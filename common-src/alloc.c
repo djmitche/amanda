@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: alloc.c,v 1.6 1997/11/12 23:06:23 blair Exp $
+ * $Id: alloc.c,v 1.7 1997/11/20 19:58:32 jrj Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -114,4 +114,52 @@ char *newstr2;
 {
     if (oldstr != (char *)0) free(oldstr);
     return stralloc2(newstr1, newstr2);
+}
+
+
+/*
+** safe_env - build a "safe" environment list.
+*/
+char **safe_env()
+{
+    static char *safe_env_list[] = {
+	"TZ",
+	NULL
+    };
+
+    /*
+     * If the initial environment pointer malloc fails, set up to
+     * pass back a pointer to the NULL string pointer at the end of
+     * safe_env_list so our result is always a valid, although possibly
+     * empty, environment list.
+     */
+#define SAFE_ENV_CNT	(sizeof(safe_env_list) / sizeof(*safe_env_list))
+    char **envp = safe_env_list + SAFE_ENV_CNT - 1;
+
+    char **p;
+    char **q;
+    char *s;
+    char *v;
+    int l1, l2;
+
+    if ((q = (char **)malloc(sizeof(safe_env_list))) != NULL) {
+	envp = q;
+	for (p = safe_env_list; *p != NULL; p++) {
+	    if ((v = getenv(*p)) == NULL) {
+		continue;			/* no variable to dup */
+	    }
+	    l1 = strlen(*p);			/* variable name w/o null */
+	    l2 = strlen(v) + 1;			/* include null byte here */
+	    if ((s = (char *)malloc(l1 + 1 + l2)) == NULL) {
+		break;				/* out of memory */
+	    }
+	    *q++ = s;				/* save the new pointer */
+	    memcpy(s, *p, l1);			/* left hand side */
+	    s += l1;
+	    *s++ = '=';
+	    memcpy(s, v, l2);			/* right hand side and null */
+	}
+	*q = NULL;				/* terminate the list */
+    }
+    return envp;
 }

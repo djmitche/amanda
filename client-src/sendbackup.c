@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.18 1997/11/12 10:49:26 amcore Exp $
+ * $Id: sendbackup.c,v 1.19 1997/11/20 19:58:28 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -390,7 +390,7 @@ va_dcl
 #endif
 {
     va_list ap;
-    char *environ[1], *argv[16];
+    char *argv[16];
     int pid, i, inpipe[2];
 
     dbprintf(("%s: spawning \"%s\" in pipeline\n", pname, prog));
@@ -429,9 +429,7 @@ va_dcl
 	if(i == 16) argv[15] = (char *)0;
 	arglist_end(ap);
 
-	environ[0] = (char *)0;	/* pass empty environment */
-
-	execve(prog, argv, environ);
+	execve(prog, argv, safe_env());
 	dbprintf(("error [exec %s: %s]\n", prog, strerror(errno)));
 	error("error [exec %s: %s]", prog, strerror(errno));
 	/* NOTREACHED */

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.11 1997/10/30 14:49:02 amcore Exp $
+ * $Id: amandad.c,v 1.12 1997/11/20 19:58:25 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -124,15 +124,6 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    char *envv[2];
-    char *envp[(sizeof(envv) / sizeof(*envv))];
-    char **p = NULL;
-    char **q = NULL;
-    char *v = NULL;
-
-    /* a list of environment variables to be passed to child processes */
-    envv[0] = "TZ";
-    envv[1] = (char *)0;
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
 
@@ -336,31 +327,10 @@ char **argv;
 #ifdef  KRB4_SECURITY
 	transfer_session_key();
 #endif
-	/* initialize the environment passed to the command */
-	for (p = envv, q = envp; *p != 0; p++) {
-	    v = getenv(*p);
-
-	    if ( v == NULL ) {
-		continue;
-	    }
-
-	    /*
-	     * create an entry in the array of environment variables
-	     */
-	    *q = (char *)malloc(strlen(*p) + strlen(v) + 2);
-	    if ( *q == NULL ) {
-		/* there's no more memory for environment variables! */
-		    break;
-	    }
-	    sprintf(*q, "%s=%s", *p, v);
-
-	    q++;
-	}
-	*q = NULL;
 
 	/* run service */
 
-	execle(cmd, cmd, NULL, envp);
+	execle(cmd, cmd, NULL, safe_env());
 	error("could not fork service: %s", strerror(errno));
     }
 

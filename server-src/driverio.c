@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.16 1997/11/07 11:28:33 george Exp $
+ * $Id: driverio.c,v 1.17 1997/11/20 19:58:37 jrj Exp $
  *
  * I/O-related functions for driver program
  */
@@ -97,7 +97,7 @@ void startup_tape_process()
 	close(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("taper dup2: %s", strerror(errno));
-	execl(taper_program, "taper", (char *)0);
+	execle(taper_program, "taper", (char *)0, safe_env());
 	error("exec %s: %s", taper_program, strerror(errno));
     default:	/* parent process */
 	close(fd[1]);
@@ -121,7 +121,7 @@ dumper_t *dumper;
 	close(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("%s dup2: %s", dumper->name, strerror(errno));
-	execl(dumper_program, "dumper", (char *)0);
+	execle(dumper_program, "dumper", (char *)0, safe_env());
 	error("exec %s (%s): %s", dumper_program,
 	      dumper->name, strerror(errno));
     default:	/* parent process */

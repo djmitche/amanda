@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.12 1997/11/17 12:41:26 amcore Exp $
+ * $Id: amflush.c,v 1.13 1997/11/20 19:58:35 jrj Exp $
  *
  * write files from work directory onto tape
  */
@@ -314,7 +314,7 @@ void run_dumps()
     /* now, have reporter generate report and send mail */
 
     chdir(confdir);
-    execl(reporter_program, "reporter", (char *)0);
+    execle(reporter_program, "reporter", (char *)0, safe_env());
 }
 
 static void startup_tape_process()
@@ -331,7 +331,7 @@ static void startup_tape_process()
 	close(fd[0]);
 	if(dup2(fd[1], 0) == -1 || dup2(fd[1], 1) == -1)
 	    error("taper dup2: %s", strerror(errno));
-	execl(taper_program, "taper", (char *)0);
+	execle(taper_program, "taper", (char *)0, safe_env());
 	error("exec %s: %s", taper_program, strerror(errno));
     default:	/* parent process */
 	close(fd[1]);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.11 1997/10/30 14:49:04 amcore Exp $
+ * $Id: rundump.c,v 1.12 1997/11/20 19:58:26 jrj Exp $
  *
  * runs DUMP program as root
  */
@@ -42,9 +42,7 @@ char **argv;
 {
     char *dump_program;
 #ifdef USE_RUNDUMP
-    char *noenv[1];
     int i;
-    noenv[0] = (char *)0;
 #endif /* USE_RUNDUMP */
 
     dbopen();
@@ -115,7 +113,7 @@ char **argv;
 	dbprintf(("%s ", argv[i]));
     dbprintf(("\n"));
 
-    execve(dump_program, argv, noenv);
+    execve(dump_program, argv, safe_env());
 
     dbprintf(("failed (errno=%d)\n",errno));
     dbclose();

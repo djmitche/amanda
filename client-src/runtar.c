@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: runtar.c,v 1.6 1997/10/30 14:49:05 amcore Exp $
+ * $Id: runtar.c,v 1.7 1997/11/20 19:58:27 jrj Exp $
  *
  * runs GNUTAR program as root
  */
@@ -41,9 +41,7 @@ int argc;
 char **argv;
 {
 #ifdef GNUTAR
-    char *noenv[1];
     int i;
-    noenv[0] = (char *)0;
 #endif
 
     dbopen();
@@ -79,7 +77,7 @@ char **argv;
 	dbprintf(("%s ", argv[i]));
     dbprintf(("\n"));
 
-    execve(GNUTAR, argv, noenv);
+    execve(GNUTAR, argv, safe_env());
 
     dbprintf(("failed (errno=%d)\n",errno));
     dbclose();

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.40 1997/11/12 12:17:43 amcore Exp $
+ * $Id: sendsize.c,v 1.41 1997/11/20 19:58:30 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -315,7 +315,7 @@ disk_estimates_t *est;
     default:
         break;
     case 0:
-	execve(cmd, argv, NULL);
+	execve(cmd, argv, safe_env());
 	dbprintf(("%s: execve %s returned: %s", pname, cmd, strerror(errno)));
 	exit(1);
     }
@@ -574,23 +574,26 @@ int level;
 
 #ifdef XFSDUMP
 	if (!strcmp(amname_to_fstype(device), "xfs"))
-	    execl(cmd, "xfsdump", "-F", "-J", "-l", dumpkeys, "-", device,
-		  (char *)0);
+	    execle(cmd, "xfsdump", "-F", "-J", "-l", dumpkeys, "-", device,
+		   (char *)0, safe_env());
 	else
 #endif
 #ifdef VXDUMP
 	if (!strcmp(amname_to_fstype(device), "vxfs"))
-	    execl(cmd, "vxdump", dumpkeys, "100000", "-", device, (char *)0);
+	    execle(cmd, "vxdump", dumpkeys, "100000", "-", device, (char *)0,
+		   safe_env());
 	else
 #endif
 #ifdef DUMP
 # ifdef AIX_BACKUP
-	    execl(cmd, "backup", dumpkeys, "-", device, (char *)0);
+	    execle(cmd, "backup", dumpkeys, "-", device, (char *)0, safe_env());
 # else
 #  ifdef OSF1_VDUMP
-	    execl(cmd, "dump", dumpkeys, "60", "-", device, (char *)0);
+	    execle(cmd, "dump", dumpkeys, "60", "-", device, (char *)0,
+		   safe_env());
 #  else
-	    execl(cmd, "dump", dumpkeys, "100000", "-", device, (char *)0);
+	    execle(cmd, "dump", dumpkeys, "100000", "-", device, (char *)0,
+		   safe_env());
 #  endif
 # endif
 #endif
@@ -683,13 +686,14 @@ int level;
 	    dup2(pipefd[1], 2);
 	    close(pipefd[0]);
 
-	    execl(SAMBA_CLIENT, "smbclient", sharename, pass,
-		  "-d","3","-U", "backup", "-E",
-		  domain[0] ? "-W" : "-c",
-		  domain[0] ? domain : tarkeys,
-		  domain[0] ? "-c" : (char *)0,
-		  domain[0] ? tarkeys : (char *)0,
-		  (char *)0);
+	    execle(SAMBA_CLIENT, "smbclient", sharename, pass,
+		   "-d","3","-U", "backup", "-E",
+		   domain[0] ? "-W" : "-c",
+		   domain[0] ? domain : tarkeys,
+		   domain[0] ? "-c" : (char *)0,
+		   domain[0] ? tarkeys : (char *)0,
+		   (char *)0,
+		   safe_env());
 	    exit(1);
 	    break;
     }
@@ -879,26 +883,27 @@ time_t dumpsince;
       dup2(pipefd[1], 2);
       close(pipefd[0]);
 
-      execl(cmd,
+      execle(cmd,
 #ifdef GNUTAR
-	    GNUTAR,
+	     GNUTAR,
 #else
-	    "tar",
+	     "tar",
 #endif
-	    "--create", "--directory", dirname,
+	     "--create", "--directory", dirname,
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	    "--listed-incremental", incrname,
+	     "--listed-incremental", incrname,
 #else
-	    "--incremental", "--newer", dumptimestr,
+	     "--incremental", "--newer", dumptimestr,
 #endif
-	    "--sparse", "--one-file-system",
+	     "--sparse", "--one-file-system",
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
-	    "--atime-preserve",
+	     "--atime-preserve",
 #endif
-	    "--ignore-failed-read", "--totals", "--file", "/dev/null",
-	    efile[0] ? efile : ".",
-	    efile[0] ? "." : (char *)0,
-	    (char *)0);
+	     "--ignore-failed-read", "--totals", "--file", "/dev/null",
+	     efile[0] ? efile : ".",
+	     efile[0] ? "." : (char *)0,
+	     (char *)0,
+	     safe_env());
 
       exit(1);
       break;

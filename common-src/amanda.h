@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.27 1997/11/12 23:06:24 blair Exp $
+ * $Id: amanda.h,v 1.28 1997/11/20 19:58:33 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -333,6 +333,7 @@ extern char  *stralloc        P((char *str));
 extern char  *stralloc2       P((char *str1, char *str2));
 extern char  *newstralloc     P((char *oldstr, char *newstr));
 extern char  *newstralloc2    P((char *oldstr, char *newstr1, char *newstr2));
+extern char **safe_env        P((void));
 extern char  *validate_regexp P((char *regex));
 extern int    match           P((char *regex, char *str));
 extern time_t unctime         P((char *timestr));
