@@ -61,3 +61,12 @@ Linux hosts intended to back up efs partitions with dump should
 install the dump package, as it is not installed by default on the
 Linux distributions I know of.  It is possible to find compiled
 versions of dump on most Linux sites.
+
+---------------------------------------------------------------------------
+Digital Unix 4
+--------------
+
+According to Michael Galloway <mgx@spruce.lsd.ornl.gov>, the stock
+DUX4 dump is broken.  There is a patch available:
+
+ftp://ftp.service.digital.com/public/dunix/v4.0b/duv40bas00005-19970926.README
