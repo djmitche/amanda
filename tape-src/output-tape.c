@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.1.2.2 2001/01/29 22:14:33 jrjackson Exp $
+ * $Id: output-tape.c,v 1.1.2.3 2001/04/23 18:48:39 jrjackson Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -520,13 +520,13 @@ tape_tapefd_status(fd, stat)
         /* IRIX-ish system */
 	anything_valid = 1;
 	stat->online_valid = 1;
-	stat->online = (0 != (buf.mt.dposn & MT_ONL));
+	stat->online = (0 != (buf.mt_dposn & MT_ONL));
 	stat->bot_valid = 1;
-	stat->bot = (0 != (buf.mt.dposn & MT_BOT));
+	stat->bot = (0 != (buf.mt_dposn & MT_BOT));
 	stat->eot_valid = 1;
-	stat->eot = (0 != (buf.mt.dposn & MT_EOT));
+	stat->eot = (0 != (buf.mt_dposn & MT_EOT));
 	stat->protected_valid = 1;
-	stat->protected = (0 != (buf.mt.dposn & MT_WRPROT));
+	stat->protected = (0 != (buf.mt_dposn & MT_WRPROT));
 #else									/* }{ */
 #ifdef GMT_ONLINE							/* { */
         /* Linux-ish system */
