@@ -80,6 +80,9 @@ if [ -f $logfile ]; then
 	done
 	mv $errfile $errfile.1
 
+	# Trim the index file to those for dumps that still exist.
+	$libexecdir/amtrmidx$SUF $conf
+
 else
 	echo "amcleanup: no unprocessed logfile to clean up."
 	exit 1
