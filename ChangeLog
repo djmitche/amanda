@@ -1,3 +1,8 @@
+2001-01-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Andreas F Mueller <afm@othello.ch>
+
+	* server-src/amadmin.c (force_no_bump_one): Fix message.
+
 2000-11-29  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/planner.c (analyze_estimate): pick incremental level
@@ -1323,7 +1328,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.427 2000/12/29 17:46:30 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.428 2001/01/02 14:25:07 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
