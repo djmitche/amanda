@@ -1,3 +1,13 @@
+2001-11-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/planner.c: Add host, disk, datestamp and level on
+	FLUSH line. Add datestamp on DUMP line.
+	* server-src/driver.c (read_flush): Read new format of FLUSH line.
+	* server-src/driver.c (read_schedule): Read new format of DUMP line.
+	* server-src/amflush.c: Write a datestamp on stderr.
+	* server-src/amdump.sh.in: Write a datestamp on stderr.
+	* server-src/amstatus.pl.in: Works with autoflush.
+
 2001-11-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/conffile.c (autoflush): New configuration options.

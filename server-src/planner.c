@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.12 2001/11/08 18:44:56 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13 2001/11/10 19:30:53 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -491,12 +491,15 @@ char **argv;
      */
 
     if(conf_autoflush) {
+	dumpfile_t file;
 	holding_t *holding_list=NULL, *holding_file;
 	get_flush(NULL, &holding_list, datestamp, 0, 0);
 	for(holding_file=holding_list; holding_file != NULL;
 				       holding_file = holding_file->next) {
-	    fprintf(stderr,"FLUSH %s\n", holding_file->name);
-	    fprintf(stdout,"FLUSH %s\n", holding_file->name);
+	    get_dumpfile(holding_file->name, &file);
+	    
+	    fprintf(stderr,"FLUSH %s %s %s %d %s\n", file.name, file.disk, file.datestamp, file.dumplevel, holding_file->name);
+	    fprintf(stdout,"FLUSH %s %s %s %d %s\n", file.name, file.disk, file.datestamp, file.dumplevel, holding_file->name);
 	}
     }
     fprintf(stderr,"ENDFLUSH\n");
@@ -2180,6 +2183,7 @@ static void output_scheduleline(dp)
 		"%ld", dump_time);
     schedline = vstralloc("DUMP ",dp->host->hostname,
 			  " ", dp->name,
+			  " ", datestamp,
 			  " ", dump_priority_str,
 			  " ", dump_level_str,
 			  " ", dump_date,
