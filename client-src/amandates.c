@@ -62,7 +62,7 @@ int open_readwrite;
 
     if (access(AMANDATES_FILE,F_OK))
 	/* not yet existing */
-	if ( (rc = open(AMANDATES_FILE,(O_CREAT|O_RDWR),0666)) )
+	if ( (rc = open(AMANDATES_FILE,(O_CREAT|O_RDWR),0644)) )
 	    /* open/create successfull */
 	    close(rc);
 

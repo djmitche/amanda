@@ -73,7 +73,7 @@ CleanTapelist () {
   # Get the location and name of the database filename.
   exec < amanda.conf || return $?
   FoundInfoFile=no
-  InfoFile=
+  InfoFile="@DB_DIR@/curinfo"
   while read Line; do
     case $Line in
       infofile*)
@@ -101,14 +101,12 @@ CleanTapelist () {
     log "${Program}: ${VarDir} does not exist or is not a directory."
     return 1
   fi
-  if [ ! -r ${InfoFile}.pag ]; then
-    log "${Program}: ${InfoFile}.pag does not exist or is not readable."
-    return 1
-  fi
-  if [ ! -r ${InfoFile}.dir ]; then
-    log "${Program}: ${InfoFile}.dir does not exist or is not readable."
-    return 1
-  fi
+  for dbext in @DB_EXT@; do
+    if [ ! -r ${InfoFile}${dbext} ]; then
+      log "${Program}: ${InfoFile}${dbext} does not exist or is not readable."
+      return 1
+    fi
+  done
 
   NewTapelist=/tmp/tapelist
   rm -f ${NewTapelist}

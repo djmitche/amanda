@@ -105,7 +105,7 @@ AC_DEFINE_UNQUOTED(CONFIG_DIR,"$CONFIG_DIR")
 AC_SUBST(CONFIG_DIR)
 
 AC_ARG_WITH(indexdir,
-    [   --with-indexdir=DIR    index of files dumped go in DIR [localstatedir/amanda-index]],
+    [   --with-indexdir=DIR    index of files dumped go in DIR [localstatedir/amanda/index]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -115,7 +115,7 @@ AC_ARG_WITH(indexdir,
 	  ;;
 	esac
     ],
-    : ${INDEX_DIR=$localstatedir/amanda-index}
+    : ${INDEX_DIR=$localstatedir/amanda/index}
 )
 INDEX_DIR=`(
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -263,15 +263,8 @@ AC_ARG_WITH(server,
     [   --without-server       do not build server stuff],
     [
         case "$withval" in
-	y | ye | yes) : ;;
-        n | no)
-	    BUILD_CHANGER_PROGS_LIBEXEC=
-	    BUILD_CHANGER_SCRIPTS_LIBEXEC=
-	    BUILD_SERVER_PROGS_SBIN=
-	    BUILD_SERVER_PROGS_LIBEXEC=
-	    BUILD_SERVER_SCRIPTS_SBIN=
-	    BUILD_SERVER_LIB=
-	  ;;
+	y | ye | yes) NO_SERVER_MODE=false ;;
+        n | no) NO_SERVER_MODE=true;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-server option.  Maybe you meant --with-indexserver=$withval])
 	  ;;
@@ -283,13 +276,8 @@ AC_ARG_WITH(client,
     [   --without-client         do not build client stuff],
     [
 	case "$withval" in
-	y | ye | yes) : ;;
-	n | no)
-	    BUILD_CLIENT_PROGS_LIBEXEC=
-	    BUILD_CLIENT_SCRIPTS_LIBEXEC=
-	    BUILD_CLIENT_LIB=
-	    BUILD_RECOVER_PROGS_SBIN=
-	  ;;
+	y | ye | yes) NO_CLIENT_MODE=false;;
+	n | no) NO_CLIENT_MODE=true;;
 	*)
 	    AC_MSG_ERROR([*** You must not supply an argument to --with-client option.])
 	  ;;
@@ -321,9 +309,9 @@ AC_ARG_WITH(amrecover,
     [
 	case "$withval" in
 	y | ye | yes)
-	    case "$BUILD_RECOVER_PROGS_SBIN" in
-	    "") AC_MSG_ERROR([*** --without-client and --with-amrecover are incompatible]);;
-	    esac
+	    if ${NO_CLIENT_MODE-false}; then
+	    	AC_MSG_ERROR([*** --without-client and --with-amrecover are incompatible])
+	    fi
 	    ;;
 	n | no)
 	    BUILD_RECOVER_PROGS_SBIN=
@@ -527,15 +515,15 @@ if test "$SAMBA_CLIENT"; then
 fi
 
 AC_ARG_WITH(gnutar-listed-incremental,
-   [   --with-gnutar-listed-incremental=DIR  gnutar directory lists go in DIR [localstatedir/amanda-gnutar-lists]],
+   [   --with-gnutar-listed-incremental=DIR  gnutar directory lists go in DIR [localstatedir/amanda/gnutar-lists]],
    [
 	case "$withval" in
 	    n | no)		unset GNUTAR_LIST_DIR ;;
-	    y | ye | yes)	: ${GNUTAR_LIST_DIR=$localstatedir/amanda-gnutar-lists} ;;
+	    y | ye | yes)	: ${GNUTAR_LIST_DIR=$localstatedir/amanda/gnutar-lists} ;;
 	    *)			GNUTAR_LIST_DIR="$withval" ;;
 	esac
     ],
-    : ${GNUTAR_LIST_DIR=$localstatedir/amanda-gnutar-lists}
+    : ${GNUTAR_LIST_DIR=$localstatedir/amanda/gnutar-lists}
 )
 if test "$GNUTAR_LIST_DIR"; then
     tmp=`eval echo $GNUTAR_LIST_DIR`
@@ -722,10 +710,7 @@ AC_ARG_WITH(db,
 )
 if test "$DB_STYLE"; then
     case "$DB_STYLE" in
-	db)	;;
-	dbm)	;;
-	gdbm)	;;
-	ndbm)	;;
+	db | dbm | gdbm | ndbm)	;;
 	*)
 	    AC_MSG_ERROR([*** Unknown argument $DB_STYLE given to --with-db.  Choose from db, dbm, gdbm, ndbm.])
 	    DB_STYLE=
@@ -1404,6 +1389,14 @@ if test "$DB_STYLE"; then
     esac
 fi
 
+case "$DB_STYLE" in
+    db) DB_EXT=.db;;
+    gdbm) DB_EXT='""';;
+    dbm | ndbm) DB_EXT=".dir .pag";;
+    *) DB_EXT=;;
+esac
+AC_SUBST(DB_EXT)
+
 AC_CACHE_CHECK(
     [for struct datum declared in header files],
     amanda_cv_struct_datum,
@@ -1873,6 +1866,24 @@ AC_SUBST(KRB4COMMON_C)
 AC_SUBST(KRB4COMMON_O)
 AC_SUBST(KRB4CLIENT_C)
 AC_SUBST(KRB4CLIENT_O)
+
+if ${NO_SERVER_MODE-false}; then
+    BUILD_CHANGER_PROGS_LIBEXEC=
+    BUILD_CHANGER_SCRIPTS_LIBEXEC=
+    BUILD_SERVER_PROGS_SBIN=
+    BUILD_SERVER_PROGS_LIBEXEC=
+    BUILD_SERVER_SCRIPTS_SBIN=
+    BUILD_SERVER_LIB=
+    BUILD_AMPLOT_SBIN=
+    BUILD_AMPLOT_LIBEXEC=
+fi
+
+if ${NO_CLIENT_MODE-false}; then
+    BUILD_CLIENT_PROGS_LIBEXEC=
+    BUILD_CLIENT_SCRIPTS_LIBEXEC=
+    BUILD_CLIENT_LIB=
+    BUILD_RECOVER_PROGS_SBIN=
+fi
 
 AC_OUTPUT( \
 	common-src/versuff.c		common-src/Makefile		\
