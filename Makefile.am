@@ -17,12 +17,11 @@ EXTRA_DIST = \
 	docs/INDEXING			docs/INSTALL			\
 	docs/INTERNALS			docs/KERBEROS			\
 	docs/MULTITAPE			docs/RESTORE			\
-	docs/SAMBA			docs/SUNOS4.BUG			\
-	docs/SYSTEM.NOTES		docs/TAPE.CHANGERS		\
-	docs/TAPETYPES			docs/UPGRADE			\
-	docs/WHATS.NEW			docs/WISHLIST			\
-	patches/readline-2.0-all	patches/readline-2.0-hpux	\
-	patches/readline-2.0-irix4	patches/readline-2.0-more	\
+	docs/SAMBA			docs/SECURITY			\
+	docs/SUNOS4.BUG			docs/SYSTEM.NOTES		\
+	docs/TAPE.CHANGERS		docs/TAPETYPES			\
+	docs/UPGRADE			docs/WHATS.NEW			\
+	docs/WISHLIST			\
 	patches/regex-3.6alpha.patch	patches/samba-1.9.16p2.patch	\
 	patches/samba-largefs.patch	patches/tar-1.12.patch		\
 	patches/gcc-sol26.patch						\
