@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: statfs.c,v 1.2 1997/08/27 08:12:15 amcore Exp $
+ * $Id: statfs.c,v 1.3 1997/11/25 07:26:19 amcore Exp $
  *
  * a generic statfs-like routine
  */
@@ -49,7 +49,7 @@
 #   define STATFS_FFREE(buf)	(buf).fd_gfree
 #   define STATFS_SCALE(buf)	1024
 #   define STATFS(path, buffer)	statfs(path, &buffer)
-#elif HAVE_SYS_STATVFS_H
+#elif defined(HAVE_SYS_STATVFS_H) && !defined(STATFS_SCO_OS5)
 /*
 ** System V.4 (STATFS_SVR4)
 */

@@ -3,6 +3,9 @@ Version 2.4.0b5
 	Configure now looks for large file support and will use it under
 	Solaris 2.6 and above.  -Blair Zajac <blair@gps.caltech.edu>
 
+	Compatibility problems fixed for:
+		SCO OpenServer 5.0.2: Paul Gampe <paulg@twics.com>
+
 Version 2.4.0b4
 
 	New changerfile and changerdev configuration keywords, that

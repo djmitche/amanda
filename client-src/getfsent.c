@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.4 1997/10/08 05:25:01 george Exp $
+ * $Id: getfsent.c,v 1.5 1997/11/25 07:26:17 amcore Exp $
  *
  * generic version of code to read fstab
  */
@@ -246,6 +246,80 @@ generic_fsent_t *fsent;
     return 1;
 }
 
+/* PAG97 - begin */
+
+#elif defined(HAVE_MNTTAB_H) /* } { */
+
+#define GETFSENT_TYPE "SVR3 (SCO UNIX)"
+
+#include <mnttab.h>
+#include <sys/fstyp.h>
+#include <sys/statfs.h>
+
+#define MNTTAB "/etc/mnttab"
+
+/*
+ * If these are defined somewhere please let me know.
+ */
+
+#define MNT_READONLY 0101
+#define MNT_READWRITE 0100
+
+static FILE *fstabf = NULL;
+
+int open_fstab()
+{
+    close_fstab();
+    return (fstabf = fopen(MNTTAB, "r")) != NULL;
+}
+
+void close_fstab()
+{
+    if(fstabf)
+	fclose(fstabf);
+    fstabf = NULL;
+}
+
+static generic_fsent_t _fsent;
+
+int get_fstab_nextentry(fsent)
+generic_fsent_t *fsent;
+{
+
+    static char opts[512];
+    struct statfs fsd;
+    char typebuf[FSTYPSZ];
+    struct mnttab mnt;
+    char *dp, *ep;
+
+    if(!fread (&mnt, sizeof mnt, 1, fstabf))
+      return 0;
+
+    fsent->fsname  = mnt.mt_dev;
+    fsent->mntdir  = mnt.mt_filsys;
+    fsent->fstype = "";
+
+    if (statfs (fsent->mntdir, &fsd, sizeof fsd, 0) != -1
+        && sysfs (GETFSTYP, fsd.f_fstyp, typebuf) != -1) {
+       dp = typebuf;
+       ep = fsent->fstype;
+       while (*dp)
+            *ep++ = tolower(*dp++);
+    }
+
+    if ( mnt.mt_ro_flg == MNT_READONLY )
+         strcpy(opts, "ro");
+    else 
+         strcpy(opts, "rw");
+
+    fsent->mntopts=opts;
+
+    fsent->freq = 0;
+    fsent->passno = 0;
+    return 1;
+}
+
+/* PAG97 - end */
 #else /* } { */
 
 #define GETFSENT_TYPE "undefined"

@@ -966,6 +966,7 @@ case "$target" in
 			;;
   *-sco3.2v5*)
 			AC_DEFINE(XENIX_TAPEIO)
+			AC_DEFINE(STATFS_SCO_OS5)
 			;;
   i386-pc-isc4*)
 			AC_DEFINE(XENIX_TAPEIO)
