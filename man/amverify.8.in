@@ -15,6 +15,9 @@ amverify \- check an Amanda tape for errors
 .I config
 [
 .I slot
+[
+.I runtapes
+]
 ]
 .SH DESCRIPTION
 .B Amverify
@@ -54,7 +57,8 @@ slot is used.
 .LP
 The
 .B runtapes
-configuration parameter determines how many tapes are processed.
+configuration parameter determines how many tapes are processed unless
+it is specified on the command line.
 .LP
 See the
 .IR amanda (8)
