@@ -1,3 +1,11 @@
+1998-08-07  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* example/Makefile.am (EXTRA_DIST): add DIN-A4.ps
+
+1998-08-07  Günter Felkel  <G.Felkel@edelmann.de>
+
+	* example/DIN-A4.ps: new file
+
 1998-08-06  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* tape-src/tapetype.c (initrandombytes): use random() instead of
