@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.42 2001/02/10 04:29:41 jrjackson Exp $
+ * $Id: diskfile.c,v 1.43 2001/11/11 23:38:40 martinea Exp $
  *
  * read disklist file
  */
@@ -82,13 +82,9 @@ lookup_host(hostname)
     const char *hostname;
 {
     host_t *p;
-    int nameLen = strlen(hostname);
 
     for (p = hostlist; p != NULL; p = p->next) {
-	if (!strncasecmp(p->hostname, hostname, nameLen)) {
-	    if (p->hostname[nameLen] == '\0' || p->hostname[nameLen] == '.')
-		return (p);
-	}
+	if(strcasecmp(p->hostname, hostname) == 0) return p;
     }
     return (NULL);
 }
