@@ -1,3 +1,5 @@
+	dumper kill it's child when it fail. -jlm
+
 Version 2.4.0p1
 
 	updated to libtool 1.2a.  -oliva
