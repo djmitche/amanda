@@ -1,3 +1,11 @@
+1998-11-20  Mike Grupenhoff <kashmir@munge.com>
+
+	* common-src/bsd-security.c: define STREAM_BUFSIZE to be
+	the size of the tcp socket buffers
+	* common-src/bsd-security.c (bsd_stream_server, bsd_stream_client):
+	adapt to the stream_server() interface changes.  Set socket
+	buffers to STREAM_BUFSIZE.
+
 1998-11-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* config/ltmain.sh, config/ltconfig, config/libtool/libtool.m4:

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.5 1998/11/11 20:32:45 kashmir Exp $
+ * $Id: bsd-security.c,v 1.6 1998/11/20 18:00:34 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -141,6 +141,11 @@ struct bsd_stream {
      */
     char databuf[TAPE_BLOCK_BYTES];
 };
+
+/*
+ * This is the tcp stream buffer size
+ */
+#define	STREAM_BUFSIZE	(TAPE_BLOCK_BYTES * 2)
 
 /*
  * Interface functions
@@ -877,7 +882,7 @@ bsd_stream_server(h)
     assert(bh != NULL);
 
     bs = alloc(sizeof(*bs));
-    bs->socket = stream_server(&bs->port);
+    bs->socket = stream_server(&bs->port, STREAM_BUFSIZE, STREAM_BUFSIZE);
     if (bs->socket < 0) {
 	security_seterror(&bh->security_handle,
 	    "can't create server stream: %s", strerror(errno));
@@ -933,7 +938,7 @@ bsd_stream_client(h, id)
     }
 
     bs = alloc(sizeof(*bs));
-    bs->fd = stream_client(bh->hostname, id, DEFAULT_SIZE, DEFAULT_SIZE,
+    bs->fd = stream_client(bh->hostname, id, STREAM_BUFSIZE, STREAM_BUFSIZE,
 	&bs->port);
     if (bs->fd < 0) {
 	security_seterror(&bh->security_handle,
