@@ -108,9 +108,9 @@ int level;
 		return;
 	    }
 	    makesharename(disk, device, 1);
-	    sprintf(cmd, "%s %s %s -U backup%s%s -c quit", SAMBA_CLIENT,
+	    sprintf(cmd, "%s %s %s -E -U backup%s%s -c quit", SAMBA_CLIENT,
 		    device, pass, domain[0] ? " -W " : "", domain);
-	    printf("running %s %s XXXX -U backup%s%s -c quit",
+	    printf("running %s %s XXXX -E -U backup%s%s -c quit",
 		   SAMBA_CLIENT, device, domain[0] ? " -W " : "", domain);
 	    if (system(cmd) & 0xff00)
 		printf("ERROR [PC SHARE %s access error: host down or invalid password?]\n", disk);
