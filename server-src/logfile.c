@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.17.4.1.4.1 2001/09/01 03:35:17 jrjackson Exp $
+ * $Id: logfile.c,v 1.17.4.1.4.2 2001/11/03 13:38:37 martinea Exp $
  *
  * common log file writing routine
  */
@@ -40,6 +40,7 @@ char *logtype_str[] = {
     "FATAL",		/* program died for some reason, used by error() */
     "ERROR", "WARNING",	"INFO", "SUMMARY",	 /* information messages */
     "START", "FINISH",				   /* start/end of a run */
+    "DISK",							 /* disk */
     "SUCCESS", "FAIL", "STRANGE",		    /* the end of a dump */
     "STATS",						   /* statistics */
     "MARKER",					  /* marker for reporter */

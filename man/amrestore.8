@@ -83,23 +83,22 @@ or
 .I datestamp
 are specified, every backup on the tape is a candidate.
 .LP
-.IR Hostname ,
-.I diskname
+.I Hostname
 and
-.I datestamp
-are regular expressions that may match more than one backup.
+.I diskname
+are special expression descibe in the "HOST & DISK EXPRESSION" section
+of
+.IR amanda (8).
+.I Datestamp
+are special expression describe in the "DATESTAMP EXPRESSION" section
+of
+.IR amanda (8).
 For example, if
 .I diskname
 is "rz[23]a", it would match disks
 .B rz2a
 and
 .BR rz3a .
-.IR Hostname ,
-.I diskname
-or
-.I datestamp
-may be an empty string ("") to match every host, disk or date
-(this is just an abbreviation for ".*").
 .LP
 .I Datestamp
 is useful if

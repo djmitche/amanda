@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.1 2001/02/10 04:28:46 jrjackson Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.2 2001/11/03 13:38:37 martinea Exp $
  *
  * read disklist file
  */
@@ -148,6 +148,43 @@ int (*cmp) P((disk_t *a, disk_t *b));
     else prev->next = disk;
     if(ptr == NULL) list->tail = disk;
     else ptr->prev = disk;
+}
+
+disk_t *add_disk(hostname, diskname)
+char *hostname;
+char *diskname;
+{
+    disk_t *disk;
+    host_t *host;
+
+    disk = alloc(sizeof(disk_t));
+    disk->line = 0;
+    disk->name = stralloc(diskname);
+    disk->spindle = -1;
+    disk->up = NULL;
+    disk->compress = COMP_NONE;
+    disk->start_t = 0;
+
+    host = lookup_host(hostname);
+    if(host == NULL) {
+	host = alloc(sizeof(host_t));
+	host->next = hostlist;
+	hostlist = host;
+
+	host->hostname = stralloc(hostname);
+	host->disks = NULL;
+	host->up = NULL;
+	host->inprogress = 0;
+	host->maxdumps = 1;
+	host->start_t = 0;
+    }
+    enqueue_disk(&lst, disk);
+
+    disk->host = host;
+    disk->hostnext = host->disks;
+    host->disks = disk;
+
+    return disk;
 }
 
 int find_disk(list, disk)
@@ -368,6 +405,7 @@ static int read_diskline()
     disk->no_hold	= dtype->no_hold;
     disk->kencrypt	= dtype->kencrypt;
     disk->index		= dtype->index;
+    disk->todo		= 1;
 
     skip_whitespace(s, ch);
     fp = s - 1;
@@ -534,6 +572,82 @@ disk_t *dp;
 		     NULL);
 }
 
+ 
+void match_disklist(disklist_t *origqp, int sargc, char **sargv)
+{
+    char *prevhost = NULL;
+    int i;
+    int match_a_host;
+    int match_a_disk;
+    int prev_match;
+    disk_t *dp;
+
+    if(sargc <= 0)
+	return;
+
+    for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	if(dp->todo == 1)
+	    dp->todo = -1;
+    }
+
+    prev_match = 0;
+    for(i=0;i<sargc;i++) {
+	match_a_host = 0;
+	for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	    if(match_host(sargv[i], dp->host->hostname))
+		match_a_host = 1;
+	}
+	match_a_disk = 0;
+	for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	    if(prevhost != NULL &&
+	       match_host(prevhost, dp->host->hostname) &&
+	       match_disk(sargv[i], dp->name)) {
+		if(match_a_host) {
+		    error("Argument %s match a host and a disk",sargv[i]);
+		}
+		else {
+		    if(dp->todo == -1) {
+			dp->todo = 1;
+			match_a_disk = 1;
+			prev_match = 0;
+		    }
+		}
+	    }
+	}
+	if(!match_a_disk) {
+	    if(match_a_host == 1) {
+		if(prev_match == 1) { /* all disk of the previous host */
+		    for(dp = origqp->head; dp != NULL; dp = dp->next) {
+			if(match_host(prevhost,dp->host->hostname))
+			    if(dp->todo == -1)
+				dp->todo = 1;
+		    }
+		}
+		prevhost = sargv[i];
+		prev_match = 1;
+	    }
+	    else {
+		prev_match = 0;
+		/*error("%s match nothing",sargv[i]);*/
+	    }
+	}
+    }
+
+    if(prev_match == 1) { /* all disk of the previous host */
+	for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	    if(match_host(prevhost,dp->host->hostname))
+		if(dp->todo == -1)
+		    dp->todo = 1;
+	}
+    }
+
+    for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	if(dp->todo == -1)
+	    dp->todo = 0;
+    }
+}
+
+ 
 #ifdef TEST
 
 char *config_name = NULL;

@@ -13,6 +13,12 @@ amdump \- back up all disks in an Amanda configuration
 .SH SYNOPSIS
 .B amdump
 .I config
+[
+.I host
+[
+.I disk
+]*
+]*
 .SH DESCRIPTION
 .B Amdump
 switches to the appropriate Amanda configuration directory,
@@ -23,6 +29,10 @@ file.
 .B Amdump
 is normally run by
 .BR cron .
+.LP
+You can specify many host/disk expression, only disks that
+match an expression will be dumped. All disk are dumped if no
+expression are given.
 .LP
 If file @CONFIG_DIR@/\fIconfig\fR/hold exists,
 .B amdump

@@ -1,3 +1,30 @@
+2001-11-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/reporter.c: Backport from 2.5.0 the change to allow
+	the "[host [disk]*]*" arguments on command.
+	* server-src/planner.c: Likewise.
+	* server-src/logfile.h: Likewise.
+	* server-src/logfile.c: Likewise.
+	* server-src/find.h: Likewise.
+	* server-src/find.c: Likewise.
+	* server-src/diskfile.h: Likewise.
+	* server-src/diskfile.c: Likewise.
+	* server-src/amtrmidx.c: Likewise.
+	* server-src/amindexd.c: Likewise.
+	* server-src/amflush.c: Likewise.
+	* server-src/amdump.sh.in: Likewise.
+	* server-src/amcheck.c: Likewise.
+	* server-src/amadmin.c: Likewise.
+	* restore-src/amrestore.c: Likewise.
+	* man/amrestore.8: Likewise.
+	* man/amflush.8.in: Likewise.
+	* man/amdump.8.in: Likewise.
+	* man/amcheck.8.in: Likewise.
+	* man/amanda.8.in: Likewise.
+	* man/amadmin.8.in: Likewise.
+	* common-src/match.c: Likewise.
+	* common-src/amanda.h: Likewise.
+
 2001-10-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* man/Makefile.am: add amdd.8 and ammt.8 to EXTRA_DIST.

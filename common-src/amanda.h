@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.4 2001/09/17 22:18:08 jrjackson Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5 2001/11/03 13:38:36 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -520,6 +520,9 @@ extern char  *clean_regex     P((char *regex));
 extern int    match           P((char *regex, char *str));
 extern int    match_glob      P((char *glob, char *str));
 extern char  *glob_to_regex   P((char *glob));
+extern int    match_host      P((char *glob, char *host));
+extern int    match_disk      P((char *glob, char *disk));
+extern int    match_datestamp P((char *dateexp, char *datestamp));
 extern time_t unctime         P((char *timestr));
 #if defined(USE_DBMALLOC)
 extern char  *dbmalloc_agets  P((char *c, int l, FILE *file));

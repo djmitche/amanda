@@ -8,10 +8,10 @@
 .if t .ft
 ..
 .de P1
-\fB\\$1\fP \fI\\$2\fP \\$3 \fI\\$4\fP \\$5
+\fB\\$1\fP \\$2 \fI\\$3\fP \\$4 \fI\\$5\fP \\$6 \\$7
 ..
 .de P2
-\fB\\$1\fP \fI\\$2\fP \fI\\$3\fP
+\fB\\$1\fP \fI\\$2\fP \\$3 \\$4 \\$5
 ..
 .de P3
 \fB\\$1\fP \\$2 \fI\\$3\fP \\$4 \fI\\$5\fP \\$6 \\$7
@@ -51,29 +51,14 @@ Where
 is also marked as being optional,
 the command operates on all hosts and disks in the
 .IR disklist .
-.P
-.I Hostnames
-are case-insensitive matched from the left breaking at each dot.
-So "HostA" will match "hosta"
-as well as "hosta.some.domain"
-and "hosta.another.domain".
-But it will not match "hostabc"
-or "hostabc.some.domain"
-or "hostabc.another.domain".
-.P
-However "HostA.some" will only match "hosta.some.domain",
-not "hosta.another.domain",
-or "hosta.something.domain"
-or just "hosta".
-.P
-.I Disks
-are regular expressions,
-so "sd0" will match disks "sd0a" and "sd0g"
-and "/mnt" will match "/mnt", "/mnt/a", and "/mnt/b".
-To match only "/mnt",
-use "^/mnt$".
-This is the same mechanism used by
-.IR amrestore(8) .
+Both
+.I hostnames
+and
+.I disk
+are special expression, see the "HOST & DISK EXPRESSION" section
+of 
+.IR amanda (8)
+for a description.
 .LP
 .TP
 .B version
@@ -82,44 +67,44 @@ The
 .I config
 parameter must be present but is ignored.
 .TP
-.P1 force-bump hostname [ disks ]
+.P1 force-bump [ hostname [ disks ]* ]+
 Force the
 .I disks
 on
 .I hostname
 to bump to a new incremental level during the next Amanda run.
 .TP
-.P1 force-no-bump hostname [ disks ]
+.P1 force-no-bump [ hostname [ disks ]* ]+
 Force the
 .I disks
 on
 .I hostname
 to not bump to a new incremental level during the next Amanda run.
 .TP
-.P1 unforce-bump hostname [ disks ]
+.P1 unforce-bump [ hostname [ disks ]* ]+
 Undo a previous
 .B force-bump
 or
 .B force-no-bump
 command.
 .TP
-.P1 force hostname [ disks ]
+.P1 force [ hostname [ disks ]* ]+
 Force the
 .I disks
 on
 .I hostname
 to do a full (level 0) backup during the next Amanda run.
 .TP
-.P1 unforce hostname [ disks ]
+.P1 unforce [ hostname [ disks ]* ]+
 Undo a previous
 .B force
 command.
 .TP
-.P3 reuse tapelabel [ ... ]
+.P2 reuse tapelabel [ ... ]
 The tapes listed
 will be available for reuse at their point in the tape cycle.
 .TP
-.P3 no-reuse tapelabel [ ... ]
+.P2 no-reuse tapelabel [ ... ]
 The tapes listed
 will not be reused when their turn comes up again in the tape cycle.
 Note that if this causes the number of reusable tapes to drop below the
@@ -127,10 +112,10 @@ Note that if this causes the number of reusable tapes to drop below the
 .I tapecycle
 value, Amanda will request new tapes until the count is satisfied again.
 .TP
-.P3 due [ hostname [ disks ] ]
+.P1 due [ hostname [ disks ]* ]*
 Show when the next full dump is due.
 .TP
-.P3 "find\fP [ \fB--sort\fP \fBhkdlb\fP ]\fB" [ hostname [ disks ] ]
+.P3 "find\fP [ \fB--sort\fP \fBhkdlb\fP ]\fB" [ hostname [ disks ]* ]*
 Display all backups currently on tape or in the holding disk.
 The tape label or holding disk filename,
 file number,
@@ -156,7 +141,7 @@ An uppercase letter reverses the sort order for that key.
 The default sort order is
 .BR hkdlb .
 .TP
-.P3 delete hostname [ disks ]
+.P1 delete [ hostname [ disks ]* ]+
 Delete the specified
 .I disks
 on
@@ -180,7 +165,7 @@ levels.
 .B balance
 Display the distribution of full backups throughout the dump schedule.
 .TP
-.P3 export [ hostname [ disks ] ]
+.P1 export [ hostname [ disks ]* ]*
 Convert records from the Amanda database
 to a text format that may be transmitted to another Amanda
 machine and
@@ -192,7 +177,7 @@ Convert
 records read from standard input to a form Amanda uses
 and insert them into the database on this machine.
 .TP
-.P3 disklist [ hostname [ disks ] ]
+.P1 disklist [ hostname [ disks ]* ]*
 Display the
 .I disklist
 information for each of the
@@ -202,7 +187,7 @@ on
 (or all hosts).
 Mostly used for debugging.
 .TP
-.P3 info [ hostname [ disks ] ]
+.P1 info [ hostname [ disks ]* ]*
 Display the
 database record for each of the
 .I disks
@@ -215,14 +200,9 @@ Request three specific file systems on
 .I machine-a
 get a full level 0 backup during the next Amanda run.
 .LP
-Note the use of "^/$" to get the root file system.
-Without the extra regular expression characters, just "/" will
-match all the file systems on
-.IR machine-a .
-.LP
 .RS
 .EX
-$ amadmin @DEFAULT_CONFIG@ force machine-a "^/$" /var /usr
+$ amadmin @DEFAULT_CONFIG@ force machine-a / /var /usr
 amadmin: machine-a:/ is set to a forced level 0 tonight.
 amadmin: machine-a:/var is set to a forced level 0 tonight.
 amadmin: machine-a:/usr is set to a forced level 0 tonight.

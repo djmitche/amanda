@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.21.4.1.4.1 2001/07/19 21:50:39 jrjackson Exp $
+ * $Id: amtrmidx.c,v 1.21.4.1.4.2 2001/11/03 13:38:37 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -131,7 +131,7 @@ char **argv;
     }
     amfree(conf_tapelist);
 
-    output_find = find_dump(NULL,0,NULL);
+    output_find = find_dump();
 
     conf_indexdir = getconf_str(CNF_INDEXDIR);
     if(*conf_indexdir == '/') {

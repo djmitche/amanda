@@ -1858,6 +1858,69 @@ It only needs to be readable by the Amanda user on the Samba server.
 Further information is in the
 .B docs/SAMBA
 file that comes with an Amanda distribution.
+.SH HOST & DISK EXPRESSION
+All host and disk arguments to programs are special expression.
+The command apply to all disk that match your arguments.
+This section describe the matcher.
+.LP
+The matcher match by word, each word is a glob expression, word
+are separated by the separator '.' for host and '/' for disk. You
+can anchor the expression at left with a '^'. You can
+anchor the expression at right with a '$'. The matcher
+is case insensitive for host but is case sensitive for disk. A match
+succeed if all word in your expression match contiguous word in 
+the host or disk.
+.LP
+.EX
+ .   word separator for a host
+ /   word separator for a disk
+ ^   anchor at left
+ $   anchor at right
+ ?   match exactly one character except the separator
+ *   match zero or more characters except the separator
+ **  match zero or more characters including the separator
+.EE
+.LP
+.LP
+Some examples:
+.LP
+.EX
+  EXPRESSION      WILL MATCH              WILL NOT MATCH
+  hosta           hosta                   hostb
+                  hoSTA.dOMAIna.ORG
+                  foo.hosta.org
+  host            host                    hosta
+  host?           hosta                   host
+                  hostb
+  ho*na           hoina                   ho.aina.org
+  ho**na          hoina
+                  ho.aina.org
+  ^hosta          hosta                   foo.hosta.org
+  sda*            /dev/sda1
+                  /dev/sda12
+  /opt/           opt (disk)              opt (host)
+  .opt.           opt (host)              opt (disk)
+  /               /                       any other disk
+  /usr            /usr
+                  /usr/opt
+  /usr$           /usr                    /usr/opt
+
+.EE
+.SH DATESTAMP EXPRESSION
+A
+.I datestamp
+expression is a range expression where we only match the prefix.
+Leading ^ is removed. Trailing $ force an exact match.
+.LP
+.EX
+  20001212-14  match all dates beginning with 20001212, 20001213 or 20001214
+  20001212-4   same as previous
+  20001212-24  match all dates between 20001212 and 20001224
+  2000121      match all dates that start with 2000121 (20001210-20001219)
+  2            match all dates that start with 2 (20000101-29991231)
+  2000-10      match all dates between 20000101-20101231
+  200010$      match only 200010
+.EE
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
 .br

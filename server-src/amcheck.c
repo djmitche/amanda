@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.6 2001/08/01 19:27:08 jrjackson Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7 2001/11/03 13:38:36 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -83,7 +83,7 @@ int test_server_pgm P((FILE *outf, char *dir, char *pgm,
 
 void usage()
 {
-    error("Usage: amcheck%s [-M <username>] [-mwsclt] <conf>", versionsuffix());
+    error("Usage: amcheck%s [-M <username>] [-mwsclt] <conf> [host [disk]* ]*", versionsuffix());
 }
 
 static unsigned long malloc_hist_1, malloc_size_1;
@@ -196,7 +196,7 @@ char **argv;
 	do_localchk = do_clientchk = do_tapechk = 1;
     }
 
-    if(argc != 1) usage();
+    if(argc < 1) usage();
 
     config_name = stralloc(*argv);
 
@@ -216,6 +216,7 @@ char **argv;
     if((origqp = read_diskfile(conf_diskfile)) == NULL) {
 	error("could not load disklist %s", conf_diskfile);
     }
+    match_disklist(origqp, argc-1, argv+1);
     amfree(conf_diskfile);
 
     /*
@@ -1152,7 +1153,7 @@ static void handle_response P((proto_t *p, pkt_t *pkt));
 #define DISK_ACTIVE				((void *)1)
 #define DISK_DONE				((void *)2)
 
-void start_host(hostp)
+int start_host(hostp)
     host_t *hostp;
 {
     disk_t *dp;
@@ -1162,7 +1163,7 @@ void start_host(hostp)
     int disk_count;
 
     if(hostp->up != HOST_READY) {
-	return;
+	return 0;
     }
 
     req = vstralloc("SERVICE selfcheck\n",
@@ -1176,6 +1177,8 @@ void start_host(hostp)
 	char *l;
 	int l_len;
 	char *o;
+
+	if(dp->todo == 0) continue;
 
 	if(dp->up != DISK_READY) {
 	    continue;
@@ -1204,7 +1207,7 @@ void start_host(hostp)
     if(disk_count == 0) {
 	amfree(req);
 	hostp->up = HOST_DONE;
-	return;
+	return 0;
     }
 
 #ifdef KRB4_SECURITY
@@ -1227,6 +1230,7 @@ void start_host(hostp)
     } else {
 	hostp->up = HOST_ACTIVE;
     }
+    return 1;
 }
 
 int start_client_checks(fd)
@@ -1283,9 +1287,10 @@ int fd;
     for(dp = origqp->head; dp != NULL; dp = dp->next) {
 	hostp = dp->host;
 	if(hostp->up == HOST_READY) {
-	    start_host(hostp);
-	    hostcount++;
-	    check_protocol();
+	    if(start_host(hostp) == 1) {
+		hostcount++;
+		check_protocol();
+	    }
 	}
     }
 

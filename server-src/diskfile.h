@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.11.4.3 2000/10/10 21:33:23 martinea Exp $
+ * $Id: diskfile.h,v 1.11.4.3.4.1 2001/11/03 13:38:37 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -76,6 +76,7 @@ typedef struct disk_s {
     int index:1;			/* produce an index ? */
     int spindle;			/* spindle # - for parallel dumps */
     int inprogress;			/* being dumped now? */
+    int todo;
     void *up;				/* generic user pointer */
 } disk_t;
 
@@ -88,6 +89,7 @@ typedef struct disklist_s {
 
 disklist_t *read_diskfile P((char *filename));
 
+disk_t *add_disk P((char *hostname, char *diskname));
 host_t *lookup_host P((char *hostname));
 disk_t *lookup_disk P((char *hostname, char *diskname));
 
@@ -102,5 +104,7 @@ void remove_disk P((disklist_t *list, disk_t *disk));
 void dump_queue P((char *str, disklist_t q, int npr, FILE *f));
 
 char *optionstr P((disk_t *dp));
+
+void match_disklist P((disklist_t *origqp, int sargc, char **sargv));
 
 #endif /* ! DISKFILE_H */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.13.4.2 2001/07/19 21:50:39 jrjackson Exp $
+ * $Id: amflush.c,v 1.41.2.13.4.3 2001/11/03 13:38:36 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -49,7 +49,7 @@ holding_t *holding_list;
 char *datestamp;
 
 /* local functions */
-int main P((int argc, char **argv));
+int main P((int main_argc, char **main_argv));
 void flush_holdingdisk P((char *diskdir, char *datestamp));
 void confirm P((void));
 void detach P((void));
@@ -63,14 +63,18 @@ char **main_argv;
     int foreground;
     struct passwd *pw;
     char *dumpuser;
+    char **datearg = NULL;
+    int nb_datearg = 0;
     int fd;
     char *conffile;
     char *conf_diskfile;
     char *conf_tapelist;
     char *conf_logfile;
     disklist_t *diskqp;
+    disk_t *dp;
     pid_t pid, child_pid;
     amwait_t exitcode;
+    int opt;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -91,16 +95,29 @@ char **main_argv;
     erroutput_type = ERR_INTERACTIVE;
     foreground = 0;
 
-    if(main_argc > 1 && strcmp(main_argv[1], "-f") == 0) {
-	foreground = 1;
-	main_argc--,main_argv++;
+    /* process arguments */
+
+    while((opt = getopt(main_argc, main_argv, "fD:")) != EOF) {
+	switch(opt) {
+	case 'f': foreground = 1;
+		  break;
+	case 'D': if (datearg == NULL)
+			datearg = malloc(20*sizeof(char *));
+		  if(nb_datearg == 20) {
+		      fprintf(stderr,"maximum of 20 -D arguments.\n");
+		      exit(1);
+		  }
+		  datearg[nb_datearg++] = stralloc(optarg);
+		  break;
+	}
+    }
+    main_argc -= optind, main_argv += optind;
+
+    if(main_argc < 1) {
+	error("Usage: amflush%s [-f] [-D date]* <confdir> [host [disk]* ]*", versionsuffix());
     }
 
-    if(main_argc != 2) {
-	error("Usage: amflush%s [-f] <confdir>", versionsuffix());
-    }
-
-    config_name = main_argv[1];
+    config_name = main_argv[0];
 
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
@@ -117,6 +134,7 @@ char **main_argv;
     if((diskqp = read_diskfile(conf_diskfile)) == NULL) {
 	error("could not read disklist file \"%s\"", conf_diskfile);
     }
+    match_disklist(diskqp, main_argc-2, main_argv+2);
     amfree(conf_diskfile);
     conf_tapelist = getconf_str(CNF_TAPELIST);
     if (*conf_tapelist == '/') {
@@ -154,8 +172,40 @@ char **main_argv;
     logroll_program = vstralloc(libexecdir, "/", "amlogroll", versionsuffix(),
 				NULL);
 
-    holding_list = pick_datestamp();
+    if(datearg) {
+	holding_t *dir, *prev_dir = NULL, *next_dir;
+	int i, ok;
+
+	holding_list = pick_all_datestamp();
+	for(dir = holding_list; dir != NULL;) {
+	    next_dir = dir->next;
+	    ok = 0;
+	    for(i=0; i<nb_datearg && ok==0; i++) {
+		ok = match_datestamp(datearg[i], dir->name);
+	    }
+	    if(ok == 0) { /* remove dir */
+		amfree(dir);
+		if(prev_dir)
+		    prev_dir->next = next_dir;
+		else
+		    holding_list = next_dir;
+	    }
+	    else {
+		prev_dir = dir;
+	    }
+	    dir=next_dir;
+	}
+    }
+    else {
+	holding_list = pick_datestamp();
+    }
     confirm();
+
+    for(dp = diskqp->head; dp != NULL; dp = dp->next) {
+	if(dp->todo)
+	    log_add(L_DISK, "%s %s", dp->host->hostname, dp->name);
+    }
+
     if(!foreground) detach();
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
@@ -395,6 +445,7 @@ char *diskdir, *datestamp;
 		    entry->d_name, file.name, file.disk);
 	    continue;
 	}
+	else if (dp->todo == 0) continue;
 
 	if(file.dumplevel < 0 || file.dumplevel > 9) {
 	    log_add(L_INFO, "%s: ignoring file with bogus dump level %d.",

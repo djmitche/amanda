@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.10 2001/09/17 18:56:28 jrjackson Exp $
+ * $Id: planner.c,v 1.76.2.15.2.11 2001/11/03 13:38:37 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -151,6 +151,7 @@ int argc;
 char **argv;
 {
     disklist_t *origqp;
+    disk_t *dp;
     int moved_one;
     char *datestamp = NULL, **vp;
     unsigned long malloc_hist_1, malloc_size_1;
@@ -257,6 +258,11 @@ char **argv;
     if((origqp = read_diskfile(conf_diskfile)) == NULL) {
 	error("could not load disklist \"%s\"", conf_diskfile);
     }
+    match_disklist(origqp, argc-2, argv+2);
+    for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	if(dp->todo)
+	    log_add(L_DISK, "%s %s", dp->host->hostname, dp->name);
+    }
     amfree(conf_diskfile);
     conf_tapelist = getconf_str(CNF_TAPELIST);
     if (*conf_tapelist == '/') {
@@ -335,7 +341,12 @@ char **argv;
     startclock();
 
     startq.head = startq.tail = NULL;
-    while(!empty(*origqp)) setup_estimate(dequeue_disk(origqp));
+    while(!empty(*origqp)) {
+	disk_t *dp = dequeue_disk(origqp);
+	if(dp->todo == 1) {
+	    setup_estimate(dp);
+	}
+    }
 
     fprintf(stderr, "setting up estimates took %s secs\n",
 	    walltime_str(curclock()));
@@ -1074,6 +1085,8 @@ host_t *hostp;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	char *s = NULL;
 	int s_len = 0;
+
+	if(dp->todo == 0) continue;
 
 	if(est(dp)->state != DISK_READY) {
 	    continue;

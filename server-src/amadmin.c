@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.2 2001/07/19 21:50:39 jrjackson Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3 2001/11/03 13:38:36 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -195,27 +195,27 @@ void usage P((void))
     fprintf(stderr, "    Valid <command>s are:\n");
     fprintf(stderr,"\tversion\t\t\t\t# Show version info.\n");
     fprintf(stderr,
-	    "\tforce <hostname> <disks> ...\t# Force level 0 at next run.\n");
+	    "\tforce [<hostname> [<disks>]* ]+\t# Force level 0 at next run.\n");
     fprintf(stderr,
-	    "\tunforce <hostname> <disks> ...\t# Clear force command.\n");
+	    "\tunforce [<hostname> [<disks>]* ]+\t# Clear force command.\n");
     fprintf(stderr,
-	    "\tforce-bump <hostname> <disks> ...\t# Force bump at next run.\n");
+	    "\tforce-bump [<hostname> [<disks>]* ]+\t# Force bump at next run.\n");
     fprintf(stderr,
-	    "\tforce-no-bump <hostname> <disks> ...\t# Force no-bump at next run.\n");
+	    "\tforce-no-bump [<hostname> [<disks>]* ]+\t# Force no-bump at next run.\n");
     fprintf(stderr,
-	    "\tunforce-bump <hostname> <disks> ...\t# Clear bump command.\n");
+	    "\tunforce-bump [<hostname> [<disks>]* ]+\t# Clear bump command.\n");
     fprintf(stderr,
 	    "\treuse <tapelabel> ...\t\t# re-use this tape.\n");
     fprintf(stderr,
 	    "\tno-reuse <tapelabel> ...\t# never re-use this tape.\n");
     fprintf(stderr,
-	    "\tfind <hostname> <disks> ...\t# Show which tapes these dumps are on.\n");
+	    "\tfind [<hostname> [<disks>]* ]*\t# Show which tapes these dumps are on.\n");
     fprintf(stderr,
-	    "\tdelete <hostname> <disks> ...\t# Delete from database.\n");
+	    "\tdelete [<hostname> [<disks>]* ]*\t# Delete from database.\n");
     fprintf(stderr,
-	    "\tinfo <hostname> <disks> ...\t# Show current info records.\n");
+	    "\tinfo [<hostname> [<disks>]* ]*\t# Show current info records.\n");
     fprintf(stderr,
-	    "\tdue <hostname> <disks> ...\t# Show due date.\n");
+	    "\tdue [<hostname> [<disks>]* ]*\t# Show due date.\n");
     fprintf(stderr,
 	    "\tbalance\t\t\t\t# Show nightly dump size balance.\n");
     fprintf(stderr,
@@ -223,11 +223,11 @@ void usage P((void))
     fprintf(stderr,
 	    "\tbumpsize\t\t\t# Show current bump thresholds.\n");
     fprintf(stderr,
-	    "\texport [<hostname> [<disks>]]\t# Export curinfo database to stdout.\n");
+	    "\texport [<hostname> [<disks>]* ]*\t# Export curinfo database to stdout.\n");
     fprintf(stderr,
 	    "\timport\t\t\t\t# Import curinfo database from stdin.\n");
     fprintf(stderr,
-  	    "\tdisklist [<hostname> [<disks> ...]]\t# Show disklist entries.\n");
+  	    "\tdisklist [<hostname> [<disks>]* ]*\t# Show disklist entries.\n");
 
     exit(1);
 }
@@ -309,40 +309,25 @@ char **argv;
 char *cmdname;
 void (*func) P((disk_t *dp));
 {
-    host_t *hp;
     disk_t *dp;
-    char *diskname;
-    int count;
+    int count = 0;
 
     if(argc < 4) {
-	fprintf(stderr,"%s: expecting \"%s <hostname> {<disks> ...}\"\n",
-		argv[0], cmdname);
+	fprintf(stderr,"%s: expecting \"%s [<hostname> [<disks>]* ]+\"\n",
+		get_pname(), cmdname);
 	usage();
     }
 
-    if((hp = lookup_host(argv[3])) == NULL) {
-	fprintf(stderr, "%s: host %s not in current disklist database.\n",
-		argv[0], argv[3]);
-	exit(1);
-    }
-    if(argc < 5) {
-	for(dp = hp->disks; dp != NULL; dp = dp->hostnext)
+    match_disklist(diskqp,argc-3,argv+3);
+
+    for(dp = diskqp->head; dp != NULL; dp = dp->next) {
+	if(dp->todo) {
+	    count++;
 	    func(dp);
-    }
-    else {
-	for(argc -= 4, argv += 4; argc; argc--, argv++) {
-	    count = 0;
-	    diskname = *argv;
-	    for(dp = hp->disks; dp != NULL; dp = dp->hostnext) {
-		if(match(diskname, dp->name)) {
-		    count++;
-		    func(dp);
-		}
-	    }
-	    if(count == 0)
-		fprintf(stderr, "%s: host %s has no disks that match \"%s\"\n",
-			argv[0], hp->hostname, diskname);
 	}
+    }
+    if(count==0) {
+	fprintf(stderr,"%s: no disk matched\n",get_pname());
     }
 }
 
@@ -557,7 +542,7 @@ char **argv;
 
     if(argc < 4) {
 	fprintf(stderr,"%s: expecting \"reuse <tapelabel> ...\"\n",
-		argv[0]);
+		get_pname());
 	usage();
     }
 
@@ -593,7 +578,7 @@ char **argv;
 
     if(argc < 4) {
 	fprintf(stderr,"%s: expecting \"no-reuse <tapelabel> ...\"\n",
-		argv[0]);
+		get_pname());
 	usage();
     }
 
@@ -889,18 +874,13 @@ void find(argc, argv)
 int argc;
 char **argv;
 {
-    host_t *hp;
     int start_argc;
     char *sort_order = NULL;
     find_result_t *output_find;
-    char *find_hostname;
-    char **find_diskstrs;
-    int  find_ndisks;
-    int  find_nhosts;
 
     if(argc < 3) {
 	fprintf(stderr,
-		"%s: expecting \"find [--sort <hkdlb>] [hostname [<disk> ...]]\"\n",
+		"%s: expecting \"find [--sort <hkdlb>] [hostname [<disk>]]*\"\n",
 		get_pname());
 	usage();
     }
@@ -936,23 +916,8 @@ char **argv;
     } else {
 	start_argc=4;
     }
-    if(argc < start_argc) {
-	find_nhosts = 0;
-	find_hostname = NULL;
-	find_ndisks = 0;
-	find_diskstrs = NULL;
-    }
-    else {
-	find_nhosts = 1;
-        find_hostname = argv[start_argc-1];
-        if((hp = lookup_host(find_hostname)) == NULL)
-	    printf("Warning: host %s not in disklist.\n", find_hostname);
-        else
-	    find_hostname = hp->hostname;
-        find_ndisks = argc - start_argc;
-        find_diskstrs = &argv[start_argc];
-    }
-    output_find = find_dump(find_hostname, find_ndisks, find_diskstrs);
+    match_disklist(diskqp,argc-(start_argc-1), argv+(start_argc-1));
+    output_find = find_dump();
     sort_find_result(sort_order, &output_find);
     print_find_result(output_find);
     free_find_result(&output_find);
