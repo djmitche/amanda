@@ -1,5 +1,8 @@
 1999-02-03  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* NEWS: fix description of incronly: it won't really perform full
+	backups
+
 	* NEWS: support for ufsdump -S, incronly strategy and new chunksize
 	default
 
