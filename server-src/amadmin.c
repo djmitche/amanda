@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.31 1998/02/20 23:16:08 martinea Exp $
+ * $Id: amadmin.c,v 1.32 1998/02/20 23:18:06 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -62,6 +62,8 @@ void force P((int argc, char **argv));
 void force_one P((disk_t *dp));
 void unforce P((int argc, char **argv));
 void unforce_one P((disk_t *dp));
+void reuse P((int argc, char **argv));
+void noreuse P((int argc, char **argv));
 void info P((int argc, char **argv));
 void info_one P((disk_t *dp));
 void find P((int argc, char **argv));
@@ -74,7 +76,6 @@ void diskloop P((int argc, char **argv, char *cmdname,
 		 void (*func) P((disk_t *dp))));
 char *seqdatestr P((int seq));
 static int next_level0 P((disk_t *dp, info_t *ip));
-void find P((int argc, char **argv));
 int find_match P((char *host, char *disk));
 char *nicedate P((int datestamp));
 int bump_thresh P((int level));
@@ -138,6 +139,8 @@ char **argv;
 
     if(strcmp(argv[2],"force") == 0) force(argc, argv);
     else if(strcmp(argv[2],"unforce") == 0) unforce(argc, argv);
+    else if(strcmp(argv[2],"reuse") == 0) reuse(argc, argv);
+    else if(strcmp(argv[2],"no-reuse") == 0) noreuse(argc, argv);
     else if(strcmp(argv[2],"info") == 0) info(argc, argv);
     else if(strcmp(argv[2],"find") == 0) find(argc, argv);
     else if(strcmp(argv[2],"delete") == 0) delete(argc, argv);
@@ -174,6 +177,10 @@ void usage P((void))
 	    "\tforce <hostname> <disks> ...\t# Force level 0 tonight.\n");
     fprintf(stderr,
 	    "\tunforce <hostname> <disks> ...\t# Clear force command.\n");
+    fprintf(stderr,
+	    "\treuse <tapelabel> ...\t\t# re-use this tape.\n");
+    fprintf(stderr,
+	    "\tno-reuse <tapelabel> ...\t# never re-use this tape.\n");
     fprintf(stderr,
 	    "\tfind <hostname> <disks> ...\t# Show which tapes these dumps are on.\n");
     fprintf(stderr,
@@ -305,6 +312,57 @@ int argc;
 char **argv;
 {
     diskloop(argc, argv, "unforce", unforce_one);
+}
+
+
+/* ----------------------------------------------- */
+
+void reuse(argc, argv)
+int argc;
+char **argv;
+{
+    tape_t *tp;
+    int count;
+
+    if(argc < 4) {
+	fprintf(stderr,"%s: expecting \"reuse <tapelabel> ...\"\n",
+		argv[0]);
+	usage();
+    }
+
+    for(count=3; count< argc; count++) {
+	tp = lookup_tapelabel(argv[count]);
+	if( tp->reuse == 0 ) tp->reuse = 1;
+	else fprintf(stderr, "reuse: tape %s already reusable.\n",
+		     argv[count]);
+    }
+
+    if(write_tapelist(getconf_str(CNF_TAPELIST)))
+	error("could not write \"%s\"\n", getconf_str(CNF_TAPELIST));
+}
+
+void noreuse(argc, argv)
+int argc;
+char **argv;
+{
+    tape_t *tp;
+    int count;
+
+    if(argc < 4) {
+	fprintf(stderr,"%s: expecting \"no-reuse <tapelabel> ...\"\n",
+		argv[0]);
+	usage();
+    }
+
+    for(count=3; count< argc; count++) {
+	tp = lookup_tapelabel(argv[count]);
+	if( tp->reuse == 1 ) tp->reuse = 0;
+	else fprintf(stderr, "no-reuse: tape %s already not reusable.\n",
+		     argv[count]);
+    }
+
+    if(write_tapelist(getconf_str(CNF_TAPELIST)))
+	error("could not write \"%s\"\n", getconf_str(CNF_TAPELIST));
 }
 
 

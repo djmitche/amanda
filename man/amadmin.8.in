@@ -72,6 +72,16 @@ Undo a previous
 .B force
 command.
 .TP
+.P3 reuse [ tapelabel ]
+The tapes
+.I tapelabel
+will be reuse in the cycle.
+.TP
+.P3 no-reuse [ tapelabel ]
+The tapes
+.I tapelabel
+will never be reuse in the cycle.
+.TP
 .P1 "find\fP [ \fB--sort\fP \fBhkdlb\fP ]\fB" hostname [ disks ]
 Display
 all backups currently on tape for each disk.
