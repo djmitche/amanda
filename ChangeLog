@@ -1,5 +1,9 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* man/amlabel.8.in: Tapes are no longer requested in reverse order
+	of amlabeling.
+	Reported by Brad Guillory <round@baileylink.net>
+
 	* server-src/amstatus.pl.in: New option --stats, to display
 	statistics about dumpers and taper.
 	* man/amstatus.8.in: Document it.
@@ -739,7 +743,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.328 2000/01/21 07:57:19 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.329 2000/01/21 08:04:31 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
