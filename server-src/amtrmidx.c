@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.9 1997/10/30 14:49:33 amcore Exp $
+ * $Id: amtrmidx.c,v 1.10 1997/12/16 01:27:01 amcore Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -34,7 +34,9 @@
 
 #include "amanda.h"
 #include "arglist.h"
+#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
+#endif
 #include "conffile.h"
 #include "diskfile.h"
 #include "version.h"

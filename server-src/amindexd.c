@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.9 1997/12/09 06:59:45 amcore Exp $
+ * $Id: amindexd.c,v 1.10 1997/12/16 01:27:00 amcore Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assummed that this is launched from inetd instead of being
@@ -36,8 +36,12 @@
 #include "conffile.h"
 #include "diskfile.h"
 #include "arglist.h"
+#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
+#endif
+#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
+#endif
 #include <grp.h>
 #include "dgram.h"
 #include "version.h"

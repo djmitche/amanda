@@ -1329,6 +1329,8 @@ AC_CHECK_HEADERS(\
 	mnttab.h \
 	ndbm.h \
 	netdb.h \
+	netinet/in_systm.h \
+	netinet/ip.h \
 	readline.h \
 	readline/history.h \
 	readline/readline.h \

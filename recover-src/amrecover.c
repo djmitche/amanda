@@ -25,15 +25,19 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.8 1997/12/09 06:59:37 amcore Exp $
+ * $Id: amrecover.c,v 1.9 1997/12/16 01:26:57 amcore Exp $
  *
  * an interactive program for recovering backed-up files
  */
 
 #include "amanda.h"
+#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
+#endif
 #include <netinet/in.h>
+#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
+#endif
 #include "amrecover.h"
 #include "getfsent.h"
 
