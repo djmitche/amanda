@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.29 1998/03/24 01:50:49 amcore Exp $
+ * $Id: reporter.c,v 1.30 1998/03/30 22:16:05 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -678,7 +678,7 @@ void output_summary()
 		fprintf(mailf, "    N/A    N/A ");
 
 	    if ((postscript) && (data(dp)->taper[i].success)) {
-		fprintf(postscript,"(%s) (%s) (%d) (%d) DrawHost\n",
+		fprintf(postscript,"(%s) (%s) (%d) (1) (1) DrawHost\n",
 			dp->host->hostname, dp->name, data(dp)->level);
 	    }
 
