@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.11 1999/09/29 23:59:43 jrj Exp $
+/* $Id: dumper.c,v 1.75.2.12 2000/10/10 21:17:37 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1317,6 +1317,7 @@ int mesgfd, datafd, indexfd, outfd;
     if(errf) afclose(errf);
 
     if (indexfile_tmp) {
+	waitpid(indexpid,NULL,0);
 	if(rename(indexfile_tmp, indexfile_real) != 0) {
 	    log_add(L_WARNING, "could not rename \"%s\" to \"%s\": %s",
 		    indexfile_tmp, indexfile_real, strerror(errno));
