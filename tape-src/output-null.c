@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-null.c,v 1.4 2001/07/31 23:19:58 jrjackson Exp $
+ * $Id: output-null.c,v 1.5 2002/08/23 13:12:24 martinea Exp $
  *
  * tapeio.c virtual tape interface for a null device.
  */
@@ -136,7 +136,7 @@ null_tape_stat(filename, buf)
      char *filename;
      struct stat *buf;
 {
-     return stat(filename, buf);
+     return stat("/dev/null", buf);
 }
 
 int
@@ -144,7 +144,7 @@ null_tape_access(filename, mode)
      char *filename;
      int mode;
 {
-     return access(filename, mode);
+     return access("/dev/null", mode);
 }
 
 int

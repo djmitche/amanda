@@ -1,3 +1,8 @@
+2002-07-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* tape-src/output-null.c (null_tape_stat, null_tape_access): Use
+	  "/dev/null" instead of filename.
+
 2002-07-22  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* changer-src/chg-mtx.sh.in: Sync with 2.4.3 branch.
