@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: killpgrp.c,v 1.5 1998/05/27 08:11:59 amcore Exp $
+ * $Id: killpgrp.c,v 1.6 1998/06/01 19:13:13 jrj Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -43,15 +43,17 @@
 /* we cannot check it, so let us assume it is ok */
 #define AM_GETPGRP() getpid()
 #endif
-
-int main P((int argc, char **argv));
-static void term_kill_soft P((int sig));
-static void term_kill_hard P((int sig));
-    
+ 
 #if defined(USE_RUNDUMP) || defined(VDUMP) || defined(XFSDUMP)
 #  undef ERRMSG
 #else
 #  define ERRMSG "killpgrp not enabled on this system.\n"
+#endif
+
+int main P((int argc, char **argv));
+#ifndef ERRMSG
+static void term_kill_soft P((int sig));
+static void term_kill_hard P((int sig));
 #endif
 
 int main(argc, argv)
@@ -132,6 +134,7 @@ char **argv;
 #endif								/* } */
 }
 
+#ifndef ERRMSG							/* { */
 static void term_kill_soft(sig)
 int sig;
 {
@@ -167,3 +170,4 @@ int sig;
 	dbprintf(("waiting until child terminates\n"));
     }
 }
+#endif								/* } */

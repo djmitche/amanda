@@ -1,3 +1,8 @@
+1998-06-01  John R. Jackson  <jrj@purdue.edu>
+
+	* client-src/killpgrp.c: clean up minor compiler warnings by not
+	building term_kill_{soft,hard} unless they are needed.
+
 1998-06-01  Dan Swartzendruber  <dswartz@druber.com> via John R. Jackson
 
 	* server-src/amlabel.c (main): check argc before referencing too
