@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.20 1998/12/07 23:53:03 martinea Exp $
+ * $Id: holding.c,v 1.21 1998/12/09 19:27:33 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -329,7 +329,7 @@ char *holding_file;
     filename = stralloc(holding_file);
     while(filename != NULL && filename[0] != '\0') {
 	if((fd = open(filename,O_RDONLY)) == -1) {
-	    fprintf(stderr,"open of %s failed: %s\n",filename,strerror(errno));
+	    fprintf(stderr,"size_holding_files: open of %s failed: %s\n",filename,strerror(errno));
 	    amfree(filename);
 	    return -1;
 	}
@@ -340,7 +340,7 @@ char *holding_file;
 	    printf("stat %s: %s\n", filename, strerror(errno));
 	    finfo.st_size = 0;
 	}
-	size += finfo.st_size;
+	size += (finfo.st_size+1023)/1024;
 	filename = newstralloc(filename, file.cont_filename);
     }
     amfree(filename);
@@ -360,7 +360,7 @@ char *holding_file;
     filename = stralloc(holding_file);
     while(filename != NULL && filename[0] != '\0') {
 	if((fd = open(filename,O_RDONLY)) == -1) {
-	    fprintf(stderr,"open of %s failed: %s\n",filename,strerror(errno));
+	    fprintf(stderr,"unlink_holding_files: open of %s failed: %s\n",filename,strerror(errno));
 	    amfree(filename);
 	    return 0;
 	}
@@ -390,7 +390,7 @@ int complete;
     while(filename != NULL && filename[0] != '\0') {
 	filename_tmp = newvstralloc(filename_tmp, filename, ".tmp", NULL);
 	if((fd = open(filename_tmp,O_RDONLY)) == -1) {
-	    fprintf(stderr,"open of %s failed: %s\n",filename_tmp,strerror(errno));
+	    fprintf(stderr,"rename_tmp_holding: open of %s failed: %s\n",filename_tmp,strerror(errno));
 	    amfree(filename);
 	    amfree(filename_tmp);
 	    return 0;
@@ -400,7 +400,7 @@ int complete;
 	close(fd);
 	if(complete == 0 ) {
 	    if((fd = open(filename_tmp,O_RDWR)) == -1) {
-		fprintf(stderr,"open of %s failed: %s\n",filename_tmp,strerror(errno));
+		fprintf(stderr,"rename_tmp_holdingX: open of %s failed: %s\n",filename_tmp,strerror(errno));
 		amfree(filename);
 		amfree(filename_tmp);
 		return 0;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.63 1998/12/07 01:34:01 martinea Exp $
+ * $Id: driver.c,v 1.64 1998/12/09 19:27:27 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -842,6 +842,7 @@ int fd;
 	dumptime = (long)atof(result_argv[5]);
 	update_info_dumper(dp, origsize, dumpsize, dumptime);
 
+	rename_tmp_holding(sched(dp)->destname, 1);
 	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	dumper->busy = 0;
@@ -869,6 +870,8 @@ int fd;
     case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
     case FATAL_TRYAGAIN:
 	free_serial(result_argv[2]);
+
+	rename_tmp_holding(sched(dp)->destname, 0);
 	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	delete_diskspace(dp);
@@ -901,6 +904,8 @@ int fd;
 
     case FAILED: /* FAILED <handle> <errstr> */
 	free_serial(result_argv[2]);
+
+	rename_tmp_holding(sched(dp)->destname, 0);
 	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	delete_diskspace(dp);
@@ -963,6 +968,7 @@ int fd;
 	dumper->down = 1;	/* mark it down so it isn't used again */
 	if(dp) {
 	    /* if it was dumping something, zap it and try again */
+	    rename_tmp_holding(sched(dp)->destname, 0);
 	    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	    adjust_diskspace(dp, DONE);
 	    delete_diskspace(dp);
@@ -1308,7 +1314,7 @@ tok_t tok;
 	   holdalloc(holdp)->allocated_dumpers);
 #endif
 
-    kbytes = (size+1023)/1024;
+    kbytes = size;
     diff = kbytes - sched(diskp)->act_size;
     switch(tok) {
     case DONE:
