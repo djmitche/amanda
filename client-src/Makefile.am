@@ -22,33 +22,32 @@ SUFFIXES =		.sh .pl
 			cat $< > $@
 			chmod a+x $@
 
-libexec_PROGRAMS =	versionsuffix					\
-			@BUILD_CLIENT_PROGS_LIBEXEC@
+libexec_PROGRAMS =	versionsuffix		@BUILD_CLIENT_PROGS_LIBEXEC@
 
-EXTRA_PROGRAMS =	amandad				calcsize	\
-			rundump				runtar		\
-			selfcheck			sendbackup	\
+EXTRA_PROGRAMS =	amandad			calcsize	\
+			rundump			runtar		\
+			selfcheck		sendbackup	\
 			sendsize
 
 sbin_SCRIPTS =		@BUILD_CLIENT_SCRIPTS_SBIN@
 
 libexec_SCRIPTS =	@BUILD_CLIENT_SCRIPTS_LIBEXEC@
 
-EXTRA_SCRIPTS =		amhpfixdevs			patch-system
+EXTRA_SCRIPTS =		amhpfixdevs		patch-system
 
 DISTCLEANFILES = $(EXTRA_SCRIPTS)
 
 EXTRA_DIST =		amhpfixdevs.sh
 
-sendbackup_SOURCES = 	sendbackup.c			sendbackup.h	\
-			sendbackup-dump.c		sendbackup-gnutar.c
+sendbackup_SOURCES = 	sendbackup.c		sendbackup.h	\
+			sendbackup-dump.c	sendbackup-gnutar.c
 
 lib_LTLIBRARIES =	@BUILD_CLIENT_LIB@
 
 EXTRA_LTLIBRARIES = 	libamclient.la
 
-libamclient_la_SOURCES=	amandates.c	getfsent.c	unctime.c	\
-			@LIBSRCS_CLIENT@
+libamclient_la_SOURCES=	amandates.c		getfsent.c	\
+			unctime.c		@LIBSRCS_CLIENT@
 
 EXTRA_libamclient_la_SOURCES = findpass.c
 libamclient_la_DEPENDENCIES = @LIBOBJS_CLIENT@
