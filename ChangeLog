@@ -1,3 +1,8 @@
+2001-11-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by Michael D. Beynon <beynon@ll.mit.edu>
+
+	* server-src/driver.c (main): Take care of empty tapeq.
+
 2001-11-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/diskfile.c (lookup_host): Match must be exact.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.112 2001/11/10 19:31:06 martinea Exp $
+ * $Id: driver.c,v 1.113 2001/11/27 16:15:53 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -343,6 +343,11 @@ main(main_argc, main_argv)
     if(cmd != TAPER_OK) {
 	/* no tape, go into degraded mode: dump to holding disk */
 	start_degraded_mode(&runq);
+    }
+    else if(empty(tapeq)) {
+	taper_busy = 0;
+	taper_disk = NULL;
+	assert(taper_ev_read == NULL);
     }
     else {
 	disk_t *dp = dequeue_disk(&tapeq);
