@@ -360,9 +360,8 @@ char *
 tapeio_next_devname(char * dev_left,
 	            char * dev_right,
 	            char **dev_next) {
-    char *dev_real = 0;
+    char *dev_real = NULL;
     char *next;
-    int len;
 
     next = *dev_next;
     if (0 != (*dev_next = strchr(next, ','))
@@ -371,15 +370,7 @@ tapeio_next_devname(char * dev_left,
 	**dev_next = 0;				/* zap the terminator */
 	(*dev_next)++;
 
-	/* 
-	** we have one string picked out, build it into the buffer
-	*/
-	len = strlen(dev_left) + strlen(next) + strlen(dev_right) + 1;
-	if ( 0 != (dev_real = malloc(len)) ) {
-	    strcpy(dev_real, dev_left);		/* safe */
-	    strcat(dev_real, next);		/* safe */
-	    strcat(dev_real, dev_right);	/* safe */
-	}
+	dev_real = vstralloc(dev_left, next, dev_right, NULL);
     }
     return dev_real;
 }
