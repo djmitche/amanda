@@ -1,5 +1,7 @@
 2000-04-09  Frank Wojcik  <fwojcik@lucent.com>
 
+	* server-src/taper.c (detach_buffers): Fixed typo in error message.
+
 	* server-src/amrmtape.sh.in: Fix occurrence of `Infofile', that
 	should have been `InfoFile'.
 
@@ -813,7 +815,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.343 2000/04/09 08:21:05 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.344 2000/04/09 08:29:37 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
