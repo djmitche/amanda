@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.11 2000/02/01 01:37:15 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.12 2000/09/24 17:12:37 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -226,9 +226,9 @@ void usage P((void))
 	    "\texport [<hostname> [<disks>]]\t# Export curinfo database to stdout.\n");
     fprintf(stderr,
 	    "\timport\t\t\t\t# Import curinfo database from stdin.\n");
-/*  fprintf(stderr,
-**	    "\tdisklist [<hostname> [<disks> ...]]\t# Debug disklist entries.\n");
-*/
+    fprintf(stderr,
+  	    "\tdisklist [<hostname> [<disks> ...]]\t# Show disklist entries.\n");
+
     exit(1);
 }
 
