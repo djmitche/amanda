@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.52 1998/02/03 21:11:06 amcore Exp $
+/* $Id: dumper.c,v 1.53 1998/02/08 19:57:31 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -350,6 +350,7 @@ char **main_argv;
 	default:
 	    putresult("BAD-COMMAND %s\n", squote(argv[1]));
 	}
+	while(wait(NULL) != -1);
     } while(cmd != QUIT);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
