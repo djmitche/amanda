@@ -104,7 +104,7 @@ regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
 
 statfs_SOURCES = statfs.test.c
 statfs_LDADD = $(libamanda_a_LIBADD) \
-	error.$(OBJ_EXTENSION)
+	alloc.$(OBJ_EXTENSION) error.$(OBJ_EXTENSION)
 
 token_SOURCES = token.test.c
 token_LDADD = $(libamanda_a_LIBADD) \

@@ -1,5 +1,7 @@
 1999-05-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* common-src/Makefile.am (statfs_LDADD): Added alloc.obj.
+
 	* common-src/statfs.c (STATFS_SCALE, sys/statvfs.h): If f_frsize is
 	zero, use f_bsize.  It now works with GNU libc 2.1.
 	Reported by Heikki Vatiainen <hessu@cs.tut.fi>
