@@ -1,3 +1,8 @@
+1999-11-25 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amflush.c (main): conf_logdir should not be free'd
+	  (found by Espen H Wiborg <espenhw@infotek.no>).
+
 1999-11-10 John R. Jackson  <jrj@purdue.edu>
 
 	* recover-src/extract_list.c: report the tape server host in the

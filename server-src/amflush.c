@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.55 1999/09/15 00:32:22 jrj Exp $
+ * $Id: amflush.c,v 1.56 1999/11/25 16:19:29 jrj Exp $
  *
  * write files from work directory onto tape
  */
@@ -147,7 +147,6 @@ char **main_argv;
     if (access(conf_logfile, F_OK) == 0)
 	error("%s exists: amdump or amflush is already running, or you must run amcleanup", conf_logfile);
     amfree(conf_logfile);
-    amfree(conf_logdir);
 
     reporter_program = vstralloc(sbindir, "/", "amreport", versionsuffix(),
 				 NULL);
