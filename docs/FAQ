@@ -13,6 +13,34 @@ He is no longer maintaining that page, but it still contains useful
 and accurate information.
 
 
+Q: Why does Amanda fail to build on my system?
+
+A: One of the most common reasons for compile-time errors is stale
+information in `config.cache', after a build on a different platform
+using the same build tree.  In order to avoid this problem, make sure
+you don't ever reuse build trees across platforms, or at least run
+`make distclean' before running `configure' on another platform.
+
+   Another common reason for failure, that causes link-time errors, is
+a problem in libtool that causes it to search for symbols in
+already-installed amanda libraries, instead of in the just-built ones.
+This problem is known to affect SunOS 4.1.3 and FreeBSD.  You can
+usually work around it by specifying a different prefix when you
+configure the new version of Amanda.  However, it may not work if the
+previous version of Amanda was installed in /usr/local and gcc
+searches this directory by default; in this case, you must either
+remove the old libraries (which you don't want to do, right? :-) or
+call configure with the flag --disable-libtool.  In this case, Amanda
+won't create shared libraries, so binaries will be larger, but you may
+worry about that later.
+
+   You may also want to take a look at docs/SYSTEM.NOTES, as well as
+to the Amanda Patches Page (check www.amanda.org) for other known
+problems.  If everything fails, you should read the manual, but since
+we don't have one yet, just post a help request to the amanda-users
+mailing list, showing the last few lines of the failed build.
+
+
 Q: Why does `amdump' report that all disks failed?
 
 A: Probably because the Amanda clients are not properly configured.
