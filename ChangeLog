@@ -1,3 +1,8 @@
+2000-11-22 John R. Jackson  <jrj@purdue.edu>
+
+	* Makefile.am: Forgot to add contrib/sst/README.Amanda to the list
+	  of files to put in a distribution.
+
 2000-11-21 John R. Jackson  <jrj@purdue.edu>
 
 	* recover-src/extract_list.c (extract_files_child): Add support for
