@@ -1,3 +1,13 @@
+2001-01-26 John R. Jackson <jrj@purdue.edu>
+
+	* changer-src/Makefile.am: Double up the references to libamanda to
+	  handle systems that put regex in strange places.
+	* client-src/Makefile.am: Ditto.
+	* recover-src/Makefile.am: Ditto.
+	* restore-src/Makefile.am: Ditto.
+	* server-src/Makefile.am: Ditto.
+	* tape-src/Makefile.am: Ditto.
+
 2001-01-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* Amanda 2.4.2p1 released
@@ -1409,7 +1419,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.442 2001/01/26 19:25:30 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = ...
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
