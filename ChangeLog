@@ -1,5 +1,7 @@
 1998-07-31  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/FAQ: software or hardware compression?
+
 	* server-src/driver.c (adjust_diskspace): do not abort just because
 	a holding disk file is missing
 	(main): report warning if holding disk directory could not be

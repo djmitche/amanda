@@ -160,6 +160,25 @@ programs; read docs/TAPE.CHANGERS for details about the ones provided
 with Amanda.
 
 
+Q: Should I use software or hardware compression?
+
+A: When you enable software compression, you drastically reduce the
+compression that might be achieved by hardware.  In fact, tape drives
+will usually use *more* tape if you tell them to try to further
+compress already compressed data.
+
+   Thus, you must choose whether you're going to use software or
+hardware compression; don't ever enable both unless you want to waste
+tape space.
+
+   Since Amanda prefers to have complete information about tape sizes
+and compression rates, it can do a better job if you use software
+compression.  However, if you can't afford the extra CPU usage, Amanda
+can live with the unpredictability of hardware compression, but you'll
+have to be very conservative about the specified tape size, specially
+if there are filesystems that contain mostly uncompressible data.
+
+
 Q: How can I configure Amanda so that it performs full backups on the
 week-end and incrementals on weekdays?
 
