@@ -1,5 +1,7 @@
 Version 2.4.0
 
+	amindexd bugfix -Jos Alsters <Jos.Alsters@sci.kun.nl>
+
 	New --disable-libtool configure option, for those who really don't
 	want libraries to be installed.  Shared libraries won't be
 	built, of course.  -oliva
