@@ -1,3 +1,10 @@
+1999-08-15  Derek Ney <derek@hipgraphics.com>, Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendsize.c (SAMBA_DEBUG_LEVEL): New macro, "0" for
+	Samba >= 2, "3" for older ones.
+	(getsize_smbtar): Use `du' if SAMBA_VERSION >= 2, and the
+	appropriate SAMBA_DEBUG_LEVEL.
+
 1999-08-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* common-src/Makefile.am (genversion.o): Depend on genversion.c

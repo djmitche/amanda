@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.104 1999/05/10 19:22:33 kashmir Exp $
+ * $Id: sendsize.c,v 1.105 1999/08/15 10:09:39 oliva Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -641,8 +641,13 @@ regex_t re_size[] = {
 #endif
 
 #ifdef SAMBA_CLIENT
-    {"Total bytes listed: [0-9][0-9]*", 1},			/* Samba dir */
+#if SAMBA_VERSION >= 2
+#define SAMBA_DEBUG_LEVEL "0"
     {"Total number of bytes: [0-9][0-9]*", 1},			 /* Samba du */
+#else
+#define SAMBA_DEBUG_LEVEL "3"
+    {"Total bytes listed: [0-9][0-9]*", 1},			/* Samba dir */
+#endif
 #endif
 
     { NULL, 0 }
@@ -960,14 +965,15 @@ long getsize_dump(disk, level)
 
 #ifdef SAMBA_CLIENT
 long getsize_smbtar(disk, level)
-char *disk;
-int level;
+     char *disk;
+     int level;
 {
     int pipefd[2], nullfd, dumppid;
     long size;
     FILE *dumpout;
     char *tarkeys, *sharename, *pass, *domain = NULL;
     char *line;
+    int debug_level;
 
     if ((pass = findpass(disk, &domain)) == NULL) {
 	error("[sendsize : error in smbtar diskline, unable to find password]");
@@ -983,15 +989,22 @@ int level;
     }
     nullfd = open("/dev/null", O_RDWR);
     pipe(pipefd);
+#if SAMBA_VERSION >= 2
+    if (level == 0)
+	tarkeys = "archive 0;recurse;du";
+    else
+	tarkeys = "archive 1;recurse;du";
+#else
     if (level == 0)
 	tarkeys = "archive 0;recurse;dir";
     else
 	tarkeys = "archive 1;recurse;dir";
+#endif
 
-    dbprintf(("%s: running \"%s \'%s\' %s -d 3 -U %s -E%s%s -c \'%s\'\"\n",
-	      get_pname(), SAMBA_CLIENT, sharename, "XXXXX", SAMBA_USER,
-	      domain ? " -W " : "", domain ? domain : "",
-	      tarkeys));
+    dbprintf(("%s: running \"%s \'%s\' %s -d %s -U %s -E%s%s -c \'%s\'\"\n",
+	      get_pname(), SAMBA_CLIENT, sharename, "XXXXX",
+	      SAMBA_DEBUG_LEVEL, SAMBA_USER, domain ? " -W " : "",
+	      domain ? domain : "", tarkeys));
 
     switch(dumppid = fork()) {
     case -1:
@@ -1013,7 +1026,7 @@ int level;
 	aclose(pipefd[0]);
 
 	execle(SAMBA_CLIENT, "smbclient", sharename, pass,
-	       "-d", "3",
+	       "-d", SAMBA_DEBUG_LEVEL,
 	       "-U", SAMBA_USER,
 	       "-E",
 	       domain ? "-W" : "-c",
