@@ -371,6 +371,11 @@ chg-scsi: (new interface, try to drive a robot with direct scsi commands)
 The config and the sysntax is the same as for chg-scsi-chio. New
 is the config type 
 
+emubarcode	1
+
+With this option and the option labelfile chg-scsi will try to create an inventory.
+With this inventory it should be possible to use the search feature for loading tapes.
+
 scsitapedev <devicename>
 
 This device is used to control the tape, read status infos etc.

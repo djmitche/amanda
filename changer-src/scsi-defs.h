@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 1998 T.Hepper
  */
@@ -13,6 +14,11 @@ typedef unsigned int PackedBit;
 #else
 typedef unsigned char PackedBit;
 #endif
+
+#define INDEX_CHANGER 0
+#define INDEX_TAPE 1
+#define INDEX_TAPECTL 2
+
 #define TAPETYPE 4
 #define IMPORT 3
 #define STORAGE 2
@@ -147,6 +153,10 @@ typedef unsigned char PackedBit;
 #define BARCODE_PUT 1
 #define BARCODE_VOL 2
 #define BARCODE_BARCODE 3
+#define UPDATE_SLOT 4
+#define FIND_SLOT 5
+#define RESET_VALID 6
+#define BARCODE_DUMP 7
 
 typedef struct {
   char voltag[128];
@@ -157,7 +167,8 @@ typedef struct {
 typedef struct {
   char voltag[128];
   char barcode[TAG_SIZE];
-  unsigned char from;		/* from where it comes, needed to move
+  unsigned int slot;             /* in which slot is the tape */
+  unsigned int from;      	 /* from where it comes, needed to move
 				 * a tape back to the right slot from the drive
 				 */
 
@@ -1015,12 +1026,16 @@ typedef struct OpenFiles {
 #ifdef HAVE_CAM_LIKE_SCSI
     struct cam_device *curdev;
 #endif
-    unsigned char SCSI;           /* Can we send SCSI commands */
-    char *dev;                    /* The device which is used */
-    char *ConfigName;             /* The name in the config */
-    char ident[17];               /* The identifier from the inquiry command */
-    ChangerCMD_T *functions;      /* Pointer to the function array for this device */
-    SCSIInquiry_T *inquiry;       /* The result from the Inquiry */
+  unsigned char avail;          /* Is this device available */
+  unsigned char devopen;        /* Is the device open */
+  unsigned char inqdone;        /* Did we try to get device infos, was an open sucessfull */
+  unsigned char SCSI;           /* Can we send SCSI commands */
+  int flags;                    /* Can be used for some flags ... */
+  char *dev;                    /* The device which is used */
+  char *ConfigName;             /* The name in the config */
+  char ident[17];               /* The identifier from the inquiry command */
+  ChangerCMD_T *functions;      /* Pointer to the function array for this device */
+  SCSIInquiry_T *inquiry;       /* The result from the Inquiry */
 } OpenFiles_T;
 
 typedef struct LogPageDecode {
@@ -1043,8 +1058,8 @@ typedef struct {
 /* ======================================================= */
 /* Funktion-Declaration */
 /* ======================================================= */
-int SCSI_OpenDevice(OpenFiles_T *,char *DeviceName);
-int OpenDevice(OpenFiles_T *,char *DeviceName, char *ConfigName, char *ident);
+int SCSI_OpenDevice(int );
+int OpenDevice(int ,char *DeviceName, char *ConfigName, char *ident);
 
 int SCSI_CloseDevice(int DeviceFD); 
 int CloseDevice(int ); 
@@ -1065,7 +1080,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
 
 void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
 
-int Tape_Ready(char *tapedev, int wait);
+int Tape_Ready(int fd, int wait);
 
 /*
  * Local variables:

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.14 2000/07/17 18:55:47 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.15 2000/07/31 18:55:13 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -38,9 +38,6 @@ static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.14 2000/07/17 18:55:47 ant
 
 extern int TapeEject(int DeviceFD);
 
-extern OpenFiles_T *pChangerDev;
-extern OpenFiles_T *pTapeDev;
-extern OpenFiles_T *pTapeDevCtl;
 extern FILE *debug_file;
 
 int PrintInquiry(SCSIInquiry_T *);
@@ -74,10 +71,11 @@ int GenericBarCode(int DeviceFD);               /* Do we have Barcode reader sup
 int NoBarCode(int DeviceFD);
 
 int GenericSearch();
+int Inventory(char * labelfile, int drive, int eject, int start, int stop, int clean);
 
 int TreeFrogBarCode(int DeviceFD);
 int EXB120BarCode(int DeviceFD);
-int GenericSenseHandler(OpenFiles_T *, unsigned char, char *);
+int GenericSenseHandler(int fd, unsigned char, char *);
 
 ElementInfo_T *LookupElement(int address);
 
@@ -365,17 +363,80 @@ int DTE = 0;
 /*
  * First all functions which are called from extern
  */
+
+
+/*
+ * Print the scsi-changer-driver version
+ */
+
+void ChangerDriverVersion()
+{
+  dbprintf(("scsi-changer-driver: %s\n",rcsid));
+}
+
+/*
+ * Try to create a list of tapes and labels which are in the current
+ * magazin. The drive must be empty !!
+ * 
+ * labelfile -> file name of the db
+ * drive -> which drive should we use
+ * eject -> the tape device needs an eject before move
+ * start -> start at slot start
+ * stop  -> stop at slot stop
+ * clean -> if we have an cleaning tape than this is the slot number of it
+ *
+ * return 
+ * 0  -> fail
+ * 1  -> successfull
+ *
+ * ToDo:
+ * Check if the tape/changer is ready for the next move
+ */
+int Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean)
+{
+  extern OpenFiles_T *pDev;
+  int x;
+  char *datestamp = malloc(1);   /* stupid, but tapefd_rdlabel does an free at the begining ... */
+  char *label = malloc(1);       /* the same here ..... */
+  char *result;
+
+  MapBarCode(labelfile,  "", "", RESET_VALID, 0, 0);
+  for (x = 0; x < STE; x++)
+    {
+      if (x == clean)
+	{
+	  continue;
+	}
+      if (load(INDEX_CHANGER, drive, x ) != 0)
+	{
+	}
+      if (pDev[INDEX_TAPE].devopen == 0)
+	{
+	  SCSI_OpenDevice(INDEX_TAPE);
+	}
+      if ((result = (char *)tapefd_rdlabel(pDev[INDEX_TAPE].fd, &datestamp, &label)) == NULL)
+	{
+	  MapBarCode(labelfile, label, "", UPDATE_SLOT, x , 0);
+	}
+      SCSI_CloseDevice(INDEX_TAPE);
+      if (eject)
+	eject_tape("", eject);
+      (void)unload(INDEX_CHANGER, drive, x);
+    }
+}
+
+/*
+ * Check if the slot ist empty
+ * slot -> slot number to check
+ */
 int isempty(int fd, int slot)
 {
+  extern OpenFiles_T *pDev;
   dbprintf(("##### START isempty\n"));
-  if (pChangerDev == NULL)
-    {
-      dbprintf(("##### STOP isempty [-1]\n"));
-      return(-1);
-    }
+
   if (ElementStatusValid == 0)
     {
-      if ( pChangerDev->functions->function[CHG_STATUS](fd, 1) != 0)
+      if ( pDev[fd].functions->function[CHG_STATUS](fd, 1) != 0)
         {
           dbprintf(("##### STOP isempty [-1]\n"));
           return(-1);
@@ -393,41 +454,50 @@ int isempty(int fd, int slot)
 
 int get_clean_state(char *tapedev)
 {
+  extern OpenFiles_T *pDev;
   /* Return 1 if cleaning is needed */
   int ret;
   
   dbprintf(("##### START get_clean_state\n"));
 
-  if (pTapeDevCtl == NULL)
+  if (pDev[INDEX_TAPECTL].SCSI == 0)
     {
       dbprintf(("##### STOP get_clean_state [-1]\n"));
       return(-1);
     }
-  ret=pTapeDevCtl->functions->function[CHG_CLEAN](tapedev);
+  ret=pDev[INDEX_TAPECTL].functions->function[CHG_CLEAN](tapedev);
   dbprintf(("##### STOP get_clean_state [%d]\n", ret));
   return(ret);    
 }
 
+/*
+ * eject the tape
+ * The parameter tapedev is not used.
+ * Type describes if we should force the SCSI eject if available
+ * normal eject is done with the ioctl
+ */
 int eject_tape(char *tapedev, int type)
   /* This function ejects the tape from the drive */
 {
+  extern OpenFiles_T *pDev;
   int ret = 0;
 
   dbprintf(("##### START eject_tape\n"));
 
-  if (pTapeDevCtl != NULL)
+  if (pDev[INDEX_TAPECTL].SCSI == 1 && pDev[INDEX_TAPECTL].avail == 1 && type == 1)
     {
-      ret=pTapeDevCtl->functions->function[CHG_EJECT](tapedev, type);
-      dbprintf(("##### STOP eject_tape [%d]\n", ret));
+      ret=pDev[INDEX_TAPECTL].functions->function[CHG_EJECT](tapedev, type);
+      dbprintf(("##### STOP (SCSI)eject_tape [%d]\n", ret));
       return(ret);
     }
   
-  if (pTapeDev != NULL)
+  if (pDev[INDEX_TAPE].avail == 1)
     {
-      ret=pTapeDev->functions->function[CHG_EJECT](tapedev, type);
-      dbprintf(("##### STOP eject_tape [%d]\n", ret));
-      return(ret);      
+      ret=Tape_Eject(pDev[INDEX_TAPE].fd);
+      dbprintf(("##### STOP (ioctl)eject_tape [%d]\n", ret));
+      return(ret);
     }
+
   dbprintf(("##### STOP eject_tape [-1]\n"));
   return(-1);
 }
@@ -436,20 +506,15 @@ int eject_tape(char *tapedev, int type)
 /* Find an empty slot, starting at start, ending at start+count */
 int find_empty(int fd, int start, int count)
 {
+  extern OpenFiles_T *pDev;
   int x;
   int end;
 
   dbprintf(("###### START find_empty\n"));
 
-  if (pChangerDev == NULL)
-    {
-      dbprintf(("%-20s : pChangerCtl == NULL\n","find_empty"));
-      return(-1);
-    }
-
   if (ElementStatusValid == 0)
     {
-      if ( pChangerDev->functions->function[CHG_STATUS](fd, 1) != 0)
+      if ( pDev[fd].functions->function[CHG_STATUS](fd , 1) != 0)
         {
           dbprintf(("###### END find_empty [%d]\n", -1));
           return(-1);
@@ -482,51 +547,52 @@ int find_empty(int fd, int start, int count)
   return(-1);
 }
 
+/*
+ * See if the tape is loaded based on the information we
+ * got back from the ReadElementStatus
+ * return values
+ * -1 -> Error (Fatal)
+ * 0  -> drive is empty
+ * 1  -> drive is loaded
+ */
 int drive_loaded(int fd, int drivenum)
 {
+  extern OpenFiles_T *pDev;
 
   dbprintf(("###### START drive_loaded\n"));
   dbprintf(("%-20s : fd %d drivenum %d \n", "drive_loaded", fd, drivenum));
-
-  if (pChangerDev == NULL)
-    {
-      dbprintf(("%-20s : pChangerCtl == NULL\n", "drive_loaded"));
-      return(-1);
-    }
-
+  
+  
   if (ElementStatusValid == 0)
-      {
-          if (pChangerDev->functions->function[CHG_STATUS](fd, 1) != 0)
-              {
-                  return(-1);
-              }
-      }
-
+    {
+      if (pDev[INDEX_CHANGER].functions->function[CHG_STATUS](INDEX_CHANGER, 1) != 0)
+	{
+	  return(-1);
+	}
+    }
+  
   if (pDTE[drivenum].status == 'E')
-      return(0);
+    return(0);
+  
   return(1);
 }
 
 
-
+/*
+ * unload the specified drive into the specified slot
+ * (storage element)
+ */
 int unload(int fd, int drive, int slot) 
 {
-  /*
-   * unload the specified drive into the specified slot
-   * (storage element)
-   */
+  extern OpenFiles_T *pDev;
+
   dbprintf(("###### START unload\n"));
   dbprintf(("%-20s : fd %d, slot %d, drive %d \n", "unload", fd, slot, drive));
 
-  if (pChangerDev == NULL)
-    {
-      dbprintf(("%-20s : pChangerCtl == NULL\n", "unload"));
-      return(-1);
-    }
 
   if (ElementStatusValid == 0)
       {
-          if (pChangerDev->functions->function[CHG_STATUS](fd, 1) != 0)
+          if (pDev[INDEX_CHANGER].functions->function[CHG_STATUS](INDEX_CHANGER , 1) != 0)
               {
                   return(-1);
               }
@@ -552,11 +618,11 @@ int unload(int fd, int drive, int slot)
       dbprintf(("unload : try to unload to slot %d\n", slot));
     }
   
-  pChangerDev->functions->function[CHG_MOVE](fd, pDTE[drive].address, pSTE[slot].address);
+  pDev[INDEX_CHANGER].functions->function[CHG_MOVE](INDEX_CHANGER , pDTE[drive].address, pSTE[slot].address);
   /*
    * Update the Status
    */
-  if (pChangerDev->functions->function[CHG_STATUS](fd, 1) != 0)
+  if (pDev[INDEX_CHANGER].functions->function[CHG_STATUS](INDEX_CHANGER , 1) != 0)
       {
           return(-1);
       }
@@ -565,27 +631,27 @@ int unload(int fd, int drive, int slot)
 }
 
 
-
-int load(int fd, int drive, int slot)
-{
 /*
  * load the media from the specified element (slot) into the
  * specified data transfer unit (drive)
+ * fd     -> pointer to the internal devie structure pDev
+ * driver -> which drive in the library
+ * slot   -> the slot number from where to load
+ *
+ * return -> 0 = success
+ *           !0 = failure
  */
+int load(int fd, int drive, int slot)
+{
   int ret;
+  extern OpenFiles_T *pDev;
 
   dbprintf(("###### START load\n"));
   dbprintf(("%-20s : fd %d, drive %d, slot %d \n", "load", fd, drive, slot));
 
-  if (pChangerDev == NULL)
-    {
-      dbprintf(("%-20s : pChangerCtl == NULL\n", "load"));
-      return(-1);
-    }
-  
   if (ElementStatusValid == 0)
       {
-          if (pChangerDev->functions->function[CHG_STATUS](fd, 1) != 0)
+          if (pDev[fd].functions->function[CHG_STATUS](fd, 1) != 0)
               {
                   return(-1);
               }
@@ -608,12 +674,12 @@ int load(int fd, int drive, int slot)
       return(-1);
     }
 
-  ret = pChangerDev->functions->function[CHG_MOVE](fd, pSTE[slot].address, pDTE[drive].address);
+  ret = pDev[fd].functions->function[CHG_MOVE](fd, pSTE[slot].address, pDTE[drive].address);
   
   /*
    * Update the Status
    */
-  if (pChangerDev->functions->function[CHG_STATUS](fd, 1) != 0)
+  if (pDev[fd].functions->function[CHG_STATUS](fd, 1) != 0)
       {
           return(-1);
       }
@@ -621,20 +687,21 @@ int load(int fd, int drive, int slot)
   return(ret);
 }
 
+/*
+ * Returns the number of Storage Slots which the library has
+ * fd -> pointer to the internal devie structure pDev
+ * return -> Number of slots
+ */ 
 int get_slot_count(int fd)
 {
+  extern OpenFiles_T *pDev;
+
   dbprintf(("###### START get_slot_count\n"));
   dbprintf(("%-20s : fd %d\n", "get_slot_count", fd));
 
-  if (pChangerDev == NULL)
-    {
-      dbprintf(("%-20s : pChangerCtl == NULL\n", "get_slot_count"));
-      return(-1);
-    }
-
   if (ElementStatusValid == 0)
     {
-      pChangerDev->functions->function[CHG_STATUS](fd, 1);
+      pDev[fd].functions->function[CHG_STATUS](fd, 1);
     }
 
   return(STE);
@@ -647,23 +714,22 @@ int get_slot_count(int fd)
 
 
 /*
- * retreive the number of data-transfer devices
+ * retreive the number of data-transfer devices /Tape drives)
+ * fd     -> pointer to the internal devie structure pDev
+ * return -> -1 on failure
  */ 
 int get_drive_count(int fd)
 {
+
+  extern OpenFiles_T *pDev;
+
   dbprintf(("###### START get_drive_count\n"));
   dbprintf(("%-20s : fd %d\n", "get_drive_count", fd));
-
-  if (pChangerDev == NULL)
-    {
-      dbprintf(("%-20s : pChangerCtl == NULL\n", "get_drive_count"));
-      return(-1);
-    }
 
 
   if (ElementStatusValid == 0)
       {
-          if ( pChangerDev->functions->function[CHG_STATUS](fd, 1) != 0)
+          if ( pDev[fd].functions->function[CHG_STATUS](fd, 1) != 0)
               {
                   return(-1);
               }
@@ -681,17 +747,20 @@ int get_drive_count(int fd)
  * The OS has to decide if it is an SCSI Commands capable device
  */
 
-int OpenDevice(OpenFiles_T *pwork, char *DeviceName, char *ConfigName, char *ident)
+int OpenDevice(int ip , char *DeviceName, char *ConfigName, char *ident)
 {
+  extern OpenFiles_T *pDev;
   ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
   
   dbprintf(("##### START OpenDevice\n"));
   dbprintf(("OpenDevice : %s\n", DeviceName));
   
-  if (SCSI_OpenDevice(pwork, DeviceName) != 0 )
+  pDev[ip].ConfigName = strdup(ConfigName);
+  pDev[ip].dev = strdup(DeviceName);
+
+  if (SCSI_OpenDevice(ip) != 0 )
     {
       
-      pwork->ConfigName = strdup(ConfigName);
    
       if (ident != NULL)   /* Override by config */
       {
@@ -699,8 +768,8 @@ int OpenDevice(OpenFiles_T *pwork, char *DeviceName, char *ConfigName, char *ide
           {
             if (strcmp(ident, p->ident) == 0)
               {
-                pwork->functions = p;
-		strncpy(pwork->ident, ident, 17);
+                pDev[ip].functions = p;
+		strncpy(pDev[ip].ident, ident, 17);
                 dbprintf(("override using ident = %s, type = %s\n",p->ident, p->type));
                 return(1);
               }
@@ -710,9 +779,9 @@ int OpenDevice(OpenFiles_T *pwork, char *DeviceName, char *ConfigName, char *ide
       } else {
         while(p->ident != NULL)
           {
-            if (strcmp(pwork->ident, p->ident) == 0)
+            if (strcmp(pDev[ip].ident, p->ident) == 0)
               {
-                pwork->functions = p;
+                pDev[ip].functions = p;
                 dbprintf(("using ident = %s, type = %s\n",p->ident, p->type));
                 return(1);
               }
@@ -725,7 +794,7 @@ int OpenDevice(OpenFiles_T *pwork, char *DeviceName, char *ConfigName, char *ide
         {
           if (strcmp("generic", p->ident) == 0)
             {
-              pwork->functions = p;
+              pDev[ip].functions = p;
               dbprintf(("using ident = %s, type = %s\n",p->ident, p->type));
               return(1);
             }
@@ -736,26 +805,35 @@ int OpenDevice(OpenFiles_T *pwork, char *DeviceName, char *ConfigName, char *ide
 }
 
 
-
+/*
+ * This functions checks if the library has an barcode reader.
+ * fd     -> pointer to the internal devie structure pDev
+ */
 int BarCode(int fd)
 {
   int ret;
+  extern OpenFiles_T *pDev;
+
   dbprintf(("##### START BarCode\n"));
   dbprintf(("%-20s : fd %d\n", "BarCode", fd));
 
-  if (pChangerDev == NULL)
-    {
-      dbprintf(("%-20s : pChangerCtl == NULL\n", "BarCode"));
-      return(-1);
-    }
-  dbprintf(("Ident = [%s], function = [%s]\n", pChangerDev->ident,
-        pChangerDev->functions->ident));
-  ret = pChangerDev->functions->function[CHG_BARCODE](fd);
+  dbprintf(("Ident = [%s], function = [%s]\n", pDev[fd].ident,
+        pDev[fd].functions->ident));
+  ret = pDev[fd].functions->function[CHG_BARCODE](fd);
   return(ret);
 }
 
-int Tape_Ready(char *tapedev, int wait)
+
+/*
+ * This functions check if the tape drive is ready
+ *
+ * fd     -> pointer to the internal devie structure pDev
+ * wait -> time to wait for the ready status
+ *
+ */
+int Tape_Ready(int fd, int wait)
 {
+  extern OpenFiles_T *pDev;
   int true = 1;
   int ret;
   int cnt = 0;
@@ -764,24 +842,8 @@ int Tape_Ready(char *tapedev, int wait)
   RequestSense_T *pRequestSense;
   dbprintf(("##### START Tape_Ready\n"));
  
- if (pTapeDev != NULL)
-    {
-      if (pTapeDev->SCSI == 1)
-        pwork = pTapeDev;
-    }
   
-  if (pTapeDevCtl != NULL)
-    {
-      if (pTapeDevCtl->SCSI == 1)
-        pwork = pTapeDevCtl;
-    }
-   
-  
-/*
-  sleep(wait);
-*/
-
-  if (pwork == NULL || pwork->SCSI == 0)
+  if (pDev[fd].SCSI == 0)
       {
           dbprintf(("Tape_Ready : can#t send SCSI commands\n"));
           sleep(wait);
@@ -795,13 +857,13 @@ int Tape_Ready(char *tapedev, int wait)
       }
 
 
-  GenericRewind(pwork->fd);
+  GenericRewind(fd);
  
 
   while (true && cnt < wait)
     {
-      ret = SCSI_TestUnitReady(pwork->fd, pRequestSense );
-      switch (SenseHandler(pwork->fd, 0, (char *)pRequestSense))
+      ret = SCSI_TestUnitReady(fd, pRequestSense );
+      switch (SenseHandler(fd, 0, (char *)pRequestSense))
         {
 	  case SENSE_NO:
 		  true=0;
@@ -1187,6 +1249,8 @@ int GenericSearch()
 
 int TreeFrogBarCode(int DeviceFD)
 {
+  extern OpenFiles_T *pDev;
+
   ModePageTreeFrogVendorUnique_T *pVendor;
   ModePageTreeFrogVendorUnique_T *pVendorWork;
 
@@ -1214,7 +1278,7 @@ int TreeFrogBarCode(int DeviceFD)
       dbprintf(("TreeFrogBarCode : EBARCO %d\n", pVendor->EBARCO));
       dbprintf(("TreeFrogCheckSum : CHKSUM  %d\n", pVendor->CHKSUM));
 
-      dump_hex((char *)pChangerDev->inquiry, INQUIRY_SIZE);
+      dump_hex((char *)pDev[INDEX_CHANGER].inquiry, INQUIRY_SIZE);
       return(pVendor->EBARCO);
     }
   return(0);
@@ -1222,6 +1286,8 @@ int TreeFrogBarCode(int DeviceFD)
 
 int EXB120BarCode(int DeviceFD)
 {
+  extern OpenFiles_T *pDev;
+
   ModePageEXB120VendorUnique_T *pVendor;
   ModePageEXB120VendorUnique_T *pVendorWork;
 
@@ -1276,9 +1342,9 @@ int EXB120BarCode(int DeviceFD)
         }
     }
   
-  dump_hex((char *)pChangerDev->inquiry, INQUIRY_SIZE);
+  dump_hex((char *)pDev[INDEX_CHANGER].inquiry, INQUIRY_SIZE);
   dbprintf(("EXB120BarCode : vendor_specific[19] %x\n",
-            pChangerDev->inquiry->vendor_specific[19]));
+            pDev[INDEX_CHANGER].inquiry->vendor_specific[19]));
   return(1);
 }
 
@@ -1290,12 +1356,13 @@ int NoBarCode(int DeviceFD)
 
 int GenericBarCode(int DeviceFD)
 {
+  extern OpenFiles_T *pDev;
 
   dbprintf(("##### START GenericBarCode\n"));
-  dump_hex((char *)pChangerDev->inquiry, INQUIRY_SIZE);
+  dump_hex((char *)pDev[INDEX_CHANGER].inquiry, INQUIRY_SIZE);
   dbprintf(("GenericBarCode : vendor_specific[19] %x\n",
-            pChangerDev->inquiry->vendor_specific[19]));
-  if ((pChangerDev->inquiry->vendor_specific[19] & 1) == 1)
+            pDev[INDEX_CHANGER].inquiry->vendor_specific[19]));
+  if ((pDev[INDEX_CHANGER].inquiry->vendor_specific[19] & 1) == 1)
     {
       return(1);
     } else {
@@ -1306,37 +1373,14 @@ int GenericBarCode(int DeviceFD)
 
 int SenseHandler(int DeviceFD, unsigned char flag, char *buffer)
 {
+  extern OpenFiles_T *pDev;
   int ret;
   dbprintf(("##### START SenseHandler\n"));
-  if (pChangerDev != NULL && pChangerDev->fd == DeviceFD)
-    {
-      dbprintf(("Ident = [%s], function = [%s]\n", pChangerDev->ident,
-                pChangerDev->functions->ident));
-      ret = pChangerDev->functions->function[CHG_ERROR](pChangerDev, flag, buffer);
-      dbprintf(("#### STOP SenseHandler\n"));
-      return(ret);
-    }
-
-  if (pTapeDev != NULL && pTapeDev->fd == DeviceFD)
-    {
-      dbprintf(("Ident = [%s], function = [%s]\n", pTapeDev->ident,
-               pTapeDev->functions->ident));
-      ret = pTapeDev->functions->function[CHG_ERROR](pTapeDev, flag, buffer);
-      dbprintf(("#### STOP SenseHandler\n"));
-    
-       return(ret);
-    }
-  
-  if (pTapeDevCtl != NULL && pTapeDevCtl->fd == DeviceFD)
-    {
-      dbprintf(("Ident = [%s], function = [%s]\n", pTapeDev->ident,
-               pTapeDevCtl->functions->ident));
-      ret = pTapeDevCtl->functions->function[CHG_ERROR](pTapeDevCtl, flag, buffer);
-      dbprintf(("#### STOP SenseHandler\n"));
-      return(ret);
-    }
+  dbprintf(("Ident = [%s], function = [%s]\n", pDev[DeviceFD].ident,
+	    pDev[DeviceFD].functions->ident));
+  ret = pDev[DeviceFD].functions->function[CHG_ERROR](DeviceFD, flag, buffer);
   dbprintf(("#### STOP SenseHandler\n"));
-  return(SENSE_ABORT);
+  return(ret);
 }
 
 /* Try to get information about the tape,    */
@@ -1352,7 +1396,7 @@ int TapeStatus()
   dbprintf(("##### START TapeStatus\n"));
   if (pDTE[0].status == 'F')
   {
-    ret = Tape_Status(pTapeDev->fd);
+    ret = Tape_Status(INDEX_TAPE);
     if ( ret & TAPE_ONLINE)
     {
       pDTE[0].status ='F'; 
@@ -1367,6 +1411,8 @@ int TapeStatus()
 
 int DLT4000Eject(char *Device, int type)
 {
+  extern OpenFiles_T *pDev;
+
   RequestSense_T *pRequestSense;
   ExtendedRequestSense_T *pExtendedRequestSense;
   int ret;
@@ -1386,42 +1432,32 @@ int DLT4000Eject(char *Device, int type)
       dbprintf(("%-20s : malloc failed\n","GenericEject"));
       return(-1);
     }
-  
-  if (pTapeDevCtl != NULL && pTapeDevCtl->SCSI == 1 && pTapeDev != NULL)
-    LogSense(pTapeDev->fd);
-  
+    
   if ( type > 1)
     {
-      dbprintf(("GenericEject : use mtio ioctl for eject on %s\n", pTapeDev->dev));
-      return(Tape_Eject(pTapeDev->fd));
+      dbprintf(("GenericEject : use mtio ioctl for eject on %s\n", pDev[INDEX_TAPE].dev));
+      return(Tape_Eject(INDEX_TAPE));
     }
   
-  if (pTapeDev != NULL && 
-		  pTapeDevCtl != NULL &&
-		  pTapeDev->fd != pTapeDevCtl->fd && 
-		  pTapeDevCtl->SCSI == 1) {
-    dbprintf(("GenericEject : Close %s \n", pTapeDev->dev));
-    close(pTapeDev->fd);
-  }
   
   
-  if (pTapeDevCtl->SCSI == 0)
+  if (pDev[INDEX_TAPECTL].SCSI == 0)
     {
-      dbprintf(("DLT4000Eject : Device %s not able to receive SCSI commands\n", pTapeDev->dev));
-      return(Tape_Eject(pTapeDev->fd));
+      dbprintf(("DLT4000Eject : Device %s not able to receive SCSI commands\n", pDev[INDEX_TAPE].dev));
+      return(Tape_Eject(INDEX_TAPE));
     }
   
   
-  dbprintf(("DLT4000Eject : SCSI eject on %s = %s\n", pTapeDevCtl->dev, pTapeDevCtl->ConfigName));
+  dbprintf(("DLT4000Eject : SCSI eject on %s = %s\n", pDev[INDEX_TAPECTL].dev, pDev[INDEX_TAPECTL].ConfigName));
   
-  RequestSense(pTapeDevCtl->fd, pExtendedRequestSense, 0); 
+  RequestSense(INDEX_TAPECTL, pExtendedRequestSense, 0); 
   DecodeExtSense(pExtendedRequestSense, "DLT4000Eject : ", debug_file);
   /* Unload the tape, 0 ==  wait for success
    * 0 == unload 
    */
-  ret = SCSI_LoadUnload(pTapeDevCtl->fd, pRequestSense, 0, 0);
+  ret = SCSI_LoadUnload(INDEX_TAPECTL, pRequestSense, 0, 0);
 
-  RequestSense(pTapeDevCtl->fd, pExtendedRequestSense, 0); 
+  RequestSense(INDEX_TAPECTL, pExtendedRequestSense, 0); 
   DecodeExtSense(pExtendedRequestSense, "DLT4000Eject : ", debug_file);
   
   /* < 0 == fatal */
@@ -1437,12 +1473,12 @@ int DLT4000Eject(char *Device, int type)
   
   while (true && cnt < 300)
     {
-      if (SCSI_TestUnitReady(pTapeDevCtl->fd, pRequestSense))
+      if (SCSI_TestUnitReady(INDEX_TAPECTL, pRequestSense))
         {
           true = 0;
           break;
         }
-      if (SenseHandler(pTapeDevCtl->fd, 0, (char *)pRequestSense) == SENSE_NO_TAPE)
+      if (SenseHandler(INDEX_TAPECTL, 0, (char *)pRequestSense) == SENSE_NO_TAPE)
         {
           true=0;
           break;
@@ -1461,50 +1497,26 @@ int DLT4000Eject(char *Device, int type)
 
 int GenericEject(char *Device, int type)
 {
+  extern OpenFiles_T *pDev;
   RequestSense_T *pRequestSense;
   int ret;
   int cnt = 0;
   int true = 1;
-
+  
   dbprintf(("##### START GenericEject\n"));
-
+  
   if ((pRequestSense = malloc(sizeof(RequestSense_T))) == NULL)
     {
       dbprintf(("%-20s : malloc failed\n","GenericEject"));
       return(-1);
     }
-  
-  if (pTapeDevCtl != NULL && pTapeDevCtl->SCSI == 1 && pTapeDev != NULL)
-    LogSense(pTapeDev->fd);
-  
-  if ( type > 1)
-    {
-      dbprintf(("GenericEject : use mtio ioctl for eject on %s\n", pTapeDev->dev));
-      return(Tape_Eject(pTapeDev->fd));
-    }
-  
-  if (pTapeDev != NULL && 
-		  pTapeDevCtl != NULL &&
-		  pTapeDev->fd != pTapeDevCtl->fd && 
-		  pTapeDevCtl->SCSI == 1) {
-    dbprintf(("GenericEject : Close %s \n", pTapeDev->dev));
-    close(pTapeDev->fd);
-  }
-  
-  
-  if (pTapeDevCtl->SCSI == 0)
-    {
-      dbprintf(("GenericEject : Device %s not able to receive SCSI commands\n", pTapeDev->dev));
-      return(Tape_Eject(pTapeDev->fd));
-    }
-  
-  
-  dbprintf(("GenericEject : SCSI eject on %s = %s\n", pTapeDevCtl->dev, pTapeDevCtl->ConfigName));
+    
+  dbprintf(("GenericEject : SCSI eject on %s = %s\n", pDev[INDEX_TAPECTL].dev, pDev[INDEX_TAPECTL].ConfigName));
   
   /* Unload the tape, 1 == don't wait for success
    * 0 == unload 
    */
-  ret = SCSI_LoadUnload(pTapeDevCtl->fd, pRequestSense, 1, 0);
+  ret = SCSI_LoadUnload(INDEX_TAPECTL, pRequestSense, 1, 0);
   
   /* < 0 == fatal */
   if (ret < 0)
@@ -1519,12 +1531,12 @@ int GenericEject(char *Device, int type)
   
   while (true && cnt < 300)
     {
-      if (SCSI_TestUnitReady(pTapeDevCtl->fd, pRequestSense))
+      if (SCSI_TestUnitReady(INDEX_TAPECTL, pRequestSense))
         {
           true = 0;
           break;
         }
-      if (SenseHandler(pTapeDevCtl->fd, 0, (char *)pRequestSense) == SENSE_NO_TAPE)
+      if (SenseHandler(INDEX_TAPECTL, 0, (char *)pRequestSense) == SENSE_NO_TAPE)
         {
           true=0;
           break;
@@ -1618,16 +1630,17 @@ int GenericRewind(int DeviceFD)
 
 int GenericClean(char * Device)
 {
+  extern OpenFiles_T *pDev;
   ExtendedRequestSense_T ExtRequestSense;
 
   dbprintf(("##### START GenericClean\n"));
-  if (pTapeDevCtl == NULL || pTapeDevCtl->SCSI == 0)
+  if (pDev[INDEX_TAPECTL].SCSI == 0)
       {
           dbprintf(("GenericClean : can't send SCSI commands\n"));
           return(0);
       }
 
-  RequestSense(pTapeDevCtl->fd, &ExtRequestSense, 0);
+  RequestSense(INDEX_TAPECTL, &ExtRequestSense, 0);
   dbprintf(("GenericClean :\n"));
   DecodeExtSense(&ExtRequestSense, "GenericClean : ", debug_file);
   if(ExtRequestSense.CLN) {
@@ -1721,30 +1734,32 @@ int GenericResetStatus(int DeviceFD)
  * TODO:
  * Limit recursion, may run in an infinite loop
  */
-int GenericSenseHandler(OpenFiles_T *pwork, unsigned char flag, char *buffer)
+int GenericSenseHandler(int ip, unsigned char flag, char *buffer)
 { 
-	RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
-	int ret = 0;
-  	unsigned char *info = NULL;
-
-  	dbprintf(("##### START GenericSenseHandler\n"));
-
-  	DecodeSense(pRequestSense, "GenericSenseHandler : ", debug_file);
-
-  	ret = Sense2Action(pwork->ident,
-			pwork->inquiry->type,
-			flag, pRequestSense->SenseKey,
-	 		pRequestSense->AdditionalSenseCode,
-			pRequestSense->AdditionalSenseCodeQualifier,
-			(char **)&info);
-	
-  	dbprintf(("##### STOP GenericSenseHandler\n"));
-  	return(ret);
+  extern OpenFiles_T *pDev;
+  RequestSense_T *pRequestSense = (RequestSense_T *)buffer;
+  int ret = 0;
+  unsigned char *info = NULL;
+  
+  dbprintf(("##### START GenericSenseHandler\n"));
+  
+  DecodeSense(pRequestSense, "GenericSenseHandler : ", debug_file);
+  
+  ret = Sense2Action(pDev[ip].ident,
+		     pDev[ip].inquiry->type,
+		     flag, pRequestSense->SenseKey,
+		     pRequestSense->AdditionalSenseCode,
+		     pRequestSense->AdditionalSenseCodeQualifier,
+		     (char **)&info);
+  
+  dbprintf(("##### STOP GenericSenseHandler\n"));
+  return(ret);
 }
 
 /* ======================================================= */
 int SDXMove(int DeviceFD, int from, int to)
 {
+  extern OpenFiles_T *pDev;
   ElementInfo_T *pfrom;
   ElementInfo_T *pto;
   int ret;
@@ -1758,19 +1773,10 @@ int SDXMove(int DeviceFD, int from, int to)
 
   dbprintf(("%-20s : from = %d, to = %d\n", "SDXMove", from, to));
 
-  if (pChangerDev == NULL)
-    {
-      dbprintf(("%20s : can't send SCSI commands\n", "SDXMove"));
-      return(-1);
-    }
-
-  if (pTapeDevCtl == NULL || pTapeDevCtl->SCSI == 0)
-    {
-      dbprintf(("SDXMove : can't send SCSI commands to tape, no log pages read\n"));
-    } else {
-      LogSense(pTapeDevCtl->fd);
-    }
-
+  /* FIXME
+   * There should be an check if a tape is loaded !!
+   */
+ 
   if ((pfrom = LookupElement(from)) == NULL)
     {
       dbprintf(("SDXMove : ElementInfo for %d not found\n", from));
@@ -1854,14 +1860,14 @@ int SDXMove(int DeviceFD, int from, int to)
   /* and if yes we have to eject it                  */
   if (pfrom->type == TAPETYPE)
   {
-    tapestat = Tape_Status(pTapeDev->fd);
+    tapestat = Tape_Status(INDEX_TAPE);
     if ( tapestat & TAPE_ONLINE)
     {
-      if (pTapeDevCtl != NULL && pTapeDevCtl->SCSI == 1)
+      if (pDev[INDEX_TAPECTL].SCSI == 1)
       { 
-        ret = eject_tape(pTapeDevCtl->dev,1);
+        ret = eject_tape(pDev[INDEX_TAPECTL].dev,1);
       } else {
-        ret = eject_tape(pTapeDev->dev,2);
+        ret = eject_tape(pDev[INDEX_TAPE].dev,2);
       }
     }
   }
@@ -1878,6 +1884,7 @@ int SDXMove(int DeviceFD, int from, int to)
 /* ======================================================= */
 int GenericMove(int DeviceFD, int from, int to)
 {
+  extern OpenFiles_T *pDev;
   ElementInfo_T *pfrom;
   ElementInfo_T *pto;
   int ret = 0;
@@ -1887,18 +1894,6 @@ int GenericMove(int DeviceFD, int from, int to)
 
   dbprintf(("%-20s : from = %d, to = %d\n", "GenericMove", from, to));
 
-  if (pChangerDev == NULL)
-    {
-      dbprintf(("%20s : can't send SCSI commands\n", "GenericMove"));
-      return(-1);
-    }
-
-  if (pTapeDevCtl == NULL || pTapeDevCtl->SCSI == 0)
-    {
-      dbprintf(("GenericMove : can't send SCSI commands to tape, no log pages read\n"));
-    } else {
-      LogSense(pTapeDevCtl->fd);
-    }
 
   if ((pfrom = LookupElement(from)) == NULL)
     {
@@ -2110,14 +2105,11 @@ int CheckMove(ElementInfo_T *from, ElementInfo_T *to)
  
 int GetCurrentSlot(int fd, int drive)
 {
+  extern OpenFiles_T *pDev;
   int x;
   dbprintf(("##### START GetCurrentSlot\n"));
-  if (pChangerDev == NULL)
-    {
-      return(-1);
-    }
 
-  if (pChangerDev->SCSI == 0)
+  if (pDev[0].SCSI == 0)
       {
           dbprintf(("GetCurrentSlot : can't send SCSI commands\n"));
           return(-1);
@@ -2125,7 +2117,7 @@ int GetCurrentSlot(int fd, int drive)
 
   if (ElementStatusValid == 0)
     {
-      if (pChangerDev->functions->function[CHG_STATUS](pChangerDev->fd, 1) != 0)
+      if (pDev[0].functions->function[CHG_STATUS](0, 1) != 0)
         {
           return(-1);
         }
@@ -3524,6 +3516,7 @@ ElementInfo_T *LookupElement(int address)
 
 int LogSense(DeviceFD)
 {
+  extern OpenFiles_T *pDev;
   CDB_T CDB;
   RequestSense_T *pRequestSense;
   LogSenseHeader_T *LogSenseHeader;
@@ -3549,8 +3542,7 @@ int LogSense(DeviceFD)
 
   if (tapestatfile != NULL && 
       (StatFile = fopen(tapestatfile,"a")) != NULL &&
-      pTapeDevCtl != NULL &&
-      pTapeDevCtl->SCSI == 1) 
+      pDev[INDEX_TAPECTL].SCSI == 1) 
     {
       if ((pRequestSense  = (RequestSense_T *)malloc(sizeof(RequestSense_T))) == NULL)
         {
@@ -3558,14 +3550,14 @@ int LogSense(DeviceFD)
               return(-1);
         }
       
-      if (SCSI_TestUnitReady(pTapeDevCtl->fd, pRequestSense) == 0)
+      if (SCSI_TestUnitReady(INDEX_TAPECTL, pRequestSense) == 0)
         {
           DecodeSense(pRequestSense, "LogSense :", debug_file);
           dbprintf(("LogSense : Tape_Ready failed\n"));
           free(pRequestSense);
           return(0);
         }
-      if (GenericRewind(pTapeDevCtl->fd) < 0) 
+      if (GenericRewind(2) < 0) 
         { 
           dbprintf(("LogSense : Rewind failed\n"));
           free(pRequestSense);
@@ -3574,14 +3566,19 @@ int LogSense(DeviceFD)
       /*
        * Try to read the tape label
        */
-      if (pTapeDev != NULL)
+      if (pDev[INDEX_TAPE].inqdone == 1)
         {
-          if ((result = (char *)tapefd_rdlabel(pTapeDev->fd, &datestamp, &label)) == NULL)
+	  if (pDev[INDEX_TAPE].devopen == 0)
+	    {
+	      SCSI_OpenDevice(INDEX_TAPE);
+	    }
+	  if ((result = (char *)tapefd_rdlabel(pDev[INDEX_TAPE].fd, &datestamp, &label)) == NULL)
             {
               fprintf(StatFile, "==== %s ==== %s ====\n", datestamp, label);
             } else {
               fprintf(StatFile, "%s\n", result);
             }
+	  SCSI_CloseDevice(INDEX_TAPE);
         }
       if ((buffer = (char *)malloc(size)) == NULL)
         {
@@ -3664,7 +3661,7 @@ int LogSense(DeviceFD)
           found = 0;
 
           while(p->ident != NULL) {
-            if ((strcmp(pTapeDevCtl->ident, p->ident) == 0 ||strcmp("*", p->ident) == 0)  && p->LogPage == logpages[count]) {
+            if ((strcmp(pDev[INDEX_TAPECTL].ident, p->ident) == 0 ||strcmp("*", p->ident) == 0)  && p->LogPage == logpages[count]) {
               p->decode(LogParameter, length);
               found = 1;
               fprintf(StatFile, "\n");
@@ -4061,8 +4058,12 @@ void ChangerReplay(char *option)
     DecodeModeSense(&buffer[0], 12, "DLT448ElementStatus :", 0, debug_file);
 }
 
+/*
+ * Display all Information we can get about the library....
+ */
 void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device)
 {
+  extern OpenFiles_T *pDev;
   int x;
   FILE *out;
   char *label;
@@ -4081,12 +4082,6 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
       printf("Error fdopen stdout\n");
       return;
     }
-
-  if (pChangerDev == NULL)
-    {
-      printf(("Changer dev not opened"));
-      return;
-    }
   
   if (strcmp("types", option) == 0 || strcmp("all", option) == 0)
   {
@@ -4101,7 +4096,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
       {
         if (ElementStatusValid == 0)
           {
-            if (pChangerDev->functions->function[CHG_STATUS](pChangerDev->fd, 1) != 0)
+            if (pDev[INDEX_CHANGER].functions->function[CHG_STATUS](pDev[INDEX_CHANGER].fd, 1) != 0)
               {
                 printf("Can not initialize changer status\n");
                 return;
@@ -4196,14 +4191,14 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
   if (strcmp("sense", option) == 0 || strcmp("all", option) == 0)
     {
       printf("\nSense Status from robot:\n");
-      RequestSense(pChangerDev->fd, &ExtRequestSense, 0);
+      RequestSense(INDEX_CHANGER , &ExtRequestSense, 0);
       DecodeExtSense(&ExtRequestSense, "", out);
       
-      if (pTapeDevCtl != NULL && pTapeDevCtl->SCSI == 1)
+      if (pDev[2].SCSI == 1)
         {
           printf("\n");
           printf("Sense Status from tape:\n");
-          RequestSense(pTapeDevCtl->fd, &ExtRequestSense, 0); 
+          RequestSense(2, &ExtRequestSense, 0); 
           DecodeExtSense(&ExtRequestSense, "", out);
         }
     }
@@ -4211,7 +4206,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
     if (strcmp("ModeSenseRobot", option) == 0 || strcmp("all", option) == 0)
       {
         printf("\n");
-        if (SCSI_ModeSense(pChangerDev->fd, pModePage, 0xff, 0x08, 0x3f) == 0)
+        if (SCSI_ModeSense(INDEX_CHANGER, pModePage, 0xff, 0x08, 0x3f) == 0)
           {
             DecodeModeSense(pModePage, 0, "Changer :" , 0, out); 
           }
@@ -4219,10 +4214,10 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
   
     if (strcmp("ModeSenseTape", option) == 0 || strcmp("all", option) == 0)
       {
-        if (pTapeDevCtl != NULL && pTapeDevCtl->SCSI == 1)
+        if (pDev[INDEX_TAPECTL].SCSI == 1)
         {
           printf("\n");
-          if (SCSI_ModeSense(pTapeDevCtl->fd, pModePage, 0xff, 0x0, 0x3f) == 0)
+          if (SCSI_ModeSense(INDEX_TAPECTL, pModePage, 0xff, 0x0, 0x3f) == 0)
             {
               DecodeModeSense(pModePage, 0, "Tape :" , 1, out); 
             }
@@ -4234,9 +4229,9 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
       printf("changer_dev  %s\n",changer_dev);
       printf("changer_file %s\n", changer_file);
       printf("tape_device  %s\n\n", tape_device);
-      DumpDev(pTapeDev, "pTapeDev");
-      DumpDev(pTapeDevCtl, "pTapeDevCtl");
-      DumpDev(pChangerDev, "pChangerDev");
+      DumpDev(&pDev[INDEX_TAPE], "pTapeDev");
+      DumpDev(&pDev[INDEX_TAPECTL], "pTapeDevCtl");
+      DumpDev(&pDev[INDEX_CHANGER], "pChangerDev");
     }
 
   if (GenericClean("") == 1)

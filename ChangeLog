@@ -1,3 +1,16 @@
+2000-07-31 Thomas Hepper <th@ant.han.de>
+	* changer-src/chg-scsi.c: Rework of the device handling.
+	Every device is opend for an operation and than closed.
+	This will hopefully fix the problems with openening the tape device
+	and the SCSI control device for the tape
+	new option emubarcode (see docs/TAPE.CHANGERS)
+	* changer-src/scsi-cam.c: Changed to work with the new device handling.
+	* changer-src/scsi-hpux_new.c: Changed to work with the new device handling.
+	* changer-src/scsi-irix.c: Changed to work with the new device handling. (Not tested)
+	* changer-src/scsi-solaris.c: Changed to work with the new device handling. (Not tested)
+	* changer-src/scsi-linux.c: Changed to work with the new device handling.
+	* changer-src/scsi-changer-driver.c: Changed to work with the new device handling
+	* changer-src/scsi-defs.h: Changed to work with the new device handling
 2000-07-18 John R. Jackson  <jrj@purdue.edu>
 
 	* changer-src/chg-chio.pl.in (do_time): fix chg-chio.pl timestamp

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-cam.c,v 1.2 2000/07/17 21:24:51 ant Exp $";
+static char rcsid[] = "$Id: scsi-cam.c,v 1.3 2000/07/31 18:55:13 ant Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an system with cam support
@@ -51,72 +51,120 @@ extern FILE *debug_file;
  * DeviceName can be an device name, /dev/nrsa0 for example
  * or an bus:target:lun path, 0:4:0 for bus 0 target 4 lun 0
  */
-int SCSI_OpenDevice(OpenFiles_T *pwork, char *DeviceName)
+int SCSI_OpenDevice(int ip)
 {
+  extern OpenFiles_T *pDev;
+  char *DeviceName;
   int DeviceFD;
   int i;
-  static int fdfake = 9999;/* Fake the fd no, may fail if this is in use in
-                            * one of the other OpenFiles_T structs 
-                            */
   char *p;
   path_id_t path;
   target_id_t target;
   lun_id_t lun;
 
-  pwork->SCSI = 0;
-  pwork->dev = strdup(DeviceName);
-  pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
+  DeviceName = strdup(pDev[ip].dev);
 
-  if (strstr(DeviceName, ":") != NULL)
-    {  
-      pwork->fd = fdfake--;
+  if (pDev[ip].inqdone == 0)
+    {
+      pDev[ip].inqdone = 1;
+      pDev[ip].SCSI = 0;
+      pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
       
-      p = strtok(DeviceName, ":");
-      sscanf(p,"%d", &path);
-
-      if ((p = strtok(NULL,":")) == NULL)
-        {
-          ChgExit("SCSI_OpenDevice", "target in Device Name not found", FATAL);
-        }
-      sscanf(p,"%d", &target);
-      if ((p = strtok(NULL,":")) == NULL)
-        {
-          ChgExit("SCSI_OpenDevice", "lun in Device Name not found", FATAL);
-        }
-      sscanf(p,"%d", &lun);
-
-      if ((pwork->curdev = cam_open_btl(path, target, lun, O_RDWR, NULL)) != NULL) {
-	pwork->SCSI = 1;
-	if (SCSI_Inquiry(pwork->fd, pwork->inquiry, INQUIRY_SIZE) == 0)
-          {
-            if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
+      if (strstr(DeviceName, ":") != NULL)
+        {  
+          
+          p = strtok(DeviceName, ":");
+          sscanf(p,"%d", &path);
+          
+          if ((p = strtok(NULL,":")) == NULL)
+            {
+              free(DeviceName);
+              ChgExit("SCSI_OpenDevice", "target in Device Name not found", FATAL);
+            }
+          sscanf(p,"%d", &target);
+          if ((p = strtok(NULL,":")) == NULL)
+            {
+              free(DeviceName);
+              ChgExit("SCSI_OpenDevice", "lun in Device Name not found", FATAL);
+            }
+          sscanf(p,"%d", &lun);
+          
+          if ((pDev[ip].curdev = cam_open_btl(path, target, lun, O_RDWR, NULL)) != NULL) {
+            pDev[ip].SCSI = 1;
+            pDev[ip].devopen = 1;
+            if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
               {
-                for (i=0;i < 16;i++)
-                  pwork->ident[i] = pwork->inquiry->prod_ident[i];
-                for (i=15; i >= 0 && !isalnum(pwork->ident[i]); i--)
+                if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip].inquiry->type == TYPE_CHANGER)
                   {
-                    pwork->ident[i] = '\0';
+                    for (i=0;i < 16;i++)
+                      pDev[ip].ident[i] = pDev[ip].inquiry->prod_ident[i];
+                    for (i=15; i >= 0 && !isalnum(pDev[ip].ident[i]); i--)
+                      {
+                        pDev[ip].ident[i] = '\0';
+                      }
+                    pDev[ip].SCSI = 1;
+                    free(DeviceName);
+                    PrintInquiry(pDev[ip].inquiry);
+                    return(1);
+                  } else {
+                    free(DeviceName);
+                    free(pDev[ip].inquiry);
+                    return(0);
                   }
-                pwork->SCSI = 1;
-                PrintInquiry(pwork->inquiry);
-                return(1);
               } else {
-                free(pwork->inquiry);
-                return(0);
+                pDev[ip].SCSI = 0;
+                free(DeviceName);
+                free(pDev[ip].inquiry);
+                pDev[ip].inquiry = NULL;
+                return(1);
               }
-          } else {
-            pwork->SCSI = 0;
-            free(pwork->inquiry);
-            pwork->inquiry = NULL;
-            return(1);
           }
-      }
+        } else {
+          if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
+            {
+              pDev[ip].devopen = 0;
+              pDev[ip].SCSI=0;
+              close(DeviceFD);
+              free(DeviceName);
+              return(1);
+            }
+        }
     } else {
-      if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
-        {
-          pwork->SCSI=0;
-          pwork->fd = DeviceFD;
-          return(1);
+      if (strstr(DeviceName, ":") != NULL)
+        {  
+          
+          p = strtok(DeviceName, ":");
+          sscanf(p,"%d", &path);
+          
+          if ((p = strtok(NULL,":")) == NULL)
+            {
+              free(DeviceName);
+              ChgExit("SCSI_OpenDevice", "target in Device Name not found", FATAL);
+            }
+          sscanf(p,"%d", &target);
+          if ((p = strtok(NULL,":")) == NULL)
+            {
+              free(DeviceName);
+              ChgExit("SCSI_OpenDevice", "lun in Device Name not found", FATAL);
+            }
+          sscanf(p,"%d", &lun);
+          
+          if ((pDev[ip].curdev = cam_open_btl(path, target, lun, O_RDWR, NULL)) != NULL) {
+            pDev[ip].devopen = 1;
+            free(DeviceName);
+            return(0);
+          }
+        } else {
+          free(DeviceName);
+          if ((DeviceFD = open(pDev[ip].dev, O_RDWR)) > 0)
+            {
+              pDev[ip].fd = DeviceFD;
+              pDev[ip].devopen = 1;
+              return(1);
+            } else {
+              return(0);
+            }
+          
         }
     }
   return(0); 
@@ -125,9 +173,16 @@ int SCSI_OpenDevice(OpenFiles_T *pwork, char *DeviceName)
 int SCSI_CloseDevice(int DeviceFD)
 {
   int ret;
-    
-  ret = close(DeviceFD) ;
-  return(ret);
+  extern OpenFiles_T *pDev;
+
+  if (pDev[DeviceFD].SCSI == 1)
+    {
+      cam_close_device(pDev[DeviceFD].curdev);
+      pDev[DeviceFD].devopen = 0;
+    } else {
+      close(pDev[DeviceFD].fd);
+    }
+  return(0);
 }
 
 int SCSI_ExecuteCommand(int DeviceFD,
@@ -140,24 +195,25 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         int RequestSenseLength)
 {
   ExtendedRequestSense_T ExtendedRequestSense;
+  extern OpenFiles_T *pDev;
   union ccb *ccb;
   int ret;
   u_int32_t ccb_flags;
   OpenFiles_T *pwork = NULL;
 
-  if (pChangerDev->fd == DeviceFD)
-	  pwork = pChangerDev;
-  if (pTapeDev->fd == DeviceFD)
-	  pwork = pTapeDev;
-  if (pTapeDevCtl->fd == DeviceFD)
-	  pwork = pTapeDevCtl;
+  /* 
+   * CLear the SENSE buffer
+   */
+  bzero(pRequestSense, RequestSenseLength);
 
-  if (pwork == NULL)
-	  return(-1);
+  if (pDev[DeviceFD].devopen == 0)
+    {
+      SCSI_OpenDevice(DeviceFD);
+    }
 
   DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
 
-  ccb = cam_getccb(pwork->curdev);
+  ccb = cam_getccb(pDev[DeviceFD].curdev);
 
   /* Build the CCB */
   bzero(&(&ccb->ccb_h)[1], sizeof(struct ccb_scsiio));
@@ -197,31 +253,44 @@ int SCSI_ExecuteCommand(int DeviceFD,
                 /* cdb_len */ CDB_Length,
                 /* timeout */ 600 * 1000);
   
-  if (( ret = cam_send_ccb(pwork->curdev, ccb)) == -1)
+  if (( ret = cam_send_ccb(pDev[DeviceFD].curdev, ccb)) == -1)
     {
+      SCSI_CloseDevice(DeviceFD);
       cam_freeccb(ccb);
       return(-1);
     }
   
+  /* 
+   * copy the SENSE data to the Sense Buffer !!
+   */
+  memcpy(pRequestSense, &ccb->csio.sense_data, RequestSenseLength);
+  
   /* ToDo add error handling */
   if ((ccb->ccb_h.status & CAM_STATUS_MASK) != CAM_REQ_CMP)
     {
+      SCSI_CloseDevice(DeviceFD);
       dbprintf(("SCSI_ExecuteCommand return %d\n", (ccb->ccb_h.status & CAM_STATUS_MASK)));
-      memcpy(pRequestSense, &ccb->csio.sense_data, RequestSenseLength);
       return(-1);
     }
-  
+
+  SCSI_CloseDevice(DeviceFD);
   cam_freeccb(ccb);
   return(0);
 }
 
 int Tape_Eject ( int DeviceFD)
 {  
+  extern OpenFiles_T *pDev;
   struct mtop mtop;
   
+  if (pDev[DeviceFD].devopen == 0)
+    SCSI_OpenDevice(DeviceFD);
+
   mtop.mt_op = MTOFFL;
   mtop.mt_count = 1;
-  ioctl(DeviceFD, MTIOCTOP, &mtop);
+  ioctl(pDev[DeviceFD].fd, MTIOCTOP, &mtop);
+
+  SCSI_CloseDevice(DeviceFD);
 
   return(-1);
 }

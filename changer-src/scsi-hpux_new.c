@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.8 2000/07/17 18:55:47 ant Exp $";
+static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.9 2000/07/31 18:55:13 ant Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an HP-UX Workstation
@@ -31,42 +31,56 @@ static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.8 2000/07/17 18:55:47 ant Exp $"
 
 #include <scsi-defs.h>
 
-int SCSI_OpenDevice(OpenFiles_T *pwork, char *DeviceName)
+int SCSI_OpenDevice(int ip)
 {
+  extern OpenFiles_T *pDev;
   int DeviceFD;
   int i;
 
-  if ((DeviceFD = open(DeviceName, O_RDWR| O_NDELAY)) > 0)
+  if (pDev[ip].inqdone == 0)
     {
-      pwork->fd = DeviceFD;
-      pwork->SCSI = 0;
-      pwork->dev = strdup(DeviceName);
-      pwork->inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
-      
-      if (SCSI_Inquiry(DeviceFD, pwork->inquiry, INQUIRY_SIZE) == 0)
-          {
-            if (pwork->inquiry->type == TYPE_TAPE || pwork->inquiry->type == TYPE_CHANGER)
-              {
-                for (i=0;i < 16;i++)
-                  pwork->ident[i] = pwork->inquiry->prod_ident[i];
-                for (i=15; i >= 0 && !isalnum(pwork->inquiry->prod_ident[i]) ; i--)
-                  {
-                    pwork->inquiry->prod_ident[i] = '\0';
-                  }
-                pwork->SCSI = 1;
-                PrintInquiry(pwork->inquiry);
-                return(1);    
-              } else {
-                close(DeviceFD);
-                free(pwork->inquiry);
-                return(0);
+      pDev[ip].inqdone = 1;
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NDELAY)) > 0)
+        {
+          pDev[ip].avail = 1;
+          pDev[ip].fd = DeviceFD;
+          pDev[ip].devopen = 1;
+          pDev[ip].SCSI = 0;
+          pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
+          
+          if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
+            {
+              if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip].inquiry->type == TYPE_CHANGER)
+                {
+                  for (i=0;i < 16;i++)
+                    pDev[ip].ident[i] = pDev[ip].inquiry->prod_ident[i];
+                  for (i=15; i >= 0 && !isalnum(pDev[ip].inquiry->prod_ident[i]) ; i--)
+                    {
+                      pDev[ip].inquiry->prod_ident[i] = '\0';
+                    }
+                  pDev[ip].SCSI = 1;
+                  PrintInquiry(pDev[ip].inquiry);
+                  return(1);    
+                } else {
+                  close(DeviceFD);
+                  free(pDev[ip].inquiry);
+                  return(0);
               }
-          } else {
-            free(pwork->inquiry);
-            pwork->inquiry = NULL;
-            return(1);
-          }
-      return(1);
+            } else {
+              close(DeviceFD);
+              free(pDev[ip].inquiry);
+              pDev[ip].inquiry = NULL;
+              return(1);
+            }
+          return(1);
+        }
+    } else {
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NDELAY)) > 0)
+        {
+          pDev[ip].fd = DeviceFD;
+          pDev[ip].devopen = 1;
+          return(1);
+        }
     }
 
   return(0); 
@@ -74,9 +88,11 @@ int SCSI_OpenDevice(OpenFiles_T *pwork, char *DeviceName)
 
 int SCSI_CloseDevice(int DeviceFD)
 {
+  extern OpenFiles_T *pDev;
   int ret;
 
-  ret = close(DeviceFD);
+  ret = close(pDev[DeviceFD].fd);
+  pDev[DeviceFD].devopen = 0;
   return(ret);
 }
 
@@ -89,11 +105,16 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         char *RequestSense,
                         int RequestSenseLength)
 {
+  extern OpenFiles_T *pDev;
   struct sctl_io sctl_io;
   extern int errno;
   int Retries = 3;
   int Zero = 0, Result;
   
+
+  if (pDev[DeviceFD].devopen == 0)
+    SCSI_OpenDevice(DeviceFD);
+
   memset(&sctl_io, '\0', sizeof(struct sctl_io));
 
   sctl_io.flags = 0;  
@@ -116,12 +137,17 @@ int SCSI_ExecuteCommand(int DeviceFD,
 
   while (--Retries > 0) {
     DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
-    Result = ioctl(DeviceFD, SIOC_IO, &sctl_io);
+    Result = ioctl(pDev[DeviceFD].fd, SIOC_IO, &sctl_io);
     if (Result < 0)
-      return(Result);
+      {
+        SCSI_CloseDevice(DeviceFD);
+        return(Result);
+      }
     
-    memcpy(RequestSense, sctl_io.sense, RequestSenseLength);
+    SCSI_CloseDevice(DeviceFD);
 
+    memcpy(RequestSense, sctl_io.sense, RequestSenseLength);
+    
     switch(sctl_io.cdb_status)
       {
       case S_GOOD:
@@ -137,13 +163,19 @@ int SCSI_ExecuteCommand(int DeviceFD,
 
 int Tape_Eject (int DeviceFD)
 {
+  extern OpenFiles_T *pDev;
   struct mtop mtop;
+
+  if (pDev[DeviceFD].devopen == 0)
+    SCSI_OpenDevice(DeviceFD);
 
   mtop.mt_op = MTOFFL;
   mtop.mt_count = 1;
-  if (ioctl(DeviceFD, MTIOCTOP, &mtop) < 0) {
+  if (ioctl(pDev[DeviceFD].fd, MTIOCTOP, &mtop) < 0) {
+    SCSI_CloseDevice(DeviceFD);
     return(-1);
   } else {
+    SCSI_CloseDevice(DeviceFD);
     return(0);
   }
 }
@@ -151,12 +183,17 @@ int Tape_Eject (int DeviceFD)
 
 int Tape_Status( int DeviceFD)
 {
+  extern OpenFiles_T *pDev;
   struct mtget mtget;
   int ret = 0;
+
+  if (pDev[DeviceFD].devopen == 0)
+    SCSI_OpenDevice(DeviceFD);
 
   if (ioctl(DeviceFD, MTIOCGET, &mtget) != 0)
   {
      dbprintf(("Tape_Status error ioctl %d\n",errno));
+     SCSI_CloseDevice(DeviceFD);
      return(-1);
   }
 
@@ -180,7 +217,8 @@ int Tape_Status( int DeviceFD)
   {
     ret = ret | TAPE_WR_PROT;
   }
- 
+
+  SCSI_CloseDevice(DeviceFD);
   return(ret); 
 }
 #endif
