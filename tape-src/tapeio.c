@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.20.4.3 1999/04/20 14:15:16 oliva Exp $
+ * $Id: tapeio.c,v 1.20.4.4 1999/04/20 14:21:40 oliva Exp $
  *
  * implements tape I/O functions
  */
@@ -261,7 +261,7 @@ int tape_open(filename, mode)
 #endif
     do {
 	ret = open(filename, mode);
-	/* if tape open fails with errno==EAGAIN, EBUSY or EINTRI, it
+	/* if tape open fails with errno==EAGAIN, EBUSY or EINTR, it
 	 * is worth retrying a few seconds later.  */
 	if (ret >= 0 ||
 	    (1
