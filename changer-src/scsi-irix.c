@@ -1,14 +1,12 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-irix.c,v 1.2 1998/11/11 23:59:15 oliva Exp $";
+static char rcsid[] = "$Id: scsi-irix.c,v 1.3 1998/11/18 07:03:19 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an SGI Workstation
  *
- * Copyright (c) 1998 T.Hepper
+ * Copyright (c) 1998 T.Hepper th@icem.de
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <amanda.h>
 
 #ifdef HAVE_IRIX_LIKE_SCSI
 

@@ -1,14 +1,12 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.3 1998/11/17 20:20:10 martinea Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.4 1998/11/18 07:03:21 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
  *
- * Copyright (c) 1998 T.Hepper
+ * Copyright (c) 1998 T.Hepper th@icem.de
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <amanda.h>
 
 #ifdef HAVE_LINUX_LIKE_SCSI
 

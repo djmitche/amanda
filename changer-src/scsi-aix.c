@@ -1,14 +1,13 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-aix.c,v 1.2 1998/11/11 23:59:09 oliva Exp $";
+static char rcsid[] = "$Id: scsi-aix.c,v 1.3 1998/11/18 07:03:09 oliva Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an AIX Workstation
  *
- * Copyright (c) 1998 T.Hepper
+ * Copyright (c) 1998 T.Hepper th@icem.de
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <amanda.h>
+
 #ifdef HAVE_AIX_LIKE_SCSI
 
 #ifdef HAVE_SYS_TYPES_H
@@ -107,17 +106,17 @@ int SCSI_ExecuteCommand(int DeviceFD,
 	  return(SC_CHECK_CONDITION);
 	  break;
 	default:
-	  fprintf(stderr,"ioctl on %d return %d\n", DeviceFD, Result);
-	  printf("ret: %d errno: %d (%s)\n", Result, errno, "");
-	  printf("data_length:     %d\n", ds.data_length);
-	  printf("buffer:          0x%X\n", ds.buffer);
-	  printf("timeout_value:   %d\n", ds.timeout_value);
-	  printf("status_validity: %d\n", ds.status_validity);
-	  printf("scsi_bus_status: 0x%X\n", ds.scsi_bus_status);
-	  printf("adapter_status:  0x%X\n", ds.adapter_status);
-	  printf("adap_q_status:   0x%X\n", ds.adap_q_status);
-	  printf("q_tag_msg:       0x%X\n", ds.q_tag_msg);
-	  printf("flags:           0X%X\n", ds.flags);
+	  dbprintf((stderr,"ioctl on %d return %d\n", DeviceFD, Result));
+	  dbprintf(("ret: %d errno: %d (%s)\n", Result, errno, ""));
+	  dbprintf(("data_length:     %d\n", ds.data_length));
+	  dbprintf(("buffer:          0x%X\n", ds.buffer));
+	  dbprintf(("timeout_value:   %d\n", ds.timeout_value));
+	  dbprintf(("status_validity: %d\n", ds.status_validity));
+	  dbprintf(("scsi_bus_status: 0x%X\n", ds.scsi_bus_status));
+	  dbprintf(("adapter_status:  0x%X\n", ds.adapter_status));
+	  dbprintf(("adap_q_status:   0x%X\n", ds.adap_q_status));
+	  dbprintf(("q_tag_msg:       0x%X\n", ds.q_tag_msg));
+	  dbprintf(("flags:           0X%X\n", ds.flags));
 	}
     }
   return(Result);

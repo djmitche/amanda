@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.5 1998/07/07 16:56:38 jrj Exp $
+ *	$Id: scsi-chio.c,v 1.6 1998/11/18 07:03:13 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -270,6 +270,27 @@ int rc;
     }
 
     return changer_info.cp_ndrives;
+}
+
+/* This function should ask the drive if it is ready */
+int Tape_Ready ( char *tapedev , char * changerdev, int changerfd, int wait)
+{
+  FILE *out=NULL;
+  int cnt=0;
+  
+  if (strcmp(tapedev,changerdev) == 0)
+    {
+      sleep(wait);
+      return(0);
+    }
+  
+  while ((cnt < wait) && (NULL==(out=fopen(tapedev,"w+")))){
+    cnt++;
+    sleep(1);
+  }
+  if (out != NULL)
+    fclose(out);
+  return 0;
 }
 
 #endif
