@@ -81,8 +81,12 @@ if($nb_options == 0 ) {
 }
 
 if( defined $opt_file) {
-	$errfile = "$pwd/$opt_file";
-	$errfile = "$logdir/$opt_file" if ( ! (-f $errfile ));
+	if( $opt_file =~ m,^/, ) {
+		$errfile = $opt_file;
+	} else {
+		$errfile = "$pwd/$opt_file";
+		$errfile = "$logdir/$opt_file" if ( ! (-f $errfile ));
+	}
 }
 
 open(AMDUMP,"<$errfile") || die("$errfile: $!");

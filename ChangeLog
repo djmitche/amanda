@@ -1,5 +1,10 @@
 1998-12-18  John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amstatus.pl.in: take the --file argument as is if it
+	is an absolute path.
+
+1998-12-18  John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/driver.c: call short_dump_state() one last time before
 	quitting so amstatus gets a last good status.  Tell taper to quit
 	after the dumpers since it writes more information to the amdump
