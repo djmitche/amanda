@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.1.2.8 2002/11/07 02:12:58 martinea Exp $
+ * $Id: amfeatures.c,v 1.1.2.9 2003/01/01 23:28:52 martinea Exp $
  *
  * Feature test related code.
  */
@@ -205,6 +205,7 @@ am_release_feature_set(f)
 	amfree(f->bytes);
 	f->size = 0;
     }
+    amfree(f);
 }
 
 /*

@@ -1,3 +1,40 @@
+2003-01-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* client-src/client_util.c: Fix memory leak reported by valgrind.
+	* client-src/selfcheck.c: Ditto.
+	* client-src/sendbackup.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+	* common-src/amfeatures.c: Ditto.
+	* common-src/debug.c: Ditto.
+	* common-src/file.c: Ditto.
+	* common-src/security.c: Ditto.
+	* recover-src/amrecover.c: Ditto.
+	* recover-src/extract_list.c: Ditto.
+	* recover-src/set_commands.c: Ditto.
+	* recover-src/uparse.y: Ditto.
+	* recover-src/uscan.l: Ditto.
+	* server-src/amcheck.c: Ditto.
+	* server-src/amindexd.c: Ditto.
+	* server-src/amlabel.c: Ditto.
+	* server-src/amlogroll.c: Ditto.
+	* server-src/amtape.c: Ditto.
+	* server-src/amtrmidx.c: Ditto.
+	* server-src/amtrmlog.c: Ditto.
+	* server-src/changer.c: Ditto.
+	* server-src/conffile.c: Ditto.
+	* server-src/diskfile.c: Ditto.
+	* server-src/driver.c: Ditto.
+	* server-src/driverio.c: Ditto.
+	* server-src/dumper.c: Ditto.
+	* server-src/find.c: Ditto.
+	* server-src/getconf.c: Ditto.
+	* server-src/holding.c: Ditto.
+	* server-src/logfile.c: Ditto.
+	* server-src/planner.c: Ditto.
+	* server-src/reporter.c: Ditto.
+	* server-src/tapefile.c: Ditto.
+	* server-src/taper.c: Ditto.
+
 2002-12-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* amplot/amplot.awk: Many fix.

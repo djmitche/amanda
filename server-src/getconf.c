@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.8.4.2.2.2.2.2 2002/11/05 01:59:24 martinea Exp $
+ * $Id: getconf.c,v 1.8.4.2.2.2.2.3 2003/01/01 23:28:55 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -364,6 +364,7 @@ char **argv;
     if(read_conffile(conffile)) {
 	error("errors processing config file \"%s\"", conffile);
     }
+    amfree(conffile);
 
     /*
      * Fill in the build values that need runtime help.

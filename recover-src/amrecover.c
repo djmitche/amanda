@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29.4.7.4.6.2.5 2002/10/27 14:31:18 martinea Exp $
+ * $Id: amrecover.c,v 1.29.4.7.4.6.2.6 2003/01/01 23:28:52 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -533,6 +533,7 @@ char **argv;
     {
 	error("%s/tcp unknown protocol", service_name);
     }
+    amfree(service_name);
     server_socket = stream_client_privileged(server_name,
 					     ntohs(sp->s_port),
 					     -1,

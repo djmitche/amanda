@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17.2.6.4.1.2.3 2002/04/13 19:24:16 jrjackson Exp $
+ * $Id: security.c,v 1.17.2.6.4.1.2.4 2003/01/01 23:28:52 martinea Exp $
  *
  * wrapper file for kerberos security
  */
@@ -359,6 +359,9 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	dbprintf(("%s: bsd security check to %s from %s@%s passed\n",
 		  debug_prefix_time(NULL),
 		  localuser, remoteuser, remotehost));
+	amfree(remotehost);
+	amfree(remoteuser);
+	amfree(remoteuser);
 	exit(0);
     }
     close(fd[1]);
@@ -403,6 +406,9 @@ int bsd_security_ok(addr, str, cksum, errstr)
 	}
     }
     fclose(fError);
+    amfree(remotehost);
+    amfree(localuser);
+    amfree(remoteuser);
     return *errstr == NULL;
 #else								/* } { */
 #if defined(SHOW_SECURITY_DETAIL)				/* { */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.13 2002/12/27 19:39:35 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.14 2003/01/01 23:28:54 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -57,6 +57,7 @@ int  inparallel;
 int nodump = 0;
 long tape_length, tape_left = 0;
 int conf_taperalgo;
+host_t *flushhost = NULL;
 
 int client_constrained P((disk_t *dp));
 int sort_by_priority_reversed P((disk_t *a, disk_t *b));
@@ -734,6 +735,12 @@ disklist_t *rq;
 			diskp_accept = diskp;
 			holdp_accept = holdp;
 		    }
+		    else {
+			free_assignedhd(holdp);
+		    }
+		}
+		else {
+		    free_assignedhd(holdp);
 		}
 	    }
 	    diskp = diskp->next;
@@ -746,6 +753,7 @@ disklist_t *rq;
 	    sched(diskp)->act_size = 0;
 	    allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
 	    sched(diskp)->activehd = assign_holdingdisk(holdp, diskp);
+	    amfree(holdp);
 	    diskp->host->inprogress += 1;	/* host is now busy */
 	    diskp->inprogress = 1;
 	    sched(diskp)->dumper = dumper;
@@ -944,6 +952,8 @@ void handle_taper_result()
 	fflush(stdout);
 
 	amfree(sched(dp)->dumpdate);
+	amfree(sched(dp)->degr_dumpdate);
+	amfree(sched(dp)->datestamp);
 	amfree(dp->up);
 
 	taper_busy = 0;
@@ -1004,9 +1014,8 @@ void handle_taper_result()
 	if(!nodump) {
 	    log_add(L_WARNING,
 		    "going into degraded mode because of tape error.");
-	    start_degraded_mode(&runq);
 	}
-	tapeq.head = tapeq.tail = NULL;
+	start_degraded_mode(&runq);
 	taper_busy = 0;
 	taper_disk = NULL;
 	FD_CLR(taper,&readset);
@@ -1426,10 +1435,22 @@ disklist_t *tapeqp;
 	*dp1 = *dp;
 	dp1->next = dp1->prev = NULL;
 
+	/* add it to the flushhost list */
+	if(!flushhost) {
+	    flushhost = alloc(sizeof(host_t));
+	    flushhost->next = NULL;
+	    flushhost->hostname = stralloc("FLUSHHOST");
+	    flushhost->up = NULL;
+	    flushhost->features = NULL;
+	}
+	dp1->hostnext = flushhost->disks;
+	flushhost->disks = dp1;
+
 	sp = (sched_t *) alloc(sizeof(sched_t));
 	sp->destname = stralloc(destname);
 	sp->level = file.dumplevel;
 	sp->dumpdate = NULL;
+	sp->degr_dumpdate = NULL;
 	sp->datestamp = stralloc(file.datestamp);
 	sp->est_size = 0;
 	sp->est_time = 0;
@@ -1618,6 +1639,7 @@ disklist_t *waitqp, *runqp;
 	    sp->degr_time = degr_time;
 	} else {
 	    sp->degr_level = -1;
+	    sp->degr_dumpdate = NULL;
 	}
 
 	if(time <= 0)
@@ -1642,7 +1664,9 @@ disklist_t *waitqp, *runqp;
 	sp->no_space = 0;
 
 	dp->up = (char *) sp;
-	dp->host->features = am_string_to_feature(features);
+	if(dp->host->features == NULL) {
+	    dp->host->features = am_string_to_feature(features);
+	}
 	remove_disk(waitqp, dp);
 	insert_disk(&runq, dp, sort_by_time);
     }
@@ -2061,6 +2085,7 @@ char *destname;
 	}
     }
 
+    amfree(used);
     return result;
 }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.1.2.1.4.1.2.1 2002/11/05 01:59:23 martinea Exp $
+ * $Id: amlogroll.c,v 1.1.2.1.4.1.2.2 2003/01/01 23:28:53 martinea Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -106,6 +106,7 @@ char **argv;
     if((logfile = fopen(logfname, "r")) == NULL) {
 	error("could not open log %s: %s", logfname, strerror(errno));
     }
+    amfree(logfname);
 
     erroutput_type |= ERR_AMANDALOG;
     set_logerror(logerror);

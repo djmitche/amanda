@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.6.2.18 2002/09/17 15:32:43 martinea Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.6.2.19 2003/01/01 23:28:51 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -115,7 +115,7 @@ char **argv;
     disk_estimates_t *est1;
     disk_estimates_t *est_prev;
     char *line = NULL;
-    char *s;
+    char *s, *fp;
     int ch;
     char *err_extra = NULL;
     int fd;
@@ -211,9 +211,10 @@ char **argv;
 	    goto err;
 	}
 	if(!isdigit((int)s[-1])) {
-	    amdevice = s - 1;
+	    fp = s - 1;
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';
+	    amdevice = stralloc(fp);
 	    skip_whitespace(s, ch);		/* find level number */
 	}
 	else {
@@ -281,6 +282,7 @@ char **argv;
 	}
 
 	add_diskest(disk, amdevice, level, spindle, prog, options);
+	amfree(amdevice);
     }
     amfree(line);
 
@@ -409,6 +411,7 @@ char **argv;
     am_release_feature_set(our_features);
     our_features = NULL;
     am_release_feature_set(g_options->features);
+    g_options->features = NULL;
     amfree(g_options->str);
     amfree(g_options->hostname);
     amfree(g_options);
@@ -450,6 +453,14 @@ option_t *options;
 	if(strcmp(curp->amname, disk) == 0) {
 	    /* already have disk info, just note the level request */
 	    curp->est[level].needestimate = 1;
+	    if(options) {
+		free_sl(options->exclude_file);
+		free_sl(options->exclude_list);
+		free_sl(options->include_file);
+		free_sl(options->include_list);
+		amfree(options->str);
+		amfree(options);
+	    }
 	    return;
 	}
     }
@@ -485,13 +496,17 @@ void free_estimates(est)
 disk_estimates_t *est;
 {
     amfree(est->amname);
+    amfree(est->amdevice);
     amfree(est->dirname);
     amfree(est->program);
     if(est->options) {
 	free_sl(est->options->exclude_file);
 	free_sl(est->options->exclude_list);
+	free_sl(est->options->include_file);
+	free_sl(est->options->include_list);
+	amfree(est->options->str);
+	amfree(est->options);
     }
-    amfree(est->options);
 }
 
 /*

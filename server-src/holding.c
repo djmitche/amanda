@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.12.4.3.2.7 2002/12/30 15:52:32 martinea Exp $
+ * $Id: holding.c,v 1.17.2.12.4.3.2.8 2003/01/01 23:28:56 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -213,6 +213,9 @@ char *datestamp;
 
 	holding_list = append_sl(holding_list, destname);
     }
+    closedir(workdir);
+    amfree(dirname);
+    amfree(destname);
     return holding_list;
 }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.54.2.16.2.5.2.15 2002/12/27 19:39:35 martinea Exp $
+ * $Id: conffile.c,v 1.54.2.16.2.5.2.16 2003/01/01 23:28:53 martinea Exp $
  *
  * read configuration file
  */
@@ -646,59 +646,58 @@ static void init_defaults()
 #else
     s = "YOUR ORG";
 #endif
-    conf_org.s = newstralloc(conf_org.s, s);
+    conf_org.s = stralloc(s);
     malloc_mark(conf_org.s);
-    conf_mailto.s = newstralloc(conf_mailto.s, "operators");
+    conf_mailto.s = stralloc("operators");
     malloc_mark(conf_mailto.s);
-    conf_dumpuser.s = newstralloc(conf_dumpuser.s, CLIENT_LOGIN);
+    conf_dumpuser.s = stralloc(CLIENT_LOGIN);
     malloc_mark(conf_dumpuser.s);
 #ifdef DEFAULT_TAPE_DEVICE
     s = DEFAULT_TAPE_DEVICE;
 #else
     s = "/dev/rmt8";
 #endif
-    conf_tapedev.s = newstralloc(conf_tapedev.s, s);
+    conf_tapedev.s = stralloc(s);
     malloc_mark(conf_tapedev.s);
 #ifdef DEFAULT_RAW_TAPE_DEVICE
     s = DEFAULT_RAW_TAPE_DEVICE;
 #else
     s = "/dev/rawft0";
 #endif
-    conf_rawtapedev.s = newstralloc(conf_rawtapedev.s, s);
+    conf_rawtapedev.s = stralloc(s);
     malloc_mark(conf_rawtapedev.s);
-    conf_tpchanger.s = newstralloc(conf_tpchanger.s, "");
+    conf_tpchanger.s = stralloc("");
     malloc_mark(conf_tpchanger.s);
 #ifdef DEFAULT_CHANGER_DEVICE
     s = DEFAULT_CHANGER_DEVICE;
 #else
     s = "/dev/null";
 #endif
-    conf_chngrdev.s = newstralloc(conf_chngrdev.s, s);
+    conf_chngrdev.s = stralloc(s);
     malloc_mark(conf_chngrdev.s);
-    conf_chngrfile.s =
-		newstralloc(conf_chngrfile.s, "/usr/adm/amanda/changer-status");
+    conf_chngrfile.s = stralloc("/usr/adm/amanda/changer-status");
     malloc_mark(conf_chngrfile.s);
-    conf_labelstr.s = newstralloc(conf_labelstr.s, ".*");
+    conf_labelstr.s = stralloc(".*");
     malloc_mark(conf_labelstr.s);
-    conf_tapelist.s = newstralloc(conf_tapelist.s, "tapelist");
+    conf_tapelist.s = stralloc("tapelist");
     malloc_mark(conf_tapelist.s);
-    conf_infofile.s = newstralloc(conf_infofile.s, "/usr/adm/amanda/curinfo");
+    conf_infofile.s = stralloc("/usr/adm/amanda/curinfo");
     malloc_mark(conf_infofile.s);
-    conf_logdir.s = newstralloc(conf_logdir.s, "/usr/adm/amanda");
+    conf_logdir.s = stralloc("/usr/adm/amanda");
     malloc_mark(conf_logdir.s);
-    conf_diskfile.s = newstralloc(conf_diskfile.s, "disklist");
+    conf_diskfile.s = stralloc("disklist");
     malloc_mark(conf_diskfile.s);
-    conf_diskdir.s  = newstralloc(conf_diskdir.s,  "/dumps/amanda");
+    conf_diskdir.s  = stralloc("/dumps/amanda");
     malloc_mark(conf_diskdir.s);
-    conf_tapetype.s = newstralloc(conf_tapetype.s, "EXABYTE");
+    conf_tapetype.s = stralloc("EXABYTE");
     malloc_mark(conf_tapetype.s);
-    conf_indexdir.s = newstralloc(conf_indexdir.s, "/usr/adm/amanda/index");
+    conf_indexdir.s = stralloc("/usr/adm/amanda/index");
     malloc_mark(conf_indexdir.s);
-    conf_columnspec.s = newstralloc(conf_columnspec.s, "");
+    conf_columnspec.s = stralloc("");
     malloc_mark(conf_columnspec.s);
-    conf_dumporder.s = newstralloc(conf_dumporder.s, "ttt");
+    conf_dumporder.s = stralloc("ttt");
     malloc_mark(conf_dumporder.s);
-    conf_amrecover_changer.s = newstralloc(conf_amrecover_changer.s, "");
+    conf_amrecover_changer.s = stralloc("");
 
     conf_dumpcycle.i	= 10;
     conf_runspercycle.i	= 0;
@@ -1216,7 +1215,7 @@ static void get_holdingdisk()
 
 static void init_holdingdisk_defaults()
 {
-    hdcur.comment = "";
+    hdcur.comment = stralloc("");
     hdcur.diskdir = stralloc(conf_diskdir.s);
     malloc_mark(hdcur.diskdir);
     hdcur.disksize = 0;
@@ -1456,8 +1455,8 @@ static void get_dumptype()
 
 static void init_dumptype_defaults()
 {
-    dpcur.comment = "";
-    dpcur.program = "DUMP";
+    dpcur.comment = stralloc("");
+    dpcur.program = stralloc("DUMP");
     dpcur.exclude_file = NULL;
     dpcur.exclude_list = NULL;
     dpcur.include_file = NULL;
@@ -1538,8 +1537,14 @@ static void copy_dumptype()
 
 #define dtcopy(v,s) if(dt->s) { dpcur.v = dt->v; dpcur.s = dt->s; }
 
-    dtcopy(comment, s_comment);
-    dtcopy(program, s_program);
+    if(dt->s_comment) {
+	dpcur.comment = newstralloc(dpcur.comment, dt->comment);
+	dpcur.s_comment = dt->s_comment;
+    }
+    if(dt->s_program) {
+	dpcur.program = newstralloc(dpcur.program, dt->program);
+	dpcur.s_program = dt->s_program;
+    }
     dpcur.exclude_file = duplicate_sl(dt->exclude_file);
     dpcur.exclude_list = duplicate_sl(dt->exclude_list);
     dpcur.include_file = duplicate_sl(dt->include_file);
@@ -1673,8 +1678,8 @@ static void get_tapetype()
 
 static void init_tapetype_defaults()
 {
-    tpcur.comment = "";
-    tpcur.lbl_templ = "";
+    tpcur.comment = stralloc("");
+    tpcur.lbl_templ = stralloc("");
     tpcur.blocksize = (DISK_BLOCK_KB);
     tpcur.file_pad = 1;
     tpcur.length = 2000 * 1024;
@@ -1722,8 +1727,14 @@ static void copy_tapetype()
 
 #define ttcopy(v,s) if(tp->s) { tpcur.v = tp->v; tpcur.s = tp->s; }
 
-    ttcopy(comment, s_comment);
-    ttcopy(lbl_templ, s_lbl_templ);
+    if(tp->s_comment) {
+	tpcur.comment = newstralloc(tpcur.comment, tp->comment);
+	tpcur.s_comment = tp->s_comment;
+    }
+    if(tp->s_lbl_templ) {
+	tpcur.lbl_templ = newstralloc(tpcur.lbl_templ, tp->lbl_templ);
+	tpcur.s_lbl_templ = tp->s_lbl_templ;
+    }
     ttcopy(blocksize, s_blocksize);
     ttcopy(file_pad, s_file_pad);
     ttcopy(length, s_length);
@@ -1800,7 +1811,7 @@ static void get_interface()
 
 static void init_interface_defaults()
 {
-    ifcur.comment = "";
+    ifcur.comment = stralloc("");
     ifcur.maxusage = 300;
 
     ifcur.s_comment = 0;
@@ -1840,7 +1851,10 @@ static void copy_interface()
 
 #define ifcopy(v,s) if(ip->s) { ifcur.v = ip->v; ifcur.s = ip->s; }
 
-    ifcopy(comment, s_comment);
+    if(ip->s_comment) {
+	ifcur.comment = newstralloc(ifcur.comment, ip->comment);
+	ifcur.s_comment = ip->s_comment;
+    }
     ifcopy(maxusage, s_maxusage);
 }
 
@@ -2284,7 +2298,7 @@ tok_t type;
     case STRING:
     case IDENT:
 	get_conftoken(type);
-	var->s = stralloc(tokenval.s);
+	var->s = newstralloc(var->s, tokenval.s);
 	malloc_mark(var->s);
 	break;
     case INT:

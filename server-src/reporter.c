@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.11 2002/12/11 15:51:14 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.12 2003/01/01 23:28:56 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -647,6 +647,9 @@ char **argv;
     amfree(tape_labels);
     amfree(config_dir);
     amfree(config_name);
+    amfree(printer_cmd);
+    amfree(mail_cmd);
+    amfree(logfname);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -1625,6 +1628,8 @@ void handle_disk()
 	dp = add_disk(hostname, diskname);
     }
 
+    amfree(hostname);
+    amfree(diskname);
     dp->todo = 1;
 }
 
@@ -1664,6 +1669,7 @@ repdata_t *handle_success()
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	bogus_line();
+	amfree(hostname);
 	return NULL;
     }
     fp = s - 1;
@@ -1675,6 +1681,8 @@ repdata_t *handle_success()
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	bogus_line();
+	amfree(hostname);
+	amfree(diskname);
 	return NULL;
     }
     fp = s - 1;
@@ -1685,12 +1693,15 @@ repdata_t *handle_success()
 
     level = atoi(datestamp);
     if(level < 100)  {
-	datestamp = stralloc(run_datestamp);
+	datestamp = newstralloc(datestamp, run_datestamp);
     }
     else {
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
 	    bogus_line();
+	    amfree(hostname);
+	    amfree(diskname);
+	    amfree(datestamp);
 	    return NULL;
 	}
 	skip_integer(s, ch);
@@ -1707,6 +1718,9 @@ repdata_t *handle_success()
 	    if(sscanf(s - 1,"[sec %f kb %f kps %f",
 		      &sec, &kbytes, &kps) != 3) {
 		bogus_line();
+	        amfree(hostname);
+	        amfree(diskname);
+	        amfree(datestamp);
 		return NULL;
 	    }
 	}
@@ -1725,6 +1739,9 @@ repdata_t *handle_success()
 			NULL);
 	addline(&errsum, str);
 	amfree(str);
+	amfree(hostname);
+	amfree(diskname);
+	amfree(datestamp);
 	return NULL;
     }
 
@@ -1732,6 +1749,9 @@ repdata_t *handle_success()
 
     if(curprog == P_PLANNER) {
 	repdata->dumper.result = L_SKIPPED;
+	amfree(hostname);
+	amfree(diskname);
+	amfree(datestamp);
 	return repdata;
     }
 
@@ -1758,6 +1778,9 @@ repdata_t *handle_success()
 	else
 	    origkb = 0.0;
     }
+    amfree(hostname);
+    amfree(diskname);
+    amfree(datestamp);
 
     sp->result = L_SUCCESS;
     sp->datestamp = repdata->datestamp;
@@ -1837,7 +1860,7 @@ void handle_failed()
     char *datestamp;
     char *errstr;
     int level;
-    char *s;
+    char *s, *fp;
     int ch;
     char *str = NULL;
     repdata_t *repdata;
@@ -1872,18 +1895,20 @@ void handle_failed()
 	bogus_line();
 	return;
     }
-    datestamp = s - 1;
+    fp = s - 1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
+    datestamp = stralloc(fp);
 
     if(strlen(datestamp) < 3) { /* there is no datestamp, it's the level */
 	level = atoi(datestamp);
-	datestamp = stralloc(run_datestamp);
+	datestamp = newstralloc(datestamp, run_datestamp);
     }
     else { /* read the level */
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
 	    bogus_line();
+	    amfree(datestamp);
 	    return;
 	}
 	skip_integer(s, ch);
@@ -1892,6 +1917,7 @@ void handle_failed()
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	bogus_line();
+	amfree(datestamp);
 	return;
     }
     errstr = s - 1;
@@ -1916,6 +1942,7 @@ void handle_failed()
 	if(sp->result != L_SUCCESS)
 	    sp->result = L_FAIL;
     }
+    amfree(datestamp);
 
     str = vstralloc("  ", prefix(hostname, diskname, level),
 		    " ", "FAILED",
@@ -1925,17 +1952,18 @@ void handle_failed()
     amfree(str);
 
     if(curprog == P_DUMPER) {
-        addline(&errdet,"");
+	addline(&errdet,"");
 	str = vstralloc("/-- ", prefix(hostname, diskname, level),
 			" ", "FAILED",
 			" ", errstr,
 			NULL);
-        addline(&errdet, str);
-        while(contline_next()) {
+	addline(&errdet, str);
+	amfree(str);
+	while(contline_next()) {
 	    get_logline(logfile);
 	    addline(&errdet, curstr);
-        }
-        addline(&errdet,"\\--------");
+	}
+	addline(&errdet,"\\--------");
     }
     return;
 }

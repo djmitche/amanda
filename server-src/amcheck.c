@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.10 2002/11/05 01:59:23 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.11 2003/01/01 23:28:52 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -906,6 +906,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	}
 
 	amfree(logfile);
+	amfree(conf_logdir);
     }
 
     if (testtape) {
@@ -991,16 +992,16 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	char *disk;
 
 	conf_infofile = stralloc(getconf_str(CNF_INFOFILE));
-	if (*conf_infofile == '/') {
-	    conf_infofile = stralloc(conf_infofile);
-	} else {
-	    conf_infofile = stralloc2(config_dir, conf_infofile);
+	if (*conf_infofile != '/') {
+	    char *ci = stralloc2(config_dir, conf_infofile);
+	    amfree(conf_infofile);
+	    conf_infofile = ci;
 	}
 	conf_indexdir = stralloc(getconf_str(CNF_INDEXDIR));
-	if (*conf_indexdir == '/') {
-	    conf_indexdir = stralloc(conf_indexdir);
-	} else {
-	    conf_indexdir = stralloc2(config_dir, conf_indexdir);
+	if (*conf_indexdir != '/') {
+	    char *ci = stralloc2(config_dir, conf_indexdir);
+	    amfree(conf_indexdir);
+	    conf_indexdir = ci;
 	}
 #if TEXTDB
 	if(stat(conf_infofile, &statbuf) == -1) {

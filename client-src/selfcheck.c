@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.19 2002/12/12 16:01:39 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.20 2003/01/01 23:28:51 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -86,7 +86,7 @@ char **argv;
     char *device = NULL;
     char *optstr = NULL;
     char *err_extra = NULL;
-    char *s;
+    char *s, *fp;
     int ch;
     int fd;
     unsigned long malloc_hist_1, malloc_size_1;
@@ -168,9 +168,10 @@ char **argv;
 	    goto err;				/* no device or level */
 	}
 	if(!isdigit((int)s[-1])) {
-	    device = s - 1;
+	    fp = s - 1;
 	    skip_non_whitespace(s, ch);
-	     s[-1] = '\0';			/* terminate the device */
+	    s[-1] = '\0';			/* terminate the device */
+	    device = stralloc(fp);
 	    skip_whitespace(s, ch);		/* find level number */
 	}
 	else {
@@ -199,6 +200,12 @@ char **argv;
 	    options = parse_options(optstr, disk, device, g_options->features, 1);
 	    check_options(program, disk, device, options);
 	    check_disk(program, disk, device, level);
+	    free_sl(options->exclude_file);
+	    free_sl(options->exclude_list);
+	    free_sl(options->include_file);
+	    free_sl(options->include_list);
+	    amfree(options->str);
+	    amfree(options);
 	} else if (ch == '\0') {
 	    /* check all since no option */
 	    need_samba=1;
@@ -218,6 +225,7 @@ char **argv;
 	} else {
 	    goto err;				/* bad syntax */
 	}
+	amfree(device);
     }
 
     check_overall();
@@ -227,6 +235,7 @@ char **argv;
     am_release_feature_set(our_features);
     our_features = NULL;
     am_release_feature_set(g_options->features);
+    g_options->features = NULL;
     amfree(g_options->str);
     amfree(g_options->hostname);
     amfree(g_options);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.14.4.6.4.1.2.1 2001/12/30 17:26:22 martinea Exp $
+ * $Id: changer.c,v 1.14.4.6.4.1.2.2 2003/01/01 23:28:53 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -236,7 +236,7 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
    the tape could not be found, then the normal scan is done like 
    in changer_scan.
 */
-void changer_find(user_init, user_slot,searchlabel)
+void changer_find(user_init, user_slot, searchlabel)
 int (*user_init) P((int rc, int nslots, int backwards));
 int (*user_slot) P((int rc, char *slotstr, char *device));
 char *searchlabel;
@@ -244,15 +244,17 @@ char *searchlabel;
     char *slotstr, *device = NULL, *curslotstr = NULL;
     int nslots, checked, backwards, rc, done, searchable;
 
-    rc = changer_query(&nslots, &curslotstr, &backwards,&searchable);
+    rc = changer_query(&nslots, &curslotstr, &backwards, &searchable);
     done = user_init(rc, nslots, backwards);
     amfree(curslotstr);
    
     if (searchlabel != NULL)
     {
-      dbprintf(("changer_find: looking for %s changer is searchable = %d \n",searchlabel,searchable));
+      dbprintf(("changer_find: looking for %s changer is searchable = %d\n",
+		searchlabel, searchable));
     } else {
-      dbprintf(("changer_find: looking for NULL changer is searchable = %d \n",searchable));
+      dbprintf(("changer_find: looking for NULL changer is searchable = %d\n",
+		searchable));
     }
 
     if ((searchlabel!=NULL) && searchable && !done){
@@ -526,10 +528,13 @@ char *labelstr;
 
     dbprintf(("changer_label: %s for slot %s\n",labelstr,slotsp));
     rc = changer_query(&nslots, &curslotstr, &backwards,&searchable);
+    amfree(curslotstr);
 
     if ((rc == 0) && (searchable == 1)){
-      dbprintf(("changer_label: calling changer -label %s\n",labelstr));
-      rc = run_changer_command("-label", labelstr, &slotstr, &rest);
+	dbprintf(("changer_label: calling changer -label %s\n",labelstr));
+	rc = run_changer_command("-label", labelstr, &slotstr, &rest);
+	amfree(slotstr);
+	amfree(rest);
     }
 
     if(rc) return rc;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.4.2.12 2002/05/27 19:56:07 martinea Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.4.2.13 2003/01/01 23:28:51 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -468,6 +468,8 @@ char **argv;
     am_release_feature_set(our_features);
     our_features = NULL;
     am_release_feature_set(g_options->features);
+    g_options->features = NULL;
+    amfree(g_options->hostname);
     amfree(g_options->str);
     amfree(g_options);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uscan.l,v 1.14.2.3.4.1.2.1 2002/03/06 19:23:32 martinea Exp $
+ * $Id: uscan.l,v 1.14.2.3.4.1.2.2 2003/01/01 23:28:52 martinea Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -149,8 +149,13 @@ mode    { return MODE; }
 int process_line(line)
 char *line;
 {
-    (void)yy_scan_string(line);		/* tell lex to scan lineread */
-    return yyparse();			/* parse lineread and act */
+    YY_BUFFER_STATE b;
+    int result;
+
+    b = yy_scan_string(line);		/* tell lex to scan lineread */
+    result = yyparse();			/* parse lineread and act */
+    yy_delete_buffer(b);
+    return result;
 }
 
 static int ll_parse_date(type, text)

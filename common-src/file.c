@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.14.4.6.4.2.2.4 2002/08/19 19:04:30 martinea Exp $
+ * $Id: file.c,v 1.14.4.6.4.2.2.5 2003/01/01 23:28:52 martinea Exp $
  *
  * file and directory bashing routines
  */
@@ -205,6 +205,7 @@ safe_cd()
     if(client_uid == (uid_t) -1 && (pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
 	client_uid = pwent->pw_uid;
 	client_gid = pwent->pw_gid;
+	endpwent();
     }
 
     (void) umask(0077);

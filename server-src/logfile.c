@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.17.4.1.4.2.2.2 2002/04/07 20:00:22 jrjackson Exp $
+ * $Id: logfile.c,v 1.17.4.1.4.2.2.3 2003/01/01 23:28:56 martinea Exp $
  *
  * common log file writing routine
  */
@@ -190,6 +190,7 @@ char *datestamp;
 
     amfree(fname);
     amfree(logfile);
+    amfree(conf_logdir);
 }
 
 

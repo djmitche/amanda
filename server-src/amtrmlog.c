@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.1.2.3.4.1.2.1 2002/11/05 01:59:23 martinea Exp $
+ * $Id: amtrmlog.c,v 1.1.2.3.4.1.2.2 2003/01/01 23:28:53 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -184,11 +184,16 @@ char **argv;
 	}
     }
     closedir(dir);
+    for (name = output_find_log; *name != NULL; name++) {
+	amfree(*name);
+    }
+    amfree(output_find_log);
     amfree(logname);
     amfree(oldfile);
     amfree(newfile);
     amfree(olddir);
     amfree(config_dir);
+    amfree(conf_logdir);
 
     dbclose();
 

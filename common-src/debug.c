@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.17.4.3.4.3.2.7 2002/11/25 18:06:51 martinea Exp $
+ * $Id: debug.c,v 1.17.4.3.4.3.2.8 2003/01/01 23:28:52 martinea Exp $
  *
  * debug log subroutines
  */
@@ -138,6 +138,7 @@ void debug_open()
     if(client_uid == (uid_t) -1 && (pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
 	client_uid = pwent->pw_uid;
 	client_gid = pwent->pw_gid;
+	endpwent();
     }
 
     /*
@@ -225,6 +226,7 @@ void debug_open()
     if(dbfilename == NULL) {
 	error("cannot create %s debug file", get_pname());
     }
+    amfree(dbfilename);
     amfree(db_filename);
     db_filename = s;
     s = NULL;

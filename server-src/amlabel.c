@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.15.4.3.2.3 2002/11/05 01:59:23 martinea Exp $
+ * $Id: amlabel.c,v 1.18.2.15.4.3.2.4 2003/01/01 23:28:53 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -239,6 +239,8 @@ int main(argc, argv)
 	}
 	printf("\n");
     }
+    amfree(oldlabel);
+    amfree(olddatestamp);
 	
     printf("rewinding"); fflush(stdout);
 
@@ -392,6 +394,8 @@ int main(argc, argv)
 		error("read label %s back, timestamp %s (expected X), what now?",
 		      oldlabel, olddatestamp);
 	    }
+	    amfree(oldlabel);
+	    amfree(olddatestamp);
 
 	    /* write tape list */
 
