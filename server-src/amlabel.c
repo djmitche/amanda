@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.10 1999/09/08 23:27:35 jrj Exp $
+ * $Id: amlabel.c,v 1.18.2.11 2000/03/06 18:33:06 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -294,8 +294,9 @@ int main(argc, argv)
     	    add_tapelabel(0, label);
        	    conf_tapelist_old = stralloc2(conf_tapelist, ".amlabel");
 	    if (rename(conf_tapelist, conf_tapelist_old) != 0) {
-		error("could not rename \"%s\" to \"%s\": %s",
-		      conf_tapelist, conf_tapelist_old, strerror(errno));
+		if(errno != ENOENT)
+		    error("could not rename \"%s\" to \"%s\": %s",
+			  conf_tapelist, conf_tapelist_old, strerror(errno));
 	    }
 	    amfree(conf_tapelist_old);
 	    if(write_tapelist(conf_tapelist)) {
