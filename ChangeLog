@@ -1,5 +1,7 @@
 1998-06-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* docs/SYSTEM.NOTES: clean-up
+
 	* docs/FAQ: new file
 	* docs/SUNOS4.BUG: removed
 	* Makefile.am: remove docs/SUNOS4.BUG and add docs/FAQ
