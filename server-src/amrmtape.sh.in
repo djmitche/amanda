@@ -148,7 +148,7 @@ CleanCurinfo () {
 	fi
 	Level=$2
 	CurrentTape=$8
-	if [ ${CurrentTape} = ${Tape} ]; then
+	if [ "${CurrentTape}" = "${Tape}" ]; then
 	  DeadLevel=${Level}
 	  ${Verbose} "Discarding Host: ${Host}, Disk: ${Disk}, Level: ${Level}"
 	elif [ $Level -gt $DeadLevel ]; then
