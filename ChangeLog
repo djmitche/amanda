@@ -1,5 +1,10 @@
 1999-03-03  Ralf Fassel <ralf@akutech.de>
 
+	* common-src/conffile.h: bit field of length 1 should be unsigned int,
+	not int.
+
+1999-03-03  Ralf Fassel <ralf@akutech.de>
+
 	* common-src/bsd-security.c (stream_read_callback): n should be ssize_t.
 
 1999-03-03  Ralf Fassel <ralf@akutech.de>
