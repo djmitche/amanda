@@ -1,6 +1,6 @@
 # Makefile for Amanda restore programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/tape-src
+INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/tape-src -I$(top_srcdir)/server-src
 
 LIB_EXTENSION = la
 
@@ -20,6 +20,10 @@ LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 amidxtaped_SOURCES = 	amidxtaped.c
+amidxtaped_LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
+                   ../server-src/libamserver.$(LIB_EXTENSION) \
+                   ../tape-src/libamtape.$(LIB_EXTENSION) \
+                   ../common-src/libamanda.$(LIB_EXTENSION)
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS)"; \

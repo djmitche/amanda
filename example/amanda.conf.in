@@ -98,6 +98,13 @@ changerdev "@DEFAULT_CHANGER_DEVICE@"
 tapetype HP-DAT		# what kind of tape it is (see tapetypes below)
 labelstr "^@DEFAULT_CONFIG@[0-9][0-9]*$"	# label constraint regex: all tapes must match
 
+amrecover_do_fsf yes		# amrecover will call amrestore with the
+				# -f flag for faster positioning of the tape.
+amrecover_check_label yes	# amrecover will call amrestore with the
+				# -l flag to check the label.
+amrecover_changer "@DEFAULT_TAPE_DEVICE@"	# amrecover will use the changer if you restore
+				# from this device.
+
 # Specify holding disks.  These are used as a temporary staging area for
 # dumps before they are written to tape and are recommended for most sites.
 # The advantages include: tape drive is more likely to operate in streaming

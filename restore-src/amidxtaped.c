@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.25.2.3.4.1.2.3 2002/03/31 21:01:33 jrjackson Exp $
+/* $Id: amidxtaped.c,v 1.25.2.3.4.1.2.4 2002/11/07 02:12:58 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -36,9 +36,16 @@
 #include "clock.h"
 #include "version.h"
 
+#include "changer.h"
 #include "tapeio.h"
+#include "conffile.h"
+#include "logfile.h"
 
 static char *pgm = "amidxtaped";	/* in case argv[0] is not set */
+
+char *conf_logdir = NULL;
+char *conf_logfile = NULL;
+int get_lock = 0;
 
 static char *get_client_line P((void));
 
@@ -93,6 +100,84 @@ get_client_line()
     return line;
 }
 
+int found = 0;
+char *searchlabel = NULL;
+int nslots, backwards;
+
+int scan_init(rc, ns, bk)
+int rc, ns, bk;
+{
+    dbprintf(("%s: AA\n", debug_prefix_time(NULL)));
+    if(rc)
+        error("could not get changer info: %s", changer_resultstr);
+
+    nslots = ns;
+    backwards = bk;
+
+    return 0;
+}
+
+
+int taperscan_slot(rc, slotstr, device)
+int rc;
+char *slotstr;
+char *device;
+{
+    char *errstr;
+    char *datestamp = NULL, *label = NULL;
+
+    if(rc == 2) {
+	dbprintf(("%s: fatal slot %s: %s\n", debug_prefix_time(NULL),
+		  slotstr, changer_resultstr));
+        return 1;
+    }
+    else if(rc == 1) {
+	dbprintf(("%s: slot %s: %s\n", debug_prefix_time(NULL),
+		  slotstr, changer_resultstr));
+        return 0;
+    }
+    else {
+        if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL) {
+	    dbprintf(("%s: slot %s: %s\n", debug_prefix_time(NULL),
+		      slotstr, errstr));
+        } else {
+            /* got an amanda tape */
+	    dbprintf(("%s: slot %s: date %-8s label %s",
+		      debug_prefix_time(NULL), slotstr, datestamp, label));
+            if(strcmp(label, FAKE_LABEL) == 0 ||
+               strcmp(label, searchlabel) == 0) {
+                /* it's the one we are looking for, stop here */
+		dbprintf((" (exact label match)\n"));
+                found = 1;
+                return 1;
+            }
+            else {
+		dbprintf((" (no match)\n"));
+            }
+        }
+    }
+    return 0;
+}
+
+
+int lock_logfile()
+{
+    conf_logdir = getconf_str(CNF_LOGDIR);
+    if (*conf_logdir == '/') {
+        conf_logdir = stralloc(conf_logdir);
+    } else {
+        conf_logdir = stralloc2(config_dir, conf_logdir);
+    }
+    conf_logfile = vstralloc(conf_logdir, "/log", NULL);
+    if (access(conf_logfile, F_OK) == 0) {
+        error("%s exists: amdump or amflush is already running, or you must run
+amcleanup", conf_logfile);
+    }
+    log_add(L_INFO, "amidxtaped");
+    return 1;
+}
+
+
 int main(argc, argv)
 int argc;
 char **argv;
@@ -112,6 +197,16 @@ char **argv;
     char *errstr = NULL;
     struct sockaddr_in addr;
     amwait_t status;
+
+    int re_header = 0;
+    int re_end = 0;
+    char *re_label = NULL;
+    char *re_fsf = NULL;
+    char *re_device = NULL;
+    char *re_host = NULL;
+    char *re_disk = NULL;
+    char *re_datestamp = NULL;
+    char *re_config = NULL;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -172,7 +267,7 @@ char **argv;
 	{
 	    perror("amidxtaped can't redirect stderr to the debug file");
 	    dbprintf(("%s: can't redirect stderr to the debug file\n",
-		      debug_prefix(NULL)));
+		      debug_prefix_time(NULL)));
 	    return 1;
 	}
     }
@@ -223,19 +318,131 @@ char **argv;
     }
 
     /* get the number of arguments */
-    amfree(buf);
-    buf = stralloc(get_client_line());
-    amrestore_nargs = atoi(buf);
+    amrestore_nargs = 0;
+    do {
+	amfree(buf);
+	buf = stralloc(get_client_line());
+	if(strncmp(buf, "LABEL=", 6) == 0) {
+	    re_label = stralloc(buf+6);
+	}
+	else if(strncmp(buf, "FSF=", 4) == 0) {
+	    int fsf = atoi(buf+4);
+	    if(fsf > 0) {
+		re_fsf = stralloc(buf+4);
+	    }
+	}
+	else if(strncmp(buf, "HEADER", 6) == 0) {
+	    re_header = 1;
+	}
+	else if(strncmp(buf, "DEVICE=", 7) == 0) {
+	    re_device = stralloc(buf+7);
+	}
+	else if(strncmp(buf, "HOST=", 5) == 0) {
+	    re_host = stralloc(buf+5);
+	}
+	else if(strncmp(buf, "DISK=", 5) == 0) {
+	    re_disk = stralloc(buf+5);
+	}
+	else if(strncmp(buf, "DATESTAMP=", 10) == 0) {
+	    re_datestamp = stralloc(buf+10);
+	}
+	else if(strncmp(buf, "END", 3) == 0) {
+	    re_end = 1;
+	}
+	else if(strncmp(buf, "CONFIG=", 7) == 0) {
+	    re_config = stralloc(buf+7);
+	}
+	else if(buf[0] != '\0' && buf[0] >= '0' && buf[0] <= '9') {
+	    amrestore_nargs = atoi(buf);
+	    re_end = 1;
+	}
+	else {
+	}
+    } while (re_end == 0);
+
+    if(re_fsf || re_label) {
+	if(re_config) {
+	    char *conffile;
+	    config_dir = vstralloc(CONFIG_DIR, "/", re_config, "/", NULL);
+	    conffile = stralloc2(config_dir, CONFFILE_NAME);
+	    if (read_conffile(conffile)) {
+		dbprintf(("%s: config '%s' not found\n",
+			  debug_prefix_time(NULL), re_config));
+		amfree(re_fsf);
+		amfree(re_label);
+		amfree(re_config);
+	    }
+	    else {
+		if(re_fsf && getconf_int(CNF_AMRECOVER_DO_FSF) == 0) {
+		    amfree(re_fsf);
+		}
+		if(re_label && getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
+		    amfree(re_label);
+		}
+		if(re_label &&
+		   strcmp(re_device, getconf_str(CNF_AMRECOVER_CHANGER)) == 0) {
+
+		    if(changer_init() == 0) {
+			dbprintf(("%s: No changer available\n",
+				  debug_prefix_time(NULL)));
+		    }
+		    else {
+			get_lock = lock_logfile();
+			searchlabel = stralloc(re_label);
+			changer_find(scan_init, taperscan_slot, searchlabel);
+			if(found == 0) {
+			    dbprintf(("%s: Can't find label \"%s\"\n",
+				      debug_prefix_time(NULL), searchlabel));
+			    exit(1);
+			}
+			else {
+			    dbprintf(("%s: label \"%s\" found\n",
+				      debug_prefix_time(NULL), searchlabel));
+			}
+		    }
+		}
+	    }
+	}
+	else {
+	    amfree(re_fsf);
+	    amfree(re_label);
+	}
+    }
+
+    if(get_lock == 0 && re_device && re_config &&
+       strcmp(re_device, getconf_str(CNF_TAPEDEV)) == 0) {
+	get_lock = lock_logfile();
+    }
+
     dbprintf(("%s: amrestore_nargs=%d\n",
 	      debug_prefix_time(NULL),
 	      amrestore_nargs));
 
-    amrestore_args = (char **)alloc((amrestore_nargs+2)*sizeof(char *));
+    amrestore_args = (char **)alloc((amrestore_nargs+12)*sizeof(char *));
     i = 0;
     amrestore_args[i++] = "amrestore";
-    while (i <= amrestore_nargs)
-    {
-	amrestore_args[i++] = stralloc(get_client_line());
+    if(re_header || re_device || re_host || re_disk || re_datestamp ||
+       re_label || re_fsf) {
+
+	amrestore_args[i++] = "-p";
+	if(re_header) amrestore_args[i++] = "-h";
+	if(re_label) {
+	    amrestore_args[i++] = "-l";
+	    amrestore_args[i++] = re_label;
+	}
+	if(re_fsf) {
+	    amrestore_args[i++] = "-f";
+	    amrestore_args[i++] = re_fsf;
+	}
+	if(re_device) amrestore_args[i++] = re_device;
+	if(re_host) amrestore_args[i++] = re_host;
+	if(re_disk) amrestore_args[i++] = re_disk;
+	if(re_datestamp) amrestore_args[i++] = re_datestamp;
+    }
+    else { /* fe_amidxtaped_nargs */
+	while (i <= amrestore_nargs) {
+	    amrestore_args[i++] = stralloc(get_client_line());
+	}
     }
     amrestore_args[i] = NULL;
 
@@ -256,7 +463,7 @@ char **argv;
 
 	/* only get here if exec failed */
 	dbprintf(("%s: child could not exec %s: %s\n",
-		  debug_prefix(NULL),
+		  debug_prefix_time(NULL),
 		  amrestore_path,
 		  strerror(errno)));
 	return 1;
@@ -266,7 +473,7 @@ char **argv;
     /* this is the parent */
     if (pid == -1)
     {
-	dbprintf(("%s: error forking child: %s\n",
+	dbprintf(("%s: error forking amrestore child: %s\n",
 		  debug_prefix_time(NULL), strerror(errno)));
 	dbclose();
 	return 1;
@@ -275,7 +482,7 @@ char **argv;
     /* wait for the child to do the restore */
     if (waitpid(pid, &status, 0) == -1)
     {
-	dbprintf(("%s: error waiting for child: %s\n",
+	dbprintf(("%s: error waiting for amrestore child: %s\n",
 		  debug_prefix_time(NULL), strerror(errno)));
 	dbclose();
 	return 1;
@@ -299,19 +506,23 @@ char **argv;
     }
 
     /* rewind tape */
-    /* the first non-option argument is the tape device */
-    for (i = 1; i <= amrestore_nargs; i++)
-	if (amrestore_args[i][0] != '-')
-	    break;
-    if (i > amrestore_nargs)
-    {
-	dbprintf(("%s: ouldn't find tape in arguments\n",
-		  debug_prefix_time(NULL)));
-	dbclose();
-	return 1;
+    if(re_device) {
+	tapename = re_device;
     }
+    else {
+	/* the first non-option argument is the tape device */
+	for (i = 1; i <= amrestore_nargs; i++)
+	    if (amrestore_args[i][0] != '-')
+		break;
+	if (i > amrestore_nargs) {
+	    dbprintf(("%s: Couldn't find tape in arguments\n",
+		      debug_prefix_time(NULL)));
+	    dbclose();
+	    return 1;
+	}
 
-    tapename = stralloc(amrestore_args[i]);
+	tapename = stralloc(amrestore_args[i]);
+    }
     if (tape_stat(tapename, &stat_tape) != 0) {
         error("could not stat %s", tapename);
     }
@@ -329,6 +540,11 @@ char **argv;
 	    dbprintf(("%s: done\n", debug_prefix_time(NULL)));
 	}
     }
+
+    if(get_lock) {
+	unlink(conf_logfile);
+    }
+
     amfree(tapename);
     dbclose();
     return 0;

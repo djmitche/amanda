@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.h,v 1.1.2.5 2002/10/27 21:13:25 martinea Exp $
+ * $Id: amfeatures.h,v 1.1.2.6 2002/11/07 02:12:58 martinea Exp $
  *
  * Define feature test related items.
  */
@@ -124,6 +124,15 @@ typedef enum {
 
     fe_amindexd_fileno_in_OLSD,
     fe_amindexd_fileno_in_ORLD,
+    fe_amidxtaped_fsf,
+    fe_amidxtaped_label,
+    fe_amidxtaped_device,
+    fe_amidxtaped_host,
+    fe_amidxtaped_disk,
+    fe_amidxtaped_datestamp,
+    fe_amidxtaped_header,
+    fe_amidxtaped_nargs,
+    fe_amidxtaped_config,
 
     /*
      * All new features must be inserted immediately *before* this entry.
