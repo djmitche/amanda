@@ -28,6 +28,10 @@ amrestore \- extract backup images from an Amanda tape
 .I fileno
 ]
 [
+.B \-l
+.I label
+]
+[
 .B \-p
 ]
 [
@@ -131,6 +135,10 @@ The default is 32 KBytes.
 .TP
 .B \-f
 Do a rewind followed by a fsf <fileno> before trying to restore an image.
+.TP
+.B \-l
+Check if we restoring from the tape with the right
+.I label
 .TP
 .B \-p
 Pipe output.
