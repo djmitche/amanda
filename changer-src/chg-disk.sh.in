@@ -127,10 +127,10 @@ loadslot() {
       exit 0
     fi
   elif [ $WHICHSLOT = "next" -o $WHICHSLOT = "advance" ]; then
-    NEWSLOT=$[$CURSLOT+1]
+    NEWSLOT=`expr $CURSLOT + 1`
     [ $NEWSLOT -gt $LASTSLOT ] && NEWSLOT=$FIRSTSLOT
   elif [ $WHICHSLOT = "prev" ]; then
-      NEWSLOT=$[$CURSLOT-1]
+      NEWSLOT=`expr $CURSLOT - 1`
       [ $NEWSLOT -lt $FIRSTSLOT ] && NEWSLOT=$LASTSLOT
   elif [ $WHICHSLOT = "first" ]; then
       NEWSLOT=$FIRSTSLOT
@@ -154,10 +154,10 @@ loadslot() {
     exit 0
   fi
   if [ $NEWSLOT = $CLEANSLOT ]; then
-    echo $[$CLEANCOUNT+1] > $CLEANFILE
+    expr $CLEANCOUNT + 1 > $CLEANFILE
     echo 0 > $ACCESSFILE
   else
-    echo $[ACCESSCOUNT+1] > $ACCESSFILE
+    expr $ACCESSCOUNT + 1 > $ACCESSFILE
     if [ $ACCESSCOUNT -gt $LASTSLOT ]; then
       $MYNAME -slot clean >/dev/null
     fi
