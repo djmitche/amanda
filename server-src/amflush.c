@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.23 1998/03/06 03:50:01 amcore Exp $
+ * $Id: amflush.c,v 1.24 1998/03/07 15:45:44 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -243,24 +243,39 @@ char *diskdir;
 	    if(argc != 5) {
 		error("error [DONE argc != 5: %d]", argc);
 	    }
+	    if( dp != serial2disk(argv[2]))
+		error("Bad serial");
+	    free_serial(argv[2]);
 
 	    filenum = atoi(argv[4]);
 	    update_info_taper(dp, argv[3], filenum);
 
 	    unlink(destname);
 	    break;
-	case TRYAGAIN:
+	case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
+	    if (argc < 2) {
+		error("error [taper TRYAGAIN argc < 2: %d]", argc);
+	    }
+	    if( dp != serial2disk(argv[2]))
+		error("Bad serial");
+	    free_serial(argv[2]);
+
 	    log_add(L_WARNING,
 		    "%s: too many taper retries, leaving file on disk",
 		    destname);
 	    break;
+
+	case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
+	    if( dp != serial2disk(argv[2]))
+		error("Bad serial");
+	    free_serial(argv[2]);
+	    /* Note: fall through code... */
+
 	default:
 	    log_add(L_WARNING, "%s: taper error, leaving file on disk",
 		    destname);
 	    break;
 	}
-
-	free_serial(disk2serial(dp));
     }
 
     closedir(workdir);
