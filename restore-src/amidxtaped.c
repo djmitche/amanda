@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: amidxtaped.c,v 1.9 1997/12/30 05:24:46 jrj Exp $
+/* $Id: amidxtaped.c,v 1.10 1997/12/31 23:35:00 jrj Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -154,20 +154,13 @@ char **argv;
 	return 1;
     }
 
-    amrestore_args[0] = "amrestore";
-
-    for (i = 1; i <= amrestore_nargs; i++)
+    i = 0;
+    amrestore_args[i++] = "amrestore";
+    while (i <= amrestore_nargs)
     {
-	if ((amrestore_args[i] = (char *)malloc(STR_SIZE)) == NULL)
-	{
-	    dbprintf(("Couldn't malloc amrestore_args[%d]\n", i));
-	    dbclose();
-	    return 1;
-	}
-	afree(buf);
-	buf = get_client_line();
+	amrestore_args[i++] = stralloc(get_client_line());
     }
-    amrestore_args[amrestore_nargs+1] = NULL;
+    amrestore_args[i] = NULL;
 
     amrestore_path = vstralloc(sbindir, "/", "amrestore", NULL);
 
