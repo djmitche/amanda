@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.14 1997/09/23 06:54:19 george Exp $
+ * $Id: driver.c,v 1.15 1997/09/26 12:04:46 george Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -142,19 +142,33 @@ char **main_argv;
 	       || access(hdp->diskdir, W_OK) == -1) {
 		log(L_WARNING, "WARNING: ignoring holding disk %s: %s\n",
 		    hdp->diskdir, strerror(errno));
-		hdp->disksize = 0;
+		hdp->disksize = 0L;
 		continue;
 	    }
-	    if(fs.avail != -1 && fs.avail < hdp->disksize) {
-		log(L_WARNING,
-		    "WARNING: %s: %d KB requested, but only %d KB available.",
-		    hdp->diskdir, hdp->disksize, fs.avail);
-		hdp->disksize = fs.avail;
+
+	    /* Check how much space is left on the disk.  We pretend that there
+	    ** is a little less space left than there really is to give a bit
+	    ** of protection against under-estimated dump sizes.
+	    */
+	    if(fs.avail != -1) { /* XXX - is this right? */
+		long avail;
+
+		avail = fs.avail - fs.avail / 10;
+
+		if(hdp->disksize > avail) {
+		    log(L_WARNING,
+			"WARNING: %s: %d KB requested, but only %d KB available.",
+			hdp->diskdir, hdp->disksize, avail);
+
+		    hdp->disksize = avail;
+		}
 	    }
+
 	    printf("driver: adding holding disk %d dir %s size %ld\n",
 		   dsk, hdp->diskdir, hdp->disksize);
+
 	    sprintf(newdir, "%s/%s", hdp->diskdir, datestamp);
-	    mkdir(newdir,0770);
+	    mkdir(newdir, 0770);
 	}
     }
 
