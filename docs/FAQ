@@ -44,6 +44,9 @@ non-rewinding tape devices for amanda to use.  For example, use
 or some other system-dependent device name that contains an `n',
 instead of one that does not.  The `n' stands for non-rewinding.
 
+   If you have labeled any tapes using the rewiding device
+configuration, you'll have to label them again.
+
 
 Q: Why does `amcheck' report `selfcheck timed out'?
 
