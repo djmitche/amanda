@@ -22,7 +22,7 @@ libamanda_la_SOURCES = \
 	packet.c	pipespawn.c	protocol.c	\
 	regcomp.c	regerror.c	regexec.c	regfree.c	\
 	rsh-security.c	\
-	security.c	statfs.c	stream.c	\
+	security.c	sl.c		statfs.c	stream.c	\
 	token.c		\
 	util.c		\
 	version.c	versuff.c
@@ -38,7 +38,8 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 			event.h		\
 			packet.h	pipespawn.h	protocol.h	\
 			queue.h		\
-			security.h	statfs.h	stream.h	\
+			sl.h		security.h	statfs.h	\
+			stream.h	\
 			token.h		\
 			util.h		\
 			version.h	\

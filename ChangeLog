@@ -1,5 +1,11 @@
 2002-02-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* common-src/sl.h: New header file
+	* common-src/sl.c: New file for list of string struct.
+	* common-src/Makefile.am: Compile sl.c
+
+2002-02-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* changer-src/chg-zd-mtx.sh.in: Don't use '^' in expr match argument.
 
 2002-02-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
