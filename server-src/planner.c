@@ -137,14 +137,14 @@ bilist_t biq;			/* The BI queue itself */
  */
 
 static void construct_datestamp P((char *buf));		  /* subroutines */
-static void setup_estimates P((disklist_t *qp));
+static void setup_estimate P((disk_t *dp));
 static void get_estimates P((void));
-static void analyze_estimates P((disklist_t *qp));
-static void handle_failed P((disklist_t *qp));
+static void analyze_estimate P((disk_t *dp));
+static void handle_failed P((disk_t *dp));
 static void delay_dumps P((void));
 static int promote_highest_priority_incremental P((void));
 static int promote_hills P((void));
-static void output_scheduleline P((disklist_t *qp));
+static void output_scheduleline P((disk_t *dp));
 
 int main(argc, argv)
 int argc;
@@ -250,7 +250,7 @@ char **argv;
     startclock();
      
     startq.head = startq.tail = NULL;
-    while(!empty(*origqp)) setup_estimates(origqp);
+    while(!empty(*origqp)) setup_estimate(dequeue_disk(origqp));
 
     fprintf(stderr, "setting up estimates took %s secs\n",
 	    walltime_str(curclock()));
@@ -305,8 +305,8 @@ char **argv;
     balanced_size = 0.0;
 
     schedq.head = schedq.tail = NULL;
-    while(!empty(estq)) analyze_estimates(&estq);
-    while(!empty(failq)) handle_failed(&failq);
+    while(!empty(estq)) analyze_estimate(dequeue_disk(&estq));
+    while(!empty(failq)) handle_failed(dequeue_disk(&failq));
 
     /*
      * At this point, all the disks are on schedq sorted by priority.
@@ -346,7 +346,8 @@ char **argv;
 
     delay_dumps();
 
-    if(total_size <= 0 && total_size < initial_size)
+    /* XXX - why bother checking this? */
+    if(empty(schedq) && total_size < initial_size)
 	error("cannot fit anything on tape, bailing out");
 
 
@@ -390,7 +391,7 @@ char **argv;
      */
 
     fprintf(stderr,"\nGENERATING SCHEDULE:\n--------\n");
-    while(!empty(schedq)) output_scheduleline(&schedq);
+    while(!empty(schedq)) output_scheduleline(dequeue_disk(&schedq));
     fprintf(stderr, "--------\n");
 
     close_infofile();
@@ -452,15 +453,12 @@ info_t *inf;	/* info block for disk */
     return;
 }
 
-static void setup_estimates(qp)
-disklist_t *qp;
+static void setup_estimate(dp)
+disk_t *dp;
 {
-    disk_t *dp;
     est_t *ep;
     info_t inf;
     int i;
-
-    dp = dequeue_disk(qp);
 
     assert(dp && dp->dtype && dp->host);
 
@@ -662,7 +660,7 @@ disklist_t *qp;
 
     /* debug output */
 
-    fprintf(stderr, "setup_estimates: %s:%s: command %d, options:",
+    fprintf(stderr, "setup_estimate: %s:%s: command %d, options:",
 	    dp->host->hostname, dp->name, inf.command);
     if(dp->dtype->no_full) fputs(" no-full", stderr);
     if(dp->dtype->skip_full) fputs(" skip-full", stderr);
@@ -1022,13 +1020,10 @@ error_return:
 static int schedule_order P((disk_t *a, disk_t *b));	  /* subroutines */
 static int pick_inclevel P((disk_t *dp));
 
-static void analyze_estimates(qp)
-disklist_t *qp;
+static void analyze_estimate(dp)
+disk_t *dp;
 {
     int lev0size;
-    disk_t *dp;
-
-    dp = dequeue_disk(qp);
 
     fprintf(stderr,"pondering %s:%s... ",
 	    dp->host->hostname, dp->name);
@@ -1064,6 +1059,8 @@ disklist_t *qp;
     fprintf(stderr,"  curr level %d size %d ", est(dp)->curr_level,
 	    est(dp)->size);
 
+    insert_disk(&schedq, dp, schedule_order);
+
     total_size += TAPE_BLOCK_SIZE + est(dp)->size + tape_mark;
 
     if(!(dp->dtype->skip_full || dp->dtype->no_full)) {
@@ -1072,19 +1069,15 @@ disklist_t *qp;
 	else lev0size = est_size(dp, 0) * compratio(dp,fullcomp);
 	balanced_size += (lev0size / runs_per_cycle);
     }
-    insert_disk(&schedq, dp, schedule_order);
 
     fprintf(stderr,"total size %ld total_lev0 %1.2f balanced-lev0size %1.2f\n",
 	    total_size, total_lev0, balanced_size);
 }
 
-static void handle_failed(qp)
-disklist_t *qp;
+static void handle_failed(dp)
+disk_t *dp;
 {
-    disk_t *dp;
     char *errstr;
-
-    dp = qp->head;
 
 /*
  * From George Scott <George.Scott@cc.monash.edu.au>:
@@ -1104,7 +1097,7 @@ disklist_t *qp;
 	log(L_WARNING,
 	    "Could not get estimate for %s:%s, using historical data.",
 	    dp->host->hostname, dp->name);
-	analyze_estimates(qp);
+	analyze_estimate(dp);
 	return;
     }
 #endif
@@ -1117,7 +1110,7 @@ disklist_t *qp;
     log(L_FAIL, "%s %s 0 [%s]",
 	dp->host->hostname, dp->name, errstr);
 
-    dequeue_disk(qp);
+    /* XXX - memory leak with *dp */
 }
 
 
@@ -1619,15 +1612,13 @@ static int promote_hills P((void))
  * ========================================================================
  * OUTPUT SCHEDULE
  *
+ * XXX - memory leak - we shouldn't just throw away *dp
  */
-static void output_scheduleline(qp)
-disklist_t *qp;
+static void output_scheduleline(dp)
+disk_t *dp;
 {
-    disk_t *dp;
     int time, degr_time;
     char schedline[1024];
-
-    dp = dequeue_disk(qp);
 
     if(est(dp)->size == -1) {
 	/* no estimate, fail the disk */
