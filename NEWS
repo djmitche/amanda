@@ -1,13 +1,65 @@
 Changes in release 2.4.1
  
-* check ChangeLog for more NEWS, until we find time to update this file. 
+* FAQ for new users, in docs/FAQ
+* New `chg-scsi' tape changer program, that replaces chg-chio and uses
+  tape-changer-related ioctls on OSs that support them
+* Reporter can now print tape labels
+* ZFTAPEs are now supported on Linux
+* New `killpgrp' setuid-root program, that kills estimate dumps even
+  if they are setuid-root
+* amrecover will restore SAMBA backups using SAMBA
+* A total estimate time-out may be specified
+* amlabel will only overwrite an Amanda tape if `-f' is specified
+* Tapes can now be marked so as not to be recycled with amadmin no-reuse
+* amidxtrm will no longer remove index files of backups in active tapes
+* New `amstatus' program
+* Large dumps can nwo be split into multiple files on holding disk
+  (but they won't span across tapes yet)
+* Fixed skip-incr and skip-full support
+* amrestore now accepts a list of filesystems to be restored
+* amcheck now accents -Maddress to send e-mail to the specified address
+* amdump, amflush and amcheck will use the log files as locks, so as
+  to avoid running concurrently
+* New `clean' amtape command.
 * driver now supports configurable level-0 dumps in degraded mode via
-  new amanda.conf keyword "reserve".  See WHATS.NEW for more details.
+  new amanda.conf keyword "reserve"; see docs/WHATS.NEW for details
+
+Changes in release 2.4.0p1
+
+* Fixed kerberos encryption
+* New --with-owner configure option, to specify owner of installed files
+* amcheck now checks for the existence of gnutar-listdir and of a
+  compressor on the server (for indexes and server compression)
+* Implemented dumptype option `strategy skip'
+* Updated to libtool 1.2a
+* Minor portability-related bugfixes.
 
 Changes in release 2.4.0
 
-* the NEWS file was not maintained in the 2.4.0 release cycle.  There are
-  plans to update it, though.
+* Several security-related fixes, see docs/SECURITY for details.
+* New configuration file syntax: dumptypes can now be used as keywords.
+* New text database format, to replace dbm/ndbm/gdbm/db databases with
+  a more portable and user-friendly format.
+* Index files are now sent through a separate TCP connection, as they
+  are generated, instead of being stored in /tmp.  This breaks Amanda
+  protocol backward compatibility.
+* Estimates are now performed concurrently, if maxdumps>1.
+* At configure time, it is now possible to specify a suffix for amanda
+  service names (--with-testing=suffix) and a directory for debugging
+  files (--with-debugging=/directory/name)
+* New tape changer configuration keywords, that partially standardize
+  tape changer script configuration interface.
+* amrecover can now handle GNU tar and AIX dump restores; it must now
+  be run as root.
+* Shared libraries are built by default, using GNU libtool.
+* Extended regular expression syntax has been adopted.
+* amcheck will no longer report failures about unused programs.
+* It is now possible to specify a SAMBA username at configure time.
+* BSD security is now enabled by default.
+* A time-out for estimate requests can now be specified in amanda.conf.
+* New patch-system script, for editing /etc/services and /etc/inetd.conf.
+* Amdump will wait if a file named `hold' exists in the log directory.
+* Various bugfixes and new ports.
 
 Changes in release 2.3.0.4
 * New chg-generic.conf option 'multieject' added which lets
