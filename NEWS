@@ -7,8 +7,8 @@ Changes in release 2.4.2
 * chunksize is now 1 Gb by default
 * ufsdump -S is now supported on Solaris
 * Samba 2.0.0 is now supported
-* New `incronly' strategy, to perform incrementals until a full backup
-  is manually forced
+* New `incronly' strategy, similar to skip-full, but allows manual
+  scheduling of full backups
 * chg-scsi was ported to several platforms
 * --with-amandahosts is now enabled by default
 * new force-bump, force-no-bump and unforce-bump command in amadmin.
