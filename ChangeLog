@@ -1,3 +1,8 @@
+2001-08-22 John R. Jackson (jrj@purdue.edu)
+
+	* tape-src/Makefile.am: Add chown/chgrp rules for ammt/amdd install
+	  so they end up like all the other Amanda programs.
+
 2001-08-15 Thomas Hepper (th@ant.han.de)
 	* changer-src/chg-scsi.c. Removed version 1 DB support from mapBarCode. Changed the way parameter
 	are given to MapBarCode and returned from there. No a struct is passed where all infos

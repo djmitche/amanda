@@ -10,6 +10,8 @@ noinst_LIBRARIES = 	libamtape.a
 LIB_EXTENSION = a
 endif
 
+sbin_PROGRAMS=          ammt amdd
+
 libamtape_la_SOURCES = 	output-file.c \
 			output-null.c \
 			output-rait.c \
@@ -19,21 +21,6 @@ libamtape_la_SOURCES = 	output-file.c \
 libamtape_la_LDFLAGS =  -release $(VERSION)
 
 libamtape_a_SOURCES =	$(libamtape_la_SOURCES)
-
-noinst_HEADERS = 	\
-			output-file.h \
-			output-null.h \
-			output-rait.h \
-			output-tape.h \
-			tapeio.h
-
-TEST_PROGS =		amtapeio
-
-EXTRA_PROGRAMS = 	tapetype $(TEST_PROGS)
-
-CLEANFILES = *.test.c
-
-sbin_PROGRAMS=          ammt amdd
 
 ###
 # Because libamanda includes routines (e.g. regex) provided by some system
@@ -59,6 +46,37 @@ amdd_LDADD =		../common-src/libamanda.$(LIB_EXTENSION) \
 	cd ../common-src && $(MAKE) libamanda.$(LIB_EXTENSION)
 
 # used for testing only
+
+TEST_PROGS =		amtapeio
+
+EXTRA_PROGRAMS = 	tapetype $(TEST_PROGS)
+
+CLEANFILES = *.test.c
+
+noinst_HEADERS = 	\
+			output-file.h \
+			output-null.h \
+			output-rait.h \
+			output-tape.h \
+			tapeio.h
+
+install-exec-hook:
+	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; \
+	for p in $$list; do \
+		pa=$(DESTDIR)$(sbindir)/`echo $$p|sed '$(transform)'`; \
+		echo chown $(BINARY_OWNER) $$pa; \
+		chown $(BINARY_OWNER) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
+	done
+	@list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; \
+	for p in $$list; do \
+		pa=$(DESTDIR)$(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		echo chown $(BINARY_OWNER) $$pa; \
+		chown $(BINARY_OWNER) $$pa; \
+		echo chgrp $(SETUID_GROUP) $$pa; \
+		chgrp $(SETUID_GROUP) $$pa; \
+	done
 
 amtapeio_SOURCES = amtapeio.test.c
 amtapeio_LDADD =	../common-src/libamanda.$(LIB_EXTENSION) \
