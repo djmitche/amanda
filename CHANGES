@@ -1,5 +1,8 @@
 Version 2.4.0
 
+	flex-related backward-compatibility problem fixed.
+	-Norman K Scherer <nsche@seros-48.hac.com>
+
 	ported to RISCOS 4BSD.  -Harlan Stenn <Harlan.Stenn@pfcs.com>
 
 	when amrecover starts up, it will warn you $CWD is not the root

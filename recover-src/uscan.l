@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uscan.l,v 1.6.2.1 1998/03/05 17:33:50 jrj Exp $
+ * $Id: uscan.l,v 1.6.2.2 1998/03/19 17:22:21 amcore Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -43,11 +43,11 @@ extern int  yyparse P((void));
 
 %x quotedstring
 
-%%
-
 %{
 static char *string_buf = NULL;
 %}
+
+%%
 
 %{
     /* literal keyword tokens */
