@@ -1,3 +1,7 @@
+2003-03-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amrmtape.sh.in: Print better output.
+
 2003-03-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* changer-src/Makefile.am (libexec_SCRIPTS): Missing \.
