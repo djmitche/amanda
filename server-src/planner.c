@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76 1998/11/04 01:48:07 martinea Exp $
+ * $Id: planner.c,v 1.76.2.1 1998/11/09 19:00:47 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -802,6 +802,10 @@ info_t *ip;
     time_t lev0_date, last_date;
     tape_t *tp;
 
+    if(ip->last_level != -1)
+	return ip->last_level;
+
+    /* to keep compatibility with old infofile */
     min_pos = 1000000000;
     min_level = -1;
     lev0_date = EPOCH;
@@ -827,6 +831,7 @@ info_t *ip;
 	    }
 	}
     }
+    ip->last_level = i;
     return min_level;
 }
 
@@ -849,17 +854,24 @@ info_t *ip;
 int lev;
 {
     tape_t *cur_tape, *old_tape;
-    int last;
+    int last, nb_runs;
 
     last = last_level(ip);
     if(lev != last) return 0;
     if(lev == 0) return 1;
 
+    if(ip->consecutive_runs != -1)
+	return ip->consecutive_runs;
+
+    /* to keep compatibility with old infofile */
     cur_tape = lookup_tapelabel(ip->inf[lev].label);
     old_tape = lookup_tapelabel(ip->inf[lev-1].label);
     if(cur_tape == NULL || old_tape == NULL) return 0;
 
-    return (old_tape->position - cur_tape->position) / conf_runtapes;
+    nb_runs = (old_tape->position - cur_tape->position) / conf_runtapes;
+    ip->consecutive_runs = nb_runs;
+
+    return nb_runs;
 }
 
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.35 1998/10/25 17:01:47 martinea Exp $
+ * $Id: driverio.c,v 1.35.2.1 1998/11/09 19:00:40 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -446,6 +446,12 @@ long dumptime;
 	inf.command = NO_COMMAND;
     }
 
+    if(level == inf.last_level)
+	inf.consecutive_runs++;
+    else {
+	inf.last_level = level;
+	inf.consecutive_runs = 1;
+    }
     if(put_info(dp->host->hostname, dp->name, &inf))
 	error("infofile update failed (%s,%s)\n", dp->host->hostname, dp->name);
 
