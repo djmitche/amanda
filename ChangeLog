@@ -1,3 +1,7 @@
+1998-06-26  John R. Jackson  <jrj@purdue.edu>
+
+	* configure.in: fix BSD/OS Kerberos include file location.
+
 1998-06-26  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* config/ltmain.sh: install official patch to libtool 1.2a

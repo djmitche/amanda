@@ -694,7 +694,14 @@ if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ;
 	    AC_MSG_RESULT(found in $dir)
 	    KRB4_SECURITY=yes
 	    AC_DEFINE(KRB4_SECURITY)
-	    KRB4INCLUDES=-I$dir/include
+	    if test -d $dir/include/kerberosIV ; then
+		#
+		# This handles BSD/OS.
+		#
+	        KRB4INCLUDES=-I$dir/include/kerberosIV
+	    else
+		KRB4INCLUDES=-I$dir/include
+	    fi
 	    KRB4LDFLAGS=-L$dir/lib
 	    KRB4LIBS="-lkrb -ldes"
 	    break
