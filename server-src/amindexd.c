@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.11 2000/09/25 23:50:30 martinea Exp $
+ * $Id: amindexd.c,v 1.39.2.11.2.1 2001/02/28 00:05:54 jrjackson Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -138,6 +138,7 @@ char **emsg;
 	if (system(cmd)!=0) {
 	    amfree(*emsg);
 	    *emsg = vstralloc("\"", cmd, "\" failed", NULL);
+	    unlink(filename);
 	    errno = -1;
 	    amfree(filename);
 	    amfree(cmd);
