@@ -1,5 +1,10 @@
 2002-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/conffile.c (dump_configuration): Print multiple
+	  exclude and include.
+
+2002-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* client-src/client_util.c (add_exclude, add_include): Typo.
 
 2002-02-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
