@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.100 2003/10/27 16:57:29 kovert Exp $
+ * $Id: amcheck.c,v 1.101 2003/10/30 18:12:37 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -147,7 +147,7 @@ char **argv;
 
     while((opt = getopt(argc, argv, "M:mawsclt")) != EOF) {
 	switch(opt) {
-	case 'M':	mailto=optarg;
+	case 'M':	mailto=stralloc(optarg);
 	case 'm':	
 #ifdef MAILER
 			mailout = 1;

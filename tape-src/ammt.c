@@ -170,7 +170,7 @@ main(int argc, char **argv) {
 	    break;
 	case 'f':
 	case 't':
-	    tapename = optarg;
+	    tapename = stralloc(optarg);
 	    break;
 	default:
 	    usage();
