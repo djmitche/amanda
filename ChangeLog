@@ -1,3 +1,7 @@
+1999-06-01  John Williams  <williams@morinda.com>
+
+	* changer-src/scsi-hpux.c (eject_tape): Enable it, it works.
+
 1999-06-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/INSTALL: Point to the patches page.  Update version numbers.
