@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.46 2002/02/14 01:51:05 martinea Exp $
+ * $Id: diskfile.c,v 1.47 2002/03/03 17:10:32 martinea Exp $
  *
  * read disklist file
  */
@@ -278,10 +278,12 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     dumptype_t *dtype;
     interface_t *netif = 0;
     char *hostname = NULL;
+    char *diskname, *diskdevice;
     char *s, *fp;
     int ch, dup = 0;
     char *line = *line_p;
     int line_num = *line_num_p;
+    char *dn;
 
     assert(filename != NULL);
     assert(line_num > 0);
@@ -312,10 +314,42 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     fp = s - 1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
+    diskname = stralloc(fp);
+
+    skip_whitespace(s, ch);
+    if(ch == '\0' || ch == '#') {
+	parserror(filename, line_num, "disk dumptype expected");
+	if(host == NULL) amfree(hostname);
+	amfree(diskname);
+	return 1;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+
+    /* diskdevice */
+    dn = stralloc(fp);
+    if(fp[0] != '{' && (dtype = lookup_dumptype(upcase(fp))) == NULL) {
+	diskdevice = dn;
+	skip_whitespace(s, ch);
+	if(ch == '\0' || ch == '#') {
+	    parserror(filename, line_num, "disk dumptype expected");
+	    if(host == NULL) amfree(hostname);
+	    amfree(diskname);
+	    amfree(diskdevice);
+	    return 1;
+	}
+	fp = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+    }
+    else {
+	diskdevice = NULL;
+	amfree(dn);
+    }
 
     /* check for duplicate disk */
-
-    if(host && (disk = lookup_disk(hostname, fp)) != NULL) {
+    if(host && (disk = lookup_disk(hostname, diskname)) != NULL) {
 	parserror(filename, line_num,
 	    "duplicate disk record, previous on line %d", disk->line);
 	dup = 1;
@@ -323,26 +357,14 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	disk = alloc(sizeof(disk_t));
 	malloc_mark(disk);
 	disk->line = line_num;
-	disk->name = stralloc(fp);
+	disk->name = diskname;
+	disk->device = diskdevice;
 	malloc_mark(disk->name);
 	disk->spindle = -1;
 	disk->up = NULL;
 	disk->inprogress = 0;
     }
 
-    skip_whitespace(s, ch);
-    if(ch == '\0' || ch == '#') {
-	parserror(filename, line_num, "disk dumptype expected");
-	if(host == NULL) amfree(hostname);
-	if(!dup) {
-	    amfree(disk->name);
-	    amfree(disk);
-	}
-	return (-1);
-    }
-    fp = s - 1;
-    skip_non_whitespace(s, ch);
-    s[-1] = '\0';
     if (fp[0] == '{') {
 	s[-1] = ch;
 	s = fp+2;
@@ -641,7 +663,8 @@ void match_disklist(disklist_t *origqp, int sargc, char **sargv)
 	for(dp = origqp->head; dp != NULL; dp = dp->next) {
 	    if(prevhost != NULL &&
 	       match_host(prevhost, dp->host->hostname) &&
-	       match_disk(sargv[i], dp->name)) {
+	       (match_disk(sargv[i], dp->name) ||
+		(dp->device && match_disk(sargv[i], dp->device)))) {
 		if(match_a_host) {
 		    error("Argument %s match a host and a disk",sargv[i]);
 		}

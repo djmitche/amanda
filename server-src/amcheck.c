@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.83 2001/08/01 21:42:05 jrjackson Exp $
+ * $Id: amcheck.c,v 1.84 2002/03/03 17:10:32 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1152,18 +1152,33 @@ void start_host(hostp)
 	o = optionstr(dp);
 	if(strncmp(dp->program,"DUMP",4) == 0 || 
 	   strncmp(dp->program,"GNUTAR",6) == 0) {
-	    l = vstralloc(dp->program, 
-			  " ",
-			  dp->name,
-			  " 0 OPTIONS |",
-			  o,
-			  "\n",
-			  NULL);
+	    if(dp->device) {
+		l = vstralloc(dp->program, 
+			      " ",
+			      dp->name,
+			      " ",
+			      dp->device,
+			      " 0 OPTIONS |",
+			      o,
+			      "\n",
+			      NULL);
+	    }
+	    else {
+		l = vstralloc(dp->program, 
+			      " ",
+			      dp->name,
+			      " 0 OPTIONS |",
+			      o,
+			      "\n",
+			      NULL);
+	    }
 	} else {
 	    l = vstralloc("DUMPER ",
 			  dp->program, 
 			  " ",
 			  dp->name,
+			  " ",
+			  dp->device,
 			  " 0 OPTIONS |",
 			  o,
 			  "\n",

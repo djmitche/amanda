@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.55 2002/02/15 14:19:37 martinea Exp $
+ * $Id: selfcheck.c,v 1.56 2002/03/03 17:10:32 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -61,8 +61,8 @@ int program_is_wrapper=0;
 /* local functions */
 int main P((int argc, char **argv));
 
-static void check_options P((char *program, char *disk, option_t *options));
-static void check_disk P((char *program, char *disk, int level, char *optstr));
+static void check_options P((char *program, char *disk, char *amdevice, option_t *options));
+static void check_disk P((char *program, char *disk, char *amdevice, int level, char *optstr));
 static void check_overall P((void));
 static void check_access P((char *filename, int mode));
 static void check_file P((char *filename, int mode));
@@ -78,6 +78,7 @@ char **argv;
     char *line = NULL;
     char *program = NULL;
     char *disk = NULL;
+    char *amdevice = NULL;
     char *optstr = NULL;
     char *s;
     int ch;
@@ -150,7 +151,21 @@ char **argv;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';				/* terminate the disk name */
 
-	skip_whitespace(s, ch);			/* find level number */
+	skip_whitespace(s, ch);                 /* find the device or level */
+	if (ch == '\0') {
+	    goto err;				/* no device or level */
+	}
+	if(!isdigit(s[-1])) {
+	    amdevice = s - 1;
+	    skip_non_whitespace(s, ch);
+	     s[-1] = '\0';			/* terminate the device */
+	    skip_whitespace(s, ch);		/* find level number */
+	}
+	else {
+	    amdevice = stralloc(disk);
+	}
+
+						/* find level number */
 	if (ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
 	    goto err;				/* bad level */
 	}
@@ -169,9 +184,9 @@ char **argv;
 	    optstr = s - 1;
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';			/* terminate the options */
-	    options = parse_options(optstr, disk, 1);
-	    check_options(program, disk, options);
-	    check_disk(program, disk, level, &optstr[2]);
+	    options = parse_options(optstr, disk, amdevice, 1);
+	    check_options(program, disk, amdevice, options);
+	    check_disk(program, disk, amdevice, level, &optstr[2]);
 	} else if (ch == '\0') {
 	    /* check all since no option */
 	    need_samba=1;
@@ -187,7 +202,7 @@ char **argv;
 	    need_runtar=1;
 	    need_gnutar=1;
 	    need_compress_path=1;
-	    check_disk(program, disk, level, "");
+	    check_disk(program, disk, amdevice, level, "");
 	} else {
 	    goto err;				/* bad syntax */
 	}
@@ -220,13 +235,13 @@ char **argv;
 
 
 static void
-check_options(program, disk, options)
-    char *program, *disk;
+check_options(program, disk, amdevice, options)
+    char *program, *disk, *amdevice;
     option_t *options;
 {
     if(strcmp(program,"GNUTAR") == 0) {
 	need_gnutar=1;
-        if(disk[0] == '/' && disk[1] == '/') {
+        if(amdevice[0] == '/' && amdevice[1] == '/') {
 	    if(options->exclude_file && options->exclude_file->nb_element > 1) {
 		printf("ERROR [samba support only one exclude file]\n");
 	    }
@@ -252,8 +267,8 @@ check_options(program, disk, options)
 	    if(options->include_file) nb_include += options->include_file->nb_element;
 	    if(options->include_list) nb_include += options->include_list->nb_element;
 
-	    if(nb_exclude > 0) file_exclude = build_exclude(disk, options, 1);
-	    if(nb_include > 0) file_include = build_include(disk, options, 1);
+	    if(nb_exclude > 0) file_exclude = build_exclude(disk, amdevice, options, 1);
+	    if(nb_include > 0) file_include = build_include(disk, amdevice, options, 1);
 
 	    amfree(file_exclude);
 	    amfree(file_include);
@@ -280,7 +295,7 @@ check_options(program, disk, options)
 #ifndef AIX_BACKUP
 #ifdef VDUMP
 #ifdef DUMP
-	if (strcmp(amname_to_fstype(disk), "advfs") == 0)
+	if (strcmp(amname_to_fstype(amdevice), "advfs") == 0)
 #else
 	if (1)
 #endif
@@ -294,7 +309,7 @@ check_options(program, disk, options)
 #endif /* VDUMP */
 #ifdef XFSDUMP
 #ifdef DUMP
-	if (strcmp(amname_to_fstype(disk), "xfs") == 0)
+	if (strcmp(amname_to_fstype(amdevice), "xfs") == 0)
 #else
 	if (1)
 #endif
@@ -308,7 +323,7 @@ check_options(program, disk, options)
 #endif /* XFSDUMP */
 #ifdef VXDUMP
 #ifdef DUMP
-	if (strcmp(amname_to_fstype(disk), "vxfs") == 0)
+	if (strcmp(amname_to_fstype(amdevice), "vxfs") == 0)
 #else
 	if (1)
 #endif
@@ -337,8 +352,8 @@ check_options(program, disk, options)
 	need_compress_path=1;
 }
 
-static void check_disk(program, disk, level, optstr)
-char *program, *disk;
+static void check_disk(program, disk, amdevice, level, optstr)
+char *program, *disk, *amdevice;
 int level;
 char *optstr;
 {
@@ -355,7 +370,7 @@ char *optstr;
     dbprintf(("%s: checking disk %s\n", get_pname(), disk));
 
     if (strcmp(program, "GNUTAR") == 0) {
-        if(disk[0] == '/' && disk[1] == '/') {
+        if(amdevice[0] == '/' && amdevice[1] == '/') {
 #ifdef SAMBA_CLIENT
 	    int nullfd, checkerr;
 	    int passwdfd;
@@ -372,25 +387,25 @@ char *optstr;
 	    char *pw_fd_env;
 	    int errdos;
 
-	    parsesharename(disk, &share, &subdir);
+	    parsesharename(amdevice, &share, &subdir);
 	    if (!share) {
-		err = stralloc2("cannot parse for share/subdir disk entry ", disk);
+		err = stralloc2("cannot parse for share/subdir disk entry ", amdevice);
 		goto common_exit;
 	    }
 	    if ((subdir) && (SAMBA_VERSION < 2)) {
 		err = vstralloc("subdirectory specified for share '",
-				disk,
+				amdevice,
 				"' but samba not v2 or better",
 				NULL);
 		goto common_exit;
 	    }
 	    if ((user_and_password = findpass(share, &domain)) == NULL) {
-		err = stralloc2("cannot find password for ", disk);
+		err = stralloc2("cannot find password for ", amdevice);
 		goto common_exit;
 	    }
 	    lpass = strlen(user_and_password);
 	    if ((pwtext = strchr(user_and_password, '%')) == NULL) {
-		err = stralloc2("password field not \'user%pass\' for ", disk);
+		err = stralloc2("password field not \'user%pass\' for ", amdevice);
 		goto common_exit;
 	    }
 	    *pwtext++ = '\0';
@@ -429,7 +444,7 @@ char *optstr;
 	    aclose(nullfd);
 	    if (pwtext_len > 0 && fullwrite(passwdfd, pwtext, pwtext_len) < 0) {
 		err = vstralloc("password write failed: ",
-				disk,
+				amdevice,
 				": ",
 				strerror(errno),
 				NULL);
@@ -476,7 +491,7 @@ char *optstr;
 	    if (errdos != 0 || rc != 0) {
 		err = newvstralloc(err,
 				   "samba access error: ",
-				   disk,
+				   amdevice,
 				   ": ",
 				   extra_info ? extra_info : "",
 				   err,
@@ -489,9 +504,9 @@ char *optstr;
 	    goto common_exit;
 	}
 	amode = F_OK;
-	device = amname_to_dirname(disk);
+	device = amname_to_dirname(amdevice);
     } else if (strcmp(program, "DUMP") == 0) {
-	if(disk[0] == '/' && disk[1] == '/') {
+	if(amdevice[0] == '/' && amdevice[1] == '/') {
 	    err = vstralloc("The DUMP program cannot handle samba shares,",
 			    " use GNUTAR: ",
 			    disk,
@@ -500,17 +515,17 @@ char *optstr;
 	}
 #ifdef VDUMP								/* { */
 #ifdef DUMP								/* { */
-        if (strcmp(amname_to_fstype(disk), "advfs") == 0)
+        if (strcmp(amname_to_fstype(amdevice), "advfs") == 0)
 #else									/* }{ */
 	if (1)
 #endif									/* } */
 	{
-	    device = amname_to_dirname(disk);
+	    device = amname_to_dirname(amdevice);
 	    amode = F_OK;
 	} else
 #endif									/* } */
 	{
-	    device = amname_to_devname(disk);
+	    device = amname_to_devname(amdevice);
 #ifdef USE_RUNDUMP
 	    amode = F_OK;
 #else
@@ -525,13 +540,14 @@ char *optstr;
 	case -1: error("fork: %s", strerror(errno));
 	case 0: /* child */
 	    {
-		char *argvchild[5];
+		char *argvchild[6];
 		char *cmd = vstralloc(DUMPER_DIR, "/", program, NULL);
 		argvchild[0] = program;
 		argvchild[1] = "selfcheck";
 		argvchild[2] = disk;
-		argvchild[3] = optstr;
-		argvchild[4] = NULL;
+		argvchild[3] = amdevice;
+		argvchild[4] = optstr;
+		argvchild[5] = NULL;
 		execve(cmd,argvchild,safe_env());
 		exit(127);
 	    }
@@ -580,6 +596,8 @@ common_exit:
 	dbprintf(("%s: %s\n", get_pname(), err));
 	amfree(err);
     } else {
+	printf("OK %s\n", disk);
+	printf("OK %s\n", amdevice);
 	printf("OK %s\n", device);
 	dbprintf(("%s: OK\n", get_pname()));
     }

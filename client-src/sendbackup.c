@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.57 2002/02/13 14:47:47 martinea Exp $
+ * $Id: sendbackup.c,v 1.58 2002/03/03 17:10:32 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -123,7 +123,7 @@ char **argv;
 {
     int interactive = 0;
     int level, mesgpipe[2];
-    char *prog, *disk, *dumpdate, *stroptions;
+    char *prog, *disk, *amdevice, *dumpdate, *stroptions;
     char *host;				/* my hostname from the server */
     char *line = NULL;
     char *err_extra = NULL;
@@ -233,7 +233,23 @@ char **argv;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
 
-    skip_whitespace(s, ch);			/* find the level number */
+    skip_whitespace(s, ch);			/* find the device or level */
+    if (ch == '\0') {
+	err_extra = "bad level";
+	goto err;
+    }
+
+    if(!isdigit(s[-1])) {
+	amdevice = s - 1;
+	skip_non_whitespace(s, ch);
+	s[-1] = '\0';
+	skip_whitespace(s, ch);			/* find level number */
+    }
+    else {
+	amdevice = stralloc(disk);
+    }
+
+    						/* find the level number */
     if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
 	err_extra = "bad level";
 	goto err;				/* bad level */
@@ -271,6 +287,7 @@ char **argv;
 
     dbprintf(("  parsed request as: program `%s'\n", prog));
     dbprintf(("                     disk `%s'\n", disk));
+    dbprintf(("                     device `%s'\n", amdevice));
     dbprintf(("                     lev %d\n", level));
     dbprintf(("                     since %s\n", dumpdate));
     dbprintf(("                     opt `%s'\n", stroptions));
@@ -287,7 +304,7 @@ char **argv;
       }
     }
 
-    options = parse_options(stroptions, disk, 0);
+    options = parse_options(stroptions, disk, amdevice, 0);
 
     if(!interactive) {
 	datafd = DATA_FD_OFFSET + 0;
@@ -335,7 +352,7 @@ char **argv;
       error("error [opening mesg pipe: %s]", strerror(errno));
     }
 
-    program->start_backup(host, disk, level, dumpdate, datafd, mesgpipe[1],
+    program->start_backup(host, disk, amdevice, level, dumpdate, datafd, mesgpipe[1],
 			  indexfd);
     dbprintf(("%s: started backup\n", get_pname()));
     parse_backup_messages(mesgpipe[0]);

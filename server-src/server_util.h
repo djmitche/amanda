@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.h,v 1.4 2001/03/20 00:27:18 jrjackson Exp $
+ * $Id: server_util.h,v 1.5 2002/03/03 17:10:32 martinea Exp $
  *
  */
 #ifndef SERVER_UTIL_H
@@ -32,7 +32,7 @@
 
 #include "util.h"
 
-#define MAX_ARGS 11
+#define MAX_ARGS 12
 
 typedef enum {
     BOGUS, QUIT, QUITTING, DONE,

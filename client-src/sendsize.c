@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.119 2002/02/15 14:19:37 martinea Exp $
+ * $Id: sendsize.c,v 1.120 2002/03/03 17:10:32 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -74,6 +74,7 @@ typedef struct level_estimates_s {
 typedef struct disk_estimates_s {
     struct disk_estimates_s *next;
     char *amname;
+    char *amdevice;
     char *dirname;
     char *program;
     int program_is_wrapper;
@@ -93,7 +94,7 @@ char *prefix_line;			/* debug line prefix if maxdumps */
 
 /* local functions */
 int main P((int argc, char **argv));
-void add_diskest P((char *disk, int level, int spindle, 
+void add_diskest P((char *disk, char *amdevice, int level, int spindle, 
 		    int program_is_wrapper, char *prog, option_t *options));
 void calc_estimates P((disk_estimates_t *est));
 void free_estimates P((disk_estimates_t *est));
@@ -110,7 +111,7 @@ int argc;
 char **argv;
 {
     int level, new_maxdumps, spindle;
-    char *prog, *disk, *dumpdate;
+    char *prog, *disk, *amdevice, *dumpdate;
     option_t *options = NULL;
     int program_is_wrapper;
     disk_estimates_t *est;
@@ -226,7 +227,22 @@ char **argv;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 
-	skip_whitespace(s, ch);			/* find the level number */
+	skip_whitespace(s, ch);			/* find the device or level */
+	if (ch == '\0') {
+	    err_extra = "bad level";
+	    goto err;
+	}
+	if(!isdigit(s[-1])) {
+	    amdevice = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';
+	    skip_whitespace(s, ch);		/* find level number */
+	}
+	else {
+	    amdevice = stralloc(disk);
+	}
+
+						/* find the level number */
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
 	    err_extra = "bad level";
 	    goto err;				/* bad level */
@@ -255,7 +271,7 @@ char **argv;
 	    skip_whitespace(s, ch);		/* find the exclusion list */
 	    if(ch != '\0') {
 		if(strncmp(s-1, "OPTIONS |;",10) == 0) {
-		    options = parse_options(s+8, disk, 0);
+		    options = parse_options(s+8, disk, amdevice, 0);
 		}
 		else {
 		    options = malloc(sizeof(option_t));
@@ -283,9 +299,20 @@ char **argv;
 		    }
 		}
 	    }
+	    else {
+		options = malloc(sizeof(option_t));
+		options->compress = NO_COMPR;
+		options->no_record = 0;
+		options->bsd_auth = 0;
+		options->createindex = 0;
+		options->exclude_file = NULL;
+		options->exclude_list = NULL;
+		options->include_file = NULL;
+		options->include_list = NULL;
+	    }
 	}
 
-	add_diskest(disk, level, spindle, program_is_wrapper, prog, options);
+	add_diskest(disk, amdevice, level, spindle, program_is_wrapper, prog, options);
     }
     amfree(line);
 
@@ -333,8 +360,8 @@ char **argv;
 }
 
 
-void add_diskest(disk, level, spindle, program_is_wrapper, prog, options)
-char *disk, *prog;
+void add_diskest(disk, amdevice, level, spindle, program_is_wrapper, prog, options)
+char *disk, *amdevice, *prog;
 int level, spindle, program_is_wrapper;
 option_t *options;
 {
@@ -356,7 +383,8 @@ option_t *options;
     newp->next = est_list;
     est_list = newp;
     newp->amname = stralloc(disk);
-    newp->dirname = amname_to_dirname(newp->amname);
+    newp->amdevice = stralloc(amdevice);
+    newp->dirname = amname_to_dirname(newp->amdevice);
     newp->program = stralloc(prog);
     newp->program_is_wrapper = program_is_wrapper;
     newp->spindle = spindle;
@@ -434,7 +462,7 @@ disk_estimates_t *est;
 #endif
 #ifdef SAMBA_CLIENT
       if (strcmp(est->program, "GNUTAR") == 0 &&
-	  est->amname[0] == '/' && est->amname[1] == '/')
+	  est->amdevice[0] == '/' && est->amdevice[1] == '/')
 	smbtar_calc_estimates(est);
       else
 #endif
@@ -454,11 +482,11 @@ disk_estimates_t *est;
  */
 
 /* local functions */
-long getsize_dump P((char *disk, int level, option_t *options));
-long getsize_smbtar P((char *disk, int level, option_t *options));
-long getsize_gnutar P((char *disk, int level,
+long getsize_dump P((char *disk, char *amdevice, int level, option_t *options));
+long getsize_smbtar P((char *disk, char *amdevice, int level, option_t *options));
+long getsize_gnutar P((char *disk, char *amdevice, int level,
 		       option_t *options, time_t dumpsince));
-long getsize_wrapper P((char *program, char *disk, int level,
+long getsize_wrapper P((char *program, char *disk, char *amdevice, int level,
 			option_t *options, time_t dumpsince));
 long handle_dumpline P((char *str));
 double first_num P((char *str));
@@ -473,7 +501,7 @@ disk_estimates_t *est;
       if (est->est[level].needestimate) {
 	  dbprintf(("%s: getting size via wrapper for %s level %d\n",
 		    get_pname(), est->amname, level));
-	  size = getsize_wrapper(est->program, est->amname, level, est->options,
+	  size = getsize_wrapper(est->program, est->amname, est->amdevice, level, est->options,
 				 est->est[level].dumpsince);
 
 	  amflock(1, "size");
@@ -508,7 +536,7 @@ disk_estimates_t *est;
 	argv[argc++] = stralloc(est->exclude);
     }
 #endif
-    argv[argc++] = stralloc(est->amname);
+    argv[argc++] = stralloc(est->amdevice);
     argv[argc++] = stralloc(est->dirname);
 
     dbprintf(("%s: running cmd: %s", prefix, argv[0]));
@@ -560,7 +588,7 @@ disk_estimates_t *est;
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via dump for %s level %d\n",
 		      prefix, est->amname, level));
-	    size = getsize_dump(est->amname, level, est->options);
+	    size = getsize_dump(est->amname, est->amdevice,level, est->options);
 
 	    amflock(1, "size");
 
@@ -585,7 +613,7 @@ disk_estimates_t *est;
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via smbclient for %s level %d\n",
 		      prefix, est->amname, level));
-	    size = getsize_smbtar(est->amname, level, est->options);
+	    size = getsize_smbtar(est->amname, est->amdevice, level, est->options);
 
 	    amflock(1, "size");
 
@@ -611,7 +639,7 @@ disk_estimates_t *est;
       if (est->est[level].needestimate) {
 	  dbprintf(("%s: getting size via gnutar for %s level %d\n",
 		    prefix, est->amname, level));
-	  size = getsize_gnutar(est->amname, level,
+	  size = getsize_gnutar(est->amname, est->amdevice, level,
 				est->options, est->est[level].dumpsince);
 
 	  amflock(1, "size");
@@ -689,8 +717,8 @@ regex_t re_size[] = {
 };
 
 
-long getsize_dump(disk, level, options)
-    char *disk;
+long getsize_dump(disk, amdevice, level, options)
+    char *disk, *amdevice;
     int level;
     option_t *options;
 {
@@ -709,8 +737,8 @@ long getsize_dump(disk, level, options)
 
     snprintf(level_str, sizeof(level_str), "%d", level);
 
-    device = amname_to_devname(disk);
-    fstype = amname_to_fstype(disk);
+    device = amname_to_devname(amdevice);
+    fstype = amname_to_fstype(amdevice);
 
     cmd = vstralloc(libexecdir, "/rundump", versionsuffix(), NULL);
     rundump_cmd = stralloc(cmd);
@@ -761,7 +789,7 @@ long getsize_dump(disk, level, options)
     {
 	char *name = " (vdump)";
 	amfree(device);
-	device = amname_to_dirname(disk);
+	device = amname_to_dirname(amdevice);
 	dumpkeys = vstralloc(level_str, "b", "f", NULL);
 	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
 		  prefix, cmd, name, dumpkeys, device));
@@ -1005,8 +1033,8 @@ long getsize_dump(disk, level, options)
 }
 
 #ifdef SAMBA_CLIENT
-long getsize_smbtar(disk, level, optionns)
-    char *disk;
+long getsize_smbtar(disk, amdevice, level, optionns)
+    char *disk, *amdevice;
     int level;
     option_t *optionns;
 {
@@ -1022,7 +1050,7 @@ long getsize_smbtar(disk, level, optionns)
     char *line;
     char *pw_fd_env;
 
-    parsesharename(disk, &share, &subdir);
+    parsesharename(amdevice, &share, &subdir);
     if (!share) {
 	amfree(share);
 	amfree(subdir);
@@ -1154,8 +1182,8 @@ long getsize_smbtar(disk, level, optionns)
 #endif
 
 #ifdef GNUTAR
-long getsize_gnutar(disk, level, options, dumpsince)
-char *disk;
+long getsize_gnutar(disk, amdevice, level, options, dumpsince)
+char *disk, *amdevice;
 int level;
 option_t *options;
 time_t dumpsince;
@@ -1185,8 +1213,8 @@ time_t dumpsince;
     if(options->include_file) nb_include += options->include_file->nb_element;
     if(options->include_list) nb_include += options->include_list->nb_element;
 
-    if(nb_exclude > 0) file_exclude = build_exclude(disk, options, 0);
-    if(nb_include > 0) file_include = build_include(disk, options, 0);
+    if(nb_exclude > 0) file_exclude = build_exclude(disk, amdevice, options, 0);
+    if(nb_include > 0) file_include = build_include(disk, amdevice, options, 0);
 
     my_argv = malloc(sizeof(char *) * 21);
     i = 0;
@@ -1393,8 +1421,8 @@ common_exit:
 }
 #endif
 
-long getsize_wrapper(program, disk, level, options, dumpsince)
-char *program, *disk;
+long getsize_wrapper(program, disk, amdevice, level, options, dumpsince)
+char *program, *disk, *amdevice;
 int level;
 option_t *options;
 time_t dumpsince;
@@ -1430,7 +1458,7 @@ time_t dumpsince;
 	argvchild[i++] = "level";
 	argvchild[i++] = levelstr;
     }
-    argvchild[i++] = disk;
+    argvchild[i++] = amdevice;
     newoptstr = vstralloc(options->str,"estimate-direct;", NULL);
     argvchild[i++] = newoptstr;
 

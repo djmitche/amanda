@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.7 2002/02/16 17:42:06 martinea Exp $
+ * $Id: client_util.c,v 1.8 2002/03/03 17:10:32 martinea Exp $
  *
  */
 
@@ -141,12 +141,13 @@ char *aexc;
     return 1;
 }
 
-static int add_include(disk, file_include, ainc, verbose)
-char *disk;
+static int add_include(disk, device, file_include, ainc, verbose)
+char *disk, *device;
 FILE *file_include;
 char *ainc;
 {
     int l;
+    int nb_exp=0;
 
     l = strlen(ainc);
     if(ainc[l-1] == '\n') {
@@ -163,6 +164,7 @@ char *ainc;
 	dbprintf(("%s: include must be at least 3 character long: %s\n", get_pname(), ainc));
 	if(verbose)
 	    printf("ERROR [include must be at least 3 character long: %s]\n", ainc);
+	return 0;
     }
     else if(ainc[0] != '.' && ainc[0] != '\0' && ainc[1] != '/') {
         dbprintf(("%s: include must start with './': %s\n", get_pname(), ainc));
@@ -178,10 +180,11 @@ char *ainc;
 
 	glob = ainc+2;
 	regex = glob_to_regex(glob);
-	if((d = opendir(disk)) == NULL) {
-	    dbprintf(("%s: Can't open disk '%s'\n", get_pname(), disk));
+	if((d = opendir(device)) == NULL) {
+	    dbprintf(("%s: Can't open disk '%s']\n", get_pname(), device));
 	    if(verbose)
-		printf("ERROR [Can't open disk '%s'\n", disk);
+		printf("ERROR [Can't open disk '%s']\n", device);
+	    return 0;
 	}
 	else {
 	    while((entry = readdir(d)) != NULL) {
@@ -190,15 +193,16 @@ char *ainc;
 		}
 		if(match(regex, entry->d_name)) {
 		    fprintf(file_include, "./%s\n", entry->d_name);
+		    nb_exp++;
 		}
 	    }
 	}
     }
-    return 1;
+    return nb_exp;
 }
 
-char *build_exclude(disk, options, verbose)
-char *disk;
+char *build_exclude(disk, device, options, verbose)
+char *disk, *device;
 option_t *options;
 int verbose;
 {
@@ -243,8 +247,9 @@ int verbose;
     return f;
 }
 
-char *build_include(disk, options, verbose)
+char *build_include(disk, device, options, verbose)
 char *disk;
+char *device;
 option_t *options;
 int verbose;
 {
@@ -254,6 +259,7 @@ int verbose;
     char ainc[MAXPATHLEN+1];
     sle_t *incl;
     int nb_include = 0;
+    int nb_exp = 0;
 
     if(options->include_file) nb_include += options->include_file->nb_element;
     if(options->include_list) nb_include += options->include_list->nb_element;
@@ -266,7 +272,7 @@ int verbose;
     if(options->include_file) {
 	for(incl = options->include_file->first; incl != NULL;
 	    incl = incl->next) {
-	    add_include(disk, file_include, incl->name, verbose);
+	    nb_exp += add_include(disk, device, file_include, incl->name, verbose);
 	}
     }
 
@@ -276,23 +282,28 @@ int verbose;
 	    include = fopen(incl->name, "r");
 	    while (!feof(include)) {
 		if(fgets(ainc, MAXPATHLEN, include))
-		    add_include(disk, file_include, ainc, verbose);
+		    nb_exp += add_include(disk, device, file_include, ainc, verbose);
 	    }
 	    fclose(include);
 	}
     }
-
+	
     fclose(file_include);
 
+    if(nb_exp == 0) {
+	dbprintf(("%s: No include for '%s']\n", get_pname(), disk));
+	if(verbose)
+	    printf("ERROR [No include for '%s']\n", disk);
+    }
     f = vstralloc(AMANDA_DBGDIR, "/", filename, NULL);
     amfree(filename);
     return f;
 }
 
 
-option_t *parse_options(str, disk, verbose)
+option_t *parse_options(str, disk, device, verbose)
 char *str;
-char *disk;
+char *disk, *device;
 int verbose;
 {
     char *exc;
@@ -348,7 +359,7 @@ int verbose;
 	else if(strncmp(tok,"exclude-list=", 13) == 0) {
 	    exc = &tok[13];
 	    if(*exc != '/') {
-		char *dirname = amname_to_dirname(disk);
+		char *dirname = amname_to_dirname(device);
 		char *efile = vstralloc(dirname,"/",exc, NULL);
 		if(access(efile, F_OK) != 0) {
 		    /* if exclude list file does not exist, ignore it.
@@ -378,7 +389,7 @@ int verbose;
 	else if(strncmp(tok,"include-list=", 13) == 0) {
 	    exc = &tok[13];
 	    if(*exc != '/') {
-		char *dirname = amname_to_dirname(disk);
+		char *dirname = amname_to_dirname(device);
 		char *efile = vstralloc(dirname,"/",exc, NULL);
 		if(access(efile, F_OK) != 0) {
 		    /* if include list file does not exist, ignore it.

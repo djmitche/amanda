@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.146 2002/01/14 00:27:44 martinea Exp $
+/* $Id: dumper.c,v 1.147 2002/03/03 17:10:32 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -79,6 +79,7 @@ static comp_t srvcompress = COMP_NONE;
 static FILE *errf = NULL;
 char *hostname = NULL;
 char *diskname = NULL;
+char *device = NULL;
 char *options = NULL;
 char *progname = NULL;
 int level;
@@ -122,8 +123,8 @@ static void log_msgout P((logtype_t));
 static int runcompress P((int, pid_t *, comp_t));
 
 static void sendbackup_response P((void *, pkt_t *, security_handle_t *));
-static int startup_dump P((const char *, const char *, int, const char *,
-		    const char *, const char *));
+static int startup_dump P((const char *, const char *, const char *, int,
+			   const char *, const char *, const char *));
 static void stop_dump P((void));
 
 static void read_indexfd P((void *, void *, ssize_t));
@@ -242,18 +243,20 @@ main(main_argc, main_argv)
 
 	case PORT_DUMP:
 	    /*
-	     * PORT-DUMP handle port host disk level dumpdate progname options
+	     * PORT-DUMP handle port host disk device level dumpdate
+	     *    progname options
 	     */
-	    if (cmdargs.argc != 9)
-		error("error [dumper PORT-DUMP argc != 9: %d]", cmdargs.argc);
+	    if (cmdargs.argc != 10)
+		error("error [dumper PORT-DUMP argc != 10: %d]", cmdargs.argc);
 	    handle = newstralloc(handle, cmdargs.argv[2]);
 	    taper_port = atoi(cmdargs.argv[3]);
 	    hostname = newstralloc(hostname, cmdargs.argv[4]);
 	    diskname = newstralloc(diskname, cmdargs.argv[5]);
-	    level = atoi(cmdargs.argv[6]);
-	    dumpdate = newstralloc(dumpdate, cmdargs.argv[7]);
-	    progname = newstralloc(progname, cmdargs.argv[8]);
-	    options = newstralloc(options, cmdargs.argv[9]);
+	    device = newstralloc(device, cmdargs.argv[6]);
+	    level = atoi(cmdargs.argv[7]);
+	    dumpdate = newstralloc(dumpdate, cmdargs.argv[8]);
+	    progname = newstralloc(progname, cmdargs.argv[9]);
+	    options = newstralloc(options, cmdargs.argv[10]);
 
 	    /* connect outf to taper port */
 
@@ -269,7 +272,7 @@ main(main_argc, main_argv)
 
 	    check_options(options);
 
-	    rc = startup_dump(hostname, diskname, level, dumpdate, progname,
+	    rc = startup_dump(hostname, diskname, device, level, dumpdate, progname,
 		options);
 	    if (rc != 0) {
 		q = squote(errstr);
@@ -307,6 +310,7 @@ main(main_argc, main_argv)
     amfree(handle);
     amfree(hostname);
     amfree(diskname);
+    amfree(device);
     amfree(dumpdate);
     amfree(progname);
     amfree(options);
@@ -1359,8 +1363,8 @@ connect_error:
 }
 
 static int
-startup_dump(hostname, disk, level, dumpdate, progname, options)
-    const char *hostname, *disk, *dumpdate, *progname, *options;
+startup_dump(hostname, disk, device, level, dumpdate, progname, options)
+    const char *hostname, *disk, *device, *dumpdate, *progname, *options;
     int level;
 {
     char level_string[NUM_STR_SIZE];
@@ -1387,30 +1391,64 @@ startup_dump(hostname, disk, level, dumpdate, progname, options)
     }
 
     snprintf(level_string, sizeof(level_string), "%d", level);
-    if(strncmp(progname,"DUMP",4) == 0 || strncmp(progname,"GNUTAR",6) == 0)
-	req = vstralloc("SERVICE sendbackup\n",
-		        "OPTIONS ",
-		        "hostname=", hostname, ";",
-		        "\n",
-			progname, " ", disk, " ", level_string, " ", 
-			dumpdate, " ",
-		        "OPTIONS ", options,
-			/* compat: if auth=krb4, send krb4-auth */
-			(strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
-		        "\n",
-		        NULL);
-    else
-	req = vstralloc("SERVICE sendbackup\n",
-		        "OPTIONS ",
-		        "hostname=", hostname, ";",
-		        "\n",
-			"DUMPER ", progname, " ", disk, " ", level_string, " ",
-			dumpdate, " ",
-		        "OPTIONS ", options,
-			/* compat: if auth=krb4, send krb4-auth */
-			(strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
-		        "\n",
-		        NULL);
+    if(strncmp(progname,"DUMP",4) == 0 || strncmp(progname,"GNUTAR",6) == 0) {
+	if(device) {
+	    req = vstralloc("SERVICE sendbackup\n",
+			    "OPTIONS ",
+			    "hostname=", hostname, ";",
+			    "\n",
+			    progname, " ", disk, " ", device, " ",
+			    level_string, " ", 
+			    dumpdate, " ",
+			    "OPTIONS ", options,
+			    /* compat: if auth=krb4, send krb4-auth */
+			    (strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
+			    "\n",
+			    NULL);
+	}
+	else {
+	    req = vstralloc("SERVICE sendbackup\n",
+			    "OPTIONS ",
+			    "hostname=", hostname, ";",
+			    "\n",
+			    progname, " ", disk, " ", level_string, " ", 
+			    dumpdate, " ",
+			    "OPTIONS ", options,
+			    /* compat: if auth=krb4, send krb4-auth */
+			    (strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
+			    "\n",
+			    NULL);
+	}
+    }
+    else {
+	if(device) {
+	    req = vstralloc("SERVICE sendbackup\n",
+			    "OPTIONS ",
+			    "hostname=", hostname, ";",
+			    "\n",
+			    "DUMPER ", progname, " ", disk, " ", device, " ",
+			    level_string, " ",
+			    dumpdate, " ",
+			    "OPTIONS ", options,
+			    /* compat: if auth=krb4, send krb4-auth */
+			    (strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
+			    "\n",
+			    NULL);
+	}
+	else {
+	    req = vstralloc("SERVICE sendbackup\n",
+			    "OPTIONS ",
+			    "hostname=", hostname, ";",
+			    "\n",
+			    "DUMPER ", progname, " ", disk, " ", level_string, " ",
+			    dumpdate, " ",
+			    "OPTIONS ", options,
+			    /* compat: if auth=krb4, send krb4-auth */
+			    (strcasecmp(authopt, "krb4") ? "" : "krb4-auth"),
+			    "\n",
+			    NULL);
+	}
+    }
 
     secdrv = security_getdriver(authopt);
     if (secdrv == NULL) {

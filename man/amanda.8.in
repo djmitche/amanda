@@ -1551,13 +1551,21 @@ file determines which disks will be backed up by Amanda.
 The file usually contains one line per disk:
 .LP
 .RS
-.I hostname diskdevice dumptype
+.I hostname diskname
+[
+.I diskdevice
+]
+.I dumptype
 [
 .I spindle
 [
 .I interface
 ] ]
 .RE
+.LP
+All pair [
+.B hostname diskname
+] must be unique.
 .LP
 Lines starting with # are ignored, as are blank lines.
 The fields have the following meanings:
@@ -1571,7 +1579,25 @@ run the Samba
 .B smbclient
 program on to back up the share.
 .TP
+.I diskname
+The name of the disk (a label).
+In most case, you set your
+.B diskname
+to the
+.B diskdevice
+and you don't set the
+.B diskdevice.
+If you want multiple entry with the same
+.B diskdevice,
+you must set a different
+.B diskname
+for each entry. It's the
+.B diskname
+that you use on command line for any amanda command.
+Look at the example/disklist file for example.
+.TP
 .I diskdevice
+Default: same as diskname.
 The name of the disk device to be backed up.
 It may be a full device name,
 a device name without the
@@ -1652,7 +1678,7 @@ for the file system that holds it, this would work instead of defining
 a new dumptype:
 .RS
 .EX
-\fIhostname diskdevice\fP {
+\fIhostname diskname\fP [ \fIdiskdevice\fP ] {
   normal
   holdingdisk no
 } [ \fIspindle\fP [ \fIinterface\fP ] ]

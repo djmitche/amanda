@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.60 2001/12/30 17:42:07 martinea Exp $
+ * $Id: driverio.c,v 1.61 2002/03/03 17:10:32 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -323,10 +323,18 @@ disk_t *dp;
     char *o;
     int activehd=0;
     assignedhd_t **h=NULL;
+    char *device;
 
     if(dp && sched(dp) && sched(dp)->holdp) {
 	h = sched(dp)->holdp;
 	activehd = sched(dp)->activehd;
+    }
+
+    if(dp && dp->device) {
+	device = dp->device;
+    }
+    else {
+	device = "NODEVICE";
     }
 
     switch(cmd) {
@@ -339,6 +347,7 @@ disk_t *dp;
 			    " ", numberport,
 			    " ", dp->host->hostname,
 			    " ", dp->name,
+			    " ", device,
 			    " ", number,
 			    " ", sched(dp)->dumpdate,
 			    " ", dp->program,

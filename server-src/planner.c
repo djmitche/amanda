@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.120 2002/02/14 01:51:05 martinea Exp $
+ * $Id: planner.c,v 1.121 2002/03/03 17:10:32 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1123,19 +1123,41 @@ host_t *hostp;
 	    }
 	    if(strncmp(dp->program,"DUMP",4) == 0 || 
 	       strncmp(dp->program,"GNUTAR",6) == 0) {
-		l = vstralloc(dp->program, " ", dp->name, " ", level, " ",
-			      est(dp)->dumpdate[i], " ", spindle,
-			      exclude1,
-			      exclude2,
-			      "\n",
-			      NULL);
+		if(dp->device) {
+		    l = vstralloc(dp->program, " ", dp->name, " ",
+				  dp->device, " ", level, " ",
+				  est(dp)->dumpdate[i], " ", spindle,
+				  exclude1,
+				  exclude2,
+				  "\n",
+				  NULL);
+		}
+		else {
+		    l = vstralloc(dp->program, " ", dp->name, " ", level, " ",
+				  est(dp)->dumpdate[i], " ", spindle,
+				  exclude1,
+				  exclude2,
+				  "\n",
+				  NULL);
+		}
 	    } else {
-		l = vstralloc("DUMPER ",
-			      dp->program, " ", dp->name, " ", level, " ",
-			      est(dp)->dumpdate[i], " ", spindle, " ",
-			      optionstr(dp),
-			      "\n",
-			      NULL);
+		if(dp->device) {
+		    l = vstralloc("DUMPER ",
+				  dp->program, " ", dp->name, " ",
+				  dp->device, " ", level, " ",
+				  est(dp)->dumpdate[i], " ", spindle, " ",
+				  optionstr(dp),
+				  "\n",
+				  NULL);
+		}
+		else {
+		    l = vstralloc("DUMPER ",
+				  dp->program, " ", dp->name, " ", level, " ",
+				  est(dp)->dumpdate[i], " ", spindle, " ",
+				  optionstr(dp),
+				  "\n",
+				  NULL);
+		}
 	    }
 	    strappend(s, l);
 	    s_len += strlen(l);
