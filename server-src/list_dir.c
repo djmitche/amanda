@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: list_dir.c,v 1.7 1997/12/09 17:22:25 blair Exp $
+/* $Id: list_dir.c,v 1.8 1997/12/13 05:08:31 amcore Exp $
  *
  * obtains directory listings from index files
  */
@@ -140,35 +140,19 @@ char *dir;
 DUMP_ITEM *dump_item;
 int  recursive;
 {
-    char cmd[2048];
     char line[2048];
+    char old_line[2048];
     char filename[1024];
     char *filename_gz;
     char dir_slash[1024];
-    char awk_print[1024];
-    char awk_print_field[1024];
-    int  no_fields;
     FILE *fp;
-    char *c;
+    char *p;
+    int len_dir_slash;
 
-    /* count 2 plus the number of /'s is path to get no fields */
-    strcpy(awk_print,"\"/\" $2");
-    no_fields=2;
     if (strcmp(dir, "/") == 0)
-    {
 	strcpy(dir_slash, dir);
-    }
     else
-    {
 	sprintf(dir_slash, "%s/", dir);
-	for (c = dir; *c != '\0'; c++)
-	    if (*c == '/') {
-		no_fields++;
-		sprintf(awk_print_field," \"/\" $%d",no_fields);
-		strcat(awk_print,awk_print_field);
-	    }
-    }
-    /* awk_print is set to '"/" $2 "/" $3 ...' according to no_fields */
 
     filename_gz=getindexfname(dump_hostname, disk_name, dump_item->date,
 			      dump_item->level);
@@ -178,31 +162,30 @@ int  recursive;
 	return -1;
     }
 
-    if(recursive) {
-        sprintf(cmd, "grep \"^%s\" %s 2>/dev/null | uniq",
-	        dir_slash, filename);
-    }
-    else { /* not recursive */
-        sprintf(cmd, "grep \"^%s\" %s 2>/dev/null | awk -F \\/ '{if(NF<%d) print %s; else print %s \"/\"}' | uniq",
-	        dir_slash, filename, no_fields+1, awk_print, awk_print);
-    }
-    dbprintf(("c %s\n", cmd));
-    if ((fp = popen(cmd, "r")) == NULL)
+    if((fp = fopen(filename,"r"))==0)
     {
 	reply(599, "System error %d", errno);
 	return -1;
     }
+    len_dir_slash= strlen(dir_slash);
+    old_line[0]='\0';
     while (fgets(line, LONG_LINE, fp) != NULL)
     {
-	/* sometimes cut returns a blank line if no input! */
-	if (strlen(line) > 1)
+	if(strncmp(dir_slash,line,len_dir_slash)==0)
 	{
-	    line[strlen(line)-1] = '\0';	/* overwrite '\n' */
-	    add_dir_list_item(dump_item, line);
+	    p=&line[len_dir_slash];
+	    while((*p != '\n') && (*p != '/')) /* read the file name */
+		p++;
+	    if(*p == '/')
+		p++;
+	    *p = '\0'; /* overwire '\n' or cut the line */
+	    if(strcmp(line,old_line)!=0)
+	    {
+		strcpy(old_line,line);
+		add_dir_list_item(dump_item, line);
+	    }
 	}
     }
-    pclose(fp);
-
     return 0;
 }
 
