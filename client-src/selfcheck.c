@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.9 1997/08/27 08:11:36 amcore Exp $
+ * $Id: selfcheck.c,v 1.10 1997/09/25 11:00:11 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -98,7 +98,7 @@ char *program, *disk;
 int level;
 {
     int tstfd;
-    char *device;
+    char device[1024];
 
     if (strcmp(program, "GNUTAR") == 0) {
 #ifdef SAMBA_CLIENT
@@ -121,12 +121,12 @@ int level;
 	    return;
 	}
 #endif
-	device = amname_to_dirname(disk);
+	strcpy(device, amname_to_dirname(disk));
     } else {
 #ifdef OSF1_VDUMP
-        device = amname_to_dirname(disk);
+        strcpy(device, amname_to_dirname(disk));
 #else
-        device = amname_to_devname(disk);
+        strcpy(device, amname_to_devname(disk));
 #endif
     }
     
