@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8 2001/11/10 19:30:53 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.1 2001/12/09 18:00:00 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -575,7 +575,7 @@ disklist_t *rq;
 		if(!accept) {
 		    char dumptype;
 		    char *dumporder = getconf_str(CNF_DUMPORDER);
-		    if((strlen(dumporder)+1) <= (dumper-dmptable)) {
+		    if(strlen(dumporder) <= (dumper-dmptable)) {
 			if(dumper-dmptable < 3)
 			    dumptype = 's';
 			else
