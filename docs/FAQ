@@ -13,6 +13,14 @@ He is no longer maintaining that page, but it still contains useful
 and accurate information.
 
 
+Q: Why does `amcheck' say `port NNN is not secure'?
+
+A: Because `amcheck', as some other Amanda programs, must be installed
+as setuid-root.  Run `make install' as `root', or `chown' all Amanda
+setuid programs to `root', then `chmod u+s' them again, if `chown'
+drops the setuid bit.
+
+
 Q: How can I configure amanda so that it performs full backups on the
 week-end and incrementals on weekdays?
 
