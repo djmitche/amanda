@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.66 1998/01/27 02:45:20 amcore Exp $
+ * $Id: sendsize.c,v 1.67 1998/01/27 04:40:56 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -568,7 +568,7 @@ char *disk;
 int level;
 {
     int pipefd[2], nullfd;
-    long killwhat, dumppid;
+    long dumppid;
     long size;
     FILE *dumpout;
     char *dumpkeys = NULL;
@@ -580,6 +580,7 @@ int level;
     char level_str[NUM_STR_SIZE];
     pid_t p;
     int s;
+    int killerr;
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
@@ -770,27 +771,38 @@ int level;
      * First, try to kill the dump process nicely.  If it ignores us
      * for several seconds, hit it harder.
      */
-    killwhat = -dumppid; /* the process group */
 #ifdef XFSDUMP
-    if (strcmp(fstype, "xfs") == 0) {
+    if (strcmp(fstype, "xfs") != 0) {
     /*
-     * xfsdump won't die if we kill the group, and it won't fork, so
-     * killing dumppid should be enough.
+     * xfsdump won't die because it runs as root, and parent can't kill
+     * child unless it is root itself.
      */
-        killwhat = dumppid;
-    }
 #endif
-    dbprintf(("sending SIGTERM to process %s%ld\n",
-	      dumppid < 0 ? "group " : "", dumppid));
-    kill(killwhat, sig);
+    dbprintf(("sending SIGTERM to process group %ld\n", dumppid));
+    killerr = kill(-dumppid, SIGTERM);
+    if (killerr == -1) {
+	dbprintf(("kill failed: %s\n", strerror(errno)));
+    }
     /* Now check whether it dies */
-    for(s = 5; s > 0 && (p = kill(killwhat, 0)) == 0; s--) {
+    for(s = 5; s > 0 && (p = kill(dumppid, 0)) == 0; s--) {
 	sleep(1);
     }
     if(p == 0) {
         dbprintf(("it won\'t die with SIGTERM, but SIGKILL should do\n"));
-	kill(-dumppid, SIGKILL);
+	killerr = kill(-dumppid, SIGKILL);
+	if (killerr == -1) {
+	    dbprintf(("kill failed: %s\n", strerror(errno)));
+	}
     }
+    for(s = 5; s > 0 && (p = kill(dumppid, 0)) == 0; s--) {
+	sleep(1);
+    }
+    if(p == 0) {
+	dbprintf(("oh well, seems like it won\'t die; amanda may have to run as root then\n"));
+    }
+#ifdef XFSDUMP
+    }
+#endif
 #endif /* HAVE_DUMP_ESTIMATE */
     wait(&status);
 
