@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.2 1998/11/05 23:19:37 kashmir Exp $
+ * $Id: bsd-security.c,v 1.3 1998/11/06 17:14:55 kashmir Exp $
  *
  * "BSD" security module
  */
@@ -134,6 +134,12 @@ struct bsd_stream {
      */
     void (*fn) P((void *, void *, size_t));
     void *arg;
+
+    /*
+     * This is the buffer that we read data into that will be passed
+     * to the read callback.
+     */
+    char databuf[TAPE_BLOCK_BYTES];
 };
 
 /*
@@ -1071,9 +1077,10 @@ static void
 stream_read_callback(arg)
     void *arg;
 {
-    char buf[256];
     struct bsd_stream *bs = arg;
     size_t n;
+
+    assert(bs != NULL);
 
     /*
      * If the IO fd is not yet open, this had better be a server socket
@@ -1092,8 +1099,8 @@ stream_read_callback(arg)
      * Remove the event first, in case they reschedule it in the callback.
      */
     bsd_stream_read_cancel(bs);
-    n = read(bs->fd, buf, sizeof(buf));
-    (*bs->fn)(bs->arg, buf, n);
+    n = read(bs->fd, bs->databuf, sizeof(bs->databuf));
+    (*bs->fn)(bs->arg, bs->databuf, n);
 }
 
 /*
