@@ -14,7 +14,7 @@ use POSIX;
 
 sub Usage {
     print STDERR <<END;
-Usage: $0 [[-config] CONFIG] [-hostwidth width] [-diskwidth width] [-verbose]
+Usage: $0 [[-config] CONFIG] [-hostwidth width] [-diskwidth width] [-skipmissed] [-verbose]
 
 This script generates to standard output an overview of the filesystems
 dumped over time and the type of dump done on a particular day, such as
@@ -55,11 +55,13 @@ my $amadmin	= "$sbindir/amadmin$suf";
 my $opt_config		= "$config";
 my $opt_hostwidth	= 8;
 my $opt_diskwidth	= 20;
+my $opt_skipmissed	= 0;
 my $opt_verbose		= 0;
 
 GetOptions('config=s'		=> \$opt_config,
 	   'hostwidth=i'	=> \$opt_hostwidth,
 	   'diskwidth=i'	=> \$opt_diskwidth,
+	   'skipmissed'		=> \$opt_skipmissed,
 	   'verbose'		=> \$opt_verbose)
 or Usage();
 
@@ -124,6 +126,7 @@ while (<$fh>) {
 $fh->close or
     die "$0: error in closing `$amadmin $opt_config find|' pipe: $!\n";
 
+unless ($opt_skipmissed)
 # touch all the dates just in case whole days were missed.
 {
     my ($start, $finish) = 
