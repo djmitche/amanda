@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.37.2.1 1998/07/23 21:28:53 martinea Exp $
+ * $Id: selfcheck.c,v 1.37.2.2 1998/09/19 00:04:22 oliva Exp $
  *
  * do self-check and send back any error messages
  */
@@ -204,8 +204,6 @@ static void check_options(program, disk, str)
 char *program, *disk, *str;
 {
     int as_index = 0;
-    char *device = NULL;
-    char *fstype = NULL;
 
     if(strstr(str,"index") != NULL)
 	as_index=1;
@@ -220,11 +218,9 @@ char *program, *disk, *str;
 	need_rundump=1;
 #endif
 #ifndef AIX_BACKUP
-	device = amname_to_devname(disk);
-
 #ifdef VDUMP
 #ifdef DUMP
-	if (strcmp(amname_to_fstype(device), "advfs") == 0)
+	if (strcmp(amname_to_fstype(disk), "advfs") == 0)
 #else
 	if (1)
 #endif
@@ -238,8 +234,7 @@ char *program, *disk, *str;
 #endif /* VDUMP */
 #ifdef XFSDUMP
 #ifdef DUMP
-	fstype = amname_to_fstype(device);
-	if (strcmp(fstype, "xfs") == 0)
+	if (strcmp(amname_to_fstype(disk), "xfs") == 0)
 #else
 	if (1)
 #endif
@@ -253,8 +248,7 @@ char *program, *disk, *str;
 #endif /* XFSDUMP */
 #ifdef VXDUMP
 #ifdef DUMP
-	fstype = amname_to_fstype(device);
-	if (strcmp(fstype, "vxfs") == 0)
+	if (strcmp(amname_to_fstype(disk), "vxfs") == 0)
 #else
 	if (1)
 #endif
@@ -282,8 +276,6 @@ char *program, *disk, *str;
     if(strstr(str, "index") != NULL) {
 	/* do nothing */
     }
-    amfree(device);
-    amfree(fstype);
 }
 
 static void check_disk(program, disk, level)

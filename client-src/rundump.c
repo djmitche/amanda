@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.22 1998/07/04 00:18:17 oliva Exp $
+ * $Id: rundump.c,v 1.22.2.1 1998/09/19 00:04:19 oliva Exp $
  *
  * runs DUMP program as root
  */
@@ -40,7 +40,7 @@ int main P((int argc, char **argv));
 #if !defined(USE_RUNDUMP)
 #  define ERRMSG "rundump not enabled on this system.\n"
 #else
-#  if !defined(DUMP) && !defined(VXDUMP)
+#  if !defined(DUMP) && !defined(VXDUMP) && !defined(VDUMP) && !defined(XFSDUMP)
 #    define ERRMSG "DUMP not available on this system.\n"
 #  else
 #    undef ERRMSG

@@ -1,3 +1,11 @@
+1998-09-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/rundump.c: fix support for VDUMP-only installation
+	* client-src/selfcheck.c (check_options): fix VDUMP auto-detection
+	* client-src/sendsize.c (getsize_dump): ditto
+	* client-src/sendbackup-dump.c (start_backup): ditto
+	Reported by Tim Perkins <Tim.Perkins@ddg.phar.cam.ac.uk>
+	
 1998-09-16  John R. Jackson  <jrj@purdue.edu>
 
 	* man/amadmin.8.in: document that "hostname" is optional for "info".

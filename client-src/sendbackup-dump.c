@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.63.2.1 1998/08/27 16:26:55 blair Exp $
+ * $Id: sendbackup-dump.c,v 1.63.2.2 1998/09/19 00:05:33 oliva Exp $
  *
  * send backup data using BSD dump
  */
@@ -261,7 +261,7 @@ char *dumpdate;
 
 #ifdef VDUMP						/* { */
 #ifdef DUMP
-    if (strcmp(amname_to_fstype(device), "advfs") == 0)
+    if (strcmp(amname_to_fstype(disk), "advfs") == 0)
 #else
     if (1)
 #endif
