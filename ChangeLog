@@ -1,3 +1,7 @@
+2004-03-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amcheck.c: Do labelstr check in correct order.
+
 2004-03-10  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	Use only one time event for all dumpers, no wait event.
