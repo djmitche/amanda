@@ -7,6 +7,8 @@ amandates.lo
 amqde
 calcize
 calcsize
+client_util.lo
+findpass.lo
 getfsent
 getfsent.lo
 getfsent.test.c

@@ -32,6 +32,8 @@ amtrmidx
 amtrmlog
 amverify
 amverify.sh
+amverifyrun
+amverifyrun.sh
 changer.lo
 clock.lo
 conffile

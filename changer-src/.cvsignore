@@ -8,12 +8,20 @@ chg-chs
 chg-chs.sh
 chg-generic
 chg-generic.sh
+chg-juke
+chg-juke.sh
 chg-manual
 chg-manual.sh
+chg-mcutil
+chg-mcutil.sh
 chg-mtx
 chg-mtx.sh
 chg-multi
 chg-multi.sh
+chg-null
+chg-null.sh
+chg-rait
+chg-rait.sh
 chg-rth
 chg-rth.pl
 chg-scsi
@@ -25,3 +33,4 @@ no-changer
 no-changer.sh
 rth-changer
 rth-changer.pl
+

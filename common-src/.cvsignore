@@ -3,7 +3,9 @@
 Makefile
 Makefile.in
 alloc.lo
+amfeatures.lo
 amflock.lo
+clock.lo
 debug.lo
 dgram.lo
 engine.ih
@@ -28,6 +30,7 @@ regfree.lo
 security
 security.lo
 security.test.c
+sl.lo
 statfs
 statfs.lo
 statfs.test.c

@@ -6,6 +6,7 @@ amdd
 ammt
 amtapeio
 amtapeio.test.c
+amtapetype
 libamtape.la
 output-file.lo
 output-null.lo
