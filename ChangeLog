@@ -1,3 +1,7 @@
+2001-01-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* docs/INSTALL: Notes about tar-1.13.19
+
 2001-01-07  Thomas Hepper <th@ant.han.de>
 
 	* changer-src/chg-scsi.c: Moved defs. for config_t and changer_t
@@ -1378,7 +1382,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.436 2001/01/08 20:08:04 ant Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.437 2001/01/20 15:37:31 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
