@@ -1,3 +1,9 @@
+1998-07-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/amcleanup.sh.in (reporter): update to call amreport.
+	(amdump.<n>) update to use the same renaming technique introduced in
+ 	June 30's change to amdump.
+
 1998-07-25  Michael Graff  <explorer@vix.com>
 
 	* changer-src/Makefile.am (install-exec-hook): support $(DESTDIR)
