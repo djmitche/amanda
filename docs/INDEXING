@@ -164,7 +164,8 @@ define a disktype with this option, e.g.,
 
 define dumptype comp-user-index {
     comment "Non-root partitions on reasonably fast machines"
-    options compress-fast, index
+    compress client fast
+    index yes
     priority medium
 }
 
