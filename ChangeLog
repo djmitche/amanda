@@ -1,3 +1,14 @@
+1998-08-27  Blair Zajac  <blair@gps.caltech.edu>
+
+	* configure.in: Add the directory /usr/lib/fs/vxfs to the search
+	path where configure looks for vxdump and vxrestore.  This is for
+	Solaris so it can automatically handle vxfs filesystems.
+	* client-src/sendbackup-dump.c: add missing last NULL argument to
+	newvstralloc().
+	* server-src/dumper.c add missing last NULL argument to	newvstralloc().
+	* NEWS: reorder 2.4.1 items into most to least important for most
+	users.
+
 1998-08-21  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* man/amanda.8.in (nofull): only level 1 incrementals

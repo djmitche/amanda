@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.63 1998/07/04 00:18:20 oliva Exp $
+ * $Id: sendbackup-dump.c,v 1.63.2.1 1998/08/27 16:26:55 blair Exp $
  *
  * send backup data using BSD dump
  */
@@ -232,7 +232,7 @@ char *dumpdate;
         char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
 					    versionsuffix(), NULL);
 #else
-	char *progname = cmd = newvstralloc(cmd, VXDUMP);
+	char *progname = cmd = newvstralloc(cmd, VXDUMP, NULL);
 #endif
 	program->backup_name  = VXDUMP;
 #ifndef VXRESTORE
