@@ -19,6 +19,11 @@ amcheck \- run Amanda self\-checks
 .BI \-M address
 ]
 .I config
+[
+.I host
+[
+.I disk
+]]*
 .SH DESCRIPTION
 .B Amcheck
 runs a number of self\-checks on both the Amanda tape server host and
@@ -34,6 +39,10 @@ run to verify the correct tape for the next run is mounted.
 can also do a self\-check on all client hosts
 to make sure each host is running and that permissions
 on filesystems to be backed up are correct.
+.LP
+You can specify many host/disk expressions, only  disks that
+match an expression will be checked. All disk are checked if no
+expression are given.
 .LP
 See the
 .IR amanda (8)

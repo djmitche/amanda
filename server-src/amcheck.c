@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.75 2000/12/24 00:43:38 jrjackson Exp $
+ * $Id: amcheck.c,v 1.76 2000/12/30 16:13:55 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -42,6 +42,7 @@
 #include "clock.h"
 #include "version.h"
 #include "amindex.h"
+#include "server_util.h"
 
 #define BUFFER_SIZE	32768
 
@@ -66,7 +67,7 @@ int test_server_pgm P((FILE *outf, char *dir, char *pgm,
 
 void usage()
 {
-    error("Usage: amcheck%s [-M <username>] [-mwsclt] <conf>", versionsuffix());
+    error("Usage: amcheck%s [-M <username>] [-mwsclt] <conf> [host disk]*", versionsuffix());
 }
 
 static unsigned long malloc_hist_1, malloc_size_1;
@@ -166,7 +167,7 @@ char **argv;
 	do_localchk = do_clientchk = do_tapechk = 1;
     }
 
-    if(argc != 1) usage();
+    if(argc < 1) usage();
 
     config_name = stralloc(*argv);
 
@@ -188,6 +189,7 @@ char **argv;
     if(read_diskfile(conf_diskfile, &origq) < 0) {
 	error("could not load disklist %s", conf_diskfile);
     }
+    match_disklist(&origq, argc-1, argv+1);
     amfree(conf_diskfile);
 
     /*
@@ -1079,53 +1081,59 @@ int fd;
     hostcount = remote_errors = 0;
 
     while(!empty(origq)) {
+	int todo = 0;
 	req = vstralloc("SERVICE selfcheck\n",
 			"OPTIONS ;\n",
 			NULL);
 	hostp = origq.head->host;
 	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	    char *t;
-	    char *o;
-
 	    remove_disk(&origq, dp);
-	    o = optionstr(dp);
-	    if(strncmp(dp->program,"DUMP",4) == 0 || 
-	       strncmp(dp->program,"GNUTAR",6) == 0)
-		t = vstralloc(req,
-			      dp->program, 
-			      " ",
-			      dp->name,
-			      " 0 OPTIONS |",
-			      o,
-			      "\n",
-			      NULL);
-	    else
-		t = vstralloc(req,
-			      "DUMPER ",
-			      dp->program, 
-			      " ",
-			      dp->name,
-			      " 0 OPTIONS |",
-			      o,
-			      "\n",
-			      NULL);
+	    if(dp->todo == 1) {
+		char *t;
+		char *o;
+
+		todo = 1;
+		o = optionstr(dp);
+		if(strncmp(dp->program,"DUMP",4) == 0 || 
+		   strncmp(dp->program,"GNUTAR",6) == 0)
+		    t = vstralloc(req,
+				  dp->program, 
+				  " ",
+				  dp->name,
+				  " 0 OPTIONS |",
+				  o,
+				  "\n",
+				  NULL);
+		else
+		    t = vstralloc(req,
+				  "DUMPER ",
+				  dp->program, 
+				  " ",
+				  dp->name,
+				  " 0 OPTIONS |",
+				  o,
+				  "\n",
+				  NULL);
+		amfree(req);
+		amfree(o);
+		req = t;
+	    }
+	}
+	if(todo == 1) {
+	    hostcount++;
+
+	    secdrv = security_getdriver(hostp->disks->security_driver);
+	    if (secdrv == NULL) {
+		error("could not find security driver '%s' for host '%s'",
+		      hostp->disks->security_driver, hostp->hostname);
+	    }
+	    protocol_sendreq(hostp->hostname, secdrv, req, conf_ctimeout,
+			     handle_result, hostp);
+
 	    amfree(req);
-	    amfree(o);
-	    req = t;
+
+	    protocol_check();
 	}
-	hostcount++;
-
-	secdrv = security_getdriver(hostp->disks->security_driver);
-	if (secdrv == NULL) {
-	    error("could not find security driver '%s' for host '%s'",
-		hostp->disks->security_driver, hostp->hostname);
-	}
-	protocol_sendreq(hostp->hostname, secdrv, req, conf_ctimeout,
-				handle_result, hostp);
-
-	amfree(req);
-
-	protocol_check();
     }
     protocol_run();
 

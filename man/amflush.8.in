@@ -16,6 +16,11 @@ amflush \- flush Amanda backup files from holding disk to tape
 .B -f
 ]
 .I config
+[
+.I host
+[
+.I disk
+]]
 .SH DESCRIPTION
 .B Amflush
 writes Amanda backups from the holding disks to tape,
@@ -27,6 +32,10 @@ is run.
 When this happens, the problem must be corrected and
 .B amflush
 run by hand.
+.LP
+You can specify many host/disk expressions, only disks that
+match an expression will be flushed. All disk are flushed if no
+expression are given.
 .PP
 .B Amflush
 will look in the holding disks specified by the

@@ -1,5 +1,16 @@
 2000-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amcheck.c: New [host disk]* pair arguments.
+	* server-src/amflush.c: Ditto.
+	* server-src/planner.c: Ditto.
+	* server-src/amdump.sh.in: Ditto.
+	* server-src/amrestore.c: Use new host/disk matcher.
+	* man/amcheck.8.in: Document new [host disk]* pair arguments.
+	* man/amflush.8.in: Ditto.
+	* man/amdump.8.in: Ditto.
+
+2000-11-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/diskfile.c (match_disklist): new function.
 	* server-src/diskfile.h (struct disk_s): new field todo.
 	* server-src/diskfile.h (match_disklist): prototype.

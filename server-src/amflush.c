@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.56 1999/11/25 16:19:29 jrj Exp $
+ * $Id: amflush.c,v 1.57 2000/12/30 16:13:55 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -117,6 +117,7 @@ char **main_argv;
     }
     if (read_diskfile(conf_diskfile, &diskq) < 0)
 	error("could not read disklist file \"%s\"", conf_diskfile);
+    match_disklist(&diskq, main_argc-2, main_argv+2);
     amfree(conf_diskfile);
 
     conf_tapelist = getconf_str(CNF_TAPELIST);
@@ -393,6 +394,7 @@ char *diskdir, *datestamp;
 		    entry->d_name, file.name, file.disk);
 	    continue;
 	}
+	else if (dp->todo == 0) continue;
 
 	if(file.dumplevel < 0 || file.dumplevel > 9) {
 	    log_add(L_INFO, "%s: ignoring file with bogus dump level %d.",

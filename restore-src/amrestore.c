@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.35 2000/12/03 21:52:17 jrjackson Exp $
+ * $Id: amrestore.c,v 1.36 2000/12/30 16:13:54 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -107,8 +107,8 @@ char *datestamp, *hostname, *diskname;
 {
     if(file->type != F_DUMPFILE) return 0;
 
-    if((*hostname == '\0' || match(hostname, file->name)) &&
-       (*diskname == '\0' || match(diskname, file->disk)) &&
+    if((*hostname == '\0' || match_host(hostname, file->name)) &&
+       (*diskname == '\0' || match_disk(diskname, file->disk)) &&
        (*datestamp == '\0' || match(datestamp, file->datestamp)))
 	return 1;
     else

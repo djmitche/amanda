@@ -47,11 +47,6 @@ else
 	SUF=
 fi
 
-if [ $# -ne 1 ]; then
-        echo  Usage: amdump$SUF conf
-        exit 1
-fi
-
 conf=$1
 if [ ! -d $confdir/$conf ]; then
     echo "amdump$SUF: could not find directory $confdir/$conf"
@@ -100,7 +95,7 @@ umask 077
 # Plan and drive the dumps.
 exec </dev/null >$errfile 2>&1
 echo "amdump: start at `date`"
-$libexecdir/planner$SUF $conf | $libexecdir/driver$SUF $conf
+$libexecdir/planner$SUF "$@" | $libexecdir/driver$SUF $conf
 echo "amdump: end at `date`"
 
 # Send out a report on the dumps.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.101 2000/12/29 17:46:39 martinea Exp $
+ * $Id: planner.c,v 1.102 2000/12/30 16:13:55 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -239,6 +239,7 @@ char **argv;
     if (read_diskfile(conf_diskfile, &origq) < 0) {
 	error("could not load disklist \"%s\"", conf_diskfile);
     }
+    match_disklist(&origq, argc-2, argv+2);
     amfree(conf_diskfile);
 
     conf_tapelist = getconf_str(CNF_TAPELIST);
@@ -310,7 +311,12 @@ char **argv;
     startclock();
 
     startq.head = startq.tail = NULL;
-    while(!empty(origq)) setup_estimate(dequeue_disk(&origq));
+    while(!empty(origq)) {
+	disk_t *dp = dequeue_disk(&origq);
+	if(dp->todo == 1) {
+	    setup_estimate(dp);
+	}
+    }
 
     fprintf(stderr, "setting up estimates took %s secs\n",
 	    walltime_str(curclock()));
@@ -983,6 +989,7 @@ host_t *hostp;
 		    NULL);
     disks = 0;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(dp->todo == 0) continue;
 	est(dp)->got_estimate = 0;
 	if(est(dp)->level[0] == -1) continue;	/* ignore this disk */
 
@@ -1039,6 +1046,7 @@ host_t *hostp;
     }
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(dp->todo == 0) continue;
 	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
 	est(dp)->errstr = NULL;
 	enqueue_disk(&waitq, dp);
@@ -1175,6 +1183,7 @@ security_handle_t *sech;
     /* XXX amanda 2.1 treated that case as a bad msg */
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(dp->todo == 0) continue;
 	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
 	remove_disk(&waitq, dp);
 	if(est(dp)->got_estimate) {
