@@ -31,7 +31,7 @@ else
   # So, we emulate echo with printf '%s\n'
   printfecho () { printf %s\n "$@"; }
   echo=printfecho
-  if test X`$echo '\t'` = 'X\t'; then :
+  if test "X`$echo '\t'`" = 'X\t'; then :
   else
     # Oops.  We have no working printf.  Try to find a not-so-buggy echo.
     echo=echo
