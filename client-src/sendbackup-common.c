@@ -156,7 +156,7 @@ int argc;
 char **argv;
 {
     int level, mesgpipe[2];
-    char disk[512], options[512], datestamp[80];
+    char disk[1024], options[4096], datestamp[80];
 
     /* initialize */
 
