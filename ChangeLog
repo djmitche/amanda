@@ -1,3 +1,8 @@
+1999-04-29 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/planner.c (when_overwrite): return a big number (1024)
+	if the tape is not reusable.
+
 1998-11-21  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* Amanda 2.4.1p1 released
