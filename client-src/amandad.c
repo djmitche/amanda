@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.24 1998/02/26 19:24:11 jrj Exp $
+ * $Id: amandad.c,v 1.25 1998/04/08 16:24:18 amcore Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -240,12 +240,12 @@ char **argv;
 	errstr = newvstralloc(errstr,
 			      "service ", base, " unavailable",
 			      NULL);
-	afree(base);
+	amfree(base);
 	sendnak(&in_msg, &out_msg, errstr);
 	dbclose();
 	return 1;
     }
-    afree(base);
+    amfree(base);
 
     /* everything looks ok initially, send ACK */
 
@@ -265,7 +265,7 @@ char **argv;
     seteuid(getuid());
 #endif /* KRB4_SECURITY */
 
-    afree(errstr);
+    amfree(errstr);
     if(!(servp->flags & NO_AUTH)
        && !security_ok(&in_msg.peer, in_msg.security, in_msg.cksum, &errstr)) {
 	/* XXX log on authlog? */
@@ -336,7 +336,7 @@ char **argv;
 	execle(cmd, cmd, NULL, safe_env());
 	error("could not exec service: %s", strerror(errno));
     }
-    afree(cmd);
+    amfree(cmd);
 
     if(!setjmp(sigjmp))
 	signal(SIGCHLD, sigchild_jump);
@@ -435,7 +435,7 @@ send_response:
     }
     /* XXX log if retry count exceeded */
 
-    afree(cmd);
+    amfree(cmd);
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
     if(malloc_size_1 != malloc_size_2) {

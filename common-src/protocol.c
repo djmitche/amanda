@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.23 1998/02/23 21:47:40 jrj Exp $
+ * $Id: protocol.c,v 1.24 1998/04/08 16:24:43 amcore Exp $
  *
  * implements amanda protocol
  */
@@ -389,7 +389,7 @@ char *str;
 				    "expected \"", saved_str, "\",",
 				    " got \"", tmp, "\"",
 				    NULL);
-	afree(tmp);
+	amfree(tmp);
 	longjmp(parse_failed,1);
     }
 }
@@ -559,7 +559,7 @@ char *security, *typestr;
 			security ? "\n" : "",
 			NULL);
     dgram_cat(msg, linebuf);
-    afree(linebuf);
+    amfree(linebuf);
 }
 
 static void send_req(p)
@@ -617,7 +617,7 @@ pkt_t *pkt;
 			"\n", NULL);
 
     dgram_cat(&outmsg, linebuf);
-    afree(linebuf);
+    amfree(linebuf);
 
 #ifdef PROTO_DEBUG
     fprintf(stderr, "time %d: send_ack_repl: len %d: packet:\n----\n%s----\n\n", 
@@ -669,9 +669,9 @@ pkt_t *pkt;
 		    p->state = S_FAILED;
 		    free_handle(p);
 		    p->continuation(p, NULL);
-		    afree(p->req);
-		    afree(p->security);
-		    afree(p);
+		    amfree(p->req);
+		    amfree(p->security);
+		    amfree(p);
 		    return;
 		}
 		else {
@@ -705,9 +705,9 @@ pkt_t *pkt;
 		p->state = S_FAILED;
 		free_handle(p);
 		p->continuation(p, pkt);
-		afree(p->req);
-		afree(p->security);
-		afree(p);
+		amfree(p->req);
+		amfree(p->security);
+		amfree(p);
 		return;
 	    }
 	    else if(pkt->type == P_REP) {
@@ -726,9 +726,9 @@ pkt_t *pkt;
 		    p->state = S_FAILED;
 		    free_handle(p);
 		    p->continuation(p, NULL);
-		    afree(p->req);
-		    afree(p->security);
-		    afree(p);
+		    amfree(p->req);
+		    amfree(p->security);
+		    amfree(p);
 		    return;
 		}
 		else {
@@ -749,9 +749,9 @@ pkt_t *pkt;
 	    p->state = S_SUCCEEDED;
 	    free_handle(p);
 	    p->continuation(p, pkt);
-	    afree(p->req);
-	    afree(p->security);
-	    afree(p);
+	    amfree(p->req);
+	    amfree(p->security);
+	    amfree(p);
 	    return;
 
 	default:

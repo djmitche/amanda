@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.30 1998/03/30 22:16:05 amcore Exp $
+ * $Id: reporter.c,v 1.31 1998/04/08 16:25:29 amcore Exp $
  *
  * nightly Amanda Report generator
  */
@@ -306,7 +306,7 @@ char **argv;
 	  if ((postscript = popen(cmd,"w")) == NULL)
 	    error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
     }
-    afree(subj_str);
+    amfree(subj_str);
 
     if (postscript) {
       copy_template_file(tp->lbl_templ);
@@ -359,10 +359,10 @@ char **argv;
 	log_rename(datestamp);
     }
 
-    afree(hostname);
-    afree(diskname);
-    afree(datestamp);
-    afree(tape_labels);
+    amfree(hostname);
+    amfree(diskname);
+    amfree(datestamp);
+    amfree(tape_labels);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -569,10 +569,10 @@ FILE *f;
 
     while(lp) {
 	fputs(lp->str, f);
-	afree(lp->str);
+	amfree(lp->str);
 	fputc('\n', f);
 	next = lp->next;
-	afree(lp);
+	amfree(lp);
 	lp = next;
     }
 }
@@ -780,7 +780,7 @@ void handle_start()
 
 	if(tape_labels) {
 	    fp = vstralloc(tape_labels, ", ", label, NULL);
-	    afree(tape_labels);
+	    amfree(tape_labels);
 	    tape_labels = fp;
 	} else {
 	    tape_labels = stralloc(label);
@@ -921,7 +921,7 @@ void handle_note()
 
     str = vstralloc("  ", program_str[curprog], ": ", curstr, NULL);
     addline(&notes, str);
-    afree(str);
+    amfree(str);
 }
 
 
@@ -961,7 +961,7 @@ void handle_error()
     s = vstralloc("  ", program_str[curprog], ": ",
 		  logtype_str[curlog], " ", curstr, NULL);
     addline(&errsum, s);
-    afree(s);
+    amfree(s);
 }
 
 /* ----- */
@@ -1068,7 +1068,7 @@ void handle_success()
 			" ", "ERROR [not in disklist]",
 			NULL);
 	addline(&errsum, str);
-	afree(str);
+	amfree(str);
 	return;
     }
 
@@ -1122,14 +1122,14 @@ void handle_strange()
 		    " ", "STRANGE",
 		    NULL);
     addline(&errsum, str);
-    afree(str);
+    amfree(str);
 
     addline(&errdet,"");
     str = vstralloc("/-- ", prefix(hostname, diskname, level),
 		    " ", "STRANGE",
 		    NULL);
     addline(&errdet, str);
-    afree(str);
+    amfree(str);
 
     while(contline_next()) {
 	get_logline(logfile);
@@ -1196,7 +1196,7 @@ void handle_failed()
 			" ", "ERROR [not in disklist]",
 			NULL);
 	addline(&errsum, str);
-	afree(str);
+	amfree(str);
     } else {
 	if(data(dp)->result != L_SUCCESS) {
 	    data(dp)->result = L_FAIL;
@@ -1209,7 +1209,7 @@ void handle_failed()
 		    " ", errstr,
 		    NULL);
     addline(&errsum, str);
-    afree(str);
+    amfree(str);
 
     if(curprog == P_DUMPER) {
         addline(&errdet,"");
@@ -1238,7 +1238,7 @@ void generate_missing()
 			    " ", "RESULTS MISSING",
 			    NULL);
 	    addline(&errsum, str);
-	    afree(str);
+	    amfree(str);
 	}
     }
 }

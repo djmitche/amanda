@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.15 1998/02/26 19:25:04 jrj Exp $
+ * $Id: amtape.c,v 1.16 1998/04/08 16:25:05 amcore Exp $
  *
  * tape changer interface program
  */
@@ -129,8 +129,8 @@ char **argv;
 	usage();
     }
 
-    afree(changer_resultstr);
-    afree(confdir);
+    amfree(changer_resultstr);
+    amfree(confdir);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -161,7 +161,7 @@ char **argv;
     default:
 	error("could not reset changer: %s", changer_resultstr);
     }
-    afree(slotstr);
+    amfree(slotstr);
 }
 
 
@@ -178,7 +178,7 @@ char **argv;
 	fprintf(stderr, "%s: slot %s not ejected: %s\n",
 		get_pname(), slotstr ? slotstr : "??", changer_resultstr);
     }
-    afree(slotstr);
+    amfree(slotstr);
 }
 
 
@@ -199,8 +199,8 @@ char **argv;
 
     fprintf(stderr, "%s: changed to slot %s on %s\n",
 	    get_pname(), slotstr, devicename);
-    afree(slotstr);
-    afree(devicename);
+    amfree(slotstr);
+    amfree(devicename);
 }
 
 
@@ -246,13 +246,13 @@ char *device;
 	else {
 	    fprintf(stderr, " (exact label match)\n");
 	    found = 1;
-	    afree(datestamp);
-	    afree(label);
+	    amfree(datestamp);
+	    amfree(label);
 	    return 1;
 	}
     }
-    afree(datestamp);
-    afree(label);
+    amfree(datestamp);
+    amfree(label);
     return 0;
 }
 
@@ -312,8 +312,8 @@ char *slotstr, *device;
 	fprintf(stderr, "slot %s: date %-8s label %s\n",
 		slotstr, datestamp, label);
     }
-    afree(datestamp);
-    afree(label);
+    amfree(datestamp);
+    amfree(label);
     return 0;
 }
 
@@ -363,8 +363,8 @@ char *device;
 		/* it's the one we are looking for, stop here */
 		fprintf(stderr, " (exact label match)\n");
 		found = 1;
-		afree(datestamp);
-		afree(label);
+		amfree(datestamp);
+		amfree(label);
 		return 1;
 	    }
 	    else if(!match(labelstr, label))
@@ -384,16 +384,16 @@ char *device;
 		    fprintf(stderr, " (first labelstr match)\n");
 		    if(!backwards || !searchlabel) {
 			found = 2;
-			afree(datestamp);
-			afree(label);
+			amfree(datestamp);
+			amfree(label);
 			return 1;
 		    }
 		}
 	    }
 	}
     }
-    afree(datestamp);
-    afree(label);
+    amfree(datestamp);
+    amfree(label);
     return 0;
 }
 
@@ -439,8 +439,8 @@ char **argv;
 	    fprintf(stderr, "%s: could not load labelstr match in slot %s: %s\n",
 		    get_pname(), first_match, changer_resultstr);
 	}
-	afree(device);
-	afree(slotstr);
+	amfree(device);
+	amfree(slotstr);
     }
     else if(!found) {
 	fprintf(stderr, "%s: could not find ", get_pname());
@@ -452,7 +452,7 @@ char **argv;
 	fprintf(stderr, "%s: label %s is now loaded.\n",
 		get_pname(), searchlabel);
 
-    afree(searchlabel);
-    afree(first_match);
-    afree(first_match_label);
+    amfree(searchlabel);
+    amfree(first_match);
+    amfree(first_match_label);
 }

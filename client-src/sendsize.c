@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.85 1998/04/01 09:34:31 amcore Exp $
+ * $Id: sendsize.c,v 1.86 1998/04/08 16:24:30 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -219,7 +219,7 @@ char **argv;
 	s[-1] = '\0';
 
 	spindle = 0;				/* default spindle */
-	afree(exclude);				/* default is no exclude */
+	amfree(exclude);				/* default is no exclude */
 
 	skip_whitespace(s, ch);			/* find the spindle */
 	if(ch != '\0') {
@@ -242,7 +242,7 @@ char **argv;
 
 	add_diskest(disk, level, exclude, spindle, prog);
     }
-    afree(line);
+    amfree(line);
 
     finish_amandates();
     free_amandates();
@@ -258,11 +258,11 @@ char **argv;
     est_prev = NULL;
     for(est = est_list; est != NULL; est = est->next) {
 	free_estimates(est);
-	afree(est_prev);
+	amfree(est_prev);
 	est_prev = est;
     }
-    afree(est_prev);
-    afree(host);
+    amfree(est_prev);
+    amfree(host);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -335,10 +335,10 @@ int level, spindle;
 void free_estimates(est)
 disk_estimates_t *est;
 {
-    afree(est->amname);
-    afree(est->dirname);
-    afree(est->exclude);
-    afree(est->program);
+    amfree(est->amname);
+    amfree(est->dirname);
+    amfree(est->exclude);
+    amfree(est->program);
 }
 
 /*
@@ -443,9 +443,9 @@ disk_estimates_t *est;
 	exit(1);
     }
     for(i = 0; i < argc; i++) {
-	afree(argv[i]);
+	amfree(argv[i]);
     }
-    afree(cmd);
+    amfree(cmd);
 
     wait(NULL);
 }
@@ -646,7 +646,7 @@ int level;
 #endif							/* } */
     {
 	char *name = " (vdump)";
-	afree(device);
+	amfree(device);
 	device = amname_to_dirname(disk);
 	dumpkeys = vstralloc(level_str, "b", "f", NULL);
 	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
@@ -691,7 +691,7 @@ int level;
 		  get_pname(), cmd, name, dumpkeys, device));
 #  endif						/* } */
 # endif							/* } */
-	afree(name);
+	amfree(name);
     }
     else
 #endif							/* } */
@@ -702,10 +702,10 @@ int level;
 
     switch(dumppid = fork()) {
     case -1:
-	afree(dumpkeys);
-	afree(cmd);
-	afree(rundump_cmd);
-	afree(device);
+	amfree(dumpkeys);
+	amfree(cmd);
+	amfree(rundump_cmd);
+	amfree(device);
 	return -1;
     default:
 	break; 
@@ -788,9 +788,9 @@ int level;
 	}
     }
 
-    afree(dumpkeys);
-    afree(cmd);
-    afree(rundump_cmd);
+    amfree(dumpkeys);
+    amfree(cmd);
+    amfree(rundump_cmd);
 
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
@@ -799,14 +799,14 @@ int level;
 	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
-	    afree(line);
+	    amfree(line);
 	    if((line = agets(dumpout)) != NULL) {
 		dbprintf(("%s\n",line));
 	    }
 	    break;
 	}
     }
-    afree(line);
+    amfree(line);
 
     dbprintf((".....\n"));
     if(size == -1)
@@ -845,8 +845,8 @@ int level;
     aclose(nullfd);
     afclose(dumpout);
 
-    afree(device);
-    afree(fstype);
+    amfree(device);
+    amfree(fstype);
 
     return size;
 }
@@ -867,10 +867,10 @@ int level;
     }
     if ((sharename = makesharename(disk, 0)) == NULL) {
 	memset(pass, '\0', strlen(pass));
-	afree(pass);
+	amfree(pass);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
-	    afree(domain);
+	    amfree(domain);
 	}
 	error("[sendsize : can't make share name of %s]", disk);
     }
@@ -889,15 +889,15 @@ int level;
     switch(dumppid = fork()) {
     case -1:
 	memset(pass, '\0', strlen(pass));
-	afree(pass);
+	amfree(pass);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
-	    afree(domain);
+	    amfree(domain);
 	}
-	afree(sharename);
+	amfree(sharename);
 	return -1;
     default:
-	afree(sharename);
+	amfree(sharename);
 	break; 
     case 0:   /* child process */
 	dup2(nullfd, 0);
@@ -917,22 +917,22 @@ int level;
 	       safe_env());
 	/* should not get here */
 	memset(pass, '\0', strlen(pass));
-	afree(pass);
+	amfree(pass);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
-	    afree(domain);
+	    amfree(domain);
 	}
-	afree(sharename);
+	amfree(sharename);
 	exit(1);
 	/* NOTREACHED */
     }
     memset(pass, '\0', strlen(pass));
-    afree(pass);
+    amfree(pass);
     if(domain) {
 	memset(domain, '\0', strlen(domain));
-	afree(domain);
+	amfree(domain);
     }
-    afree(sharename);
+    amfree(sharename);
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
 
@@ -940,14 +940,14 @@ int level;
 	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
-	    afree(line);
+	    amfree(line);
 	    if((line = agets(dumpout)) != NULL) {
 		dbprintf(("%s",line));
 	    }
 	    break;
 	}
     }
-    afree(line);
+    amfree(line);
 
     dbprintf((".....\n"));
     if(size == -1)
@@ -1019,18 +1019,18 @@ notincremental:
 	out = fopen(incrname, "w");
 	if (out == NULL) {
 	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
-	  afree(incrname);
-	  afree(basename);
-	  afree(dirname);
+	  amfree(incrname);
+	  amfree(basename);
+	  amfree(dirname);
 	  return -1;
 	}
 
 	if (fclose(out) == EOF) {
 	  dbprintf(("error [closing %s: %s]\n", incrname, strerror(errno)));
 	  out = NULL;
-	  afree(incrname);
-	  afree(basename);
-	  afree(dirname);
+	  amfree(incrname);
+	  amfree(basename);
+	  amfree(dirname);
 	  return -1;
 	}
 	out = NULL;
@@ -1048,17 +1048,17 @@ notincremental:
 	}
 
 	if (in == NULL) {
-	  afree(inputname);
+	  amfree(inputname);
 	  goto notincremental;
 	}
 
 	out = fopen(incrname, "w");
 	if (out == NULL) {
 	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
-	  afree(incrname);
-	  afree(basename);
-	  afree(inputname);
-	  afree(dirname);
+	  amfree(incrname);
+	  amfree(basename);
+	  amfree(inputname);
+	  amfree(dirname);
 	  return -1;
 	}
 
@@ -1066,30 +1066,30 @@ notincremental:
 	  if (fputs(buf, out) == EOF) {
 	    dbprintf(("error [writing to %s: %s]\n", incrname,
 		      strerror(errno)));
-	    afree(incrname);
-	    afree(basename);
-	    afree(inputname);
-	    afree(dirname);
+	    amfree(incrname);
+	    amfree(basename);
+	    amfree(inputname);
+	    amfree(dirname);
 	    return -1;
 	  }
 
 	if (ferror(in)) {
 	  dbprintf(("error [reading from %s: %s]\n", inputname,
 		    strerror(errno)));
-	  afree(incrname);
-	  afree(basename);
-	  afree(inputname);
-	  afree(dirname);
+	  amfree(incrname);
+	  amfree(basename);
+	  amfree(inputname);
+	  amfree(dirname);
 	  return -1;
 	}
 
 	if (fclose(in) == EOF) {
 	  dbprintf(("error [closing %s: %s]\n", inputname, strerror(errno)));
 	  in = NULL;
-	  afree(incrname);
-	  afree(basename);
-	  afree(inputname);
-	  afree(dirname);
+	  amfree(incrname);
+	  amfree(basename);
+	  amfree(inputname);
+	  amfree(dirname);
 	  return -1;
 	}
 	in = NULL;
@@ -1097,17 +1097,17 @@ notincremental:
 	if (fclose(out) == EOF) {
 	  dbprintf(("error [closing %s: %s]\n", incrname, strerror(errno)));
 	  out = NULL;
-	  afree(incrname);
-	  afree(basename);
-	  afree(inputname);
-	  afree(dirname);
+	  amfree(incrname);
+	  amfree(basename);
+	  amfree(inputname);
+	  amfree(dirname);
 	  return -1;
 	}
 	out = NULL;
 
-	afree(inputname);
+	amfree(inputname);
       }
-      afree(basename);
+      amfree(basename);
     }
 #endif
 
@@ -1122,7 +1122,7 @@ notincremental:
     cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 
     if (exclude_spec == NULL) {
-	afree(exclude_arg);
+	amfree(exclude_arg);
 	/* do nothing */
 #define sc "--exclude-list="
     } else if (strncmp(exclude_spec, sc, sizeof(sc)-1)==0) {
@@ -1132,7 +1132,7 @@ notincremental:
 	else {
 	    dbprintf(("%s: missing exclude list file \"%s\" discarded\n",
 		      get_pname(), file));
-	    afree(exclude_arg);
+	    amfree(exclude_arg);
 	}
 #undef sc
 #define sc "--exclude-file="
@@ -1173,8 +1173,8 @@ notincremental:
 
     switch(dumppid = fork()) {
     case -1:
-      afree(cmd);
-      afree(dirname);
+      amfree(cmd);
+      amfree(dirname);
       return -1;
     default:
       break;
@@ -1213,8 +1213,8 @@ notincremental:
       exit(1);
       break;
     }
-    afree(exclude_arg);
-    afree(cmd);
+    amfree(exclude_arg);
+    amfree(cmd);
 
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
@@ -1223,14 +1223,14 @@ notincremental:
 	dbprintf(("%s\n",line));
 	size = handle_dumpline(line);
 	if(size > -1) {
-	    afree(line);
+	    amfree(line);
 	    if((line = agets(dumpout)) != NULL) {
 		dbprintf(("%s\n",line));
 	    }
 	    break;
 	}
     }
-    afree(line);
+    amfree(line);
 
     dbprintf((".....\n"));
     if(size == -1)
@@ -1241,8 +1241,8 @@ notincremental:
     kill(-dumppid, SIGTERM);
 
     unlink(incrname);
-    afree(incrname);
-    afree(dirname);
+    amfree(incrname);
+    amfree(dirname);
 
     wait(NULL);
 

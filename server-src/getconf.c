@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.6 1998/02/26 19:25:14 jrj Exp $
+ * $Id: getconf.c,v 1.7 1998/04/08 16:25:21 amcore Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -76,7 +76,7 @@ char **argv;
 
     puts(result);
 
-    afree(result);
+    amfree(result);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

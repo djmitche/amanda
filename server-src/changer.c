@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.11 1998/03/30 15:33:58 amcore Exp $
+ * $Id: changer.c,v 1.12 1998/04/08 16:25:08 amcore Exp $
  *
  * interface routines for tape changers
  */
@@ -71,7 +71,7 @@ static int report_bad_resultstr()
     s = vstralloc("badly formed result from changer: ",
 		  "\"", changer_resultstr, "\"",
 		  NULL);
-    afree(changer_resultstr);
+    amfree(changer_resultstr);
     changer_resultstr = s;
     return 2;
 }
@@ -98,7 +98,7 @@ char **rest;
     }
     exitcode = changer_command(changer_cmd);
     if(changer_cmd != cmd) {
-	afree(changer_cmd);
+	amfree(changer_cmd);
     }
     s = changer_resultstr;
     ch = *s++;
@@ -117,7 +117,7 @@ char **rest;
     if(exitcode) {
 	if(ch == '\0') return report_bad_resultstr();
 	result_copy = stralloc(s - 1);
-	afree(changer_resultstr);
+	amfree(changer_resultstr);
 	changer_resultstr = result_copy;
 	return exitcode;
     }
@@ -183,7 +183,7 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
 
     rc = changer_info(&nslots, &curslotstr, &backwards);
     done = user_init(rc, nslots, backwards);
-    afree(curslotstr);
+    amfree(curslotstr);
 
     slotstr = "current";
     checked = 0;
@@ -194,8 +194,8 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
 	    done = user_slot(rc, curslotstr, device);
 	else if(!done)
 	    done = user_slot(0,  curslotstr, device);
-	afree(curslotstr);
-	afree(device);
+	amfree(curslotstr);
+	amfree(device);
 
 	checked += 1;
 	slotstr = "next";
@@ -214,7 +214,7 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
 
     rc = changer_info(&nslots, &curslotstr, &backwards);
     done = user_init(rc, nslots, backwards);
-    afree(curslotstr);
+    amfree(curslotstr);
 
     checked = 0;
 
@@ -224,8 +224,8 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
     } else if(!done) {
 	done = user_slot(0,  curslotstr, device);
     }
-    afree(curslotstr);
-    afree(device);
+    amfree(curslotstr);
+    amfree(device);
 }
 
 /* ---------------------------- */
@@ -250,7 +250,7 @@ char *cmdstr;
 
 /* fprintf(stderr, "changer: opening pipe from: %s\n", cmd); */
 
-    afree(changer_resultstr);
+    amfree(changer_resultstr);
 
     if((cmdpipe = popen(cmd_and_io, "r")) == NULL) {
 	changer_resultstr = vstralloc ("<error> ",
@@ -259,11 +259,11 @@ char *cmdstr;
 				       "\": ",
 				       strerror(errno),
 				       NULL);
-	afree(cmd);
-	afree(cmd_and_io);
+	amfree(cmd);
+	amfree(cmd_and_io);
 	return 2;
     }
-    afree(cmd_and_io);
+    amfree(cmd_and_io);
 
     if((changer_resultstr = agets(cmdpipe)) == NULL) {
 	changer_resultstr = vstralloc ("<error> ",
@@ -284,7 +284,7 @@ char *cmdstr;
 			   changer_resultstr,
 			   " (got signal ", number, ")",
 			   NULL);
-	afree(changer_resultstr);
+	amfree(changer_resultstr);
 	changer_resultstr = cmd;
 	cmd = NULL;
 	exitcode = 2;
@@ -294,6 +294,6 @@ char *cmdstr;
 
 /* fprintf(stderr, "changer: got exit: %d str: %s\n", exitcode, resultstr); */
 
-    afree(cmd);
+    amfree(cmd);
     return exitcode;
 }

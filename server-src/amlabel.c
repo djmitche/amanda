@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.12 1998/03/17 01:43:51 martinea Exp $
+ * $Id: amlabel.c,v 1.13 1998/04/08 16:25:04 amcore Exp $
  *
  * write an Amanda label on a tape
  */
@@ -340,9 +340,9 @@ char **argv;
 	printf("\ntape not labeled\n");
     }
 
-    afree(outslot);
-    afree(tapename);
-    afree(confdir);
+    amfree(outslot);
+    amfree(tapename);
+    amfree(confdir);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

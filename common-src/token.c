@@ -23,7 +23,7 @@
  * Author: George Scott, Computer Centre, Monash University.
  */
 /*
- * $Id: token.c,v 1.17 1998/02/26 19:24:43 jrj Exp $
+ * $Id: token.c,v 1.18 1998/04/08 16:24:45 amcore Exp $
  *
  * token bashing routines
  */
@@ -285,7 +285,7 @@ int main()
 	printf("Testing split() with \" \" token separator\n");
 	while(1) {
 		printf("Input string: ");
-		afree(str);
+		amfree(str);
 		if ((str = agets(stdin)) == NULL) {
 			printf("\n");
 			break;
@@ -294,13 +294,13 @@ int main()
 		printf("%d tokens:\n", r);
 		for (i=0; i <= r; i++) printf("tok[%d] = \"%s\"\n", i, t[i]);
 	}
-	afree(str);
+	amfree(str);
 	printf("\n");
 
 	printf("Testing quote()\n");
 	while(1) {
 		printf("Input string: ");
-		afree(str);
+		amfree(str);
 		if ((str = agets(stdin)) == NULL) {
 			printf("\n");
 			break;
@@ -312,9 +312,9 @@ int main()
 		r = split(str, t, 20, " ");
 		if (r != 1) printf("split()=%d!\n", r);
 		printf("Unquoted = \"%s\"\n", t[1]);
-		afree(sr);
+		amfree(sr);
 	}
-	afree(str);
+	amfree(str);
 }
 
 #endif

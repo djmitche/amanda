@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.14 1998/02/26 19:25:17 jrj Exp $
+ * $Id: logfile.c,v 1.15 1998/04/08 16:25:25 amcore Exp $
  *
  * common log file writing routine
  */
@@ -119,7 +119,7 @@ arglist_function(void log_add, logtype_t, typ)
 	}
     }
 
-    afree(leader);
+    amfree(leader);
 
     n = strlen(linebuf);
     if(n == 0 || linebuf[n-1] != '\n') linebuf[n++] = '\n';
@@ -180,8 +180,8 @@ char *datestamp;
     if(rename(logfile, fname) == -1)
 	error("could not rename log file to `%s': %s", fname, strerror(errno));
 
-    afree(fname);
-    afree(logfile);
+    amfree(fname);
+    amfree(logfile);
 }
 
 
@@ -208,7 +208,7 @@ static void close_log()
 	error("close log file: %s", strerror(errno));
 
     logfd = -1;
-    afree(logfile);
+    amfree(logfile);
 }
 
 
@@ -220,7 +220,7 @@ FILE *logf;
     char *s;
     int ch;
 
-    afree(logline);
+    amfree(logline);
     if((logline = agets(logf)) == NULL) return 0;
     curlinenum++;
     s = logline;

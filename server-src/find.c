@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.2 1998/03/30 21:13:27 blair Exp $
+ * $Id: find.c,v 1.3 1998/04/08 16:25:20 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -110,7 +110,7 @@ char **lfind_diskstrs;
 	    printf("Warning: no log files found for tape %s written %s\n",
 		   tp->label, find_nicedate(tp->datestamp));
     }
-    afree(logfile);
+    amfree(logfile);
 
     search_holding_disk(&output_find);
     return(output_find);
@@ -152,8 +152,8 @@ find_result_t **output_find;
 		destname = newvstralloc(destname,
 					sdirname, "/", entry->d_name,
 					NULL);
-		afree(hostname);
-		afree(diskname);
+		amfree(hostname);
+		amfree(diskname);
 		if(get_amanda_names(destname, &hostname, &diskname, &level)) {
 		    continue;
 		}
@@ -191,10 +191,10 @@ find_result_t **output_find;
 	    closedir(workdir);
 	}	
     }
-    afree(destname);
-    afree(sdirname);
-    afree(hostname);
-    afree(diskname);
+    amfree(destname);
+    amfree(sdirname);
+    amfree(hostname);
+    amfree(diskname);
 }
 
 static int find_compare(i1, j1)
@@ -361,13 +361,13 @@ find_result_t **output_find;
     for(output_find_result=*output_find;
 	    output_find_result;
 	    output_find_result=output_find_result->next) {
-	if(prev != NULL) afree(prev);
-	afree(output_find_result->hostname);
-	afree(output_find_result->diskname);
-	afree(output_find_result->label);
-	afree(output_find_result->status);
+	if(prev != NULL) amfree(prev);
+	amfree(output_find_result->hostname);
+	amfree(output_find_result->diskname);
+	amfree(output_find_result->label);
+	amfree(output_find_result->status);
     }
-    if(prev != NULL) afree(prev);
+    if(prev != NULL) amfree(prev);
     output_find = NULL;
 }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: set_commands.c,v 1.8 1998/02/06 20:50:27 amcore Exp $
+ * $Id: set_commands.c,v 1.9 1998/04/08 16:24:52 amcore Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -53,7 +53,7 @@ char *date;
 	cmd = newstralloc2(cmd, "OISD ", disk_path);
 	if (exchange(cmd) == -1)
 	    exit(1);
-	afree(cmd);
+	amfree(cmd);
 	if (server_happy())
 	{
 	    suck_dir_list_from_server();
@@ -66,7 +66,7 @@ char *date;
 	    clear_dir_list();
 	}
     }
-    afree(cmd);
+    amfree(cmd);
 
     return 0;
 }
@@ -90,12 +90,12 @@ char *host;
     if (server_happy())
     {
 	dump_hostname = newstralloc(dump_hostname, host);
-	afree(disk_name);
-	afree(mount_point);
-	afree(disk_path);
+	amfree(disk_name);
+	amfree(mount_point);
+	amfree(disk_path);
 	clear_dir_list();
     }
-    afree(cmd);
+    amfree(cmd);
 }
 
 
@@ -122,7 +122,7 @@ char *mtpt;
     cmd = stralloc2("DISK ", dsk);
     if (converse(cmd) == -1)
 	exit(1);
-    afree(cmd);
+    amfree(cmd);
 
     if (!server_happy())
 	return;
@@ -208,7 +208,7 @@ char *dir;
 	    {
 		printf("Invalid directory - Can't cd outside mount point \"%s\"\n",
 		       mount_point);
-		afree(ldir);
+		amfree(ldir);
 		return;
 	    }
 	    new_dir = stralloc(ldir+strlen(mount_point));
@@ -243,7 +243,7 @@ char *dir;
 		/* at top of disk */
 		printf("Invalid directory - Can't cd outside mount point \"%s\"\n",
 		       mount_point);
-		afree(ldir);
+		amfree(ldir);
 		return;
 	    }
 	    de = strrchr(new_dir, '/');	/* always at least 1 */
@@ -267,7 +267,7 @@ char *dir;
     cmd = stralloc2("OISD ", new_dir);
     if (exchange(cmd) == -1)
 	exit(1);
-    afree(cmd);
+    amfree(cmd);
     if (server_happy())
     {
 	disk_path = newstralloc(disk_path, new_dir);
@@ -279,8 +279,8 @@ char *dir;
 	printf("Invalid directory - %s\n", dir);
     }
 
-    afree(new_dir);
-    afree(ldir);
+    amfree(new_dir);
+    amfree(ldir);
 }
 
 

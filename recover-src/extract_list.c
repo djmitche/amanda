@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.28 1998/03/13 15:36:35 martinea Exp $
+ * $Id: extract_list.c,v 1.29 1998/04/08 16:24:50 amcore Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -185,7 +185,7 @@ EXTRACT_LIST *tape_list;
     {
 	clear_tape_list(tape_list);
 	extract_list = tape_list->next;
-	afree(tape_list);
+	amfree(tape_list);
 	return;
     }
 
@@ -198,7 +198,7 @@ EXTRACT_LIST *tape_list;
 	{
 	    clear_tape_list(tape_list);
 	    prev->next = tape_list->next;
-	    afree(tape_list);
+	    amfree(tape_list);
 	    return;
 	}
 	prev = this;
@@ -253,28 +253,28 @@ DIR_ITEM *ditem;
 	    while(curr!=NULL)
 	    {
 		if (strcmp(curr->path,ditem_path) == 0) {
-		    afree(ditem_path);
+		    amfree(ditem_path);
 		    return 1;
 		}
 		curr=curr->next;
 	    }
 	    if ((that = (EXTRACT_LIST_ITEM *)malloc(sizeof(EXTRACT_LIST_ITEM)))
 		== NULL) {
-		afree(ditem_path);
+		amfree(ditem_path);
 		return -1;
 	    }
 	    strncpy(that->path, ditem_path, sizeof(that->path)-1);
 	    that->path[sizeof(that->path)-1] = '\0';
 	    that->next = this->files;
 	    this->files = that;		/* add at front since easiest */
-	    afree(ditem_path);
+	    amfree(ditem_path);
 	    return 0;
 	}
     }
 
     /* so this is the first time we have seen this tape */
     if ((this = (EXTRACT_LIST *)malloc(sizeof(EXTRACT_LIST))) == NULL) {
-	afree(ditem_path);
+	amfree(ditem_path);
 	return -1;
     }
     strncpy(this->tape, ditem->tape, sizeof(this->tape)-1);
@@ -284,7 +284,7 @@ DIR_ITEM *ditem;
     this->date[sizeof(this->date)-1] = '\0';
     if ((that = (EXTRACT_LIST_ITEM *)malloc(sizeof(EXTRACT_LIST_ITEM)))
 	== NULL) {
-	afree(ditem_path);
+	amfree(ditem_path);
 	return -1;
     }
     strncpy(that->path, ditem_path, sizeof(that->path)-1);
@@ -299,7 +299,7 @@ DIR_ITEM *ditem;
     {
 	this->next = extract_list;
 	extract_list = this;
-	afree(ditem_path);
+	amfree(ditem_path);
 	return 0;
     }
     for (this1 = extract_list; this1->next != NULL; this1 = this1->next)
@@ -309,14 +309,14 @@ DIR_ITEM *ditem;
 	{
 	    this->next = this1->next;
 	    this1->next = this;
-	    afree(ditem_path);
+	    amfree(ditem_path);
 	    return 0;
 	}
     }
     /* add at end */
     this->next = NULL;
     this1->next = this;
-    afree(ditem_path);
+    amfree(ditem_path);
     return 0;
 }
 
@@ -345,11 +345,11 @@ DIR_ITEM *ditem;
 	    {
 		/* first on list */
 		this->files = that->next;
-		afree(that);
+		amfree(that);
 		/* if list empty delete it */
 		if (this->files == NULL)
 		    delete_tape_list(this);
-		afree(ditem_path);
+		amfree(ditem_path);
 		return 0;
 	    }
 	    prev = that;
@@ -359,19 +359,19 @@ DIR_ITEM *ditem;
 		if (strcmp(that->path, ditem_path) == 0)
 		{
 		    prev->next = that->next;
-		    afree(that);
-		    afree(ditem_path);
+		    amfree(that);
+		    amfree(ditem_path);
 		    return 0;
 		}
 		prev = that;
 		that = that->next;
 	    }
-	    afree(ditem_path);
+	    amfree(ditem_path);
 	    return 1;
 	}
     }
 
-    afree(ditem_path);
+    amfree(ditem_path);
     return 1;
 }
 
@@ -430,30 +430,30 @@ char *path;
 
 		cmd = stralloc2("ORLD ", ditem_path);
 		if(send_command(cmd) == -1) {
-		    afree(cmd);
-		    afree(ditem_path);
-		    afree(path_on_disk);
-		    afree(path_on_disk_slash);
+		    amfree(cmd);
+		    amfree(ditem_path);
+		    amfree(path_on_disk);
+		    amfree(path_on_disk_slash);
 		    exit(1);
 		}
-		afree(cmd);
+		amfree(cmd);
 		/* skip preamble */
 		if ((i = get_reply_line()) == -1) {
-		    afree(ditem_path);
-		    afree(path_on_disk);
-		    afree(path_on_disk_slash);
+		    amfree(ditem_path);
+		    amfree(path_on_disk);
+		    amfree(path_on_disk_slash);
 		    exit(1);
 		}
 		if(i==0)		/* assume something wrong */
 		{
-		    afree(ditem_path);
-		    afree(path_on_disk);
-		    afree(path_on_disk_slash);
+		    amfree(ditem_path);
+		    amfree(path_on_disk);
+		    amfree(path_on_disk_slash);
 		    l = reply_line();
 		    printf("%s\n", l);
 		    return;
 		}
-		afree(err);
+		amfree(err);
 		dir_undo = NULL;
 		added=0;
 		strncpy(lditem.path, ditem_path, sizeof(lditem.path)-1);
@@ -462,9 +462,9 @@ char *path;
 		while ((i = get_reply_line()) != 0)
 		{
 		    if (i == -1) {
-			afree(ditem_path);
-		        afree(path_on_disk);
-		        afree(path_on_disk_slash);
+			amfree(ditem_path);
+		        amfree(path_on_disk);
+		        amfree(path_on_disk_slash);
 			exit(1);
 		    }
 		    if(err) {
@@ -576,17 +576,17 @@ char *path;
 		    break;
 		}
 	    }
-	    afree(cmd);
-	    afree(ditem_path);
-	    afree(path_on_disk);
-	    afree(path_on_disk_slash);
+	    amfree(cmd);
+	    amfree(ditem_path);
+	    amfree(path_on_disk);
+	    amfree(path_on_disk_slash);
 	    return;
 	}
     }
-    afree(cmd);
-    afree(ditem_path);
-    afree(path_on_disk);
-    afree(path_on_disk_slash);
+    amfree(cmd);
+    amfree(ditem_path);
+    amfree(path_on_disk);
+    amfree(path_on_disk_slash);
 
     printf("File %s doesn't exist in directory\n", path);
     dbprintf(("add_file: (Failed) File %s doesn't exist in directory\n",
@@ -644,25 +644,25 @@ char *path;
 
 		cmd = stralloc2("ORLD ", ditem_path);
 		if(send_command(cmd) == -1) {
-		    afree(cmd);
-		    afree(ditem_path);
-		    afree(path_on_disk);
-		    afree(path_on_disk_slash);
+		    amfree(cmd);
+		    amfree(ditem_path);
+		    amfree(path_on_disk);
+		    amfree(path_on_disk_slash);
 		    exit(1);
 		}
-		afree(cmd);
+		amfree(cmd);
 		/* skip preamble */
 		if ((i = get_reply_line()) == -1) {
-		    afree(ditem_path);
-		    afree(path_on_disk);
-		    afree(path_on_disk_slash);
+		    amfree(ditem_path);
+		    amfree(path_on_disk);
+		    amfree(path_on_disk_slash);
 		    exit(1);
 		}
 		if(i==0)		/* assume something wrong */
 		{
-		    afree(ditem_path);
-		    afree(path_on_disk);
-		    afree(path_on_disk_slash);
+		    amfree(ditem_path);
+		    amfree(path_on_disk);
+		    amfree(path_on_disk_slash);
 		    l = reply_line();
 		    printf("%s\n", l);
 		    return;
@@ -670,16 +670,16 @@ char *path;
 		deleted=0;
 		strncpy(lditem.path, ditem->path, sizeof(lditem.path)-1);
 		lditem.path[sizeof(lditem.path)-1] = '\0';
-		afree(cmd);
-		afree(err);
+		amfree(cmd);
+		amfree(err);
 		date_undo = tape_undo = dir_undo = NULL;
 		/* skip the last line -- duplicate of the preamble */
 		while ((i = get_reply_line()) != 0)
 		{
 		    if (i == -1) {
-			afree(ditem_path);
-			afree(path_on_disk);
-			afree(path_on_disk_slash);
+			amfree(ditem_path);
+			amfree(path_on_disk);
+			amfree(path_on_disk_slash);
 			exit(1);
 		    }
 		    if(err) {
@@ -791,17 +791,17 @@ char *path;
 		    break;
 		}
 	    }
-	    afree(cmd);
-	    afree(ditem_path);
-	    afree(path_on_disk);
-	    afree(path_on_disk_slash);
+	    amfree(cmd);
+	    amfree(ditem_path);
+	    amfree(path_on_disk);
+	    amfree(path_on_disk_slash);
 	    return;
 	}
     }
-    afree(cmd);
-    afree(ditem_path);
-    afree(path_on_disk);
-    afree(path_on_disk_slash);
+    amfree(cmd);
+    amfree(ditem_path);
+    amfree(path_on_disk);
+    amfree(path_on_disk_slash);
     printf("File %s doesn't exist in directory\n", path);
 }
 
@@ -832,7 +832,7 @@ char *file;
 	    printf("Warning - can't pipe through %s\n", pager);
 	    fp = stdout;
 	}
-	afree(pager_command);
+	amfree(pager_command);
     }
     else
     {
@@ -930,10 +930,10 @@ static int extract_files_setup P((void))
     if ((sp = getservbyname(service_name, "tcp")) == NULL)
     {
 	printf("%s/tcp unknown protocol - config error?\n", service_name);
-	afree(service_name);
+	amfree(service_name);
 	return -1;
     }
-    afree(service_name);
+    amfree(service_name);
     if ((hp = gethostbyname(tape_server_name)) == NULL)
     {
 	printf("%s is an unknown host\n", tape_server_name);
@@ -991,7 +991,7 @@ static int extract_files_setup P((void))
     }
     send_to_tape_server(tape_server_socket, line);
     memset(line, '\0', strlen(line));
-    afree(line);
+    amfree(line);
 
     /* we want to force amrestore to only match disk_name exactly */
     disk_regex = vstralloc("^", disk_name, "$", NULL);
@@ -1018,7 +1018,7 @@ static int extract_files_setup P((void))
     dbprintf(("Started amidxtaped with arguments \"7 -h -p -d %s %s %s %s\"\n",
 	      clean_datestamp, dump_device_name, dump_hostname, disk_regex));
 
-    afree(disk_regex);
+    amfree(disk_regex);
 
     return tape_server_socket;
 }
@@ -1158,10 +1158,10 @@ EXTRACT_LIST *elist;
         (void)execv(cmd, restore_args);
         /* only get here if exec failed */
         for (i = 0; i < no_initial_params + files_off_tape; i++) {
-	    afree(restore_args[i]);
+	    amfree(restore_args[i]);
 	}
-	afree(restore_args);
-	afree(cmd);
+	amfree(restore_args);
+	amfree(cmd);
         perror("amrecover couldn't exec tar");
 #endif
     }
@@ -1175,9 +1175,9 @@ EXTRACT_LIST *elist;
         (void)execv(RESTORE, restore_args);
         /* only get here if exec failed */
         for (i = 0; i < no_initial_params + files_off_tape; i++) {
-	    afree(restore_args[i]);
+	    amfree(restore_args[i]);
 	}
-	afree(restore_args);
+	amfree(restore_args);
         perror("amrecover couldn't exec restore");
 #endif
     }

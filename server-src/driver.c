@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.38 1998/03/09 23:03:23 blair Exp $
+ * $Id: driver.c,v 1.39 1998/04/08 16:25:15 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -167,7 +167,7 @@ char **main_argv;
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file\n");
 
-    afree(datestamp);
+    amfree(datestamp);
     datestamp = construct_datestamp();
     log_add(L_START,"date %s", datestamp);
 
@@ -224,7 +224,7 @@ char **main_argv;
 	    mkdir(newdir, 0770);
 	}
     }
-    afree(newdir);
+    amfree(newdir);
 
     if(inparallel > MAX_DUMPERS) inparallel = MAX_DUMPERS;
 
@@ -321,7 +321,7 @@ char **main_argv;
 
     for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
 	dumper_cmd(dumper, QUIT, NULL);
-	afree(dumper->name);
+	amfree(dumper->name);
     }
 
     /* wait for all to die */
@@ -336,18 +336,18 @@ char **main_argv;
 	    if(rmdir(newdir) != 0)
 		log_add(L_WARNING, "Could not rmdir %s: %s",
 		        newdir, strerror(errno));
-	    afree(hdp->up);
+	    amfree(hdp->up);
 	}
     }
-    afree(newdir);
+    amfree(newdir);
 
     printf("driver: FINISHED time %s\n", walltime_str(curclock()));
     fflush(stdout);
     log_add(L_FINISH,"date %s time %s", datestamp, walltime_str(curclock()));
-    afree(datestamp);
+    amfree(datestamp);
 
-    afree(dumper_program);
-    afree(taper_program);
+    amfree(dumper_program);
+    amfree(taper_program);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -594,8 +594,8 @@ void handle_taper_result()
 	       walltime_str(curclock()), dp->host->hostname, dp->name);
 	fflush(stdout);
 
-	afree(sched(dp)->dumpdate);
-	afree(dp->up);
+	amfree(sched(dp)->dumpdate);
+	amfree(dp->up);
 
 	if(empty(tapeq)) {
 	    taper_busy = 0;
@@ -1076,7 +1076,7 @@ disklist_t *waitqp;
 	remove_disk(waitqp, dp);
 	insert_disk(&rq, dp, sort_by_time);
     }
-    afree(inpline);
+    amfree(inpline);
     if(line == 0)
 	log_add(L_WARNING, "WARNING: got empty schedule from planner");
 
@@ -1190,7 +1190,7 @@ disk_t *diskp;
 		"%s/%s/%s.%s.%d",
 		holdp->diskdir, datestamp, diskp->host->hostname,
 		sfn, sched(diskp)->level);
-    afree(sfn);
+    amfree(sfn);
 
     holdalloc(holdp)->allocated_space += sched(diskp)->act_size;
     holdalloc(holdp)->allocated_dumpers += 1;

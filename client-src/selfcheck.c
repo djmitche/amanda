@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.32 1998/03/30 21:59:01 amcore Exp $
+ * $Id: selfcheck.c,v 1.33 1998/04/08 16:24:24 amcore Exp $
  *
  * do self-check and send back any error messages
  */
@@ -174,7 +174,7 @@ char **argv;
 
     check_overall();
 
-    afree(line);
+    amfree(line);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -190,7 +190,7 @@ char **argv;
     return 0;
 
  err:
-    afree(line);
+    amfree(line);
     printf("ERROR [BOGUS REQUEST PACKET]\n");
     dbprintf(("REQ packet is bogus\n"));
     dbclose();
@@ -280,8 +280,8 @@ char *program, *disk, *str;
     if(strstr(str, "index") != NULL) {
 	/* do nothing */
     }
-    afree(device);
-    afree(fstype);
+    amfree(device);
+    amfree(fstype);
 }
 
 static void check_disk(program, disk, level)
@@ -303,10 +303,10 @@ int level;
 	    }
 	    if ((device = makesharename(disk, 1)) == NULL) {
 		memset(pass, '\0', strlen(pass));
-		afree(pass);
+		amfree(pass);
 		if(domain) {
 		    memset(domain, '\0', strlen(domain));
-		    afree(domain);
+		    amfree(domain);
 		}
 		printf("ERROR [can't make share name of %s]\n", disk);
 		return;
@@ -322,20 +322,20 @@ int level;
 			    " -c quit",
 			    NULL);
 	    memset(pass, '\0', strlen(pass));
-	    afree(pass);
+	    amfree(pass);
 	    printf("running %s %s XXXX -E -U %s%s%s -c quit\n",
 		   SAMBA_CLIENT, device, SAMBA_USER,
 		   domain ? " -W " : "", domain ? domain : "");
 	    if(domain) {
 		memset(domain, '\0', strlen(domain));
-		afree(domain);
+		amfree(domain);
 	    }
 	    if (system(cmd) & 0xff00)
 		printf("ERROR [PC SHARE %s access error: host down or invalid password?]\n", disk);
 	    else
 		printf("OK %s\n", disk);
 	    memset(cmd, '\0', strlen(cmd));
-	    afree(cmd);
+	    amfree(cmd);
 	    return;
 	}
 #endif
@@ -388,7 +388,7 @@ int level;
 #endif
 
     dbprintf((": %s\n", err ? err : "OK"));
-    afree(device);
+    amfree(device);
 
     /* XXX perhaps do something with level: read dumpdates and sanity check */
 }
@@ -406,14 +406,14 @@ static void check_overall()
     {
 	cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 	check_file(cmd,X_OK);
-	afree(cmd);
+	amfree(cmd);
     }
 
     if( need_rundump )
     {
 	cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
 	check_file(cmd,X_OK);
-	afree(cmd);
+	amfree(cmd);
     }
 
 #ifdef DUMP

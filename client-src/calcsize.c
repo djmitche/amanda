@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.21 1998/03/18 10:00:44 amcore Exp $
+ * $Id: calcsize.c,v 1.22 1998/04/08 16:24:21 amcore Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -230,10 +230,10 @@ char **argv;
 	    add_exclude_file(result + sizeof(exclude_list_string)-1);
 	  }
 	} else {
-	  afree(result);
+	  amfree(result);
 	  goto usage;
 	}
-	afree(result);
+	amfree(result);
 	argc -= 2;
 	argv++;
     } else
@@ -365,7 +365,7 @@ char *parent_dir;
 	    if((finfo.st_mode & S_IFMT) == S_IFDIR) {
 		newdir = stralloc2(newname, f->d_name);
 		push_name(newdir);
-		afree(newdir);
+		amfree(newdir);
 	    }
 
 	    for(i = 0; i < ndumps; i++) {
@@ -393,7 +393,7 @@ char *parent_dir;
 	    perror(dirname);
 #endif
     }
-    afree(newname);
+    amfree(newname);
 }
 
 void push_name(str)
@@ -417,7 +417,7 @@ char *pop_name()
 
     name_stack = newp->next;
     str = newp->str;
-    afree(newp);
+    amfree(newp);
     return str;
 }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.40 1998/03/16 14:36:15 amcore Exp $
+ * $Id: conffile.c,v 1.41 1998/04/08 16:25:10 amcore Exp $
  *
  * read configuration file
  */
@@ -610,7 +610,7 @@ static void init_defaults()
 
 	hp = holdingdisks;
 	holdingdisks = holdingdisks->next;
-	afree(hp);
+	amfree(hp);
     }
     num_holdingdisks = 0;
 
@@ -621,21 +621,21 @@ static void init_defaults()
 
 	dp = dumplist;
 	dumplist = dumplist->next;
-	afree(dp);
+	amfree(dp);
     }
     while(tapelist != NULL) {
 	tapetype_t *tp;
 
 	tp = tapelist;
 	tapelist = tapelist->next;
-	afree(tp);
+	amfree(tp);
     }
     while(interface_list != NULL) {
 	interface_t *ip;
 
 	ip = interface_list;
 	interface_list = interface_list->next;
-	afree(ip);
+	amfree(ip);
     }
 
     /* create some predefined dumptypes for backwards compatability */
@@ -706,7 +706,7 @@ char *filename;
     while(read_confline());
     afclose(conf);
 
-    afree(confname);
+    amfree(confname);
 
     /* Restore globals */
     line_num = save_line_num;
@@ -1326,7 +1326,7 @@ static void save_tapetype()
     tp = lookup_tapetype(tpcur.name);
 
     if(tp != (tapetype_t *)0) {
-	afree(tpcur.name);
+	amfree(tpcur.name);
 	parserror("tapetype %s already defined on line %d", tp->name, tp->seen);
 	return;
     }

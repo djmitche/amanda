@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.59 1998/03/07 18:07:24 martinea Exp $
+/* $Id: dumper.c,v 1.60 1998/04/08 16:25:18 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -236,7 +236,7 @@ char **main_argv;
     interactive = isatty(0);
     pid = getpid();
 
-    afree(datestamp);
+    amfree(datestamp);
     datestamp = construct_datestamp();
 
     service_ports_init();
@@ -269,7 +269,7 @@ char **main_argv;
 		q = squotef("[holding file \"%s\": %s]",
 			    filename, strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
-		afree(q);
+		amfree(q);
 		break;
 	    }
 
@@ -280,7 +280,7 @@ char **main_argv;
 		q = squote(errstr);
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
 			  handle, q);
-		afree(q);
+		amfree(q);
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		if (mesgfd != -1)
 		    aclose(mesgfd);
@@ -327,7 +327,7 @@ char **main_argv;
 	    if(outfd == -1) {
 		q = squotef("[taper port open: %s]", strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
-		afree(q);
+		amfree(q);
 		break;
 	    }
 
@@ -338,7 +338,7 @@ char **main_argv;
 		q = squote(errstr);
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
 			  handle, q);
-		afree(q);
+		amfree(q);
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		if (mesgfd != -1)
 		    aclose(mesgfd);
@@ -364,24 +364,24 @@ char **main_argv;
 	default:
 	    q = squote(argv[1]);
 	    putresult("BAD-COMMAND %s\n", q);
-	    afree(q);
+	    amfree(q);
 	}
 	while(wait(NULL) != -1);
     } while(cmd != QUIT);
 
-    afree(errstr);
-    afree(msg);
-    afree(datestamp);
-    afree(backup_name);
-    afree(recover_cmd);
-    afree(compress_suffix);
-    afree(handle);
-    afree(filename);
-    afree(hostname);
-    afree(diskname);
-    afree(dumpdate);
-    afree(progname);
-    afree(options);
+    amfree(errstr);
+    amfree(msg);
+    amfree(datestamp);
+    amfree(backup_name);
+    amfree(recover_cmd);
+    amfree(compress_suffix);
+    amfree(handle);
+    amfree(filename);
+    amfree(hostname);
+    amfree(diskname);
+    amfree(dumpdate);
+    amfree(progname);
+    amfree(options);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -406,7 +406,7 @@ static cmd_t getcmd()
     }
 
     argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
-    afree(line);
+    amfree(line);
 
 #if DEBUG
     {
@@ -473,7 +473,7 @@ int outf, size;
 	    } else if(written < 0 && errno != ENOSPC) {
 		q = squotef("[data write: %s]", strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
-		afree(q);
+		amfree(q);
 		return 1;
 	    }
 	    putresult("NO-ROOM %s\n", handle);
@@ -649,7 +649,7 @@ int len;
 	}
 	if(msgbuf) {
 	    t = stralloc2(msgbuf, str);
-	    afree(msgbuf);
+	    amfree(msgbuf);
 	    msgbuf = t;
 	} else if(nl == NULL) {
 	    msgbuf = stralloc(str);
@@ -788,9 +788,9 @@ int mesgfd, datafd, indexfd, outfd;
     dumpsize = origsize = dump_result = 0;
     got_info_endline = got_sizeline = got_endline = 0;
     header_done = 0;
-    afree(backup_name);
-    afree(recover_cmd);
-    afree(compress_suffix);
+    amfree(backup_name);
+    amfree(recover_cmd);
+    amfree(compress_suffix);
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
     fn = sanitise_filename(diskname);
@@ -801,13 +801,13 @@ int mesgfd, datafd, indexfd, outfd;
 			    ".", level_str,
 			    ".errout",
 			    NULL);
-    afree(fn);
+    amfree(fn);
     if((errf = fopen(errfname, "w")) == NULL) {
 	errstr = newvstralloc(errstr,
 			      "errfile open \"", errfname, "\": ",
 			      strerror(errno),
 			      NULL);
-	afree(errfname);
+	amfree(errfname);
 	goto failed;
     }
 
@@ -1058,7 +1058,7 @@ int mesgfd, datafd, indexfd, outfd;
     q = squotef("[%s]", errstr);
     putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,
 	      (long)(dumptime+0.5), q);
-    afree(q);
+    amfree(q);
 
     afclose(errf);
 
@@ -1078,7 +1078,7 @@ int mesgfd, datafd, indexfd, outfd;
     }
 
     unlink(errfname);
-    afree(errfname);
+    amfree(errfname);
 
     if (indexfile) {
 	char *tmpname = NULL;
@@ -1092,8 +1092,8 @@ int mesgfd, datafd, indexfd, outfd;
 	indexfile[len-4] = '\0';
 	unlink(indexfile);
 	rename(tmpname, indexfile);
-	afree(tmpname);
-	afree(indexfile);
+	amfree(tmpname);
+	amfree(indexfile);
     }
 
     return;
@@ -1101,7 +1101,7 @@ int mesgfd, datafd, indexfd, outfd;
 failed:
     q = squotef("[%s]", errstr);
     putresult("FAILED %s %s\n", handle, q);
-    afree(q);
+    amfree(q);
 
     if(errf) afclose(errf);
     /* fall through to ... */
@@ -1113,7 +1113,7 @@ failed:
     if (errfname) {
 	log_msgout(L_FAIL);
 	unlink(errfname);
-	afree(errfname);
+	amfree(errfname);
     }
     log_end_multiline();
 
@@ -1293,7 +1293,7 @@ pkt_t *pkt;
 			      "]",
 			      NULL);
 	response_error = 1;
-	afree(optionstr);
+	amfree(optionstr);
 	return;
     }
     mesgfd = stream_client(hostname, mesg_port,
@@ -1307,7 +1307,7 @@ pkt_t *pkt;
 	aclose(datafd);
 	datafd = -1;				/* redundant */
 	response_error = 1;
-	afree(optionstr);
+	amfree(optionstr);
 	return;
     }
 
@@ -1324,7 +1324,7 @@ pkt_t *pkt;
 	    aclose(mesgfd);
 	    datafd = mesgfd = -1;		/* redundant */
 	    response_error = 1;
-	    afree(optionstr);
+	    amfree(optionstr);
 	    return;
 	}
     }
@@ -1340,7 +1340,7 @@ pkt_t *pkt;
 	if (indexfd != -1)
 	    aclose(indexfd);
 	response_error = 1;
-	afree(optionstr);
+	amfree(optionstr);
 	return;
     }
     if(krb4_auth && kerberos_handshake(mesgfd, cred.session) == 0) {
@@ -1351,12 +1351,12 @@ pkt_t *pkt;
 	    aclose(indexfd);
 	aclose(mesgfd);
 	response_error = 1;
-	afree(optionstr);
+	amfree(optionstr);
 	return;
     }
 #endif
     response_error = 0;
-    afree(optionstr);
+    amfree(optionstr);
     return;
 
  request_NAK:
@@ -1364,14 +1364,14 @@ pkt_t *pkt;
 /*  fprintf(stderr, "dumper: got strange NAK: %s", pkt->body); */
     errstr = newstralloc(errstr, "[request NAK]");
     response_error = 2;
-    afree(optionstr);
+    amfree(optionstr);
     return;
 
  bogus_error_packet:
 
     errstr = newstralloc(errstr, "[bogus error packet]");
     response_error = 2;
-    afree(optionstr);
+    amfree(optionstr);
     return;
 
  parse_of_reply_message_failed:
@@ -1379,7 +1379,7 @@ pkt_t *pkt;
     if(nl) *nl = '\n';
     errstr = newstralloc(errstr, "[parse of reply message failed]");
     response_error = 2;
-    afree(optionstr);
+    amfree(optionstr);
     return;
 }
 
@@ -1431,7 +1431,7 @@ int level;
 				      rc_str,
 				      ": ", krb_err_txt[rc],
 				      NULL);
-		afree(req);
+		amfree(req);
 		return 2;
 	    }
 	}
@@ -1443,7 +1443,7 @@ int level;
 				  rc_str,
 				  ": ", krb_err_txt[rc],
 				  NULL);
-	    afree(req);
+	    amfree(req);
 	    return 2;
 	}
     } else

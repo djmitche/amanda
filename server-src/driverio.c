@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.27 1998/03/07 18:07:21 martinea Exp $
+ * $Id: driverio.c,v 1.28 1998/04/08 16:25:17 amcore Exp $
  *
  * I/O-related functions for driver program
  */
@@ -170,7 +170,7 @@ int show;
     } else {
 	argc = split(line, argv, sizeof(argv) / sizeof(argv[0]), " ");
     }
-    afree(line);
+    amfree(line);
 
     if(show) {
 	printf("driver: result time %s from %s:",
@@ -253,7 +253,7 @@ char *datestamp;
 	    error("writing taper command: %s", strerror(errno));
 	}
     }
-    afree(cmdline);
+    amfree(cmdline);
 }
 
 void dumper_cmd(dumper, cmd, /* optional */ dp)
@@ -281,7 +281,7 @@ disk_t *dp;
 			    " ", dp->program,
 			    " |", o,
 			    "\n", NULL);
-	afree(o);
+	amfree(o);
 	break;
     case QUIT:
     case ABORT:
@@ -307,7 +307,7 @@ disk_t *dp;
 	    }
 	}
     }
-    afree(cmdline);
+    amfree(cmdline);
 }
 
 #define MAX_SERIAL MAX_DUMPERS+1	/* one for the taper */

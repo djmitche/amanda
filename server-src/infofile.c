@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.40 1998/02/26 19:25:15 jrj Exp $
+ * $Id: infofile.c,v 1.41 1998/04/08 16:25:23 amcore Exp $
  *
  * manage current info file
  */
@@ -69,13 +69,13 @@ char *mode;
 			 "/info",
 			 NULL);
 
-    afree(host);
-    afree(disk);
+    amfree(host);
+    amfree(disk);
 
     /* create the directory structure if in write mode */
     if (writing) {
         if (mkpdir(infofile, 0755, (uid_t)-1, (gid_t)-1) == -1) {
-	    afree(infofile);
+	    amfree(infofile);
 	    return NULL;
 	}
     }
@@ -93,8 +93,8 @@ char *mode;
     }
 
     if(infof == (FILE *)0) {
-	afree(infofile);
-	afree(newinfofile);
+	amfree(infofile);
+	amfree(newinfofile);
 	return NULL;
     }
 
@@ -114,8 +114,8 @@ FILE *infof;
 	amfunlock(fileno(infof), "info");
     }
 
-    afree(infofile);
-    afree(newinfofile);
+    amfree(infofile);
+    amfree(newinfofile);
 
     rc = rc || fclose(infof);
     infof = NULL;
@@ -139,12 +139,12 @@ info_t *info;
 
     if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "version: %d", &version);
-    afree(line);
+    amfree(line);
     if(rc != 1) return -2;
 
     if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "command: %d", &info->command);
-    afree(line);
+    amfree(line);
     if(rc != 1) return -2;
 
     /* get rate: and comp: lines for full dumps */
@@ -154,13 +154,13 @@ info_t *info;
     if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "full-rate: %f %f %f",
 		&pp->rate[0], &pp->rate[1], &pp->rate[2]);
-    afree(line);
+    amfree(line);
     if(rc > 3) return -2;
 
     if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "full-comp: %f %f %f",
 		&pp->comp[0], &pp->comp[1], &pp->comp[2]);
-    afree(line);
+    amfree(line);
     if(rc > 3) return -2;
 
     /* get rate: and comp: lines for incr dumps */
@@ -170,13 +170,13 @@ info_t *info;
     if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "incr-rate: %f %f %f",
 		&pp->rate[0], &pp->rate[1], &pp->rate[2]);
-    afree(line);
+    amfree(line);
     if(rc > 3) return -2;
 
     if((line = agets(infof)) == NULL) return -1;
     rc = sscanf(line, "incr-comp: %f %f %f",
 		&pp->comp[0], &pp->comp[1], &pp->comp[2]);
-    afree(line);
+    amfree(line);
     if(rc > 3) return -2;
 
     /* get stats for dump levels */
@@ -255,7 +255,7 @@ info_t *info;
 	info->inf[level] = onestat;
     }
     if(line == NULL) rc = -1;			/* EOF too soon */
-    afree(line);
+    amfree(line);
 
     return rc;
 }
@@ -334,13 +334,13 @@ char *disk;
 		   NULL);
     fn_new = stralloc2(fn, ".new");
 
-    afree(host); afree(disk);
+    amfree(host); afree(disk);
 
     unlink(fn_new);
-    afree(fn_new);
+    amfree(fn_new);
 
     rc = rmpdir(fn, infodir);
-    afree(fn);
+    amfree(fn);
 
     return rc;
 }
@@ -388,7 +388,7 @@ void close_infofile()
 #ifdef TEXTDB
     assert(infodir != (char *)0);
 
-    afree(infodir);
+    amfree(infodir);
 #else
     dbm_close(infodb);
 
@@ -504,7 +504,7 @@ info_t *record;
 	/* lookup record */
 
 	d = dbm_fetch(infodb, k);
-	afree(k.dptr);
+	amfree(k.dptr);
 	if(d.dptr == NULL) {
 	    rc = -1; /* record not found */
 	}
@@ -644,11 +644,11 @@ info_t *record;
     /* store record */
 
     if(dbm_store(infodb, k, d, DBM_REPLACE) != 0) {
-	afree(k.dptr);
+	amfree(k.dptr);
 	return -1;
     }
 
-    afree(k.dptr);
+    amfree(k.dptr);
     return 0;
 #endif
 }
@@ -671,10 +671,10 @@ char *hostname, *diskname;
     /* delete key and record */
 
     if(dbm_delete(infodb, k) != 0) {
-	afree(k.dptr);
+	amfree(k.dptr);
 	return -1;
     }
-    afree(k.dptr);
+    amfree(k.dptr);
     return 0;
 #endif
 }

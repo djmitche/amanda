@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.18 1998/03/16 14:36:22 amcore Exp $
+ * $Id: tapeio.c,v 1.19 1998/04/08 16:25:35 amcore Exp $
  *
  * implements tape I/O functions
  */
@@ -363,8 +363,8 @@ char **datestamp, **label;
     char buffer[TAPE_BLOCK_BYTES];
     dumpfile_t file;
 
-    afree(*datestamp);
-    afree(*label);
+    amfree(*datestamp);
+    amfree(*label);
 
     if(tapefd_rewind(tapefd) == -1) {
 	errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));

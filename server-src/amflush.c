@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.28 1998/03/09 22:35:46 blair Exp $
+ * $Id: amflush.c,v 1.29 1998/04/08 16:25:01 amcore Exp $
  *
  * write files from work directory onto tape
  */
@@ -197,7 +197,7 @@ char *diskdir, *datestamp;
     if((workdir = opendir(dirname)) == NULL) {
 	log_add(L_INFO, "%s: could not open working dir: %s",
 	        dirname, strerror(errno));
-	afree(dirname);
+	amfree(dirname);
 	return;
     }
     chdir(dirname);
@@ -218,8 +218,8 @@ char *diskdir, *datestamp;
 				dirname, "/", entry->d_name,
 				NULL);
 
-	afree(hostname);
-	afree(diskname);
+	amfree(hostname);
+	amfree(diskname);
 	if(get_amanda_names(destname, &hostname, &diskname, &sp.level)) {
 	    log_add(L_INFO, "%s: ignoring cruft file.", entry->d_name);
 	    continue;
@@ -297,10 +297,10 @@ char *diskdir, *datestamp;
     if(rmdir(dirname))
 	log_add(L_WARNING, "Could not rmdir %s.  Check for cruft.",
 	        dirname);
-    afree(diskname);
-    afree(hostname);
-    afree(destname);
-    afree(dirname);
+    amfree(diskname);
+    amfree(hostname);
+    amfree(destname);
+    amfree(dirname);
 }
 
 void run_dumps()

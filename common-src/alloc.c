@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: alloc.c,v 1.13 1998/02/23 21:47:32 jrj Exp $
+ * $Id: alloc.c,v 1.14 1998/04/08 16:24:33 amcore Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -245,7 +245,7 @@ int size;
     char *addr;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
-    afree(old);
+    amfree(old);
     addr = alloc(size);
     malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
@@ -372,7 +372,7 @@ char *newstr;
     char *addr;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
-    afree(oldstr);
+    amfree(oldstr);
     addr = stralloc(newstr);
     malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
@@ -393,7 +393,7 @@ arglist_function1(char *newvstralloc, char *, oldstr, char *, newstr)
 
     debug_alloc_pop();
     malloc_enter(dbmalloc_caller_loc(saved_file, saved_line));
-    afree(oldstr);
+    amfree(oldstr);
     arglist_start(argp, newstr);
     result = internal_vstralloc(newstr, argp);
     arglist_end(argp);

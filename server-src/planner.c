@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.62 1998/03/19 15:48:44 martinea Exp $
+ * $Id: planner.c,v 1.63 1998/04/08 16:25:27 amcore Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -223,7 +223,7 @@ char **argv;
     conf_bumpmult = getconf_real(CNF_BUMPMULT);
     conf_etimeout = getconf_int(CNF_ETIMEOUT);
 
-    afree(datestamp);
+    amfree(datestamp);
     datestamp = construct_datestamp();
     log_add(L_START, "date %s", datestamp);
 
@@ -411,8 +411,8 @@ char **argv;
     close_infofile();
     log_add(L_FINISH, "date %s", datestamp);
 
-    afree(msg);
-    afree(datestamp);
+    amfree(msg);
+    amfree(datestamp);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -937,7 +937,7 @@ host_t *hostp;
 			  exclude2,
 			  "\n",
 			  NULL);
-	    afree(req);
+	    amfree(req);
 	    req = t;
 	    disks++;
 	}
@@ -973,7 +973,7 @@ host_t *hostp;
 	errstr = NULL;
 	enqueue_disk(destqp, dp);
     }
-    afree(errstr);
+    amfree(errstr);
 }
 
 static disk_t *lookup_hostdisk(hp, str)
@@ -1184,7 +1184,7 @@ pkt_t *pkt;
 	fprintf(stderr, "error result for host %s disk %s: %s\n",
 	    dp->host->hostname, dp->name, errbuf);
     }
-    afree(errbuf);
+    amfree(errbuf);
 }
 
 
@@ -1577,8 +1577,8 @@ static void delay_dumps P((void))
 		biq.head = bi->next;
 	    else
 		(bi->prev)->next = bi->next;
-	    afree(bi->errstr);
-	    afree(bi);
+	    amfree(bi->errstr);
+	    amfree(bi);
 	}
     }
 
@@ -1605,11 +1605,11 @@ static void delay_dumps P((void))
 	}
 
 	/* Clean up - dont be too fancy! */
-	afree(bi->errstr);
-	afree(bi);
+	amfree(bi->errstr);
+	amfree(bi);
     }
 
-    afree(errbuf);
+    amfree(errbuf);
 
     fprintf(stderr, "  delay: Total size now %ld.\n", total_size);
 
@@ -1824,14 +1824,14 @@ static int promote_hills P((void))
 		    "Full dump of %s:%s specially promoted from %d days ahead.",
 		    dp->host->hostname, dp->name, hill_days);
 
-	    afree(sp);
+	    amfree(sp);
 	    return 1;
 	}
 	/* All the disks in that hill were unsuitable. */
 	sp[hill_days].disks = 0;	/* Don't get tricked again */
     }
 
-    afree(sp);
+    amfree(sp);
     return 0;
 }
 
@@ -1923,6 +1923,6 @@ disk_t *dp;
 
     fputs(schedline, stdout);
     fputs(schedline, stderr);
-    afree(schedline);
-    afree(degr_str);
+    amfree(schedline);
+    amfree(degr_str);
 }

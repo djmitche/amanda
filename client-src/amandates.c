@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandates.c,v 1.12 1998/02/13 05:15:28 amcore Exp $
+ * $Id: amandates.c,v 1.13 1998/04/08 16:24:20 amcore Exp $
  *
  * manage amandates file, that mimics /etc/dumpdates, but stores
  * GNUTAR dates
@@ -159,8 +159,8 @@ void free_amandates()
 
     for(amdp = amandates_list; amdp != NULL; amdp = nextp) {
 	nextp = amdp->next;
-	afree(amdp->name);
-	afree(amdp);
+	amfree(amdp->name);
+	amfree(amdp);
     }
     amandates_list = NULL;
 }
@@ -258,7 +258,7 @@ amandates_t *amdp;
     devname = amname_to_devname(amdp->name);
 
     if((dumpdf = fopen("/etc/dumpdates", "r")) == NULL) {
-	afree(devname);
+	amfree(devname);
 	return;
     }
 
@@ -296,5 +296,5 @@ amandates_t *amdp;
 	}
     }
     afclose(dumpdf);
-    afree(devname);
+    amfree(devname);
 }

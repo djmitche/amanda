@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.11 1998/02/26 19:24:34 jrj Exp $
+ * $Id: file.c,v 1.12 1998/04/08 16:24:39 amcore Exp $
  *
  * file and directory bashing routines
  */
@@ -87,7 +87,7 @@ gid_t gid;	/* gid for new directories */
 	}
     }
 
-    afree(dir);
+    amfree(dir);
     return rc;
 }
 
@@ -136,7 +136,7 @@ char *topdir;	/* where to stop removing */
 	rc = rmpdir(dir, topdir);
     }
 
-    afree(dir);
+    amfree(dir);
 
     return rc;
 }
@@ -254,7 +254,7 @@ agets(file)
      * report done (NULL) when no data was processed.
      */
     if (f == NULL && line_len == 0) {
-	afree (line);
+	amfree (line);
 	line = NULL;				/* redundant, but clear */
 	if(!ferror(file)) {
 	    errno = 0;				/* flag EOF vs error */
@@ -312,7 +312,7 @@ areads (fd)
 		} else {
 		    t = NULL;
 		}
-		afree(line_buffer);
+		amfree(line_buffer);
 		line_buffer = t;
 		malloc_leave(dbmalloc_caller_loc(s, l));
 		return line;
@@ -326,7 +326,7 @@ areads (fd)
 	    if(r == 0) {
 		errno = 0;			/* flag EOF instead of error */
 	    }
-	    afree(line_buffer);
+	    amfree(line_buffer);
 	    malloc_leave(dbmalloc_caller_loc(s, l));
 	    return NULL;
 	}

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.38 1998/03/21 17:24:34 martinea Exp $
+ * $Id: amadmin.c,v 1.39 1998/04/08 16:24:58 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -102,10 +102,10 @@ char **argv;
     confdir = vstralloc(CONFIG_DIR, "/", argv[1], NULL);
     if(chdir(confdir)) {
 	fprintf(stderr,"%s: could not find config dir %s\n", argv[0], confdir);
-	afree(confdir);
+	amfree(confdir);
 	usage();
     }
-    afree(confdir);
+    amfree(confdir);
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not find \"%s\" in this directory.\n", CONFFILE_NAME);
@@ -547,7 +547,7 @@ void balance()
 
     if(sp[total].outsize == 0) {
 	printf("\nNo data to report on yet.\n");
-	afree(sp);
+	amfree(sp);
 	return;
     }
 
@@ -571,7 +571,7 @@ void balance()
 	printf(" (%d filesystems overdue, the most being overdue %d days)\n",
 	       overdue, max_overdue);
     }
-    afree(sp);
+    amfree(sp);
 }
 
 
@@ -652,7 +652,7 @@ char **argv;
     print_find_result(output_find);
     free_find_result(&output_find);
 
-    afree(sort_order);
+    amfree(sort_order);
 }
 
 
@@ -849,12 +849,12 @@ char **argv;
 
     while(import_one());
 
-    afree(line);
+    amfree(line);
     return;
 
  bad_header:
 
-    afree(line);
+    amfree(line);
     fprintf(stderr, "%s: bad CURINFO header line in input: %s.\n",
 	    get_pname(), hdr);
     fprintf(stderr, "    Was the input in \"amadmin export\" format?\n");
@@ -904,7 +904,7 @@ int import_one P((void))
 
     skip_whitespace(s, ch);
     while (ch == 0) {
-      afree(line);
+      amfree(line);
       if((line = impget_line()) == NULL) goto shortfile_err;
       s = line;
       ch = *s++;
@@ -923,19 +923,19 @@ int import_one P((void))
     diskname = stralloc(fp);
     s[-1] = ch;
 
-    afree(line);
+    amfree(line);
     if((line = impget_line()) == NULL) goto shortfile_err;
     if(sscanf(line, "command: %d", &info.command) != 1) goto parse_err;
 
     /* get rate: and comp: lines for full dumps */
 
-    afree(line);
+    amfree(line);
     if((line = impget_line()) == NULL) goto shortfile_err;
     rc = sscanf(line, "full-rate: %f %f %f",
 		&info.full.rate[0], &info.full.rate[1], &info.full.rate[2]);
     if(rc != 3) goto parse_err;
 
-    afree(line);
+    amfree(line);
     if((line = impget_line()) == NULL) goto shortfile_err;
     rc = sscanf(line, "full-comp: %f %f %f",
 		&info.full.comp[0], &info.full.comp[1], &info.full.comp[2]);
@@ -943,13 +943,13 @@ int import_one P((void))
 
     /* get rate: and comp: lines for incr dumps */
 
-    afree(line);
+    amfree(line);
     if((line = impget_line()) == NULL) goto shortfile_err;
     rc = sscanf(line, "incr-rate: %f %f %f",
 		&info.incr.rate[0], &info.incr.rate[1], &info.incr.rate[2]);
     if(rc != 3) goto parse_err;
 
-    afree(line);
+    amfree(line);
     if((line = impget_line()) == NULL) goto shortfile_err;
     rc = sscanf(line, "incr-comp: %f %f %f",
 		&info.incr.comp[0], &info.incr.comp[1], &info.incr.comp[2]);
@@ -958,7 +958,7 @@ int import_one P((void))
     /* get stats for dump levels */
 
     while(1) {
-	afree(line);
+	amfree(line);
 	if((line = impget_line()) == NULL) goto shortfile_err;
 	if(strncmp(line, "//", 2) == 0) {
 	    /* end of record */
@@ -1032,7 +1032,7 @@ int import_one P((void))
 
 	info.inf[level] = onestat;
     }
-    afree(line);
+    amfree(line);
 
     /* got a full record, now write it out to the database */
 
@@ -1040,21 +1040,21 @@ int import_one P((void))
 	fprintf(stderr, "%s: error writing record for %s:%s\n",
 		get_pname(), hostname, diskname);
     }
-    afree(hostname);
-    afree(diskname);
+    amfree(hostname);
+    amfree(diskname);
     return 1;
 
  parse_err:
-    afree(line);
-    afree(hostname);
-    afree(diskname);
+    amfree(line);
+    amfree(hostname);
+    amfree(diskname);
     fprintf(stderr, "%s: parse error reading import record.\n", get_pname());
     return 0;
 
  shortfile_err:
-    afree(line);
-    afree(hostname);
-    afree(diskname);
+    amfree(line);
+    amfree(hostname);
+    amfree(diskname);
     fprintf(stderr, "%s: short file reading import record.\n", get_pname());
     return 0;
 }

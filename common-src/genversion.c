@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: genversion.c,v 1.16 1998/02/26 19:24:38 jrj Exp $
+ * $Id: genversion.c,v 1.17 1998/04/08 16:24:42 amcore Exp $
  *
  * dump the current Amanda version info
  */
@@ -335,7 +335,7 @@ int main()
 
     printf("  0\n};\n");
 
-    afree(str);
+    amfree(str);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

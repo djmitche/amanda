@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.c,v 1.26 1998/03/18 08:27:30 amcore Exp $
+ * $Id: amrecover.c,v 1.27 1998/04/08 16:24:48 amcore Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -132,13 +132,13 @@ int get_line ()
 		fprintf(stderr, "%s: Unexpected server end of file\n",
 			get_pname());
 	    }
-	    afree(line);
-	    afree(server_line);
+	    amfree(line);
+	    amfree(server_line);
 	    return -1;
 	}
 	if(line) {
 	    strappend(line, part);
-	    afree(part);
+	    amfree(part);
 	} else {
 	    line = part;
 	    part = NULL;
@@ -146,7 +146,7 @@ int get_line ()
 	if((len = strlen(line)) > 0 && line[len-1] == '\r') {
 	    line[len-1] = '\0';
 	    server_line = newstralloc(server_line, line);
-	    afree(line);
+	    amfree(line);
 	    return 0;
 	}
 	/*
@@ -327,7 +327,7 @@ int cwd_len;
 	    && (strncmp(fsent.mntdir, cwd, current_length) == 0))
 	{
 	    longest_match = current_length;
-	    afree(*mpt_guess);
+	    amfree(*mpt_guess);
 	    *mpt_guess = stralloc(fsent.mntdir);
 	    fsname = newstralloc(fsname, fsent.fsname+strlen(DEV_PREFIX));
 	    local_disk = is_local_fstype(&fsent);
@@ -336,14 +336,14 @@ int cwd_len;
     close_fstab();
 
     if (longest_match == 0) {
-	afree(*mpt_guess);
-	afree(fsname);
+	amfree(*mpt_guess);
+	amfree(fsname);
 	return -1;			/* ? at least / should match */
     }
 
     if (!local_disk) {
-	afree(*mpt_guess);
-	afree(fsname);
+	amfree(*mpt_guess);
+	amfree(fsname);
 	return 0;
     }
 
@@ -353,27 +353,27 @@ int cwd_len;
     disk_try = stralloc2("DISK ", *mpt_guess);		/* try logical name */
     if (exchange(disk_try) == -1)
 	exit(1);
-    afree(disk_try);
+    amfree(disk_try);
     if (server_happy())
     {
 	*dn_guess = stralloc(*mpt_guess);		/* logical is okay */
-	afree(fsname);
+	amfree(fsname);
 	return 1;
     }
     disk_try = stralloc2("DISK ", fsname);		/* try device name */
     if (exchange(disk_try) == -1)
 	exit(1);
-    afree(disk_try);
+    amfree(disk_try);
     if (server_happy())
     {
 	*dn_guess = stralloc(fsname);			/* dev name is okay */
-	afree(fsname);
+	amfree(fsname);
 	return 1;
     }
 
     /* neither is okay */
-    afree(*mpt_guess);
-    afree(fsname);
+    amfree(*mpt_guess);
+    amfree(fsname);
     return 2;
 }
 
@@ -433,8 +433,8 @@ char **argv;
     tape_server_name = newstralloc(tape_server_name, DEFAULT_TAPE_SERVER);
     tape_device_name = newstralloc(tape_device_name, DEFAULT_TAPE_DEVICE);
 #else
-    afree(tape_server_name);
-    afree(tape_device_name);
+    amfree(tape_server_name);
+    amfree(tape_device_name);
 #endif
     if (argc > 1 && argv[1][0] != '-')
     {
@@ -496,9 +496,9 @@ char **argv;
 
     dbopen();
 
-    afree(disk_name);
-    afree(mount_point);
-    afree(disk_path);
+    amfree(disk_name);
+    amfree(mount_point);
+    amfree(disk_path);
     dump_date[0] = '\0';
 
     /* set up signal handler */
@@ -615,7 +615,7 @@ char **argv;
     if (!server_happy())
 	exit(1);
     memset(line, '\0', strlen(line));
-    afree(line);
+    amfree(line);
 
     /* set the date of extraction to be today */
     (void)time(&timer);
@@ -624,22 +624,22 @@ char **argv;
     line = stralloc2("DATE ", dump_date);
     if (converse(line) == -1)
 	exit(1);
-    afree(line);
+    amfree(line);
 
     line = stralloc2("SCNF ", config);
     if (converse(line) == -1)
 	exit(1);
-    afree(line);
+    amfree(line);
 
     if (server_happy())
     {
 	/* set host we are restoring to this host by default */
-	afree(dump_hostname);
+	amfree(dump_hostname);
 	dump_hostname = alloc(MAX_HOSTNAME_LENGTH+1);
 	if (gethostname(dump_hostname, MAX_HOSTNAME_LENGTH) == -1)
 	{
 	    perror("amrecover: Can't get local host name");
-	    afree(dump_hostname);
+	    amfree(dump_hostname);
 	    /* fake an unhappy server */
 	    server_line[0] = '5';
 	}
@@ -658,7 +658,7 @@ char **argv;
 	    line = stralloc2("HOST ", dump_hostname);
 	    if (converse(line) == -1)
 		exit(1);
-	    afree(line);
+	    amfree(line);
 	}
 
 	if (server_happy())
@@ -675,7 +675,7 @@ char **argv;
 		    set_directory(cwd);
 		    if (server_happy() && strcmp(cwd, mpt_guess) != 0)
 		        printf("WARNING: not on root of selected filesystem, check man-page!\n");
-		    afree(mpt_guess);
+		    amfree(mpt_guess);
 		    break;
 
 		case 0:
@@ -708,7 +708,7 @@ char **argv;
 	    add_history(lineread);
 	    process_line(lineread);	/* act on line's content */
 	}
-	afree(lineread);
+	amfree(lineread);
     } while (!quit_prog);
 
     dbclose();

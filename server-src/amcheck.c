@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.39 1998/04/01 09:52:23 amcore Exp $
+ * $Id: amcheck.c,v 1.40 1998/04/08 16:24:59 amcore Exp $
  *
  * checks for common problems in server and clients
  */
@@ -157,7 +157,7 @@ char **argv;
     confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s", confdir, strerror(errno));
-    afree(confdir);
+    amfree(confdir);
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file");
@@ -235,10 +235,10 @@ char **argv;
 		    error("write main file: %s", strerror(errno));
 		}
 	    }
-	    afree(wait_msg);
+	    amfree(wait_msg);
 	}
     }
-    afree(msg);
+    amfree(msg);
 
     /* copy temp output to main output and write tagline */
 
@@ -258,7 +258,7 @@ char **argv;
 	aclose(tempfd);
 	unlink(tempfname);
     }
-    afree(tempfname);
+    amfree(tempfname);
 
     version_string = vstralloc("\n",
 			       "(brought to you by Amanda ", version(), ")\n",
@@ -268,7 +268,7 @@ char **argv;
 	    error("write main file: %s", strerror(errno));
 	}
     }
-    afree(version_string);
+    amfree(version_string);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
@@ -293,7 +293,7 @@ char **argv;
 			NULL);
 	if(system(cmd) != 0)
 	    error("mail command failed: %s", cmd);
-	afree(cmd);
+	amfree(cmd);
     }
     if(mailout)
 	unlink(mainfname);
@@ -398,7 +398,7 @@ char *taper_scan()
 	searchlabel = first_match_label;
     else if(!found && got_match) {
 	searchlabel = first_match_label;
-	afree(found_device);
+	amfree(found_device);
 	if(changer_loadslot(first_match, &outslot, &found_device) == 0) {
 	    found = 1;
 	}
@@ -413,7 +413,7 @@ char *taper_scan()
 					    "new tape not found in rack");
 	}
     }
-    afree(outslot);
+    amfree(outslot);
 
     return found ? found_device : NULL;
 }
@@ -437,8 +437,8 @@ int fd;
     default:
 	return pid;
     }
-    afree(msg);
-    afree(tempfname);
+    amfree(msg);
+    amfree(tempfname);
 
     startclock();
 
@@ -466,8 +466,8 @@ int fd;
 	if(access(tapefile, F_OK) == 0 && access(tapefile, W_OK) != 0)
 	    fprintf(outf, "ERROR: %s is not writable\n", tapefile);
 
-	afree(confdir);
-	afree(tapefile);
+	amfree(confdir);
+	amfree(tapefile);
 
 	if(read_tapelist(conf_tapelist))
 	    fprintf(outf, "ERROR: parse error in %s", conf_tapelist);
@@ -529,7 +529,7 @@ int fd;
 	    logbad = 1;
 	}
 
-	afree(logfile);
+	amfree(logfile);
     }
 
     /* check that the tape is a valid amanda tape */
@@ -603,8 +603,8 @@ int fd;
       fprintf(outf, "%s is not executable, server-compression and indexing will not work\n",
 	      COMPRESS_PATH);
 
-    afree(datestamp);
-    afree(label);
+    amfree(datestamp);
+    amfree(label);
 
     fprintf(outf, "Server check took %s seconds.\n", walltime_str(curclock()));
 
@@ -651,7 +651,7 @@ int fd;
     default:
 	return pid;
     }
-    afree(tempfname);
+    amfree(tempfname);
 
     startclock();
 
@@ -705,8 +705,8 @@ int fd;
 			  o,
 			  "\n",
 			  NULL);
-	    afree(req);
-	    afree(o);
+	    amfree(req);
+	    amfree(o);
 	    req = t;
 	}
 	hostcount++;
@@ -731,7 +731,7 @@ int fd;
 	check_protocol();
     }
     run_protocol();
-    afree(msg);
+    amfree(msg);
 
     fprintf(outf,
      "Client check: %d hosts checked in %s seconds, %d problems found.\n",

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.21 1998/03/07 18:09:40 martinea Exp $
+ * $Id: amrestore.c,v 1.22 1998/04/08 16:24:55 amcore Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -131,7 +131,7 @@ dumpfile_t *file;
 		   ".",
 		   number,
 		   NULL);
-    afree(sfn);
+    amfree(sfn);
     return fn;
 }
 
@@ -207,7 +207,7 @@ int isafile;
 
 	if((dest = creat(filename, CREAT_MODE)) < 0)
 	    error("could not create output file: %s", strerror(errno));
-	afree(filename_ext);
+	amfree(filename_ext);
     }
 
     out = dest;
@@ -422,7 +422,7 @@ char **argv;
     get_pname());
 
     while(file.type == F_TAPESTART || file.type == F_DUMPFILE) {
-	afree(filename);
+	amfree(filename);
 	filename = make_filename(&file);
 	if(disk_match(&file,datestamp,hostname,diskname) != 0) {
 	    fprintf(stderr, "%s: %3d: restoring %s\n", 
