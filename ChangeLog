@@ -1,5 +1,10 @@
 1998-12-08  John R. Jackson  <jrj@purdue.edu>
 
+	* amplot/Makefile.am: fix install rule when DESTDIR is non-null,
+	compliments of Henning P. Schmiedehausen <hps@tanstaafl.de>.
+
+1998-12-08  John R. Jackson  <jrj@purdue.edu>
+
 	* configure.in: fix reversed code for --with-amrecover, compliments
 	of Yar Tikhiy <yar@radio-msu.net>.
 

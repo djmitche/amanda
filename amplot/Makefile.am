@@ -33,7 +33,7 @@ amplot.gp:		amplot.g
 install-exec-hook:
 	@list="$(sbin_SCRIPTS)"; \
 	for p in $$list; do \
-		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(DESTDIR)$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
@@ -43,7 +43,7 @@ install-exec-hook:
 install-data-hook:
 	@list="$(amplot_DATA)"; \
 	for p in $$list; do \
-		pa=$(libexecdir)/$$p; \
+		pa=$(DESTDIR)$(libexecdir)/$$p; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
