@@ -1,3 +1,8 @@
+1998-11-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driver.c (main): add hdp->disksize to total_disksize
+	even when we create the datestamp dir. (reserve was unusable).
+
 1998-11-07  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* configure.in (GNUTAR): accept tar from Free paxutils, the new name
