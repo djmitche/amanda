@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.28 1998/01/30 01:38:21 blair Exp $
+ * $Id: driver.c,v 1.29 1998/02/11 17:56:41 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -321,7 +321,7 @@ char **main_argv;
            walltime_str(curclock()));
     fflush(stdout);
 
-    if(!degraded_mode)
+    if(taper)
 	taper_cmd(QUIT, NULL, NULL, 0);
 
     for(dumper = dmptable; dumper < dmptable + inparallel; dumper++)
@@ -669,7 +669,7 @@ void handle_taper_result()
 	taper_busy = 0;
 	taper_disk = NULL;
 	FD_CLR(taper,&readset);
-	aclose(taper);
+	if(tok != TAPE_ERROR) aclose(taper);
 	break;
     default:
 	error("driver received unexpected token (%d) from taper", tok);
