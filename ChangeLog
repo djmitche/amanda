@@ -1,3 +1,12 @@
+1999-03-21 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* configure.in: default for DUMPER_DIR is $exec_prefix/dumper.
+	* Makefile.am: make dumper-src directory
+	* dumper-src: directory for program that implement the DUMPER-API.
+	* dumper-src/Makefile.am:
+	* dumper-src/generic-dumper.pl.in: first draft of a generic wrapper.
+	* dumper-src/gnutar.pl.in: first draft of a gnutar wrapper.
+
 1999-03-21  Elmar Bartel  <bartel@Informatik.TU-Muenchen.DE>
 
 	* conffile.h, conffile.c: new columnspec option

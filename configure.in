@@ -90,7 +90,7 @@ if test "$LIBRARY_DIRS"; then
 fi
 
 AC_ARG_WITH(dumperdir,
-    [  --with-dumperdir=DIR   where we install the dumpers [libexecdir/dumper]],
+    [  --with-dumperdir=DIR   where we install the dumpers [EPREFIX/dumper]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -99,7 +99,12 @@ AC_ARG_WITH(dumperdir,
 	esac
 	DUMPER_DIR="$withval"
     ],
-    : ${DUMPER_DIR=$libexecdir/dumper}
+    :
+      tmp_prefix=$prefix
+      test "x$tmp_prefix" = xNONE && tmp_prefix=$ac_default_prefix
+      tmp_exec_prefix=$exec_prefix
+      test "x$tmp_exec_prefix" = xNONE && tmp_exec_prefix=${tmp_prefix}
+      ${DUMPER_DIR=$tmp_exec_prefix/dumper}
 )
 DUMPER_DIR=`(
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -1014,6 +1019,9 @@ AM_CONDITIONAL(WANT_LIBTOOL, test x"$USE_LIBTOOL" = x"yes")
     tmp=`eval echo "$libexecdir"`
     AC_DEFINE_UNQUOTED(libexecdir,"$tmp")
 
+#    tmp=`eval echo $dumperdir`
+#    AC_DEFINE_UNQUOTED(dumperdir,"$tmp")
+#
     tmp=`eval echo $mandir`
     AC_DEFINE_UNQUOTED(mandir,"$tmp")
 )
@@ -2462,6 +2470,9 @@ AC_OUTPUT( \
 	changer-src/chg-zd-mtx.sh	changer-src/Makefile		\
 									\
 	client-src/patch-system.sh	client-src/Makefile		\
+									\
+        dumper-src/gnutar.pl		dumper-src/generic-dumper.pl	\
+	dumper-src/Makefile						\
 									\
 	common-src/versuff.c		common-src/Makefile		\
 									\

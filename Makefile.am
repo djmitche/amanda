@@ -13,7 +13,7 @@ AUTOCONF = @AUTOCONF@ --localdir=config
 AUTOHEADER = @AUTOHEADER@ --localdir=config
 
 if WANT_CLIENT
-CLIENT_SUBDIRS = client-src
+CLIENT_SUBDIRS = client-src dumper-src
 endif
 if WANT_TAPE
 TAPE_SUBDIRS = tape-src

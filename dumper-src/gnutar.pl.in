@@ -1,0 +1,281 @@
+#!/usr/local/bin/perl
+#
+
+use File::Copy;
+use IPC::Open3;
+use Sys::Hostname;
+
+$host = hostname;
+$host =~ s/\..*$//;
+$gnulist = "/home/ungava/martinea/gnutar-lists";
+
+
+
+$level_incrementals = 9;
+
+@index_generation = ("direct","parse","output","image");
+@parse_estimate   = ("direct","parse");
+@parse_backup     = ("direct","parse");
+@backup_type      = ("full","level","diff");
+
+$gnutar = "/bin/tar";
+
+#$user_support  = "";
+#$group_support = "";
+
+#$user_selfcheck  = "";
+#$group_selfcheck = "";
+
+#$user_estimate  = "";
+#$group_estimate = "";
+
+#$user_estimate_parse  = "";
+#$group_estimate_parse = "";
+
+$user_backup  = "root";
+#$group_backup = "";
+
+#$user_backup_parse  = "";
+#$group_backup_parse = "";
+
+#$user_index_from_output  = "";
+#$group_index_from_output = "";
+
+#$user_index_from_image  = "";
+#$group_index_from_image = "";
+
+#$user_restore  = "";
+#$group_restore = "";
+
+#$user_print_command  = "";
+#$group_print_command = "";
+
+$user_default  = "amanda";
+$group_default = "amanda";
+
+
+sub command_selfcheck {
+   print "selfcheck\n";
+}
+
+sub command_estimate_full {
+   my($disk)    = @_;
+   command_estimate_level(0, $disk);
+}
+
+sub command_estimate_level {
+   my($level, $disk) = @_;
+   my($listdir) = "$host$disk";
+   $listdir     =~ s/\//_/g;
+   if($level == 0) {
+      open(GNULIST, ">${gnulist}/${listdir}_${level}.new") || die();
+      close(GNULIST) || die();
+   }
+   else {
+      my($prev_level) = $level - 1;
+      copy("${gnulist}/${listdir}_${prev_level}", "${gnulist}/${listdir}_${level}.new");
+   }
+   if($option_estimate_direct == 1) {
+      command_estimate_opt_direct($disk, $level, $listdir);
+   }
+   else {
+      command_estimate_opt_parse($disk, $level, $listdir);
+   }
+}
+
+#sub command_estimate_diff {
+#}
+
+sub command_estimate_opt_direct {
+   my($disk, $level, $listdir) = @_;
+   my($size) = -1;
+
+   open3(\*WTRFH, '>&STDOUT', \*ESTIMATE, "$gnutar --create --directory $disk --listed-incremental ${gnulist}/${listdir}_${level}.new --sparse --one-file-system --ignore-failed-read --totals --file /dev/null .") || die();
+
+   $size = parse_estimate(ESTIMATE);
+   close(ESTIMATE);
+   output_size($size);
+   unlink "${gnulist}/${listdir}_${level}.new";
+   exit 0;
+}
+
+sub command_estimate_opt_parse {
+   my($disk, $level, $listdir) = @_;
+
+   open3(\*WTRFH, '>&STDOUT',\*ESTIMATE,"$gnutar --create --directory $disk --listed-incremental ${gnulist}/${listdir}_${level}.new --sparse --one-file-system --ignore-failed-read --totals --file /dev/null .");
+
+   while (<ESTIMATE>) {
+      print $_;
+   }
+   close(ESTIMATE);
+   close(WTRFH);
+
+   unlink "${gnulist}/${listdir}_${level}.new";
+}
+
+sub command_estimate_parse {
+   my($size) = parse_estimate(STDIN);
+   output_size($size);
+   exit 0;
+}
+
+sub parse_estimate {
+   my($fh) = @_;
+   my($size) = -1;
+   while(<$fh>) {
+      if ($_ =~ /^Total bytes written: (\d*)$/) {
+         $size = $1;
+         last;
+      }
+   }
+   return $size;
+}
+
+sub output_size {
+   my($size) = @_;
+   if($size == -1) {
+      print "-1 -1\n";
+      exit 2;
+   }
+   else {
+      my($ksize) = $size / 1024;
+      print "$ksize 1024\n";
+   }
+}
+
+sub command_backup_full {
+   my($disk)    = @_;
+   command_backup_level(0, $disk);
+}
+
+sub command_backup_level {
+   my($level, $disk) = @_;
+   my($listdir) = "$host$disk";
+   my($verbose) = "";
+   $listdir     =~ s/\//_/g;
+
+   if($level == 0) {
+      open(GNULIST, ">${gnulist}/${listdir}_${level}.new") || die();
+      close(GNULIST) || die();
+   }
+   else {
+      my($prev_level) = $level - 1;
+      copy("${gnulist}/${listdir}_${prev_level}", 
+           "${gnulist}/${listdir}_${level}.new");
+   }
+
+   if($option_index_direct == 1 || $option_index_parse == 1) {
+      $verbose = "--verbose";
+   }
+   my($cmd) = "$gnutar --create $verbose --directory $disk --listed-incremental ${gnulist}/${listdir}_${level}.new --sparse --one-file-system --ignore-failed-read --totals --file - .";
+
+   if($option_backup_parse == 1 && $option_index_direct == 0 &&
+                                   $option_index_parse  == 0) {
+      system($cmd);
+   }
+   else {
+      open3(\*WTRFH, '>&STDOUT', \*INDEX, $cmd) || die();
+
+      if($option_index_direct == 1 || $option_index_parse == 1) {
+         open(INDEXOUT, '>&=3') || die();
+         parse_backup(INDEX, STDERR, INDEXOUT);
+         close(INDEXOUT);
+      }
+      else {
+         parse_backup(INDEX, STDERR, undef);
+      }
+      close(INDEX);
+      close(WTRFH);
+   }
+
+   if(!defined($option_no_record)) {
+      rename "${gnulist}/${listdir}_${level}.new", 
+             "${gnulist}/${listdir}_${level}";
+   }
+   else {
+      unlink "${gnulist}/${listdir}_${level}.new";
+   }
+   exit 0;
+}
+
+#sub command_backup_diff {
+#}
+
+sub command_backup_parse {
+   $option_backup_direct = 1;
+   $option_backup_parse  = 0;
+   parse_backup(STDIN, STDOUT, undef);
+   exit 0;
+}
+
+sub parse_backup {
+   my($fhin, $fhout, $indexout) = @_;
+   my($size) = -1;
+   while(<$fhin>) {
+      if ( /^\.\//) {
+         if(defined($indexout)) {
+	    if($option_index_direct == 1) {
+               s/^\.//;
+               print $indexout $_;
+	    }
+	    elsif($option_index_parse == 1) {
+               print $indexout $_;
+            }
+         }
+      }
+      else {
+         if (/^Total bytes written: (\d*)$/) {
+            $size = $1;
+	    if(defined($fhout) && $option_backup_parse == 1) {
+	       print $fhout $_;
+	    }
+         }
+         elsif(defined($fhout)) {
+            if($option_backup_direct == 1) {
+               print $fhout $_;
+            }
+            elsif($option_backup_parse == 1) {
+               print $fhout $_;
+            }
+         }
+      }
+   }
+   if(defined($fhout) && $option_backup_direct == 1) {
+      if ($size == -1) {
+         print $fhout "$command -1 -1\n";
+      }
+      else {
+         my($ksize) = $size/1024;
+         print $fhout "$ksize 1024\n";
+      }
+   }
+}
+
+sub command_index_from_output {
+   index_from_output(STDIN, STDOUT);
+   exit 0;
+}
+
+sub index_from_output {
+   my($fhin, $fhout) = @_;
+   my($size) = -1;
+   while(<$fhin>) {
+      next if /^Total bytes written:/;
+      next if !/^\.\//;
+      s/^\.//;
+      print $fhout $_;
+   }
+}
+
+sub command_index_from_image {
+   open(INDEX, "$gnutar --list --file - |") || die();
+   index_from_output(INDEX, STDOUT);
+}
+
+#sub command_restore {
+#}
+
+sub command_print_command {
+}
+
+require "generic-dumper.pl"
