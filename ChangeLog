@@ -1,3 +1,7 @@
+1999-06-01  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/taper.c (write_buffer): assert properly
+
 1999-06-01  John Williams  <williams@morinda.com>
 
 	* changer-src/scsi-hpux.c (eject_tape): Enable it, it works.
