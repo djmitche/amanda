@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.21 2002/11/12 18:01:19 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.22 2002/11/25 18:06:51 martinea Exp $
  *
  */
 
@@ -92,10 +92,10 @@ char *disk, *exin;
     time(&curtime);
     diskname = sanitise_filename(disk);
 
-    dbgdir = stralloc2(AMANDA_DBGDIR, "/");
-    if((d = opendir(AMANDA_DBGDIR)) == NULL) {
+    dbgdir = stralloc2(AMANDA_TMPDIR, "/");
+    if((d = opendir(AMANDA_TMPDIR)) == NULL) {
 	error("open debug directory \"%s\": %s",
-	AMANDA_DBGDIR, strerror(errno));
+	AMANDA_TMPDIR, strerror(errno));
     }
     test_name = get_name(diskname, exin,
 			 curtime - (AMANDA_DEBUG_DAYS * 24 * 60 * 60), 0);
