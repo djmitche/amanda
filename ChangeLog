@@ -1,5 +1,10 @@
 1999-04-16  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/alloc.c (dbmalloc_caller_loc): const the file
+	arg, use the queue macros to maintain the list.
+
+1999-04-16  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/versuff.c.in: const the return str of version()
 	and versionsuffix.  Bump copyright to 1999.
 

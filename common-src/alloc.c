@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.18 1999/04/10 06:18:38 kashmir Exp $
+ * $Id: alloc.c,v 1.19 1999/04/16 15:18:48 kashmir Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -32,6 +32,7 @@
  */
 #include "amanda.h"
 #include "arglist.h"
+#include "queue.h"
 
 #if defined(USE_DBMALLOC)
 
@@ -39,10 +40,10 @@
  *=====================================================================
  * dbmalloc_caller_loc -- keep track of all allocation callers
  *
- * char *dbmalloc_caller_loc(char *s, int l)
+ * const char *dbmalloc_caller_loc(const char *file, int line)
  *
- * entry:	s = source file
- *		l = source line
+ * entry:	file = source file
+ *		line = source line
  * exit:	a string like "genversion.c@999"
  *
  * The debug malloc library has a concept of a call stack that can be used
@@ -61,90 +62,54 @@
  *=====================================================================
  */
 
-char *
-dbmalloc_caller_loc(s, l)
-char *s;
-int l;
+const char *
+dbmalloc_caller_loc(file, line)
+    const char *file;
+    int line;
 {
     struct loc_str {
 	char *str;
-	struct loc_str *next;
-    };
-    static struct loc_str *root = NULL;
-    struct loc_str *ls, *ls_last;
-    int len;
-    int size;
-    char *p;
-    static char *loc = NULL;
-    static int loc_size = 0;
+	LIST_ENTRY(loc_str) le;
+    } *ls;
+    static LIST_HEAD(, loc_str) root = LIST_HEAD_INITIALIZER(root);
+    static char loc[256];	/* big enough for filename@lineno */
+    const char *p;
 
-    if ((p = strrchr(s, '/')) == NULL) {
-	p = s;					/* keep the whole name */
-    } else {
-	p++;					/* just the last path element */
-    }
+    if ((p = strrchr(file, '/')) != NULL)
+	file = p + 1;				/* just the last path element */
 
-    len = strlen (p);
-    size = len + 1 + NUM_STR_SIZE + 1;
-    if (size > loc_size) {
-	size = ((size + 64 - 1) / 64) * 64;	/* might as well get a bunch */
-	/*
-	 * We should free the previous loc area, but we have marked it
-	 * as a non-leak and the library considers it an error to free
-	 * such an area, so we just ignore it.  We probably grabbed
-	 * enough the first time that this will not even happen.
-	 */
-	loc = malloc (size);
-	if (loc == NULL) {
-	    return "??";			/* not much better than abort */
-	}
-	malloc_mark (loc);
-	loc_size = size;
-    }
+    snprintf(loc, sizeof(loc), "%s@%d", file, line);
 
-    strcpy (loc, p);
-    snprintf(loc + len, 1 + NUM_STR_SIZE, "@%d", l);
-
-    for (ls_last = NULL, ls = root; ls != NULL; ls_last = ls, ls = ls->next) {
-	if (strcmp (loc, ls->str) == 0) {
-	    break;
+    for (ls = LIST_FIRST(&root); ls != NULL; ls = LIST_NEXT(ls, le)) {
+	if (strcmp(loc, ls->str) == 0) {
+	    if (ls != LIST_FIRST(&root)) {
+		/*
+		 * This is a repeat and was not at the head of the list.
+		 * Unlink it and move it to the front.
+		 */
+		LIST_REMOVE(ls, le);
+		LIST_INSERT_HEAD(&root, ls, le);
+	    }
+	    return (ls->str);
 	}
     }
 
-    if (ls == NULL) {
-	/*
-	 * This is a new entry.  Put it at the head of the list.
-	 */
-	ls = malloc (sizeof (*ls));
-	if (ls == NULL) {
-	    return "??";			/* not much better than abort */
-	}
-	malloc_mark (ls);
-	size = strlen (loc) + 1;
-	ls->str = malloc (size);
-	if (ls->str == NULL) {
-	    free (ls);
-	    return "??";			/* not much better than abort */
-	}
-	malloc_mark (ls->str);
-	strcpy (ls->str, loc);
-	ls->next = root;
-	root = ls;
-    } else if (ls_last != NULL) {
-	/*
-	 * This is a repeat and was not at the head of the list.
-	 * Unlink it and move it to the front.
-	 */
-	ls_last->next = ls->next;
-	ls->next = root;
-	root = ls;
-    } else {
-	/*
-	 * This is a repeat but was already at the head of the list,
-	 * so nothing else needs to be done.
-	 */
+    /*
+     * This is a new entry.  Put it at the head of the list.
+     */
+    ls = malloc(sizeof(*ls));
+    if (ls == NULL)
+	return ("??");			/* not much better than abort */
+    ls->str = malloc(strlen(loc) + 1);
+    if (ls->str == NULL) {
+	free(ls);
+	return ("??");			/* not much better than abort */
     }
-    return ls->str;
+    strcpy(ls->str, loc);
+    malloc_mark(ls);
+    malloc_mark(ls->str);
+    LIST_INSERT_HEAD(&root, ls, le);
+    return (ls->str);
 }
 
 /*
