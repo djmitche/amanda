@@ -705,9 +705,9 @@ if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ;
 	    KRB4LDFLAGS=-L$dir/lib
 	    KRB4LIBS="-lkrb -ldes"
 	    break
-	elif test -f ${dir}/lib/libkrb4.a \
-		  -a -f ${dir}/lib/libcrypto.a \
-		  -a -f ${dir}/lib/libdes425.a ; then
+	elif test -f ${dir}/lib/libkrb4.a &&
+	     test -f ${dir}/lib/libcrypto.a &&
+	     test -f ${dir}/lib/libdes425.a ; then
 	    #
 	    # This is Kerberos 5 with Kerberos 4 back-support.
 	    #
@@ -716,7 +716,11 @@ if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ;
 	    AC_DEFINE(KRB4_SECURITY)
 	    KRB4INCLUDES="-I$dir/include -I$dir/include/kerberosIV"
 	    KRB4LDFLAGS=-L$dir/lib
-	    KRB4LIBS="-lkrb4 -lcrypto -ldes425"
+	    if test -f ${dir}/lib/libkrb5.a &&
+               test -f ${dir}/lib/libcom_err.a; then
+		KRB4LIBS="-lkrb4 -lkrb5 -lcrypto -ldes425 -lcom_err"
+	    else
+		KRB4LIBS="-lkrb4 -lcrypto -ldes425"
 	    break
 	fi
     done
