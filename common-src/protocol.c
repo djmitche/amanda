@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.29 1999/04/16 05:13:06 kashmir Exp $
+ * $Id: protocol.c,v 1.30 1999/05/11 23:55:40 kashmir Exp $
  *
  * implements amanda protocol
  */
@@ -68,7 +68,6 @@ typedef struct proto {
     pkt_t req;				/* the actual wire request */
     protocol_sendreq_callback continuation; /* call when req dies/finishes */
     void *datap;			/* opaque cookie passed to above */
-    struct proto *prev, *next;		/* pending queue handles */
 } proto_t;
 
 #define ACK_WAIT	10	/* time (secs) to wait for ACK - keep short */

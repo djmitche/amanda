@@ -1,5 +1,10 @@
 1999-05-11  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/protocol.c (proto_t): don't need prev and next ptrs
+	anymore
+
+1999-05-11  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/amanda.h, common-src/alloc.c: remove the static
 	buffer manager - nothing uses it.  It can be resurrected in
 	the future if needed.
