@@ -1,3 +1,18 @@
+Changes in release 2.4.2p2
+
+* Mostly bug fixes.
+* Samba passwords are now sent to smbclient via a pipe and never displayed.
+* Amrecover should now work with xfsrestore.
+* Amrecover no longer binds an incorrect port that resulted in connection
+  failures on some systems.
+* Debug files in /tmp/amanda (--with-debug-dir) are now timestamped and old
+  ones automatically cleaned out.  This means more space (a few KBytes) will
+  be used since in a given run, several of the programs are called more than
+  once.  But it also means important debugging information should no longer
+  be lost by the file being overwritten.  The length of time to keep the
+  files is controlled by --with-debug-days (default: 4).  The old flag
+  --with-pid-debug-files is no longer needed and is ignored.
+
 Changes in release 2.4.2
 
 * dumptypes can be specialized in the disklist file
