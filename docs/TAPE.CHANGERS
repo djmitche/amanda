@@ -43,15 +43,16 @@ depending on how amanda was configured.
 The tape changer program must support the following commands:
 
     <tpchanger> -slot <slot-specifier>
-
-		changes to a particular slot
-		outputs to stdout the slot name and name of the 
-			device file to access the tape
+		if loaded, unloads the current slot and puts that tape away,
+			then loads the requested slot
+		outputs to stdout the slot name and name of the device file
+			to access the tape
 		returns 0 on success, 
-		returns 1 on positioning error (eg at bottom of
-		    gravity stacker or slot empty)
+		returns 1 on positioning error (eg at bottom of gravity
+			stacker or slot empty)
 		returns 2 any other fatal error
 			error messages to stdout in place of device name
+			junk in place of the slot name
 
 	Examples:
 		% chg-multi -slot 0
@@ -92,8 +93,8 @@ The tape changer program must support the following commands:
 		0 tape-changer not responding	# exitcode returned is 2
 
     <tpchanger> -eject
-		ejects the currently loaded tape, if appropriate.  Output
-		and error handling are the same as the -slot command.
+		if loaded, unloads the current slot and puts that tape away
+		output and error handling are the same as the -slot command
 
 	Examples:
 		% chg-multi -eject
@@ -122,7 +123,7 @@ For all the commands:
 	amanda to stop attempting to talk to the tape changer.
 
 
-4.  SLOT NUMBERS AND THE "CURRENT" SLOT
+4.  SLOT NAMES AND THE "CURRENT" SLOT
 
 Some tape changers, such as carousels and gravity stackers, have a hardware
 notion of current position.  Others have no current position when no tape
@@ -131,12 +132,11 @@ from the slots.
 
 Nevertheless, Amanda requires its tape-changer scripts to maintain the
 notion of a "current" position.  This is for performance reasons: as
-tapes tend to be loaded into the rack in order, and Amanda uses them
-in order, the next tape to use can be found much quicker if the
-position of the previous one is remembered.  As an example, the
-chg-multi.sh script maintains the current position in a
-"chg-multi.state" file (or any other file specified in a `statefile'
-line in the changer configuration file).
+tapes tend to be loaded into the rack in order, and Amanda uses them in
+order, the next tape to use can be found much quicker if the position of
+the previous one is remembered.  As an example, the chg-multi.sh script
+maintains the current position in a "chg-multi.state" file (or any other
+file specified in a `statefile' line in the changer configuration file).
 
 Amanda does not care how slots are specified: they could be numbered 0 to
 N-1, numbered 1 to N, or even designated by letter, A .. Z.  The only
