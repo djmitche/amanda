@@ -1625,7 +1625,7 @@ fi
 dnl
 dnl BSD SCSI
 dnl
-if test x"$ac_cv_header_sys_mtio_h" = x"yes" -a \
+if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
    test x"$ac_cv_header_sys_scsiio_h" = x"yes"; then
     AC_CACHE_CHECK([for BSD like scsi support],
     amanda_cv_bsd_scsi,

@@ -1,3 +1,8 @@
+1998-12-14  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (BSD SCSI): test ... -a ... is not portable, and less 
+	so when written test ... -a test ... :-)
+
 1998-12-14  Thomas Hepper <th@icem.de>
 
 	* changer-src/Makefile.am Added scsi-bsd.c
