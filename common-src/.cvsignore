@@ -1,2 +1,7 @@
 .deps
 Makefile.in
+Makefile
+statfs
+token
+version.c
+versuff.c

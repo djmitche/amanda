@@ -1,2 +1,14 @@
 .deps
 Makefile.in
+Makefile
+amandad
+calcize
+calcsize
+patch-system.sh
+patch-system
+rundump
+runtar
+selfcheck
+sendbackup
+sendsize
+versionsuffix

@@ -1,1 +1,6 @@
 Makefile.in
+Makefile
+amcat.awk
+amplot.sh
+amplot
+amplot.gp

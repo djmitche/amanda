@@ -1,2 +1,11 @@
 .deps
 Makefile.in
+Makefile
+chg-generic.sh
+chg-generic
+hp-changer.sh
+hp-changer
+no-changer.sh
+no-changer
+rth-changer.pl
+rth-changer

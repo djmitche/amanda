@@ -1,1 +1,9 @@
 Makefile.in
+Makefile
+amadmin.8
+amanda.8
+amcheck.8
+amcleanup.8
+amdump.8
+amflush.8
+amlabel.8
