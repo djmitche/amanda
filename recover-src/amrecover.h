@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.h,v 1.10 1999/03/05 01:29:39 martinea Exp $
+ * $Id: amrecover.h,v 1.11 2000/01/21 05:08:18 oliva Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -70,6 +70,7 @@ extern void set_disk P((char *dsk, char *mtpt));
 extern void set_host P((char *host));
 extern int set_date P((char *date));
 extern void set_directory P((char *dir));
+extern void set_tape P((char *tape));
 extern void show_directory P((void));
 extern void set_mode P((int mode));
 extern void show_mode P((void));

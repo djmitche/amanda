@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: help.c,v 1.5 1999/03/05 01:29:45 martinea Exp $
+ * $Id: help.c,v 1.6 2000/01/21 05:08:22 oliva Exp $
  *
  * implements the "help" command in amrecover
  */
@@ -56,6 +56,7 @@ void help_list P((void))
     printf("setdate {YYYY-MM-DD|--MM-DD|---DD} - set date of look\n");
     printf("setdisk diskname [mountpoint] - select disk on dump host\n");
     printf("sethost host      - select dump host\n");
+    printf("settape [host:][device|default] - select tape server and/or device\n");
     printf("setmode smb|tar   - select the method used to extract SMB shares\n");
     printf("\n");
 }

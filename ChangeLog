@@ -1,3 +1,16 @@
+2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* recover-src/uscan.l (settape): Recognize it.
+	* recover-src/uparse.y: Parse it.
+	* recover-src/amrecover.h (set_tape): Declare it.
+	* recover-src/set_commands.c (set_tape): Implement it.
+	* recover-src/help.c (help_list): Document it.
+	* man/amrecover.8.in: Likewise.
+	* recover-src/extract_list.c (extract_files): Warn if tape device is
+	/dev/null.
+	* recover-src/amrecover.c (tape_device_name): Default to
+	server-determined default.
+
 2000-01-13  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* configure.in: Recognize alpha*-*-linux-* and sparc*-*-linux-*.

@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1998 University of Maryland at College Park
+ * Copyright (c) 1991-1998, 2000 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.13 1999/03/05 01:29:46 martinea Exp $
+ * $Id: set_commands.c,v 1.14 2000/01/21 05:08:24 oliva Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -336,6 +336,44 @@ void show_directory P((void))
 	printf("%s\n", mount_point);
     else
 	printf("%s%s\n", mount_point, disk_path);
+}
+
+
+/* set the tape server and device */
+void set_tape (tape)
+    char *tape;
+{
+    char *tapedev = strchr(tape, ':');
+
+    if (tapedev)
+    {
+	if (tapedev != tape) {
+	    *tapedev = '\0';
+	    tape_server_name = newstralloc(tape_server_name, tape);
+	} else
+	    amfree(tape_server_name);
+	++tapedev;
+    } else
+	tapedev = tape;
+    
+    if (tapedev[0])
+    {
+	if (strcmp(tapedev, "default") == 0)
+	    amfree(tape_device_name);
+	else
+	    tape_device_name = newstralloc(tape_device_name, tapedev);
+    }
+
+    if (tape_device_name)
+	printf ("Using tape %s", tape_device_name);
+    else
+	printf ("Using default tape");
+
+    if (tape_server_name)
+	printf (" from server %s.\n", tape_server_name);
+    else
+	printf (".\nTape server unspecified, assumed to be %s.\n",
+		server_name);
 }
 
 void set_mode (mode)
