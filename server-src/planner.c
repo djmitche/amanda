@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.44 1997/11/30 23:46:54 amcore Exp $
+ * $Id: planner.c,v 1.45 1997/12/11 11:24:22 george Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -617,14 +617,10 @@ disk_t *dp;
     else ep->level_days = runs_at(&inf, ep->last_level);
     ep->last_lev0size = inf.inf[0].csize;
 
-    ep->fullrate = perf_average(inf.full.rate, DEFAULT_DUMPRATE);
-    if(ep->fullrate < 1.0) ep->fullrate = 1.0;
-
-    ep->incrrate = perf_average(inf.incr.rate, DEFAULT_DUMPRATE);
-    if(ep->incrrate < 1.0) ep->incrrate = 1.0;
+    ep->fullrate = perf_average(inf.full.rate, 0.0);
+    ep->incrrate = perf_average(inf.incr.rate, 0.0);
 
     ep->fullcomp = perf_average(inf.full.comp, dp->comprate[0]);
-
     ep->incrcomp = perf_average(inf.incr.comp, dp->comprate[1]);
 
     /* determine which estimates to get */
@@ -1723,15 +1719,20 @@ disk_t *dp;
 	    degr_date = ep->dumpdate[i];
     }
 
+#define fix_rate(rate) (rate < 1.0 ? DEFAULT_DUMPRATE : rate)
+
+    if(ep->dump_level == 0) {
+	dump_time = ep->dump_size / fix_rate(ep->fullrate);
+
+	if(ep->degr_level != -1) {
+	    degr_time = ep->degr_size / fix_rate(ep->incrrate);
+	}
+    }
+    else {
+	dump_time = ep->dump_size / fix_rate(ep->incrrate);
+    }
+
     if(ep->dump_level == 0 && ep->degr_level != -1) {
-	if (ep->fullrate > 0)
-	    dump_time = ep->dump_size / ep->fullrate;
-	else
-	    dump_time = -1;
-	if (ep->incrrate > 0)
-	    degr_time = ep->degr_size / ep->incrrate;
-	else
-	    degr_time = -1;
 	sprintf(schedline, "%s %s %d %d %s %ld %ld %d %s %ld %ld\n",
 		dp->host->hostname, dp->name, ep->dump_priority,
 		ep->dump_level, dump_date,
@@ -1740,16 +1741,6 @@ disk_t *dp;
 		ep->degr_size, degr_time);
     }
     else {
-	if(ep->dump_level == 0)
-	    if (ep->fullrate > 0)
-		dump_time = ep->dump_size / ep->fullrate;
-	    else
-		dump_time = -1;
-	else
-	    if (ep->incrrate > 0)
-		dump_time = ep->dump_size / ep->incrrate;
-	    else
-		dump_time = -1;
 	sprintf(schedline, "%s %s %d %d %s %ld %ld\n",
 		dp->host->hostname, dp->name, ep->dump_priority,
 		ep->dump_level, dump_date,
