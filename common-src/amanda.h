@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.93 2001/01/25 00:25:30 jrjackson Exp $
+ * $Id: amanda.h,v 1.94 2001/07/19 23:02:28 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -408,6 +408,8 @@ extern void   set_pname P((char *pname));
 extern char  *get_pname P((void));
 extern int    erroutput_type;
 extern void   error     P((const char *format, ...))
+    __attribute__ ((format (printf, 1, 2), noreturn));
+extern void   errordump P((const char *format, ...))
     __attribute__ ((format (printf, 1, 2), noreturn));
 extern int    onerror         P((void (*errf)(void)));
 

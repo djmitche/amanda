@@ -24,10 +24,10 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.28 2001/01/25 00:25:30 jrjackson Exp $
+ * $Id: alloc.c,v 1.29 2001/07/19 23:02:28 jrjackson Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
- * error() is called, relieving the caller from checking the return
+ * errordump() is called, relieving the caller from checking the return
  * code
  */
 #include "amanda.h"
@@ -191,8 +191,9 @@ alloc(size)
 
     malloc_enter(dbmalloc_caller_loc(s, l));
     addr = (void *)malloc(max(size, 1));
-    if (addr == NULL)
-	error("memory allocation failed (%u bytes requested)", size);
+    if (addr == NULL) {
+	errordump("memory allocation failed (%u bytes requested)", size);
+    }
     malloc_leave(dbmalloc_caller_loc(s, l));
     return addr;
 }
@@ -285,8 +286,8 @@ internal_vstralloc(str, argp)
 	    continue;				/* minor optimisation */
 	}
 	if (a >= MAX_VSTRALLOC_ARGS) {
-	    error ("more than %d arg%s to vstralloc",
-		   MAX_VSTRALLOC_ARGS, (MAX_VSTRALLOC_ARGS == 1) ? "" : "s");
+	    errordump("more than %d arg%s to vstralloc",
+		      MAX_VSTRALLOC_ARGS, (MAX_VSTRALLOC_ARGS == 1) ? "" : "s");
 	}
 	arg[a] = next;
 	len[a] = l;
