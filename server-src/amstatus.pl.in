@@ -170,7 +170,6 @@ while(<AMDUMP>) {
 			$size=$5;
 			$size=32 if $size<32;
 			$esize{$hostpart}=$size;
-			$size{$hostpart}=$size;
 			$degr_level{$hostpart}=-1;
 		}
 	}
@@ -184,7 +183,6 @@ while(<AMDUMP>) {
 			$size=$6;
 			$size=32 if $size<32;
 			$esize{$hostpart}=$size;
-			$size{$hostpart}=$size;
 			$degr_level{$hostpart}=-1;
 		}
 	}
@@ -197,7 +195,6 @@ while(<AMDUMP>) {
 			$size=$5;
 			$size=32 if $size<32;
 			$esize{$hostpart}=$size;
-			$size{$hostpart}=$size;
 			$degr_level{$hostpart}=$6;
 			$degr_size{$hostpart}=$7;
 			$degr_size{$hostpart}=32 if ($7 < 32);
@@ -213,7 +210,6 @@ while(<AMDUMP>) {
 			$size=$6;
 			$size=32 if $size<32;
 			$esize{$hostpart}=$size;
-			$size{$hostpart}=$size;
 			$degr_level{$hostpart}=$7;
 			$degr_size{$hostpart}=$8;
 			$degr_size{$hostpart}=32 if ($8 < 32);
@@ -253,7 +249,6 @@ while(<AMDUMP>) {
 		if(     $level{$hostpart} != $8 &&
 		   $degr_level{$hostpart} == $8) {
 			$level{$hostpart}=$degr_level{$hostpart};
-			$size{$hostpart} =$degr_size{$hostpart};
 			$esize{$hostpart}=$degr_size{$hostpart};
 		}
 		$serial{"$serial"}=$hostpart;
@@ -285,7 +280,6 @@ while(<AMDUMP>) {
 		if(     $level{$hostpart} != $9 &&
 		   $degr_level{$hostpart} == $9) {
 			$level{$hostpart}=$degr_level{$hostpart};
-			$size{$hostpart} =$degr_size{$hostpart};
 			$esize{$hostpart}=$degr_size{$hostpart};
 		}
 		$serial{"$serial"}=$hostpart;
@@ -676,7 +670,7 @@ foreach $host (sort @hosts) {
 							printf "%8dk", $esize{$hostpart};
 							printf " dumping %8dk", $size{$hostpart};
 							if($size{$hostpart} != 0) {
-								printf " (%6.2f%%)", (100.0*$size{$hostpart})/(1024.0*$esize{$hostpart});
+								printf " (%6.2f%%)", (100.0*$size{$hostpart})/$esize{$hostpart};
 							}
 							if( defined $starttime ) {
 								print " (", &showtime($dump_time{$hostpart}), ")";
