@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.88 2003/01/26 16:57:15 martinea Exp $
+/* $Id: taper.c,v 1.89 2003/04/14 17:16:46 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -700,7 +700,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 {
     buffer_t *bp;
     char tok;
-    int rc, err, opening, closing, bufnum;
+    int rc, err, opening, closing, bufnum, need_closing;
     long filesize;
     times_t runtime;
     char *strclosing = NULL;
@@ -723,6 +723,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 
     filesize = 0;
     closing = 0;
+    need_closing = 0;
     err = 0;
     fh_init(&file);
 
@@ -767,6 +768,13 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 	    if(bufdebug) {
 		fprintf(stderr, "taper: r: got R%d\n", bufnum);
 		fflush(stderr);
+	    }
+
+	    if(need_closing) {
+		syncpipe_put('C');
+		closing = 1;
+		need_closing = 0;
+		break;
 	    }
 
 	    if(closing) break;	/* ignore extra read tokens */
@@ -821,7 +829,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		strclosing = newvstralloc(strclosing,"Can't read data: ",NULL);
 		syncpipe_put('C');
 	    } else {
-		if(rc == 0) { /* switch to next file */
+		if(rc < buflen) { /* switch to next file */
 		    int save_fd;
 		    struct stat stat_file;
 
@@ -829,51 +837,61 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		    close(fd);
 		    if(file.cont_filename[0] == '\0') {	/* no more file */
 			err = 0;
-			closing = 1;
-			syncpipe_put('C');
+			need_closing = 1;
 		    } else if(stat(file.cont_filename, &stat_file) != 0) {
 			err = errno;
-			closing = 1;
+			need_closing = 1;
 			strclosing = newvstralloc(strclosing,"can't stat: ",file.cont_filename,NULL);
-			syncpipe_put('C');
 		    } else if((fd = open(file.cont_filename,O_RDONLY)) == -1) {
 			err = errno;
-			closing = 1;
+			need_closing = 1;
 			strclosing = newvstralloc(strclosing,"can't open: ",file.cont_filename,NULL);
-			syncpipe_put('C');
 		    } else if((fd != save_fd) && dup2(fd, save_fd) == -1) {
 			err = errno;
-			closing = 1;
+			need_closing = 1;
 			strclosing = newvstralloc(strclosing,"can't dup2: ",file.cont_filename,NULL);
-			syncpipe_put('C');
 		    } else {
+			buffer_t bp1;
+			int rc1;
+
+			bp1.status = EMPTY;
+			bp1.size = DISK_BLOCK_BYTES;
+			bp1.buffer = malloc(DISK_BLOCK_BYTES);
+
 			if(fd != save_fd) {
 			    close(fd);
 			    fd = save_fd;
 			}
-			rc = taper_fill_buffer(fd, bp, DISK_BLOCK_BYTES);
-			if(rc <= 0) {
-			    err = (rc < 0) ? errno : 0;
-			    closing = 1;
+
+			rc1 = taper_fill_buffer(fd, &bp1, DISK_BLOCK_BYTES);
+			if(rc1 <= 0) {
+			    amfree(bp1.buffer);
+			    err = (rc1 < 0) ? errno : 0;
+			    need_closing = 1;
 			    strclosing = newvstralloc(strclosing,
 						      "Can't read header: ",
 						      file.cont_filename,
 						      NULL);
-			    syncpipe_put('C');
 			} else {
-			    parse_file_header(bp->buffer, &file, rc);
+			    parse_file_header(bp1.buffer, &file, rc1);
 
-			    rc = taper_fill_buffer(fd, bp, tt_blocksize);
-			    if(rc <= 0) {
-				err = (rc < 0) ? errno : 0;
-				closing = 1;
-				if(rc < 0) {
+			    amfree(bp1.buffer);
+			    bp1.buffer = bp->buffer + rc;
+
+			    rc1 = taper_fill_buffer(fd, &bp1, tt_blocksize - rc);
+			    if(rc1 <= 0) {
+				err = (rc1 < 0) ? errno : 0;
+				need_closing = 1;
+				if(rc1 < 0) {
 			    	    strclosing = newvstralloc(strclosing,
 							      "Can't read data: ",
 							      file.cont_filename,
 							      NULL);
 				}
-				syncpipe_put('C');
+			    }
+			    else {
+				rc += rc1;
+				bp->size = rc;
 			    }
 			}
 		    }
@@ -888,7 +906,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 			cont_filename = stralloc(file.cont_filename);
 			file.cont_filename[0] = '\0';
 			file.blocksize = tt_blocksize;
-			build_header(bp->buffer, &file, rc);
+			build_header(bp->buffer, &file, tt_blocksize);
 
 			/* add CONT_FILENAME back to in-memory header */
 			strncpy(file.cont_filename, cont_filename, 
@@ -909,6 +927,11 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		    syncpipe_put('W');
 		    syncpipe_putint(bp-buftable);
 		    bp = nextbuf(bp);
+		}
+		if(need_closing && rc <= 0) {
+		    syncpipe_put('C');
+		    need_closing = 0;
+		    closing = 1;
 		}
 	    }
 	    break;
@@ -1089,10 +1112,6 @@ int buflen;
 	switch(cnt) {
 	case 0:	/* eof */
 	    if(interactive) fputs("r0", stderr);
-	    if(tt_file_pad && curptr > bp->buffer) {
-		memset(curptr, 0, spaceleft);
-		bp->size += spaceleft;
-	    }
 	    return bp->size;
 	case -1:	/* error on read, punt */
 	    if(interactive) fputs("rE", stderr);
@@ -1321,6 +1340,10 @@ void write_file()
 	 */
 
 	while(full_buffers) {
+	    if(tt_file_pad && bp->size < tt_blocksize) {
+		memset(bp->buffer+bp->size, 0, tt_blocksize - bp->size);
+		bp->size = tt_blocksize;
+	    }
 	    if(!write_buffer(bp)) goto tape_error;
 	    full_buffers--;
 	    bp = nextbuf(bp);
@@ -1355,6 +1378,10 @@ void write_file()
 		    syncpipe_put('E');
 		    syncpipe_putstr("writer-side buffer mismatch");
 		    goto error_ack;
+		}
+		if(tt_file_pad && bp->size < tt_blocksize) {
+		    memset(bp->buffer+bp->size, 0, tt_blocksize - bp->size);
+		    bp->size = tt_blocksize;
 		}
 		if(!write_buffer(bp)) goto tape_error;
 		bp = nextbuf(bp);

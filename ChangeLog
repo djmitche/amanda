@@ -1,3 +1,7 @@
+2003-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/taper.c: Read holding file correctly if blocksize != 32k.
+
 2003-04-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	New file by Robert C Dege <RDege@northropgrumman.com>
 
