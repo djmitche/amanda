@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.h,v 1.11 1998/09/08 17:47:44 martinea Exp $
+ * $Id: holding.h,v 1.11.2.1 1998/11/05 21:03:35 martinea Exp $
  *
  */
 
@@ -38,7 +38,7 @@
 extern struct dirname {
     struct dirname *next;
     char *name;
-} *dir_list;
+} *holding_list;
 
 /* local functions */
 int is_dir P((char *fname));

@@ -1,5 +1,12 @@
 1998-11-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/holding.h: rename dir_list to holding_list because
+	dir_list is also declared in amflush.c
+	* server-src/holding.c: ditto
+	* server-src/find.c: ditto
+
+1998-11-05  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amstatus.pl.in: remove warning.
 
 1998-11-04  Alexandre Oliva  <oliva@dcc.unicamp.br>
