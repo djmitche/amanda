@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.64 1998/01/26 21:15:47 jrj Exp $
+ * $Id: sendsize.c,v 1.65 1998/01/27 02:30:51 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -567,7 +567,8 @@ long getsize_dump(disk, level)
 char *disk;
 int level;
 {
-    int pipefd[2], nullfd, dumppid;
+    int pipefd[2], nullfd;
+    long killwhat, dumppid;
     long size;
     FILE *dumpout;
     char *dumpkeys = NULL;
@@ -578,12 +579,12 @@ int level;
     char *line = NULL;
     char level_str[NUM_STR_SIZE];
     pid_t p;
-    int sig;
     int s;
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
     device = amname_to_devname(disk);
+    fstype = amname_to_fstype(device);
 
     cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
 
@@ -591,7 +592,6 @@ int level;
     pipe(pipefd);
 #ifdef XFSDUMP						/* { */
 #ifdef DUMP						/* { */
-    fstype = amname_to_fstype(device);
     if (strcmp(fstype, "xfs") == 0)
 #else							/* } { */
     if (1)
@@ -610,7 +610,6 @@ int level;
 #endif							/* } */
 #ifdef VXDUMP						/* { */
 #ifdef DUMP						/* { */
-    fstype = amname_to_fstype(device);
     if (strcmp(fstype, "vxfs") == 0)
 #else							/* } { */
     if (1)
@@ -631,7 +630,7 @@ int level;
 #endif							/* } */
 #ifdef VDUMP						/* { */
 #ifdef DUMP						/* { */
-    if (strcmp(amname_to_fstype(device), "advfs") == 0)
+    if (strcmp(fstype, "advfs") == 0)
 #else							/* } { */
     if (1)
 #endif							/* } */
@@ -704,21 +703,19 @@ int level;
 	aclose(pipefd[0]);
 
 #ifdef XFSDUMP
-	fstype = amname_to_fstype(device);
 	if (strcmp(fstype, "xfs") == 0)
 	    execle(cmd, "xfsdump", "-F", "-J", "-l", level_str, "-", device,
 		   (char *)0, safe_env());
 	else
 #endif
 #ifdef VXDUMP
-	fstype = amname_to_fstype(device);
 	if (strcmp(fstype, "vxfs") == 0)
 	    execle(cmd, "vxdump", dumpkeys, "100000", "-", device, (char *)0,
 		   safe_env());
 	else
 #endif
 #ifdef VDUMP
-	if (strcmp(amname_to_fstype(device), "advfs") == 0)
+	if (strcmp(fstype, "advfs") == 0)
 	    execle(cmd, "vdump", dumpkeys, "60", "-", device, (char *)0,
 		   safe_env());
 	else
@@ -773,28 +770,29 @@ int level;
      * First, try to kill the dump process nicely.  If it ignores us
      * for several seconds, hit it harder.
      */
+    killwhat = -dumppid; /* the process group */
 #ifdef XFSDUMP
+    if (strcmp(fstype, "xfs") == 0) {
     /*
-     * We know xfsdump ignores SIGTERM, so arrange to hit it hard.
+     * xfsdump won't die if we kill the group, and it won't fork, so
+     * killing dumppid should be enough.
      */
-    fstype = amname_to_fstype(device);
-    sig = ((strcmp(fstype, "xfs") == 0 ? SIGKILL : SIGTERM);
-#else
-    sig = SIGTERM;
+        killwhat = dumppid;
+    }
 #endif
-    dbprintf(("sending signal %d to process group %ld\n", sig, (long)dumppid));
-    kill(-dumppid, sig);
-    for(s = 5; s > 0 && (p = waitpid(dumppid, &status, WNOHANG)) == 0; s--) {
+    dbprintf(("sending SIGTERM to process %s%ld\n",
+	      dumppid < 0 ? "group " : "", dumppid));
+    kill(killwhat, sig);
+    /* Now check whether it dies */
+    for(s = 5; s > 0 && (p = kill(killwhat, 0)) == 0; s--) {
 	sleep(1);
     }
     if(p == 0) {
-        dbprintf(("sending KILL to process group %ld\n", (long)dumppid));
+        dbprintf(("it won\'t die with SIGTERM, but SIGKILL should do\n"));
 	kill(-dumppid, SIGKILL);
-	wait(&status);
     }
-#else /* HAVE_DUMP_ESTIMATE */
-    wait(&status);
 #endif /* HAVE_DUMP_ESTIMATE */
+    wait(&status);
 
     aclose(nullfd);
     afclose(dumpout);
