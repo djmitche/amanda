@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.2 1998/11/12 00:00:26 oliva Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.1.2.3 1998/11/17 20:20:49 martinea Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -173,7 +173,7 @@ int Tape_Ready(char *tapedev, char * changerdev, int changerfd, int wait)
     }
 
   if (strcmp(tapedev,changerdev) != 0)
-    SCSI_CloseDevice(Device, DeviceFD);
+    SCSI_CloseDevice(tapedev, DeviceFD);
 }
 
 int SCSI_Scan()
