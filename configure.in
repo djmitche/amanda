@@ -1408,67 +1408,47 @@ mount=`(
     done
 )`
 
-FIXDEVS_MESSAGE=
-case `dirname $mount` in
-    /dev/dsk)
-		dev_prefix=/dev/dsk/
-		;;
-    /dev/vg*)
-		if test -d /dev/dsk; then
-		    dev_prefix=/dev/dsk/
-		else
-		    dev_prefix=/dev/
-		fi
-		FIXDEVS_MESSAGE="*** Run amhpfixdevs on HP-UX systems using /dev/vg??."
-		;;
-	*)
-		# Match everything else, including an empty $mount.
-		if test -d /dev/dsk; then
-		    dev_prefix=/dev/dsk/
-		elif test -d /dev; then
-		    dev_prefix=/dev/
-		else
-		    dev_prefix=/
-		fi
-		;;
-esac
-
-if test "$dev_prefix" = /dev/dsk/; then
-    if test -d /dev/rdsk; then
-	rdev_prefix=/dev/rdsk/
-    else
-	rdev_prefix=/dev/dsk/
-    fi
-else
-    # Some systems, notably Linux, do not have raw disk devices
-    # names.  Check this by trying to see if a raw disk device name
-    # exists using the normal raw device path prepended to the
-    # mount point of the root filesystem.
-    if test "$mount"; then
-	dev_name="/dev/r`basename $mount`"
-	if test -b $dev_name || test -c $dev_name; then
-	    rdev_prefix=/dev/r
-	else
-	    rdev_prefix=/dev/
-	fi
-    else
-	rdev_prefix=$dev_prefix
-    fi
-fi
-
 if test "$DEV_PREFIX" && test "$RDEV_PREFIX"; then
     AC_MSG_RESULT((predefined) $DEV_PREFIX - $RDEV_PREFIX)
 else
-    DEV_PREFIX=$dev_prefix
-    RDEV_PREFIX=$rdev_prefix
+    if test -d /dev/dsk; then
+	DEV_PREFIX=/dev/dsk/
+	if test -d /dev/rdsk; then
+	    RDEV_PREFIX=/dev/rdsk/
+	else
+	    RDEV_PREFIX=/dev/dsk/
+	fi
+    elif test -d /dev; then
+	DEV_PREFIX=/dev/
+	# Some systems, notably Linux, do not have raw disk devices
+	# names.  Check this by trying to see if a raw disk device name
+	# exists using the normal raw device path prepended to the
+	# mount point of the root filesystem.
+	if test "$mount"; then
+	    dev_name="/dev/r`basename $mount`"
+	    if test -b $dev_name || test -c $dev_name; then
+		RDEV_PREFIX=/dev/r
+	    else
+		RDEV_PREFIX=/dev/
+	    fi
+	else
+	    RDEV_PREFIX=/dev/r
+	fi
+    else
+	DEV_PREFIX=/
+	RDEV_PREFIX=/
+    fi
     AC_MSG_RESULT($DEV_PREFIX - $RDEV_PREFIX)
 fi
+
 AC_DEFINE_UNQUOTED(DEV_PREFIX,"${DEV_PREFIX}")
 AC_DEFINE_UNQUOTED(RDEV_PREFIX,"${RDEV_PREFIX}")
-if test "$FIXDEVS_MESSAGE"; then
-    AC_MSG_WARN($FIXDEVS_MESSAGE)
-fi
 
+case $mount in
+    /dev/vg*)
+	AC_MSG_WARN("*** Run amhpfixdevs on HP-UX systems using /dev/vg??.")
+	;;
+esac
 dnl maximum file size on holding disk
 AC_CACHE_CHECK(
     [maximum file size],
