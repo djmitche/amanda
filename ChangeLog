@@ -1,3 +1,9 @@
+1998-09-26  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* recover-src/extract_list.c (extract_files_child): fix-up
+ 	no_initial_params if password or domain information is not found
+	Reported by Jose Cheng <jcheng@math.ist.utl.pt>
+
 1998-09-25  John R. Jackson  <jrj@purdue.edu>
 
 	* configure.in: fix --with-dump-honor-nodump test.  Patch by
