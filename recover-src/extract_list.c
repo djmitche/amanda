@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.12 2000/10/11 02:08:27 martinea Exp $
+ * $Id: extract_list.c,v 1.43.2.13 2000/11/21 22:23:31 jrjackson Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1281,6 +1281,11 @@ static void extract_files_child(in_fd, elist)
 #ifdef AIX_BACKUP
         no_initial_params = 2;
 #else
+#if defined(XFSDUMP)
+	if (strcmp(file.program, XFSDUMP) == 0) {
+            no_initial_params = 6;
+	} else
+#endif
         no_initial_params = 4;
 #endif
     	break;
@@ -1329,9 +1334,20 @@ static void extract_files_child(in_fd, elist)
 #ifdef AIX_BACKUP
         restore_args[j++] = stralloc("-xB");
 #else
+#if defined(XFSDUMP)
+	if (strcmp(file.program, XFSDUMP) == 0) {
+            restore_args[j++] = stralloc("-f");
+            restore_args[j++] = stralloc("-");	/* data on stdin */
+            restore_args[j++] = stralloc("-v");
+            restore_args[j++] = stralloc("silent");
+            restore_args[j++] = stralloc("-s");	/* the "extract" flag? */
+	} else
+#endif
+	{
         restore_args[j++] = stralloc("xbf");
         restore_args[j++] = stralloc("2");	/* read in units of 1K */
         restore_args[j++] = stralloc("-");	/* data on stdin */
+	}
 #endif
     }
   
@@ -1384,6 +1400,11 @@ static void extract_files_child(in_fd, elist)
 #if defined(VXDUMP)
 	if (strcmp(file.program, VXDUMP) == 0) {
     	    cmd = stralloc(VXRESTORE);
+	}
+#endif
+#if defined(XFSDUMP)
+	if (strcmp(file.program, XFSDUMP) == 0) {
+    	    cmd = stralloc(XFSRESTORE);
 	}
 #endif
 	if (cmd == NULL) {
