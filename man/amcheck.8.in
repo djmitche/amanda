@@ -28,8 +28,7 @@ On the tape server host,
 .B amcheck
 can go through the same tape checking used at the start of the nightly
 .B amdump
-run to verify the correct tape for the next run is in the
-correct drive.
+run to verify the correct tape for the next run is mounted.
 .LP
 .B Amcheck
 can also do a self\-check on all client hosts
@@ -57,7 +56,7 @@ Run the tape tests on the server host.
 .TP
 .B \-w
 Enables a destructive check for write\-protection on the
-tape (which would cause the subsequent
+tape (which would otherwise cause the subsequent
 .B amdump
 to fail).
 If the tape
@@ -73,7 +72,7 @@ Nothing is printed, but mail is sent
 if any errors are detected.
 The mail goes to the
 .B mailto
-address as specified in the
+address specified in the
 .I amanda.conf
 file or the
 .I address
@@ -114,7 +113,7 @@ WARNING: drinkme: selfcheck request timed out.  Host down?
 WARNING: scruffy: selfcheck request timed out.  Host down?
 Client check: 136 hosts checked in 51.945 seconds, 3 problems found.
 
-(brought to you by Amanda 2.4.0)
+(brought to you by Amanda 2.4.2)
 .EE
 .RE
 .LP
@@ -124,7 +123,7 @@ is in
 .IR amanda.conf ,
 mail will be sent to
 .B csd-amanda
-if the tape check returns an error.
+if the server check returns an error.
 .LP
 .RS
 .EX
@@ -217,6 +216,12 @@ from
 instead of
 .IR runuser .
 .TP
+ERROR: program dir \fIdirectory\fP: not accessible
+(error)
+The directory Amanda expects to find its auxiliary programs in,
+.IR directory ,
+is not accessible.
+.TP
 ERROR: program \fIprogram\fP: does not exist
 (error)
 Program
@@ -235,8 +240,8 @@ Program
 .I program
 needed on the tape server exists but is not executable.
 .TP
-ERROR: program \fIprogram\fP: not setuid-root
-(error)
+WARNING: program \fIprogram\fP: not setuid-root
+(warning)
 Program
 .I program
 needed on the tape server exists but should be owned by user "root"
@@ -276,6 +281,9 @@ for an Amanda index directory (see
 .B indexdir
 in
 .BR amanda.conf )
+.TP
+oldlog
+for the directory that holds the old log files
 .RE
 .TP
 NOTE: \fIXXX\fP dir \fIdirectory\fP: does not exist
@@ -284,6 +292,11 @@ A database (info) or index directory does not exist or cannot be accessed.
 This might just mean this is a new client or disk,
 but if that is not the case,
 this should be treated as an error.
+.TP
+NOTE: it will be created on the next run
+(info)
+This indicates the info directory listed in the previous message
+will be created on the next run.
 .TP
 ERROR: \fIXXX\fP dir \fIname\fP: not a directory
 (error)
@@ -339,14 +352,6 @@ in
 .BR amanda.conf )
 is not writable or was not found.
 .TP
-NOTE: hold file \fIfile\fP exists
-(info)
-Hold file
-.I file
-exists and will cause
-.B amdump
-to pause at the beginning until it is removed.
-.TP
 ERROR: tape list \fItapelist\fP: parse error
 (error)
 Amanda tape list file
@@ -356,6 +361,24 @@ Amanda tape list file
 in
 .BR amanda.conf )
 could not be read or parsed.
+.TP
+WARNING: tapedev is /dev/null, dumps will be thrown away
+(warning)
+The
+.B tapedev
+parameter in
+.B amanda.conf
+is set to
+.B /dev/null
+and Amanda uses that when debugging to throw all the dump images away.
+.TP
+NOTE: hold file \fIfile\fP exists
+(info)
+Hold file
+.I file
+exists and will cause
+.B amdump
+to pause at the beginning until it is removed.
 .TP
 ERROR: holding disk \fIdisk\fP: statfs: \fIerror message\fP
 (error)

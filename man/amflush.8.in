@@ -18,9 +18,9 @@ amflush \- flush Amanda backup files from holding disk to tape
 .I config
 .SH DESCRIPTION
 .B Amflush
-writes all Amanda backups from holding disk to tape,
+writes Amanda backups from the holding disks to tape,
 and updates the Amanda info database and tape list accordingly.
-The backups stay in the holding disk when something is wrong with the tape
+Backups may stay in a holding disk when something is wrong with the tape
 at the time
 .B amdump
 is run.
@@ -29,18 +29,19 @@ When this happens, the problem must be corrected and
 run by hand.
 .PP
 .B Amflush
-will look in the holding disk specified by the
+will look in the holding disks specified by the
 .I amanda.conf
 file in @CONFIG_DIR@/\fIconfig\fR
 for any non-empty Amanda work directories.
-It then prompts you to select a directory.
-The work directories on the holding disk are named by the date at the time
+It then prompts you to select a directory
+or to process all of the directories.
+The work directories in the holding disks are named by the date at the time
 .B amdump
 was run, e.g.\&
 .IR 19910215 .
 .PP
 .B Amflush
-normally detaches from the tty and runs as a background process.
+normally detaches itself from the tty and runs as a background process.
 With the
 .B -f
 option,
@@ -68,6 +69,22 @@ a mail report similar to
 .RS
 .EX
 % amflush @DEFAULT_CONFIG@
+Scanning /amanda-hold...
+  20001113: found Amanda directory.
+  20001114: found Amanda directory.
+
+Multiple Amanda directories, please pick one by letter:
+  A. 20001113
+  B. 20001114
+Select directories to flush [A..B]: [ALL] all
+
+Flushing dumps in 20001113, 20001114,
+today: 20001117
+to tape drive /dev/rmt/0mn.
+Expecting tape DMP014 or a new tape.  (The last dumps were to tape DMP013)
+Are you sure you want to do this? yes
+Running in background, you can log off now.
+You'll get mail when amflush is finished.
 .EE
 .RE
 .SH AUTHOR

@@ -1,5 +1,26 @@
 2000-11-21 John R. Jackson  <jrj@purdue.edu>
 
+	* man/amgetconf.8.in: New man page.
+	* man/Makefile.am: Add support for amgetconf.8.in.
+	* man/amadmin.8.in: Update for 2.4.2 and do general cleanup.
+	* man/amanda.8.in: Ditto.
+	* man/amcheck.8.in: Ditto.
+	* man/amcheckdb.8.in: Ditto.
+	* man/amcleanup.8.in: Ditto.
+	* man/amdump.8.in: Ditto.
+	* man/amflush.8.in: Ditto.
+	* man/amlabel.8.in: Ditto.
+	* man/amrecover.8.in: Ditto.
+	* man/amreport.8.in: Ditto.
+	* man/amrestore.8: Ditto.
+	* man/amrmtape.8.in: Ditto.
+	* man/amstatus.8.in: Ditto.
+	* man/amtape.8: Ditto.
+	* man/amtoc.8.in: Ditto.
+	* man/amverify.8.in: Ditto.
+
+2000-11-21 John R. Jackson  <jrj@purdue.edu>
+
 	* contrib/sst/sst.c (sst_ioctl): Allow non-root users to use sst.
 
 2000-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>

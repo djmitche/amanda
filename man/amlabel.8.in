@@ -19,6 +19,13 @@ amlabel \- label an Amanda tape
 .I slot
 ]
 .SH DESCRIPTION
+All Amanda tapes must be pre-labeled before they are used.
+Amanda verifies the label in
+.B amdump
+and
+.B amflush
+before writing to make sure the proper tape is loaded.
+.LP
 .B Amlabel
 writes an Amanda label on the tape in the device specified by the
 .I amanda.conf
@@ -29,22 +36,31 @@ may be any string that does not contain whitespace and that matches the
 .B labelstr
 regular expression option.
 It is up to the system administrator to define a naming convention.
+.LP
 .B Amlabel
-will also append the new tape to the
+appends the new tape to the
 .I tapelist
-file, so that it will be used by Amanda before it reuses any other
-tapes.  When you amlabel multiple tapes, they'll be requested in the
-order you amlabel them.
+file so it will be used by Amanda before it reuses any other
+tapes.
+When you
+.B amlabel
+multiple tapes, they will be used in the
+order you
+.B amlabel
+them.
 .LP
 .B Amlabel
 will not write the label if the tape contains an active
-amanda tape or if the label specified is on an active tape. The
+Amanda tape or if the label specified is on an active tape.
+The
 .B -f
-(force) flag bypass these verification.
+(force) flag bypasses these verifications.
 .LP
-An optional slot may be specified after the tape label.
+An optional
+.I slot
+may be specified after the tape label.
 If a tape changer is in use,
-.I amlabel
+.B amlabel
 will label the tape in the specified slot
 instead of the currently loaded tape.
 .LP
@@ -52,28 +68,76 @@ See the
 .IR amanda (8)
 man page for more details about Amanda.
 .SH EXAMPLE
-Write an Amanda label with the string "VOL1" on
+Write an Amanda label with the string "DMP000" on
 the tape loaded in the device named in the
 .B tapedev
 option in @CONFIG_DIR@/@DEFAULT_CONFIG@/amanda.conf:
 .LP
 .RS
 .EX
-% amlabel @DEFAULT_CONFIG@ VOL1
+% amlabel @DEFAULT_CONFIG@ DMP000
 .EE
 .RE
 .LP
 Label the tape in slot 3 of the currently configured tape changer
-with the string "VOL2":
+with the string "DMP003":
 .LP
 .RS
 .EX
-% amlabel @DEFAULT_CONFIG@ VOL2 slot 3
+% amlabel @DEFAULT_CONFIG@ DMP003 slot 3
 .EE
 .RE
+.SH MESSAGES
+.TP
+label \fIlabel\fR doesn't match labelstr "\fIstr\fR"
+Label
+.I label
+on the command line does not match the
+.I labelstr
+regular expression
+.I str
+from
+.IR amanda.conf .
+.TP
+label \fIlabel\fR already on a tape
+Label
+.I label
+is already listed as an active Amanda tape.
+.TP
+no tpchanger specified in "\fIpath\fR", so slot command invalid
+The command line has the
+.B slot
+parameter but the
+.I amanda.conf
+file in
+.I path
+does not have a tape changer configured.
+.TP
+reading label \fIlabel\fR, tape is in another amanda configuration
+This tape appears to be a valid Amanda tape,
+but label does not match
+.B labelstr
+for this configuration so it is probably part of a different
+Amanda configuration.
+.TP
+reading label \fIlabel\fR, tape is active
+Tape
+.I label
+appears to already be part of this Amanda configuration
+and active, i.e. has valid data on it.
+.TP
+no label found, are you sure \fItape\fR is non-rewinding?
+While checking that the label was written correctly,
+.I amlabel
+got an error that might be caused by mis-configuring Amanda
+with a rewinding tape device name
+instead of a non-rewinding device name for
+.IR tape.
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
 .br
 University of Maryland, College Park
 .SH "SEE ALSO"
 amanda(8)
+amdump(8)
+amflush(8)

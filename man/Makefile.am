@@ -9,7 +9,21 @@ endif
 COMMON_MAN_PAGES = amanda.8
 
 if WANT_SERVER
-SERVER_MAN_PAGES = amadmin.8 amcheck.8 amcheckdb.8 amcleanup.8 amdump.8 amflush.8 amlabel.8 amoverview.8 amrmtape.8 amtape.8 amtoc.8 amverify.8 amstatus.8 amreport.8
+SERVER_MAN_PAGES = amadmin.8 \
+		   amcheck.8 \
+		   amcheckdb.8 \
+		   amcleanup.8 \
+		   amdump.8 \
+		   amflush.8 \
+		   amgetconf.8 \
+		   amlabel.8 \
+		   amoverview.8 \
+		   amreport.8 \
+		   amrmtape.8 \
+		   amstatus.8 \
+		   amtape.8 \
+		   amtoc.8 \
+		   amverify.8
 endif
 
 if WANT_RECOVER
@@ -23,7 +37,11 @@ endif
 # not autoconf-generated:
 EXTRA_DIST = amplot.8 amrestore.8 amtape.8
 
-man_MANS = $(AMPLOT_MAN_PAGES) $(COMMON_MAN_PAGES) $(SERVER_MAN_PAGES) $(RECOVER_MAN_PAGES) $(RESTORE_MAN_PAGES)
+man_MANS = $(AMPLOT_MAN_PAGES) \
+	   $(COMMON_MAN_PAGES) \
+	   $(SERVER_MAN_PAGES) \
+	   $(RECOVER_MAN_PAGES) \
+	   $(RESTORE_MAN_PAGES)
 
 install-data-hook:
 	@list="$(man_MANS)"; \

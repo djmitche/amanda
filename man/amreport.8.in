@@ -12,25 +12,27 @@
 ..
 .TH AMREPORT 1
 .SH NAME
-amreport \- generate a formatted output of statistics for an amdump run
+amreport \- generate a formatted output of statistics for an Amanda run
 .SH SYNOPSIS
 .B amreport
-.I config
 [
+.I config
+] [
 .B -l
-.I log file
+.I logfile
 ] [
 .B -f
-.I output file
+.I outputfile
 ] [
 .B -p
-.I postscript file
+.I postscriptfile
 ] 
 .SH DESCRIPTION
 .B Amreport
 generates a summary report of an
 .IR amanda (8)
-backup run.  If no configuration name is specified, amanda.conf is
+backup run.
+If no configuration name is specified, amanda.conf is
 read from the current directory.
 .LP
 See the
@@ -41,79 +43,87 @@ man page for more details about Amanda.
 .I config
 Name of the configuration to process.
 .TP
-.OP -l "log file"
-Name of the log file to parse to generate the report. If
-a log file is not specified, then it defaults to the file:
+.OP -l logfile
+Name of the log file to parse to generate the report.
+If a log file is not specified, it defaults to the file:
 .LP
 .RS
 .RS
-\fIlogdir\fP/log,
+\fIlogdir\fP/log
 .RE  
 .RE  
 .IP  
+where
 .I logdir
 is the log directory defined in amanda.conf.
 .TP
-.OP -f "output file"
+.OP -f outputfile
 Normally,
 .B amreport
 sends the report via e-mail to the
 .I mailto
-user as defined in the amanda.conf file. If
-.I output file
+user as defined in the amanda.conf file.
+If
+.I outputfile
 is specified, then the report is put in
-.I output file.
+.IR outputfile .
 .TP
-.OP -p "postscript file"
+.OP -p postscriptfile
 Send the postscript output to the file
-.I postscript file
+.I postscriptfile
 instead of to the
 .IR lpr (1)
-command. This option has an effect only if the
+command.
+This option has an effect only if the
 .I lbl-templ
-directive is specified in amanda.conf. See
-.B LABEL PRINTING
-below.
-.TP
-
-.SS LABEL PRINTING
+directive is specified in amanda.conf.
+.SH LABEL PRINTING
 .LP
-Amanda has the ability to print postscript labels which describe the contents
-of the tape being written to.  The labels are designed to be folded and
+Amanda can print postscript labels describing the contents
+of tape(s) written in a run.
+The labels are designed to be folded and
 inserted into the tape case along with the tape or hole punched and put 
-in a 3-ring binder. Various label templates have been provided which
-format data in ways that are ideal for each tape size. The information
-provided varies slightly from one label template to the next, due to 
-size constraints. The labels contain one line for each host/file-system
-pair and can also contain the file number on the tape, the level of the
-dump, the original size of the dump and the size of the (possibly compressed)
-file written to the tape.
-The ability to print these labels is achieved by adding the lbl-templ field to the
-tapetype definition in amanda.conf. If you don't add this line to your
-tapetype definition, then 
+in a 3-ring binder.
+Various label templates are provided to
+format data for different tape sizes.
+.LP
+The information printed varies slightly between label templates
+due to size constraints.
+Labels contain one line for each host/file-system
+pair and may also contain the file number on the tape,
+the level of the dump,
+the original size of the dump
+and the size of the (possibly compressed) tape file.
+.LP
+Add the
+.I lbl-templ
+parameter to the tapetype definition in amanda.conf to enable labels.
+If you don't add this line to your
+tapetype definition,
 .B amreport
-will not print a tape label.
+will not print tape labels.
 .LP
-You can also specify an alternate "printer" definition to print the
-label to other than the system default printer.
+You may use the
+.I printer
+keyword in amanda.conf to print to other than the system default printer.
 .LP
-.B Labels Provided
+.SH TEMPLATES
 .sp
-The authors have provided label templates for the following tape types.
-These are pretty generic labels, and should be easy to customize for
-other tape types. Others are encouraged to do so.
+Amanda provides label templates for the following tape types.
+These are pretty generic labels and should be easy to customize for
+other tape types or particular site needs.
+.LP
 .RS
 .RS
-.sp
 .nf
-* exabyte 8mm tapes
-* dat 4mm tapes
+* ExaByte 8mm tapes
+* DAT 4mm tapes
 * DLT tapes
 * 3-ring binder
 .fi
-.sp
 .RE
 .RE
+.LP
 The 3-ring binder type is the most generic.
 It may be used to make a hardcopy log of the tapes.
 .SH "SEE ALSO"

@@ -9,7 +9,7 @@
 ..
 .TH AMRESTORE 8
 .SH NAME
-amrestore \- extract files from an Amanda tape
+amrestore \- extract backup images from an Amanda tape
 .SH SYNOPSIS
 .B amrestore
 [
@@ -42,7 +42,7 @@ amrestore \- extract files from an Amanda tape
 ]]]]]]
 .SH DESCRIPTION
 .B Amrestore
-extracts files from the tape mounted on
+extracts backup images from the tape mounted on
 .I tapedevice
 or from the holding file
 .I holdingfile
@@ -52,7 +52,7 @@ that match
 and
 .I datestamp
 patterns given on the command line.
-The tape must be in a format written by the
+The tape or holding file must be in a format written by the
 .B amdump
 or
 .B amflush
@@ -96,14 +96,14 @@ may be an empty string ("") to match every host, disk or date
 (this is just an abbreviation for ".*").
 .LP
 .I Datestamp
-is useful if you have multiple
+is useful if
 .B amflush
-runs on the tape.
+writes multiple backup runs to a single tape.
 .PP
 Unless
 .B -p
 is used,
-candidate backup files are extracted to files
+candidate backup images are extracted to files
 in the current directory named:
 .LP
 .RS
@@ -113,7 +113,7 @@ in the current directory named:
 .TP
 .B -p
 Pipe output.
-The first matching backup file is sent to standard output,
+The first matching backup image is sent to standard output,
 which is normally a pipe to
 .B restore
 or
@@ -151,15 +151,21 @@ writes all files in compressed format,
 even if the backups on the tape are not compressed.
 Output file names will have a
 .I .Z
-extension.
+or
+.I .gz
+extension depending on whether
+.B compress
+or
+.B gzip
+is the preferred compression program.
 This option is useful when the current directory disk is small.
 .TP
 .B -r
 Raw output.
-Backup files are output exactly as they are on the tape,
+Backup images are output exactly as they are on the tape,
 including the
 .B amdump
-file headers.
+headers.
 Output file names will have a
 .I .RAW
 extension.
@@ -187,15 +193,15 @@ option to
 .BR restore ,
 which causes it to read in units of two 512-byte blocks (1 Kbyte)
 at a time.
-This keeps it from complaining about short reads.
+This helps keep it from complaining about short reads.
 .LP
 .RS
 .EX
-% amrestore -p /dev/nrmt9 seine rz3g | restore ivbf 2 -
+% amrestore -p /dev/nrmt9 seine rz3g | restore -ivbf 2 -
 .EE
 .RE
 .LP
-The next example extracts all backup files for host
+The next example extracts all backup images for host
 .IR seine .
 This is the usual way to extract all data for a host after a disk crash.
 .LP
@@ -223,12 +229,12 @@ seine.rz1g.19910125.0
 .EE
 .RE
 .LP
-You can also use amrestore to extract backup data from a holding disk
-file:
+You may also use amrestore to extract a backup image from a holding disk
+file that has not yet been flushed to tape:
 .LP
 .RS
 .EX
-% amrestore -p seine.rz1a.2 | restore -if -
+% amrestore -p /amanda/20001119/seine.rz1a.2 | restore -ivbf 2 -
 .EE
 .RE
 .SH AUTHOR
@@ -239,4 +245,5 @@ University of Maryland, College Park
 amanda(8),
 amdump(8),
 amflush(8),
+tar(1)
 restore(8)

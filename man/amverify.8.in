@@ -21,23 +21,23 @@ amverify \- check an Amanda tape for errors
 reads an Amanda format tape and makes sure each backup image
 can be processed by
 .B amrestore
-and, if possible, the appropriate system restore program (e.g.\&
+and, if possible, the appropriate restore program (e.g.\&
 .BR tar ).
 .LP
 .B Amverify
 runs
 .B amrestore
 on each file of the tape and pipes the output
-to the system restore program with an option to create a catalogue
+to a restore program (if available) with an option to create a catalogue
 of the backup.
 The catalogue itself is discarded.
 Only the success or failure of the operation itself is reported.
 .LP
-If the dump image cannot be processed by the system restore program,
+If the backup image cannot be processed by the restore program,
 e.g. if it was written on a different operating system,
-the image is still processed by
-.B amrestore
-but thrown away.
+the image is sent through
+.B dd
+to /dev/null.
 This still determines if the tape is readable,
 but does not do any internal consistency check on the image.
 .LP

@@ -50,20 +50,20 @@ List backups of hosts and disks that are being discarded.  Enabled by default.
 .TP
 .B -q
 Opposite of
-.B -v .
+.BR -v .
 .TP
 .B -d
 Run in debugging mode so all executed commands are shown.
 .SH EXAMPLE
 Remove tape labeled
-.I DailySet1.034
+.I DAILY034
 from the
 .I DailySet1
 configuration.
 .LP
 .RS
 .EX
-# amrmtape DailySet1 DailySet1.034
+# amrmtape DailySet1 DAILY034
 .EE
 .RE
 .SH AUTHOR

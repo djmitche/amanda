@@ -15,7 +15,7 @@ amcheckdb \- check Amanda database for tape consistency
 .I config
 .SH DESCRIPTION
 .B Amcheckdb
-verifies every tape mentioned in the Amanda database
+verifies that every tape mentioned in the Amanda database
 is still valid in the
 .I tapelist
 file.
@@ -35,7 +35,7 @@ Ready.
 .LP
 This shows tape
 .I DMP014
-still listed in the database but no longer listed in the
+is still listed in the database but is no longer listed in the
 .I tapelist
 file:
 .LP
