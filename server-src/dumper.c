@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.121 1999/04/16 05:13:21 kashmir Exp $
+/* $Id: dumper.c,v 1.122 1999/04/16 23:01:51 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -80,8 +80,7 @@ char *handle = NULL;
 
 char *errstr = NULL;
 int abort_pending;
-long dumpsize, origsize;
-int nb_header_block;
+static long dumpsize, headersize, origsize;
 
 static comp_t srvcompress = COMP_NONE;
 
@@ -605,7 +604,7 @@ databuf_flush(db)
 	 * to the next chunk, and then close it.
 	 */
 	fd = db->fd;
-	if (lseek(fd, (off_t)0, 0) < 0) {
+	if (lseek(fd, (off_t)0, SEEK_SET) < 0) {
 	    errstr = squotef("lseek holding file: %s", strerror(errno));
 	    return (-1);
 	}
@@ -629,7 +628,11 @@ databuf_flush(db)
 	file.cont_filename[0] = '\0';
 	write_tapeheader(fd, &file);
 	dumpsize += TAPE_BLOCK_SIZE;
-	nb_header_block++;
+	/*
+	 * XXX this is bogus - this is being updated in the chunker process
+	 * and therefore will never be seen by the dumper.
+	 */
+	headersize += TAPE_BLOCK_SIZE;
 	amfree(tmp_filename);
 
 	/*
@@ -1005,8 +1008,7 @@ do_dump(db)
 
     startclock();
 
-    dumpsize = origsize = dump_result = 0;
-    nb_header_block = 0;
+    dumpsize = headersize = origsize = dump_result = 0;
     status = 0;
     fh_init(&file);
 
@@ -1088,7 +1090,7 @@ do_dump(db)
     runtime = stopclock();
     dumptime = runtime.r.tv_sec + runtime.r.tv_usec/1000000.0;
 
-    dumpsize -= (nb_header_block * TAPE_BLOCK_SIZE);/* don't count the header */
+    dumpsize -= headersize;		/* don't count the header */
     if (dumpsize < 0) dumpsize = 0;	/* XXX - maybe this should be fatal? */
 
     errstr = alloc(128);
@@ -1235,7 +1237,7 @@ read_mesgfd(cookie, buf, size)
 	    return;
 	}
 	dumpsize += TAPE_BLOCK_SIZE;
-	nb_header_block++;
+	headersize += TAPE_BLOCK_SIZE;
 
 	/*
 	 * Now, setup the compress for the data output, and start

@@ -1,5 +1,12 @@
 1999-04-16  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c: make dumpsize and headersize static.  Rename
+	nb_header_block to headersize and also make it static.  headersize
+	now counts bytes instead of blocks, just like the other two.
+	Use SEEK_SET in an lseek instead of hardcoding 0.
+
+1999-04-16  Mike Grupenhoff <kashmir@munge.com>
+
 	* configure.in: implement --with-cflags to allow turning on
 	compiler warnings and optimizations
 
