@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.2.1 2001/03/15 02:18:49 jrjackson Exp $
+ * $Id: sendsize.c,v 1.97.2.13.2.2 2001/04/23 21:13:58 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -926,7 +926,9 @@ long getsize_smbtar(disk, level, exclude_spec)
     char *tarkeys, *sharename, *user_and_password = NULL, *domain = NULL;
     int lpass;
     char *pwtext;
+    int pwtext_len;
     char *line;
+    char *pw_fd_env;
 
     if ((user_and_password = findpass(disk, &domain)) == NULL) {
 	if(domain) {
@@ -947,6 +949,7 @@ long getsize_smbtar(disk, level, exclude_spec)
 	      get_pname(), disk);
     }
     *pwtext++ = '\0';
+    pwtext_len = strlen(pwtext);
     if ((sharename = makesharename(disk, 0)) == NULL) {
 	memset(user_and_password, '\0', lpass);
 	amfree(user_and_password);
@@ -970,13 +973,19 @@ long getsize_smbtar(disk, level, exclude_spec)
 	tarkeys = "archive 1;recurse;dir";
 #endif
 
+    if (pwtext_len > 0) {
+	pw_fd_env = "PASSWD_FD";
+    } else {
+	pw_fd_env = "dummy_PASSWD_FD";
+    }
     dumppid = pipespawn(SAMBA_CLIENT, STDERR_PIPE|PASSWD_PIPE,
 	      &nullfd, &nullfd, &pipefd, 
-	      "PASSWD_FD", &passwdfd,
+	      pw_fd_env, &passwdfd,
 	      "smbclient",
 	      sharename,
 	      "-d", SAMBA_DEBUG_LEVEL,
-	      "-U", user_and_password,				/* user only */
+	      *user_and_password ? "-U" : skip_argument,
+	      *user_and_password ? user_and_password : skip_argument,
 	      "-E",
 	      domain ? "-W" : skip_argument,
 	      domain ? domain : skip_argument,
@@ -987,7 +996,7 @@ long getsize_smbtar(disk, level, exclude_spec)
 	amfree(domain);
     }
     aclose(nullfd);
-    if(fullwrite(passwdfd, pwtext, strlen(pwtext)) < 0) {
+    if(pwtext_len > 0 && fullwrite(passwdfd, pwtext, pwtext_len) < 0) {
 	int save_errno = errno;
 
 	memset(user_and_password, '\0', lpass);
