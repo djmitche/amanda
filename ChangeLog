@@ -1,5 +1,9 @@
 1998-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* config/acconfig.h: add "#undef HAVE_WRITEV_DECL".
+
+1998-12-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* NEWS: document new force-bump, force-no-bump and unforce-bump
 	command in amadmin.
 
