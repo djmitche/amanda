@@ -136,7 +136,8 @@ char **main_argv;
 	    holdalloc(hdp)->allocated_dumpers = 0;
 	    holdalloc(hdp)->allocated_space = 0;
 
-	    if(get_fs_stats(hdp->diskdir, &fs) == -1) {
+	    if(get_fs_stats(hdp->diskdir, &fs) == -1 ||
+	       access(hdp->diskdir, W_OK) == -1) {
 		log(L_WARNING, "WARNING: ignoring holding disk %s: %s\n",
 		    hdp->diskdir, strerror(errno));
 		hdp->disksize = 0;

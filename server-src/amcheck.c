@@ -391,6 +391,11 @@ int fd;
 		    hdp->diskdir, strerror(errno));
 	    disklow = 1;
 	}
+	else if(access(hdp->diskdir, W_OK) == -1) {
+	    fprintf(outf, "ERROR: %s is unwritable: %s\n",
+		    hdp->diskdir, strerror(errno));
+	    disklow = 1;
+	}
 	else if(fs.avail == -1) {
 	    fprintf(outf, 
 	       "WARNING: avail disk space unknown for %s. %ld KB requested.\n",
