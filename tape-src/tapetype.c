@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.5 1999/12/12 20:48:00 jrj Exp $
+ * $Id: tapetype.c,v 1.6 2000/09/24 02:00:18 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -104,6 +104,7 @@ void usage()
 {
   fputs("usage: ", stderr);
   fputs(sProgName, stderr);
+  fputs(" -h", stderr);
   fputs(" [-e estsize]", stderr);
   fputs(" [-f tapedev]", stderr);
   fputs(" [-t typename]", stderr);
@@ -114,7 +115,7 @@ void help()
 {
   usage();
   fputs("\
-  -help			display this message\n\
+  -h			display this message\n\
   -e estsize		estimated tape size (default: 1g == 1024m)\n\
   -f tapedev		tape device name (default: $TAPE)\n\
   -t typename		tapetype name (default: unknown-tapetype)\n\

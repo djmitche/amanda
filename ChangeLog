@@ -1,4 +1,9 @@
 2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	patch by jason Thomas <jet@users.sourceforge.net>
+
+	* tape-src/tapetype.c: fix help message.
+
+2000-09-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	patch by Rudolf Cejka <cejkar@users.sourceforge.net>
 
 	* common-src/file.c (mkpdir): check p != NULL
