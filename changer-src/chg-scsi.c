@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.19 2000/07/31 18:55:13 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.20 2000/11/26 15:55:45 martinea Exp $";
 #endif
 /*
  * 
@@ -70,6 +70,7 @@ static char rcsid[] = "$Id: chg-scsi.c,v 1.19 2000/07/31 18:55:13 ant Exp $";
 #include "conffile.h"
 #include "libscsi.h"
 #include "scsi-defs.h"
+#include "tapeio.h"
 
 char *tapestatfile = NULL;
 FILE *debug_file = NULL;
@@ -1016,7 +1017,6 @@ int main(int argc, char *argv[])
   char *tape_device = NULL;
   char *changer_file = NULL;
   char *scsitapedevice = NULL;
-  int TapeEject = 0;              /* Do we have an device for ejecting the tape ? */
 
   chg.number_of_configs = 0;
   chg.eject = 0;

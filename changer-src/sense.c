@@ -319,7 +319,7 @@
 	};
 
 
-int DumpSense()
+void DumpSense()
 {
 	SenseType_T *pwork = (SenseType_T *)&SenseType;
 

@@ -1,3 +1,22 @@
+2000-11-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* common-src/util.c: #include "../tape-src/tapeio.h"
+	* tape-src/tapeio.c(tapefd_write): second arg is const.
+	* tape-src/tapeio.h(tapefd_write): Likewise.
+	* common-src/event.c(event_loop): declare entry if ASSERT is defined.
+	* changer-src/chg-scsi.c: Fix compiler warning.
+	* changer-src/scsi-aix.c: Likewise.
+	* changer-src/scsi-bsd.c: Likewise.
+	* changer-src/scsi-cam.c: Likewise.
+	* changer-src/scsi-changer-driver.c: Likewise.
+	* changer-src/scsi-defs.h: Likewise.
+	* changer-src/scsi-hpux.c: Likewise.
+	* changer-src/scsi-hpux_new.c: Likewise.
+	* changer-src/scsi-irix.c: Likewise.
+	* changer-src/scsi-linux.c: Likewise.
+	* changer-src/scsi-solaris.c: Likewise.
+	* changer-src/sense.c: Likewise.
+
 2000-11-22 John R. Jackson  <jrj@purdue.edu>
 
 	* contrib/dbbackup.ksh: Deal with adm being a symlink.

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.15 2000/07/31 18:55:13 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.16 2000/11/26 15:55:45 martinea Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -32,7 +32,7 @@ static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.15 2000/07/31 18:55:13 ant
 #endif
 #
 
-#include <scsi-defs.h>
+#include "scsi-defs.h"
 
 #include "tapeio.h"
 
@@ -63,7 +63,7 @@ int CheckMove(ElementInfo_T *from, ElementInfo_T *to);
 int GenericRewind(int);
 int GenericStatus();
 int GenericFree();
-int TapeStatus();                   /* Is the tape loaded ? */
+void TapeStatus();                   /* Is the tape loaded ? */
 int DLT4000Eject(char *Device, int type);
 int GenericEject(char *Device, int type);
 int GenericClean(char *Device);                 /* Does the tape need a clean */
@@ -71,13 +71,16 @@ int GenericBarCode(int DeviceFD);               /* Do we have Barcode reader sup
 int NoBarCode(int DeviceFD);
 
 int GenericSearch();
-int Inventory(char * labelfile, int drive, int eject, int start, int stop, int clean);
+void Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean);
 
 int TreeFrogBarCode(int DeviceFD);
 int EXB120BarCode(int DeviceFD);
 int GenericSenseHandler(int fd, unsigned char, char *);
 
 ElementInfo_T *LookupElement(int address);
+int eject_tape(char *tapedev, int type);
+int unload(int fd, int drive, int slot);
+int load(int fd, int drive, int slot);
 
 /*
  * Log Pages Decode
@@ -94,7 +97,6 @@ int DecodeModeSense(char *buffer, int offset, char *pstring, char block, FILE *o
 int SCSI_Move(int DeviceFD, unsigned char chm, int from, int to);
 int SCSI_LoadUnload(int DeviceFD, RequestSense_T *pRequestSense, unsigned char byte1, unsigned char load);
 int SCSI_TestUnitReady(int, RequestSense_T *);
-int SCSI_Inquiry(int, char *, unsigned char);
 int SCSI_ModeSense(int DeviceFD, char *buffer, u_char size, u_char byte1, u_char byte2);
 int SCSI_ModeSelect(int DeviceFD, 
                     char *buffer,
@@ -169,7 +171,7 @@ ChangerCMD_T ChangerIO[] = {
     GenericRewind,
     NoBarCode,
     GenericSearch,
-    GenericSenseHandler}},
+    GenericSenseHandler}}, 
 	/* Exabyte Devices */
   {"EXB-10e",      
     "Exabyte Robot [EXB-10e]",
@@ -392,7 +394,7 @@ void ChangerDriverVersion()
  * ToDo:
  * Check if the tape/changer is ready for the next move
  */
-int Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean)
+void Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean)
 {
   extern OpenFiles_T *pDev;
   int x;
@@ -837,7 +839,6 @@ int Tape_Ready(int fd, int wait)
   int true = 1;
   int ret;
   int cnt = 0;
-  OpenFiles_T *pwork = NULL;
 
   RequestSense_T *pRequestSense;
   dbprintf(("##### START Tape_Ready\n"));
@@ -1252,7 +1253,6 @@ int TreeFrogBarCode(int DeviceFD)
   extern OpenFiles_T *pDev;
 
   ModePageTreeFrogVendorUnique_T *pVendor;
-  ModePageTreeFrogVendorUnique_T *pVendorWork;
 
   dbprintf(("##### START TreeFrogBarCode\n"));
   if (pModePage == NULL)
@@ -1388,9 +1388,8 @@ int SenseHandler(int DeviceFD, unsigned char flag, char *buffer)
 /* At the moment quick and dirty with ioctl  */
 /* Hack for AIT                              */
 /*                                           */
-int TapeStatus()
+void TapeStatus()
 {
-  RequestSense_T *pRequestSense;
   int ret;
 
   dbprintf(("##### START TapeStatus\n"));
@@ -1884,11 +1883,9 @@ int SDXMove(int DeviceFD, int from, int to)
 /* ======================================================= */
 int GenericMove(int DeviceFD, int from, int to)
 {
-  extern OpenFiles_T *pDev;
   ElementInfo_T *pfrom;
   ElementInfo_T *pto;
   int ret = 0;
-  int moveok = 0;
 
   dbprintf(("##### START GenericMove\n"));
 
@@ -2761,7 +2758,6 @@ int DLT448ElementStatus(int DeviceFD, int InitStatus)
 /* */
 int SDXElementStatus(int DeviceFD, int InitStatus)
 {
-	ElementInfo_T *pwork; 
 	int count;
 	int error;
 	int retry = 2;
@@ -4043,15 +4039,16 @@ void ChangerReplay(char *option)
 {
     char buffer[1024];
     FILE *ip;
-    int x = 0;
+    int x = 0, bufferx;
    
     if ((ip=fopen("/tmp/chg-scsi-trace", "r")) == NULL)
       {
 	exit(1);
       }
     
-    while (fscanf(ip, "%2x", &buffer[x]) != EOF)
+    while (fscanf(ip, "%2x", &bufferx) != EOF)
       {
+	buffer[x] = bufferx;
 	x++;
       }
 
@@ -4118,7 +4115,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d MTE  %s  %04d %s ",pMTE[x].address,
                  (pMTE[x].full ? "Full " :"Empty"),
                  pMTE[x].from, pMTE[x].VolTag);
-          if ((label = (char *)MapBarCode(labelfile, "", pMTE[x].VolTag, BARCODE_BARCODE)) == NULL)
+          if ((label = (char *)MapBarCode(labelfile, "", pMTE[x].VolTag, BARCODE_BARCODE, 0, 0)) == NULL)
           { 
 		printf("No mapping\n");
           } else {
@@ -4137,7 +4134,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d STE  %s  %04d %s ",pSTE[x].address,  
                  (pSTE[x].full ? "Full ":"Empty"),
                  pSTE[x].from, pSTE[x].VolTag);
-	  if ((label = (char *)MapBarCode(labelfile, "", pSTE[x].VolTag,  BARCODE_BARCODE)) == NULL)
+	  if ((label = (char *)MapBarCode(labelfile, "", pSTE[x].VolTag,  BARCODE_BARCODE, 0, 0)) == NULL)
           {
                 printf("No mapping\n");
           } else {
@@ -4156,7 +4153,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d DTE  %s  %04d %s ",pDTE[x].address,  
                  (pDTE[x].full ? "Full " : "Empty"),
                  pDTE[x].from, pDTE[x].VolTag);
-	  if (( label = (char *)MapBarCode(labelfile, "", pDTE[x].VolTag,  BARCODE_BARCODE)) == NULL)
+	  if (( label = (char *)MapBarCode(labelfile, "", pDTE[x].VolTag,  BARCODE_BARCODE, 0, 0)) == NULL)
           {
                 printf("No mapping\n");
           } else {
@@ -4174,7 +4171,7 @@ void ChangerStatus(char *option, char * labelfile, int HasBarCode, char *changer
           printf("%07d IEE  %s  %04d %s ",pIEE[x].address,  
                  (pIEE[x].full ? "Full " : "Empty"),
                  pIEE[x].from, pIEE[x].VolTag);
-	  if ((label = (char *)MapBarCode(labelfile, "", pIEE[x].VolTag,  BARCODE_BARCODE)) == NULL)
+	  if ((label = (char *)MapBarCode(labelfile, "", pIEE[x].VolTag,  BARCODE_BARCODE, 0, 0)) == NULL)
           {
                 printf("No mapping\n");
           } else {
@@ -4644,7 +4641,7 @@ int SCSI_ModeSense(int DeviceFD, char *buffer, u_char size, u_char byte1, u_char
   return(ret);
 }
 
-int SCSI_Inquiry(int DeviceFD, char *buffer, u_char size)
+int SCSI_Inquiry(int DeviceFD, SCSIInquiry_T *buffer, u_char size)
 {
   CDB_T CDB;
   RequestSense_T *pRequestSense;
@@ -4707,7 +4704,7 @@ int SCSI_Inquiry(int DeviceFD, char *buffer, u_char size)
       retry++;
       if (ret == 0)
         {
-          dump_hex(buffer, size);
+          dump_hex((char *)buffer, size);
           dbprintf(("SCSI_Inquiry : end %d\n", ret));
           return(ret);
         }

@@ -24,11 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.5 2000/07/10 19:59:17 mengel Exp $
+ * $Id: util.c,v 1.6 2000/11/26 15:55:45 martinea Exp $
  */
 
 #include "amanda.h"
 #include "util.h"
+
+#include "../tape-src/tapeio.h"
 
 /*
  * Keep calling read() until we've read buflen's worth of data, or EOF,

@@ -1065,7 +1065,7 @@ int SCSI_CloseDevice(int DeviceFD);
 int CloseDevice(int ); 
 int Tape_Eject(int);
 int Tape_Status(int);
-int DumpSense();
+void DumpSense();
 int Sense2Action(char *ident, unsigned char type, unsigned char ignsense, unsigned char sense, unsigned
 char asc, unsigned char ascq, char **text) ;
 
@@ -1080,7 +1080,20 @@ int SCSI_ExecuteCommand(int DeviceFD,
 
 void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
 
+int SCSI_Inquiry(int, SCSIInquiry_T *, unsigned char);
+int PrintInquiry(SCSIInquiry_T *);
+int DecodeSCSI(CDB_T CDB, char *string);
+
+void ChangerReplay(char *option);
+void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
+int BarCode(int fd);
+char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action, int slot, int from);
+
 int Tape_Ready(int fd, int wait);
+
+void Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean);
+void ChangerDriverVersion();
+int LogSense(int fd);
 
 /*
  * Local variables:

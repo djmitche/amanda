@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.28 2000/07/25 16:23:16 mengel Exp $
+ * $Id: tapeio.c,v 1.29 2000/11/26 15:55:45 martinea Exp $
  *
  * implements tape I/O functions
  */
@@ -380,7 +380,7 @@ void *buffer;
 
 int tapefd_write(tapefd, buffer, count)
 int tapefd, count;
-void *buffer;
+const void *buffer;
 {
     return write(tapefd, buffer, count);
 }

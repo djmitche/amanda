@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.10 2000/07/10 19:50:24 mengel Exp $
+ * $Id: tapeio.h,v 1.11 2000/11/26 15:55:45 martinea Exp $
  *
  * interface for tapeio.c
  */
@@ -44,7 +44,7 @@ int tapefd_weof P((int tapefd, int count));
 void tapefd_resetofs P((int tapefd));
 
 int tapefd_read P((int tapefd, void *buffer, int count));
-int tapefd_write P((int tapefd, void *buffer, int count));
+int tapefd_write P((int tapefd, const void *buffer, int count));
 
 char *tapefd_rdlabel P((int tapefd, char **datestamp, char **label));
 char *tapefd_wrlabel P((int tapefd, char  *datestamp, char  *label));

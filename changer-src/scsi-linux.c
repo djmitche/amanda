@@ -1,7 +1,31 @@
-#ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.12 2000/07/31 18:55:13 ant Exp $";
-#endif
 /*
+ * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * Copyright (c) 1991-2000 University of Maryland at College Park
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of U.M. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  U.M. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Authors: the Amanda Development Team.  Its members are listed in a
+ * file named AUTHORS, in the root directory of this distribution.
+ */
+/*
+ * $Id: scsi-linux.c,v 1.13 2000/11/26 15:55:45 martinea Exp $
+ *
  * Interface to execute SCSI commands on Linux
  *
  * Copyright (c) Thomas Hepper th@ant.han.de
@@ -48,7 +72,7 @@ static char rcsid[] = "$Id: scsi-linux.c,v 1.12 2000/07/31 18:55:13 ant Exp $";
 int SCSI_CloseDevice(int DeviceFD)
 {
   extern OpenFiles_T *pDev;
-  int ret;
+  int ret = 0;
   
   if (pDev[DeviceFD].devopen == 1)
     {
@@ -186,7 +210,7 @@ int SCSI_OpenDevice(int ip)
         {
           pDev[ip].devopen = 1;
           pDev[ip].fd = DeviceFD;
-          if (pDev[ip].flags = 1)
+          if (pDev[ip].flags == 1)
             {
               if ((timeout = ioctl(DeviceFD, SG_GET_TIMEOUT)) > 0) 
                 {
@@ -219,7 +243,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   extern OpenFiles_T *pDev;
   struct sg_header *psg_header;
   char *buffer;
-  int osize;
+  int osize = 0;
   int status;
 
   if (pDev[DeviceFD].avail == 0)
@@ -453,7 +477,7 @@ int Tape_Status( int DeviceFD)
      return(-1);
   }
 
-  dbprintf(("ioctl -> mtget.mt_gstat %X\n",mtget.mt_gstat));
+  dbprintf(("ioctl -> mtget.mt_gstat %lX\n",mtget.mt_gstat));
   if (GMT_ONLINE(mtget.mt_gstat))
   {
     ret = TAPE_ONLINE;
