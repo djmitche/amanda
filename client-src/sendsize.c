@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.27 1997/09/09 14:39:44 amcore Exp $
+ * $Id: sendsize.c,v 1.28 1997/09/11 08:04:29 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -457,24 +457,63 @@ int level;
     strcpy(device, amname_to_devname(disk));
 #endif
 
-#if defined(USE_RUNDUMP) || !defined(DUMP)
     sprintf(cmd, "%s/rundump%s", libexecdir, versionsuffix());
-#else
-    sprintf(cmd, "%s", DUMP);
-#endif
 
     nullfd = open("/dev/null", O_RDWR);
     pipe(pipefd);
 #ifdef XFSDUMP
+#ifdef DUMP
     if (!strcmp(amname_to_fstype(device), "xfs"))
+#else
+    if (1)
+#endif
     {
-	dbprintf(("%s: running \"%s -F -J -l %d - %s\"\n",
-		  pname, XFSDUMP, level, device));
+#ifdef USE_RUNDUMP
+        char *name = " (xfsdump)";
+#else
+        char *name = "";
+	sprintf(cmd, "%s", XFSDUMP);
+#endif
+        sprintf(dumpkeys, "%d", level);
+	dbprintf(("%s: running \"%s%s -F -J -l %s - %s\"\n", \
+		  pname, cmd, name, dumpkeys, device));
     }
     else
 #endif
+#ifdef VXDUMP
 #ifdef DUMP
+    if (!strcmp(amname_to_fstype(device), "vxfs"))
+#else
+    if (1)
+#endif
     {
+#ifdef USE_RUNDUMP
+        char *name = " (vxdump)";
+#else
+	char *name = "";
+	sprintf(cmd, "%s", VXDUMP);
+#endif
+	sprintf(dumpkeys, "%dsf", level);
+        dbprintf(("%s: running \"%s%s %s 100000 - %s\"\n", \
+		  pname, cmd, name, dumpkeys, device));
+    }
+    else
+#endif      
+#ifdef DUMP
+    if (1) {
+#ifdef USE_RUNDUMP
+        char *name = " ("
+#ifdef AIX_BACKUP
+	  "backup"
+#else
+	  DUMP
+#endif
+	  ")";
+#else
+	char *name = "";
+        sprintf(cmd, "%s", DUMP);
+#endif
+#ifndef AIX_BACKUP
 	sprintf(dumpkeys, "%d"
 #ifdef HAVE_DUMP_ESTIMATE
 		"E"
@@ -483,8 +522,19 @@ int level;
 		"s"
 #endif
 		"f", level);
-	dbprintf(("%s: running \"%s %s 100000 - %s\"\n",
-		  pname, cmd, dumpkeys, device));
+	dbprintf(("%s: running \"%s %s 100000 - %s\"\n", \
+		  pname, cmd, name, dumpkeys, device));
+#else /* AIX_BACKUP */
+	sprintf(dumpkeys, "-%df", level);
+	dbprintf(("%s: running \"%s %s - %s\"\n", \
+		  pname, cmd, name, dumpkeys, device));
+#endif
+    }
+    else
+#else
+    {
+        dbprintf(("%s: no dump program available", pname));
+	error("%s: no dump program available", pname);
     }
 #endif
 
@@ -502,35 +552,31 @@ int level;
 	dup2(pipefd[1], 2);
 	close(pipefd[0]);
 
-#ifndef AIX_BACKUP
 #ifdef XFSDUMP
 	if (!strcmp(amname_to_fstype(device), "xfs"))
-	{
-	    sprintf(dumpkeys, "%d", level);
-	    execl(
-#ifdef USE_RUNDUMP
-		  cmd,
-#else
-		  XFSDUMP,
-#endif
-		  "xfsdump", "-F", "-J", "-l", dumpkeys, "-", device,
+	    execl(cmd, "xfsdump", "-F", "-J", "-l", dumpkeys, "-", device,
 		  (char *)0);
-	}
 	else
 #endif
-	{
-	    sprintf(dumpkeys, "%dsf", level);
+#ifdef VXDUMP
+	if (!strcmp(amname_to_fstype(device), "vxfs"))
+	    execl(cmd, "vxdump", dumpkeys, "100000", "-", device, (char *)0);
+	else
+#endif
 #ifdef DUMP
+#ifndef AIX_BACKUP
 	    execl(cmd, "dump", dumpkeys, "100000", "-", device, (char *)0);
-#endif
-	}
 #else
-	sprintf(dumpkeys, "-%df", level);
-#ifdef DUMP
-	execl(cmd, "backup", dumpkeys, "-", device, (char *)0);
+	    execl(cmd, "backup", dumpkeys, "-", device, (char *)0);
 #endif
 #endif
-	exit(1);
+	{
+	  dbprintf(("%s: exec %s failed or no dump program available", \
+		    pname, cmd));
+	  error("%s: exec %s failed or no dump program available", \
+		pname, cmd);
+	  exit(1);
+	}
     }
     close(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
@@ -787,7 +833,7 @@ time_t dumpsince;
 #endif
 	;
       
-      dbprintf((spec, pname, cmd, dirname, name_or_time,
+      dbprintf((spec, pname, cmd, dirname, name_or_time, \
 		efile[0] ? efile : "", efile[0] ? " " : ""));
     }
 
