@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.17.2.6.4.1.2.4 2003/01/01 23:28:52 martinea Exp $
+ * $Id: security.c,v 1.17.2.6.4.1.2.5 2004/01/14 12:59:12 martinea Exp $
  *
  * wrapper file for kerberos security
  */
@@ -101,7 +101,7 @@ void show_stat_info(a, b)
 #endif								/* } */
 
 int bsd_security_ok P((struct sockaddr_in *addr,
-		       char *str, unsigned long cksum, char **errstr));
+		       char *str, u_int32_t cksum, char **errstr));
 
 char *get_bsd_security()
 {
@@ -115,7 +115,7 @@ char *get_bsd_security()
 int security_ok(addr, str, cksum, errstr)
 struct sockaddr_in *addr;
 char *str;
-unsigned long cksum;
+u_int32_t cksum;
 char **errstr;
 {
 #ifdef KRB4_SECURITY						/* { */
@@ -131,7 +131,7 @@ char **errstr;
 int bsd_security_ok(addr, str, cksum, errstr)
      struct sockaddr_in *addr;
      char *str;
-     unsigned long cksum;
+     u_int32_t cksum;
      char **errstr;
 {
     char *remotehost = NULL, *remoteuser = NULL, *localuser = NULL;
@@ -514,7 +514,7 @@ int bsd_security_ok(addr, str, cksum, errstr)
 int bsd_security_ok(addr, str, cksum, errstr)
 struct sockaddr_in *addr;
 char *str;
-unsigned long cksum;
+u_int32_t cksum;
 char **errstr;
 {
 #if defined(SHOW_SECURITY_DETAIL)				/* { */

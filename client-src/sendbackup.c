@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.4.2.15 2003/12/16 22:36:45 martinea Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.4.2.16 2004/01/14 12:59:12 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -432,14 +432,22 @@ char **argv;
 		      debug_prefix_time(NULL)));
 	    dbclose();
 	    exit(1);
-        }
+        } else {
+	    dbprintf(("%s: kerberos_handshake on data socket succeeded\n",
+		      debug_prefix_time(NULL)));
+
+	}
 
         if(kerberos_handshake(mesgf, session_key) == 0) {
 	    dbprintf(("%s: kerberos_handshake on mesg socket failed\n",
 		      debug_prefix_time(NULL)));
 	    dbclose();
 	    exit(1);
-        }
+        } else {
+	    dbprintf(("%s: kerberos_handshake on mesg socket succeeded\n",
+		      debug_prefix_time(NULL)));
+
+	}
 
         dbprintf(("%s: kerberos handshakes succeeded!\n",
 		  debug_prefix_time(NULL)));

@@ -40,7 +40,7 @@ char *krb_get_phost P((char *hostname));
 
 /* Amanda krb4 function prototypes */
 void kerberos_service_init P((void));
-unsigned long kerberos_cksum P((char *str));
+u_int32_t kerberos_cksum P((char *str));
 struct hostent *host2krbname P((char *alias, char *inst, char *realm));
 char *bin2astr P((unsigned char *buf, int len));
 void astr2bin P((char *astr, unsigned char *buf, int  *lenp));
@@ -51,11 +51,11 @@ des_cblock *host2key P((char *hostp));
 int check_mutual_authenticator P((des_cblock *key, pkt_t *pkt, proto_t *p));
 extern char *get_krb_security P((char *str,
 				 char *host_inst, char *realm,
-				 unsigned long *cksum));
+				 u_int32_t *cksum));
 
 extern int krb4_auth;
 extern int kencrypt;
 extern des_cblock session_key;
-extern unsigned long auth_cksum;
+extern u_int32_t auth_cksum;
 
 #endif

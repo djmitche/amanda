@@ -38,7 +38,7 @@ static char *ticketfilename = NULL;
 int krb4_auth = 0;
 int kencrypt = 0;
 des_cblock session_key;
-unsigned long auth_cksum;
+u_int32_t auth_cksum;		/* was 'long' on 32-bit platforms */
 
 void krb4_killtickets(void)
 {
@@ -98,7 +98,7 @@ void kerberos_service_init()
 }
 
 
-unsigned long kerberos_cksum(str)
+u_int32_t kerberos_cksum(str)
 char *str;
 {
     des_cblock seed;
@@ -159,31 +159,67 @@ des_cblock key;
 }
 
 
+/*
+ * struct timeval is a host structure, and may not be used in
+ * protocols, because members are defined as 'long', rather than
+ * u_int32_t.
+ */
+typedef struct net_tv {
+  int32_t tv_sec;
+  int32_t tv_usec;
+} net_tv;
+
 int kerberos_handshake(fd, key)
 int fd;
 des_cblock key;
 {
     int rc;
-    struct timeval local, localenc, remote, rcvlocal;
+    struct timeval local;
+    net_tv localenc, remote, rcvlocal;
     struct timezone tz;
     char *strerror();
     char *d;
     int l, n, s;
 
+    /*
+     * There are two mutual authentication transactions going at once:
+     * one in which we prove the to peer that we are the legitimate
+     * party, and one in which the peer proves to us that that they
+     * are legitimate.
+     *
+     * In addition to protecting against spoofing, this exchange
+     * ensures that the two peers have the same keys, protecting
+     * against having data encrypted with one key and decrypted with
+     * another on the backup tape.
+     */
+
     gettimeofday(&local, &tz);
-    memcpy(&localenc, &local, sizeof local);
+
+    /* 
+     * Convert time to  network order and sizes, encrypt,  and send to
+     * peer as the first step in  the peer proving to us that they are
+     * legitimate.
+     */
+    localenc.tv_sec = (int32_t) local.tv_sec;
+    localenc.tv_usec = (int32_t) local.tv_usec;
     localenc.tv_sec = htonl(localenc.tv_sec);
     localenc.tv_usec = htonl(localenc.tv_usec);
+    assert(sizeof(localenc) == 8);
     encrypt_data(&localenc, sizeof localenc, key);
 
     d = (char *)&localenc;
-    for(l = 0, n = sizeof(local); l < n; l += s) {
+    for(l = 0, n = sizeof(localenc); l < n; l += s) {
 	if((s = write(fd, d+l, n-l)) < 0) {
 	    error("kerberos_handshake write error: [%s]", strerror(errno));
 	}
     }
 
+    /*
+     * Read block from peer and decrypt.  This is the first step in us
+     * proving to the peer that we are legitimate.
+     */
     d = (char *)&remote;
+    assert(sizeof(remote) == 8);
     for(l = 0, n = sizeof(remote); l < n; l += s) {
 	if((s = read(fd, d+l, n-l)) < 0) {
 	    error("kerberos_handshake read error: [%s]", strerror(errno));
@@ -197,6 +233,10 @@ des_cblock key;
 
     /* XXX do timestamp checking here */
 
+    /*
+     * Add 1.000001 seconds to the peer's timestamp, leaving it in
+     * network order, re-encrypt and send back.
+     */
     remote.tv_sec = ntohl(remote.tv_sec);
     remote.tv_usec = ntohl(remote.tv_usec);
     remote.tv_sec += 1;
@@ -213,6 +253,11 @@ des_cblock key;
 	}
     }
 
+    /*
+     * Read the peers reply, decrypt, convert to host order, and
+     * verify that the peer was able to add 1.000001 seconds, thus
+     * showing that it knows the DES key.
+     */
     d = (char *)&rcvlocal;
     for(l = 0, n = sizeof(rcvlocal); l < n; l += s) {
 	if((s = read(fd, d+l, n-l)) < 0) {
@@ -228,8 +273,12 @@ des_cblock key;
     rcvlocal.tv_sec = ntohl(rcvlocal.tv_sec);
     rcvlocal.tv_usec = ntohl(rcvlocal.tv_usec);
 
-    return (rcvlocal.tv_sec  == local.tv_sec + 1) &&
-	   (rcvlocal.tv_usec == local.tv_usec + 1);
+    dbprintf(("handshake: %d %d %d %d\n",
+	      local.tv_sec, local.tv_usec,
+	      rcvlocal.tv_sec, rcvlocal.tv_usec));
+
+    return (rcvlocal.tv_sec  == (int32_t) (local.tv_sec + 1)) &&
+	   (rcvlocal.tv_usec == (int32_t) (local.tv_usec + 1));
 }
 
 des_cblock *host2key(hostname)
@@ -254,7 +303,7 @@ proto_t *p;
     char *astr = NULL;
     union {
 	char pad[8];
-	unsigned long i;
+	u_int32_t i;
     } mutual;
     int len;
     char *s, *fp;
@@ -305,7 +354,7 @@ proto_t *p;
 char *get_krb_security(str, host_inst, realm, cksum)
 char *str;
 char *host_inst, *realm;
-unsigned long *cksum;
+u_int32_t *cksum;
 {
     KTEXT_ST ticket;
     int rc;
@@ -341,7 +390,7 @@ unsigned long *cksum;
 int krb4_security_ok(addr, str, cksum, errstr)
 struct sockaddr_in *addr;
 char *str;
-unsigned long cksum;
+u_int32_t cksum;
 char **errstr;
 {
     KTEXT_ST ticket;

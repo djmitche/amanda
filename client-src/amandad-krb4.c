@@ -68,7 +68,7 @@ dgram_t *msg;
 {
     union {
 	char pad[8];		/* minimum size for encryption */
-	unsigned long i;
+	u_int32_t i;		/* "long" on 32-bit machines */
     } mutual;
     int alen, blen;
     char *s;

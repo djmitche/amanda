@@ -1,3 +1,21 @@
+2004-01-13  Greg Troxel  <gdt@t...>
+
+	* common-src/krb4-security.c (errstr;): Make krb4 work on 64-bit
+	  platforms.  Essentially, change 'unsigned long' to u_int32_t for
+	  on-the-wire representation of checksums, declaring that the wire
+	  protocol is defined by existing use of unsigned long on 32-bit
+	  machines.
+
+	  Modify the data/control handshake similarly, defining a
+	  'net_timeval' that uses int32_t rather than long.  Cleanup a latent
+	  bug in handshake code that didn't cause trouble before when
+	  everything was the same type.
+
+	  This change preserves interoperability with the previous code
+	  on 32 bit machines.  (It is likely that 64/64 interoperability
+	  was ok, but unlikely that it was important to anyone, given
+	  the low population of amanda-krb users.)
+
 2004-01-14  Stefan G. Weichinger <monitor@oops.co.at>
 
 	* docs/INSTALL: Add config for xinetd.

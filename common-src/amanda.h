@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.11 2003/12/16 22:36:45 martinea Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.12 2004/01/14 12:59:12 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -761,7 +761,7 @@ extern char *version_info[];
 
 /* from security.c */
 extern int security_ok P((struct sockaddr_in *addr,
-			  char *str, unsigned long cksum, char **errstr));
+			  char *str, u_int32_t cksum, char **errstr));
 extern char *get_bsd_security P((void));
 
 /*
