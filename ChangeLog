@@ -1,3 +1,7 @@
+1998-09-30  John R. Jackson  <jrj@purdue.edu>
+
+	* man/amanda.8.in: minor typo in "reserve" description.
+
 1998-09-29  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/taper.c (end_tape): do not rewind the tape when done.
