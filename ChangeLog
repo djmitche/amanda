@@ -1,3 +1,9 @@
+2001-01-23 John R. Jackson <jrj@purdue.edu>
+
+	* configure.in: Test for setmntent.
+	* client-src/getfsent.c: Add some support for Redhat 7 /etc/fstab
+	  changes that indirectly reference the device for a file system.
+
 2001-01-20  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.4.2p1)
@@ -1390,7 +1396,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.439 2001/01/20 15:41:53 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.440 2001/01/23 22:46:55 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
