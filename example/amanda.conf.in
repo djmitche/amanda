@@ -15,6 +15,7 @@ netusage  600 Kbps	# maximum net bandwidth for Amanda, in KB per sec
 
 dumpcycle 4 weeks	# the number of days in the normal dump cycle
 tapecycle 8 tapes	# the number of tapes in rotation
+# WARNING: don't use `inf' for tapecycle, it's broken!
 
 bumpsize 20 Mb		# minimum savings (threshold) to bump level 1 -> 2
 bumpdays 1		# minimum days at each level
