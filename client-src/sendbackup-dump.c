@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.65.2.5.4.2.2.2 2002/03/03 17:10:51 martinea Exp $
+ * $Id: sendbackup-dump.c,v 1.65.2.5.4.2.2.3 2002/03/09 15:09:53 martinea Exp $
  *
  * send backup data using BSD dump
  */
@@ -189,7 +189,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
     /* normal dump */
 #ifdef XFSDUMP						/* { */
 #ifdef DUMP						/* { */
-    if (strcmp(amname_to_fstype(disk), "xfs") == 0)
+    if (strcmp(amname_to_fstype(amdevice), "xfs") == 0)
 #else							/* } { */
     if (1)
 #endif							/* } */
@@ -226,7 +226,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 #endif							/* } */
 #ifdef VXDUMP						/* { */
 #ifdef DUMP
-    if (strcmp(amname_to_fstype(disk), "vxfs") == 0)
+    if (strcmp(amname_to_fstype(amdevice), "vxfs") == 0)
 #else
     if (1)
 #endif
@@ -270,7 +270,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 
 #ifdef VDUMP						/* { */
 #ifdef DUMP
-    if (strcmp(amname_to_fstype(disk), "advfs") == 0)
+    if (strcmp(amname_to_fstype(amdevice), "advfs") == 0)
 #else
     if (1)
 #endif
