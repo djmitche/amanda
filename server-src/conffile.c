@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.101 2003/03/27 17:50:41 kovert Exp $
+ * $Id: conffile.c,v 1.102 2003/04/26 02:02:24 kovert Exp $
  *
  * read configuration file
  */
@@ -73,6 +73,9 @@ typedef enum {
     AMRECOVER_DO_FSF, AMRECOVER_CHECK_LABEL, AMRECOVER_CHANGER,
 
     TAPERALGO, FIRST, FIRSTFIT, LARGEST, LARGESTFIT, SMALLEST, LAST,
+
+    /* kerberos 5 */
+    KRB5KEYTAB, KRB5PRINCIPAL, 
 
     /* holding disk */
     COMMENT, DIRECTORY, USE, CHUNKSIZE,
@@ -199,6 +202,8 @@ static val_t conf_maxdumpsize;
 static val_t conf_amrecover_do_fsf;
 static val_t conf_amrecover_check_label;
 static val_t conf_taperalgo;
+static val_t conf_krb5keytab;
+static val_t conf_krb5principal;
 
 /* reals */
 static val_t conf_bumpmult;
@@ -255,6 +260,8 @@ static int seen_amrecover_do_fsf;
 static int seen_amrecover_check_label;
 static int seen_amrecover_changer;
 static int seen_taperalgo;
+static int seen_krb5keytab;
+static int seen_krb5principal;
 
 static int allow_overwrites;
 static int token_pushed;
@@ -403,6 +410,8 @@ struct byname {
     { "AUTOFLUSH", CNF_AUTOFLUSH, BOOL },
     { "RESERVE", CNF_RESERVE, INT },
     { "MAXDUMPSIZE", CNF_MAXDUMPSIZE, INT },
+    { "KRB5KEYTAB", CNF_KRB5KEYTAB, STRING },
+    { "KRB5PRINCIPAL", CNF_KRB5PRINCIPAL, STRING },
     { NULL }
 };
 
@@ -486,6 +495,8 @@ confparm_t parm;
     case CNF_AMRECOVER_CHECK_LABEL: return seen_amrecover_check_label;
     case CNF_AMRECOVER_CHANGER: return seen_amrecover_changer;
     case CNF_TAPERALGO: return seen_taperalgo;
+    case CNF_KRB5KEYTAB: return seen_krb5keytab;
+    case CNF_KRB5PRINCIPAL: return seen_krb5principal;
     default: return 0;
     }
 }
@@ -570,6 +581,8 @@ confparm_t parm;
     case CNF_RAWTAPEDEV: r = conf_rawtapedev.s; break;
     case CNF_COLUMNSPEC: r = conf_columnspec.s; break;
     case CNF_AMRECOVER_CHANGER: r = conf_amrecover_changer.s; break;
+    case CNF_KRB5PRINCIPAL: r = conf_krb5principal.s; break;
+    case CNF_KRB5KEYTAB: r = conf_krb5keytab.s; break;
 
     default:
 	error("error [unknown getconf_str parm: %d]", parm);
@@ -690,6 +703,9 @@ static void init_defaults()
     conf_amrecover_changer.s = stralloc("");
     conf_printer.s = stralloc("");
 
+    conf_krb5keytab.s = stralloc("/.amanda-v5-keytab");
+    conf_krb5principal.s = stralloc("service/amanda");
+
     conf_dumpcycle.i	= 10;
     conf_runspercycle.i	= 0;
     conf_tapecycle.i	= 15;
@@ -758,6 +774,8 @@ static void init_defaults()
     seen_amrecover_check_label = 0;
     seen_amrecover_changer = 0;
     seen_taperalgo = 0;
+    seen_krb5keytab = 0;
+    seen_krb5principal = 0;
     line_num = got_parserror = 0;
     allow_overwrites = 0;
     token_pushed = 0;
@@ -935,6 +953,8 @@ keytab_t main_keytable[] = {
     { "AMRECOVER_CHECK_LABEL", AMRECOVER_CHECK_LABEL },
     { "AMRECOVER_CHANGER", AMRECOVER_CHANGER },
     { "TAPERALGO", TAPERALGO },
+    { "KRB5KEYTAB", KRB5KEYTAB },
+    { "KRB5PRINCIPAL", KRB5PRINCIPAL },
     { NULL, IDENT }
 };
 
@@ -1056,6 +1076,10 @@ static int read_confline()
     case AMRECOVER_CHANGER: get_simple(&conf_amrecover_changer,&seen_amrecover_changer, STRING); break;
 
     case TAPERALGO: get_taperalgo(&conf_taperalgo,&seen_taperalgo); break;
+
+    /* kerberos 5 bits.  only useful when kerberos 5 built in... */
+    case KRB5KEYTAB:    get_simple(&conf_krb5keytab,   &seen_krb5keytab,   STRING); break;
+    case KRB5PRINCIPAL: get_simple(&conf_krb5principal,&seen_krb5principal,STRING); break;
 
     case LOGFILE: /* XXX - historical */
 	/* truncate the filename part and pretend he said "logdir" */
@@ -2849,6 +2873,8 @@ dump_configuration(filename)
     printf("conf_columnspec = \"%s\"\n", getconf_str(CNF_COLUMNSPEC));
     printf("conf_indexdir = \"%s\"\n", getconf_str(CNF_INDEXDIR));
     printf("num_holdingdisks = %d\n", num_holdingdisks);
+    printf("conf_krb5keytab = \"%s\"\n", getconf_str(CNF_KRB5KEYTAB));
+    printf("conf_krb5principal = \"%s\"\n", getconf_str(CNF_KRB5PRINCIPAL));
     for(hp = holdingdisks; hp != NULL; hp = hp->next) {
 	printf("\nHOLDINGDISK %s:\n", hp->name);
 	printf("	COMMENT \"%s\"\n", hp->comment);
@@ -3051,3 +3077,19 @@ main(argc, argv)
 }
 
 #endif /* TEST */
+
+char *
+generic_get_security_conf(string, arg)
+	char *string;
+	void *arg;
+{
+	if(!string || !*string)
+		return(NULL);
+
+	if(strcmp(string, "krb5principal")==0) {
+		return(getconf_str(CNF_KRB5PRINCIPAL));
+	} else if(strcmp(string, "krb5keytab")==0) {
+		return(getconf_str(CNF_KRB5KEYTAB));
+	}
+	return(NULL);
+}

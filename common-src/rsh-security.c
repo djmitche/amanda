@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.10 2002/04/19 00:49:19 martinea Exp $
+ * $Id: rsh-security.c,v 1.11 2003/04/26 02:02:19 kovert Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -142,6 +142,7 @@ static void rsh_accept P((int, int,
     void (*)(security_handle_t *, pkt_t *)));
 static void rsh_close P((void *));
 static void rsh_connect P((const char *,
+    char *(*)(char *, void *), 
     void (*)(void *, security_handle_t *, security_status_t), void *));
 static void rsh_recvpkt P((void *,
     void (*)(void *, pkt_t *, security_status_t), void *, int));
@@ -231,8 +232,9 @@ static void parse_pkt P((pkt_t *, const void *, size_t));
  * up a network "connection".
  */
 static void
-rsh_connect(hostname, fn, arg)
+rsh_connect(hostname, conf_fn, fn, arg)
     const char *hostname;
+    char *(*conf_fn) P((char *, void *));
     void (*fn) P((void *, security_handle_t *, security_status_t));
     void *arg;
 {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.h,v 1.9 1999/04/09 19:51:27 kashmir Exp $
+ * $Id: protocol.h,v 1.10 2003/04/26 02:02:18 kovert Exp $
  *
  * server-side interfaces for amanda protocol state machine
  */
@@ -36,7 +36,9 @@
 void protocol_init P((void));
 typedef	void (*protocol_sendreq_callback) P((void *, pkt_t *,
     security_handle_t *));
-void protocol_sendreq P((const char *, const security_driver_t *, const char *,
+void protocol_sendreq P((const char *, const security_driver_t *, 
+	char *(*) P((char *, void *)), 
+	const char *,
     time_t, protocol_sendreq_callback, void *));
 void protocol_check P((void));
 void protocol_run P((void));

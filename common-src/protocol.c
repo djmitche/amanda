@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.35 2003/03/29 23:50:25 kovert Exp $
+ * $Id: protocol.c,v 1.36 2003/04/26 02:02:17 kovert Exp $
  *
  * implements amanda protocol
  */
@@ -71,6 +71,7 @@ typedef struct proto {
     pkt_t req;				/* the actual wire request */
     protocol_sendreq_callback continuation; /* call when req dies/finishes */
     void *datap;			/* opaque cookie passed to above */
+    char *(*conf_fn) P((char *, void *));/* configuration function */
 } proto_t;
 
 #define	CONNECT_TRIES	3	/* num retries after connect errors */
@@ -128,9 +129,10 @@ protocol_init()
  * for transmission.
  */
 void
-protocol_sendreq(hostname, security_driver, req, repwait, continuation, datap)
+protocol_sendreq(hostname, security_driver, conf_fn, req, repwait, continuation, datap)
     const char *hostname;
     const security_driver_t *security_driver;
+    char *(*conf_fn) P((char *, void *));
     const char *req;
     time_t repwait;
     protocol_sendreq_callback continuation;
@@ -149,6 +151,7 @@ protocol_sendreq(hostname, security_driver, req, repwait, continuation, datap)
     p->connecttries = CONNECT_TRIES;
     p->reqtries = REQ_TRIES;
     p->acktries = ACK_TRIES;
+    p->conf_fn = conf_fn;
     pkt_init(&p->req, P_REQ, req);
 
     /*
@@ -165,7 +168,7 @@ protocol_sendreq(hostname, security_driver, req, repwait, continuation, datap)
 	      debug_prefix_time(": protocol"), hostname, (int)p));
 #endif
 
-    security_connect(p->security_driver, p->hostname, connect_callback, p);
+    security_connect(p->security_driver, p->hostname, conf_fn, connect_callback, p);
 }
 
 /*
@@ -239,7 +242,8 @@ connect_wait_callback(cookie)
     proto_t *p = cookie;
 
     event_release((event_handle_t *)p->security_handle);
-    security_connect(p->security_driver, p->hostname, connect_callback, p);
+    security_connect(p->security_driver, p->hostname, p->conf_fn,
+	connect_callback, p);
 }
 
 

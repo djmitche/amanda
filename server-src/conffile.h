@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.49 2003/01/04 03:35:04 martinea Exp $
+ * $Id: conffile.h,v 1.50 2003/04/26 02:02:26 kovert Exp $
  *
  * interface for config file reading code
  */
@@ -80,7 +80,9 @@ typedef enum conf_e {
     CNF_AMRECOVER_DO_FSF,
     CNF_AMRECOVER_CHECK_LABEL,
     CNF_AMRECOVER_CHANGER,
-    CNF_TAPERALGO
+    CNF_TAPERALGO,
+    CNF_KRB5KEYTAB,
+    CNF_KRB5PRINCIPAL
 } confparm_t;
 
 typedef struct tapetype_s {
@@ -278,4 +280,6 @@ int SetColumDataFromString P((ColumnInfo* ci, char *s, char **errstr));
 
 char *taperalgo2str P((int taperalgo));
 
+/* this is in securityconf.h */
+char *generic_get_security_conf P((char *, void *));
 #endif /* ! CONFFILE_H */

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.157 2003/01/01 23:28:19 martinea Exp $
+/* $Id: dumper.c,v 1.158 2003/04/26 02:02:27 kovert Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -160,6 +160,8 @@ main(main_argc, main_argv)
     char *conffile;
     char *q = NULL;
     int a;
+
+    chdir("/tmp/amanda");
 
     for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
 	/*
@@ -1555,8 +1557,8 @@ startup_dump(hostname, disk, device, level, dumpdate, progname, options)
 	    authopt, hostname);
     }
 
-    protocol_sendreq(hostname, secdrv, req, STARTUP_TIMEOUT,
-	sendbackup_response, &response_error);
+    protocol_sendreq(hostname, secdrv, generic_get_security_conf, req,
+	STARTUP_TIMEOUT, sendbackup_response, &response_error);
 
     amfree(req);
 

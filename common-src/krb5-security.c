@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.6 2003/03/30 01:53:18 kovert Exp $
+ * $Id: krb5-security.c,v 1.7 2003/04/26 02:02:16 kovert Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -40,7 +40,6 @@
 #include "security.h"
 #include "stream.h"
 #include "version.h"
-
 
 #define	BROKEN_MEMORY_CCACHE
 
@@ -84,15 +83,16 @@
 /*#define	AMANDA_KRB5_ENCRYPT*/
 
 /*
- * Where the keytab lives.  This should be configurable.
+ * Where the keytab lives, if defined.  Otherwise it expects something in the
+ * config file.
  */
-#define AMANDA_KEYTAB	"/.amanda-v5-keytab"
+/* #define AMANDA_KEYTAB	"/.amanda-v5-keytab" */
 
 /*
- * The name of the principal we authenticate with.  This should also
- * be configurable.
+ * The name of the principal we authenticate with, if defined.  Otherwise
+ * it expects something in the config file.
  */
-#define	AMANDA_PRINCIPAL	"service/amanda"
+/* #define	AMANDA_PRINCIPAL	"service/amanda" */
 
 /*
  * The lifetime of our tickets in seconds.  This may or may not need to be
@@ -190,6 +190,7 @@ struct krb5_handle {
     } fn;
     void *arg;				/* argument to pass function */
     event_handle_t *ev_wait;		/* wait handle for connects */
+    char *(*conf_fn) P((char *, void *)); /* used to get config info */
     event_handle_t *ev_timeout;		/* timeout handle for recv */
 };
 
@@ -219,6 +220,7 @@ static void krb5_accept P((int, int,
     void (*)(security_handle_t *, pkt_t *)));
 static void krb5_close P((void *));
 static void krb5_connect P((const char *,
+    char *(*)(char *, void *),
     void (*)(void *, security_handle_t *, security_status_t), void *));
 static void krb5_recvpkt P((void *,
     void (*)(void *, pkt_t *, security_status_t), void *, int));
@@ -292,7 +294,7 @@ static void init P((void));
 #ifdef BROKEN_MEMORY_CCACHE
 static void cleanup P((void));
 #endif
-static const char *get_tgt P((void));
+static const char *get_tgt P((char *, char *));
 static void open_callback P((void *));
 static void connect_callback P((void *));
 static void connect_timeout P((void *));
@@ -329,8 +331,9 @@ static void parse_pkt P((pkt_t *, const void *, size_t));
  * up a network "connection".
  */
 static void
-krb5_connect(hostname, fn, arg)
+krb5_connect(hostname, conf_fn, fn, arg)
     const char *hostname;
+    char *(*conf_fn) P((char *, void *));
     void (*fn) P((void *, security_handle_t *, security_status_t));
     void *arg;
 {
@@ -339,6 +342,8 @@ krb5_connect(hostname, fn, arg)
     struct servent *se;
     int port, fd;
     const char *err;
+    char *keytab_name = NULL;
+    char *principal_name = NULL;
 
     assert(hostname != NULL);
 
@@ -356,7 +361,22 @@ krb5_connect(hostname, fn, arg)
     kh->ev_wait = NULL;
     kh->ev_timeout = NULL;
 
-    if ((err = get_tgt()) != NULL) {
+#ifdef AMANDA_KEYTAB
+    keytab_name = AMANDA_KEYTAB;
+#else
+    if(conf_fn) {
+    	keytab_name = conf_fn("krb5keytab", arg);
+    }
+#endif
+#ifdef AMANDA_PRINCIPAL
+    principal_name = AMANDA_PRINCIPAL;
+#else
+    if(conf_fn) {
+    	principal_name = conf_fn("krb5principal", arg);
+    }
+#endif
+
+    if ((err = get_tgt(keytab_name, principal_name)) != NULL) {
 	security_seterror(&kh->sech, "%s: could not get TGT: %s",
 	    hostname, err);
 	(*fn)(arg, &kh->sech, S_ERROR);
@@ -370,6 +390,7 @@ krb5_connect(hostname, fn, arg)
 	return;
     }
     kh->fn.connect = fn;
+    kh->conf_fn = conf_fn;
     kh->arg = arg;
     kh->hostname = stralloc(he->h_name);
     kh->ks = krb5_stream_client(kh, newhandle++);
@@ -440,7 +461,7 @@ open_callback(cookie)
 
     k5printf(("krb5: open_callback: possible connections available, retry %s\n",
 	kh->hostname));
-    krb5_connect(kh->hostname, kh->fn.connect, kh->arg);
+    krb5_connect(kh->hostname, kh->conf_fn, kh->fn.connect, kh->arg);
     amfree(kh->hostname);
     amfree(kh);
 }
@@ -1561,7 +1582,8 @@ cleanup()
  * Get a ticket granting ticket and stuff it in the cache
  */
 static const char *
-get_tgt()
+get_tgt(keytab_name, principal_name)
+	char *keytab_name, *principal_name;
 {
     krb5_context context;
     krb5_error_code ret;
@@ -1586,11 +1608,21 @@ get_tgt()
 
     krb5_init_ets(context);
 
+    if(!keytab_name) {
+        error = vstralloc("error  -- no krb5 keytab defined", NULL);
+        return(error);
+    }
+
+    if(!principal_name) {
+        error = vstralloc("error  -- no krb5 principal defined", NULL);
+        return(error);
+    }
+
     /*
      * Resolve keytab file into a keytab object
      */
-    if ((ret = krb5_kt_resolve(context, AMANDA_KEYTAB, &keytab)) != 0) {
-	error = vstralloc("error resolving keytab ", AMANDA_KEYTAB, ": ",
+    if ((ret = krb5_kt_resolve(context, keytab_name, &keytab)) != 0) {
+	error = vstralloc("error resolving keytab ", keytab, ": ",
 	    error_message(ret), NULL);
 	return (error);
     }
@@ -1599,9 +1631,9 @@ get_tgt()
      * Resolve the amanda service held in the keytab into a principal
      * object
      */
-    ret = krb5_parse_name(context, AMANDA_PRINCIPAL, &client);
+    ret = krb5_parse_name(context, principal_name, &client);
     if (ret != 0) {
-	error = vstralloc("error parsing ", AMANDA_PRINCIPAL, ": ",
+	error = vstralloc("error parsing ", principal_name, ": ",
 	    error_message(ret), NULL);
 	return (error);
     }
@@ -1640,7 +1672,7 @@ get_tgt()
 	keytab, 0, &creds, 0);
 
     if (ret != 0) {
-	error = vstralloc("error getting ticket for ", AMANDA_PRINCIPAL,
+	error = vstralloc("error getting ticket for ", principal_name,
 	    ": ", error_message(ret), NULL);
 	goto cleanup2;
     }
@@ -2002,8 +2034,8 @@ k5printf(("net_read_fillbuf: read %d characters w/ errno %d\n", kc->readbuf.size
 /*
  * hackish, but you can #undef AMANDA_PRINCIPAL here, and you can both
  * hardcode a principal in your build and use the .k5amandahosts.  This is
- * not the default behavior because other sites that run pre-releases of
- * 2.5.0 before this feature was there do not behave this way...
+ * available because sites that run pre-releases of amanda 2.5.0 before 
+ * this feature was there do not behave this way...
  */
 
 /*#undef AMANDA_PRINCIPAL*/
@@ -2026,7 +2058,7 @@ krb5_checkuser(host, name, realm)
     struct passwd *pwd;
     char *ptmp;
     char *result = "generic error";	/* default is to not permit */
-    FILE *fp;
+    FILE *fp = NULL;
     struct stat sbuf;
     uid_t localuid;
     char *line = NULL;
@@ -2042,23 +2074,45 @@ krb5_checkuser(host, name, realm)
     }
     localuid = pwd->pw_uid;
 
+#ifdef USE_AMANDAHOSTS
     ptmp = stralloc2(pwd->pw_dir, "/.k5amandahosts");
+#else
+    ptmp = stralloc2(pwd->pw_dir, "/.k5login");
+#endif
 
     if(!ptmp) {
 	result = vstralloc("could not find home directory for ", CLIENT_LOGIN, NULL);
 	goto common_exit;
    }
 
-    dbprintf(("opening ptmp: %s\n", (ptmp)?ptmp: "NULL!"));
+   /*
+    * check to see if the ptmp file does nto exist.
+    */
+   if(access(ptmp, R_OK) == -1 && errno == ENOENT) {
+	/*
+	 * in this case we check to see if the principal matches
+	 * the destination user mimicing the .k5login functionality.
+	 */
+	 if(strcmp(name, CLIENT_LOGIN) != 0) {
+		result = vstralloc(name, " does not match ",
+			CLIENT_LOGIN, NULL);
+		goto common_exit;
+	}
+	result = NULL;
+	goto common_exit;
+    }
+
+    k5printf(("opening ptmp: %s\n", (ptmp)?ptmp: "NULL!"));
     if((fp = fopen(ptmp, "r")) == NULL) {
 	result = vstralloc("can not open ", ptmp, NULL);
 	goto common_exit;
     }
-    dbprintf(("opened ptmp\n"));
+    k5printf(("opened ptmp\n"));
 
     if (fstat(fileno(fp), &sbuf) != 0) {
 	result = vstralloc("cannot fstat ", ptmp, ": ", strerror(errno), NULL);
 	goto common_exit;
+
     }
 
     if (sbuf.st_uid != localuid) {
@@ -2078,7 +2132,7 @@ krb5_checkuser(host, name, realm)
 
     while((line = agets(fp)) != NULL) {
 #if defined(SHOW_SECURITY_DETAIL)                               /* { */
-	dbprintf(("%s: processing line: <%s>\n", debug_prefix(NULL), line));
+	k5printf(("%s: processing line: <%s>\n", debug_prefix(NULL), line));
 #endif                                                          /* } */
 	/* if there's more than one column, then it's the host */
 	if( (filehost = strtok(line, " \t")) == NULL) {
@@ -2099,7 +2153,7 @@ krb5_checkuser(host, name, realm)
 	    amfree(line);
 	    continue;
 	} else {
-		dbprintf(("found a host match\n"));
+		k5printf(("found a host match\n"));
 	}
 
 	if( (filerealm = strchr(fileuser, '@')) != NULL) {
@@ -2114,9 +2168,9 @@ krb5_checkuser(host, name, realm)
 	 * You likely only get this far if you've turned on cross-realm auth
 	 * anyway...
 	 */
-	dbprintf(("comparing %s %s\n", fileuser, name));
+	k5printf(("comparing %s %s\n", fileuser, name));
 	if(strcmp(fileuser, name) == 0) {
-		dbprintf(("found a match!\n"));
+		k5printf(("found a match!\n"));
 		if(realm && filerealm && (strcmp(realm, filerealm)!=0)) {
 			amfree(line);
 			continue;
@@ -2131,8 +2185,10 @@ krb5_checkuser(host, name, realm)
     result = vstralloc("no match in ", ptmp, NULL);
 
 common_exit:
-    afclose(fp);
-    amfree(line);
+    if(fp)
+	afclose(fp);
+    if(line)
+    	amfree(line);
     return(result);
 #endif /* AMANDA_PRINCIPAL */
 }
