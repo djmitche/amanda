@@ -1,5 +1,9 @@
 2001-12-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amstatus.pl.in: Fixup for estimate, write flush line.
+
+2001-12-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/reporter.c (output_summary): Set origsize and 
 	  outsize correctly.
 
