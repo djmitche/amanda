@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.11.2.5 1998/03/14 13:40:35 amcore Exp $
+ * $Id: getfsent.c,v 1.11.2.6 1998/03/22 20:26:03 amcore Exp $
  *
  * generic version of code to read fstab
  */
@@ -134,7 +134,7 @@ generic_fsent_t *fsent;
     return 1;
 }
 
-#else /* () line 0 */
+#else
 #  if defined(HAVE_MNTENT_H) /* } { */
 
 /*
@@ -175,7 +175,7 @@ generic_fsent_t *fsent;
     return 1;
 }
 
-#  else /* () line 0 */
+#  else
 #    if defined(HAVE_SYS_MNTTAB_H) || defined(STATFS_SCO_OS5) /* } { */
 
 /* we won't actually include mnttab.h, since it contains nothing useful.. */
@@ -258,9 +258,7 @@ generic_fsent_t *fsent;
     return 1;
 }
 
-/* PAG97 - begin */
-
-#    else /* () line 0 */
+#    else
 #      if defined(HAVE_MNTTAB_H) /* } { */
 
 #define GETFSENT_TYPE "SVR3 (SCO UNIX)"
@@ -329,7 +327,6 @@ generic_fsent_t *fsent;
     return 1;
 }
 
-/* PAG97 - end */
 #      else /* } { */
 
 #define GETFSENT_TYPE "undefined"
