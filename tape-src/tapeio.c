@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.23 1999/04/10 06:20:13 kashmir Exp $
+ * $Id: tapeio.c,v 1.24 1999/04/20 14:15:02 oliva Exp $
  *
  * implements tape I/O functions
  */
@@ -241,8 +241,8 @@ int tapefd, count;
 
 
 int tape_open(filename, mode)
-char *filename;
-int mode;
+     char *filename;
+     int mode;
 {
 #ifdef HAVE_LINUX_ZFTAPE_H
     struct mtop mt;
@@ -252,14 +252,29 @@ int mode;
 	mode = O_RDONLY;
     else
 	mode = O_RDWR;
+#if 0
+    /* Since we're no longer using a special name for no-tape, we no
+       longer need this */
     if (strcmp(filename, "/dev/null") == 0) {
 	filename = "/dev/null";
     }
+#endif
     do {
 	ret = open(filename, mode);
-	/* if tape open fails with errno==EAGAIN, it is worth retrying
-	 * a few seconds later.  */
-	if (ret >= 0 || errno != EAGAIN)
+	/* if tape open fails with errno==EAGAIN, EBUSY or EINTRI, it
+	 * is worth retrying a few seconds later.  */
+	if (ret >= 0 ||
+	    (1
+#ifdef EAGAIN
+	     && errno != EAGAIN
+#endif
+#ifdef EBUSY
+	     && errno != EBUSY
+#endif
+#ifdef EINTR
+	     && errno != EINTR
+#endif
+	     ))
 	    break;
 	sleep(delay);
 	timeout -= delay;

@@ -1,3 +1,8 @@
+1999-04-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* tape-src/tapeio.c (tape_open): Retry after EBUSY and EINTR too.
+	Comment out test that would set filename to /dev/null.
+
 1999-04-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/WISHLIST: Global reformat.  Removed fixed issues.  Added
