@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.23 1997/09/26 11:24:24 george Exp $
+ * $Id: sendbackup-gnutar.c,v 1.24 1997/10/07 00:18:28 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -52,8 +52,8 @@ static regex_t re_table[] = {
   { DMP_SIZE, 
 	"^Total bytes written: [0-9][0-9]*",				1},
 
-  /* samba 1.9.17 has introduced this output message */
-  { DMP_NORMAL, "^tar: dumped [0-9][0-9]* tar files" },
+  /* samba 1.9.17 has introduced these output messages */
+  { DMP_NORMAL, "^\\(doing parameter\\|pm_process()\\|adding IPC\\|Added interface\\|Opening\\|Connect\\|max \\|capabilities \\|Sec mode \\|Got \\|Chose protocol \\|Server \\|Timezone \\|received\\|FINDFIRST\\|dos_clean_name\\|file\\|getting file\\|Rejected chained\\|nread=\\|([0-9][0-9]*\\.[0-9][0-9]* kb/s)\\|tar: dumped [0-9][0-9]* tar files\\)"
 
   /* catch-all: DMP_STRANGE is returned for all other lines */
   { DMP_STRANGE, NULL, 0}
