@@ -129,7 +129,7 @@ strings for printing long long integers.
 +	AC_TRY_RUN([[
 +#include <stdio.h>
 +main() {
-+  long long foo = 1;
++  long long foo = -1;
 +  char buf[1024];
 +  while(foo) {
 +    long long bar = 0;
@@ -164,3 +164,10 @@ strings for printing long long integers.
 +
 +/* Define to 1 if printf() supports "%lld" */
 +#undef PRINTF_LONG_LONG_WORKS
+--- tar-1.12/configure
++++ tar-1.12/configure
+@@ -1,2 +1,4 @@
+ #! /bin/sh
++echo You must run autoheader and autoconf after installing this patch
++exit 1
+ 
