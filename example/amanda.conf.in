@@ -99,7 +99,7 @@ labelstr "^@DEFAULT_CONFIG@[0-9][0-9]*$"	# label constraint regex: all tapes mus
 # If no holding disks are specified then all dumps will be written directly
 # to tape.  If a dump is too big to fit on the holding disk than it will be
 # written directly to tape.  If more than one holding disk is specified then
-# they will all be used round-robin.
+# they will all be used based on activity and available space.
 
 holdingdisk hd1 {
     comment "main holding disk"

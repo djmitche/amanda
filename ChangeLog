@@ -1,3 +1,9 @@
+2001-04-13 John R. Jackson <jrj@purdue.edu>
+
+	* example/amanda.conf.in: Fix multiple holding disks comment.
+	* example/amanda.conf.chg-scsi.in: Ditto, plus bring this file into
+	  sync with the base version.
+
 2001-04-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/getfsent.h (search_fstab): New prototype.
