@@ -228,7 +228,10 @@ while [ $SLOT -le $SLOTS ]; do
 		until $MT $MTOPT $DEVICE stat >/dev/null 2>&1; do sleep 3; done
 		$ECHO $ECHOARG "Reading... \r$ECHOSUF" >&2
 		TARERG=`$AMRESTORE -p $DEVICE 2> $TEMP.$CSLOT.o |
-			{ $TAR tf - > /dev/null 2> $TEMP.$CSLOT.oo; echo $?; }`
+			{ $TAR tf - > /dev/null 2> $TEMP.$CSLOT.oo
+			  echo $?
+			  cat >/dev/null
+			}`
 		FILE=`grep restoring $TEMP.$CSLOT.o | sed 's/^.*restoring //'`
 		EOF=`grep "reached end of tape" $TEMP.$CSLOT.o`
 		# amrestore:   0: restoring sundae._mnt_sol1_usr.19961127.1

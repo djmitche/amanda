@@ -14,6 +14,10 @@
 
 Version 2.4.0
 
+	read all output from amrestore otherwise, instead of the
+	beginning of the next tape section, it would read garbage.
+	-Terje Malmedal <tm@odin.funcom.com> & oliva
+
 	formatting error in amoverview fixed.
 	-Terje Malmedal <tm@odin.funcom.com>
 
