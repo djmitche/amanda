@@ -80,6 +80,8 @@ void add_file_unknown P((int, struct stat *));
 long final_size_unknown P((int, char *));
 
 int use_gtar_excl = 0;
+char exclude_string[] = "--exclude=";
+char exclude_list_string[] = "--exclude-list=";
 
 char *pname = "calcsize";
 
@@ -180,14 +182,15 @@ char **argv;
 	if (*result && (cp = strrchr(result,';')))
 	    /* delete trailing ; */
 	    *cp = 0;
-	if (strncmp(result, "--exclude=", strlen("--exclude=")) == 0)
-	  add_exclude(result+strlen("--exclude="));
-	else if (strncmp(result, "--exclude-list=", strlen("--exclude-list=")) == 0) {
-	  if (access(result + strlen("--exclude-list="), R_OK) != 0) {
+	if (strncmp(result, exclude_string, sizeof(exclude_string)-1) == 0)
+	  add_exclude(result+sizeof(exclude_string)-1);
+	else if (strncmp(result, exclude_list_string,
+			 sizeof(exclude_list_string)-1) == 0) {
+	  if (access(result + sizeof(exclude_list_string)-1, R_OK) != 0) {
 	    fprintf(stderr,"Cannot open exclude file %s\n",cp+1);
 	    use_gtar_excl = 0;
 	  } else {
-	    add_exclude_file(cp+1);
+	    add_exclude_file(result + sizeof(exclude_list_string)-1);
 	  }
 	} else
 	  goto usage;
