@@ -13,10 +13,10 @@ amcheck \- run Amanda self\-checks
 .SH SYNOPSIS
 .B amcheck
 [
-.BI -M address
+.B \-mwsclt
 ]
 [
-.B -mwsct
+.BI \-M address
 ]
 .I config
 .SH DESCRIPTION
@@ -26,16 +26,14 @@ the Amanda client hosts.
 .LP
 On the tape server host,
 .B amcheck
-goes through the same tape checking used at the start of the nightly
+can go through the same tape checking used at the start of the nightly
 .B amdump
-run.
-This verifies the correct tape for the next run is in the
+run to verify the correct tape for the next run is in the
 correct drive.
-Holding disks are checked to insure they have enough free space.
 .LP
 .B Amcheck
-also causes a self\-check to be run on all client hosts.
-This makes sure each host is up and running and that permissions
+can also do a self\-check on all client hosts
+to make sure each host is running and that permissions
 on filesystems to be backed up are correct.
 .LP
 See the
@@ -43,26 +41,21 @@ See the
 man page for more details about Amanda.
 .SH OPTIONS
 .TP
-.BI -M address
-When
-.B -m
-is also set, mail the report to
-.I address
-instead of the
-.B mailto
-value from
-.IR amanda.conf .
+.B \-s
+Run the tape server local and tape checks
+(same as
+.BR \-lt ).
 .TP
-.B -s
-Only the tape server host checks are run.
+.B \-c
+Run the client host checks.
 .TP
-.B -c
-Only the client host checks are run.
+.B \-l
+Run the local tests (e.g. permissions) on the server host.
 .TP
-.B -t
-Do not run the tape tests on the server host.
+.B \-t
+Run the tape tests on the server host.
 .TP
-.B -w
+.B \-w
 Enables a destructive check for write\-protection on the
 tape (which would cause the subsequent
 .B amdump
@@ -71,9 +64,11 @@ If the tape
 is writable, this check causes all data after the tape label to be
 erased (actually depends on the device driver: there is no portable
 non\-destructive way to check for write\-protection).
-The check is only made if the tape is otherwise correct.
+The check implies
+.B \-t
+and is only made if the tape is otherwise correct.
 .TP
-.B -m
+.B \-m
 Nothing is printed, but mail is sent
 if any errors are detected.
 The mail goes to the
@@ -83,8 +78,21 @@ address as specified in the
 file or the
 .I address
 value if
-.B -M
+.B \-M
 is set.
+.TP
+.BI \-M address
+Mail the report to
+.I address
+instead of the
+.B mailto
+value from
+.IR amanda.conf .
+Implies
+.BR \-m .
+.LP
+The default is
+.BR \-cs .
 .SH EXAMPLES
 In this example, both the tape server and client tests are run.
 The results are displayed on standard output.
@@ -478,7 +486,7 @@ is OK and the write enable test succeeded.
 NOTE: skipping tape-writable test.
 (info)
 The tape write test (see the
-.B -w
+.B \-w
 option) was not enabled.
 .TP
 WARNING: skipping tape test because amdump or amflush seem to be running
@@ -501,7 +509,7 @@ Otherwise, you need to wait until they complete before running
 NOTE: skipping tape checks
 (info)
 The tape tests are being skipped because you used the
-.B -t
+.B \-t
 command line option.
 .TP
 WARNING: \fIcompress\fP is not executable, server-compression and indexing will not work

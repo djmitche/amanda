@@ -1,3 +1,11 @@
+1998-12-01  John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/amcheck.c: make -t mean do the tape checks, add new -l
+	option for doing just the local server (non-tape) checks.  Have -w
+	turn on -t.  Have -cs (or -sc) do both server and client checks.
+	* man/amcheck.8.in: document above changes and clean up some minor
+	formatting issues.
+
 1998-12-01  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/event.c (release): nuke bogus comment about signal

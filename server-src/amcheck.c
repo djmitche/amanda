@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.52 1998/11/24 22:15:45 jrj Exp $
+ * $Id: amcheck.c,v 1.53 1998/12/01 21:29:17 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -65,7 +65,7 @@ char *confname;
 
 void usage P((void));
 int start_client_checks P((int fd));
-int start_server_check P((int fd, int do_tapechk));
+int start_server_check P((int fd, int do_localchk, int do_tapechk));
 int main P((int argc, char **argv));
 int scan_init P((int rc, int ns, int bk));
 int taperscan_slot P((int rc, char *slotstr, char *device));
@@ -90,8 +90,8 @@ char **argv;
     char *mainfname = NULL;
     char pid_str[NUM_STR_SIZE];
     int do_clientchk, clientchk_pid, client_probs;
-    int do_serverchk, serverchk_pid, server_probs;
-    int do_tapechk;
+    int do_localchk, do_tapechk, serverchk_pid, server_probs;
+    int chk_flag;
     int opt, size, result_port, tempfd, mainfd;
     amwait_t retstat;
     pid_t pid;
@@ -135,26 +135,41 @@ char **argv;
     }
 
     mailout = overwrite = 0;
-    do_serverchk = do_clientchk = do_tapechk = 1;
+    do_localchk = do_tapechk = do_clientchk = 0;
+    chk_flag = 0;
     server_probs = client_probs = 0;
     tempfd = mainfd = -1;
 
     /* process arguments */
 
-    while((opt = getopt(argc, argv, "M:mwsct")) != EOF) {
+    while((opt = getopt(argc, argv, "M:mwsclt")) != EOF) {
 	switch(opt) {
 	case 'm':	mailout = 1; break;
 	case 'M':	mailout = 1; mailto=optarg; break;
-	case 'w':	overwrite = 1; break;
-	case 's':	do_serverchk = 1; do_clientchk = 0; break;
-	case 'c':	do_serverchk = 0; do_clientchk = 1; break;
-	case 't':	do_tapechk = 0; break;
+	case 's':	do_localchk = 1; do_tapechk = 1;
+			chk_flag = 1;
+			break;
+	case 'c':	do_clientchk = 1;
+			chk_flag = 1;
+			break;
+	case 'l':	do_localchk = 1;
+			chk_flag = 1;
+			break;
+	case 'w':	do_tapechk = 1; overwrite = 1;
+			chk_flag = 1;
+			break;
+	case 't':	do_tapechk = 1;
+			chk_flag = 1;
+			break;
 	case '?':
 	default:
 	    usage();
 	}
     }
     argc -= optind, argv += optind;
+    if(! chk_flag) {
+	do_localchk = do_clientchk = do_tapechk = 1;
+    }
 
     if(argc != 1) usage();
 
@@ -176,7 +191,7 @@ char **argv;
      * If the output is to be mailed, the main output is also a disk file,
      * otherwise it is stdout.
      */
-    if(do_clientchk && do_serverchk) {
+    if(do_clientchk && (do_localchk || do_tapechk)) {
 	/* we need the temp file */
 	tempfname = vstralloc("/tmp/amcheck.temp.", pid_str, NULL);
 	if((tempfd = open(tempfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
@@ -195,15 +210,15 @@ char **argv;
 
     /* start server side checks */
 
-    if(do_serverchk)
-	serverchk_pid = start_server_check(mainfd, do_tapechk);
+    if(do_localchk || do_tapechk)
+	serverchk_pid = start_server_check(mainfd, do_localchk, do_tapechk);
     else
 	serverchk_pid = 0;
 
     /* start client side checks */
 
     if(do_clientchk) {
-	clientchk_pid = start_client_checks(do_serverchk? tempfd : mainfd);
+	clientchk_pid = start_client_checks((do_localchk || do_tapechk) ? tempfd : mainfd);
     }
     else
 	clientchk_pid = 0;
@@ -242,7 +257,7 @@ char **argv;
 
     /* copy temp output to main output and write tagline */
 
-    if(do_clientchk && do_serverchk) {
+    if(do_clientchk && (do_localchk || do_tapechk)) {
 	if(lseek(tempfd, 0, 0) == -1)
 	    error("seek temp file: %s", strerror(errno));
 
@@ -451,7 +466,7 @@ uid_t dumpuid;
     return pgmbad;
 }
 
-int start_server_check(fd, do_tapechk)
+int start_server_check(fd, do_localchk, do_tapechk)
 int fd;
 {
     char *errstr, *tapename;
@@ -462,7 +477,6 @@ int fd;
     int pid;
     int tapebad = 0, disklow = 0, logbad = 0;
     int userbad = 0, infobad = 0, indexbad = 0, pgmbad = 0;
-    int inparallel;
     int testtape = do_tapechk;
     uid_t uid_me = getuid();
     uid_t uid_dumpuser = uid_me;
@@ -518,7 +532,7 @@ int fd;
     /*
      * Look up the programs used on the server side.
      */
-    {
+    if(do_localchk) {
 	if(access(libexecdir, X_OK) == -1) {
 	    fprintf(outf, "ERROR: program dir %s: not accessible\n",
 		    libexecdir);
@@ -566,7 +580,7 @@ int fd;
      * to do it here).
      */
 
-    {
+    if(do_localchk) {
 	char *conf_tapelist;
 	char *confdir;
 	char *tapefile;
@@ -600,54 +614,54 @@ int fd;
 
     /* check available disk space */
 
-    inparallel = getconf_int(CNF_INPARALLEL);
-
-    for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
-	if(get_fs_stats(hdp->diskdir, &fs) == -1) {
-	    fprintf(outf, "ERROR: holding disk %s: statfs: %s\n",
-		    hdp->diskdir, strerror(errno));
-	    disklow = 1;
-	}
-	else if(access(hdp->diskdir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: holding disk %s: not writable: %s\n",
-		    hdp->diskdir, strerror(errno));
-	    disklow = 1;
-	}
-	else if(fs.avail == -1) {
-	    fprintf(outf,
-	            "WARNING: holding disk %s: available space unknown (%ld KB requested)\n",
-		    hdp->diskdir, hdp->disksize);
-	    disklow = 1;
-	}
-	else if(hdp->disksize > 0) {
-	    if(fs.avail < hdp->disksize) {
-		fprintf(outf,
-			"WARNING: holding disk %s: only %ld KB free (%ld KB requested)\n",
-			hdp->diskdir, fs.avail, hdp->disksize);
+    if(do_localchk) {
+	for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
+	    if(get_fs_stats(hdp->diskdir, &fs) == -1) {
+		fprintf(outf, "ERROR: holding disk %s: statfs: %s\n",
+			hdp->diskdir, strerror(errno));
 		disklow = 1;
 	    }
-	    else
-		fprintf(outf,
-			"Holding disk %s: %ld KB disk space available, that's plenty\n",
-			hdp->diskdir, fs.avail);
-	}
-	else {
-	    if(fs.avail < -hdp->disksize) {
-		fprintf(outf,
-			"WARNING: holding disk %s: only %ld KB free, using nothing\n",
-			hdp->diskdir, fs.avail);
+	    else if(access(hdp->diskdir, W_OK) == -1) {
+		fprintf(outf, "ERROR: holding disk %s: not writable: %s\n",
+			hdp->diskdir, strerror(errno));
 		disklow = 1;
 	    }
-	    else
+	    else if(fs.avail == -1) {
 		fprintf(outf,
-			"Holding disk %s: %ld KB disk space available, using %ld KB\n",
-			hdp->diskdir, fs.avail, fs.avail + hdp->disksize);
+			"WARNING: holding disk %s: available space unknown (%ld KB requested)\n",
+			hdp->diskdir, hdp->disksize);
+		disklow = 1;
+	    }
+	    else if(hdp->disksize > 0) {
+		if(fs.avail < hdp->disksize) {
+		    fprintf(outf,
+			    "WARNING: holding disk %s: only %ld KB free (%ld KB requested)\n",
+			    hdp->diskdir, fs.avail, hdp->disksize);
+		    disklow = 1;
+		}
+		else
+		    fprintf(outf,
+			    "Holding disk %s: %ld KB disk space available, that's plenty\n",
+			    hdp->diskdir, fs.avail);
+	    }
+	    else {
+		if(fs.avail < -hdp->disksize) {
+		    fprintf(outf,
+			    "WARNING: holding disk %s: only %ld KB free, using nothing\n",
+			    hdp->diskdir, fs.avail);
+		    disklow = 1;
+		}
+		else
+		    fprintf(outf,
+			    "Holding disk %s: %ld KB disk space available, using %ld KB\n",
+			    hdp->diskdir, fs.avail, fs.avail + hdp->disksize);
+	    }
 	}
     }
 
     /* check that the log file is writable if it already exists */
 
-    {
+    if(do_localchk) {
 	char *logdir;
 	char *logfile;
 
@@ -745,7 +759,7 @@ int fd;
      * and disk is OK.  Since we may be seeing clients and/or disks for
      * the first time, these are just warnings, not errors.
      */
-    {
+    if(do_localchk) {
 	char *infodir = stralloc(getconf_str(CNF_INFOFILE));
 	char *indexdir = stralloc(getconf_str(CNF_INDEXDIR));
 	char *hostinfodir = NULL;
@@ -914,9 +928,12 @@ int fd;
 	amfree(indexdir);
     }
 
-    if (access(COMPRESS_PATH, X_OK) == -1)
-	fprintf(outf, "WARNING: %s is not executable, server-compression and indexing will not work\n",
-	        COMPRESS_PATH);
+    if(do_localchk) {
+	if(access(COMPRESS_PATH, X_OK) == -1) {
+	    fprintf(outf, "WARNING: %s is not executable, server-compression and indexing will not work\n",
+	            COMPRESS_PATH);
+	}
+    }
 
     amfree(datestamp);
     amfree(label);
