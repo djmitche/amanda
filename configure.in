@@ -1639,9 +1639,9 @@ AC_CHECK_HEADERS(\
 	sys/ipc.h \
 	sys/mman.h \
 	sys/mntent.h \
+	sys/param.h \
 	sys/mount.h \
 	sys/mtio.h \
-	sys/param.h \
 	sys/scarray.h \
 	sys/scsiio.h \
 	sys/scsi.h \
@@ -1660,7 +1660,19 @@ AC_CHECK_HEADERS(\
 	syslog.h \
 	unistd.h \
 	vtblc.h \
-)
+,,,
+[[#include <sys/socket.h>
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <netinet/in_systm.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#include <netinet/in.h>
+]])
 
 NO_SCSI_CHANGER_MODE=true
 NO_CHIO_CHANGER_MODE=true
