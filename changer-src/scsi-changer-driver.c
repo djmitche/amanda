@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.28 2001/05/28 18:25:54 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.29 2001/06/01 19:43:20 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -703,7 +703,7 @@ int eject_tape(char *tapedev, int type)
   
   if (pDev[INDEX_TAPE].avail == 1)
     {
-      ret=Tape_Eject(pDev[INDEX_TAPE].fd);
+      ret=Tape_Eject(INDEX_TAPE);
       DebugPrint(DEBUG_INFO,SECTION_TAPE,"##### STOP (ioctl)eject_tape [%d]\n", ret);
       return(ret);
     }
@@ -879,25 +879,46 @@ int load(int fd, int drive, int slot)
               }
       }
 
-  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"load : load drive %d[%d] slot %d[%d]\n",drive,
-          pDTE[drive].address,
-          slot,
-          pSTE[slot].address);
+  /*
+   * Check if the requested slot is in the range of available slots
+   * The library starts counting at 1, we start at 0, so if the request slot
+   * is ge than the value we got from the ModeSense fail with an return value
+   * of 2
+   */
+  if (slot >= STE)
+    {
+      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"load : slot %d ge STE %d\n",slot, STE); 
+      ChgExit("load", "slot >= STE", FATAL);
+    }
+  
+  /* 
+   * And the same for the tape drives
+   */
+  if (drive >= DTE)
+    {
+      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"load : drive %d ge DTE %d\n",drive, DTE); 
+      ChgExit("load", "drive >= DTE", FATAL);
+    }
 
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"load : load drive %d[%d] slot %d[%d]\n",drive,
+	     pDTE[drive].address,
+	     slot,
+	     pSTE[slot].address);
+  
   if (pDTE[drive].status == 'F')
     {
       DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"load : Drive %d address %d is full\n", drive, pDTE[drive].address);
       DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"##### STOP load (-1 update status failed)\n");
       return(-1);
     }
-
+  
   if (pSTE[slot].status == 'E')
     {
       DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"load : Slot %d address %d is empty\n", drive, pSTE[slot].address);
       DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"##### STOP load (-1 update status failed)\n");
       return(-1);
     }
-
+  
   ret = pDev[fd].functions->function_move(fd, pSTE[slot].address, pDTE[drive].address);
   
   /*
@@ -3242,11 +3263,14 @@ int GetElementStatus(int DeviceFD)
   ImportExportElementDescriptor_T *ImportExportElementDescriptor;
   int x = 0;
   int offset = 0;
+  int barcode = 0;                   /* To store the result of the BarCode function */
   int NoOfElements;
 
  
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### START GetElementStatus\n");
   
+  barcode = BarCode(DeviceFD);
+
   /* 
    * If the MODE_SENSE was successfull we use this Information to read the Elelement Info 
    */
@@ -3270,7 +3294,7 @@ int GetElementStatus(int DeviceFD)
           if (SCSI_ReadElementStatus(DeviceFD, 
                                      CHANGER, 
                                      0,
-                                     BarCode(DeviceFD),
+                                     barcode,
                                      V2(pEAAPage->MediumTransportElementAddress),
                                      MTE,
                                      (char **)&DataBuffer) != 0)
@@ -3333,7 +3357,7 @@ int GetElementStatus(int DeviceFD)
           if (SCSI_ReadElementStatus(DeviceFD, 
                                      STORAGE, 
                                      0,
-                                     BarCode(DeviceFD),
+                                     barcode,
                                      V2(pEAAPage->FirstStorageElementAddress),
                                      STE,
                                      (char **)&DataBuffer) != 0)
@@ -3399,7 +3423,7 @@ int GetElementStatus(int DeviceFD)
           if (SCSI_ReadElementStatus(DeviceFD, 
                                      IMPORT, 
                                      0,
-                                     BarCode(DeviceFD),
+                                     barcode,
                                      V2(pEAAPage->FirstImportExportElementAddress),
                                      IEE,
                                      (char **)&DataBuffer) != 0)
@@ -3463,7 +3487,7 @@ int GetElementStatus(int DeviceFD)
           if (SCSI_ReadElementStatus(DeviceFD, 
                                      TAPETYPE, 
                                      0,
-                                     BarCode(DeviceFD),
+                                     barcode,
                                      V2(pEAAPage->FirstDataTransferElementAddress),
                                      DTE,
                                      (char **)&DataBuffer) != 0)
@@ -3517,7 +3541,7 @@ int GetElementStatus(int DeviceFD)
       if (SCSI_ReadElementStatus(DeviceFD, 
                                  0, 
                                  0,
-                                 BarCode(DeviceFD),
+                                 barcode,
                                  0,
                                  0xffff,
                                  (char **)&DataBuffer) != 0)

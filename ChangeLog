@@ -1,3 +1,9 @@
+2001-06-01 Thomas Hepper <th@ant.han.de>
+	* changer-src/scsi-changer-driver.c: Added an range check in the load
+	function and abort if the requested slot is out of range.
+	Fixed in incorrect pointer in the eject function if the ioctl
+	interface is used
+
 2001-05-29 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/reporter.c: Fix PostScript output to only show what went
