@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapefile.c,v 1.4 1997/08/27 08:13:28 amcore Exp $
+ * $Id: tapefile.c,v 1.5 1997/11/30 23:50:56 amcore Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -162,7 +162,7 @@ int tapedays;
 int guess_runs_from_tapelist()
 {
     tape_t *tp;
-    int i, ntapes, tape_ndays, dumpcycle, runtapes;
+    int i, ntapes, tape_ndays, dumpcycle, runtapes, runs;
     time_t tape_time, today;
 
     today = time(0);
@@ -192,7 +192,10 @@ int guess_runs_from_tapelist()
 	ntapes = dumpcycle * runtapes;
     }
 
-    return (ntapes + runtapes - 1) / runtapes;
+    runs = (ntapes + runtapes - 1) / runtapes;
+    if (runs <= 0)
+      runs = 1;
+    return runs;
 }
 
 static tape_t *parse_tapeline(line)
