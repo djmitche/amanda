@@ -1,16 +1,14 @@
 1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* NEWS: chg-scsi ports and Samba 2.0.0 support
+
 	* configure.in (USE_AMANDAHOSTS): enable by default
 	* example/config.site: ditto
 	* docs/INSTALL: ditto
 	* NEWS: ditto
 
-1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
-
 	* docs/INSTALL: updated URLs for GNU packages and Samba
 	* docs/SAMBA: note that Samba 2.0.0 is supported
-
-1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/SYSTEM.NOTES (HP/UX): what does `Link severed' mean?
 
