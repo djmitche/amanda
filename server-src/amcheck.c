@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.14 2000/04/09 08:10:30 oliva Exp $
+ * $Id: amcheck.c,v 1.50.2.15 2000/09/23 00:14:34 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -636,6 +636,8 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    fprintf(outf,
 		    "WARNING: tapedev is %s, dumps will be thrown away\n",
 		    tapename);
+	    testtape = 0;
+	    do_tapechk = 0;
 	}
     }
 
