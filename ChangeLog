@@ -1,3 +1,8 @@
+2002-09-16  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+	Patch by  Florian Hars <hars@bik-gmbh.de>
+
+	* changer-src/chg-zd-mtx.sh.in: Fix default value for cleancycle.
+
 2002-09-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* recover-src/extract_list.c (extract_files): print tape drive
