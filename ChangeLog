@@ -6,6 +6,7 @@
 	* changer-src/libscsi.h: Ditto.
 	* changer-src/scsi-aix.c: Ditto.
 	* changer-src/scsi-bsd.c: Ditto.
+	* changer-src/scsi-cam.c: Ditto.
 	* changer-src/scsi-changer-driver.c: Ditto.
 	* changer-src/scsi-defs.h: Ditto.
 	* changer-src/scsi-hpux.c: Ditto.
@@ -13,6 +14,7 @@
 	* changer-src/scsi-irix.c: Ditto.
 	* changer-src/scsi-linux.c: Ditto.
 	* changer-src/scsi-solaris.c: Ditto.
+	* changer-src/sense.c: Ditto.
 
 2001-07-10 John R. Jackson <jrj@purdue.edu>
 
