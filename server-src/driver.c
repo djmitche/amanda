@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.40 1998/05/05 21:47:41 martinea Exp $
+ * $Id: driver.c,v 1.41 1998/05/06 02:25:17 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1267,7 +1267,7 @@ disk_t *diskp;
 	   sched(diskp)->holdp->diskdir);
 #endif
     holdalloc(sched(diskp)->holdp)->allocated_space -= sched(diskp)->act_size;
-    unlink(sched(diskp)->destname);
+    unlink_holding_files(sched(diskp)->destname);
     sched(diskp)->holdp = NULL;
     sched(diskp)->act_size = 0;
     sched(diskp)->destname[0] = '\0';
