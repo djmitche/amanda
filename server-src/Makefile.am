@@ -13,8 +13,6 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 LDADD =	libamserver.$(LIB_EXTENSION) \
 	../tape-src/libamtape.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION) \
-	libamserver.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.sh .pl

@@ -8,8 +8,6 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 # they cross-reference each other a bit, so need to be included twice
 LDADD = ../server-src/libamserver.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION) \
-	../server-src/libamserver.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.pl .sh
