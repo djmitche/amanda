@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.34 2003/01/01 23:28:17 martinea Exp $
+ * $Id: amtape.c,v 1.35 2003/10/31 15:40:36 martinea Exp $
  *
  * tape changer interface program
  */
@@ -498,6 +498,16 @@ char *device;
 		tp = lookup_tapelabel(label);
 		if(tp != NULL && !reusable_tape(tp))
 		    fprintf(stderr, " (active tape)\n");
+		else if(got_match == 0 && tp->datestamp == 0) {
+		    got_match = 1;
+		    first_match = newstralloc(first_match, slotstr);
+		    first_match_label = newstralloc(first_match_label, label);
+		    fprintf(stderr, " (new tape)\n");
+		    found = 3;
+		    amfree(datestamp);
+		    amfree(label);
+		    return 1;
+		}
 		else if(got_match)
 		    fprintf(stderr, " (labelstr match)\n");
 		else {
@@ -541,11 +551,15 @@ char **argv;
     fprintf(stderr, "a new tape.\n");
 
     if (searchlabel != NULL)
-      changer_find(scan_init, taperscan_slot,searchlabel);
+      changer_find(scan_init, taperscan_slot, searchlabel);
     else
       changer_scan(scan_init, taperscan_slot);
 
-    if(found == 2) {
+    if(found == 3) {
+	fprintf(stderr, "%s: settling for new tape\n", get_pname());
+	searchlabel = newstralloc(searchlabel, first_match_label);
+    }
+    else if(found == 2) {
 	fprintf(stderr, "%s: %s: settling for first labelstr match\n",
 		get_pname(),
 		searchlabel? "gravity stacker": "looking only for new tape");

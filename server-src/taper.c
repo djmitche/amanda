@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.90 2003/05/25 23:34:38 kovert Exp $
+/* $Id: taper.c,v 1.91 2003/10/31 15:40:36 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -2154,6 +2154,16 @@ int taperscan_slot(rc, slotstr, device)
 		    fprintf(stderr, " (active tape)\n");
 		    fflush(stderr);
 		}
+		else if(got_match == 0 && tp->datestamp == 0) {
+		    got_match = 1;
+		    first_match = newstralloc(first_match, slotstr);
+		    first_match_label = newstralloc(first_match_label, label);
+		    fprintf(stderr, " (new tape)\n");
+		    fflush(stderr);
+		    found = 3;
+		    found_device = newstralloc(found_device, device);
+		    return 1;
+		}
 		else if(got_match) {
 		    fprintf(stderr, " (labelstr match)\n");
 		    fflush(stderr);
@@ -2193,7 +2203,7 @@ char *taper_scan()
     else
       changer_scan(scan_init, taperscan_slot);
 
-    if(found == 2)
+    if(found == 2 || found == 3)
 	searchlabel = first_match_label;
     else if(!found && got_match) {
 	searchlabel = first_match_label;

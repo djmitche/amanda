@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.101 2003/10/30 18:12:37 martinea Exp $
+ * $Id: amcheck.c,v 1.102 2003/10/31 15:40:36 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -523,6 +523,15 @@ char *device;
 		tp = lookup_tapelabel(label);
 		if(tp != NULL && !reusable_tape(tp))
 		    fprintf(errf, " (active tape)\n");
+		else if(got_match == 0 && tp->datestamp == 0) {
+		    got_match = 1;
+		    first_match = newstralloc(first_match, slotstr);
+		    first_match_label = newstralloc(first_match_label, label);
+		    fprintf(errf, " (new tape)\n");
+		    found = 3;
+		    found_device = newstralloc(found_device, device);
+		    return 1;
+		}
 		else if(got_match)
 		    fprintf(errf, " (labelstr match)\n");
 		else {
@@ -556,7 +565,7 @@ char *taper_scan()
 
     changer_find(scan_init, taperscan_slot, searchlabel);
 
-    if(found == 2)
+    if(found == 2 || found == 3)
 	searchlabel = first_match_label;
     else if(!found && got_match) {
 	searchlabel = first_match_label;
