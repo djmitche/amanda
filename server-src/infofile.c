@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.37 1998/01/30 01:51:04 blair Exp $
+ * $Id: infofile.c,v 1.38 1998/01/30 23:09:16 blair Exp $
  *
  * manage current info file
  */
@@ -119,7 +119,7 @@ FILE *infof;
 
     rc = rc || fclose(infof);
     infof = NULL;
-    if (!rc) rc = -1;
+    if (rc) rc = -1;
 
     return rc;
 }
