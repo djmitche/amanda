@@ -882,6 +882,7 @@ case "$target" in
   sparc-unknown-linux-gnu)
 			;;
   *-ultrix*)
+			: ${USE_RUNDUMP=yes}
 			AC_DEFINE(STATFS_ULTRIX)
 			AC_DEFINE(DUMP_RETURNS_1)
 			;;
