@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uscan.l,v 1.11 1998/04/14 16:23:31 jrj Exp $
+ * $Id: uscan.l,v 1.12 1998/06/01 19:46:51 jrj Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -64,8 +64,10 @@ exit    { return QUIT; }
 history { return DHIST; }
 ls      { return LS; }
 add     { return ADD; }
+addx    { return ADDX; }
 list    { return LIST; }
 delete  { return DELETE; }
+deletex { return DELETEX; }
 pwd     { return PWD; }
 clear   { return CLEAR; }
 help    { return HELP; }
@@ -85,7 +87,14 @@ extract { return EXTRACT; }
     /* file names */
 %}
 
-[-A-Za-z0-9_/.]* { yylval.strval = stralloc(yytext); return PATH; }
+[^ \t\r"]+		{
+  yylval.strval = stralloc(yytext); return PATH;
+}
+
+%{
+    /* quoted file names */
+%}
+
 \"               { amfree(string_buf); BEGIN(quotedstring); }
 
 <quotedstring>\"        { /* saw closing quote - all done */
@@ -119,9 +128,14 @@ extract { return EXTRACT; }
 
 %{
     /* anything else */
+    /* everything should have been handled by now, so this rule is disabled */
 %}
 
+%{
+#if 0
 .	{ yyerror("invalid character"); }
+#endif
+%}
 
 %%
 

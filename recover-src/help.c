@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: help.c,v 1.2 1997/08/27 08:12:33 amcore Exp $
+ * $Id: help.c,v 1.3 1998/06/01 19:46:48 jrj Exp $
  *
  * implements the "help" command in amrecover
  */
@@ -37,23 +37,25 @@ void help_list P((void))
 {
     printf("valid commands are:\n\n");
 
-    printf("add path1 ...    - add to extraction list\n");
-    printf("cd directory     - change cwd on virtual file system\n");
-    printf("clear            - clear extraction list\n");
-    printf("delete path1 ... - delete from extraction list\n");
-    printf("extract          - extract selected files from tapes\n");
+    printf("add path1 ...     - add to extraction list (shell wildcards)\n");
+    printf("addx path1 ...    - add to extraction list (regular expressions)\n");
+    printf("cd directory      - change cwd on virtual file system\n");
+    printf("clear             - clear extraction list\n");
+    printf("delete path1 ...  - delete from extraction list (shell wildcards)\n");
+    printf("deletex path1 ... - delete from extraction list (regular expressions)\n");
+    printf("extract           - extract selected files from tapes\n");
     printf("exit\n");
     printf("help\n");
-    printf("history          - show dump history of disk\n");
-    printf("list [filename]  - show extraction list, optionally writing to file\n");
-    printf("lcd directory    - change cwd on local file system\n");
-    printf("ls               - list directory on virtual file system\n");
-    printf("lpwd             - show cwd on local file system\n");
-    printf("pwd              - show cwd on virtual file system\n");
+    printf("history           - show dump history of disk\n");
+    printf("list [filename]   - show extraction list, optionally writing to file\n");
+    printf("lcd directory     - change cwd on local file system\n");
+    printf("ls                - list directory on virtual file system\n");
+    printf("lpwd              - show cwd on local file system\n");
+    printf("pwd               - show cwd on virtual file system\n");
     printf("quit\n");
     printf("setdate {YYYY-MM-DD|--MM-DD|---DD} - set date of look\n");
     printf("setdisk diskname [mountpoint] - select disk on dump host\n");
-    printf("sethost host     - select dump host\n");
+    printf("sethost host      - select dump host\n");
 
     printf("\n");
 }

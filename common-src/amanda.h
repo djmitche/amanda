@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.62 1998/05/29 18:52:32 jrj Exp $
+ * $Id: amanda.h,v 1.63 1998/06/01 19:46:40 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -487,7 +487,10 @@ extern char  *newvstralloc    P((char *oldstr, char *newstr, ...));
 extern void  *sbuf_man        P((void *bufs, void *ptr));
 extern char **safe_env        P((void));
 extern char  *validate_regexp P((char *regex));
+extern char  *validate_glob   P((char *glob));
 extern int    match           P((char *regex, char *str));
+extern int    match_glob      P((char *glob, char *str));
+extern char  *glob_to_regex   P((char *glob));
 extern time_t unctime         P((char *timestr));
 #if defined(USE_DBMALLOC)
 extern char  *dbmalloc_agets  P((char *c, int l, FILE *file));

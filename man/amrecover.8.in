@@ -193,9 +193,19 @@ The backup date is shown for each file.
 .TP
 .CP add path1 "path2 ..."
 Add the specified files or directories to the restore list.
+Each path may have shell style wildcards.
+.TP
+.CP addx path1 "path2 ..."
+Add the specified files or directories to the restore list.
+Each path may be a regular expression.
 .TP
 .CP delete path1 "path2 ..."
 Delete the specified files or directories from the restore list.
+Each path may have shell style wildcards.
+.TP
+.CP deletex path1 "path2 ..."
+Delete the specified files or directories from the restore list.
+Each path may be a regular expression.
 .TP
 .CP list "" file
 Display the contents of the restore list.

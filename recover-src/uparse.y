@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uparse.y,v 1.3 1997/12/30 05:24:38 jrj Exp $
+ * $Id: uparse.y,v 1.4 1998/06/01 19:46:50 jrj Exp $
  *
  * parser for amrecover interactive language
  */
@@ -47,8 +47,8 @@ extern int yylex P((void));
 
 	/* literal keyword tokens */
 
-%token SETHOST SETDISK SETDATE SETMODE CD QUIT DHIST LS ADD EXTRACT
-%token LIST DELETE PWD CLEAR HELP LCD LPWD
+%token SETHOST SETDISK SETDATE SETMODE CD QUIT DHIST LS ADD ADDX EXTRACT
+%token LIST DELETE DELETEX PWD CLEAR HELP LCD LPWD
 
         /* typed tokens */
 
@@ -63,7 +63,9 @@ ucommand:
   |     display_command
   |     quit_command
   |     add_command
+  |     addx_command
   |     delete_command
+  |     deletex_command
   |     local_command
   |	help_command
   |     extract_command
@@ -95,8 +97,17 @@ add_command:
   ;
 
 add_path:
-	add_path PATH { add_file($2); }
-  |     PATH { add_file($1); }
+	add_path PATH { add_glob($2); }
+  |     PATH { add_glob($1); }
+  ;
+
+addx_command:
+	ADDX addx_path
+  ;
+
+addx_path:
+	addx_path PATH { add_regex($2); }
+  |     PATH { add_regex($1); }
   ;
 
 delete_command:
@@ -104,13 +115,26 @@ delete_command:
   ;
 
 delete_path:
-	delete_path PATH { delete_file($2); }
-  |     PATH { delete_file($1); }
+	delete_path PATH { delete_glob($2); }
+  |     PATH { delete_glob($1); }
+  ;
+
+deletex_command:
+	DELETEX deletex_path
+  ;
+
+deletex_path:
+	deletex_path PATH { delete_regex($2); }
+  |     PATH { delete_regex($1); }
   ;
 
 local_command:
 	LPWD { char buf[STR_SIZE]; puts(getcwd(buf, sizeof(buf))); }
-  |     LCD PATH { if (chdir($2) == -1) printf("%s: No such directory\n", $2); }
+  |     LCD PATH {
+		if (chdir($2) == -1) {
+			perror($2);
+		}
+	}
 
 help_command:
 	HELP { help_list(); }

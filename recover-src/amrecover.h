@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrecover.h,v 1.6 1998/03/07 18:11:50 martinea Exp $
+ * $Id: amrecover.h,v 1.7 1998/06/01 19:46:45 jrj Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -83,7 +83,11 @@ extern void clean_pathname P((char *s));
 extern void display_extract_list P((char *file));
 extern void clear_extract_list P((void));
 extern int is_extract_list_nonempty P((void));
-extern void add_file P((char *path));
-extern void delete_file P((char *path));
+extern void add_glob P((char *glob));
+extern void add_regex P((char *regex));
+extern void add_file P((char *path, char *regex));
+extern void delete_glob P((char *glob));
+extern void delete_regex P((char *regex));
+extern void delete_file P((char *path, char *regex));
 
 extern void extract_files P((void));

@@ -2,10 +2,20 @@
 
 	* client-src/killpgrp.c: clean up minor compiler warnings by not
 	building term_kill_{soft,hard} unless they are needed.
+
 	* server-src/driverio.c (dumper_cmd): clean up compiler warning
 	in printf format by forcing argument to always be long and using %ld.
+
 	* server-src/driver.c: include <holding.h> to get declaration for
 	unlink_holding_files and avoid a compiler warning.
+
+	* common-src/amanda.h, common-src/match.c (validate_glob, match_glob,
+	glob_to_regex), recover-src/amrecover.h, recover-src/extract_list.c
+	(add_glob, add_regex, add_file, delete_glob, delete_regex,
+	delete_file), recover-src/help.c (help_list), recover-src/uparse.y,
+	recover-src/uscan.l, man/amrecover.8.in: add shell wildcard support
+	for the add/delete amrecover commands.  Add addx/deletex commands
+	that use regular expressions.  Support more characters in path names.
 
 1998-06-01  Dan Swartzendruber  <dswartz@druber.com> via John R. Jackson
 

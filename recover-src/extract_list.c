@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.36 1998/05/27 23:16:43 jrj Exp $
+ * $Id: extract_list.c,v 1.37 1998/06/01 19:46:47 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -379,8 +379,51 @@ DIR_ITEM *ditem;
 }
 
 
-void add_file(path)
+void add_glob(glob)
+char *glob;
+{
+    char *regex;
+    char *regex_path;
+    char *s;
+
+    regex = glob_to_regex(glob);
+    dbprintf(("add_glob (%s) -> %s\n", glob, regex));
+    if ((s = validate_regexp(regex)) != NULL) {
+	printf("\"%s\" is not a valid shell wildcard pattern: ", glob);
+	puts(s);
+	return;
+    }
+    /*
+     * glob_to_regex() anchors the beginning of the pattern with ^,
+     * but we will be tacking it onto the end of the current directory
+     * in add_file, so strip that off.  Also, it anchors the end with
+     * $, but we need to match an optional trailing /, so tack that on
+     * the end.
+     */
+    regex_path = stralloc(regex + 1);
+    amfree(regex);
+    regex_path[strlen(regex_path) - 1] = '\0';
+    strappend(regex_path, "[/]*$");
+    add_file(glob, regex_path);
+    amfree(regex_path);
+}
+
+void add_regex(regex)
+char *regex;
+{
+    char *s;
+
+    if ((s = validate_regexp(regex)) != NULL) {
+	printf("\"%s\" is not a valid regular expression: ", regex);
+	puts(s);
+	return;
+    }
+    add_file(regex, regex);
+}
+
+void add_file(path, regex)
 char *path;
+char *regex;
 {
     DIR_ITEM *ditem, lditem;
     char *path_on_disk = NULL;
@@ -394,35 +437,38 @@ char *path;
     int  added;
     char *s, *fp;
     int ch;
+    int found_one;
 
     if (disk_path == NULL) {
 	printf("Must select directory before adding files\n");
 	return;
     }
 
-    dbprintf(("add_file: Looking for \"%s\"\n", path));
+    dbprintf(("add_file: Looking for \"%s\"\n", regex));
 
     /* remove "/" at end of path */
-    i = strlen(path)-1;
-    if(path[i] == '/') path[i] = '\0';
+    i = strlen(regex)-1;
+    while(i >= 0 && regex[i] == '/') regex[i--] = '\0';
 
     /* convert path (assumed in cwd) to one on disk */
     if (strcmp(disk_path, "/") == 0)
-	path_on_disk = stralloc2("/", path);
+	path_on_disk = stralloc2("/", regex);
     else
-	path_on_disk = vstralloc(disk_path, "/", path, NULL);
+	path_on_disk = vstralloc(disk_path, "/", regex, NULL);
 
     path_on_disk_slash = stralloc2(path_on_disk, "/");
 
     dbprintf(("add_file: Converted path=\"%s\" to path_on_disk=\"%s\"\n",
-	      path, path_on_disk));
+	      regex, path_on_disk));
 
+    found_one = 0;
     for (ditem=get_dir_list(); ditem!=NULL; ditem=get_next_dir_item(ditem))
     {
 	dbprintf(("add_file: Pondering ditem->path=\"%s\"\n", ditem->path));
-	if (strcmp(ditem->path, path_on_disk) == 0 ||
-	    strcmp(ditem->path, path_on_disk_slash) == 0)
+	if (match(path_on_disk, ditem->path)
+	    || match(path_on_disk_slash, ditem->path))
 	{
+	    found_one = 1;
 	    i = strlen(ditem->path);
 	    if((i > 0 && ditem->path[i-1] == '/')
 	       || (i > 1 && ditem->path[i-2] == '/' && ditem->path[i-1] == '.'))
@@ -568,22 +614,17 @@ char *path;
 		    dbprintf(("add_file: (Failed) System error\n"));
 		    break;
 		case  0:
-		    printf("Added %s\n", path_on_disk);
+		    printf("Added %s\n", ditem->path);
 		    dbprintf(("add_file: (Successful) Added %s\n",
-			      path_on_disk));
+			      ditem->path));
 		    break;
 		case  1:
-		    printf("File %s already added\n", path_on_disk);
+		    printf("File %s already added\n", ditem->path);
 		    dbprintf(("add_file: file %s already added\n",
-			      path_on_disk));
+			      ditem->path));
 		    break;
 		}
 	    }
-	    amfree(cmd);
-	    amfree(ditem_path);
-	    amfree(path_on_disk);
-	    amfree(path_on_disk_slash);
-	    return;
 	}
     }
     amfree(cmd);
@@ -591,15 +632,59 @@ char *path;
     amfree(path_on_disk);
     amfree(path_on_disk_slash);
 
-    printf("File %s doesn't exist in directory\n", path);
-    dbprintf(("add_file: (Failed) File %s doesn't exist in directory\n",
-	      path));
+    if(! found_one) {
+	printf("File %s doesn't exist in directory\n", path);
+	dbprintf(("add_file: (Failed) File %s doesn't exist in directory\n",
+	          path));
+    }
 }
 
 
+void delete_glob(glob)
+char *glob;
+{
+    char *regex;
+    char *regex_path;
+    char *s;
 
-void delete_file(path)
+    regex = glob_to_regex(glob);
+    dbprintf(("delete_glob (%s) -> %s\n", glob, regex));
+    if ((s = validate_regexp(regex)) != NULL) {
+	printf("\"%s\" is not a valid shell wildcard pattern: ", glob);
+	puts(s);
+	return;
+    }
+    /*
+     * glob_to_regex() anchors the beginning of the pattern with ^,
+     * but we will be tacking it onto the end of the current directory
+     * in add_file, so strip that off.  Also, it anchors the end with
+     * $, but we need to match an optional trailing /, so tack that on
+     * the end.
+     */
+    regex_path = stralloc(regex + 1);
+    amfree(regex);
+    regex_path[strlen(regex_path) - 1] = '\0';
+    strappend(regex_path, "[/]*$");
+    delete_file(glob, regex_path);
+    amfree(regex_path);
+}
+
+void delete_regex(regex)
+char *regex;
+{
+    char *s;
+
+    if ((s = validate_regexp(regex)) != NULL) {
+	printf("\"%s\" is not a valid regular expression: ", regex);
+	puts(s);
+	return;
+    }
+    delete_file(regex, regex);
+}
+
+void delete_file(path, regex)
 char *path;
+char *regex;
 {
     DIR_ITEM *ditem, lditem;
     char *path_on_disk = NULL;
@@ -616,6 +701,7 @@ char *path;
     int  deleted;
     char *s;
     int ch;
+    int found_one;
 
     if (disk_path == NULL) {
 	printf("Must select directory before deleting files\n");
@@ -624,27 +710,30 @@ char *path;
 
     dbprintf(("delete_file: Looking for \"%s\"\n", path));
     /* remove "/" at the end of the path */
-    i = strlen(path)-1;
-    if(path[i] == '/') path[i] = '\0';
+    i = strlen(regex)-1;
+    while(i >= 0 && regex[i] == '/') regex[i--] = '\0';
 
     /* convert path (assumed in cwd) to one on disk */
     if (strcmp(disk_path, "/") == 0)
-	path_on_disk = stralloc2("/", path);
+	path_on_disk = stralloc2("/", regex);
     else
-	path_on_disk = vstralloc(disk_path, "/", path, NULL);
+	path_on_disk = vstralloc(disk_path, "/", regex, NULL);
 
     path_on_disk_slash = stralloc2(path_on_disk, "/");
 
     dbprintf(("delete_file: Converted path=\"%s\" to path_on_disk=\"%s\"\n",
-	      path, path_on_disk));
+	      regex, path_on_disk));
+    found_one = 0;
     for (ditem=get_dir_list(); ditem!=NULL; ditem=get_next_dir_item(ditem))
     {
 	dbprintf(("delete_file: Pondering ditem->path=\"%s\"\n", ditem->path));
-	if (strcmp(ditem->path, path_on_disk) == 0 ||
-	    strcmp(ditem->path, path_on_disk_slash) == 0)
+	if (match(path_on_disk, ditem->path)
+	    || match(path_on_disk_slash, ditem->path))
 	{
-	    if(ditem->path[strlen(ditem->path)-1]=='/' ||
-	       strcmp(&(ditem->path[strlen(ditem->path)-2]),"/.")==0)
+	    found_one = 1;
+	    i = strlen(ditem->path);
+	    if((i > 0 && ditem->path[i-1] == '/')
+	       || (i > 1 && ditem->path[i-2] == '/' && ditem->path[i-1] == '.'))
 	    {	/* It is a directory */
 		ditem_path = newstralloc(ditem_path, ditem->path);
 		clean_pathname(ditem_path);
@@ -780,7 +869,9 @@ char *path;
 		    puts(cmd);
 		} else if(deleted == 0) {
 		    printf("Warning - dir '%s' not on tape list\n",
-			   path_on_disk);
+			   ditem_path);
+		    dbprintf(("delete_file: dir '%s' not on tape list\n",
+			      ditem_path));
 		}
 	    }
 	    else
@@ -788,28 +879,33 @@ char *path;
 		switch(delete_extract_item(ditem)) {
 		case -1:
 		    printf("System error\n");
+		    dbprintf(("delete_file: (Failed) System error\n"));
 		    break;
 		case  0:
-		    printf("Deleted %s\n", path_on_disk);    
+		    printf("Deleted %s\n", ditem->path);
+		    dbprintf(("delete_file: (Successful) Deleted %s\n",
+			      ditem->path));
 		    break;
 		case  1:
 		    printf("Warning - file '%s' not on tape list\n",
-			   path_on_disk);
+			   ditem->path);
+		    dbprintf(("delete_file: file '%s' not on tape list\n",
+			      ditem->path));
 		    break;
 		}
 	    }
-	    amfree(cmd);
-	    amfree(ditem_path);
-	    amfree(path_on_disk);
-	    amfree(path_on_disk_slash);
-	    return;
 	}
     }
     amfree(cmd);
     amfree(ditem_path);
     amfree(path_on_disk);
     amfree(path_on_disk_slash);
-    printf("File %s doesn't exist in directory\n", path);
+
+    if(! found_one) {
+	printf("File %s doesn't exist in directory\n", path);
+	dbprintf(("delete_file: (Failed) File %s doesn't exist in directory\n",
+	          path));
+    }
 }
 
 
