@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.122 2002/03/22 15:00:13 martinea Exp $
+ * $Id: planner.c,v 1.123 2002/03/30 19:04:10 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1815,15 +1815,16 @@ static void delay_dumps P((void))
 	dp = bi->dp;
 
 	if(bi->deleted)
-	    new_total = total_size + tt_blocksize_kb + est(dp)->dump_size + tape_mark;
+	    new_total = total_size + tt_blocksize_kb + bi->size + tape_mark;
 	else
 	    new_total = total_size - est(dp)->dump_size + bi->size;
 
-	if(new_total <= tape_length) { /* reinstate it */
+	if(new_total <= tape_length && bi->size < tape->length) {
+	    /* reinstate it */
 	    total_size = new_total;
 	    if(bi->deleted) {
-		if(est(dp)->dump_level == 0) {
-		    total_lev0 += (double) est(dp)->dump_size;
+		if(bi->level == 0) {
+		    total_lev0 += (double) bi->size;
 		}
 		insert_disk(&schedq, dp, schedule_order);
 	    }
@@ -1903,6 +1904,8 @@ char *errstr;
 
     bi->deleted = 1;
     bi->dp = dp;
+    bi->level = est(dp)->dump_level;
+    bi->size = est(dp)->dump_size;
     bi->errstr = stralloc(errstr);
 
     remove_disk(&schedq, dp);

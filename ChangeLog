@@ -1,4 +1,10 @@
-2002-03-24  John R. Jackson (jrj@purdue.edu)
+2002-03-30  John R. Jackson (jrj@purdue.edu)
+
+	* server-src/planner.c: Make sure individual dumps larger than a tape
+	  are not added back into the schedule.  Found by Uncle George
+	  <gatgul@voicenet.com>.
+
+2002-03-29  John R. Jackson (jrj@purdue.edu)
 
 	* man/amanda.8.in: Move "comment" in tapetype after inclusion of
 	  previous definition.  Found by Uncle George <gatgul@voicenet.com>.
