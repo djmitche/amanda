@@ -210,6 +210,7 @@ static int read_diskline()
 	host->up = NULL;
 	host->inprogress = 0;
 	host->maxdumps = 1;	/* will be overwritten */
+	host->netif = lookup_interface("");
     }
 
     get_string();
@@ -252,6 +253,17 @@ static int read_diskline()
     get_string();
     if(*str != '\n' && *str != '\0') {	/* got optional platter number */
 	disk->platter = atoi(str);
+	get_string();
+    }
+
+    if(*str != '\n' && *str != '\0') {	/* got optional network interface */
+	if((host->netif = lookup_interface(upcase(str))) == NULL) {
+	    parserror("undefined network interface `%s'", str);
+	    free(disk->name);
+	    free(disk);
+	    eat_line();
+	    return 1;
+	    }
 	get_string();
     }
 

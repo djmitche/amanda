@@ -1,4 +1,3 @@
-
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
  * Copyright (c) 1991 University of Maryland
@@ -70,7 +69,12 @@ struct dumpseen_s {
     int index;
 };
 
-typedef enum { 
+struct interface_seen_s {
+    int comment;
+    int maxusage;
+};
+
+typedef enum {
     UNKNOWN, ANY, INT, REAL, STRING, TIME, IDENT, COMMA, LBRACE,
     RBRACE, NL, END, ORG, MAILTO, DUMPUSER, DUMPCYCLE, MAXCYCLE,
     TAPECYCLE, TAPEDEV, LABELSTR,
@@ -81,8 +85,9 @@ typedef enum {
     DUMPTYPE, OPTIONS, PRIORITY, FREQUENCY, PROGRAM, MAXDUMPS,
     STARTTIME, NO_COMPRESS, COMPR, COMPR_BEST, COMPR_FAST, SRVCOMPRESS,
     SKIP_INCR, SKIP_FULL, NO_FULL, NO_RECORD, NO_HOLD,
+    INTERFACE, USAGE,
     KRB4_AUTH, BSD_AUTH, KENCRYPT,
-    LOW, MEDIUM, HIGH, 
+    LOW, MEDIUM, HIGH,
     INFINITY,
     MULT1, MULT7, MULT1K, MULT1M,
     INDEX
@@ -139,6 +144,9 @@ static struct tapeseen_s tpseen;
 static dumptype_t dpcur;
 static struct dumpseen_s dpseen;
 
+static interface_t ifcur;
+static struct interface_seen_s ifseen;
+
 static int seen_org, seen_mailto, seen_dumpuser, seen_tapedev, seen_tpchanger;
 static int seen_labelstr, seen_runtapes, seen_maxdumps;
 static int seen_tapelist, seen_infofile, seen_diskfile, seen_diskdir;
@@ -153,6 +161,7 @@ static val_t tokenval;
 static int line_num, got_parserror;
 static dumptype_t *dumplist = NULL;
 static tapetype_t *tapelist = NULL;
+static interface_t *interface_list = NULL;
 static FILE *conf = (FILE *)NULL;
 static char *confname = NULL;
 
@@ -166,6 +175,7 @@ static void get_dumptype P((void));
 static void init_dumpdefaults P((void));
 static void get_tapetype P((void));
 static void init_tapedefaults P((void));
+static void get_interface P((void));
 static void get_simple P((val_t *var, int *seen, tok_t type));
 static void get_time P((val_t *var, int *seen));
 
@@ -205,12 +215,14 @@ char *filename;
     conf     = save_conf;
     free(confname);	/* Free what was allocated by init_string() above */
     confname = save_confname;
-}    
+}
 
 
 int read_conffile(filename)
 char *filename;
 {
+    interface_t *ip;
+
     init_defaults();
 
     /* We assume that conffile & conf are initialized to NULL above */
@@ -224,6 +236,16 @@ char *filename;
 	    parserror("tapetype %s not defined", tapetype_id.s);
 	}
     }
+
+    ip = alloc(sizeof(interface_t));
+    ip->name = "";
+    ip->seen = seen_netusage;
+    ip->comment = "implicit from NETUSAGE";
+    ip->maxusage = conf_netusage.i;
+    ip->curusage = 0;
+    ip->next = interface_list;
+    interface_list = ip;
+
     return got_parserror;
 }
 
@@ -320,7 +342,7 @@ static void init_defaults()
     seen_indexdir = 0;
     line_num = got_parserror = 0;
 
-    /* free any previously declared dump and tape types */
+    /* free any previously declared dump, tape and interface types */
 
     while(dumplist != NULL) {
 	dp = dumplist;
@@ -332,7 +354,14 @@ static void init_defaults()
 	tapelist = tapelist->next;
 	free(tp);
     }
-}   
+    while(interface_list != NULL) {
+	interface_t *ip;
+
+	ip = interface_list;
+	interface_list = interface_list->next;
+	free(ip);
+    }
+}
 
 static void init_string(ptrp, str)
 char *str, **ptrp;
@@ -360,30 +389,29 @@ static int read_confline()
         }
         break;
 
-    case ORG:	    get_simple(&conf_org,       &seen_org,       STRING);break;
-    case MAILTO:    get_simple(&conf_mailto,    &seen_mailto,    STRING);break;
-    case DUMPUSER:  get_simple(&conf_dumpuser,  &seen_dumpuser,  STRING);break;
-    case DUMPCYCLE: get_simple(&conf_dumpcycle, &seen_dumpcycle, INT);	 break;
-    case MAXCYCLE:  get_simple(&conf_maxcycle,  &seen_maxcycle,  INT);	 break;
-    case TAPECYCLE: get_simple(&conf_tapecycle, &seen_tapecycle, INT);	 break;
-    case RUNTAPES:  get_simple(&conf_runtapes,  &seen_runtapes,  INT);	 break;
-    case TAPEDEV:   get_simple(&conf_tapedev,   &seen_tapedev,   STRING);break;
-    case TPCHANGER: get_simple(&conf_tpchanger, &seen_tpchanger, STRING);break;
-    case LABELSTR:  get_simple(&conf_labelstr,  &seen_labelstr,  STRING);break;
-    case TAPELIST:  get_simple(&conf_tapelist,  &seen_tapelist,  STRING);break;
-    case INFOFILE:  get_simple(&conf_infofile,  &seen_infofile,  STRING);break;
-    case LOGFILE:   get_simple(&conf_logfile,   &seen_logfile,   STRING);break;
-    case DISKFILE:  get_simple(&conf_diskfile,  &seen_diskfile,  STRING);break;
-    case BUMPMULT:  get_simple(&conf_bumpmult,  &seen_bumpmult,  REAL);  break;
-    case BUMPSIZE:  get_simple(&conf_bumpsize,  &seen_bumpsize,  INT);   break;
-    case BUMPDAYS:  get_simple(&conf_bumpdays,  &seen_bumpdays,  INT);   break;
-    case NETUSAGE:  get_simple(&conf_netusage,  &seen_netusage,  INT);	 break;
-    case INPARALLEL:get_simple(&conf_inparallel,&seen_inparallel,INT);	 break;
-    case TIMEOUT:   get_simple(&conf_timeout,   &seen_timeout,   INT);	 break;
-    case MAXDUMPS:  get_simple(&conf_maxdumps,  &seen_maxdumps,   INT);	 break;
-    case TAPETYPE:  get_simple(&tapetype_id,    &seen_tapetype,  IDENT); break;
-    case INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  STRING);break;
-
+    case ORG:       get_simple(&conf_org,       &seen_org,       STRING); break;
+    case MAILTO:    get_simple(&conf_mailto,    &seen_mailto,    STRING); break;
+    case DUMPUSER:  get_simple(&conf_dumpuser,  &seen_dumpuser,  STRING); break;
+    case DUMPCYCLE: get_simple(&conf_dumpcycle, &seen_dumpcycle, INT);    break;
+    case MAXCYCLE:  get_simple(&conf_maxcycle,  &seen_maxcycle,  INT);    break;
+    case TAPECYCLE: get_simple(&conf_tapecycle, &seen_tapecycle, INT);    break;
+    case RUNTAPES:  get_simple(&conf_runtapes,  &seen_runtapes,  INT);    break;
+    case TAPEDEV:   get_simple(&conf_tapedev,   &seen_tapedev,   STRING); break;
+    case TPCHANGER: get_simple(&conf_tpchanger, &seen_tpchanger, STRING); break;
+    case LABELSTR:  get_simple(&conf_labelstr,  &seen_labelstr,  STRING); break;
+    case TAPELIST:  get_simple(&conf_tapelist,  &seen_tapelist,  STRING); break;
+    case INFOFILE:  get_simple(&conf_infofile,  &seen_infofile,  STRING); break;
+    case LOGFILE:   get_simple(&conf_logfile,   &seen_logfile,   STRING); break;
+    case DISKFILE:  get_simple(&conf_diskfile,  &seen_diskfile,  STRING); break;
+    case BUMPMULT:  get_simple(&conf_bumpmult,  &seen_bumpmult,  REAL);   break;
+    case BUMPSIZE:  get_simple(&conf_bumpsize,  &seen_bumpsize,  INT);    break;
+    case BUMPDAYS:  get_simple(&conf_bumpdays,  &seen_bumpdays,  INT);    break;
+    case NETUSAGE:  get_simple(&conf_netusage,  &seen_netusage,  INT);    break;
+    case INPARALLEL:get_simple(&conf_inparallel,&seen_inparallel,INT);    break;
+    case TIMEOUT:   get_simple(&conf_timeout,   &seen_timeout,   INT);    break;
+    case MAXDUMPS:  get_simple(&conf_maxdumps,  &seen_maxdumps,  INT);    break;
+    case TAPETYPE:  get_simple(&tapetype_id,    &seen_tapetype,  IDENT);  break;
+    case INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  STRING); break;
 
     case DISKDIR:
 	assert(holdingdisks != NULL);
@@ -407,7 +435,8 @@ static int read_confline()
 	}
 	get_conftoken(NL);
 	break;
-    case DISKSIZE:  
+
+    case DISKSIZE:
 	assert(holdingdisks != NULL);
 	holdingdisks->disksize = get_number();
 
@@ -423,9 +452,11 @@ static int read_confline()
 	get_conftoken(ANY);
 	if(tok == DUMPTYPE) get_dumptype();
 	else if(tok == TAPETYPE) get_tapetype();
-	else parserror("DUMPTYPE or TAPETYPE expected");
+	else if(tok == INTERFACE) get_interface();
+	else parserror("DUMPTYPE, INTERFACE or TAPETYPE expected");
 	break;
-    case NL:	
+
+    case NL:
 	/* empty line */
 	break;
     case END:
@@ -610,13 +641,77 @@ static void init_tapedefaults()
 }
 
 
+static void get_interface()
+{
+    int done;
+    interface_t *p;
+
+    get_conftoken(IDENT);
+    ifcur.name = stralloc(tokenval.s);
+    ifcur.seen = line_num;
+
+    ifcur.comment = "";
+    ifseen.comment = 0;
+
+    ifcur.maxusage = 300;
+    ifseen.maxusage = 0;
+
+    ifcur.curusage = 0;
+
+    get_conftoken(LBRACE);
+    get_conftoken(NL);
+
+    done = 0;
+    do {
+	line_num += 1;
+	get_conftoken(ANY);
+	switch(tok) {
+
+	case RBRACE:
+	    done = 1;
+	    break;
+	case COMMENT:
+	    get_simple((val_t *)&ifcur.comment, &ifseen.comment, STRING);
+	    break;
+	case USAGE:
+	    get_simple((val_t *)&ifcur.maxusage, &ifseen.maxusage, INT);
+	    break;
+
+	case NL:
+	    /* empty line */
+	    break;
+	case END:	/* end of file */
+	    done = 1;
+	default:
+	    parserror("interface parameter expected");
+	}
+	if(tok != NL) get_conftoken(NL);
+    } while(!done);
+
+    /* check results and save on interface list */
+    if((p = lookup_interface(ifcur.name)) != NULL) {
+	free(ifcur.name);
+	parserror("interface %s already defined on line %d", p->name, p->seen);
+    }
+    else {
+	/* save on list */
+	p = alloc(sizeof(interface_t));
+	*p = ifcur;
+	p->next = interface_list;
+	interface_list = p;
+    }
+
+    return;
+}
+
+
 static void get_simple(var, seen, type)
 val_t *var;
 int *seen;
 tok_t type;
 {
     assert(type == STRING || type == IDENT || type == INT || type == REAL);
-    
+
     ckseen(seen);
 
     if(type == STRING || type == IDENT) {
@@ -749,6 +844,17 @@ char *str;
     return NULL;
 }
 
+interface_t *lookup_interface(str)
+char *str;
+{
+    interface_t *p;
+
+    for(p = interface_list; p != NULL; p = p->next) {
+	if(!strcmp(p->name, str)) return p;
+    }
+    return NULL;
+}
+
 
 static void get_dumpopts()
 {
@@ -758,13 +864,13 @@ static void get_dumpopts()
     do {
 	get_conftoken(ANY);
 	switch(tok) {
-	case COMPR_BEST: 
+	case COMPR_BEST:
 	    ckseen(&dpseen.compress);
 	    dpcur.srvcompress = dpcur.compress_fast = 0;
 	    dpcur.compress_best = 1; break;
 	case COMPR:
-	case COMPR_FAST: 
-	    ckseen(&dpseen.compress);  
+	case COMPR_FAST:
+	    ckseen(&dpseen.compress);
 	    dpcur.compress_fast = 1;
 	    dpcur.srvcompress = dpcur.compress_best = 0; break;
 	case NO_COMPRESS:
@@ -783,7 +889,7 @@ static void get_dumpopts()
 	case NO_FULL:    ckseen(&dpseen.no_full);   dpcur.no_full  = 1;break;
 	case NO_HOLD:    ckseen(&dpseen.no_hold);   dpcur.no_hold  = 1;break;
 	case NO_RECORD:  ckseen(&dpseen.record);    dpcur.record   = 0;break;
- 	case IDENT:
+	case IDENT:
 		if(!strcmp("EXCLUDE-FILE", tokenval.s)){
 		    get_conftoken(STRING);
 		    sprintf(efile, "exclude-file=%s;", tokenval.s);
@@ -796,8 +902,8 @@ static void get_dumpopts()
 		}
 		else
 		    parserror("dump option expected");
- 		break;
-  	case NL: done = 1; break;
+		break;
+	case NL: done = 1; break;
 	case INDEX:      ckseen(&dpseen.index);     dpcur.index    = 1;break;
 	case COMMA: break;
 	case END:
@@ -905,7 +1011,6 @@ static struct keytab_s {
     { "COMPRESS", COMPR },
     { "COMPRESS-BEST", COMPR_BEST },
     { "COMPRESS-FAST", COMPR_FAST },
-    { "SRVCOMPRESS", SRVCOMPRESS },
     { "DAY", MULT1 },
     { "DAYS", MULT1 },
     { "DEFINE", DEFINE },
@@ -924,6 +1029,7 @@ static struct keytab_s {
     { "INF", INFINITY },
     { "INFOFILE", INFOFILE },
     { "INPARALLEL", INPARALLEL },
+    { "INTERFACE", INTERFACE },
     { "K", MULT1K },
     { "KB", MULT1K },
     { "KBYTES", MULT1K },
@@ -957,6 +1063,7 @@ static struct keytab_s {
     { "SKIP-FULL", SKIP_FULL },
     { "SKIP-INCR", SKIP_INCR },
     { "SPEED", SPEED },
+    { "SRVCOMPRESS", SRVCOMPRESS },
     { "STARTTIME", STARTTIME },
     { "TAPE", MULT1 },
     { "TAPECYCLE", TAPECYCLE },
@@ -966,6 +1073,7 @@ static struct keytab_s {
     { "TAPETYPE", TAPETYPE },
     { "TIMEOUT", TIMEOUT },
     { "TPCHANGER", TPCHANGER },
+    { "USAGE", USAGE },
     { "WEEK", MULT7 },
     { "WEEKS", MULT7 },
     { NULL, IDENT }
@@ -1010,7 +1118,7 @@ tok_t exp;
 
 	ungetc(ch, conf);
 	*buf = '\0';
-	
+
 	tokenval.s = tkbuf;
 
 	if(exp == IDENT) tok = IDENT;
@@ -1169,6 +1277,7 @@ dump_configuration()
 {
     tapetype_t *tp;
     dumptype_t *dp;
+    interface_t *ip;
     holdingdisk_t *hp;
 
     if(confname == NULL) {
@@ -1242,6 +1351,12 @@ dump_configuration()
 	if(dp->kencrypt) printf(" KENCRYPT");
 	if(dp->index) printf(" INDEX");
 	putchar('\n');
+    }
+
+    for(ip = interface_list; ip != NULL; ip = ip->next) {
+	printf("\nINTERFACE %s:\n", ip->name);
+	printf("	COMMENT \"%s\"\n", ip->comment);
+	printf("	USAGE %d\n", ip->maxusage);
     }
 }
 #endif /* TEST */

@@ -39,6 +39,7 @@ typedef struct host_s {
     struct disk_s *disks;		/* linked list of disk records */
     int inprogress;			/* # dumps in progress */
     int maxdumps;			/* maximum dumps in parallel */
+    interface_t *netif;			/* network interface this host is on */
     char *up;				/* generic user pointer */
 } host_t;
 

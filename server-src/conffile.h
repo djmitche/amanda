@@ -86,6 +86,18 @@ typedef struct dumptype_s {
     int index:1;
 } dumptype_t;
 
+/* A network interface */
+typedef struct interface_s {
+    struct interface_s *next;
+    int seen;
+    char *name;
+
+    char *comment;
+    int maxusage;		/* bandwidth we can consume [kb/s] */
+
+    int curusage;			/* current usage */
+} interface_t;
+
 typedef struct holdingdisk_s {
     struct holdingdisk_s *next;
     char *diskdir;
@@ -103,5 +115,6 @@ char *getconf_str P((confparm_t parameter));
 char *getconf_byname P((char *confname));
 dumptype_t *lookup_dumptype P((char *identifier));
 tapetype_t *lookup_tapetype P((char *identifier));
+interface_t *lookup_interface P((char *identifier));
 
 #endif /* ! CONFFILE_H */

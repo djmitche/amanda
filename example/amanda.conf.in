@@ -254,3 +254,28 @@ define dumptype comp-test {
     options compress-fast, no-record
     priority medium
 }
+
+# network interfaces
+#
+# These are referred to by the disklist file.  They define the attributes
+# of the network interface that the remote machine is accessed through.
+# Notes: - netusage above defines the attributes that are used when the
+#          disklist entry doesn't specify otherwise.
+#        - the values below are only samples.
+#        - specifying an interface does not force the traffic to pass
+#          through that interface.  Your OS routing tables do that.  This
+#          is just a mechanism to stop Amanda trashing your network.
+# Attributes are:
+#	usage		- bandwidth we can consume.  Note that this is
+#			  not guaranteed; it is only a guideline that
+#			  Amanda will try to keep within.
+
+define interface local {
+    comment "a local disk"
+    usage 1000 kb
+}
+
+define interface le0 {
+    comment "10 Mbps ethernet"
+    usage 400 kb
+}

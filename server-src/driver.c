@@ -86,8 +86,6 @@ struct timeval sleep_time = { SLEEP_MAX, 0 };
 # define MAXFILESIZE	(LONG_MAX/1024)
 #endif
 
-static char local_hostname[MAX_HOSTNAME_LENGTH];
-
 int driver_main(main_argc, main_argv)
 int main_argc;
 char **main_argv;
@@ -97,7 +95,7 @@ char **main_argv;
     fd_set selectset;
     int fd, dsk;
     dumper_t *dumper;
-    char newdir[80], *domain;
+    char newdir[80];
     generic_fs_stats_t fs;
     holdingdisk_t *hdp;
 
@@ -109,12 +107,6 @@ char **main_argv;
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file\n");
-
-    /* Use this to see if disks we're dumping are on this host */
-    /* local_hostname[sizeof(local_hostname)-1] = '\0';*/ /* static variable */
-    if(gethostname(local_hostname, sizeof(local_hostname)-1) == -1)
-	error("error [gethostname: %s]", strerror(errno));
-    if((domain = strchr(local_hostname, '.'))) *domain++ = '\0';
 
     construct_datestamp(datestamp);
     log(L_START,"date %s", datestamp);
@@ -136,7 +128,6 @@ char **main_argv;
 
     if(!force_parameters) {
 	inparallel	= getconf_int(CNF_INPARALLEL);
-	total_bandwidth = getconf_int(CNF_NETUSAGE);
 	big_dumpers     = inparallel - LITTLE_DUMPERS;
 	use_lffo	= 1;
 
@@ -187,7 +178,7 @@ char **main_argv;
     log(L_STATS, "startup time %s", walltime_str(curclock()));
 
 printf("driver: start time %s inparallel %d bandwidth %d diskspace %d",
-       walltime_str(curclock()), inparallel, total_bandwidth, free_space());
+       walltime_str(curclock()), inparallel, free_kps((interface_t *)0), free_space());
 printf(" dir %s datestamp %s driver: drain-ends tapeq %s big-dumpers %d\n",
        "OBSOLETE", datestamp,  use_lffo? "LFFO" : "FIFO", big_dumpers);
 fflush(stdout);
@@ -358,7 +349,7 @@ disklist_t *rq;
 		cur_idle = max(cur_idle, IDLE_START_WAIT);
 		sleep_time.tv_sec = min(diskp->dtype->start_t-now,
 					sleep_time.tv_sec);
-	    } else if(sched(diskp)->est_kps > free_kps())
+	    } else if(sched(diskp)->est_kps > free_kps(diskp->host->netif))
 		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
 	    else if(sched(diskp)->est_size > MAXFILESIZE)
 		cur_idle = max(cur_idle, IDLE_TOO_LARGE);
@@ -372,7 +363,7 @@ disklist_t *rq;
 
 		/* disk fits, dump it */
 		cur_idle = NOT_IDLE;
-		allocate_bandwidth(sched(diskp)->est_kps);
+		allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
 		assign_holdingdisk(holdp, diskp);
 		diskp->host->inprogress += 1;	/* host is now busy */
 		diskp->inprogress = 1;
@@ -451,9 +442,7 @@ disklist_t *queuep;
 		sched(dp)->dumpdate = sched(dp)->degr_dumpdate;
 		sched(dp)->est_size = sched(dp)->degr_size;
 		sched(dp)->est_time = sched(dp)->degr_time;
-		if(strcmp(dp->host->hostname, local_hostname) == 0)
-		    sched(dp)->est_kps = 0;     /* disk on server */
-		else if(sched(dp)->est_time == 0)
+		if(sched(dp)->est_time == 0)
 		    sched(dp)->est_kps = 10;
 		else
 		    sched(dp)->est_kps =
@@ -668,7 +657,7 @@ int fd;
 	dumptime = (long)atof(argv[5]);
 	update_info_dumper(dp, origsize, dumpsize, dumptime);
 
-	deallocate_bandwidth(sched(dp)->est_kps);
+	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	dumper->busy = 0;
 	dp->host->inprogress -= 1;
@@ -694,7 +683,7 @@ int fd;
     case TRYAGAIN: /* TRY-AGAIN <handle> <err str> */
     case FATAL_TRYAGAIN:
 	free_serial(argv[2]);
-	deallocate_bandwidth(sched(dp)->est_kps);
+	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	delete_diskspace(dp);
 	dumper->busy = 0;
@@ -723,7 +712,7 @@ int fd;
 
     case FAILED: /* FAILED <handle> <errstr> */
 	free_serial(argv[2]);
-	deallocate_bandwidth(sched(dp)->est_kps);
+	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	delete_diskspace(dp);
 	dumper->busy = 0;
@@ -755,7 +744,7 @@ int fd;
     case ABORT_FINISHED: /* ABORT-FINISHED <handle> */
 	assert(pending_aborts);
 	free_serial(argv[2]);
-	deallocate_bandwidth(sched(dp)->est_kps);
+	deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	adjust_diskspace(dp, DONE);
 	delete_diskspace(dp);
 	sched(dp)->attempted++;
@@ -782,7 +771,7 @@ int fd;
 	dumper->down = 1;	/* mark it down so it isn't used again */
 	if(dp) {
 	    /* if it was dumping something, zap it and try again */
-	    deallocate_bandwidth(sched(dp)->est_kps);
+	    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 	    adjust_diskspace(dp, DONE);
 	    delete_diskspace(dp);
 	    dp->host->inprogress -= 1;
@@ -870,9 +859,7 @@ disklist_t *waitqp;
 	    sp->degr_size = degr_size;
 	    sp->degr_time = degr_time;
 	}
-	if(strcmp(hostname, local_hostname) == 0)
-	    sp->est_kps = 0;    /* disk on server, no network traffic */
-	else if(time == 0)
+	if(time == 0)
 	    sp->est_kps = 10;
 	else
 	    sp->est_kps = size/time;
@@ -894,22 +881,40 @@ disklist_t *waitqp;
     return rq;
 }
 
-int free_kps() 
+int free_kps(ip) 
+interface_t *ip;
 {
-    return total_bandwidth-allocated_bandwidth;
+    int res;
+
+    if (ip == (interface_t *)0) {
+	/* XXX - got to do better than this! */
+	res = 10000;
+    }
+    else {
+	/* XXX - kludge - if we are currently using nothing
+	**       on this interface then lie and say he can
+	**       have as much as he likes.
+	*/
+	if (ip->curusage == 0) res = 10000;
+	else res = ip->maxusage - ip->curusage;
+    }
+
+    return res;
 }
 
-void allocate_bandwidth(kps) 
+void allocate_bandwidth(ip, kps) 
+interface_t *ip;
 int kps;
 {
-    allocated_bandwidth += kps;
+    ip->curusage += kps;
 }
 
-void deallocate_bandwidth(kps)
+void deallocate_bandwidth(ip, kps)
+interface_t *ip;
 int kps;
 {
-    assert(kps <= allocated_bandwidth);
-    allocated_bandwidth -= kps;
+    assert(kps <= ip->curusage);
+    ip->curusage -= kps;
 }
 
 /* ------------ */
@@ -1112,7 +1117,7 @@ disk_t *dp;
     dp->host->inprogress += 1;
     dp->inprogress = 1;
     sched(dp)->timestamp = time((time_t *)0);
-    allocate_bandwidth(sched(dp)->est_kps);
+    allocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
     idle_reason = 0;
 
     short_dump_state();
@@ -1198,7 +1203,7 @@ disk_t *dp;
     taper_busy = dumper->busy = 0;
     dp->host->inprogress -= 1;
     dp->inprogress = 0;
-    deallocate_bandwidth(sched(dp)->est_kps);
+    deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
 
     inside_dump_to_tape = 0;
     return failed;
@@ -1223,7 +1228,7 @@ void short_dump_state()
     wall_time = walltime_str(curclock());
 
     printf("driver: state time %s ", wall_time);
-    printf("free kps: %d space: %d taper: ", free_kps(), free_space());
+    printf("free kps: %d space: %d taper: ", free_kps((interface_t *)0), free_space());
     if(degraded_mode) printf("DOWN");
     else if(!taper_busy) printf("idle");
     else printf("writing");
@@ -1247,7 +1252,7 @@ char *str;
 
     printf("================\n");
     printf("driver state at time %s: %s\n", walltime_str(curclock()), str);
-    printf("free kps: %d, space: %d\n", free_kps(), free_space());
+    printf("free kps: %d, space: %d\n", free_kps((interface_t *)0), free_space());
     if(degraded_mode) printf("taper: DOWN\n");
     else if(!taper_busy) printf("taper: idle\n");
     else printf("taper: writing %s:%s.%d est size %ld\n", 
