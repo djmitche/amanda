@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.10 1998/01/05 06:03:27 george Exp $
+ * $Id: logfile.c,v 1.11 1998/01/09 00:03:07 jrj Exp $
  *
  * common log file writing routine
  */
@@ -164,7 +164,7 @@ char *datestamp;
     unsigned int seq;
     struct stat statbuf;
 
-    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log");
+    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
 
     for(seq = 0; 1; seq++) {	/* if you've got MAXINT files in your dir... */
 	ap_snprintf(seq_str, sizeof(seq_str), "%d", seq);
@@ -186,7 +186,7 @@ char *datestamp;
 
 static void open_log()
 {
-    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log");
+    logfile = vstralloc(getconf_str(CNF_LOGDIR), "/log", NULL);
 
     logfd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0666);
 
