@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.89 2002/03/11 18:07:17 martinea Exp $
+ * $Id: conffile.c,v 1.90 2002/03/22 15:00:12 martinea Exp $
  *
  * read configuration file
  */
@@ -100,7 +100,7 @@ typedef enum {
     SKIP, STANDARD, NOFULL, NOINC, HANOI, INCRONLY,
 
     /* exclude list */
-    LIST, EFILE, APPEND,
+    LIST, EFILE, APPEND, OPTIONAL,
 
     /* numbers */
     INFINITY, MULT1, MULT7, MULT1K, MULT1M, MULT1G,
@@ -1989,6 +1989,7 @@ keytab_t exclude_keytable[] = {
     { "LIST", LIST },
     { "FILE", EFILE },
     { "APPEND", APPEND },
+    { "OPTIONAL", OPTIONAL },
     { NULL, IDENT }
 };
 
@@ -1997,6 +1998,8 @@ static void get_exclude()
     int list, got_one = 0;
     keytab_t *save_kt;
     sl_t *exclude;
+    int optional = 0;
+    int append = 0;
 
     save_kt = keytable;
     keytable = exclude_keytable;
@@ -2015,12 +2018,19 @@ static void get_exclude()
 	if(tok == EFILE) get_conftoken(ANY);
     }
 
+    if(tok == OPTIONAL) {
+	get_conftoken(ANY);
+	optional = 1;
+    }
+
     if(tok == APPEND) {
 	get_conftoken(ANY);
+	append = 1;
     }
     else {
 	free_sl(exclude);
 	exclude = NULL;
+	append = 0;
     }
 
     while(tok == STRING) {
@@ -2034,8 +2044,11 @@ static void get_exclude()
 
     if(list == 0)
 	dpcur.exclude_file = exclude;
-    else
+    else {
 	dpcur.exclude_list = exclude;
+	if(!append || optional)
+	    dpcur.exclude_optional = optional;
+    }
 
     keytable = save_kt;
 }
@@ -2046,6 +2059,8 @@ static void get_include()
     int list, got_one = 0;
     keytab_t *save_kt;
     sl_t *include;
+    int optional = 0;
+    int append = 0;
 
     save_kt = keytable;
     keytable = exclude_keytable;
@@ -2064,12 +2079,19 @@ static void get_include()
 	if(tok == EFILE) get_conftoken(ANY);
     }
 
+    if(tok == OPTIONAL) {
+	get_conftoken(ANY);
+	optional = 1;
+    }
+
     if(tok == APPEND) {
 	get_conftoken(ANY);
+	append = 1;
     }
     else {
 	free_sl(include);
 	include = NULL;
+	append = 0;
     }
 
     while(tok == STRING) {
@@ -2083,8 +2105,11 @@ static void get_include()
 
     if(list == 0)
 	dpcur.include_file = include;
-    else
+    else {
 	dpcur.include_list = include;
+	if(!append || optional)
+	    dpcur.include_optional = optional;
+    }
 
     keytable = save_kt;
 }
