@@ -1,3 +1,8 @@
+2001-08-22 John R. Jackson (jrj@purdue.edu)
+
+	* tape-src/Makefile.am: Add chown/chgrp rules for ammt/amdd install
+	  so they end up like all the other Amanda programs.
+
 2001-08-16 John R. Jackson (jrj@purdue.edu)
 
 	* docs/Makefile.am: Fix PORTS.USAGE -> PORT.USAGE typo.
