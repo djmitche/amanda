@@ -1,3 +1,8 @@
+1998-07-07  John R. Jackson  <jrj@purdue.edu>
+
+	* changer-src/scsi-chio.c: move #include's so this will compile on
+	systems without <sys/mtio.h> (e.g. AIX).
+
 1998-07-06  John R. Jackson  <jrj@purdue.edu>
 
 	* client-src/sendsize.c (handle_dumpline): allow the dump block

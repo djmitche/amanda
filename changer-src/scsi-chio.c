@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.4 1998/06/13 06:13:22 oliva Exp $
+ *	$Id: scsi-chio.c,v 1.5 1998/07/07 16:56:38 jrj Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -13,11 +13,11 @@
 #include "config.h"
 #include "amanda.h"
 
+#if defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)
+
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
-
-#if defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)
 
 /* This include comes with Gerd Knor's SCSI media changer driver.
  * If you are porting to another system, this is the file that defines
