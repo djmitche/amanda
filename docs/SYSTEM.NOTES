@@ -2,7 +2,7 @@ Amanda 2.4 - System-Specific Installation Notes
 
 Please read the notes that correspond to the architectures you are
 installing for.  If you find additional gotchas, or anything incorrect
-in these notes, please send your updates to amanda-hackers@cs.umd.edu,
+in these notes, please send your updates to amanda-hackers@amanda.org,
 after checking that they are not known/fixed problems in the amanda
 patches page: http://www.amanda.org/patches.html
 

@@ -1,3 +1,7 @@
+2001-02-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* docs/SYSTEM.NOTES: change cs.umd.edu by amanda.org.
+
 2001-02-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/amindexd.c (uncompress_file): remove uncompressed
