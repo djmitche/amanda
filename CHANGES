@@ -42,6 +42,10 @@
 
 Version 2.4.0p1
 
+	amcheck now checks whether COMPRESS_PATH is executable, which
+	would prevent server-compression and indexing from working.
+	-oliva, reported by Peter Schultze <peter@mbi.ucla.edu>
+
 	fixed dump estimate regular expression for DU 4.0.
 	-Andreas Schmitz <schmitz@theorie.physik.uni-wuppertal.de>
 

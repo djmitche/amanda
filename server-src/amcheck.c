@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.38 1998/03/02 04:57:09 amcore Exp $
+ * $Id: amcheck.c,v 1.39 1998/04/01 09:52:23 amcore Exp $
  *
  * checks for common problems in server and clients
  */
@@ -598,6 +598,10 @@ int fd;
 		    indexdir);
 	}
     }
+
+    if (access(COMPRESS_PATH, X_OK) == -1)
+      fprintf(outf, "%s is not executable, server-compression and indexing will not work\n",
+	      COMPRESS_PATH);
 
     afree(datestamp);
     afree(label);
