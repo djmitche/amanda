@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.8.4.1.2.1 2000/12/24 23:15:59 jrjackson Exp $
+ * $Id: getconf.c,v 1.8.4.1.2.2 2001/07/19 22:15:16 jrjackson Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -88,7 +88,7 @@ char **argv;
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
-	error("could not find config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     }
 
     result = getconf_byname(parmname);
