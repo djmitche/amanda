@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.34 1999/04/10 19:35:26 kashmir Exp $
+ * $Id: amandad.c,v 1.35 1999/04/10 22:12:49 kashmir Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1032,8 +1032,11 @@ allocstream(as, handle)
 
     /* allocate a stream from the security layer and return */
     dh->netfd = security_stream_server(as->security_handle);
-    if (dh->netfd == NULL)
+    if (dh->netfd == NULL) {
+	dbprintf(("couldn't open stream to server: %s\n",
+	    security_geterror(as->security_handle)));
 	return (-1);
+    }
 
     /*
      * convert the stream into a numeric id that can be sent to the
