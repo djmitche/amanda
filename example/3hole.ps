@@ -16,6 +16,8 @@
 %% John R. Jackson, Technical Software Specialist, jrj@purdue.edu
 %%%%
 
+/pageSave save def
+
 %%%
 % If you are printing duplex, change the 0 to a 1 in the following line:
 %%%
@@ -982,6 +984,13 @@ MessString5 DrawMess
 		HavePage 1 eq {
 			*showpage		% dump the last page
 		} if
+
+		% Clean up.  Ideally this would be in the page epilog,
+		% but reporter.c only emits the "showpage".
+		end				% end the dict in which this
+						% showpage redefinition lives
+		pageSave restore		% free up memory
+		
 	} def
 %%%
 % Normally there would be an "end" here to match the "begin" for our
