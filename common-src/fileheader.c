@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.11.4.1.4.1.2.2 2002/01/14 00:27:27 martinea Exp $
+ * $Id: fileheader.c,v 1.11.4.1.4.1.2.3 2002/01/31 19:14:25 martinea Exp $
  *
  */
 
@@ -261,19 +261,27 @@ int buflen;
     }
 
     done=0;
-    do {	
+    do {
 	/* isolate the next line */
+	int max_char;
 	ptr_buf++;
 	start_buf = ptr_buf;
+	max_char = buflen - (ptr_buf - buffer);
+	nchars = max_char<sizeof(line)? max_char : sizeof(line) - 1;
 	for(s=line ; ptr_buf < start_buf+nchars; ptr_buf++, s++) {
 	    ch = *ptr_buf;
 	    if(ch == '\n') {
 		*s = '\0';
 		break;
 	    }
+	    else if(ch == '\0' || ch == '\014') {
+		done=1;
+		break;
+	    }
 	    *s = ch;
 	}
-	if(ptr_buf >= buffer+nchars) done = 1;
+	if (done == 1) break;
+	if(ptr_buf >= start_buf+nchars) done = 1;
 	line[sizeof(line)-1] = '\0';
 	s = line;
 	ch = *s++;
@@ -324,11 +332,9 @@ int buflen;
 		strncpy(file->recover_cmd,s2+1,sizeof(file->recover_cmd));
 		file->recover_cmd[sizeof(file->recover_cmd)-1] = '\0';
 	    }
-	    done = 1;
 	}
 #undef SC
-	else {
-	    done = 1;
+	else { /* ignore unknown line */
 	}
     } while(!done);
 
@@ -381,9 +387,6 @@ int buflen;
 		      if(file->is_partial != 0) {
 			strncat(buffer,"PARTIAL=YES\n",buflen-strlen(buffer));
 		      }
-		      ap_snprintf(number, sizeof(number), "BLOCKSIZE=%ld\n",
-				  file->blocksize);
-		      strncat(buffer, number, buflen-strlen(buffer));
 		      strncat(buffer,
 			"To restore, position tape at start of file and run:\n",
 			buflen-strlen(buffer));
@@ -396,6 +399,13 @@ int buflen;
 				       " skip=1",
 				       " |", file->uncompress_cmd,
 				       " ", file->recover_cmd,
+				       "\n",
+				       NULL);
+		      strncat(buffer, line, buflen-strlen(buffer));
+		      ap_snprintf(number, sizeof(number),
+				  "%ld", file->blocksize);
+		      line = newvstralloc(line, 
+				       "BLOCKSIZE=", number,
 				       "\n",
 				       "\014\n",	/* ?? */
 				       NULL);
