@@ -1,3 +1,18 @@
+1999-09-20 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/Makefile.am: use new amlogroll utility to rename the log
+	  file to the datestamped name.
+	* server-src/amcheck.c: ditto.
+	* server-src/amcleanup.sh.in: ditto and call all utilities with the
+	  config file name as an argument.
+	* server-src/amdump.sh.in: ditto and call all utilities with the
+	  config file name as an argument.
+	* server-src/amflush.c: ditto.
+	* server-src/amlogroll.c: new utility.
+	* server-src/driverio.c: ditto and call all utilities with the
+	  config file name as an argument.
+	* server-src/reporter.c: ditto.
+
 1999-09-20  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
 	* amlogroll.c: It was missing; copied from the 2.4.2 branch.
