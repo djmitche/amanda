@@ -140,7 +140,7 @@
 
 
 # CLIENT_LOGIN		--with-user=USERNAME
-#			Default: user that runs configure
+#			This flag *must* be specified
 #			The user to install as the owner of all Amanda
 #			programs and the user to switch to on client
 #			machines.
@@ -148,7 +148,7 @@
 
 
 # SETUID_GROUP		--with-group=GROUPNAME
-#			Default: group that configure is run under
+#			This flag *must* be specified
 #			The name of the group to install all files under.
 # SETUID_GROUP=bin
 

@@ -1,5 +1,14 @@
 Version 2.4.0
 
+	amrmtape updated to text database.  -oliva
+
+	incorrect NO-ROOM error when dumping directly to tape fixed.
+	-oliva
+
+	--with-user and --with-group become are now required.  -oliva
+
+	patch-system script much more configurable.  -oliva
+
 	amindexd must get an exact match for diskname. -oliva
 
 	fix serial number message in amflush

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.46.2.1 1998/01/24 06:02:13 amcore Exp $
+/* $Id: dumper.c,v 1.46.2.2 1998/01/27 19:10:04 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -300,6 +300,7 @@ char **main_argv;
 	    }
 	    handle = newstralloc(handle, argv[2]);
 	    taper_port = atoi(argv[3]);
+	    filename = newstralloc(filename, "<taper program>");
 	    hostname = newstralloc(hostname, argv[4]);
 	    diskname = newstralloc(diskname, argv[5]);
 	    level = atoi(argv[6]);
@@ -404,15 +405,15 @@ int outf, size;
  * written if it is full, or the remainder is zeroed if at eof.
  */
 {
-    int rc;
     cmd_t cmd;
-    off_t pos;
 
     spaceleft -= size;
     dataptr += size;
 
+ retry:
     if(size == 0) {	/* eof, zero rest of buffer */
 	memset(dataptr, '\0', spaceleft);
+	/* dataptr still points to the point where padding started */
 	spaceleft = 0;
     }
 
@@ -420,18 +421,38 @@ int outf, size;
 
 	NAUGHTY_BITS;
 
-	pos = lseek(outf, 0L, SEEK_CUR);
-	while((rc = write(outf, databuf, sizeof(databuf))) < sizeof(databuf)) {
-	    if(rc >= 0) {
-		/*
-		 * Assuming this means we ran out of space part way through,
-		 * go back to start of block and try again.
-		 *
-		 * This assumption may be false if we are catching signals.
-		 */
-		lseek(outf, pos, SEEK_SET);
-
-	    } else if(errno != ENOSPC) {
+	while((spaceleft = write(outf, databuf, sizeof(databuf)))
+	      < sizeof(databuf)) {
+	    if(spaceleft > 0) {
+		static unsigned remainder = 0;
+		dumpsize += (sizeof(databuf) - spaceleft + remainder) / 1024;
+		remainder = (sizeof(databuf) - spaceleft + remainder) % 1024;
+		log(L_WARNING,
+		    "retrying incomplete write to %s while dumping %s:%s",
+		    filename, hostname, diskname);
+		/* If only padding bytes remained, there's no need to
+		 * retry.  This works because, when padding bytes are
+		 * added, dataptr remains pointing to the first
+		 * padding byte.  dataptr-databuf is the number of
+		 * important bytes to be written, whereas spaceleft is
+		 * the number of bytes actually written.  If we wrote
+		 * them all, consider the operation a success.  */
+		if (dataptr - databuf > spaceleft) {
+		    spaceleft = sizeof(databuf);
+		    dataptr = databuf;
+		    if (remainder != 0) {
+			++dumpsize;
+		    }
+		    remainder = 0;
+		    return 0;
+		}
+		dataptr = databuf + sizeof(databuf) - spaceleft;
+	        memmove(databuf, databuf + spaceleft, dataptr - databuf);
+		if (size == 0) { /* must retry until succeeded */
+		    goto retry;
+		}
+		return 0;
+	    } else if(spaceleft < 0 && errno != ENOSPC) {
 		putresult("FAILED %s %s\n", handle,
 			  squotef("[data write: %s]", strerror(errno)));
 		return 1;
