@@ -1298,8 +1298,10 @@ Default:
 .IR yes .
 Whether to ask the backup program to update its
 database (e.g.\&
-.IR /etc/dumpdates )
-of time stamps.
+.IR /etc/dumpdates
+for DUMP or 
+.IR @GNUTAR_LISTED_INCREMENTAL_DIRX@
+for GNUTAR) of time stamps.
 This is normally enabled for daily backups and turned off
 for periodic archival runs.
 .TP
