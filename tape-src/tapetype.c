@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.13 2003/02/11 00:52:14 martinea Exp $
+ * $Id: tapetype.c,v 1.14 2003/02/14 12:54:55 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -145,6 +145,7 @@ void usage()
   fputs("usage: ", stderr);
   fputs(sProgName, stderr);
   fputs(" -h", stderr);
+  fputs(" [-c]", stderr);
   fputs(" [-b blocksize]", stderr);
   fputs(" [-e estsize]", stderr);
   fputs(" [-f tapedev]", stderr);
@@ -157,6 +158,7 @@ void help()
   usage();
   fputs("\
   -h			display this message\n\
+  -c			run hardware compression detection test only\n\
   -b blocksize		record block size (default: 32k)\n\
   -e estsize		estimated tape size (default: 1g == 1024m)\n\
   -f tapedev		tape device name (default: $TAPE)\n\
