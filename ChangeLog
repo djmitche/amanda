@@ -1,5 +1,8 @@
 2000-01-21  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
 
+	* configure.in (MAILER): Warn or print an error if not found,
+	depending on whether server code is disabled or not.
+
 	* server-src/reporter.c (output_tapeinfo): Report used tapes
 	regardless of tape errors.
 
