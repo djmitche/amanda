@@ -1,5 +1,10 @@
 2002-01-25 John R. Jackson (jrj@purdue.edu)
 
+	* server-src/driver.c: Log non-zero exit codes and signals from all
+	  the dumpers and taper.
+
+2002-01-25 John R. Jackson (jrj@purdue.edu)
+
 	* server-src/amindexd.c: Clean up reporting of errors by gethostby*()
 	  functions.  Make sure they always report what they were trying to
 	  look up, and don't bother reporting errno (it would be h_errno).
