@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.21 2001/07/10 20:51:20 jrjackson Exp $
+ * $Id: amcheck.c,v 1.50.2.22 2001/07/13 20:36:58 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1039,23 +1039,107 @@ int start_server_check(fd, do_localchk, do_tapechk)
 
 int remote_errors;
 FILE *outf;
+int amanda_port;
+
+#ifdef KRB4_SECURITY
+int kamanda_port;
+#endif
 
 static void handle_response P((proto_t *p, pkt_t *pkt));
+
+#define HOST_READY				((void *)0)
+#define HOST_ACTIVE				((void *)1)
+#define HOST_DONE				((void *)2)
+
+#define DISK_READY				((void *)0)
+#define DISK_ACTIVE				((void *)1)
+#define DISK_DONE				((void *)2)
+
+void start_host(hostp)
+    host_t *hostp;
+{
+    disk_t *dp;
+    char *req = NULL;
+    int req_len = 0;
+    int rc;
+    int disk_count;
+
+    if(hostp->up != HOST_READY) {
+	return;
+    }
+
+    req = vstralloc("SERVICE selfcheck\n",
+		    "OPTIONS ;\n",
+		    NULL);
+    req_len = strlen(req);
+    req_len += 128;				/* room for SECURITY ... */
+    req_len += 256;				/* room for non-disk answers */
+    disk_count = 0;
+    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	char *l;
+	int l_len;
+	char *o;
+
+	if(dp->up != DISK_READY) {
+	    continue;
+	}
+	o = optionstr(dp);
+	l = vstralloc(dp->program, 
+		      " ",
+		      dp->name,
+		      " 0 OPTIONS |",
+		      o,
+		      "\n",
+		      NULL);
+	l_len = strlen(l);
+	amfree(o);
+	if(req_len + l_len > MAX_DGRAM / 2) {	/* allow 2X for err response */
+	    amfree(l);
+	    break;
+	}
+	strappend(req, l);
+	req_len += l_len;
+	amfree(l);
+	dp->up = DISK_ACTIVE;
+	disk_count++;
+    }
+
+    if(disk_count == 0) {
+	amfree(req);
+	hostp->up = HOST_DONE;
+	return;
+    }
+
+#ifdef KRB4_SECURITY
+    if(hostp->disks->auth == AUTH_KRB4)
+	rc = make_krb_request(hostp->hostname, kamanda_port, req,
+			      hostp, conf_ctimeout, handle_response);
+    else
+#endif
+        rc = make_request(hostp->hostname, amanda_port, req,
+			  hostp, conf_ctimeout, handle_response);
+
+    req = NULL;				/* do not own this any more */
+
+    if(rc) {
+	/* couldn't resolve hostname */
+	fprintf(outf,
+		"ERROR: %s: could not resolve hostname\n", hostp->hostname);
+	remote_errors++;
+	hostp->up = HOST_DONE;
+    } else {
+	hostp->up = HOST_ACTIVE;
+    }
+}
 
 int start_client_checks(fd)
 int fd;
 {
-    disk_t *dp;
     host_t *hostp;
-    char *req = NULL;
-    int hostcount, rc, pid;
-    int amanda_port;
+    disk_t *dp;
+    int hostcount, pid;
     struct servent *amandad;
     int userbad = 0;
-
-#ifdef KRB4_SECURITY
-    int kamanda_port;
-#endif
 
     switch(pid = fork()) {
     case -1: error("could not fork client check: %s", strerror(errno));
@@ -1099,50 +1183,15 @@ int fd;
 
     hostcount = remote_errors = 0;
 
-    while(!empty(*origqp)) {
-	req = vstralloc("SERVICE selfcheck\n",
-			"OPTIONS ;\n",
-			NULL);
-	hostp = origqp->head->host;
-	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-	    char *t;
-	    char *o;
-
-	    remove_disk(origqp, dp);
-	    o = optionstr(dp);
-	    t = vstralloc(req,
-			  dp->program, 
-			  " ",
-			  dp->name,
-			  " 0 OPTIONS |",
-			  o,
-			  "\n",
-			  NULL);
-	    amfree(req);
-	    amfree(o);
-	    req = t;
+    for(dp = origqp->head; dp != NULL; dp = dp->next) {
+	hostp = dp->host;
+	if(hostp->up == HOST_READY) {
+	    start_host(hostp);
+	    hostcount++;
+	    check_protocol();
 	}
-	hostcount++;
-
-#ifdef KRB4_SECURITY
-	if(hostp->disks->auth == AUTH_KRB4)
-	    rc = make_krb_request(hostp->hostname, kamanda_port, req,
-				  hostp, conf_ctimeout, handle_response);
-	else
-#endif
-	    rc = make_request(hostp->hostname, amanda_port, req,
-			      hostp, conf_ctimeout, handle_response);
-
-	req = NULL;				/* do not own this any more */
-
-	if(rc) {
-	    /* couldn't resolve hostname */
-	    fprintf(outf,
-		    "ERROR: %s: could not resolve hostname\n", hostp->hostname);
-	    remote_errors++;
-	}
-	check_protocol();
     }
+
     run_protocol();
     amfree(msg);
 
@@ -1172,6 +1221,7 @@ proto_t *p;
 pkt_t *pkt;
 {
     host_t *hostp;
+    disk_t *dp;
     char *errstr;
     char *s;
     int ch;
@@ -1197,6 +1247,7 @@ pkt_t *pkt;
 		    hostp->hostname);
 	}
 	remote_errors++;
+	hostp->up = HOST_DONE;
 	return;
     }
 
@@ -1206,6 +1257,7 @@ pkt_t *pkt;
 	fprintf(outf, "ERROR: %s [mutual-authentication failed]\n",
 		hostp->hostname);
 	remote_errors++;
+	hostp->up = HOST_DONE;
 	return;
     }
 #endif
@@ -1224,6 +1276,7 @@ pkt_t *pkt;
     }
 #undef sc
 
+    hostp->up = HOST_READY;
     while(ch) {
 #define sc "ERROR"
 	if(strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
@@ -1239,8 +1292,15 @@ pkt_t *pkt;
 
 	    fprintf(outf, "ERROR: %s: %s\n", hostp->hostname, errstr);
 	    remote_errors++;
+	    hostp->up = HOST_DONE;
 	} else {
 	    skip_line(s, ch);
 	}
     }
+    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(dp->up == DISK_ACTIVE) {
+	    dp->up = DISK_DONE;
+	}
+    }
+    start_host(hostp);
 }
