@@ -1,5 +1,14 @@
 1998-12-08  John R. Jackson  <jrj@purdue.edu>
 
+	* Makefile.am: add the user-contributed area.
+	* contrib/README: describe the user-contributed area.
+	* contrib/dbbackup.README: README for Oracle database backup system.
+	* contrib/dbbackup.ksh: Oracle database backup system wrapper.
+	* contrib/dbbackup.sql: Oracle database backup system setup commands.
+	* contrib/dbbackup.tcl: Oracle database backup system main body.
+
+1998-12-08  John R. Jackson  <jrj@purdue.edu>
+
 	* amplot/Makefile.am: fix install rule when DESTDIR is non-null,
 	compliments of Henning P. Schmiedehausen <hps@tanstaafl.de>.
 
