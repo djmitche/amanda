@@ -1140,6 +1140,7 @@ case "$target" in
   *-sysv4.2uw2*)
 			AC_DEFINE(UWARE_TAPEIO,1,[Define on UnixWare. ])
 			;;
+  *-sco3.2v4*)
   *-sco3.2v5*)
 			xenix_tapeio=yes
 			AC_DEFINE(STATFS_SCO_OS5,1,[Define on SCO OS5. ])

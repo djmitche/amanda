@@ -1,5 +1,9 @@
 2003-03-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* configure.in: Compile on *-sco3.2v4*
+
+2003-03-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* configure.in: Use '=' instead of '=='.
 
 2003-03-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
