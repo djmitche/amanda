@@ -65,7 +65,7 @@ char line[MAX_LINE];
 char *argv[MAX_ARGS+1];
 int argc;
 int interactive;
-char *handle;
+char *handle = NULL;
 char loginid[80];
 char *indexfile;
 
@@ -82,9 +82,13 @@ static int srvcompress;
 
 char errfname[MAX_LINE];
 FILE *errf;
-char *filename, *hostname, *diskname, *options, *progname;
+char *filename = NULL;
+char *hostname = NULL;
+char *diskname = NULL;
+char *options = NULL;
+char *progname = NULL;
 int level;
-char *dumpdate;
+char *dumpdate = NULL;
 char datestamp[80];
 
 int datafd = -1;
@@ -216,14 +220,21 @@ char **main_argv;
 	    /* FILE-DUMP handle filename host disk level dumpdate progname options */
 
 	    assert(argc == 9);
-	    handle = argv[2];
-	    filename = argv[3];
-	    hostname = argv[4];
-	    diskname = argv[5];
+	    if(handle) free(handle);
+	    if(filename) free(filename);
+	    if(hostname) free(hostname);
+	    if(diskname) free(diskname);
+	    if(dumpdate) free(dumpdate);
+	    if(progname) free(progname);
+	    if(options) free(options);
+	    handle = stralloc(argv[2]);
+	    filename = stralloc(argv[3]);
+	    hostname = stralloc(argv[4]);
+	    diskname = stralloc(argv[5]);
 	    level = atoi(argv[6]);
-	    dumpdate = argv[7];
-	    progname = argv[8];
-	    options = argv[9];
+	    dumpdate = stralloc(argv[7]);
+	    progname = stralloc(argv[8]);
+	    options = stralloc(argv[9]);
 
 	    if((outfd = open(filename, O_WRONLY|O_CREAT, 0666)) == -1) {
 		putresult("FAILED %s %s\n", handle,
@@ -260,14 +271,20 @@ char **main_argv;
 
 	    /* PORT-DUMP handle port host disk level dumpdate progname options */
 	    assert(argc == 9);
-	    handle = argv[2];
+	    if(handle) free(handle);
+	    if(hostname) free(hostname);
+	    if(diskname) free(diskname);
+	    if(dumpdate) free(dumpdate);
+	    if(progname) free(progname);
+	    if(options) free(options);
+	    handle = stralloc(argv[2]);
 	    taper_port = atoi(argv[3]);
-	    hostname = argv[4];
-	    diskname = argv[5];
+	    hostname = stralloc(argv[4]);
+	    diskname = stralloc(argv[5]);
 	    level = atoi(argv[6]);
-	    dumpdate = argv[7];
-	    progname = argv[8];
-	    options = argv[9];
+	    dumpdate = stralloc(argv[7]);
+	    progname = stralloc(argv[8]);
+	    options = stralloc(argv[9]);
 
 	    /* connect outf to taper port */
 

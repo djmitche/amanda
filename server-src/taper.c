@@ -318,7 +318,9 @@ int rdpipe, wrpipe;
 	    exit(0);
 
 	default:
-	    putresult("BAD-COMMAND %s\n", squote(argv[1]));
+	    handle = stralloc(argv[1]);
+	    putresult("BAD-COMMAND %s\n", squote(handle));
+	    free(handle);
 	    break;
 	}
     }
