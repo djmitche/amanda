@@ -2,11 +2,26 @@
 *
 * File:          $RCSfile: extract_list.c,v $
 *
-* Revision:      $Revision: 1.3 $
-* Last Edited:   $Date: 1997/04/17 09:16:53 $
-* Author:        $Author: amcore $
+* Revision:      $Revision: 1.1 $
+* Last Edited:   $Date: 1997/05/13 02:15:32 $
+* Author:        $Author: george $
 *
 * History:       $Log: extract_list.c,v $
+* History:       Revision 1.1  1997/05/13 02:15:32  george
+* History:       Move amrecover from client-src to recover-src.
+* History:       Affected files are:
+* History:          amrecover.c
+* History:          amrecover.h
+* History:          display_commands.c
+* History:          extract_list.c
+* History:          help.c
+* History:          set_commands.c
+* History:          uparse.c
+* History:          uparse.h
+* History:          uparse.y
+* History:          uscan.c
+* History:          uscan.l
+* History:
 * History:       Revision 1.3  1997/04/17 09:16:53  amcore
 * History:       amrecover failed to restore from an uncompressed dump image
 * History:       because I read the amrestore man page incorrectly. It now

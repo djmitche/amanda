@@ -4,13 +4,28 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/04/21 08:48:26 $
-* Author:        $Author: amcore $
+* Revision:      $Revision: 1.1 $
+* Last Edited:   $Date: 1997/05/13 02:15:35 $
+* Author:        $Author: george $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: set_commands.c,v $
+* History:       Revision 1.1  1997/05/13 02:15:35  george
+* History:       Move amrecover from client-src to recover-src.
+* History:       Affected files are:
+* History:          amrecover.c
+* History:          amrecover.h
+* History:          display_commands.c
+* History:          extract_list.c
+* History:          help.c
+* History:          set_commands.c
+* History:          uparse.c
+* History:          uparse.h
+* History:          uparse.y
+* History:          uscan.c
+* History:          uscan.l
+* History:
 * History:       Revision 1.2  1997/04/21 08:48:26  amcore
 * History:       These changes cleanup a number of problems related to getting
 * History:       and maintaining a consistent directory listing as the disk, host,

@@ -4,14 +4,29 @@
 * Part of:       amrecover
 *
 * Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:29:58 $
-* Author:        $Author: amcore $
+* Last Edited:   $Date: 1997/05/13 02:15:33 $
+* Author:        $Author: george $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: help.c,v $
-* History:       Revision 1.1  1997/03/15 21:29:58  amcore
-* History:       Initial revision
+* History:       Revision 1.1  1997/05/13 02:15:33  george
+* History:       Move amrecover from client-src to recover-src.
+* History:       Affected files are:
+* History:          amrecover.c
+* History:          amrecover.h
+* History:          display_commands.c
+* History:          extract_list.c
+* History:          help.c
+* History:          set_commands.c
+* History:          uparse.c
+* History:          uparse.h
+* History:          uparse.y
+* History:          uscan.c
+* History:          uscan.l
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:29:58  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.2  1996/11/29 09:52:12  alan
 * History:       rearranged, added lpwd, lcd, extract

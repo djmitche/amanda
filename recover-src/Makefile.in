@@ -138,7 +138,17 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 LDADD =			../common-src/libamanda.a
 
-sbin_PROGRAMS =		amrestore
+sbin_PROGRAMS =		amrecover			amrestore
+
+amrecover_SOURCES =	amrecover.c			amrecover.h	\
+			display_commands.c		extract_list.c	\
+			help.c				set_commands.c	\
+			uparse.y			uscan.l
+
+EXTRA_DIST =		uparse.h
+
+amrecover_LDADD =	../common-src/libamanda.a @LEXLIB@
+YFLAGS =		-d
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES = 
@@ -149,27 +159,35 @@ DEFS = @DEFS@ -I. -I$(srcdir) -I..
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
+amrecover_OBJECTS =  amrecover.o display_commands.o extract_list.o \
+help.o set_commands.o uparse.o uscan.o
+amrecover_DEPENDENCIES =  ../common-src/libamanda.a
+amrecover_LDFLAGS = 
 amrestore_SOURCES = amrestore.c
 amrestore_OBJECTS =  amrestore.o
 amrestore_LDADD = $(LDADD)
 amrestore_DEPENDENCIES =  ../common-src/libamanda.a
 amrestore_LDFLAGS = 
+LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+LEXLIB = @LEXLIB@
 CFLAGS = @CFLAGS@
 LINK = $(CC) $(LDFLAGS) -o $@
-DIST_COMMON =  Makefile.am Makefile.in
+DIST_COMMON =  Makefile.am Makefile.in uparse.c uscan.c
 
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = gnutar
-DEP_FILES =  .deps/amrestore.P
-SOURCES = amrestore.c
-OBJECTS = amrestore.o
+DEP_FILES =  .deps/amrecover.P .deps/amrestore.P \
+.deps/display_commands.P .deps/extract_list.P .deps/help.P \
+.deps/set_commands.P .deps/uparse.P .deps/uscan.P
+SOURCES = $(amrecover_SOURCES) amrestore.c
+OBJECTS = $(amrecover_OBJECTS) amrestore.o
 
 default: all
 
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .h .l .o .y
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --foreign recover-src/Makefile
 
@@ -216,9 +234,25 @@ distclean-compile:
 
 maintainer-clean-compile:
 
+amrecover: $(amrecover_OBJECTS) $(amrecover_DEPENDENCIES)
+	@rm -f amrecover
+	$(LINK) $(amrecover_LDFLAGS) $(amrecover_OBJECTS) $(amrecover_LDADD) $(LIBS)
+
 amrestore: $(amrestore_OBJECTS) $(amrestore_DEPENDENCIES)
 	@rm -f amrestore
 	$(LINK) $(amrestore_LDFLAGS) $(amrestore_OBJECTS) $(amrestore_LDADD) $(LIBS)
+.y.c:
+	$(YACC) $(YFLAGS) $< && mv y.tab.c $@
+	if test -f y.tab.h; then \
+	if cmp -s y.tab.h $*.h; then rm -f y.tab.h; else mv y.tab.h $*.h; fi; \
+	else :; fi
+.y.h:
+	$(YACC) $(YFLAGS) $< && mv y.tab.c $@
+	if test -f y.tab.h; then \
+	if cmp -s y.tab.h $*.h; then rm -f y.tab.h; else mv y.tab.h $*.h; fi; \
+	else :; fi
+.l.c:
+	$(LEX) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@
 
 tags: TAGS
 

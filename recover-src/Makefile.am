@@ -8,7 +8,17 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
  
 LDADD =			../common-src/libamanda.a
 
-sbin_PROGRAMS =		amrestore
+sbin_PROGRAMS =		amrecover			amrestore
+
+amrecover_SOURCES =	amrecover.c			amrecover.h	\
+			display_commands.c		extract_list.c	\
+			help.c				set_commands.c	\
+			uparse.y			uscan.l
+
+EXTRA_DIST =		uparse.h
+
+amrecover_LDADD =	../common-src/libamanda.a @LEXLIB@
+YFLAGS =		-d
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS)"; \

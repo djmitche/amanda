@@ -4,13 +4,28 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.4 $
-* Last Edited:   $Date: 1997/05/05 20:50:02 $
-* Author:        $Author: oliva $
+* Revision:      $Revision: 1.1 $
+* Last Edited:   $Date: 1997/05/13 02:15:29 $
+* Author:        $Author: george $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: amrecover.c,v $
+* History:       Revision 1.1  1997/05/13 02:15:29  george
+* History:       Move amrecover from client-src to recover-src.
+* History:       Affected files are:
+* History:          amrecover.c
+* History:          amrecover.h
+* History:          display_commands.c
+* History:          extract_list.c
+* History:          help.c
+* History:          set_commands.c
+* History:          uparse.c
+* History:          uparse.h
+* History:          uparse.y
+* History:          uscan.c
+* History:          uscan.l
+* History:
 * History:       Revision 1.4  1997/05/05 20:50:02  oliva
 * History:       changed functions definitions so that they do not use P((args));
 * History:       unprotoized argument declarations were provided instead.
