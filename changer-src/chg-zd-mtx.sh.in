@@ -710,7 +710,7 @@ done
 firstslot=${firstslot:-'-1'}				# default: mtx status
 lastslot=${lastslot:-'-1'}				# default: mtx status
 cleanslot=${cleanslot:-'-1'}				# default: -1
-cleancycle=${cleanslot:-'120'}				# default: two minutes
+cleancycle=${cleancycle:-'120'}				# default: two minutes
 if [ -z "$offline_before_unload" -a -n "$OFFLINE_BEFORE_UNLOAD" ]; then
 	offline_before_unload=$OFFLINE_BEFORE_UNLOAD	# (old name)
 fi
