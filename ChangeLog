@@ -1,3 +1,8 @@
+1998-06-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* restore-src/amrestore.c (restore): fixed -p flag (and amrecover)
+	should not dup2( A, B ); aclose(A) when A == B
+
 1998-06-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* client-src/sendsize.c (getsize_dump): use killpgrp

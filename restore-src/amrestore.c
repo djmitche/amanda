@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.25 1998/05/27 23:16:49 jrj Exp $
+ * $Id: amrestore.c,v 1.26 1998/06/11 22:58:58 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -246,12 +246,16 @@ int isafile;
 	    break;
 	case 0:
 	    aclose(outpipe[1]);
-	    if(dup2(outpipe[0], 0) == -1)
-		error("error [dup2 pipe: %s]", strerror(errno));
-	    aclose(outpipe[0]);
-	    if(dup2(dest, 1) == -1)
-		error("error [dup2 dest: %s]", strerror(errno));
-	    aclose(dest);
+	    if(outpipe[0] != 0) {
+		if(dup2(outpipe[0], 0) == -1)
+		    error("error [dup2 pipe: %s]", strerror(errno));
+		aclose(outpipe[0]);
+	    }
+	    if(dest != 1) {
+		if(dup2(dest, 1) == -1)
+		    error("error [dup2 dest: %s]", strerror(errno));
+		aclose(dest);
+	    }
 	    execlp(COMPRESS_PATH, COMPRESS_PATH, (char *)0);
 	    error("could not exec %s: %s", COMPRESS_PATH, strerror(errno));
 	}
@@ -278,12 +282,16 @@ int isafile;
 	    break;
 	case 0:
 	    aclose(outpipe[1]);
-	    if(dup2(outpipe[0], 0) < 0)
-		error("dup2 pipe: %s", strerror(errno));
-	    aclose(outpipe[0]);
-	    if(dup2(dest, 1) < 0)
-		error("dup2 dest: %s", strerror(errno));
-	    aclose(dest);
+	    if(outpipe[0] != 0) {
+		if(dup2(outpipe[0], 0) < 0)
+		    error("dup2 pipe: %s", strerror(errno));
+		aclose(outpipe[0]);
+	    }
+	    if(dest != 1) {
+		if(dup2(dest, 1) < 0)
+		    error("dup2 dest: %s", strerror(errno));
+		aclose(dest);
+	    }
 	    (void) execlp(UNCOMPRESS_PATH, UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 			  UNCOMPRESS_OPT,
