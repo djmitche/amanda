@@ -1,3 +1,8 @@
+1998-12-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/driver.c (start_some_dumps): Use the holdp returned
+	by find_diskspace for a big_dumper in degraded mode.
+
 1998-12-11  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/SYSTEM.NOTES (Ultrix): recommend gcc or egcs
