@@ -22,7 +22,8 @@ EXTRA_PROGRAMS =	seagate-changer
 
 libexec_SCRIPTS =	@BUILD_CHANGER_SCRIPTS_LIBEXEC@
 
-EXTRA_SCRIPTS =		chg-generic hp-changer no-changer rth-changer
+EXTRA_SCRIPTS =		chg-generic	hp-changer	no-changer	\
+			rth-changer	chs-changer
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; for p in $$list; do \

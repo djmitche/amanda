@@ -217,7 +217,7 @@ AMCLIENT_EXTRA_OBJS=
 BUILD_RECOVER_PROGS_SBIN="amrecover"
 
 BUILD_CHANGER_PROGS_LIBEXEC="seagate-changer"
-BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-generic hp-changer no-changer rth-changer"
+BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-generic hp-changer no-changer rth-changer chs-changer"
 
 BUILD_TAPE_LIB="libamtape.la"
 
@@ -2019,7 +2019,7 @@ AC_OUTPUT( \
 									\
 	changer-src/chg-generic.sh	changer-src/hp-changer.sh	\
 	changer-src/no-changer.sh	changer-src/rth-changer.pl	\
-	changer-src/Makefile						\
+	changer-src/chs-changer.sh	changer-src/Makefile		\
 									\
 	recover-src/Makefile						\
 									\
