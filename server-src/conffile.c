@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.20 1997/10/17 06:26:44 george Exp $
+ * $Id: conffile.c,v 1.21 1997/11/06 07:32:20 amcore Exp $
  *
  * read configuration file
  */
@@ -60,7 +60,7 @@ typedef enum {
     /* config parameters */
     INCLUDEFILE,
     ORG, MAILTO, DUMPUSER,
-    TAPECYCLE, TAPEDEV, LABELSTR,
+    TAPECYCLE, TAPEDEV, CHNGRDEV, CHNGRFILE, LABELSTR,
     BUMPSIZE, BUMPDAYS, BUMPMULT,
     TAPELIST, DISKFILE, INFOFILE, LOGFILE,
     DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, TIMEOUT,
@@ -135,6 +135,8 @@ static val_t conf_mailto;
 static val_t conf_dumpuser;
 static val_t conf_tapedev;
 static val_t conf_tpchanger;
+static val_t conf_chngrdev;
+static val_t conf_chngrfile;
 static val_t conf_labelstr;
 static val_t conf_tapelist;
 static val_t conf_infofile;
@@ -169,7 +171,8 @@ static dumptype_t dpcur;
 
 static interface_t ifcur;
 
-static int seen_org, seen_mailto, seen_dumpuser, seen_tapedev, seen_tpchanger;
+static int seen_org, seen_mailto, seen_dumpuser;
+static int seen_tapedev, seen_tpchanger, seen_chngrdev, seen_chngrfile;
 static int seen_labelstr, seen_runtapes, seen_maxdumps;
 static int seen_tapelist, seen_infofile, seen_diskfile, seen_diskdir;
 static int seen_logfile, seen_bumpsize, seen_bumpmult, seen_bumpdays;
@@ -284,6 +287,8 @@ struct byname {
     { "DUMPUSER", CNF_DUMPUSER, STRING },
     { "TAPEDEV", CNF_TAPEDEV, STRING },
     { "TPCHANGER", CNF_TPCHANGER, STRING },
+    { "CHANGERDEV", CNF_CHNGRDEV, STRING },
+    { "CHANGERFILE", CNF_CHNGRFILE, STRING },
     { "LABELSTR", CNF_LABELSTR, STRING },
     { "TAPELIST", CNF_TAPELIST, STRING },
     { "DISKFILE", CNF_DISKFILE, STRING },
@@ -341,6 +346,8 @@ confparm_t parm;
     case CNF_DUMPUSER: return seen_dumpuser;
     case CNF_TAPEDEV: return seen_tapedev;
     case CNF_TPCHANGER: return seen_tpchanger;
+    case CNF_CHNGRDEV: return seen_chngrdev;
+    case CNF_CHNGRFILE: return seen_chngrfile;
     case CNF_LABELSTR: return seen_labelstr;
     case CNF_RUNTAPES: return seen_runtapes;
     case CNF_MAXDUMPS: return seen_maxdumps;
@@ -418,6 +425,8 @@ confparm_t parm;
     case CNF_DUMPUSER: r = conf_dumpuser.s; break;
     case CNF_TAPEDEV: r = conf_tapedev.s; break;
     case CNF_TPCHANGER: r = conf_tpchanger.s; break;
+    case CNF_CHNGRDEV: r = conf_chngrdev.s; break;
+    case CNF_CHNGRFILE: r = conf_chngrfile.s; break;
     case CNF_LABELSTR: r = conf_labelstr.s; break;
     case CNF_TAPELIST: r = conf_tapelist.s; break;
     case CNF_INFOFILE: r = conf_infofile.s; break;
@@ -502,6 +511,20 @@ static void init_defaults()
 #endif
 		);
     conf_tpchanger.s = newstralloc(conf_tpchanger.s, "");
+    conf_chngrdev.s = newstralloc(conf_chngrdev.s,
+#ifdef DEFAULT_CHANGER_DEVICE
+				  DEFAULT_CHANGER_DEVICE
+#else
+				  "/dev/null"
+#endif
+				  );
+    conf_chngrfile.s = newstralloc(conf_chngrfile.s,
+#ifdef LOG_DIR
+				   LOG_DIR "/changer-status"
+#else
+				   "/usr/adm/amanda/changer-status"
+#endif
+	);
     conf_labelstr.s = newstralloc(conf_labelstr.s, ".*");
     conf_tapelist.s = newstralloc(conf_tapelist.s, "tapelist");
     conf_infofile.s = newstralloc(conf_infofile.s,
@@ -544,7 +567,8 @@ static void init_defaults()
     /* defaults for internal variables */
 
     seen_org = seen_mailto = seen_dumpuser = seen_tapedev = 0;
-    seen_tpchanger = seen_labelstr = seen_runtapes = seen_maxdumps = 0;
+    seen_tpchanger = seen_chngrdev = seen_chngrfile = 0;
+    seen_labelstr = seen_runtapes = seen_maxdumps = 0;
     seen_tapelist = seen_infofile = seen_diskfile = seen_diskdir = 0;
     seen_logfile = seen_bumpsize = seen_bumpmult = seen_bumpdays = 0;
     seen_tapetype = seen_dumpcycle = seen_maxcycle = seen_tapecycle = 0;
@@ -699,6 +723,8 @@ keytab_t main_keytable[] = {
     { "TAPETYPE", TAPETYPE },
     { "TIMEOUT", TIMEOUT },	/* XXX - historical */
     { "TPCHANGER", TPCHANGER },
+    { "CHANGERDEV", CHNGRDEV },
+    { "CHANGERFILE", CHNGRFILE },
     { NULL, IDENT }
 };
 
@@ -728,6 +754,8 @@ static int read_confline()
     case RUNTAPES:  get_simple(&conf_runtapes,  &seen_runtapes,  INT);    break;
     case TAPEDEV:   get_simple(&conf_tapedev,   &seen_tapedev,   STRING); break;
     case TPCHANGER: get_simple(&conf_tpchanger, &seen_tpchanger, STRING); break;
+    case CHNGRDEV:  get_simple(&conf_chngrdev,  &seen_chngrdev,  STRING); break;
+    case CHNGRFILE: get_simple(&conf_chngrfile, &seen_chngrfile, STRING); break;
     case LABELSTR:  get_simple(&conf_labelstr,  &seen_labelstr,  STRING); break;
     case TAPELIST:  get_simple(&conf_tapelist,  &seen_tapelist,  STRING); break;
     case INFOFILE:  get_simple(&conf_infofile,  &seen_infofile,  STRING); break;
@@ -2047,6 +2075,8 @@ dump_configuration()
     printf("conf_dumpuser = \"%s\"\n", getconf_str(CNF_DUMPUSER));
     printf("conf_tapedev = \"%s\"\n", getconf_str(CNF_TAPEDEV));
     printf("conf_tpchanger = \"%s\"\n", getconf_str(CNF_TPCHANGER));
+    printf("conf_chngrdev = \"%s\"\n", getconf_str(CNF_CHNGRDEV));
+    printf("conf_chngrfile = \"%s\"\n", getconf_str(CNF_CHNGRFILE));
     printf("conf_labelstr = \"%s\"\n", getconf_str(CNF_LABELSTR));
     printf("conf_tapelist = \"%s\"\n", getconf_str(CNF_TAPELIST));
     printf("conf_infofile = \"%s\"\n", getconf_str(CNF_INFOFILE));

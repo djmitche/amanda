@@ -202,32 +202,27 @@
 # DEFAULT_TAPE_SERVER=kipuka
 
 
-#DEFAULT_TAPE_DEVICE	--with-tape-device=TAPE_DEVICE
-#			Default: /dev/null
-#			This is the name of the no rewinding tape device
-#			on the the DEFAULT_TAPE_SERVER machine for
-#			restoring backups.
-# DEFAULT_TAPE_DEVICE=/dev/rmt/0bn
-
-
-# TAPE_REWIND_DEVICE	--with-rew-tape=
-#			Default: /dev/rmt/[0-9]b or /dev/rst[0-9]
-#			This sets the default rewinding tape device.  The
-#			configure script will search for the lowest numbered
-#			/dev/rmt/[0-9]b device and if none exist, it will
-#			use the lowest numbered	/dev/rst[0-9] device.  If
-#			no tape device is found, /dev/null is used.
-# TAPE_REWIND_DEVICE=/dev/rmt/0b
-
-
-# TAPE_NO_REWIND_DEVICE	--with-norew-tape=
+# DEFAULT_TAPE_DEVICE	--with-tape-device=TAPE_DEVICE
 #			Default: /dev/rmt/[0-9]bn or /dev/nrst[0-9]
 #			This sets the default no rewinding tape device.  The
 #			configure script will search for the lowest numbered
 #			/dev/rmt/[0-9]bn device and if none exist, it will
 #			use the lowest numbered /dev/nrst[0-9] device.  If
 #			no tape device is found, /dev/null is used.
-# TAPE_NO_REWIND_DEVICE=/dev/rmt/0bn
+#
+#			This is also the name of the no rewinding tape device
+#			on the the DEFAULT_TAPE_SERVER machine for
+#			restoring backups.
+# DEFAULT_TAPE_DEVICE=/dev/rmt/0bn
+# DEFAULT_TAPE_DEVICE=/dev/nrst0
+
+
+# DEFAULT_CHANGER_DEVICE --with-changer-device=CHANGER_DEVICE
+#			Default: /dev/ch0 or /dev/null
+#			This sets the default tape changer device.
+#			If /dev/ch0 exists, it is used, otherwise, no
+#			changer device is defined.
+# DEFAULT_CHANGER_DEVICE=/dev/ch0
 
 
 # USE_FQDN		--with-fqdn

@@ -25,8 +25,13 @@ The name of this changer program is given by the new "tpchanger" variable
 in the amanda.conf file.  Example entry:
 
 	tpchanger "chg-generic"		# use generic tape changer script
+	changerfile "/etc/amanda/changer.conf"    # changer configuration
 
-The older tapedev parameter is ignored if a tpchanger program is specified.
+The older tapedev parameter is ignored if a tpchanger program is
+specified, unless the changer program itself reads tapedev from
+amanda.conf.  chg-generic doesn't, as it reads all its configuration
+arguments from its own configuration file, specified in changerfile.
+
 If the tpchanger program does not begin with a '/', then amanda will expect
 it to reside in libexecdir, and possibly have the version suffix appended
 depending on how amanda was configured.
@@ -123,11 +128,13 @@ is loaded: all tapes are in their slots and the changer arm is docked away
 from the slots.
 
 Nevertheless, Amanda requires its tape-changer scripts to maintain the
-notion of a "current" position.  This is for performance reasons: as tapes
-tend to be loaded into the rack in order, and Amanda uses them in order,
-the next tape to use can be found much quicker if the position of the
-previous one is remembered.  As an example, the chg-generic.sh script
-maintains the current position in a "chg-generic.state" file.
+notion of a "current" position.  This is for performance reasons: as
+tapes tend to be loaded into the rack in order, and Amanda uses them
+in order, the next tape to use can be found much quicker if the
+position of the previous one is remembered.  As an example, the
+chg-generic.sh script maintains the current position in a
+"chg-generic.state" file (or any other file specified in a `statefile'
+line in the changer configuration file).
 
 Amanda does not care how slots are specified: they could be numbered 0 to
 N-1, numbered 1 to N, or even designated by letter, A .. Z.  The only
@@ -217,3 +224,53 @@ the preferred tape isn't present and nothing can be done, Amanda now picks
 the first tape (starting at the current position) that matches the
 labelstr, and is not active, regardless of whether it is the preferred
 tape.
+
+
+7. BUILT-IN TAPE CHANGERS
+
+no-changer:
+
+This is a poor man's tape changer, as it requires the backup operator
+to change tapes manually.  It expects `tapedev' to point to a valid
+tape device, and stores some status data in files whose names start
+with the `changerfile'.  `changerdev' is ignored.
+
+chg-generic:
+
+A generic tape changer script that allows multiple tape drives in a
+single host to emulate a tape changer.  It ignores `tapedev' and
+`changerdev', as `changerfile' may specify several tape devices to be
+used.  A sample configuration file can be found in
+example/chg-generic.conf.
+
+chs-changer:
+
+A tape changer script very similar to chg-generic, that uses the `chs'
+program to change tapes.  As in chg-generic, `tapedev' and
+`changerdev' are ignored, whereas `changerfile' names its
+configuration file, similar to chg-generic.conf.
+
+hp-changer:
+
+A mtx-based tape changer script.  `tapedev' must specify the tape
+device controlled by the mtx program, but `changerdev' is ignored.
+`changerfile' must specify a prefix for status files maintained by
+this script.  If `changerfile' is defined as
+`/usr/adm/amanda/csd/changer', this script will maintain files named
+`changer-clean' and `changer-access' in the log directory.
+
+rth-changer:
+
+A perl5 script that controls an HPc1553 tape drive via a Peripheral
+Vision Inc. SCSI control subsystem that interprets commands sent on
+the SCSI bus.  It expects `tapedev' to specify the tape device to be
+used.  `changerfile' and `changerdev' are ignored.
+
+seagate-changer:
+
+A C program that relies on the tape changer interface specified in
+chio.h (Gerd Knor's SCSI media changer driver, a Linux kernel loadable
+module).  `tapedev' specifies the tape device to be used;
+`changer_dev' is the device used to talk to the kernel module (usually
+/dev/ch0), and `changerfile' specifies a filename in which the current
+slot number will be stored.

@@ -35,13 +35,22 @@ exec_prefix=@exec_prefix@
 libexecdir=@libexecdir@
 
 pname="chs-changer"
-ourconf="chs-changer.conf"
-ourstate="chs-changer.state"
 
 PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
-MT_FILE_FLAG=@MT_FILE_FLAG@
+CHS=@CHS@
+MT=@MT@
+MTF=@MT_FILE_FLAG@
+
+USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
+if test "$USE_VERSION_SUFFIXES" = "yes"; then
+	SUF="-@VERSION@"
+else
+	SUF=
+fi
+
+ourconf=`getconf$SUF changerfile`
 
 # read in some config parameters
 
@@ -87,6 +96,12 @@ ejectdelay=`awk '$1 == "ejectdelay" {print $2}' $ourconf 2>/dev/null`
 if [ "$ejectdelay" = "" ]; then
 	echo "<none> $pname: ejectdelay not specified in $ourconf"
 	ejectdelay=0
+fi
+
+ourstate=`awk '$1 == "statefile" {print $2}' $outconf 2>/dev/null`
+if [ "$outstate" = "" ]; then
+	echo "<none> $pname: statefile not specified in $outconf"
+	exit 2
 fi
 
 # read in state: only curslot and curloaded at the present time
@@ -243,7 +258,7 @@ if [ $ejectslot -eq 1 ]; then	# eject the tape from the drive
 	if [ $multieject -eq 1 ]; then
 		loopslot=$curslot
 		while [ $loopslot -lt $newslot ]; do
-			mt $MT_FILE_FLAG $device offline >/dev/null 2>&1
+			$MT $MTF $device offline >/dev/null 2>&1
 			if [ $? -ne 0 ]; then
 				echo "$newslot $device: unable to change slot $loopslot"
 				exit 2
@@ -253,8 +268,8 @@ if [ $ejectslot -eq 1 ]; then	# eject the tape from the drive
 	fi
   
 	# second, try to unload the device
-	mt $MT_FILE_FLAG $device offline >/dev/null 2>&1
-	chs deselect -d1 -s$curslot >/dev/null 2>&1
+	$MT $MTF $device offline >/dev/null 2>&1
+	$CHS deselect -d1 -s$curslot >/dev/null 2>&1
 	if [ $? -ne 0 ]; then
 		#
 		# XXX if the changer-specific eject command can distinguish
@@ -284,7 +299,7 @@ if [ \( $loadslot -eq 1 \) -a \( \( $curloaded -ne 1 \) -o \( \( $curloaded -eq 
 		exit 2
 	fi
 
-	chs select -s$newslot -d1 >/dev/null 2>&1
+	$CHS select -s$newslot -d1 >/dev/null 2>&1
 	if [ $? -ne 0 ]; then
 		echo "tape load from slot $newslot failed"
 		exit 2
@@ -292,7 +307,7 @@ if [ \( $loadslot -eq 1 \) -a \( \( $curloaded -ne 1 \) -o \( \( $curloaded -eq 
 	sleep 60
 
 	# second, try to rewind the device
-	mt $MT_FILE_FLAG $device rewind >/dev/null 2>&1
+	$MT $MTF $device rewind >/dev/null 2>&1
 	if [ $? -ne 0 ]; then
 		#
 		# XXX if the changer-specific load command can distinguish

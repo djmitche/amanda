@@ -49,24 +49,22 @@
 #elif defined(HAVE_SYS_CHIO_H)
 # include <sys/chio.h>
 #else
-# error "Inside CHIO code without CHIO_H or SYS_CHIO_H defined"
+# error "Inside CHIO code without HAVE_CHIO_H or HAVE_SYS_CHIO_H defined"
 #endif
 
-/* device where the changer is */
-#define CHANGER "/dev/ch0"
-/* COUNTFILE is were we store the current slot */
-#define COUNTFILE "/etc/amanda/cervesa/changer_count"
+char *pname = "seagate-changer";
 
 int loaded;
 
 /*  The tape drive does not have an idea of current slot so
     we use a file to store the current slot.  It is not ideal
     but it gets the job done  */
-int get_current_slot()
+int get_current_slot(count_file)
+    char *count_file;
 {
     FILE *inf;
     int retval;
-    if ((inf=fopen(COUNTFILE,"r")) == NULL) {
+    if ((inf=fopen(count_file,"r")) == NULL) {
 	printf("unable to open current slot file\n");
 	return 0;
     }
@@ -75,20 +73,23 @@ int get_current_slot()
     return retval;
 }
 
-void put_current_slot(int retval)
+void put_current_slot(count_file, slot)
+    char *count_file;
+    int slot;
 {
     FILE *inf;
-    if ((inf=fopen(COUNTFILE,"w+")) == NULL) {
+    if ((inf=fopen(count_file,"w")) == NULL) {
 	printf("unable to open current slot file\n");
 	exit(2);
     }
-    fprintf(inf,"%d",retval);
+    fprintf(inf,"%d",slot);
     fclose(inf);
 }
 
 
 /* this routine checks a specified slot to see if it is empty */
-int isempty(int fd, int slot,int nslots)
+int isempty(fd, slot, nslots)
+    int fd, slot, nslots;
 {
     struct changer_element_status  ces;
     int                            i,rc;
@@ -110,7 +111,8 @@ int isempty(int fd, int slot,int nslots)
 }
 
 /* find the first empty slot */
-int find_empty(int fd,int count)
+int find_empty(fd, count)
+    int fd, count;
 {
     struct changer_element_status  ces;
     int                            i,rc;
@@ -121,7 +123,7 @@ int find_empty(int fd,int count)
 
     rc = ioctl(fd,CHIOGSTATUS,&ces);
     if (rc) {
-	fprintf(stderr,"ioctl failed: 0x%x %s\n",rc,sys_errlist[errno]);
+	fprintf(stderr,"ioctl failed: 0x%x %s\n",rc,strerror(errno));
 	exit(1);
     }
 
@@ -133,7 +135,8 @@ int find_empty(int fd,int count)
 }
 
 /* returns one if there is a tape loaded in the drive */
-int drive_loaded(int fd,int drivenum)
+int drive_loaded(fd, drivenum)
+    int fd, drivenum;
 {
     struct changer_element_status  ces;
     int                            i,rc;
@@ -144,11 +147,11 @@ int drive_loaded(int fd,int drivenum)
 
     rc = ioctl(fd,CHIOGSTATUS,&ces);
     if (rc) {
-	fprintf(stderr,"ioctl failed: 0x%x %s\n",rc,sys_errlist[errno]);
+	fprintf(stderr,"ioctl failed: 0x%x %s\n",rc,strerror(errno));
 	exit(1);
     }
 
-    i = (ces.ces_data[i] & CESTATUS_FULL);
+    i = (ces.ces_data[0] & CESTATUS_FULL);
 
     free(ces.ces_data);
     return i;
@@ -171,7 +174,7 @@ void unload(int fd, int drive, int slot)
       rc = ioctl(fd,CHIOMOVE,&move);
       if (rc){
 	fprintf(stderr,"ioctl failed (MOVE): 0x%x %s\n",
-		rc,sys_errlist[errno]);
+		rc,strerror(errno));
 	exit(2);
       }
     }
@@ -193,7 +196,7 @@ void load(int fd, int drive, int slot)
     rc = ioctl(fd,CHIOMOVE,&move);
     if (rc){
 	fprintf(stderr,"ioctl failed (MOVE): 0x%x %s\n",
-		rc,sys_errlist[errno]);
+		rc,strerror(errno));
 	exit(2);
     }
 }
@@ -285,10 +288,12 @@ void parse_args(int argc, char *argv[],command *rval)
 }
 
 /* used to find actual slot number from keywords next, prev, first, etc */
-int get_relative_target(int fd,int nslots,char *parameter,int loaded)
+int get_relative_target(fd, nslots, parameter, loaded, changer_file)
+    int fd, nslots, loaded;
+    char *parameter, changer_file;
 {
     int current_slot,i;
-    current_slot=get_current_slot();
+    current_slot=get_current_slot(changer_file);
 
     i=0;
     while((i<SLOTCOUNT)&&(strcmp(slotdefs[i].str,parameter)))
@@ -325,24 +330,37 @@ int get_relative_target(int fd,int nslots,char *parameter,int loaded)
 
 /* ----------------------------------------------------------------------*/
 
-int main(int argc, char *argv[])
+int main(argc, argv)
+    int argc;
+    char *argv[];
 {
     int target,oldtarget;
     command com;   /* a little DOS joke */
   
     struct changer_params params;
     int    fd,rc;
+    char *changer_dev, *changer_file, *tape_device;
 
     parse_args(argc,argv,&com);
+
+    if (read_conffile(CONFFILE_NAME)) {
+	perror(CONFFILE_NAME);
+	exit(1);
+    }
+
+    changer_dev = getconf_str(CNF_CHNGRDEV);
+    changer_file = getconf_str(CNF_CHNGRFILE);
+    tape_device = getconf_str(CNF_TAPEDEV);
+    
     /* get info about the changer */
-    if (-1 == (fd = open(CHANGER,O_RDONLY))) {
+    if (-1 == (fd = open(changer_dev,O_RDWR))) {
 	perror("open");
 	return 2;
     }
     
     rc = ioctl(fd,CHIOGPARAMS,&params);
     if (rc) {
-	fprintf(stderr,"ioctl failed: 0x%x %s\n",rc,sys_errlist[errno]);
+	fprintf(stderr,"ioctl failed: 0x%x %s\n",rc,strerror(errno));
 	return 2;
     }
 
@@ -358,29 +376,32 @@ int main(int argc, char *argv[])
 		}
 	    } else
 		target=get_relative_target(fd,params.cp_nslots,
-					   com.parameter,loaded);
+					   com.parameter,loaded,changer_file);
 	    if (loaded) {
-		oldtarget=get_current_slot();
+		oldtarget=get_current_slot(changer_file);
 		if (oldtarget!=target) {
 		    unload(fd,0,oldtarget);
 		    loaded=0;
 		}
 	    }
-	    put_current_slot(target);
+	    put_current_slot(changer_file, target);
 	    if (!loaded&&isempty(fd,target,params.cp_nslots)) {
 		printf("%d slot %d is empty\n",target,target);
 		close(fd);
 		return 1;
 	    }
-	    load(fd,0,target);
-	    printf("%d %s\n",target,TAPE_NO_REWIND_DEVICE);
+	    if (!loaded)
+		load(fd,0,target);
+	    printf("%d %s\n", target, tape_device);
 	    break;
+
 	case COM_INFO:
-	    printf("%d ",get_current_slot());
+	    printf("%d ",get_current_slot(changer_file));
 	    printf("%d 1\n",params.cp_nslots);
 	    break;
+
 	case COM_RESET:
-	    target=get_current_slot();
+	    target=get_current_slot(changer_file);
 	    if (loaded) {
 		if (!isempty(fd,target,params.cp_nslots))
 		    target=find_empty(fd,params.cp_nslots);
@@ -394,16 +415,17 @@ int main(int argc, char *argv[])
 	    }
 
 	    load(fd,0,0);
-	    put_current_slot(0);
-	    printf("%d %s\n",get_current_slot(),TAPE_NO_REWIND_DEVICE);
+	    put_current_slot(changer_file, 0);
+	    printf("%d %s\n", get_current_slot(changer_file), tape_device);
 	    break;
+
 	case COM_EJECT:
 	    if (loaded) {
-		target=get_current_slot();
-		unload(fd,0,target);
-		pritnf("%d %s\n",0,TAPE_NO_REWIND_DEVICE);
+		target=get_current_slot(changer_file);
+		unload(fd, 0, target);
+		printf("%d %s\n", 0, tape_device);
 	    } else {
-	        printf("%d %s\n",0,"drive was not loaded");
+	        printf("%d %s\n", 0, "drive was not loaded");
 	    }
 	    break;
       };
@@ -413,7 +435,9 @@ int main(int argc, char *argv[])
 }
 
 #else
-int main(int argc, char *argv[])
+int main(argc, argv)
+    int argc;
+    char *argv[];
 {
 	fprintf(stderr, "%s: no changer support compiled in.\n", argv[0]);
 	fprintf(stderr, "See seagate-changer.c for more information.\n");

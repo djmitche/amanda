@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.12 1997/08/27 08:13:06 amcore Exp $
+ * $Id: conffile.h,v 1.13 1997/11/06 07:32:22 amcore Exp $
  *
  * interface for config file reading code
  */
@@ -37,7 +37,8 @@
 #define CONFFILE_NAME "amanda.conf"
 
 typedef enum conf_e {
-    CNF_ORG, CNF_MAILTO, CNF_DUMPUSER, CNF_TAPEDEV, CNF_LABELSTR,
+    CNF_ORG, CNF_MAILTO, CNF_DUMPUSER, CNF_TAPEDEV,
+    CNF_CHNGRDEV, CNF_CHNGRFILE, CNF_LABELSTR,
     CNF_TAPELIST, CNF_DISKFILE, CNF_INFOFILE, CNF_LOGFILE, CNF_DISKDIR,
     CNF_INDEXDIR, CNF_TAPETYPE, CNF_DUMPCYCLE, CNF_MAXCYCLE, CNF_TAPECYCLE,
     CNF_DISKSIZE, CNF_NETUSAGE, CNF_INPARALLEL, CNF_TIMEOUT,

@@ -1,12 +1,20 @@
 Version 2.4.0b4
 
+	New changerfile and changerdev configuration keywords, that
+	allow changer scripts to be configured in the main amanda
+	configuration file.  Each changer script has been adapted, so
+	that it uses those flags whenever possible.  Also,
+	documentation about built-in scripts has been added to
+	docs/TAPE.CHANGERS.  -oliva & Eric Schnoebelen
+	<eric@egsner.cirr.com>
+
 	--with-debugging now accepts a directory name, where debugging
 	files should be stored.  -John R. Jackson <jrj@cc.purdue.edu>
 
-	SCO OpenServer V5 port.  -Christopher B. Olsen
-	<colsen@compus.com>
-
-	AIX support improved.  -Georg Rehfeld <georg@wmd.de>
+	Compatibility problems fixed for:
+		NextStep 3.3: Fabrice GAILLARD <gaillard@ina.fr>
+		SCO OpenServer V5: Christopher B. Olsen <colsen@compus.com>
+		AIX: Georg Rehfeld <georg@wmd.de>
 
 	Planner would core dump if it had to delay dumps.  -Georg
 	Rehfeld <georg@wmd.de>

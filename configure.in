@@ -436,42 +436,93 @@ AC_ARG_WITH(tape-device,
 	  ;;
 	esac
     ],
-    : ${DEFAULT_TAPE_DEVICE=/dev/null}
+    [
+	if test -z "$DEFAULT_TAPE_DEVICE"; then
+	    AC_MSG_CHECKING(for non-rewinding tape device)
+	    dnl Check for the /dev/rmt directory and use what's in there.
+	    dnl Otherwise look for tape devices in /dev.  For the devices
+	    dnl in /dev/rmt, we want to use the Berkeley behavior of
+	    dnl reading the first record of the next tape file after 0
+	    dnl bytes are returned upon reading to the next tape mark,
+	    dnl instead of returning an error.  Look for devices that have
+	    dnl a 'b' in their name.
+	    tape_dev=/dev/null
+	    nr_tape_dev=/dev/null
+	    if test -d /dev/rmt; then
+
+		dnl See if we can find two devices, one being the norewind
+		dnl version of the other.  Devices in this directory are
+		dnl normally a digit followed by some characters.  We also
+		dnl want the Berkely behavior, since Amanda needs it for
+		dnl amrestore.
+
+		for num in 9 8 7 6 5 4 3 2 1 0; do
+		    td=/dev/rmt/${num}b
+		    ntd=/dev/rmt/${num}bn
+		    if test -r $td -a -r $ntd; then
+			tape_dev=$td
+			nr_tape_dev=$ntd
+		    fi
+		done
+	    else
+		dnl Look for tape devices in /dev.
+		for num in 9 8 7 6 5 4 3 2 1 0; do
+		    td=/dev/rst${num}
+		    ntd=/dev/nrst${num}
+		    if test -r $td -a -r $ntd; then
+			tape_dev=$td
+			nr_tape_dev=$ntd
+		    fi
+		done
+	    fi
+	    DEFAULT_TAPE_DEVICE=$nr_tape_dev
+	    AC_MSG_RESULT($DEFAULT_TAPE_DEVICE)
+	fi
+    ]
 )
+
+if test -z "$DEFAULT_TAPE_DEVICE"; then
+    DEFAULT_TAPE_DEVICE=/dev/null
+fi
+
 AC_DEFINE_UNQUOTED(DEFAULT_TAPE_DEVICE,"$DEFAULT_TAPE_DEVICE")
 AC_SUBST(DEFAULT_TAPE_DEVICE)
 
 AC_ARG_WITH(rew-tape,
-    [   --with-rew-tape=ARG    rewinding tape device for changer scripts is ARG],
-    [
-	case "$withval" in
-	"" | y | ye | yes | n | no)
-	    AC_MSG_ERROR([*** You must supply an argument to the --with-rew-tape option.])
-	  ;;
-	*) TAPE_REWIND_DEVICE="$withval"
-	  ;;
-	esac
-    ],
-    : ${TAPE_REWIND_DEVICE=/dev/null}
-)
-AC_DEFINE_UNQUOTED(TAPE_REWIND_DEVICE,"$TAPE_REWIND_DEVICE")
-AC_SUBST(TAPE_REWIND_DEVICE)
+    [   --with-rew-tape        deprecated, use --with-tape-device],
+    [   AC_MSG_ERROR([*** --with-rew-tape is deprecated, use --with-tape-device instead.])
+    ],)
 
 AC_ARG_WITH(norew-tape,
-    [   --with-norew-tape=ARG  norewinding tape device for changer scripts is ARG],
+    [   --with-norew-tape=ARG  deprecated, use --with-tape-device],
+    [   AC_MSG_ERROR([*** --with-norew-tape is deprecated, use --with-tape-device instead.])
+    ],)
+
+AC_ARG_WITH(changer-device,
+    [   --with-changer-device=ARG default tape changer device [/dev/ch0 if it exists]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
-	    AC_MSG_ERROR([*** You must supply an argument to the --with-norew-tape option.])
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-changer-device option.])
 	  ;;
-	*) TAPE_NO_REWIND_DEVICE="$withval"
+	*) DEFAULT_CHANGER_DEVICE="$withval"
 	  ;;
 	esac
     ],
-    : ${TAPE_NO_REWIND_DEVICE=/dev/null}
+    [
+	if test -z "$DEFAULT_CHANGER_DEVICE" &&
+	   test -f /dev/ch0; then
+	    DEFAULT_CHANGER_DEVICE=/dev/ch0
+	fi
+    ]
 )
-AC_DEFINE_UNQUOTED(TAPE_NO_REWIND_DEVICE,"$TAPE_NO_REWIND_DEVICE")
-AC_SUBST(TAPE_NO_REWIND_DEVICE)
+
+if test -z "$DEFAULT_CHANGER_DEVICE"; then
+    DEFAULT_CHANGER_DEVICE=/dev/null
+fi
+
+AC_DEFINE_UNQUOTED(DEFAULT_CHANGER_DEVICE,"$DEFAULT_CHANGER_DEVICE")
+AC_SUBST(DEFAULT_CHANGER_DEVICE)
 
 AC_ARG_WITH(fqdn,
     [   --with-fqdn            use FQDN's to backup multiple networks],
@@ -1059,6 +1110,11 @@ fi
 
 AC_PATH_PROGS(MT,mt,,$LOCSYSPATH)
 
+AC_PATH_PROGS(CHS,chs,,$LOCSYSPATH)
+if test "$CHS"; then
+    CHS=chs
+fi
+
 AC_PATH_PROGS(MTX,mtx,,$LOCSYSPATH)
 if test "$MTX"; then
     MTX=mtx
@@ -1160,53 +1216,6 @@ AC_SUBST(AMPLOT_CAT_PACK)
 dnl Empty GZIP so that make dist works.
 GZIP=
 
-AC_MSG_CHECKING(for rewinding tape device)
-dnl Check for the /dev/rmt directory and use what's in there.  Otherwise
-dnl look for tape devices in /dev.  For the devices in /dev/rmt, we want
-dnl to use the Berkeley behavior of reading the first record of the next
-dnl tape file after 0 bytes are returned upon reading to the next tape
-dnl mark, instead of returning an error.  Look for devices that have a
-dnl 'b' in their name.
-tape_dev=/dev/null
-nr_tape_dev=/dev/null
-if test -d /dev/rmt; then
-    dnl See if we can find two devices, one being the norewind version
-    dnl of the other.  Devices in this directory are normally a digit
-    dnl followed by some characters.  We also want the Berkely behavior,
-    dnl since Amanda needs it for amrestore.
-    for num in 9 8 7 6 5 4 3 2 1 0; do
-	td=/dev/rmt/${num}b
-	ntd=/dev/rmt/${num}bn
-	if test -r $td -a -r $ntd; then
-	    tape_dev=$td
-	    nr_tape_dev=$ntd
-	fi
-    done
-else
-    dnl Look for tape devices in /dev.
-    for num in 9 8 7 6 5 4 3 2 1 0; do
-	td=/dev/rst${num}
-	ntd=/dev/nrst${num}
-	if test -r $td -a -r $ntd; then
-	    tape_dev=$td
-	    nr_tape_dev=$ntd
-	fi
-    done
-fi
-
-if test "$TAPE_REWIND_DEVICE" = /dev/null; then
-    TAPE_REWIND_DEVICE=$tape_dev
-fi
-
-if test "$TAPE_NO_REWIND_DEVICE" = /dev/null; then
-    TAPE_NO_REWIND_DEVICE=$nr_tape_dev
-fi
-
-AC_MSG_RESULT($TAPE_REWIND_DEVICE)
-
-AC_MSG_CHECKING(for no rewinding tape device)
-AC_MSG_RESULT($TAPE_NO_REWIND_DEVICE)
-
 dnl Checks for compilers, typedefs, structures, and compiler characteristics.
 AM_PROG_LIBTOOL
 AC_PROG_CC
@@ -1270,7 +1279,7 @@ AC_CHECK_HEADERS(\
 	unistd.h)
 
 dnl Do not build seagate-changer if we can't find chio.h.
-if test "$ac_cv_header_chio_h" = no -o "$ac_cv_header_sys_chio_h" = no; then
+if test "$ac_cv_header_chio_h" = no -a "$ac_cv_header_sys_chio_h" = no; then
     BUILD_CHANGER_PROGS_LIBEXEC=
 fi
 
@@ -1968,6 +1977,7 @@ CFLAGS="$OLD_CFLAGS"
 LIBS="$LIBS $KRB4LIBS"
 
 dnl extra substitution parameters
+AC_SUBST(CHS)
 AC_SUBST(MTX)
 AC_SUBST(ac_n)
 AC_SUBST(ac_c)

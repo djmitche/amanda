@@ -24,21 +24,15 @@ fi
 myname=$0
 EGREP=@EGREP@
 MT=@MT@
+MTF=@MT_FILE_FLAG@
 DD=@DD@
-nrtape=@TAPE_NO_REWIND_DEVICE@
-tape=@TAPE_REWIND_DEVICE@
+tape=`getconf$SUF tapedev`
 
-logfile=`getconf$SUF logfile`
-logdir=`dirname $logfile`
+changerfile=`getconf$SUF changerfile`
 
-if test ! -d "$logdir"; then
-	echo "$0: directory given in amanda.conf's logfile line does not exist." 1>&2
-	exit 1
-fi
-
-cleanfile=$logdir/.no-changer-clean
-accessfile=$logdir/.no-changer-access
-slotfile=$logdir/.no-changer-slot
+cleanfile=$logdir/$changerfile-clean
+accessfile=$logdir/$changerfile-access
+slotfile=$logdir/$changerfile-slot
 [ ! -f $cleanfile ] && echo 0 > $cleanfile
 [ ! -f $accessfile ] && echo 0 > $accessfile
 [ ! -f $slotfile ] && echo 0 > $slotfile
@@ -59,10 +53,10 @@ request() {
 #
 
 eject() { 
-	used=`$MT -t $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
 	if [ ! -z "$used" ];then
-		$MT -t $tape rewind
-		$MT -t $tape offline
+		$MT $MTF $tape rewind
+		$MT $MTF $tape offline
 		echo "$slot $tape"
 		echo 0 > $slotfile
 		exit 0
@@ -75,11 +69,12 @@ eject() {
 #
 
 reset() {
-	used=`$MT -t $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	$MT $MTF $tape rewind
+	used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
 	if [ ! -z "$used" ];then
-		echo "$slot $nrtape"
+		echo "$slot $tape"
 	else
-		echo "0 $nrtape"
+		echo "0 $tape"
 	fi
 	exit 0
 }
@@ -87,7 +82,8 @@ reset() {
 # load #
 
 load() {
-	used=`$MT -t $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	$MT $MTF $tape rewind
+	used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
 	echo "     -> loaded $used" >> /tmp/changer.debug
 	case $1 in
 	current)
@@ -118,7 +114,7 @@ load() {
 	#
 	if [ ! -z "$used" -a $load = $slot ];then
 		# already loaded
-		echo "$slot $nrtape"
+		echo "$slot $tape"
 		exit 0
 	fi
 
@@ -136,27 +132,27 @@ load() {
 	#
 	if [ ! -z "$used" ]; then
 		echo "     -> unload $used" >> /tmp/changer.debug
-		$MT -t $tape rewind
-		$MT -t $tape offline
+		$MT $MTF $tape rewind
+		$MT $MTF $tape offline
 		used=""
 	fi
 	echo "     -> load   $load" >> /tmp/changer.debug
 	while [ -z "$used" ]; do
 		request $load
-		used=`$MT -t $tape status 2>&1 | $EGREP "ONLINE|READY"`
+		used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
 	done
 	echo $load > $slotfile
 	echo "     -> rew $load" >> /tmp/changer.debug
-	$MT -t $nrtape rewind
+	$MT $MTF $tape rewind
 	$DD if=$tape count=1 >> /tmp/changer.debug 2>&1
-	echo "$load $nrtape"
+	echo "$load $tape"
 	exit 0
 }
 
 #
 
 info() {
-	used=`$MT -t $tape status 2>&1 | $EGREP "ONLINE|READY"`
+	used=`$MT $MTF $tape status 2>&1 | $EGREP "ONLINE|READY"`
 	echo "     -> info   $used" >> /tmp/changer.debug
 	if [ -z "$used" ];then
 		echo "0 $lastslot 1"

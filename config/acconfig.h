@@ -24,12 +24,6 @@
 #undef LOG_DIR
 #undef INDEX_DIR
 
-/* This is the rewinding tape device on the Amanda tape host.  */
-#undef TAPE_REWIND_DEVICE
-
-/* This is the no rewinding tape device on the Amanda tape host.  */
-#undef TAPE_NO_REWIND_DEVICE
-
 /* This is the default Amanda index server.  */
 #undef DEFAULT_SERVER
 
@@ -39,8 +33,11 @@
 /* This is the default restoring Amanda tape server.  */
 #undef DEFAULT_TAPE_SERVER
 
-/* This is the default no-rewinding tape drive on the restoring tape server. */
+/* This is the default no-rewinding tape device.  */
 #undef DEFAULT_TAPE_DEVICE
+
+/* This is the default changer device.  */
+#undef DEFAULT_CHANGER_DEVICE
 
 /* Define if you want to use the .amandahosts file instead of .rhosts.  */
 #undef USE_AMANDAHOSTS

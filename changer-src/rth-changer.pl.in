@@ -25,26 +25,34 @@ require 5.001;
 
 use Getopt::Long;
 
-$tapeRewind="@TAPE_REWIND_DEVICE@";
-$tapeNoRewind="@TAPE_NO_REWIND_DEVICE@";
+$libexecdir="@libexecdir@";
+if ("@USE_VERSION_SUFFIXES" eq "yes") {
+    $suf = "-@VERSION@";
+} else {
+    $suf = "";
+}
+
+$MT="@MT";
+$MTF="@MT_FILE_FLAG";
+$tapeDevice=`$libexecdir/getconf$SUF tapedev`;
 
 sub getCurrentTape {
 
-  if (!sysopen(RTH, $tapeRewind, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeRewind' for getting current tape: $!\n";
+  if (!sysopen(RTH, $tapeDevice, 2)) {
+    print "$currentTape rth-changer: error in opening `$tapeDevice' for getting current tape: $!\n";
     exit(2);
   }
   if (syswrite(RTH, "Rd_ElS", 6) != 6) {
-    print "$currentTape rth-changer: error in writing `Rd_ElS' to `$tapeRewind': $!\n";
+    print "$currentTape rth-changer: error in writing `Rd_ElS' to `$tapeDevice': $!\n";
     exit(2);
   }
   if (!close(RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeRewind' for getting current tape: $!\n";
+    print "$currentTape rth-changer: error in closing `$tapeDevice' for getting current tape: $!\n";
     exit(2);
   }
 
-  if (!sysopen(RTH, $tapeRewind, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeRewind' for getting current tape: $!\n";
+  if (!sysopen(RTH, $tapeDevice, 2)) {
+    print "$currentTape rth-changer: error in opening `$tapeDevice' for getting current tape: $!\n";
     exit(2);
   }
   if (sysread(RTH, $status, 136) != 136) {
@@ -52,7 +60,7 @@ sub getCurrentTape {
     exit(2);
   }
   if (!close(RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeRewind' for getting current tape: $!\n";
+    print "$currentTape rth-changer: error in closing `$tapeDevice' for getting current tape: $!\n";
     exit(2);
   }
 
@@ -68,21 +76,21 @@ sub getCurrentTape {
 
 sub getTapeStatus {
 
-  if (!sysopen(RTH, $tapeRewind, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeRewind' for getting tape status: $!\n";
+  if (!sysopen(RTH, $tapeDevice, 2)) {
+    print "$currentTape rth-changer: error in opening `$tapeDevice' for getting tape status: $!\n";
     exit(2);
   }
   if (syswrite(RTH, "Rd_ElS", 6) != 6) {
-    print "$currentTape rth-changer: error in writing `Rd_ElS' to `$tapeRewind': $!\n";
+    print "$currentTape rth-changer: error in writing `Rd_ElS' to `$tapeDevice': $!\n";
     exit(2);
   }
   if (!close(RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeRewind' for getting tpae status: $!\n";
+    print "$currentTape rth-changer: error in closing `$tapeDevice' for getting tpae status: $!\n";
     exit(2);
   }
 
-  if (!sysopen(RTH, $tapeRewind, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeRewind' for getting tape status: $!\n";
+  if (!sysopen(RTH, $tapeDevice, 2)) {
+    print "$currentTape rth-changer: error in opening `$tapeDevice' for getting tape status: $!\n";
     exit(2);
   }
   if (sysread(RTH, $status, 136) != 136) {
@@ -90,7 +98,7 @@ sub getTapeStatus {
     exit(2);
   }
   if (!close(RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeRewind' for getting tape status: $!\n";
+    print "$currentTape rth-changer: error in closing `$tapeDevice' for getting tape status: $!\n";
     exit(2);
   }
 
@@ -114,16 +122,16 @@ sub rthLoad {
   my($tape) = @_;
 
   $command = sprintf "GeT%d", $tape;
-  if (!sysopen(RTH, $tapeRewind, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeRewind' for loading tape: $!\n";
+  if (!sysopen(RTH, $tapeDevice, 2)) {
+    print "$currentTape rth-changer: error in opening `$tapeDevice' for loading tape: $!\n";
     exit(2);
   }
   if (syswrite(RTH, $command, 4) != 4) {
-    print "$currentTape rth-changer: error in loading tape by writing `$command' to `$tapeRewind': $!\n";
+    print "$currentTape rth-changer: error in loading tape by writing `$command' to `$tapeDevice': $!\n";
     exit(2);
   }
   if (!close (RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeRewind' when trying to load tape: $!\n";
+    print "$currentTape rth-changer: error in closing `$tapeDevice' when trying to load tape: $!\n";
     exit(2);
   }
 }
@@ -132,16 +140,16 @@ sub rthUnload {
   my($tape) = @_;
 
   $command = sprintf "PuT%d", $tape;
-  if (!sysopen(RTH, $tapeRewind, 2)) {
-    print "$currentTape rth-changer: error in opening `$tapeRewind' for unloading tape: $!\n";
+  if (!sysopen(RTH, $tapeDevice, 2)) {
+    print "$currentTape rth-changer: error in opening `$tapeDevice' for unloading tape: $!\n";
     exit(2);
   }
   if (syswrite(RTH, $command, 4) != 4) {
-    print "$currentTape rth-changer: error in unloading tape by writing `$command' to `$tapeRewind': $!\n";
+    print "$currentTape rth-changer: error in unloading tape by writing `$command' to `$tapeDevice': $!\n";
     exit(2);
   }
   if (!close (RTH)) {
-    print "$currentTape rth-changer: error in closing `$tapeRewind' when trying to unload tape: $!\n";
+    print "$currentTape rth-changer: error in closing `$tapeDevice' when trying to unload tape: $!\n";
     exit(2);
   }
 }
@@ -205,15 +213,15 @@ $currentTape=getCurrentTape();
 if($opt_slot) {
   if($opt_slot =~ /first/) {
     changeTape(1);
-    print $currentTape, " ", $tapeNoRewind, "\n";
+    print $currentTape, " ", $tapeDevice, "\n";
   }
   if($opt_slot =~ /last/) {
     changeTape(6);
-    print $currentTape, " ", $tapeNoRewind, "\n";
+    print $currentTape, " ", $tapeDevice, "\n";
   }
   if($opt_slot =~ /current/) {
     changeTape($currentTape);
-    print $currentTape, " ", $tapeNoRewind, "\n";
+    print $currentTape, " ", $tapeDevice, "\n";
   }
   if($opt_slot =~ /next/) {
     $tape=$currentTape+1;
@@ -221,7 +229,7 @@ if($opt_slot) {
       $tape=1;
     }
     changeTape($tape);
-    print $currentTape, " ", $tapeNoRewind,"\n";
+    print $currentTape, " ", $tapeDevice,"\n";
   }
   if($opt_slot =~ /prev/) {
     $tape=$currentTape-1;
@@ -229,11 +237,11 @@ if($opt_slot) {
       $tape=6;
     }
     changeTape($tape);
-    print $currentTape, " ", $tapeNoRewind,"\n";
+    print $currentTape, " ", $tapeDevice,"\n";
   }
   if($opt_slot =~ /\d/) {
     changeTape($opt_slot);
-    print $currentTape, " ", $tapeNoRewind,"\n";
+    print $currentTape, " ", $tapeDevice,"\n";
   }
 
   exit 0;
@@ -248,14 +256,14 @@ if($opt_info) {
 
 if($opt_reset) {
   changeTape(1);
-  print $currentTape, " ",$tapeNoRewind,"\n";
+  print $currentTape, " ",$tapeDevice,"\n";
   exit 0;
 }
 
 if($opt_eject) {
   if($currentTape) { 
     rthUnload($currentTape);
-    print "0 ",$tapeNoRewind,"\n";
+    print "0 ",$tapeDevice,"\n";
     exit 0;
   } 
   else {

@@ -15,8 +15,6 @@ PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 
-MT_FILE_FLAG=@MT_FILE_FLAG@
-
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
 if test "$USE_VERSION_SUFFIXES" = "yes"; then
 	SUF="-@VERSION@"
@@ -25,8 +23,9 @@ else
 fi
 
 myname=$0
-nrtape=@TAPE_NO_REWIND_DEVICE@
-tape=@TAPE_REWIND_DEVICE@
+tape=`getconf$SUF tapedev`
+MT=@MT@
+MTF=@MT_FILE_FLAG@
 MTX=@MTX@
 DD=@DD@
 lastslot=5
@@ -34,16 +33,10 @@ lastslot=5
 cleanslot=5
 ecleanslot=6
 
-logfile=`getconf$SUF logfile`
-logdir=`dirname $logfile`
+changerfile=`getconf$SUF changerfile`
 
-if test ! -d "$logdir"; then
-	echo "$0: directory given in amanda.conf's logfile line does not exist." 1>&2
-	exit 1
-fi
-
-cleanfile=$logdir/.hp-changer-clean
-accessfile=$logdir/.hp-changer-access
+cleanfile=$changerfile-clean
+accessfile=$changerfile-access
 [ ! -f $cleanfile ] && echo 0 > $cleanfile
 [ ! -f $accessfile ] && echo 0 > $accessfile
 cleancount=`cat $cleanfile`
@@ -53,7 +46,7 @@ eject() {
   used=`$MTX -s | grep "Drive: tape [1-5] loaded"`
   if [ ! -z "$used" ];then
     $MTX -u `echo $used | sed 's/.*\([1-5]\).*/\1/'`
-    echo "`echo $used | sed 's/.*\([1-5]\).*/\1/'` $nrtape"
+    echo "`echo $used | sed 's/.*\([1-5]\).*/\1/'` $tape"
     exit 0
   else
     echo "0 Drive was not loaded"
@@ -68,7 +61,7 @@ reset() {
   fi
   res=`$MTX -l 1`
   if [ $? -eq 0 ];then
-    echo "1 $nrtape"
+    echo "1 $tape"
     exit 0
   else
     echo "1 $res"
@@ -84,10 +77,10 @@ load() {
     current)
 	     if [ $used -lt 0 ];then
 	       $MTX -l 1
-	       echo "0 $nrtape"
+	       echo "0 $tape"
 	       exit 0
 	     else 
-	       echo "`expr $used - 1 ` $nrtape"
+	       echo "`expr $used - 1 ` $tape"
 	       exit 0
 	     fi
 	     ;;
@@ -115,7 +108,7 @@ load() {
     esac
 #
     if [ $load = $used ]; then
-        echo "`expr $used - 1 ` $nrtape"
+        echo "`expr $used - 1 ` $tape"
         exit 0
     fi
 
@@ -149,9 +142,9 @@ load() {
     echo "     -> res    $res" >> /tmp/changer.debug
     if [ $status -eq 0 ];then
       echo "     -> rew $load" >> /tmp/changer.debug
-      mt $MT_FILE_FLAG $nrtape rew
+      $MT $MTF $tape rew
       $DD if=$tape count=1 >> /tmp/changer.debug 2>&1
-      echo "`expr $load - 1` $nrtape"
+      echo "`expr $load - 1` $tape"
       exit 0
     else
       echo " $res"
