@@ -1,3 +1,9 @@
+1999-05-06  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/driver.c (start_some_dumps): sleep_time is an
+	offset, not an absolute.  Leave it that way when we return from
+	this function.
+
 1999-05-05  Mike Grupenhoff <kashmir@munge.com>
 
 	* server-src/amverify.sh.in (pecho): new function.  Like echo

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.80 1999/05/04 21:15:48 kashmir Exp $
+ * $Id: driver.c,v 1.81 1999/05/06 18:18:09 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -522,7 +522,9 @@ start_some_dumps(dumper, rq)
      */
     if (diskp == NULL && delayed_diskp != NULL) {
 	assert(dumper->ev_wait == NULL);
-	dumper->ev_wait = event_register(sleep_time - now, EV_TIME,
+	assert(sleep_time > now);
+	sleep_time -= now;
+	dumper->ev_wait = event_register(sleep_time, EV_TIME,
 	    handle_idle_wait, dumper);
     } else if (diskp != NULL && cur_idle == NOT_IDLE) {
 	allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
