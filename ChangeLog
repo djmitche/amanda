@@ -1,4 +1,9 @@
 2004-04-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Documentation from Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* man/amoverview.8.in: Document results.
+
+2004-04-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Paul Bijnens <paul.bijnens@xplanation.com>
 
 	* server-src/amoverview.pl.in: Print last two characters.
