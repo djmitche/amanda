@@ -53,6 +53,12 @@ every weeknight at 1 a.m. as user
 0 1 * * 1-5 bin \*(pr/amdump @DEFAULT_CONFIG@
 .EE
 .RE
+.LP
+Please see the 
+.IR crontab (5)
+or
+.IR crontab (1)
+manual page for the correct crontab format for your system.
 .SH MESSAGES
 .TP
 amdump: waiting for hold file to be removed
