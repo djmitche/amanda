@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.16 1999/05/10 22:01:53 kashmir Exp $
+ * $Id: fileheader.c,v 1.17 1999/06/02 21:42:47 kashmir Exp $
  */
 
 #include "amanda.h"
@@ -333,38 +333,6 @@ known_compress_type(file)
 	return 1;
 #endif
     return 0;
-}
-
-int
-fill_buffer(fd, buffer, size)
-    int fd, size;
-    char *buffer;
-{
-    char *curptr;
-    int spaceleft;
-    ssize_t cnt;
-
-    curptr = buffer;
-    spaceleft = size;
-
-    do {
-	cnt = read(fd, curptr, spaceleft);
-	switch(cnt) {
-	case 0:
-	    if(spaceleft ==  size) {
-		return 0;
-	    }
-	    else {
-		return size;
-	    }
-	case -1:
-	    return -1;
-	default:
-	    spaceleft -= cnt;
-	    curptr +=cnt;
-	}
-    } while(spaceleft > 0);
-    return size;
 }
 
 static const struct {

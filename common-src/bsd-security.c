@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.28 1999/05/24 18:43:23 kashmir Exp $
+ * $Id: bsd-security.c,v 1.29 1999/06/02 21:42:45 kashmir Exp $
  *
  * "BSD" security module
  */
 
 #include "amanda.h"
+#include "util.h"
 #include "dgram.h"
 #include "event.h"
 #include "packet.h"
@@ -1031,29 +1032,19 @@ bsd_stream_id(s)
  * Write a chunk of data to a stream.  Blocks until completion.
  */
 static int
-bsd_stream_write(s, vbuf, size)
+bsd_stream_write(s, buf, size)
     void *s;
-    const void *vbuf;
+    const void *buf;
     size_t size;
 {
     struct bsd_stream *bs = s;
-    const char *buf = vbuf;
-    ssize_t n;
 
     assert(bs != NULL);
 
-    /*
-     * Write out all the data
-     */
-    while (size > 0) {
-	n = write(bs->fd, buf, size);
-	if (n < 0) {
-	    security_stream_seterror(&bs->secstr,
-		"write error on stream %d: %s", bs->port, strerror(errno));
-	    return (-1);
-	}
-	buf += n;
-	size -= n;
+    if (fullwrite(bs->fd, buf, size) < 0) {
+	security_stream_seterror(&bs->secstr,
+	    "write error on stream %d: %s", bs->port, strerror(errno));
+	return (-1);
     }
     return (0);
 }

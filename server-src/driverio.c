@@ -25,11 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.50 1999/05/15 15:08:45 martinea Exp $
+ * $Id: driverio.c,v 1.51 1999/06/02 21:43:03 kashmir Exp $
  *
  * I/O-related functions for driver program
  */
 #include "amanda.h"
+#include "util.h"
 #include "clock.h"
 #include "conffile.h"
 #include "diskfile.h"
@@ -218,7 +219,6 @@ char *datestamp;
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
     disk_t *dp;
-    int l, n, s;
 
     switch(cmd) {
     case START_TAPER:
@@ -259,12 +259,10 @@ char *datestamp;
     printf("driver: send-cmd time %s to taper: %s",
 	   walltime_str(curclock()), cmdline);
     fflush(stdout);
-    for(l = 0, n = strlen(cmdline); l < n; l += s) {
-	if((s = write(taper, cmdline + l, n - l)) < 0) {
-	    printf("writing taper command: %s\n", strerror(errno));
-	    fflush(stdout);
-	    return 0;
-	}
+    if (fullwrite(taper, cmdline, strlen(cmdline)) < 0) {
+	printf("writing taper command: %s\n", strerror(errno));
+	fflush(stdout);
+	return 0;
     }
     amfree(cmdline);
     return 1;
@@ -278,7 +276,6 @@ disk_t *dp;
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
     char chunksize[NUM_STR_SIZE];
-    int l, n, s;
     char *o;
 
     switch(cmd) {
@@ -333,13 +330,10 @@ disk_t *dp;
 	printf("driver: send-cmd time %s to %s: %s",
 	       walltime_str(curclock()), dumper->name, cmdline);
 	fflush(stdout);
-	for(l = 0, n = strlen(cmdline); l < n; l += s) {
-	    if((s = write(dumper->fd, cmdline + l, n - l)) < 0) {
-		printf("writing %s command: %s\n", dumper->name,
-		       strerror(errno));
-		fflush(stdout);
-		return 0;
-	    }
+	if (fullwrite(dumper->fd, cmdline, strlen(cmdline)) < 0) {
+	    printf("writing %s command: %s\n", dumper->name, strerror(errno));
+	    fflush(stdout);
+	    return 0;
 	}
     }
     amfree(cmdline);

@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1999 University of Maryland at College Park
+ * Copyright (c) 1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,44 +24,62 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.h,v 1.10 1999/06/02 21:42:49 kashmir Exp $
- *
+ * $Id: util.c,v 1.1 1999/06/02 21:42:51 kashmir Exp $
  */
 
-#ifndef FILEHEADER_H
-#define FILEHEADER_H
-
 #include "amanda.h"
+#include "util.h"
 
-#define STRMAX		256
+/*
+ * Keep calling read() until we've read buflen's worth of data, or EOF,
+ * or we get an error.
+ *
+ * Returns the number of bytes read, 0 on EOF, or negative on error.
+ */
+ssize_t
+fullread(fd, vbuf, buflen)
+    int fd;
+    void *vbuf;
+    size_t buflen;
+{
+    ssize_t nread, tot = 0;
+    char *buf = vbuf;	/* cast to char so we can ++ it */
 
-typedef char string_t[STRMAX];
-typedef enum {
-    F_UNKNOWN, F_WEIRD, F_TAPESTART, F_TAPEEND, 
-    F_DUMPFILE, F_CONT_DUMPFILE
-} filetype_t;
+    while (buflen > 0) {
+	nread = read(fd, buf, buflen);
+	if (nread < 0)
+	    return (nread);
+	if (nread == 0)
+	    break;
+	tot += nread;
+	buf += nread;
+	buflen -= nread;
+    }
+    return (tot);
+}
 
-typedef struct file_s {
-    filetype_t type;
-    string_t datestamp;
-    int dumplevel;
-    int compressed;
-    string_t comp_suffix;
-    string_t name;	/* hostname or label */
-    string_t disk;
-    string_t program;
-    string_t recover_cmd;
-    string_t uncompress_cmd;
-    string_t cont_filename;
-    int is_partial;
-} dumpfile_t;
+/*
+ * Keep calling write() until we've written buflen's worth of data,
+ * or we get an error.
+ *
+ * Returns the number of bytes written, or negative on error.
+ */
+ssize_t
+fullwrite(fd, vbuf, buflen)
+    int fd;
+    const void *vbuf;
+    size_t buflen;
+{
+    ssize_t nwritten, tot = 0;
+    const char *buf = vbuf;	/* cast to char so we can ++ it */
 
-/* local functions */
-
-void  fh_init             P((dumpfile_t *file));
-void  parse_file_header   P((const char *buffer, dumpfile_t *file, int buflen));
-void  write_header        P((char *buffer, const dumpfile_t *file, int buflen));
-void  print_header        P((FILE *outf, const dumpfile_t *file));
-int   known_compress_type P((const dumpfile_t *file));
-
-#endif /* !FILEHEADER_H */
+    while (buflen > 0) {
+	nwritten = write(fd, buf, buflen);
+	if (nwritten < 0)
+	    return (nwritten);
+	tot += nwritten;
+	buf += nwritten;
+	buflen -= nwritten;
+    }
+    return (tot);
+}

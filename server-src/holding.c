@@ -24,12 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.27 1999/05/14 21:57:44 kashmir Exp $
+ * $Id: holding.c,v 1.28 1999/06/02 21:43:08 kashmir Exp $
  *
  * Functions to access holding disk
  */
 
 #include "amanda.h"
+#include "util.h"
 #include "holding.h"
 #include "fileheader.h"
 
@@ -348,7 +349,7 @@ char *holding_file;
 	    amfree(filename);
 	    return -1;
 	}
-	buflen=fill_buffer(fd, buffer, sizeof(buffer));
+	buflen=fullread(fd, buffer, sizeof(buffer));
 	parse_file_header(buffer, &file, buflen);
 	close(fd);
 	if(stat(filename, &finfo) == -1) {
@@ -379,7 +380,7 @@ char *holding_file;
 	    amfree(filename);
 	    return 0;
 	}
-	buflen=fill_buffer(fd, buffer, sizeof(buffer));
+	buflen=fullread(fd, buffer, sizeof(buffer));
 	parse_file_header(buffer, &file, buflen);
 	close(fd);
 	unlink(filename);
@@ -410,7 +411,7 @@ int complete;
 	    amfree(filename_tmp);
 	    return 0;
 	}
-	buflen=fill_buffer(fd, buffer, sizeof(buffer));
+	buflen=fullread(fd, buffer, sizeof(buffer));
 	if (buflen == 0) {
 	    fprintf(stderr,"rename_tmp_holding: %s: empty file?\n", filename_tmp);
 	    amfree(filename);
@@ -430,7 +431,7 @@ int complete;
 	    }
 	    file.is_partial = 1;
 	    write_header(buffer, &file, sizeof(buffer));
-	    write(fd, buffer, sizeof(buffer));
+	    fullwrite(fd, buffer, sizeof(buffer));
 	    close(fd);
 	}
 	rename(filename_tmp, filename);

@@ -24,11 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.63 1999/05/24 20:13:15 kashmir Exp $
+ * $Id: amcheck.c,v 1.64 1999/06/02 21:43:00 kashmir Exp $
  *
  * checks for common problems in server and clients
  */
 #include "amanda.h"
+#include "util.h"
 #include "conffile.h"
 #include "statfs.h"
 #include "diskfile.h"
@@ -83,7 +84,6 @@ char **argv;
     amwait_t retstat;
     pid_t pid;
     extern int optind;
-    int l, n, s;
     int fd;
     char *mailto = NULL;
     extern char *optarg;
@@ -225,11 +225,8 @@ char **argv;
 	    snprintf(number, sizeof(number), "%ld", (long)pid);
 	    wait_msg = vstralloc("parent: reaped bogus pid ", number, "\n",
 				 NULL);
-	    for(l = 0, n = strlen(wait_msg); l < n; l += s) {
-		if((s = write(mainfd, wait_msg + l, n - l)) < 0) {
-		    error("write main file: %s", strerror(errno));
-		}
-	    }
+	    if (fullwrite(mainfd, wait_msg, strlen(wait_msg)) < 0)
+		error("write main file: %s", strerror(errno));
 	    amfree(wait_msg);
 	}
     }
@@ -241,11 +238,8 @@ char **argv;
 	    error("seek temp file: %s", strerror(errno));
 
 	while((size=read(tempfd, buffer, sizeof(buffer))) > 0) {
-	    for(l = 0; l < size; l += s) {
-		if((s = write(mainfd, buffer + l, size - l)) < 0) {
-		    error("write main file: %s", strerror(errno));
-		}
-	    }
+	    if (fullwrite(mainfd, buffer, size) < 0)
+		error("write main file: %s", strerror(errno));
 	}
 	if(size < 0)
 	    error("read temp file: %s", strerror(errno));
@@ -257,11 +251,8 @@ char **argv;
     version_string = vstralloc("\n",
 			       "(brought to you by Amanda ", version(), ")\n",
 			       NULL);
-    for(l = 0, n = strlen(version_string); l < n; l += s) {
-	if((s = write(mainfd, version_string + l, n - l)) < 0) {
-	    error("write main file: %s", strerror(errno));
-	}
-    }
+    if (fullwrite(mainfd, version_string, strlen(version_string)) < 0)
+	error("write main file: %s", strerror(errno));
     amfree(version_string);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);

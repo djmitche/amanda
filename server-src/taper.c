@@ -23,12 +23,13 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.54 1999/06/01 22:38:59 kashmir Exp $
+/* $Id: taper.c,v 1.55 1999/06/02 21:43:12 kashmir Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
 
 #include "amanda.h"
+#include "util.h"
 #include "conffile.h"
 #include "tapefile.h"
 #include "clock.h"
@@ -114,7 +115,7 @@ int  syncpipe_getint P((void));
 char *syncpipe_getstr P((void));
 void syncpipe_put P((int ch));
 void syncpipe_putint P((int i));
-void syncpipe_putstr P((char *str));
+void syncpipe_putstr P((const char *str));
 
 /* tape manipulation subsystem */
 int first_tape P((char *new_datestamp));
@@ -821,38 +822,33 @@ int taper_fill_buffer(fd, buffer, size)
 int fd, size;
 char *buffer;
 {
-    char *curptr;
-    int spaceleft, cnt;
+    int cnt;
 
-    curptr = buffer;
-    spaceleft = size;
-
-    do {
-	cnt = read(fd, curptr, spaceleft);
-	switch(cnt) {
-	case 0:	/* eof */
-	    if(spaceleft == size) {
-		if(interactive) fputs("r0", stderr);
-		return 0;
-	    }
-	    else {
-		/* partial buffer, zero rest */
-		memset(curptr, '\0', spaceleft);
-		if(interactive) fputs("rP", stderr);
-		return size;
-	    }
-	case -1:	/* error on read, punt */
-	    if(interactive) fputs("rE", stderr);
-	    return -1;
-	default:
-	    spaceleft -= cnt;
-	    curptr += cnt;
+    cnt = fullread(fd, buffer, size);
+    switch (cnt) {
+    case 0:	/* eof */
+	if (interactive)
+	    fputs("r0", stderr);
+	return (0);
+    case -1:	/* error on read, punt */
+	if (interactive)
+	    fputs("rE", stderr);
+	return (-1);
+    default:
+	assert(cnt <= size);
+	if (cnt < size) {
+	    /* partial buffer, zero rest */
+	    memset(buffer + cnt, '\0', size - cnt);
+	    if (interactive)
+		fputs("rP", stderr);
+	} else {
+	    /* filled buffer */
+	    if (interactive)
+		fputs("R", stderr);
 	}
-
-    } while(spaceleft > 0);
-
-    if(interactive) fputs("R", stderr);
-    return size;
+	return (size);
+    }
+    /* NOTREACHED */
 }
 
 
@@ -1398,27 +1394,18 @@ char syncpipe_get()
 
 int syncpipe_getint()
 {
-    int rc;
-    int i;
-    int len = sizeof(i);
-    char *p;
+    int rc, i;
 
-    for(p = (char *)&i; len > 0; len -= rc, p += rc) {
-	if ((rc = read(getpipe, p, len)) <= 0) {
-	    error("syncpipe_getint: %s",
-		  rc < 0 ? strerror(errno) : "short read");
-	}
-    }
+    if ((rc = fullread(getpipe, &i, sizeof(i))) != sizeof(i))
+	error("syncpipe_getint: %s", rc < 0 ? strerror(errno) : "short read");
 
-    return i;
+    return (i);
 }
 
 
 char *syncpipe_getstr()
 {
-    int rc;
-    int len;
-    char *p;
+    int rc, len;
     char *str;
 
     if((len = syncpipe_getint()) <= 0) {
@@ -1427,61 +1414,44 @@ char *syncpipe_getstr()
 
     str = alloc(len);
 
-    for(p = str; len > 0; len -= rc, p += rc) {
-	if ((rc = read(getpipe, p, len)) <= 0) {
-	    error("syncpipe_getstr: %s",
-		  rc < 0 ? strerror(errno) : "short read");
-	}
-    }
+    if ((rc = fullread(getpipe, str, len)) != len)
+	error("syncpipe_getstr: %s", rc < 0 ? strerror(errno) : "short read");
 
-    return str;
+    return (str);
 }
 
 
 void syncpipe_put(chi)
 int chi;
 {
-    int l, n, s;
     char ch = chi;
-    char *item = &ch;
 
-    if(bufdebug && chi != 'R' && chi != 'W') {
-	fprintf(stderr,"taper: %c: putc %c\n",*procname,chi);
+    if(bufdebug && ch != 'R' && ch != 'W') {
+	fprintf(stderr,"taper: %c: putc %c\n",*procname,ch);
 	fflush(stderr);
     }
 
-    for(l = 0, n = sizeof(ch); l < n; l += s) {
-	if((s = write(putpipe, item + l, n - l)) < 0) {
-	    error("syncpipe_put: %s", strerror(errno));
-	}
-    }
+    if (fullwrite(putpipe, &ch, sizeof(ch)) < 0)
+	error("syncpipe_put: %s", strerror(errno));
 }
 
 void syncpipe_putint(i)
 int i;
 {
-    int l, n, s;
-    char *item = (char *)&i;
 
-    for(l = 0, n = sizeof(i); l < n; l += s) {
-	if((s = write(putpipe, item + l, n - l)) < 0) {
-	    error("syncpipe_putint: %s", strerror(errno));
-	}
-    }
+    if (fullwrite(putpipe, &i, sizeof(i)) < 0)
+	error("syncpipe_putint: %s", strerror(errno));
 }
 
-void syncpipe_putstr(item)
-char *item;
+void syncpipe_putstr(str)
+const char *str;
 {
-    int l, n, s;
+    int n;
 
-    n = strlen(item)+1;				/* send '\0' as well */
+    n = strlen(str)+1;				/* send '\0' as well */
     syncpipe_putint(n);
-    for(l = 0, n = strlen(item)+1; l < n; l += s) {
-	if((s = write(putpipe, item + l, n - l)) < 0) {
-	    error("syncpipe_putstr: %s", strerror(errno));
-	}
-    }
+    if (fullwrite(putpipe, str, n) < 0)
+	error("syncpipe_putstr: %s", strerror(errno));
 }
 
 

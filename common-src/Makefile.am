@@ -26,6 +26,7 @@ libamanda_la_SOURCES = \
 	rsh-security.c	\
 	security.c	statfs.c	stream.c	\
 	token.c		\
+	util.c		\
 	version.c	versuff.c
 
 libamanda_la_LIBADD =	@LIBOBJS@ @ALLOCA@
@@ -41,6 +42,7 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 			queue.h		\
 			security.h	statfs.h	stream.h	\
 			token.h		\
+			util.h		\
 			version.h	\
 			fileheader.h
 

@@ -25,12 +25,13 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.18 1999/04/10 06:19:59 kashmir Exp $
+ * $Id: logfile.c,v 1.19 1999/06/02 21:43:10 kashmir Exp $
  *
  * common log file writing routine
  */
 #include "amanda.h"
 #include "arglist.h"
+#include "util.h"
 #include "conffile.h"
 
 #include "logfile.h"
@@ -85,7 +86,7 @@ arglist_function(void log_add, logtype_t, typ)
     int saved_errout;
     char *leader = NULL;
     char linebuf[STR_SIZE];
-    int l, n, s;
+    int n;
 
 
     /* format error message */
@@ -113,11 +114,8 @@ arglist_function(void log_add, logtype_t, typ)
 
     if(multiline == -1) open_log();
 
-    for(l = 0, n = strlen(leader); l < n; l += s) {
-	if((s = write(logfd, leader + l, n - l)) < 0) {
-	    error("log file write error: %s", strerror(errno));
-	}
-    }
+    if (fullwrite(logfd, leader, strlen(leader)) < 0)
+	error("log file write error: %s", strerror(errno));
 
     amfree(leader);
 
@@ -125,11 +123,8 @@ arglist_function(void log_add, logtype_t, typ)
     if(n == 0 || linebuf[n-1] != '\n') linebuf[n++] = '\n';
     linebuf[n] = '\0';
 
-    for(l = 0; l < n; l += s) {
-	if((s = write(logfd, linebuf + l, n - l)) < 0) {
-	    error("log file write error: %s", strerror(errno));
-	}
-    }
+    if (fullwrite(logfd, linebuf, n) < 0)
+	error("log file write error: %s", strerror(errno));
 
     if(multiline != -1) multiline++;
     else close_log();

@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1999 University of Maryland at College Park
+ * Copyright (c) 1999 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,44 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.h,v 1.10 1999/06/02 21:42:49 kashmir Exp $
- *
+ * $Id: util.h,v 1.1 1999/06/02 21:42:52 kashmir Exp $
  */
+#ifndef UTIL_H
+#define	UTIL_H
 
-#ifndef FILEHEADER_H
-#define FILEHEADER_H
+ssize_t fullread P((int, void *, size_t));
+ssize_t fullwrite P((int, const void *, size_t));
 
-#include "amanda.h"
-
-#define STRMAX		256
-
-typedef char string_t[STRMAX];
-typedef enum {
-    F_UNKNOWN, F_WEIRD, F_TAPESTART, F_TAPEEND, 
-    F_DUMPFILE, F_CONT_DUMPFILE
-} filetype_t;
-
-typedef struct file_s {
-    filetype_t type;
-    string_t datestamp;
-    int dumplevel;
-    int compressed;
-    string_t comp_suffix;
-    string_t name;	/* hostname or label */
-    string_t disk;
-    string_t program;
-    string_t recover_cmd;
-    string_t uncompress_cmd;
-    string_t cont_filename;
-    int is_partial;
-} dumpfile_t;
-
-/* local functions */
-
-void  fh_init             P((dumpfile_t *file));
-void  parse_file_header   P((const char *buffer, dumpfile_t *file, int buflen));
-void  write_header        P((char *buffer, const dumpfile_t *file, int buflen));
-void  print_header        P((FILE *outf, const dumpfile_t *file));
-int   known_compress_type P((const dumpfile_t *file));
-
-#endif /* !FILEHEADER_H */
+#endif	/* UTIL_H */

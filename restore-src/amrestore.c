@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.29 1999/04/10 06:19:22 kashmir Exp $
+ * $Id: amrestore.c,v 1.30 1999/06/02 21:42:56 kashmir Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -45,6 +45,7 @@
  */
 
 #include "amanda.h"
+#include "util.h"
 #include "tapeio.h"
 #include "fileheader.h"
 
@@ -181,7 +182,6 @@ int isafile;
 {
     int rc, dest, out, outpipe[2];
     int wc;
-    int l, s;
 
     /* adjust compression flag */
 
@@ -218,7 +218,6 @@ int isafile;
 
     /* if -r or -h, write the header before compress or uncompress pipe */
     if(rawflag || headerflag) {
-	int l, s;
 	char *cont_filename;
 
 	/* remove CONT_FILENAME from header */
@@ -226,11 +225,8 @@ int isafile;
 	memset(file->cont_filename,'\0',sizeof(file->cont_filename));
 	write_header(buffer,file,buflen);
 
-	for(l = 0; l < buflen; l += s) {
-	    if((s = write(out, buffer + l, buflen - l)) < 0) {
-		error("write error: %s", strerror(errno));
-	    }
-	}
+	if (fullwrite(out, buffer, buflen) < 0)
+	    error("write error: %s", strerror(errno));
 	/* add CONT_FILENAME to header */
 	strncpy(file->cont_filename, cont_filename, sizeof(file->cont_filename));
     }
@@ -309,7 +305,7 @@ int isafile;
     got_sigpipe = 0;
     wc = 0;
     do {
-	buflen = fill_buffer(tapedev, buffer, sizeof(buffer));
+	buflen = fullread(tapedev, buffer, sizeof(buffer));
 	if(buflen == 0 && isafile) { /* switch to next file */
 	    int save_tapedev;
 
@@ -329,33 +325,31 @@ int isafile;
 	    buflen=read_file_header(buffer, file, sizeof(buffer), tapedev);
 /* should be validated */
 	    
-	    buflen = fill_buffer(tapedev, buffer, sizeof(buffer));
+	    buflen = fullread(tapedev, buffer, sizeof(buffer));
 	}
 	if(buflen == 0 && !isafile) break; /* EOF */
 
 	if(buflen < 0) break;
 
-	for(l = 0; l < buflen; l += s) {
-	    if((s = write(out, buffer + l, buflen - l)) < 0) {
-		if(got_sigpipe) {
-		    fprintf(stderr,"Error %d (%s) offset %d+%d, wrote %d\n",
-				   errno, strerror(errno), wc, buflen, rc);
-		    fprintf(stderr,  
-			    "%s: pipe reader has quit in middle of file.\n",
-			    get_pname());
-		    fprintf(stderr,
-			    "%s: skipping ahead to start of next file, please wait...\n",
-			    get_pname());
-		    if(!isafile) {
-			if(tapefd_fsf(tapedev, 1) == -1) {
-			    error("fast-forward: %s", strerror(errno));
-			}
+	if (fullwrite(out, buffer, buflen) < 0) {
+	    if(got_sigpipe) {
+		fprintf(stderr,"Error %d (%s) offset %d+%d, wrote %d\n",
+			       errno, strerror(errno), wc, buflen, rc);
+		fprintf(stderr,  
+			"%s: pipe reader has quit in middle of file.\n",
+			get_pname());
+		fprintf(stderr,
+			"%s: skipping ahead to start of next file, please wait...\n",
+			get_pname());
+		if(!isafile) {
+		    if(tapefd_fsf(tapedev, 1) == -1) {
+			error("fast-forward: %s", strerror(errno));
 		    }
-		} else {
-		    perror("amrestore: write error");
 		}
-		exit(2);
+	    } else {
+		perror("amrestore: write error");
 	    }
+	    exit(2);
 	}
 	wc += buflen;
     } while (buflen > 0);

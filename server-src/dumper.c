@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.129 1999/06/02 19:36:27 kashmir Exp $
+/* $Id: dumper.c,v 1.130 1999/06/02 21:43:05 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1317,8 +1317,7 @@ read_indexfd(cookie, buf, size)
     void *cookie, *buf;
     ssize_t size;
 {
-    int n, fd;
-    char *cbuf = buf;
+    int fd;
 
     assert(cookie != NULL);
     fd = *(int *)cookie;
@@ -1332,13 +1331,12 @@ read_indexfd(cookie, buf, size)
 
     assert(buf != NULL);
 
-    while (size > 0) {
-	n = write(fd, cbuf, size);
-	if (n < 0)
-	    return;
-	size -= n;
-	cbuf += n;
-    }
+    /*
+     * If we get an error while writing to the index file, just
+     * return without scheduling another read.
+     */
+    if (fullwrite(fd, buf, size) < 0)
+	return;
     security_stream_read(streams[INDEXFD].fd, read_indexfd, cookie);
 }
 

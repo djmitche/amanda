@@ -1,5 +1,19 @@
 1999-06-02  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/util.c (fullread, fullwrite): versions of
+	read()/write() that keep looping until the buffer is
+	completely read/written, or an error occurs.
+	* common-src/Makefile.am: build util.c/util.h
+	* common-src/fileheader.c, common-src/fileheader.h
+	(fill_buffer): remove, replaced with fullread()
+	* server-src/holding.c: use fullread() instead of fill_buffer().
+	* common-src/bsd-security.c, restore-src/amrestore.c,
+	server-src/amcheck.c, server-src/driverio.c, server-src/dumper.c,
+	server-src/logfile.c, server-src/taper.c: use fullread/fullwrite
+	instead of doing the retry loops manually.
+
+1999-06-02  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (read_mesgfd, read_datafd): upon EOF,
 	close the stream.  If the other stream is also closed, shut
 	down.
