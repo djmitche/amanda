@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.94 2002/11/07 02:12:48 martinea Exp $
+ * $Id: conffile.c,v 1.95 2002/11/07 23:20:11 martinea Exp $
  *
  * read configuration file
  */
@@ -68,7 +68,7 @@ typedef enum {
     DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, DUMPORDER, TIMEOUT,
     TPCHANGER, RUNTAPES,
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
-    PRINTER, AUTOFLUSH, RESERVE,
+    PRINTER, AUTOFLUSH, RESERVE, MAXDUMPSIZE,
     COLUMNSPEC, 
     AMRECOVER_DO_FSF, AMRECOVER_CHECK_LABEL, AMRECOVER_CHANGER,
 
@@ -193,6 +193,7 @@ static val_t conf_ctimeout;
 static val_t conf_tapebufs;
 static val_t conf_autoflush;
 static val_t conf_reserve;
+static val_t conf_maxdumpsize;
 static val_t conf_amrecover_do_fsf;
 static val_t conf_amrecover_check_label;
 
@@ -245,6 +246,7 @@ static int seen_ctimeout;
 static int seen_tapebufs;
 static int seen_autoflush;
 static int seen_reserve;
+static int seen_maxdumpsize;
 static int seen_columnspec;
 static int seen_amrecover_do_fsf;
 static int seen_amrecover_check_label;
@@ -392,6 +394,7 @@ struct byname {
     { "AMRECOVER_CHANGER", CNF_AMRECOVER_CHANGER, STRING },
     { "AUTOFLUSH", CNF_AUTOFLUSH, BOOL },
     { "RESERVE", CNF_RESERVE, INT },
+    { "MAXDUMPSIZE", CNF_MAXDUMPSIZE, INT },
     { NULL }
 };
 
@@ -470,6 +473,7 @@ confparm_t parm;
     case CNF_RAWTAPEDEV: return seen_rawtapedev;
     case CNF_AUTOFLUSH: return seen_autoflush;
     case CNF_RESERVE: return seen_reserve;
+    case CNF_MAXDUMPSIZE: return seen_maxdumpsize;
     case CNF_AMRECOVER_DO_FSF: return seen_amrecover_do_fsf;
     case CNF_AMRECOVER_CHECK_LABEL: return seen_amrecover_check_label;
     case CNF_AMRECOVER_CHANGER: return seen_amrecover_changer;
@@ -501,6 +505,7 @@ confparm_t parm;
     case CNF_TAPEBUFS: r = conf_tapebufs.i; break;
     case CNF_AUTOFLUSH: r = conf_autoflush.i; break;
     case CNF_RESERVE: r = conf_reserve.i; break;
+    case CNF_MAXDUMPSIZE: r = conf_maxdumpsize.i; break;
     case CNF_AMRECOVER_DO_FSF: r = conf_amrecover_do_fsf.i; break;
     case CNF_AMRECOVER_CHECK_LABEL: r = conf_amrecover_check_label.i; break;
 
@@ -693,6 +698,7 @@ static void init_defaults()
     conf_tapebufs.i     = 20;
     conf_autoflush.i	= 0;
     conf_reserve.i	= 100;
+    conf_maxdumpsize.i	= -1;
     conf_amrecover_do_fsf.i = 0;
     conf_amrecover_check_label.i = 0;
 
@@ -736,6 +742,7 @@ static void init_defaults()
     seen_tapebufs = 0;
     seen_autoflush = 0;
     seen_reserve = 0;
+    seen_maxdumpsize = 0;
     seen_columnspec = 0;
     seen_amrecover_do_fsf = 0;
     seen_amrecover_check_label = 0;
@@ -906,6 +913,7 @@ keytab_t main_keytable[] = {
     { "RAWTAPEDEV", RAWTAPEDEV },
     { "AUTOFLUSH", AUTOFLUSH },
     { "RESERVE", RESERVE },
+    { "MAXDUMPSIZE", MAXDUMPSIZE },
     { "COLUMNSPEC", COLUMNSPEC },
     { "AMRECOVER_DO_FSF", AMRECOVER_DO_FSF },
     { "AMRECOVER_CHECK_LABEL", AMRECOVER_CHECK_LABEL },
@@ -1023,6 +1031,7 @@ static int read_confline()
 			parserror("reserve must be between 0 and 100");
 		    }
 		    break;
+    case MAXDUMPSIZE:get_simple(&conf_maxdumpsize,&seen_maxdumpsize,INT); break;
     case COLUMNSPEC:get_simple(&conf_columnspec,&seen_columnspec,STRING); break;
 
     case AMRECOVER_DO_FSF: get_simple(&conf_amrecover_do_fsf,&seen_amrecover_do_fsf, BOOL); break;
@@ -2736,6 +2745,7 @@ dump_configuration(filename)
     printf("conf_tapebufs = %d\n", getconf_int(CNF_TAPEBUFS));
     printf("conf_autoflush  = %d\n", getconf_int(CNF_AUTOFLUSH));
     printf("conf_reserve  = %d\n", getconf_int(CNF_RESERVE));
+    printf("conf_maxdumpsize  = %d\n", getconf_int(CNF_MAXDUMPSIZE));
     printf("conf_amrecover_do_fsf  = %d\n", getconf_int(CNF_AMRECOVER_DO_FSF));
     printf("conf_amrecover_check_label  = %d\n", getconf_int(CNF_AMRECOVER_CHECK_LABEL));
     printf("conf_amrecover_changer = \"%s\"\n", getconf_str(CNF_AMRECOVER_CHANGER));
