@@ -62,7 +62,7 @@ load 'title'
 plot 	"run_queue" title "Run Queue" with line 3,\
 	"tape_queue" title "Tape Queue" with line 2,\
 	"finished"  title "Dumps Finished" with line 4,\
-	"bandw_free" title "Bandwidth Allocated" with line 6, \
+	"bandw_free" title "Bandwidth Allocated" with line 8, \
 	"disk_alloc" title "%Disk Allocated" with line 1, \
 	"tape_wait" title "%Tape Wait" with line 5,\
 	"tape_idle" title "Taper Idle" with line 1,\

@@ -5,6 +5,9 @@ amplot \- visualize the behavior of Amanda
 .SH SYNOPSIS
 .B amplot
 [
+.B -b
+]
+[
 .B -c
 ]
 [
@@ -74,6 +77,10 @@ See the
 man page for more details about Amanda.
 .SH OPTIONS
 .TP
+.B -b
+Generate b/w postscript file (need
+.BR -p ).
+.TP
 .B -c
 Compress
 .I amdump_files
@@ -94,7 +101,8 @@ Direct postscript output to file
 .BR -g ).
 .TP
 .B -l
-Generate landscape oriented output.
+Generate landscape oriented output (need
+.BR -p ).
 .TP
 .B "-t \fIT\fR"
 Set the right edge of the plot to be
