@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.9 1997/09/26 12:15:46 george Exp $
+ * $Id: amflush.c,v 1.10 1997/10/31 20:01:28 amcore Exp $
  *
  * write files from work directory onto tape
  */
@@ -304,7 +304,9 @@ char *diskdir;
     printf("Scanning %s...\n", diskdir);
     chdir(diskdir);
     while((workdir = readdir(topdir)) != NULL) {
-	if(!strcmp(workdir->d_name, ".") || !strcmp(workdir->d_name, ".."))
+	if(!strcmp(workdir->d_name, ".")
+	   || !strcmp(workdir->d_name, "..")
+	   || !strcmp(workdir->d_name, "lost+found"))
 	    continue;
 
 	printf("  %s: ", workdir->d_name);
