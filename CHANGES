@@ -33,6 +33,9 @@
 
 Version 2.4.0
 
+	typos fixed in chg-chs.
+	-David Barr <dbarr@simplex.com>
+
 	chg-mtx now prints error message if tapedev or changerdev must
 	be defined.
 	-Adrian T. Filipi-Martin <atf3r@cs.virginia.edu>
