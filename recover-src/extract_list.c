@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.43.2.13.4.1 2001/02/28 02:12:04 jrjackson Exp $
+ * $Id: extract_list.c,v 1.43.2.13.4.2 2001/03/13 21:29:21 jrjackson Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1175,7 +1175,7 @@ static void extract_files_child(in_fd, elist)
     EXTRACT_LIST *elist;
 {
     int save_errno;
-    int no_initial_params = 0;
+    int extra_params = 0;
     int i,j=0;
     char **restore_args = NULL;
     int files_off_tape;
@@ -1234,34 +1234,36 @@ static void extract_files_child(in_fd, elist)
     }
 
     /* form the arguments to restore */
+    files_off_tape = length_of_tape_list(elist);
     switch (dumptype) {
     case IS_SAMBA:
 #ifdef SAMBA_CLIENT
-    	no_initial_params = 10;
+    	extra_params = 10;
     	break;
 #endif
     case IS_TAR:
     case IS_GNUTAR:
-        no_initial_params = 3;
+        extra_params = 3;
         break;
     case IS_UNKNOWN:
     case IS_DUMP:
 #ifdef AIX_BACKUP
-        no_initial_params = 2;
+        extra_params = 2;
 #else
 #if defined(XFSDUMP)
 	if (strcmp(file.program, XFSDUMP) == 0) {
-            no_initial_params = 6;
+            extra_params = 4 + files_off_tape;
 	} else
 #endif
-        no_initial_params = 4;
+	{
+        extra_params = 4;
+	}
 #endif
     	break;
     }
 
-    files_off_tape = length_of_tape_list(elist);
     if ((restore_args
-	 = (char **)malloc((no_initial_params + files_off_tape + 1)
+	 = (char **)malloc((extra_params + files_off_tape + 1)
 			   * sizeof(char *)))
 	== NULL) 
     {
@@ -1282,9 +1284,9 @@ static void extract_files_child(in_fd, elist)
             	restore_args[j++] = stralloc("-W");
     	    	restore_args[j++] = stralloc(domain);
    	    } else
-		no_initial_params -= 2;
+		extra_params -= 2;
     	} else
-	    no_initial_params -= 6;
+	    extra_params -= 6;
     	restore_args[j++] = stralloc("-d0");
     	restore_args[j++] = stralloc("-Tx");
 	restore_args[j++] = stralloc("-");	/* data on stdin */
@@ -1304,11 +1306,8 @@ static void extract_files_child(in_fd, elist)
 #else
 #if defined(XFSDUMP)
 	if (strcmp(file.program, XFSDUMP) == 0) {
-            restore_args[j++] = stralloc("-f");
-            restore_args[j++] = stralloc("-");	/* data on stdin */
             restore_args[j++] = stralloc("-v");
             restore_args[j++] = stralloc("silent");
-            restore_args[j++] = stralloc("-s");	/* the "extract" flag? */
 	} else
 #endif
 	{
@@ -1325,15 +1324,34 @@ static void extract_files_child(in_fd, elist)
     	case IS_TAR:
     	case IS_GNUTAR:
     	case IS_SAMBA:
-	    restore_args[j+i] = stralloc2(".", fn->path);
+	    restore_args[j++] = stralloc2(".", fn->path);
 	    break;
 	case IS_UNKNOWN:
 	case IS_DUMP:
-	    restore_args[j+i] = stralloc(fn->path);
+#if defined(XFSDUMP)
+	    if (strcmp(file.program, XFSDUMP) == 0) {
+		/*
+		 * xfsrestore needs a -s option before each file to be
+		 * restored, and also wants them to be relative paths.
+		 */
+		restore_args[j++] = stralloc("-s");
+		restore_args[j++] = stralloc(fn->path + 1);
+	    } else
+#endif
+	    {
+	    restore_args[j++] = stralloc(fn->path);
+	    }
   	}
     }
-    j+=i;
+#if defined(XFSDUMP)
+    if (strcmp(file.program, XFSDUMP) == 0) {
+	restore_args[j++] = stralloc("-");
+	restore_args[j++] = stralloc(".");
+    } else
+#endif
+    {
     restore_args[j] = NULL;
+    }
   
     switch (dumptype) {
     case IS_SAMBA:
@@ -1383,7 +1401,7 @@ static void extract_files_child(in_fd, elist)
     }
     if (cmd) {
         dbprintf(("Exec'ing %s with arguments:\n", cmd));
-	for (i = 0; i < no_initial_params + files_off_tape; i++) {
+	for (i = 0; i < j; i++) {
 	    if( i == passwd_field)
 		dbprintf(("\tXXXXX\n"));
 	    else
@@ -1392,7 +1410,7 @@ static void extract_files_child(in_fd, elist)
         (void)execv(cmd, restore_args);
 	/* only get here if exec failed */
 	save_errno = errno;
-	for (i = 0; i < no_initial_params + files_off_tape; i++) {
+	for (i = 0; i < j; i++) {
   	    amfree(restore_args[i]);
   	}
   	amfree(restore_args);
