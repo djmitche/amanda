@@ -173,7 +173,7 @@ AMCLIENT_EXTRA_OBJS=
 BUILD_RECOVER_PROGS_SBIN="amrecover"
 
 BUILD_CHANGER_PROGS_LIBEXEC="chg-scsi"
-BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-manual chg-multi chg-mtx chg-rth chg-chs chg-chio"
+BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-manual chg-multi chg-mtx chg-rth chg-chs chg-chio chg-zd-mtx"
 
 BUILD_TAPE_LIB="libamtape.a"
 BUILD_TAPE_LTLIB="libamtape.la"
@@ -705,9 +705,9 @@ if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ;
 	    KRB4LDFLAGS=-L$dir/lib
 	    KRB4LIBS="-lkrb -ldes"
 	    break
-	elif test -f ${dir}/lib/libkrb4.a \
-		  -a -f ${dir}/lib/libcrypto.a \
-		  -a -f ${dir}/lib/libdes425.a ; then
+	elif test -f ${dir}/lib/libkrb4.a &&
+	     test -f ${dir}/lib/libcrypto.a &&
+	     test -f ${dir}/lib/libdes425.a ; then
 	    #
 	    # This is Kerberos 5 with Kerberos 4 back-support.
 	    #
@@ -716,7 +716,12 @@ if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ;
 	    AC_DEFINE(KRB4_SECURITY)
 	    KRB4INCLUDES="-I$dir/include -I$dir/include/kerberosIV"
 	    KRB4LDFLAGS=-L$dir/lib
-	    KRB4LIBS="-lkrb4 -lcrypto -ldes425"
+	    if test -f ${dir}/lib/libkrb5.a &&
+               test -f ${dir}/lib/libcom_err.a; then
+		KRB4LIBS="-lkrb4 -lkrb5 -lcrypto -ldes425 -lcom_err"
+	    else
+		KRB4LIBS="-lkrb4 -lcrypto -ldes425"
+	    fi
 	    break
 	fi
     done
@@ -839,6 +844,24 @@ AC_ARG_WITH(ticket-lifetime,
     : ${TICKET_LIFETIME=128}
 )
 AC_DEFINE_UNQUOTED(TICKET_LIFETIME,$TICKET_LIFETIME)
+
+AC_ARG_WITH(portrange,
+    [  --with-portrange=low,high  bind unreserved TCP server sockets to ports within this range [unlimited]],
+    [
+	PORTRANGE="$withval"
+    ]
+)
+if test x"${PORTRANGE+set}" = x"set"; then
+    if test x`echo "$PORTRANGE" | sed 's/[[0-9]]*,[[0-9]]*//'` != x""; then
+    	AC_MSG_ERROR([*** --with-portrange requires two comma-separated non-negative numbers])
+    fi
+    if echo "$PORTRANGE" | sed s/,/\ / | {
+       read min max && test "$min" -le "$max"; }; then :
+    else
+	AC_MSG_ERROR([*** the second port number must be greater than the first one in --with-portrange])
+    fi
+    AC_DEFINE_UNQUOTED(PORTRANGE,$PORTRANGE)
+fi
 
 AC_ARG_WITH(db,
     [  --with-db={text,db,dbm,gdbm,ndbm} use the selected database format [text]],
@@ -1350,11 +1373,11 @@ if test "$XFSRESTORE"; then
     AC_DEFINE_UNQUOTED(XFSRESTORE,"$XFSRESTORE")
 fi
 
-AC_PATH_PROGS(VXDUMP,vxdump,,$SYSLOCPATH)
+AC_PATH_PROGS(VXDUMP,vxdump,,$SYSLOCPATH:/usr/lib/fs/vxfs)
 if test "$VXDUMP"; then
     AC_DEFINE_UNQUOTED(VXDUMP,"$VXDUMP")
 fi
-AC_PATH_PROGS(VXRESTORE,vxrestore,,$SYSLOCPATH)
+AC_PATH_PROGS(VXRESTORE,vxrestore,,$SYSLOCPATH:/usr/lib/fs/vxfs)
 if test "$VXRESTORE"; then
     AC_DEFINE_UNQUOTED(VXRESTORE,"$VXRESTORE")
 fi
@@ -2292,7 +2315,7 @@ AC_OUTPUT( \
 	changer-src/chg-manual.sh	changer-src/chg-multi.sh	\
 	changer-src/chg-mtx.sh		changer-src/chg-chs.sh		\
 	changer-src/chg-rth.pl		changer-src/chg-chio.pl		\
-	changer-src/Makefile						\
+	changer-src/chg-zd-mtx.sh	changer-src/Makefile		\
 									\
 	client-src/patch-system.sh	client-src/Makefile		\
 									\

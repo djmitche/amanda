@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.37 1998/07/13 14:58:07 oliva Exp $
+ * $Id: selfcheck.c,v 1.38 1998/09/02 03:39:24 oliva Exp $
  *
  * do self-check and send back any error messages
  */
@@ -62,6 +62,7 @@ static void check_disk P((char *program, char *disk, int level));
 static void check_overall P((void));
 static void check_file P((char *filename, int mode));
 static void check_dir P((char *dirname, int mode));
+static void check_suid P((char *filename));
 static void check_space P((char *dir, long kbytes));
 
 int main(argc, argv)
@@ -404,6 +405,7 @@ static void check_overall()
     {
 	cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 	check_file(cmd,X_OK);
+	check_suid(cmd);
 	amfree(cmd);
     }
 
@@ -411,6 +413,7 @@ static void check_overall()
     {
 	cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
 	check_file(cmd,X_OK);
+	check_suid(cmd);
 	amfree(cmd);
     }
 
@@ -582,4 +585,21 @@ int mode;
     char *dir = stralloc2(dirname, "/.");
     check_file(dir, mode);
     amfree(dir);
+}
+
+static void check_suid(filename)
+char *filename;
+{
+    struct stat stat_buf;
+    if(!stat(filename, &stat_buf)) {
+	if(stat_buf.st_uid != 0 ) {
+	    printf("ERROR [%s is not owned by root]\n",filename);
+	}
+	if((stat_buf.st_mode & S_ISUID) != S_ISUID) {
+	    printf("ERROR [%s is not SUID root]\n",filename);
+	}
+    }
+    else {
+	printf("ERROR [can not stat %s]\n",filename);
+    }
 }

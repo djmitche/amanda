@@ -1,6 +1,250 @@
+1998-08-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* NEWS: typo
+
+1998-08-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/INSTALL: update some version numbers; SAMBA 1.9.18p10 has
+	fixed the bug in p8; using p8 is not recommended any more
+	* docs/SAMBA: ditto
+
+	* config/config.guess: updated to libtool 1.2b's, in order to
+	auto-detect some recent architectures
+	* config/config.sub: ditto
+
+	* server-src/amcleanup.sh.in (sbindir): amreport now lives in
+ 	sbindir; added it to PATH and removed full pathnames to binaries
+
+1998-08-27  Blair Zajac  <blair@gps.caltech.edu>
+
+	* configure.in: Add the directory /usr/lib/fs/vxfs to the search
+	path where configure looks for vxdump and vxrestore.  This is for
+	Solaris so it can automatically handle vxfs filesystems.
+	* client-src/sendbackup-dump.c: add missing last NULL argument to
+	newvstralloc().
+	* server-src/dumper.c: add missing last NULL argument to
+	newvstralloc().
+	* NEWS: reorder 2.4.1 items into most to least important for most
+	users.
+	* config/acconfig.h: update comment for VXDUMP and VXRESTORE to
+	include systems where the Veritas filesystem is used.
+
+1998-08-21  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* man/amanda.8.in (nofull): only level 1 incrementals
+
+1998-08-20  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* changer-src/chg-mtx.sh.in (PATH): added /usr/local/bin
+
+	* configure.in (BUILD_CHANGER_SCRIPTS_LIBEXEC): added chg-zd-mtx
+	(AC_OUTPUT): ditto
+	* changer-src/Makefile.am (EXTRA_SCRIPTS): ditto
+	* docs/TAPE.CHANGERS (chg-zd-mtx): documented it
+	(chg-mtx): mentioned chg-zd-mtx
+
+1998-08-20  Eric Doutreleau  <Eric.Doutreleau@int-evry.fr>
+
+	* changer-src/chg-zd-mtx.sh.in: new changer script for
+	Zubkoff/Dandelion version of mtx.
+
+1998-08-19  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/SAMBA: updated; documented new patch (sambatar.diff,
+ 	available in the patches page) and requirements about backup user.
+	* docs/INSTALL: documented new patch
+
+1998-08-18  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendsize.c (regex_s): refuse to compile if SAMBA_CLIENT
+ 	and HAVE_DUMP_ESTIMATE are both defined: the regexp that matches the
+ 	estimate from DU 4.0's dump also matches an output line from
+ 	smbclient, that provides an incorrect estimate.
+	* docs/SYSTEM.NOTES: document the problem
+
+1998-08-14  John R. Jackson  <jrj@purdue.edu>
+
+	* docs/TAPE.CHANGERS: describe "advance" and clean up some spelling.
+
+1998-08-13  Alexandre Oliva  <oliva@dcc.unicamp.br>, Marcel Hild  <hild@id-pro.de>
+
+	* configure.in (--with-portrange): validate and define PORTRANGE
+	* example/config.site: document it
+	* config/acconfig.h (PORTRANGE): prepare for configure define
+	* common-src/stream.c (stream_server): use PORTRANGE to limit TCP
+	unreserved server sockets
+
+1998-08-12  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ: working around `dumps way too big'
+
+1998-08-11  Alexandre Oliva  <oliva@dcc.unicamp.br>, Gunnar Gunnarsson  <gunnar@ki.ericsson.se>
+
+	* common-src/token.h (rxquote, shquote): new functions
+	* common-src/token.c (rxquote) quotes a string into an equivalent
+ 	regular expression
+	(shquote): quotes all shell special meta-characters, so that a
+ 	string can be safely passed down for shell interpretation in
+	system() or popen()-like calls
+	* server-src/amindexd.c (build_disk_table): quote the disk_name with 
+	both rxquote and shquote
+
+1998-08-11  John R. Jackson  <jrj@purdue.edu>
+
+	* changer-src/chg-manual.sh.in: put the debug file in DEBUG_DIR for
+	security.  Clean up and enhance logging.  Fix locations of the
+	changer files.	Source the changerfile into the script so it can
+	override the request() function and allow alternatives to /dev/tty
+	(e.g. E-mail, syslog).	Issue rewind before status (Solaris does
+	not give a good status report right after a tape is loaded).
+
+1998-08-10  Nick Hibma  <nick.hibma@jrc.it>
+
+	* changer-src/chg-chio.pl.in: move to first slot if last is unused
+
+1998-08-07  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* example/Makefile.am (EXTRA_DIST): add DIN-A4.ps
+
+1998-08-07  Günter Felkel  <G.Felkel@edelmann.de>
+
+	* example/DIN-A4.ps: new file
+
+1998-08-06  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* tape-src/tapetype.c (initrandombytes): use random() instead of
+	rand(), its low-order bits are more random
+	(main): call srandom(seed) instead of srand(seed)
+	(USE_RAND): if defined, reverts to using rand() and srand(seed)
+
+	* docs/FAQ: some notes about driving real tape changers
+
+1998-08-05  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* man/amreport.8.in (SYNOPSIS): replace `amtoc' with `amreport'
+
+1998-08-04  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendsize.c: revert 1998-08-01's change, it wouldn't
+	even compile, as amfree() expands to a statement, not an expression, 
+	so it cannot be used as the `increment' part of a for loop.
+
+	* server-src/planner.c (main): if runs_per_cycle is set to zero or
+	negative, set it to 1, in order to avoid division by zero.
+	* server-src/amadmin.c (balance): ditto
+
+1998-08-01  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* client-src/sendsize.c: replace free(line) with amfree(line),
+	because line is not ensured to be non-NULL
+	
+	* docs/FAQ: amandad: error receiving message
+	
+	* docs/FAQ: difference between skip-full and strategy nofull
+
+1998-07-31  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ: software or hardware compression?
+
+	* server-src/driver.c (adjust_diskspace): do not abort just because
+	a holding disk file is missing
+	(main): report warning if holding disk directory could not be
+	created, and do not use it
+	Reported by Albrecht Gebhardt <agebhard@zidsrv.sci.uni-klu.ac.at>
+
+	* example/Makefile.am (EXTRA_DIST): add 8.5x11.ps to the
+	distribution
+	Reported by Jason L Tibbitts III <tibbs@hpc.uh.edu>
+
+	* server-src/conffile.c (get_holdingdisk): define chunksize 0 as
+	INT_MAX/1024, and chunksize -1 as -INT_MAX/1024
+	* server-src/driver.c (find_diskspace): accept negative chunksizes
+	as the maximum size (in modulus) for using the holding disk
+	* man/amanda.8.in (chunksize): document the usage of negative
+	values, and improve the explanation of chunking
+	* example/amanda.conf.in: ditto
+
+1998-07-29  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ: disk offline
+
+1998-07-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* restore-src/amidxtaped.c (main): use tape_rewind() instead of
+	running `mt'
+
+	* server-src/amcleanup.sh.in (reporter): update to call amreport.
+	(amdump.<n>) update to use the same renaming technique introduced in
+ 	June 30's change to amdump.
+
+1998-07-25  Michael Graff  <explorer@vix.com>
+
+	* changer-src/Makefile.am (install-exec-hook): support $(DESTDIR)
+	* client-src/Makefile.am (install-exec-hook): ditto
+	* man/Makefile.am (install-data-hook): ditto
+	* recover-src/Makefile.am (install-exec-hook): ditto
+	* restore-src/Makefile.am (install-exec-hook): ditto
+	* server-src/Makefile.am (install-exec-hook): ditto
+
+	* configure.in: link krb5 and com_err in for Kerberos support, if
+ 	they exist
+
+1998-07-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/reporter.c (copy_template_file): add braces to 
+	remove warning
+	* tape-src/tapeio.h: declare is_zftape to remove warning in
+	amlabel.c and taper.c
+
+1998-07-23  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* server-src/driver.c (any_delayed_disk): new variable, to ensure
+	that we do not leave the main driver loop if there are delayed disks 
+	but there are no active dumpers
+	(main): instead of checking whether idle_reason is IDLE_START_WAIT,
+	check whether there is any_delayed_disk for remaining in the loop
+	(start_degraded_mode): set any_delayed_disk when needed
+	Reported by Peter Walker <peter@talarian.com>
+
 1998-07-23  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/reporter.c (main): handle LPRCMD being undefined.
+
+1998-07-23  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/selfcheck.c (check_suid): new function to check if a
+	program is SUID root.
+	* client-src/selfcheck.c (check_overall): check that runtar and
+	rundump are SUID root.
+
+1998-07-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in: version number set to 2.4.1
+
+	* recover-src/Makefile.am (LDADD): libamtape imports symbols from
+ 	libamanda, so it must be listed first
+
+	* changer-src/Makefile.am (LDADD): remove duplication of libamserver
+ 	and libamanda, as they no longer provide symbols for each other
+	* server-src/Makefile.am (LDADD): ditto
+	
+1998-07-21  Blair Zajac  <blair@gps.caltech.edu>
+
+	* server-src/amrmtape.sh.in: now use amanda.conf's tapelist variable
+	* server-src/amcheckdb.sh.in:  now use amanda.conf's tapelist variable
+	* server-src/amfreetapes.sh.in: now use amanda.conf's tapelist variable
+	* server-src/amtoc.pl.in: now use amanda.conf's tapelist variable,
+	make perl4 compatible
+
+1998-07-17  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ (results missing): suggestions to work around the UDP
+	packet size limit
+
+1998-07-16  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ (amrecover): a config name may have to be specified
+	Reported by digital messiah <dmessiah@silcon.com>
 
 1998-07-15  Blair Zajac  <blair@gps.caltech.edu>
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.94 1998/07/06 15:38:33 jrj Exp $
+ * $Id: sendsize.c,v 1.95 1998/09/02 03:39:28 oliva Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -568,9 +568,25 @@ regex_t re_size[] = {
     {"xfsdump: estimated dump size: [0-9][0-9]* bytes", 1},  /* Irix 6.2 xfs */
     {"  UFSDUMP: estimated [0-9][0-9]* blocks", 512},               /* Sinix */
     {"  VXDUMP: estimated [0-9][0-9]* blocks", 512},                /* Sinix */
-    {"Total bytes listed: [0-9][0-9]*", 1},		     /* Samba client */
     {"Total bytes written: [0-9][0-9]*", 1},		    /* Gnutar client */
+
+    /* dump -E prints a line that matches the incorrect output line of
+       smbclient.  Amanda will work correctly if you #undef
+       HAVE_DUMP_ESTIMATE in ../config/config.h, but you may prefer to
+       live with incorrect estimates for SAMBA backups.  In the latter
+       case, just comment out the next three lines, and the matching
+       #endif */
+#if defined(SAMBA_CLIENT) && defined(HAVE_DUMP_ESTIMATE)
+# error "Cannot support estimates of both DU's dump and smbclient"
+#else
+# ifdef SAMBA_CLIENT
+    {"Total bytes listed: [0-9][0-9]*", 1},		     /* Samba client */
+# else
+#  ifdef HAVE_DUMP_ESTIMATE
     {"[0-9][0-9]* blocks", 1024},			  /* DU 4.0 dump  -E */
+#  endif
+# endif
+#endif /* defined(SAMBA_CLIENT) && defined(HAVE_DUMP_ESTIMATE) */
 
     { NULL, 0 }
 };

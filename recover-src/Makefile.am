@@ -11,8 +11,8 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
  
 LDADD = @LEXLIB@ \
 	../client-src/libamclient.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION) \
-	../tape-src/libamtape.$(LIB_EXTENSION) 
+	../tape-src/libamtape.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
 
 EXTRA_PROGRAMS = 	amrecover
 
@@ -30,7 +30,7 @@ YFLAGS =		-d
 install-exec-hook:
 	@list="$(sbin_PROGRAMS)"; \
 	for p in $$list; do \
-		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(DESTDIR)$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \

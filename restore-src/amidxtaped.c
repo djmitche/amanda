@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.24 1998/07/04 00:19:18 oliva Exp $
+/* $Id: amidxtaped.c,v 1.25 1998/09/02 03:40:17 oliva Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -34,6 +34,8 @@
 
 #include "amanda.h"
 #include "version.h"
+
+#include "tapeio.h"
 
 static char *get_client_line P((void));
 
@@ -289,20 +291,17 @@ char **argv;
       error("could not stat %s", tapename);
     isafile = S_ISREG((stat_tape.st_mode));
     if (!isafile) {
-	char *cmd = NULL;
+	char *errstr = NULL;
 
-	cmd = vstralloc("mt",
-#ifdef MT_FILE_FLAG
-			" ", MT_FILE_FLAG,
-#else
-			" -f",
-#endif
-			" ", tapename,
-			" ", "rewind",
-			NULL);
-	dbprintf(("Rewinding tape: %s\n", cmd));
-	system(cmd);
-	amfree(cmd);
+	dbprintf(("Rewinding tape: "));
+	errstr = tape_rewind(tapename);
+
+	if (errstr != NULL) {
+	    dbprintf(("%s\n", errstr));
+	    amfree(errstr);
+	} else {
+	    dbprintf(("done\n"));
+	}
     }
     amfree(tapename);
     dbclose();

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.46 1998/07/04 15:53:12 martinea Exp $
+ * $Id: driver.c,v 1.47 1998/09/02 03:40:40 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -114,18 +114,8 @@ char *idle_strings[] = {
 
 #define SLEEP_MAX		(24*3600)
 struct timeval sleep_time = { SLEEP_MAX, 0 };
-
-#ifndef MAXFILESIZE
-/*
-** file size must not exceed MAX_IOV, stored in iov_len
-** usually of type size_t (== signed long)
-** HP-UX-9, Solaris-2, IRIX-3/4/5/6, AIX-3: 2 GB
-** HP-UX-10: 4 GB
-** Irix64: >> n GB
-*/
-# include <limits.h>
-# define MAXFILESIZE	(LONG_MAX/1024)
-#endif
+/* enabled if any disks are in start-wait: */
+int any_delayed_disk = 0;
 
 int main(main_argc, main_argv)
 int main_argc;
@@ -239,7 +229,11 @@ char **main_argv;
 	    newdir = newvstralloc(newdir,
 				  hdp->diskdir, "/", datestamp,
 				  NULL);
-	    mkdir(newdir, 0770);
+	    if (mkdir(newdir, 0770) == -1) {
+		log_add(L_WARNING, "WARNING: could not create %s: %s",
+			newdir, strerror(errno));
+		hdp->disksize = 0L;
+	    }
 	}
     }
 
@@ -290,7 +284,7 @@ char **main_argv;
     }
 
     while(start_some_dumps(&runq) || some_dumps_in_progress() ||
-	  (idle_reason == IDLE_START_WAIT)) {
+	  any_delayed_disk) {
 
 	short_dump_state();
 
@@ -427,6 +421,7 @@ disklist_t *rq;
     idle_reason = IDLE_NO_DUMPERS;
     sleep_time.tv_sec = SLEEP_MAX;
     sleep_time.tv_usec = 0;
+    any_delayed_disk = 0;
 
     /*
      * A potential problem with starting from the bottom of the dump time
@@ -466,6 +461,7 @@ disklist_t *rq;
 	    if(diskp->start_t > now) {
 		cur_idle = max(cur_idle, IDLE_START_WAIT);
 		sleep_time.tv_sec = min(diskp->start_t - now, sleep_time.tv_sec);
+		any_delayed_disk = 1;
 	    } else if(sched(diskp)->est_kps > free_kps(diskp->host->netif))
 		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
 	    else if((holdp = find_diskspace(sched(diskp)->est_size,&cur_idle)) == NULL)
@@ -1188,7 +1184,7 @@ int *cur_idle;
 
     minp = NULL;
     for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
-	if(hdp->chunksize == -1 && size > MAXFILESIZE) {
+	if(hdp->chunksize < 0 && size > -hdp->chunksize) {
 	    *cur_idle = max(*cur_idle, IDLE_TOO_LARGE);
 	}
 	/* We add 10 MB per active dumper to give a bit of protection
@@ -1248,8 +1244,10 @@ tok_t tok;
     unsigned long kbytes;
     long diff;
 
-    if(stat(sched(diskp)->destname, &finfo) == -1)
-	error("stat %s: %s", sched(diskp)->destname, strerror(errno));
+    if(stat(sched(diskp)->destname, &finfo) == -1) {
+	printf("stat %s: %s\n", sched(diskp)->destname, strerror(errno));
+	finfo.st_size = 0;
+    }
 
     holdp = sched(diskp)->holdp;
 

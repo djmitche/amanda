@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.68 1998/07/04 00:19:54 oliva Exp $
+/* $Id: dumper.c,v 1.69 1998/09/02 03:40:43 oliva Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -543,7 +543,11 @@ int outf, size, split;
 
 	    filename_seq++;
 	    ap_snprintf(sequence, sizeof(sequence), "%d", filename_seq);
-	    new_filename = newvstralloc(new_filename,filename,".",sequence,NULL);
+	    new_filename = newvstralloc(new_filename,
+					filename,
+					".",
+					sequence,
+					NULL);
 
 	    strncpy(file.cont_filename, new_filename, 
 		    sizeof(file.cont_filename));
@@ -1002,10 +1006,12 @@ int mesgfd, datafd, indexfd, outfd;
 			      NULL);
 
 	if (mkpdir(indexfile, 0755, (uid_t)-1, (gid_t)-1) == -1) {
-	   errstr = newvstralloc(errstr, "err create ",
-					 indexfile,
-					 ": ",
-					 strerror(errno));
+	   errstr = newvstralloc(errstr,
+				 "err create ",
+				 indexfile,
+				 ": ",
+				 strerror(errno),
+				 NULL);
 	   amfree(indexfile);
 	   goto failed;
 	}

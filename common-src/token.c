@@ -20,10 +20,11 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * Author: George Scott, Computer Centre, Monash University.
+ * Authors: the Amanda Development Team.  Its members are listed in a
+ * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.c,v 1.21 1998/07/04 00:19:02 oliva Exp $
+ * $Id: token.c,v 1.22 1998/09/02 03:39:35 oliva Exp $
  *
  * token bashing routines
  */
@@ -220,6 +221,145 @@ char *str;	/* the string to quote */
     }
 
     if (need_quotes) *po++ = '"';
+
+    *po = '\0';
+
+    assert(po - buf == len);	/* Just checking! */
+
+    return buf;
+}
+
+/* Quote a string so that it can be used as a regular expression */
+char *rxquote(str)
+char *str;	/* the string to quote */
+{
+    char *pi, *po;
+    int len;
+    char *buf;
+
+    /* Calculate the length of the quoted token. */
+
+    len = 0;
+    for (pi = str; *pi; pi++) {
+	switch (*pi) {
+	    /* regular expression meta-characters: */
+#define META_CHARS \
+	case '\\': \
+	case '.': \
+	case '?': \
+	case '*': \
+	case '+': \
+	case '^': \
+	case '$': \
+	case '|': \
+	case '(': \
+	case ')': \
+	case '[': \
+	case ']': \
+	case '{': \
+	case '}' /* no colon */
+	META_CHARS:
+	    len++;
+	    /* fall through */
+	default:
+	    len++;
+	    break;
+	}
+    }
+
+    /* Allocate some space */
+
+    buf = alloc(len+1);		/* trailing null */
+
+    /* Copy it across */
+
+    po = buf;
+
+    for (pi = str; *pi; pi++) {
+	switch (*pi) {
+	META_CHARS:
+#undef META_CHARS
+	    *po++ = '\\';
+	    /* fall through */
+	default:
+	    *po++ = *pi;
+	    break;
+	}
+    }
+
+    *po = '\0';
+
+    assert(po - buf == len);	/* Just checking! */
+
+    return buf;
+}
+
+/* Quote a string so that it can be safely passed to a shell */
+char *shquote(str)
+char *str;	/* the string to quote */
+{
+    char *pi, *po;
+    int len;
+    char *buf;
+
+    /* Calculate the length of the quoted token. */
+
+    len = 0;
+    for (pi = str; *pi; pi++) {
+	switch (*pi) {
+	    /* shell meta-characters: */
+#define META_CHARS \
+	case '\\': \
+	case ' ': \
+	case '\t': \
+	case '\n': \
+	case '?': \
+	case '*': \
+	case '$': \
+	case '~': \
+	case '!': \
+	case ';': \
+	case '&': \
+	case '<': \
+	case '>': \
+	case '\'': \
+	case '\"': \
+	case '`': \
+	case '|': \
+	case '(': \
+	case ')': \
+	case '[': \
+	case ']': \
+	case '{': \
+	case '}' /* no colon */
+	META_CHARS:
+	    len++;
+	    /* fall through */
+	default:
+	    len++;
+	    break;
+	}
+    }
+
+    /* Allocate some space */
+
+    buf = alloc(len+1);		/* trailing null */
+
+    /* Copy it across */
+
+    po = buf;
+
+    for (pi = str; *pi; pi++) {
+	switch (*pi) {
+	META_CHARS:
+#undef META_CHARS
+	    *po++ = '\\';
+	    /* fall through */
+	default:
+	    *po++ = *pi;
+	    break;
+	}
+    }
 
     *po = '\0';
 

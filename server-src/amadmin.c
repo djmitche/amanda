@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.45 1998/07/15 00:10:54 martinea Exp $
+ * $Id: amadmin.c,v 1.46 1998/09/02 03:40:22 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -570,6 +570,10 @@ void balance()
 	runs_per_cycle = guess_runs_from_tapelist();
     } else
 	runs_per_cycle = runspercycle;
+
+    if (runs_per_cycle <= 0) {
+	runs_per_cycle = 1;
+    }
 
     if(dumpcycle > total)
 	total = dumpcycle;

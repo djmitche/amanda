@@ -16,7 +16,7 @@ $exec_prefix="@exec_prefix@";
 $libexecdir="@libexecdir@";
 
 # The directory where configurations can be found.
-$confdir="@CONFIG_DIR@";
+$config_dir="@CONFIG_DIR@";
 
 # Get the version suffix.
 $USE_VERSION_SUFFIXES = '@USE_VERSION_SUFFIXES@';
@@ -54,7 +54,7 @@ if (!defined($verbose)) {
 # ------------------------------------------------------------------------
 sub read_info {
 # ------------------------------------------------------------------------
-    my($info_readed) = 0;
+    $info_readed = 0;
     if (! $use_dbm) {
 	($host, $fs)=split (':', $_[0]);
 	$fs =~ s,_,__,g;
@@ -181,9 +181,14 @@ sub init {
 	    }
 	    $conf_name=$ARGV[$i];
 
+	    -d "$config_dir/$conf_name" ||
+		die "$0: configuration directory `$config_dir/$conf_name' does not exist.\n";
+	    chdir("$config_dir/$conf_name") ||
+		die "$0: cannot chdir to `$config_dir/$conf_name': $!\n";
+
             # where to find the directories which hold the
 	    # administration files
-            $infofile=`cd $confdir/$conf_name && $libexecdir/getconf$suf infofile`;
+            $infofile=`cd $config_dir/$conf_name && $libexecdir/getconf$suf infofile`;
 	    chomp $infofile;
 
 	    if (-d "$infofile") {
@@ -193,7 +198,7 @@ sub init {
 	    }
 	    if ($use_dbm) {
 		dbmopen(%curinfo,"$infofile",400)
-		    || die ("cannot open dbm_file $infofile\n");
+		    || die ("cannot open dbm_file `$infofile': $!\n");
 	    }
 	}
 	elsif ($ARGV[$i] eq '-l') {
@@ -215,8 +220,12 @@ sub init {
 
     # if ($use_dbm && ! defined (%curinfo)) {&usage("dbmfile empty ?")};
 
-    open(TAPELIST,"< $confdir/$conf_name/tapelist")
-	|| warn "WARNING: cannot open tapelist\n";
+    # Read the tapelist.
+    $tapelist = `$libexecdir/getconf$suf tapelist`;
+    chomp($tapelist);
+    $tapelist = 'tapelist' unless $tapelist;
+    open(TAPELIST,"< $tapelist")
+	|| warn "WARNING: cannot open `$tapelist' for reading: $!\n";
 
     if (defined ($tape_name)) {
 	# check that $tape_name is defined in tapelist
@@ -233,8 +242,8 @@ sub init {
     }
     close(TAPELIST);
 
-    open(DISKLIST,"< $confdir/$conf_name/disklist")
-	|| warn "WARNING: cannot open disklist\n";
+    open(DISKLIST,"< $config_dir/$conf_name/disklist")
+	|| warn "WARNING: cannot open `disklist': $!\n";
 
     while (<DISKLIST>) {
 	if ( (/^[^\#]/) && (/^(\S+)\s+(\S+)\s+(\S+)\s+(.*)/) ) {
@@ -255,8 +264,9 @@ sub init {
 	$t=~s,[\s/],_,g;
 	($toc=$infofile) =~ s![^/]*$!!;		# remove last path element
 	$toc.="$t.toc";
-	open(FOUT,"> $toc") || die "Cannot open toc file ($toc)\n";
-	select(FOUT) || die "Cannot select output file\n";
+	open(FOUT,"> $toc") ||
+	    die "Cannot open toc file `$toc' for writing: $!\n";
+	select(FOUT) || die "Cannot select output file: $!\n";
 	$| = 1; $= =10000; $- = 10000;
     }
 
@@ -279,7 +289,8 @@ sub init {
            print "  #  partition                               lvl  size[Kb]  method\n";
 	   printf("  0  %-41s -         -  %-15s\n",$tape_name,$date);
 	}
-	open(TMP,"|sort -n > $tmpFile") || die "cannot open temporary file\n";
+	open(TMP,"|sort -n > $tmpFile") ||
+	    die "cannot open temporary file: $!\n";
 	$| = 1;
     }
 } # init

@@ -56,7 +56,7 @@ NFS-auto-mounted, some clients may fail to mount the Amanda binaries
 in time.
 
    If the error is repeatable, log into the client, and check whether
-the directory /tmp/amanda exists, and a file named /tmp/amandad.debug
+the directory /tmp/amanda exists, and a file named amandad.debug
 exists in there: amandad will create this file whenever it starts.  If
 this file does not exist, amandad is not starting properly, or it
 lacks permission to create /tmp/amanda/amandad.debug.
@@ -80,6 +80,20 @@ from the keyboard.
 
    As soon as you have properly configured inetd.conf so as to run
 amandad, you should no longer get the `selfcheck timed out' message.
+
+
+Q: Why does `amandad.debug' contain `error receiving message'?
+
+A: One possibility is that you have run `amandad' from the command
+line prompt and typed anything instead of waiting for it to time-out:
+in this case, it will try to read a UDP packet from the keyboard, and
+this was reported not to work on most keyboards :-).  However, if you
+have run `amandad' as any user other than the one listed in
+`inetd.conf', it may have created a /tmp/amanda directory that the
+Amanda user cannot write to, so you should wipe it out.
+
+   Another possibility is that the Amanda service was not properly
+configured as a UDP service; check /etc/services and /etc/inetd.conf.
 
 
 Q: Why does `amcheck' say `access as <username> not allowed...'
@@ -155,9 +169,56 @@ return in the terminal where you started the controlling program.
    If you have several tape units, which you want to use to emulate a
 tape changer, you want chg-multi.  Even if you do own a real tape
 changer, that operates based on ejecting a tape or such, chg-multi may
-be useful.  Other tape changers may require specialized changer
-programs; read docs/TAPE.CHANGERS for details about the ones provided
-with Amanda.
+be useful.
+
+   Actual tape changers usually require specialized changer programs,
+such as `mtx', `chio' or specific system calls.  The availability of
+these programs is much more dependent on the operating system you're
+running than on the particular tape changer hardware you have.
+
+   `mtx', for example, is available for several platforms.  However,
+even if you find it for your platform, beware that there exist several
+different programs named `mtx', that require different command line
+arguments, and print different output, and Amanda's chg-mtx does not
+support them all.  You may have to edit the script, which shouldn't be
+hard to do.
+
+   In section BUILT-IN TAPE CHANGERS of docs/TAPE.CHANGERS, you will
+find details about the tape changer interfacing programs provided with
+Amanda, that can interact with common tape changer programs and with
+tape changer-related system calls provided by some operating system.
+If none of them matches your needs, you may have to develop your own
+tape changer interface script.
+
+   Before posting a question to the Amanda mailing lists, *please*
+search the archives, and try to obtain as much information about
+driving your tape changer hardware from the vendor of the changer
+hardware and of the operating system, rather than from the Amanda
+mailing lists.  We usually don't have much to say about tape changer
+units, and several questions about them remain unanswered.  :-(
+
+   Anyway, if you decide to post a question, make sure you specify
+both the tape changer hardware *and* the OS/platform that is going to
+interface with it.  Good luck! :-)
+
+
+Q: Should I use software or hardware compression?
+
+A: When you enable software compression, you drastically reduce the
+compression that might be achieved by hardware.  In fact, tape drives
+will usually use *more* tape if you tell them to try to further
+compress already compressed data.
+
+   Thus, you must choose whether you're going to use software or
+hardware compression; don't ever enable both unless you want to waste
+tape space.
+
+   Since Amanda prefers to have complete information about tape sizes
+and compression rates, it can do a better job if you use software
+compression.  However, if you can't afford the extra CPU usage, Amanda
+can live with the unpredictability of hardware compression, but you'll
+have to be very conservative about the specified tape size, specially
+if there are filesystems that contain mostly uncompressible data.
 
 
 Q: How can I configure Amanda so that it performs full backups on the
@@ -170,8 +231,8 @@ spread full backups along the dumpcycle, so you won't have any
 full-only or incremental-only runs.
 
 
-Q: What if my my tape unit uses expensive tapes, and I don't want to
-use one tape per day?  Can't Amanda append to tapes?
+Q: What if my tape unit uses expensive tapes, and I don't want to use
+one tape per day?  Can't Amanda append to tapes?
 
 A: It can't, and this is good.  Tape drives and OS drivers are
 (in)famous for rewinding tapes at unexpected times, without telling
@@ -213,24 +274,125 @@ help, please take a look at the Amanda Ongoing Projects Page, where
 more up-to-date information is likely to be found about this project.
 
    The current work-around is to use GNU tar to back up subdirectories
-of the huge filesystem separately.  But don't list too many of them:
-if you do, the estimate request or the reply may not fit in a UDP
-packet, and you'll get messages such as `missing estimates for' or
-such, and these backups won't happen.  This is yet another known
-limitation of Amanda; fixing it involves modifying the way estimate
-requests are issued, so that no packet exceeds the maximum packet
-size.
+of the huge filesystem separately.  But be aware of the problems listed in the next question:
 
 
-Q: Why does `amrecover' report `no index records'?
+Q: What's the difference between option `skip-full' and `strategy nofull'?
 
-A: Probably because you have not enabled index generation in
-amanda.conf.  The `index yes' option must be present in every dumptype
-for whose disks indexes should be generated.
+A: `strategy nofull' is supposed to handle the following situation:
+you run a full dump off-line once a millenium :-), because that disk
+isn't supposed to change at all and, if it does, changes are minimal.
+Amanda will run only level 1 backups of that filesystem, to avoid the
+risk of overwriting a level 1 backup needed to do a restore.
+Remember, you run full dumps once a millenium, and your tape cycle
+probably won't last that long :-)
+
+   `skip-full', OTOH, is supposed to let the user run full dumps
+off-line regularly (i.e., as often as specified in the dumpcycle),
+while Amanda takes care of the incrementals.  Currently, Amanda will
+tell you when you're supposed to run the level 0 backups but, if you
+fail to do so, Amanda will not only skip a full day's worth of
+valuable backups of the filesystem, on the day it told you to the full
+backup manually, but it will also run a level 1 backup on the next
+day, even if you have not performed the full backup yet.  Worse yet:
+it might perform a level 2 on the next day, just after you have run
+the level 0, so, if the disk should crash, you'd have to restore a
+level 0 then a level 2, but not the level 1!  Not a real problem, but
+definitely strange, eh?
+
+
+Q: Why does `amdump' report `results missing'?
+
+A: One of the possible reasons is that you have requested too many
+backups of the host.  In this case, the estimate request or the reply
+may not fit in a UDP packet.  This will cause Amanda not to perform
+some of the backups.  Fixing this problem involves modifying the way
+estimate requests are issued, so that no packet exceeds the maximum
+packet size, and issuing additional requests that did not fit in a UDP
+packet after a reply for the previous set is obtained.
+
+   One possible work-around is to try to shorten the pathnames of the
+directories and the exclude file names, so that more requests fit in
+the UDP packet.  You may create short-named links in some directory
+closer to the root (/) so as to reduce the length of names.  I.e.,
+instead of backing up /usr/home/foo and /usr/home/bar, create the
+following links:
+	/.foo -> /usr/home/foo
+	/.bar -> /usr/home/bar
+then list /.foo and /.bar in the disklist.
+
+   Another approach is to group sub-directories in backup sets,
+instead of backing up them all separately.  For example, create
+/usr/home/.bkp1 and move `foo' and `bar' into it, then create links so
+that the original pathnames remain functional.  Then, list
+/usr/home/.bkp1 in the disklist.  You may create as many `.bkp<N>'
+directories as you need.
+
+   A simpler approach, that may work for you, is to backup only a
+subset of the subdirectories of a filesystem separately.  The others
+can be backed up together with the root of the filesystem, using an
+exclude list that prevents duplicate backups.
+
+
+Q: Why does `amdump' report `disk offline'?
+
+A: Well, assuming the disk is not really off line :-), it may be a
+permission problem, but then, `amcheck' would have reported it.
+
+   Another possible reason for this failure is a filesystem error,
+that causes DUMP to crash before it estimates the backup size; a
+`fsck' may help.
+
+   Yet another possibility is that the filesystem is so large that the
+backup program is incorrectly reporting the estimated size, for
+example, by printing a negative value that Amanda will not accept as a
+valid estimate.  If you are using DUMP, contact your vendor and
+request a patch for dump that fixes this bug.  If you are using GNU
+tar, make sure it is release 1.12 or newer; 1.11.8 won't do!  Even
+release 1.12 may require a patch to correctly report estimates and
+dump sizes; check the patches directory of the Amanda distribution.
+
+
+Q: What if `amdump' reports `dumps way too big, must skip incremental
+dumps'?
+
+A: It means Amanda couldn't back up some disk because it wouldn't fit
+in the tape(s) you have configured Amanda to use.  It considered
+performing some incrementals instead of full dumps, so that all disks
+would fit, but this wouldn't be enough, so the disk really had to be
+dropped in this run.
+
+   In general, you can just ignore this message if it happens only
+once in a while.  Low-priority disks are discarded first, so you'll
+hardly miss really important data.
+
+   One real work-around is to configure Amanda to use more tapes:
+increase `runtapes' in `amanda.conf'.  Even if you don't have a real
+tape changer, you can act yourself as a changer (`chg-manual'; more
+details in the question about tape changer configuration), or use
+`chg-multi' with a single tape unit, and lie to Amanda that it will
+have two tapes to use.  If you have a holding disk as large as a tape,
+and configure Amanda (2.4.1b1 or newer) not to reserve any space for
+degraded dumps, dumps that would be stored in the second tape of a run
+will be performed to the holding disk, so you can flush them to tape
+in the morning.
+
+
+Q: Why does `amrecover' report `no index records' or `disk not found'?
+
+A: The most common cause of this problem is not having enabled index
+generation in amanda.conf.  The `index yes' option must be present in
+every dumptype for whose disks indexes should be generated.
+
+   Another possibility is that `amrecover' is not selecting the
+configuration name that contains the backups for the selected disk.
+You may specify a configuration name with the `-c' switch, when you
+invoke `amrecover'.  The default configuration name can only be
+specified at Amanda configure time (--with-config=<name>).
 
    Indexes are currently generated at backup-time only, so, if a
 backup was performed without creating an index, you won't be able to
-use `amrecover' to restore it, 'll have to use `amrestore'.
+use `amrecover' to restore it, you'll have to use `amrestore'.
 
 
 Q: Ok, I'm done with testing Amanda, now I want to put it in

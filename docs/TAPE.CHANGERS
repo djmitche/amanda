@@ -139,7 +139,8 @@ line in the changer configuration file).
 Amanda does not care how slots are specified: they could be numbered 0 to
 N-1, numbered 1 to N, or even designated by letter, A .. Z.  The only
 requirement is that the names do not contain whitespace, and that the names
-"current", "next", "prev", "first", "last" retain their meaning as follows:
+"current", "next", "prev", "first", "last" and "advance" retain their
+meaning as follows:
 
 	current	the position of the last loaded tape, as described above
 	next	the position after current, wrapping from the last slot to
@@ -148,6 +149,9 @@ requirement is that the names do not contain whitespace, and that the names
 		the last.
 	first   the first slot in the tape rack.
 	last	the last slot in the tape rack.
+	advance the same as "next" except the next tape may not be loaded if
+		the changer supports advancing to the next slot without
+		putting that tape in the drive.
 
 The current position must be updated even if there is a positioning error
 (such as "empty slot").  This allows amanda to step through the entire tape
@@ -252,7 +256,23 @@ and `tapedev' will reference the same device file.  `changerfile' must
 specify a prefix for status files maintained by this script.  If
 `changerfile' is defined as `/usr/adm/amanda/csd/changer', this script
 will maintain files named `changer-clean' and `changer-access' in the
-log directory.
+log directory.  You may have to edit the script to specify which slot
+contains a cleaning tape (cleanslot).
+
+The `mtx' program must support commands such as `-s', `-l' and `-u'.
+If the one you've got requires `status', `load' and `unload', you
+should use chg-zd-mtx instead, see below.
+
+chg-zd-mtx:
+
+Based on chg-mtx, but modified in order to support Zubkoff/Dandelion
+version of mtx.  Eric DOUTRELEAU <Eric.Doutreleau@int-evry.fr>, who
+contributed this script, reported that it works on a Solaris/sparc box
+with a HP 1557A stacker.
+
+In addition to the `changerfile'-clean and the `changerfile'-access
+files, it will maintain a `changerfile'-slot that indicates the
+currently loaded slot.
 
 chg-scsi: (former seagate-changer, then chg-chio)
 
@@ -296,8 +316,8 @@ eject	x		x 0 or 1		1 means that the drives need
 						robot can handle the tape.
 sleep	x		x between 0 and MAX_INT specifies the seconds to wait
 						before the drive could be used
-						after insering a tape. 5 should
-						be OK.
+						after inserting a tape. 5
+						should be OK.
 cleanmax x		x some positive int	How many cleanings does a 
 						cleaning tape survive
 changerdev  <device>				The device for the robot
@@ -312,7 +332,7 @@ drivenum x		x between 0 and the number of drives in the library
 dev	<device>				The device for the tapedrive
 startuse    x		x between 0 and maximum slotnumber of your library
 						Starting here we may use the tapes
-enduse	 x		x betweeb start and maximum slotnumber
+enduse	 x		x between start and maximum slotnumber
 						This is the last tape we may use
 						in this configuration. If we reach
 						this one the next will be start..

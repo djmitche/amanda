@@ -16,7 +16,7 @@ EXTRA_DIST = amplot.8 amrestore.8 amtape.8
 install-data-hook:
 	@list="$(man_MANS)"; \
 	for p in $$list; do \
-		pa=$(mandir)/man8/`echo $$p|sed '$(transform)'`; \
+		pa=$(DESTDIR)$(mandir)/man8/`echo $$p|sed '$(transform)'`; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.39 1998/07/23 22:09:39 jrj Exp $
+ * $Id: reporter.c,v 1.40 1998/09/02 03:40:49 oliva Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1386,12 +1386,13 @@ char *lbl_templ;
 
   while ((numread = (read((fileno(template_file)), buf, BUFSIZ))) > 0) {
     if ((numwritten = (write((fileno(postscript)), buf, numread)))
-	!= numread)
+	!= numread) {
       if (numread < 0)
 	error("error copying template file: %s",strerror(errno));
       else
 	error("error copying template file: short write (r:%d w:%d)",
 	      numread, numwritten);
+    }
   }
   if (numread < 0)
     error("error reading template file: %s",strerror(errno));

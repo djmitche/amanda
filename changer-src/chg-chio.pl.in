@@ -86,14 +86,6 @@ sub getCurrentTape {
 
 	my($slot, $i);
 
-	if ( $nr_tapes == 0 ) {
-		print "$progname: No tapes in changer!\n";
-		exit(2);
-	} elsif ( $nr_tapes > $max_slot ) {	# just to make sure
-		print "$progname: nr_tapes=$nr_tapes > max_slot=$max_slot ??\n";
-		exit(2);
-	}
-
 	if ( !$drives[0] ) {		# drive empty
 		return(0);
 	} elsif ( $nr_tapes == 1 ) {	# one tape -> comes from slot max_slot
@@ -149,6 +141,11 @@ sub getTapeStatus {
 		}
 	}
 	close(FH);
+
+	if ( $nr_tapes == 0 ) {
+		print "$progname: No tapes in changer!\n";
+		exit(2);
+	}
 
 	$currentTape = &getCurrentTape(); 
 
@@ -308,17 +305,21 @@ if ( $opt_slot ) {
 	}
 	if ( $opt_slot =~ /next/ ) {
 		$tape = $currentTape+1;
-		if ( $tape > $max_slot ) {
-		$tape = 1;
-		}
+      while ( $slots[$tape-1] == 0 ) {        # there is at least 1 
+         if ( ++$tape > $max_slot ) {
+            $tape = 1;
+         }
+      }
 		&changeTape($tape);
 		print "$currentTape $tapeDevice\n";
 	}
 	if ( $opt_slot =~ /prev/ ) {
 		$tape = $currentTape-1;
-		if ( $tape < 1 ) {
-		   $tape = $max_slot;
-		}
+      while ( $slots[$tape-1] == 0 ) {        # there is at least 1
+         if ( --$tape < 1 ) {
+            $tape = $max_slot;
+         }
+      }
 		&changeTape($tape);
 		print "$currentTape $tapeDevice\n";
 	}
@@ -370,4 +371,3 @@ if ( $opt_eject ) {
 
 print "$progname: No command was received.  Exiting.\n";
 exit 1;
-

@@ -54,7 +54,7 @@ CleanTapelist () {
 
   #
   # Check if the configuration directory exists.  Make sure that the
-  # necessary files are in there, such as amanda.conf and tapelist.
+  # necessary files can be found, such as amanda.conf and tapelist.
   #
   if [ ! -d ${ConfigDir}/${Config} ]; then
     log "${Program}: configuration directory ${ConfigDir}/${Config} does not exist."
@@ -66,8 +66,16 @@ CleanTapelist () {
     log "${Program}: amanda.conf not found or is not readable in ${ConfigDir}."
     return 1
   fi
-  if [ ! -r tapelist ]; then
-    log "${Program}: tapelist not found or is not readable in ${ConfigDir}."
+
+  # Get the location and name of the tapelist filename.  If tapelist is not
+  # specified in the amanda.conf file, then use tapelist in the config
+  # directory.
+  TapeList=`getconf${SUF} tapelist`
+  if [ ! "$TapeList" ]; then
+    TapeList="$ConfigDir/$Config/tapelist"
+  fi
+  if [ ! -r $TapeList ]; then
+    log "${Program}: $TapeList not found or is not readable."
     return 1
   fi
 
@@ -94,18 +102,18 @@ CleanTapelist () {
   NewTapelist=/tmp/tapelist
   rm -f ${NewTapelist}
   awk "\$2 == \"${Tape}\" { next; } { print; }" \
-      > ${NewTapelist} < tapelist ||
+      > ${NewTapelist} < $TapeList ||
   return $?
   if [ "xno" = "x${DoNothing}" ]; then
-    lines=`wc -l < tapelist`
-    cp -p tapelist tapelist~ && (
+    lines=`wc -l < $TapeList`
+    cp -p $TapeList ${TapeList}~ && (
       if test "$lines" -gt 1; then
         [ -s ${NewTapelist} ] &&
-          cp ${NewTapelist} tapelist &&
+          cp ${NewTapelist} $TapeList &&
           rm -f ${NewTapelist}
       else
         [ -f ${NewTapelist} ] &&
-          cp ${NewTapelist} tapelist &&
+          cp ${NewTapelist} $TapeList &&
           rm -f ${NewTapelist}
       fi
     )

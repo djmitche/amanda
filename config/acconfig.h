@@ -116,10 +116,12 @@
 /* Define the location of the xfsrestore program on Irix hosts.  */
 #undef XFSRESTORE
 
-/* Define the location of the vxdump program on HPUX and SINIX hosts.  */
+/* Define the location of the vxdump program on HPUX and SINIX hosts or on
+ * other hosts where the Veritas filesystem (vxfs) has been installed.  */
 #undef VXDUMP
 
-/* Define the location of the vxrestore program on HPUX and SINIX hosts.  */
+/* Define the location of the vxrestore program on HPUX and SINIX hosts or on
+ * other hosts where the Veritas filesystem (vxfs) has been installed.  */
 #undef VXRESTORE
 
 /* Define if Amanda is using the gzip program.  */
@@ -318,5 +320,10 @@
 
 /* Defined if wait() puts the status in a union wait instead of int.  */
 #undef WAIT_USES_UNION
+
+/* A comma-separated list of two integers, determining the minimum and
+   maximum port number unreserved TCP server sockets should be bound
+   to.  */
+#undef PORTRANGE
 
 #endif

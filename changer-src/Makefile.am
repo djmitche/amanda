@@ -8,8 +8,6 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
 # they cross-reference each other a bit, so need to be included twice
 LDADD = ../server-src/libamserver.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION) \
-	../server-src/libamserver.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.pl .sh
@@ -38,14 +36,15 @@ EXTRA_PROGRAMS =	chg-scsi
 libexec_SCRIPTS =	@BUILD_CHANGER_SCRIPTS_LIBEXEC@
 
 EXTRA_SCRIPTS =		chg-manual	chg-multi	chg-mtx		\
-			chg-rth		chg-chs		chg-chio
+			chg-rth		chg-chs		chg-chio	\
+			chg-zd-mtx
 
 DISTCLEANFILES = $(EXTRA_SCRIPTS)
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; \
 	for p in $$list; do \
-		pa=$(sbindir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(DESTDIR)$(sbindir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \
@@ -53,7 +52,7 @@ install-exec-hook:
 	done
 	@list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; \
 	for p in $$list; do \
-		pa=$(libexecdir)/`echo $$p|sed '$(transform)'`; \
+		pa=$(DESTDIR)$(libexecdir)/`echo $$p|sed '$(transform)'`; \
 		echo chown $(BINARY_OWNER) $$pa; \
 		chown $(BINARY_OWNER) $$pa; \
 		echo chgrp $(SETUID_GROUP) $$pa; \

@@ -33,10 +33,11 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libexecdir=@libexecdir@
+sbindir=@sbindir@
 
 confdir=@CONFIG_DIR@
 
-PATH=$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
+PATH=$sbindir:$libexecdir:/usr/bin:/bin:/usr/sbin:/sbin:/usr/ucb
 export PATH
 
 USE_VERSION_SUFFIXES="@USE_VERSION_SUFFIXES@"
@@ -68,20 +69,29 @@ tapecycle=`getconf$SUF tapecycle`
 if [ -f $logfile ]; then
 	echo "amcleanup: processing outstanding log file."
 	exec </dev/null >/dev/null 2>&1
-	$libexecdir/reporter$SUF
+	amreport$SUF
 
-	# keep debug log through the tapecycle plus a couple days
-	days=`expr $tapecycle + 2`
+	if [ -f $errfile ]; then
+	    # Keep debug log through the tapecycle plus a couple days
+	    maxdays=`expr $tapecycle + 2`
 
-	while [ $days -ge 2 ]; do
+	    days=1
+	    # First, find out the last existing errfile,
+	    # to avoid ``infinite'' loops if tapecycle is infinite
+	    while [ $days -lt $maxdays ] && [ -f $errfile.$days ]; do
+		days=`expr $days + 1`
+	    done
+	    # Now, renumber the existing log files
+	    while [ $days -ge 2 ]; do
 		ndays=`expr $days - 1`
 		mv $errfile.$ndays $errfile.$days
 		days=$ndays
-	done
-	mv $errfile $errfile.1
-
+	    done
+	    mv $errfile $errfile.1
+	fi
+	
 	# Trim the index file to those for dumps that still exist.
-	$libexecdir/amtrmidx$SUF $conf
+	amtrmidx$SUF $conf
 
 else
 	echo "amcleanup: no unprocessed logfile to clean up."

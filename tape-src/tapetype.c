@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.2 1998/07/04 00:20:21 oliva Exp $
+ * $Id: tapetype.c,v 1.3 1998/09/02 03:40:54 oliva Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -38,11 +38,20 @@
 
 static char randombytes[NBLOCKS][BLOCKSIZE];
 
+#if USE_RAND
+/* If the C library does not define random(), try to use rand() by
+   defining USE_RAND, but then make sure you are not using hardware
+   compression, because the low-order bits of rand() may not be that
+   random... :-( */
+#define random() rand()
+#define srandom(seed) srand(seed)
+#endif
+
 static void initrandombytes() {
   int i, j;
   for(i=0; i < NBLOCKS; ++i)
     for(j=0; j < BLOCKSIZE; ++j)
-      randombytes[i][j] = (char)rand();
+      randombytes[i][j] = (char)random();
 }
 
 static char *getrandombytes() {
@@ -85,7 +94,7 @@ int main(argc, argv)
 
   time(&start);
 
-  srand(start);
+  srandom(start);
 
   while(writeblock(fd))
     if (++maxblocks % 100 == 0)

@@ -20,10 +20,11 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * Author: George Scott, Computer Centre, Monash University
+ * Authors: the Amanda Development Team.  Its members are listed in a
+ * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.h,v 1.9 1998/07/04 00:19:03 oliva Exp $
+ * $Id: token.h,v 1.10 1998/09/02 03:39:37 oliva Exp $
  *
  * interface to token module
  */
@@ -40,6 +41,8 @@ extern char *squotef P((char *format, ...))
 extern char *squote P((char *str));
 extern char *quotef P((char *sep, char *format, ...));
 extern char *quote P((char *sep, char *str));
+extern char *rxquote P((char *str));
+extern char *shquote P((char *str));
 extern int table_lookup P((table_t *table, char *str));
 extern char *table_lookup_r P((table_t *table, int val));
 

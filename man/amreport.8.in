@@ -14,7 +14,7 @@
 .SH NAME
 amreport \- generate a formatted output of statistics for an amdump run
 .SH SYNOPSIS
-.B amtoc
+.B amreport
 .I config
 [
 .B -l

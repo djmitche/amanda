@@ -86,9 +86,13 @@ holdingdisk hd1 {
 			#        use all space except that value
     chunksize -1 	# size of chunk if you want big dump to be
 			# dumped on multiple files on holding disks
-			#	-1 dont split
-			#	 0 use INT_MAX
-			#    other use this value (200 Mb)
+			#  N Kb/Mb/Gb split disks in chunks of size N
+			#  0          split disks in INT_MAX/1024 Kb chunks
+			# -1          same as -INT_MAX/1024 (see below)
+			# -N Kb/Mb/Gb dont split, dump larger
+			#             filesystems directly to tape
+			#             (example: -2 Gb)
+    # chunksize 2 Gb
     }
 #holdingdisk hd2 {
 #    directory "/dumps2/amanda"

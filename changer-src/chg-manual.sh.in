@@ -22,18 +22,22 @@ else
 fi
 
 myname=$0
+DEBUG_DIR=@DEBUG_DIR@
 EGREP=@EGREP@
 MT=@MT@
 MTF=@MT_FILE_FLAG@
 DD=@DD@
+MAILER=@MAILER@
 ONLINEREGEX="ONLINE|READY|sense[_ ]key[(]0x0[)]|sense key error = 0|^er=0$"
+REPORTTO=`getconf$SUF mailto`
 tape=`getconf$SUF tapedev`
+ORG=`getconf$SUF ORG`
 
 changerfile=`getconf$SUF changerfile`
 
-cleanfile=$logdir/$changerfile-clean
-accessfile=$logdir/$changerfile-access
-slotfile=$logdir/$changerfile-slot
+cleanfile=$changerfile-clean
+accessfile=$changerfile-access
+slotfile=$changerfile-slot
 [ ! -f $cleanfile ] && echo 0 > $cleanfile
 [ ! -f $accessfile ] && echo 0 > $accessfile
 [ ! -f $slotfile ] && echo 0 > $slotfile
@@ -41,51 +45,105 @@ cleancount=`cat $cleanfile`
 accesscount=`cat $accessfile`
 slot=`cat $slotfile`
 
+# this starts at 1 !!!
 lastslot=99
-# counted from 1 !!!
-
 #
+
+dbglog=$DEBUG_DIR/changer.debug
 
 request() {
 	echo "insert tape into slot $1 and press return" >/dev/tty
 	read ANSWER </dev/tty
 }
 
+###
+# If $changerfile exists, source it into this script.  One reason is to
+# override the request() function above which gets called to request
+# that a tape be mounted.  Here is an alternate versions of request()
+# that does things more asynchronous:
+#
+#  request() {
+#	# Send E-mail about the mount request and wait for the drive
+#	# to go ready by checking the status once a minute.  Repeat
+#       # the E-mail once an hour in case it gets lost.
+#	timeout=0
+#	while true;do
+#	    if [ $timeout -le 0 ]; then
+#		echo "insert Amanda tape into slot $1 ($tape)" \
+#		  | $MAILER -s "$ORG AMANDA TAPE MOUNT REQUEST FOR SLOT $1" \
+#		          $REPORTTO
+#		timeout=`expr 60 \* 60`
+#	    fi
+#	    echo "     -> rewind $tape" >> $dbglog
+#	    $MT $MTF $tape rewind >> $dbglog 2>&1
+#	    echo "     -> status $tape" >> $dbglog
+#	    used=`$MT $MTF $tape status 2>&1 | tee -a $dbglog | $EGREP "$ONLINEREGEX"`
+#	    echo "     -> loaded <$used>" >> $dbglog
+#	    if [ ! -z "$used" ];then
+#		break
+#	    fi
+#	    sleep 60
+#	    timeout=`expr $timeout - 60`
+#	done
+#  }
+#
+# Instead of sending mail, you might write the message to /dev/console
+# or use "logger" to send it via syslog, etc.
+###
+
+if [ -f $changerfile ]; then
+	. $changerfile
+fi
+
 #
 
 eject() { 
-	used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
+	echo "     -> rewind $tape" >> $dbglog
+	$MT $MTF $tape rewind >> $dbglog 2>&1
+	echo "     -> status $tape" >> $dbglog
+	used=`$MT $MTF $tape status 2>&1 | tee -a $dbglog | $EGREP "$ONLINEREGEX"`
+	echo "     -> loaded <$used>" >> $dbglog
 	if [ ! -z "$used" ];then
-		$MT $MTF $tape rewind
-		$MT $MTF $tape offline
-		echo "$slot $tape"
+		echo "     -> offline $tape" >> $dbglog
+		$MT $MTF $tape offline >> $dbglog 2>&1
 		echo 0 > $slotfile
-		exit 0
+		answer="$slot $tape"
+		code=0
 	else
-		echo "0 Drive was not loaded"
-		exit 1
+		answer="0 Drive was not loaded"
+		code=1
 	fi
+	echo "Exit -> $answer" >> $dbglog
+	echo "$answer"
+	exit $code
 }
 
 #
 
 reset() {
-	$MT $MTF $tape rewind
-	used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
+	echo "     -> rewind $tape" >> $dbglog
+	$MT $MTF $tape rewind >> $dbglog 2>&1
+	echo "     -> status $tape" >> $dbglog
+	used=`$MT $MTF $tape status 2>&1 | tee -a $dbglog | $EGREP "$ONLINEREGEX"`
+	echo "     -> loaded <$used>" >> $dbglog
 	if [ ! -z "$used" ];then
-		echo "$slot $tape"
+		answer="$slot $tape"
 	else
-		echo "0 $tape"
+		answer="0 $tape"
 	fi
+	echo "Exit -> $answer" >> $dbglog
+	echo "$answer"
 	exit 0
 }
 
 # load #
 
 loadslot() {
-	$MT $MTF $tape rewind
-	used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
-	echo "     -> loaded $used" >> /tmp/changer.debug
+	echo "     -> rewind $tape" >> $dbglog
+	$MT $MTF $tape rewind >> $dbglog 2>&1
+	echo "     -> status $tape" >> $dbglog
+	used=`$MT $MTF $tape status 2>&1 | tee -a $dbglog | $EGREP "$ONLINEREGEX"`
+	echo "     -> loaded <$used>" >> $dbglog
 	whichslot=$1
 	case $whichslot in
 	current)
@@ -109,14 +167,18 @@ loadslot() {
 		load=$1
 		;;
 	*)
-		echo "0 illegal request"
+		answer="0 illegal request"
+		echo "Exit -> $answer" >> $dbglog
+		echo "$answer"
 		exit 1
 		;;
 	esac
 	#
 	if [ ! -z "$used" -a $load = $slot ];then
 		# already loaded
-		echo "$slot $tape"
+		answer="$slot $tape"
+		echo "Exit -> $answer" >> $dbglog
+		echo "$answer"
 		exit 0
 	fi
 
@@ -133,38 +195,46 @@ loadslot() {
 
 	#
 	if [ ! -z "$used" ]; then
-		echo "     -> unload $used" >> /tmp/changer.debug
-		$MT $MTF $tape rewind
-		$MT $MTF $tape offline
+		echo "     -> offline $tape" >> $dbglog
+		$MT $MTF $tape offline >> $dbglog 2>&1
 		used=""
 	fi
 	if [ $whichslot = advance ]; then
 		tape=/dev/null
 	else
-		echo "     -> load   $load" >> /tmp/changer.debug
+		echo "     -> load   $load" >> $dbglog
 		while [ -z "$used" ]; do
 			request $load
-			used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
+			echo "     -> rewind $tape" >> $dbglog
+			$MT $MTF $tape rewind >> $dbglog 2>&1
+			echo "     -> status $tape" >> $dbglog
+			used=`$MT $MTF $tape status 2>&1 | tee -a $dbglog | $EGREP "$ONLINEREGEX"`
+			echo "     -> loaded <$used>" >> $dbglog
 		done
-		echo "     -> rew $load" >> /tmp/changer.debug
-		$MT $MTF $tape rewind
-		$DD if=$tape count=1 >> /tmp/changer.debug 2>&1
+		$DD if=$tape count=1 >> $dbglog 2>&1
 	fi
 	echo $load > $slotfile
-	echo "$load $tape"
+	answer="$load $tape"
+	echo "Exit -> $answer" >> $dbglog
+	echo "$answer"
 	exit 0
 }
 
 #
 
 info() {
-	used=`$MT $MTF $tape status 2>&1 | $EGREP "$ONLINEREGEX"`
-	echo "     -> info   $used" >> /tmp/changer.debug
+	echo "     -> rewind $tape" >> $dbglog
+	$MT $MTF $tape rewind >> $dbglog 2>&1
+	echo "     -> status $tape" >> $dbglog
+	used=`$MT $MTF $tape status 2>&1 | tee -a $dbglog | $EGREP "$ONLINEREGEX"`
+	echo "     -> loaded <$used>" >> $dbglog
 	if [ -z "$used" ];then
-		echo "0 $lastslot 1"
+		answer="0 $lastslot 1"
 	else
-		echo "$slot $lastslot 1"
+		answer="$slot $lastslot 1"
 	fi
+	echo "Exit -> $answer" >> $dbglog
+	echo "$answer"
 	exit 0
 }
 
@@ -172,7 +242,7 @@ info() {
 # main part
 #
 
-echo "Args -> $*" >> /tmp/changer.debug
+echo "Args -> $*" >> $dbglog
 while [ $# -ge 1 ];do
 	case $1 in
 	-slot)
