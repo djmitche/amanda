@@ -1,5 +1,7 @@
 1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* Makefile.am (EXTRA_DIST): sst was added within contrib
+
 	* ltmain.sh, ltconfig, libtool.m4i: updated from libtool CVS
 	* configure.in: AC_SUBST LIBTOOL_DEPS
 	* Makefile.am: regen libtool if neded
