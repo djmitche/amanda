@@ -1,5 +1,9 @@
 2003-11-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/conffile.c (copy_dumptype): Copy in/exclude only if seen.
+
+2003-11-26  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/reporter.c (output_tapeinfo): Fix printing of new tape.
 
 2003-11-25  Jean-Louis Martineau <martineau@iro.umontreal.ca>
