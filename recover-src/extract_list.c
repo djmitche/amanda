@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.27 1998/03/07 18:11:52 martinea Exp $
+ * $Id: extract_list.c,v 1.28 1998/03/13 15:36:35 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1280,11 +1280,11 @@ void extract_files P((void))
 	}
 	else {
 	    dump_device_name = newstralloc(dump_device_name, tape_device_name);
-	    dump_datestamp = newstralloc(dump_datestamp, elist->date);
 	    printf("Load tape %s now\n", elist->tape);
 	    if (!okay_to_continue())
 	        return;
 	}
+	dump_datestamp = newstralloc(dump_datestamp, elist->date);
 
 	/* connect to the tape handler daemon on the tape drive server */
 	if ((tape_server_socket = extract_files_setup()) == -1)
