@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: security.c,v 1.12 1998/04/08 16:24:44 amcore Exp $
+ * $Id: security.c,v 1.13 1998/06/28 08:22:47 oliva Exp $
  *
  * wrapper file for kerberos security
  */
@@ -222,7 +222,7 @@ char **errstr;
      * "./.rhosts" rather than "~localuser/.rhosts", so we have to
      * chdir ourselves.  Sigh.
      *
-     * And, beleive it or not, some ruserok()'s try an initgroup just
+     * And, believe it or not, some ruserok()'s try an initgroup just
      * for the hell of it.  Since we probably aren't root at this point
      * it'll fail, and initgroup "helpfully" will blatt "Setgroups: Not owner"
      * into our stderr output even though the initgroup failure is not a
@@ -285,16 +285,16 @@ char **errstr;
 	/* Find start of remote user */
 	skip_whitespace(s, ch);
 	if(ch == '\0') {
-	    memset(pbuf, '\0', pbuf_len);	/* leave no trace */
-	    continue;				/* no remoteuser field */
+	    ptmp = localuser;			/* no remoteuser field */
+	} else {
+	    ptmp = s-1;				/* start of remoteuser field */
+
+	    /* Find end of remote user */
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';			/* terminate remoteuser field */
 	}
-	ptmp = s-1;				/* start of remoteuser field */
 
-	/* Find end of remote user */
-	skip_non_whitespace(s, ch);
-	s[-1] = '\0';				/* terminate remoteuser field */
-
-	if(strcmp(pbuf, remotehost) == 0 && strcmp(ptmp, remoteuser) == 0) {
+	if(strcasecmp(pbuf, remotehost) == 0 && strcasecmp(ptmp, remoteuser) == 0) {
 	    amandahostsauth = 1;
 	    break;
 	}

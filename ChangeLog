@@ -1,5 +1,12 @@
 1998-06-28  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* common-src/security.c (bsd_security_ok): accept case mismatches
+ 	when comparing hostnames and usernames from amandahosts, and assume
+ 	localuser if username is missing.
+	* docs/INSTALL: clarify BSD security and amandahosts, WRT to
+	non-FQDNs.
+	Reported by Chris Shenton <chris@absinthe.shenton.org>
+
 	* server-src/reporter.c (output_tapeinfo): degraded mode no longer
 	implies incremental dumps only.
 	Reported by Randy Dees <rrd@amherst.com>

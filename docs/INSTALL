@@ -260,9 +260,14 @@ to compile some of the Amanda programs (see section 1.2.H below).
 
 2.2. SET UP THE BACKUP CLIENT HOSTS
 
-    A.  When using BSD-style security, set up your ~dumpuser/.rhosts or
-	/etc/hosts.equiv so that the dumpuser is allowed in from the
-	server host.
+    A.  When using BSD-style security (enabled by default), set up
+	your ~dumpuser/.rhosts or /etc/hosts.equiv so that the
+	dumpuser is allowed in from the server host.  If you have
+	configured --with-amandahosts, ~dumpuser/.amandahosts will be
+	used instead of /etc/hosts.equiv and ~/.rhosts, and only
+	canonical host names will be accepted, because this is safer.
+	--with-amandahosts will probably be enabled by default in some
+	future release.
 
     B.  Set up your raw disk devices so that the dumpuser can read
 	them, and /etc/dumpdates so that the dumpuser can write to it.
