@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: runtar.c,v 1.4 1997/08/27 08:11:35 amcore Exp $
+ * $Id: runtar.c,v 1.5 1997/09/29 22:05:54 amcore Exp $
  *
  * runs GNUTAR program as root
  */
@@ -72,6 +72,8 @@ char **argv;
 	if (geteuid() != 0)
 	    error("error [must be setuid root]\n");
 #endif
+
+	setuid(0);
     }
 
     dbprintf(("running: %s: ",GNUTAR));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: rundump.c,v 1.9 1997/09/19 02:37:55 george Exp $
+ * $Id: rundump.c,v 1.10 1997/09/29 22:05:52 amcore Exp $
  *
  * runs DUMP program as root
  */
@@ -82,6 +82,8 @@ char **argv;
 	if (geteuid() != 0)
 	    error("error [must be setuid root]\n");
 #endif	/* FORCE_USERID */
+
+	setuid(0);
     }
 
 #ifdef XFSDUMP
