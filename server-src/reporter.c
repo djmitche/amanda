@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.38 1998/07/16 00:26:07 blair Exp $
+ * $Id: reporter.c,v 1.38.2.1 1998/07/23 22:10:02 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -354,6 +354,7 @@ char **argv;
 	}
     }
     else {
+#ifdef LPRCMD
 	if (strcmp(printer,"") != 0)	/* alternate printer is defined */
 	    /* print to the specified printer */
 #ifdef LPRFLAG
@@ -364,11 +365,16 @@ char **argv;
 	else
 	    /* print to the default printer */
 	    printer_cmd = vstralloc(LPRCMD, NULL);
+#endif
 
 	if ((strcmp(tp->lbl_templ,"")) != 0)
+#ifdef LPRCMD
 	    if ((postscript = popen(printer_cmd,"w")) == NULL)
 		error("could not open pipe to \"%s\": %s",
 		      printer_cmd, strerror(errno));
+#else
+	    error("no printer command defined");
+#endif
     }
 
     amfree(subj_str);
