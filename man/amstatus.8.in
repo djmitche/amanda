@@ -42,7 +42,8 @@ amstatus \- display the state of an Amanda run
 gives the current state of the Amanda run specified by the 
 .I config
 configuration.
-It may also be used after a run to summarize the results.
+If there is no active amanda running, it summarizes the result of the last run.
+It may also be used to summarize the results of a previous run.
 .LP
 See the
 .IR amanda (8)
@@ -57,6 +58,8 @@ Specify the Amanda configuration you want to display the state for.
 .B --file amdumpfile
 Specify an alternate file instead of the
 .I amdump
+or
+.I amflush
 file.
 .TP
 .B --summary
