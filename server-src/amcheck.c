@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.94 2002/11/05 01:58:52 martinea Exp $
+ * $Id: amcheck.c,v 1.95 2003/02/12 02:12:18 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -70,7 +70,7 @@ int test_server_pgm P((FILE *outf, char *dir, char *pgm,
 
 void usage()
 {
-    error("Usage: amcheck%s [-M <username>] [-mwsclt] <conf> [host [disk]* ]*", versionsuffix());
+    error("Usage: amcheck%s [-M <username>] [-mawsclt] <conf> [host [disk]* ]*", versionsuffix());
 }
 
 static unsigned long malloc_hist_1, malloc_size_1;
@@ -98,6 +98,7 @@ char **argv;
     char *mailto = NULL;
     extern char *optarg;
     int mailout;
+    int alwaysmail;
     char *tempfname = NULL;
     char *conffile;
     char *conf_diskfile;
@@ -136,7 +137,7 @@ char **argv;
     }
     uid_me = getuid();
 
-    mailout = overwrite = 0;
+    alwaysmail = mailout = overwrite = 0;
     do_localchk = do_tapechk = do_clientchk = 0;
     chk_flag = 0;
     server_probs = client_probs = 0;
@@ -144,12 +145,22 @@ char **argv;
 
     /* process arguments */
 
-    while((opt = getopt(argc, argv, "M:mwsclt")) != EOF) {
+    while((opt = getopt(argc, argv, "M:mawsclt")) != EOF) {
 	switch(opt) {
 	case 'M':	mailto=optarg;
 	case 'm':	
 #ifdef MAILER
 			mailout = 1;
+#else
+			printf("You can't use -%c because configure didn't find a mailer.\n",
+				opt);
+			exit(1);
+#endif
+			break;
+	case 'a':	
+#ifdef MAILER
+			mailout = 1;
+			alwaysmail = 1;
 #else
 			printf("You can't use -%c because configure didn't find a mailer.\n",
 				opt);
@@ -330,7 +341,7 @@ char **argv;
 
 #define	MAILTO_LIMIT	10
 
-    if((server_probs || client_probs) && mailout) {
+    if((server_probs || client_probs || alwaysmail) && mailout) {
 	int mailfd;
 	int nullfd;
 	int errfd;

@@ -1,5 +1,10 @@
 2003-02-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/amcheck.c: New -a option.
+	* man/amcheck.8.in: Document it.
+
+2003-02-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amindexd.c (build_disk_table): Compare the level.
 
 2003-02-10  Jean-Louis Martineau <martineau@iro.umontreal.ca>
