@@ -1,5 +1,11 @@
 1998-10-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amcheckdb.sh.in: modify to match new tapelist file
+	format (keyword reuse and no-reuse). Probably no-one use this
+	program.
+
+1998-10-25  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driver.c (handle_dumper_result): Add sleep time
 	when a dumper failed, it could be a temporary network problem,
 	such as NIS or NFS, better wait a few seconds before retrying.

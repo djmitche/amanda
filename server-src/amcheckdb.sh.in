@@ -75,7 +75,8 @@ $Amadmin $Config export \
 	done \
 	| sort -u \
 	| while read TAPE; do
-		grep " $TAPE\$" $TapeList 2>/dev/null >/dev/null
+		[ "$TAPE" = "" ] && continue
+		grep " $TAPE " $TapeList 2>/dev/null >/dev/null
 		[ $? != 0 ] \
 			&& echo "Tape $TAPE missing in $TapeList"
 	done
