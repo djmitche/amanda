@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: uscan.l,v 1.3 1997/08/27 08:12:39 amcore Exp $
+ * $Id: uscan.l,v 1.4 1997/09/02 12:04:09 amcore Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -136,4 +136,8 @@ char *line;
 {
     (void)yy_scan_string(line);		/* tell lex to scan lineread */
     return yyparse();			/* parse lineread and act */
+}
+
+int yywrap() {
+  return 1;
 }

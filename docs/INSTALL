@@ -72,15 +72,6 @@ to compile some of the Amanda programs (see section 1.2.H below).
 		are included with this version of Amanda to fix some
 		problems with the compilation of this package.
 
-	    ftp://prep.ai.mit.edu/pub/gnu/flex-2.5.4a.tar.gz
-		The amrecover interface requires the flex library, so
-		configure must be able to find that library.  Some other
-		lexers may do, but then you'll have to remove
-		recover-src/uscan.c so that it is rebuilt.  If you
-		don't have flex, you may get error messages from the
-		linker saying that it could not resolve the yywrap
-		symbol.
-
 	Only if you wish to edit and enhance Amanda, you may need to
 	install the following tools.  Autoconf and automake are
 	required if you are going to rebuild the Makefiles and auto
@@ -90,6 +81,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	    ftp://prep.ai.mit.edu/pub/gnu/autoconf/automake-1.2.tar.gz
 	    ftp://prep.ai.mit.edu/pub/gnu/libtool-1.0.tar.gz
 	    ftp://prep.ai.mit.edu/pub/gnu/bison-1.25.tar.gz
+	    ftp://prep.ai.mit.edu/pub/gnu/flex-2.5.4a.tar.gz
 
     E.  Read about the different configuration options available for
 	building and running Amanda.  To see the options, do both:

@@ -1,3 +1,5 @@
+	amrecover no longer depends on GNU flex library.  -oliva
+
 	Ensure that malloc(0) is not called.  -Wolfram Schmidt
 	<Wolfram.Schmidt@iao.fhg.de>
 
