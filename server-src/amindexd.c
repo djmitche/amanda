@@ -3,13 +3,16 @@
 * File:          $RCSfile: amindexd.c,v $
 * Part of:       
 *
-* Revision:      $Revision: 1.5 $
-* Last Edited:   $Date: 1997/07/24 08:04:10 $
-* Author:        $Author: george $
+* Revision:      $Revision: 1.6 $
+* Last Edited:   $Date: 1997/08/26 02:16:40 $
+* Author:        $Author: amcore $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: amindexd.c,v $
+* History:       Revision 1.6  1997/08/26 02:16:40  amcore
+* History:       Fix dangling references to bindir.  by John R. Jackson
+* History:
 * History:       Revision 1.5  1997/07/24 08:04:10  george
 * History:       Remove extra spaces from where they are not needed/wanted.
 * History:
@@ -332,7 +335,7 @@ int build_disk_table P((void))
 	return -1;
     }
 
-    sprintf(cmd, "%s/amadmin%s %s find %s %s", bindir, versionsuffix(),
+    sprintf(cmd, "%s/amadmin%s %s find %s %s", sbindir, versionsuffix(),
 	    config, dump_hostname, disk_name);
     if ((fp = popen(cmd, "r")) == NULL)
     {

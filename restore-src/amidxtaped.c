@@ -2,11 +2,14 @@
 *
 * File:          $RCSfile: amidxtaped.c,v $
 *
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/07/03 07:48:12 $
+* Revision:      $Revision: 1.3 $
+* Last Edited:   $Date: 1997/08/26 02:16:37 $
 * Author:        $Author: amcore $
 *
 * History:       $Log: amidxtaped.c,v $
+* History:       Revision 1.3  1997/08/26 02:16:37  amcore
+* History:       Fix dangling references to bindir.  by John R. Jackson
+* History:
 * History:       Revision 1.2  1997/07/03 07:48:12  amcore
 * History:       Added MT_FILE_FLAG to {ac,}config.h, so that amidxtaped uses the
 * History:       switch determined by configure for invoking mt.
@@ -198,7 +201,7 @@ char **argv;
     }
     amrestore_args[amrestore_nargs+1] = NULL;
 
-    sprintf(amrestore_path, "%s/%s", bindir, "amrestore");
+    sprintf(amrestore_path, "%s/%s", sbindir, "amrestore");
     
     /* so got all the arguments, now ready to execv */
     dbprintf(("Ready to execv amrestore with:\n"));
