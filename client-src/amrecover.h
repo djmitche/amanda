@@ -4,15 +4,20 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:29:58 $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/04/17 09:17:00 $
 * Author:        $Author: amcore $
 *
 * Description:   
 * Public Func:   
 * History:       $Log: amrecover.h,v $
-* History:       Revision 1.1  1997/03/15 21:29:58  amcore
-* History:       Initial revision
+* History:       Revision 1.2  1997/04/17 09:17:00  amcore
+* History:       amrecover failed to restore from an uncompressed dump image
+* History:       because I read the amrestore man page incorrectly. It now
+* History:       handles uncompressed as well as compressed dump images.
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:29:58  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.14  1996/12/19 08:53:40  alan
 * History:       first go at file extraction
@@ -85,7 +90,6 @@ extern int quit_prog;			/* set when time to exit parser */
 extern char tape_server_name[LINE_LENGTH];
 extern char tape_device_name[LINE_LENGTH];
 extern pid_t extract_restore_child_pid;
-extern pid_t extract_compress_child_pid;
 
 extern int converse P((char *cmd));
 extern int exchange P((char *cmd));

@@ -2,11 +2,16 @@
 *
 * File:          $RCSfile: extract_list.c,v $
 *
-* Revision:      $Revision: 1.2 $
-* Last Edited:   $Date: 1997/03/19 11:41:08 $
-* Author:        $Author: oliva $
+* Revision:      $Revision: 1.3 $
+* Last Edited:   $Date: 1997/04/17 09:16:53 $
+* Author:        $Author: amcore $
 *
 * History:       $Log: extract_list.c,v $
+* History:       Revision 1.3  1997/04/17 09:16:53  amcore
+* History:       amrecover failed to restore from an uncompressed dump image
+* History:       because I read the amrestore man page incorrectly. It now
+* History:       handles uncompressed as well as compressed dump images.
+* History:
 * History:       Revision 1.2  1997/03/19 11:41:08  oliva
 * History:       If no DUMP program is found, amcheck no longer produces error
 * History:       messages.  If any filesystem is to be backed up with DUMP but
@@ -94,7 +99,6 @@ EXTRACT_LIST;
 
 /* global pid storage for interrupt handler */
 pid_t extract_restore_child_pid = -1;
-pid_t extract_compress_child_pid = -1;
 
 
 static EXTRACT_LIST *extract_list = NULL;
@@ -491,15 +495,14 @@ static int extract_files_setup P((void))
     sprintf(disk_regex, "^%s$", disk_name);
 
     /* send to the tape server what tape file we want */
-    /* 5 args: "-p", "-c", "tape device", "hostname", "diskname" */
-    send_to_tape_server(tape_server_socket, "5");
+    /* 4 args: "-p", "tape device", "hostname", "diskname" */
+    send_to_tape_server(tape_server_socket, "4");
     send_to_tape_server(tape_server_socket, "-p");
-    send_to_tape_server(tape_server_socket, "-c");
     send_to_tape_server(tape_server_socket, tape_device_name);
     send_to_tape_server(tape_server_socket, dump_hostname);
     send_to_tape_server(tape_server_socket, disk_regex);
 		
-    dbprintf(("Started amidxtaped with arguments \"5 -p -c %s %s %s\"\n",
+    dbprintf(("Started amidxtaped with arguments \"4 -p %s %s %s\"\n",
 	      tape_device_name, dump_hostname, disk_regex));
 
     return tape_server_socket;
@@ -596,6 +599,20 @@ EXTRACT_LIST *elist;
 
 
 /* does the actual extraction of files */
+/* The original design had the dump image being returned exactly as it
+   appears on the tape, and this routine getting from the index server
+   whether or not it is compressed, on the assumption that the tape
+   server may not know how to uncompress it. But
+   - Amrestore can't do that. It returns either compressed or uncompressed
+   (always). Amrestore assumes it can uncompress files. It is thus a good
+   idea to run the tape server on a machine with gzip.
+   - The information about compression in the disklist is really only
+   for future dumps. It is possible to change compression on a drive
+   so the information in the disklist may not necessarily relate to
+   the dump image on the tape.
+     Consequently the design was changed to assuming that amrestore can
+   uncompress any dump image and have it return an uncompressed file
+   always. */
 void extract_files P((void))
 {
     EXTRACT_LIST *elist;
@@ -603,8 +620,6 @@ void extract_files P((void))
     int child_stat;
     char buf[1024];
     char *l;
-    int dumps_compressed;
-    int pipe_fd[2];
     int tape_server_socket;
 
     if (!is_extract_list_nonempty())
@@ -643,20 +658,6 @@ void extract_files P((void))
 	return;
     printf("\n");
 
-    /* determine if dumps are compressed */
-    sprintf(buf, "DCMP");
-    if (send_command(buf) == -1)
-        exit(1);
-    if (get_reply_line() == -1)
-	exit(1);
-    l = reply_line();
-    if (!server_happy())
-    {
-	printf("%s\n", l);
-	exit(1);
-    }
-    dumps_compressed = (l[4] == 'Y')? 1: 0;
-
     while ((elist = first_tape_list()) != NULL)
     {
 	printf("Load tape %s now\n", elist->tape);
@@ -670,135 +671,47 @@ void extract_files P((void))
 	    return;
 	}
 	
-	/* okay, ready to extract. fork a child or 2 to do the actual work */
-	if (dumps_compressed)
+	/* okay, ready to extract. fork a child to do the actual work */
+	if ((pid = fork()) == 0)
 	{
+	    /* this is the child process */
+	    /* never gets out of this clause */
+	    extract_files_child(tape_server_socket, elist);
+	    /*NOT REACHED*/
+	}
+	/* this is the parent */
+	if (pid == -1)
+	{
+	    perror("extract_list - error forking child");
+	    exit(1);
+	}
 
-	    dbprintf(("Dumps are compressed\n"));
+	/* store the child pid globally so that it can be killed on intr */
+	extract_restore_child_pid = pid;
 
-	    /* need to pipe data through uncompress routine before
-	       sending it to restore */
-	    /* get a pipe for between processes */
-	    if (pipe(pipe_fd) == -1)
-	    {
-		perror("extract_list - error getting pipe");
-		exit(1);
-	    }
-
-	    /* start up uncompress command, as filter */
-	    if ((pid = fork()) == 0)
-	    {
-		/* this is the child process */
-		/* never gets out of this clause */
-		(void)close(pipe_fd[0]); /* close read end of pipe */
-
-		/* turn stdin into socket from tape server */
-		if (dup2(tape_server_socket, STDIN_FILENO) == -1)
-		{
-		    perror("extract_list - uncompress client");
-		    exit(1);
-		}
-
-		/* turn stdout into pipe write fd */
-		if (dup2(pipe_fd[1], STDOUT_FILENO) == -1)
-		{
-		    perror("extract_list - uncompress client");
-		    exit(1);
-		}
-		(void)execlp(UNCOMPRESS_PATH, UNCOMPRESS_PATH,
-#ifdef UNCOMPRESS_OPT
-			     UNCOMPRESS_OPT,
-#endif
-			     (char *)0);
-		/* only get here if exec failed */
-		error("could not exec %s: %s", UNCOMPRESS_PATH,
-		      strerror(errno));
-		exit(1);
-		/*NOT REACHED*/
-	    }
-	    /* this is the parent */
-	    if (pid == -1)
-	    {
-		perror("extract_list - error forking child");
-		exit(1);
-	    }
-	    /* store the child pid globally so that it can be killed on intr */
-	    extract_compress_child_pid = pid;
-
-	    /* now start up restore */
-	    if ((pid = fork()) == 0)
-	    {
-		/* this is the child process */
-		/* never gets out of this clause */
-		(void)close(pipe_fd[1]);	/* close write end of pipe */
-		extract_files_child(pipe_fd[0], elist);
-		/*NOT REACHED*/
-	    }
-	    /* this is the parent */
-	    if (pid == -1)
-	    {
-		perror("extract_list - error forking child");
-		exit(1);
-	    }
-	    /* store the child pid globally so that it can be killed on intr */
-	    extract_restore_child_pid = pid;
-
-	    (void)close(pipe_fd[0]);
-	    (void)close(pipe_fd[1]);
-	    (void)close(tape_server_socket);
+	(void)close(tape_server_socket);
+	
+	/* wait for the child process to finish */
+	if ((pid = waitpid(-1, &child_stat, 0)) == (pid_t)-1)
+	{
+	    perror("extract_list - error waiting for child");
+	    exit(1);
+	}
+	if (pid == extract_restore_child_pid)
+	{
+	    extract_restore_child_pid = -1;
 	}
 	else
 	{
-	    dbprintf(("Dumps are not compressed\n"));
-
-	    /* only need 1 child, for restore */
-	    extract_compress_child_pid = -1;
-
-	    if ((pid = fork()) == 0)
-	    {
-		/* this is the child process */
-		/* never gets out of this clause */
-		extract_files_child(tape_server_socket, elist);
-		/*NOT REACHED*/
-	    }
-	    /* this is the parent */
-	    if (pid == -1)
-	    {
-		perror("extract_list - error forking child");
-		exit(1);
-	    }
-
-	    /* store the child pid globally so that it can be killed on intr */
-	    extract_restore_child_pid = pid;
-
-	    (void)close(tape_server_socket);
+	    fprintf(stderr, "extract list - unknown child terminated?\n");
+	    exit(1);
 	}
-	
-	/* wait for the child processes to finish */
-	while ((extract_restore_child_pid != -1)
-	       && (extract_compress_child_pid != -1))
+	if ((WIFEXITED(child_stat) != 0) && (WEXITSTATUS(child_stat) != 0))
 	{
-	    if ((pid = waitpid(-1, &child_stat, 0)) == (pid_t)-1)
-	    {
-		perror("extract_list - error waiting for child");
-		exit(1);
-	    }
-	    if (pid == extract_restore_child_pid)
-		extract_restore_child_pid = -1;
-	    else if (pid == extract_compress_child_pid)
-		extract_compress_child_pid = -1;
-	    else
-	    {
-		fprintf(stderr, "extract list - unknown child terminated?\n");
-		exit(1);
-	    }
-	    if ((WIFEXITED(child_stat) != 0) && (WEXITSTATUS(child_stat) != 0))
-	    {
-		fprintf(stderr,
-			"extract_list - child returned non-zero status: %d\n",
-			WEXITSTATUS(child_stat));
-		exit(1);
-	    }
+	    fprintf(stderr,
+		    "extract_list - child returned non-zero status: %d\n",
+		    WEXITSTATUS(child_stat));
+	    exit(1);
 	}
 
 	/* finish up */

@@ -4,15 +4,20 @@
 * Module:        
 * Part of:       
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:29:58 $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/04/17 09:16:57 $
 * Author:        $Author: amcore $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: amrecover.c,v $
-* History:       Revision 1.1  1997/03/15 21:29:58  amcore
-* History:       Initial revision
+* History:       Revision 1.2  1997/04/17 09:16:57  amcore
+* History:       amrecover failed to restore from an uncompressed dump image
+* History:       because I read the amrestore man page incorrectly. It now
+* History:       handles uncompressed as well as compressed dump images.
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:29:58  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.19  1996/12/31 09:32:00  alan
 * History:       Removed inclusion of mntent.h and use of MAXMNTSTR since this was
@@ -287,9 +292,6 @@ int signum;
     if (extract_restore_child_pid != -1)
 	(void)kill(extract_restore_child_pid, SIGKILL);
     extract_restore_child_pid = -1;
-    if (extract_compress_child_pid != -1)
-	(void)kill(extract_compress_child_pid, SIGKILL);
-    extract_compress_child_pid = -1;
 
     (void)send_command("QUIT");
     exit(1);
