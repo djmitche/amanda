@@ -1,3 +1,8 @@
+1999-01-27  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (SAMBA_CLIENT): updated check for smbclient to
+	support Samba 2.0.0
+
 1999-01-26  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* server-src/amdump.sh.in (runuser): set to LOGNAME if defined, and

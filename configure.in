@@ -1158,7 +1158,7 @@ fi
 AC_PATH_PROGS(SAMBA_CLIENT,smbclient,,$LOCSYSPATH)
 if test ! -z "$SAMBA_CLIENT"; then
   case "`\"$SAMBA_CLIENT\" '\\\\not.a.host.name\\notashare' -U nosuchuser -N -Tx /dev/null 2>&1`" in
-  *"Unknown host"*)
+  *"Unknown host"*|*"Connection to not.a.host.name failed"*)
 		AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
 		;;
   *)
