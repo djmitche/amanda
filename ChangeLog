@@ -1,5 +1,10 @@
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/Makefile.am: change OBJ_EXTENSION to OBJEXT in line
+	  related to the "security" test tool.
+
+1999-09-05 John R. Jackson  <jrj@purdue.edu>
+
 	* changer-src/chg-chio.pl.in: add -w to #! line to catch more errors.
 	* client-src/amandad.c: fix some compiler warnings.
 	* common-src/protocol.c: fix some compiler warnings.
@@ -45,7 +50,7 @@
 
 1999-09-05 John R. Jackson  <jrj@purdue.edu>
 
-	* common-src/genversion.c: CLIENT_USER has to be defined so there
+	* common-src/genversion.c: CLIENT_LOGIN has to be defined so there
 	  is no point testing for it.
 	* server-src/conffile.c: ditto.
 
@@ -241,7 +246,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.256 1999/09/05 23:17:29 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.257 1999/09/05 23:39:43 jrj Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 

@@ -96,8 +96,7 @@ file_LDADD = $(libamanda_a_LIBADD)
 
 security_SOURCES = security.test.c
 security_LDADD = $(libamanda_a_LIBADD) \
-	alloc.$(OBJ_EXTENSION) debug.$(OBJ_EXTENSION) \
-	error.$(OBJ_EXTENSION) file.$(OBJ_EXTENSION)
+	alloc.$(OBJEXT) debug.$(OBJEXT) error.$(OBJEXT) file.$(OBJEXT)
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@
