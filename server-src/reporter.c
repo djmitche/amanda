@@ -598,7 +598,8 @@ void output_summary()
 	fprintf(mailf,"%1d %8.0f %8.0f ", 
 		data(dp)->level, data(dp)->origsize, data(dp)->outsize);
 
-	if(dp->dtype->compress_best || dp->dtype->compress_fast)
+	if(dp->dtype->compress_best || dp->dtype->compress_fast
+		|| dp->dtype->srvcompress)
 	    f = data(dp)->origsize;
 	else 
 	    f = 0.0;
@@ -813,7 +814,8 @@ void handle_success()
 	disks[level] += 1;
 	stats[i].disks += 1;
 	stats[i].outsize += kbytes;
-	if(!(dp->dtype->compress_fast || dp->dtype->compress_best))
+	if(!(dp->dtype->compress_fast || dp->dtype->compress_best
+		|| dp->dtype->srvcompress))
 	    data(dp)->origsize = kbytes;
 	else {
 	    /* grab original size from record */
