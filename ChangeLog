@@ -1,12 +1,18 @@
-1998-06-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+1998-06/18  Blair Zajac <blair@gps.caltech.edu>
 
-	* server-src/amadmin.c (bumpsize): write wrong equation for bump
-	threshold.
+	* config/ltconfig: update to 1.2a
+	* config/ltmain.sh: update to 1.2a
+	* config/libtool/libtool/m4: update to 1.2a
 
 1998-06-17  John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/dumper.c (write_tapeheader): comment out some variables
 	to get rid of a compiler warning.
+
+1998-06-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/amadmin.c (bumpsize): write wrong equation for bump
+	threshold.
 
 1998-06-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 

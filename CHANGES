@@ -1,3 +1,5 @@
+	really update libtool to 1.2a.  -blair
+
 	gb now valid way to specify size of holding disk.  -kovert
 
 	configure no longer checks for MAXFILESIZE; INT_MAX is used
