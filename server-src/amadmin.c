@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.3 2004/04/22 19:22:11 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.4 2004/08/02 18:54:00 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1146,6 +1146,11 @@ disk_t *dp;
 	       (long)info.inf[l].date, info.inf[l].filenum,
 	       info.inf[l].label);
     }
+    for(l=0;info.history[l].level > -1;l++) {
+	printf("history: %d %ld %ld %ld\n",info.history[l].level,
+	       info.history[l].size, info.history[l].csize,
+	       info.history[l].date);
+    }
     printf("//\n");
 }
 
@@ -1262,6 +1267,7 @@ int import_one P((void))
     char *line = NULL;
     char *s, *fp;
     int ch;
+    int nb_history, i;
     char *hostname = NULL;
     char *diskname = NULL;
 
@@ -1370,6 +1376,10 @@ int import_one P((void))
 	    /* end of record */
 	    break;
 	}
+	if(strncmp(line, "history:", 8) == 0) {
+	    /* end of record */
+	    break;
+	}
 	memset(&onestat, 0, sizeof(onestat));
 
 	s = line;
@@ -1437,6 +1447,58 @@ int import_one P((void))
 	if(level < 0 || level > 9) goto parse_err;
 
 	info.inf[level] = onestat;
+    }
+    nb_history = 0;
+    for(i=0;i<=NB_HISTORY+1;i++) {
+	info.history[i].level = -2;
+    }
+    while(1) {
+	history_t onehistory;
+	long date;
+
+	if(line[0] == '/' && line[1] == '/') {
+	    info.history[nb_history].level = -2;
+	    rc = 0;
+	    break;
+	}
+	memset(&onehistory, 0, sizeof(onehistory));
+	s = line;
+	ch = *s++;
+#define sc "history:"
+	if(strncmp(line, sc, sizeof(sc)-1) != 0) {
+	    break;
+	}
+	s += sizeof(sc)-1;
+	ch = s[-1];
+#undef sc
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%d", &onehistory.level) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%ld", &onehistory.size) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%ld", &onehistory.csize) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);
+	if(ch == '\0' || sscanf((s - 1), "%ld", &date) != 1) {
+	    break;
+	}
+	skip_integer(s, ch);
+	onehistory.date = date; /* time_t not guarranteed to be long */
+
+	info.history[nb_history++] = onehistory;
+	amfree(line);
+	if((line = impget_line()) == NULL) goto shortfile_err;
     }
     amfree(line);
 
