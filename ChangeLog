@@ -1,3 +1,29 @@
+2001-09-15 Thomas Hepper (th@ant.han.de)
+	* changer-src/chg-scsi.c: Added new config option autoinv, 
+	if not set no auto inventory will be done if the label db is out of 
+	sync. Reworked MapBarCode, now the parameters are passed as a struct 
+	and the result is returned in this struct (MBC_T), 
+	also removed some duplicate/nonsens code from MapBarCode
+	Changed the definitions for slot_file. It was used duplicate, 
+	1. as the config file set by amanda.conf, and second set by the
+	config option in the chg-scsi config file. Now the file from
+	amanda.conf is called chg_scsi_conf. and changer_file is renamed 
+	to slot_file.
+	Added check if cleanfile is not set, if true clean_file is set to NULL
+	Now return if tape_device is not in the range 0-9.
+	Added some checks if we have all informations like slot_file, 
+	devices etc. Fixed and error in the search function, 
+	if the searched vol is already loaded return the correct info 
+	and not 'label not found'. Fixed error in the parameter passing 
+	to get_relative_slot. If the option was -slot last we where 
+	1 above the end parameter..
+
+	* changer-src/scsi-bsd.c: Fix compile problems.
+	* changer-src/scsi-changer-driver.c: Fixed the last problems :-) 
+	for the label/barcode handling...
+	* changer-src/scsi-defs.h: Added new struct MBC_T
+	* changer-src/sense.c: Added some more messages for Exabyte 210 lib
+
 2001-09-01 John R. Jackson (jrj@purdue.edu)
 
 	* client-src/sendsize.c: Fix memory allocation problem.

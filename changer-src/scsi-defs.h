@@ -187,6 +187,7 @@ typedef struct {  /* The information we can get for any drive (configuration) */
 typedef struct {
   int number_of_configs; /* How many different configurations are used */
   int eject;             /* Do the drives need an eject-command */
+  int autoinv;           /* Do automaticly an inventory if an tape is not in the db or not active in the db */
   int havebarcode;       /* Do we have an barcode reader installed */
   char *debuglevel;      /* How many debug info to print */
   unsigned char emubarcode;	/* Emulate the barcode feature,  used for keeping an inventory of the lib */
