@@ -1,5 +1,14 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/protocol.[ch]: rewrite for security api.  The entry
+	points now have the 'protocol' prefix.  See protocol.h for more
+	info.
+	* common-src/security.c: rewrite for security api.  This now contains
+	the functions for the 'base class' or some approximation of it.
+	See security.h for the entry points, or docs/SECURITY-API.
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/amanda.h: rip out krb4 defines, headers, and
 	prototypes.  Also, make assert() abort() after calling error().
 	* common-src/krb4-security.c: stub file that pulls in the real
