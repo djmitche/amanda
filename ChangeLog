@@ -1,3 +1,6 @@
+1999-02-27  Thomas Hepper <th@ant.han.de>
+	* server-src/amlabel.c fixed call to changer_label
+
 1999-02-26  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/holding.h: declare struct holding_t.  Remove
