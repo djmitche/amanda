@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.30 1998/09/03 22:10:32 oliva Exp $
+ * $Id: amandad.c,v 1.31 1998/10/27 21:17:08 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -202,7 +202,7 @@ char **argv;
     dbprintf(("got packet:\n--------\n%s--------\n\n", in_msg.dgram.cur));
 
     parse_pkt_header(&in_msg);
-    if(in_msg.type != P_REQ && in_msg.type != P_NAK) {
+    if(in_msg.type != P_REQ && in_msg.type != P_NAK && in_msg.type != P_ACK) {
 	/* XXX */
 	dbprintf(("this is a %s packet, nak'ing it\n", 
 		  in_msg.type == P_BOGUS? "bogus" : "unexpected"));

@@ -1,5 +1,10 @@
 1998-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* client-src/amandad.c (main): terminate immediately if started
+	by a P_ACK packet without sending a P_NAK packet.
+
+1998-10-27  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/conffile.h (dtimeout): new keyword 
 	* server-src/conffile.c (dtimeout): ditto
 	* server-src/dumper.c: use dtimeout instead of READ_TIMEOUT
