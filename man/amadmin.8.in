@@ -4,31 +4,38 @@
 amadmin \- administrative interface to control Amanda backups
 .SH SYNOPSIS
 .B amadmin
-.I config 
+.I config
 .I command
-[ command options ] 
+.I [ command options ]
 
 .SH DESCRIPTION
 
 .B Amadmin
 performs various administrative tasks on the Amanda configuration
-specified by the \fIconfig\fR argument.  The 
-.B amadmin
-commands and their options are as follows.  All commands that take 
-.I hostname [
-.I disks ... ]
-parameters operate on all the disks in the 
+specified by the
+.I config
+argument.
+
+.SH COMMANDS
+
+All commands that take
+.I hostname
+.I [ disks ... ]
+parameters operate on all the disks in the
 .I disklist
 for that
-.I hostname,
-if no disks are specified.  The
+.I hostname
+if no disks are specified.
+.P
+The
 .I disks
 parameters are regular expressions,
-for example "sd0" will match disks "sd0a" and "sd0g"
-and "/mnt" will match "/mnt", "/mnt/a", and "/mnt/b",
-while "^/mnt$" will match only "/mnt".
+so "sd0" will match disks "sd0a" and "sd0g"
+and "/mnt" will match "/mnt", "/mnt/a", and "/mnt/b".
+To match only "/mnt",
+use "^/mnt$".
 This is the same mechanism used by
-.B amrestore.
+.IR amrestore(8) .
 
 .HP 5
 .B version
@@ -37,62 +44,54 @@ Shows the current version and some compile time and runtime parameters.
 
 .HP 5
 .B force
-.I hostname [
-.I disks ... ]
-.br
-Forces the 
-.I disks
-on the computer named by
 .I hostname
-to run a full level 0 backup on the next Amanda run.  
+.I [ disks ... ]
+.br
+Forces the
+.I disks
+on
+.I hostname
+to do a full level 0 backup during the next Amanda run.
 
 .HP 5
 .B unforce
-.I hostname [
-.I disks ... ]
+.I hostname
+.I [ disks ... ]
 .br
-Undoes a previous 
+Undoes a previous
 .B force
 command.
 
 .HP 5
 .B find
-.I hostname [
-.I disks ... ]
+.I hostname
+.I [ disks ... ]
 .br
 Displays, for each
 .I disk,
-all the dumps that are currently on tape for that disk.  The tape
-label, file number, and status are displayed.
+all dumps that are currently on tape.
+The tape label, file number, and status are displayed.
 
 .HP 5
 .B delete
 .I hostname
 .I disks ...
 .br
-Deletes all the specified 
+Deletes the specified
 .I disks
 from the Amanda
 .I curinfo
 database.
 
 .HP 5
-.B info
-.I hostname
-.I disks ...
-.br
-Displays the 
-.I curinfo
-database record for each of the
-.I disks.
-Mostly used just for debugging.
-
-.HP 5
 .B tape
 .br
 Displays the label name of the tape Amanda is expecting to write to on
-the next Amdump run. See also
-.I amcheck(8).
+the next
+.i amdump(8)
+run.
+See also
+.IR amcheck(8) .
 
 .HP 5
 .B bumpsize
@@ -103,48 +102,245 @@ levels.
 .HP 5
 .B balance
 .br
-displays the distribution of full backups throughout the dump
-schedule.  For example:
+Displays the distribution of full backups throughout the dump
+schedule.
+
+.HP 5
+.B export
+.I [ hostname
+.I [ disks ... ]
+.I ]
+.br
+Convert records from the Amanda database for a particular host
+(or all hosts)
+and disks to a text format that may be transmitted to another Amanda
+machine and imported.
+
+.HP 5
+.B import
+.br
+Convert records read from standard input to a form Amanda uses
+and insert them into the database on this machine.
+
+.HP 5
+.B disklist
+.I [ hostname
+.I [ disks ... ]
+.I ]
+.br
+Displays the
+.I disklist
+information for each of the
+.I disks
+on
+.I hostname
+(or all hosts).
+Mostly used for debugging.
+
+.HP 5
+.B info
+.I hostname
+.I [ disks ... ]
+.br
+Displays the
+.I curinfo
+database record for each of the
+.I disks
+on
+.IR hostname .
+Mostly used for debugging.
+
+.SH EXAMPLES
+
 .EX
-          $ amadmin csd balance
-          due  #fs   orig KB    out KB  balance
-          -------------------------------------
-            0   21    930389    768753    +5.1%
-            1   29   1236272    733211    +0.2%
-            2   31   1552381    735796    +0.6%
-            3   23   1368447    684552    -6.4%
-            4   32   1065603    758155    +3.6%
-            5   14   1300535    738430    +0.9%
-            6   31   1362696    740365    +1.2%
-            7   30   1427936    773397    +5.7%
-            8   11   1059191    721786    -1.3%
-            9   19   1108737    661867    -9.5%
-          -------------------------------------
-          TOT  241  12412187   7316312   731631
+'\" In case this set of man macros does not have .EX, the following
+'\" gets things close to correct.
+'na
+'nf
+$ amadmin @DEFAULT_CONFIG@ force machine-a "^/$" /var /usr
+amadmin: machine-a:/ is set to a forced level 0 tonight.
+amadmin: machine-a:/var is set to a forced level 0 tonight.
+amadmin: machine-a:/usr is set to a forced level 0 tonight.
+
+$ amadmin @DEFAULT_CONFIG@ force machine-b
+amadmin: machine-b:/ is set to a forced level 0 tonight.
+amadmin: machine-b:/var is set to a forced level 0 tonight.
+amadmin: machine-b:/usr is set to a forced level 0 tonight.
+amadmin: machine-b:/home is set to a forced level 0 tonight.
+'fi
+'ad b
 .EE
-.PP
-The 
-.I due 
-column is the number of days until the dumps are due for a full
-backup.  Thus those dumps in row 0 are due for a full dump tonight.
+
+.RS 5
+The first command requests three specific file systems on
+.B machine-a
+get a full level 0 dump during the next Amanda run.
+
+Note the use of "^/$" to get the root file system.
+Without extra regular expression characters, just "/" would
+have matched all the file systems on
+.BR machine-a .
+
+The second command requests all file systems on
+.B machine-b
+get a full level 0 dump during the next Amanda run.
+.RE
+
+.EX
+'\" In case this set of man macros does not have .EX, the following
+'\" gets things close to correct.
+'na
+'nf
+$ amadmin @DEFAULT_CONFIG@ unforce machine-b /home
+amadmin: force command for machine-b:/home cleared.
+'fi
+'ad b
+.EE
+
+.RS 5
+This command undoes the previous
+.B force
+request for
+.B /home
+on
+.BR machine-b .
+The other file systems would still get a full level 0 dump.
+.RE
+
+.EX
+'\" In case this set of man macros does not have .EX, the following
+'\" gets things close to correct.
+'na
+'nf
+$ amadmin @DEFAULT_CONFIG@ find machine-c /var
+date        host      disk lv tape    file status
+1997-11-09  machine-c /var  0 000110     9 OK
+1997-11-08  machine-c /var  2 000109     2 OK
+1997-11-07  machine-c /var  2 000108     2 OK
+1997-11-06  machine-c /var  2 000107     2 OK
+1997-11-05  machine-c /var  2 000106     3 OK
+1997-11-04  machine-c /var  2 000105     2 OK
+1997-11-03  machine-c /var  2 000104     2 OK
+1997-11-02  machine-c /var  2 000103     2 OK
+1997-11-01  machine-c /var  1 000102     5 OK
+1997-10-31  machine-c /var  1 000101     3 OK
+'fi
+'ad b
+.EE
+
+.RS 5
+This command locates the tapes holding
+.B /var
+from
+.BR machine-c .
+The
+.I file
+column tells you which file on the tape has the dump
+(there is a tape label on file number zero).
+The
+.I status
+column tells you whether the dump was successful or had
+some type of error.
+.RE
+
+.EX
+'\" In case this set of man macros does not have .EX, the following
+'\" gets things close to correct.
+'na
+'nf
+$ amadmin @DEFAULT_CONFIG@ delete machine-d /workspace
+amadmin: machine-d:/workspace deleted from curinfo database.
+amadmin: NOTE: you'll have to remove these from the disklist yourself.
+'fi
+'ad b
+.EE
+
+.RS 5
+This command tells Amanda to forget about the
+.B /workspace
+disk on
+.BR machine-d .
+If you do not also remove the disk from the
+.I disklist
+file, Amanda will treat it as a new disk on the next run.
+.RE
+
+.EX
+'\" In case this set of man macros does not have .EX, the following
+'\" gets things close to correct.
+'na
+'nf
+$ amadmin @DEFAULT_CONFIG@ tape
+The next Amanda run should go onto tape 123456 or a new tape.
+'fi
+'ad b
+.EE
+
+.RS 5
+This command tells you the next tape Amanda wants to use is
+labeled
+.BR 123456 .
+.RE
+
+.EX
+'\" In case this set of man macros does not have .EX, the following
+'\" gets things close to correct.
+'na
+'nf
+$ amadmin @DEFAULT_CONFIG@ balance
+ due-date  #fs   orig KB    out KB  balance
+-------------------------------------------
+11/10 Mon   21    930389    768753    +5.1%
+11/11 Tue   29   1236272    733211    +0.2%
+11/12 Wed   31   1552381    735796    +0.6%
+11/13 Thu   23   1368447    684552    -6.4%
+11/14 Fri   32   1065603    758155    +3.6%
+11/15 Sat   14   1300535    738430    +0.9%
+11/16 Sun   31   1362696    740365    +1.2%
+11/17 Mon   30   1427936    773397    +5.7%
+11/18 Tue   11   1059191    721786    -1.3%
+11/19 Wed   19   1108737    661867    -9.5%
+-------------------------------------------
+TOTAL      241  12412187   7316312   731631  (estimated 8 runs per dumpcycle)
+'fi
+'ad b
+.EE
+
+.RS 5
+The
+.I due-date
+column is the day the dumps are due for a full backup.
 .I #fs
-shows the number of filesystems doing full dumps that night, and 
+shows the number of filesystems doing full dumps that night, and
 .I orig KB
 and
 .I out KB
-show the total size of the dumps before and after any compression,
-respectively.  The 
-.I balance 
+show the estimated total size of the dumps before and after any compression,
+respectively.
+
+The
+.I balance
 column shows how far off that night's dumps are from the average size
-(shown at the bottom of the balance column).  Amanda tries to keep the
+(shown at the bottom of the balance column).
+Amanda tries to keep the
 dumps balanced to with +/- 5%, but since the amount of data on each
 filesystem is always changing, and Amanda will never delay dumps just
 to rebalance the schedule, it is common for the schedule to fluctuate
-by larger percentages.  In particular, in the case of a tape or dump
+by larger percentages.
+In particular, in the case of a tape or dump
 failure, a bump will occur the following night, which will not be
 smoothed out until the next pass through the schedule.
+
+The last line also shows an estimate of how many Amanda runs will be
+made between full dumps for a file system.
+In the example, a file system will probably have a full dump done
+every eight times Amanda is run (e.g. every eight days).
+.RE
+
 .SH FILES
-@sbindir@/amadmin, @CONFIG_DIR@/<config>/amanda.conf
+@sbindir@/amadmin
+.br
+@CONFIG_DIR@/\fIconfig\fR/amanda.conf
 
 .SH AUTHOR
 James da Silva <jds@cs.umd.edu>
@@ -152,4 +348,4 @@ James da Silva <jds@cs.umd.edu>
 University of Maryland, College Park
 
 .SH "SEE ALSO"
-amanda(8), amcheck(8)
+amanda(8), amcheck(8), amdump(8), amrestore(8)
