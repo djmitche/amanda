@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.8 2001/04/15 12:05:24 ant Exp $
+ * $Id: scsi-cam.c,v 1.9 2001/05/28 18:25:54 ant Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
@@ -129,6 +129,7 @@ int SCSI_OpenDevice(int ip)
 
     free(DeviceName);
     if (pDev[ip].curdev) {
+      pDev[ip].avail = 1;
       pDev[ip].SCSI = 1;
       pDev[ip].devopen = 1;
       if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0) {
@@ -152,6 +153,9 @@ int SCSI_OpenDevice(int ip)
         pDev[ip].inquiry = NULL;
         return(1);
       }
+    } else { /* Device open failed */
+      DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice open failed\n");
+      return(0);
     }
   } else {
     if (parse_btl(DeviceName, &path, &target, &lun))
@@ -304,10 +308,42 @@ int Tape_Eject ( int DeviceFD)
 
 int Tape_Status( int DeviceFD)
 {
-/* 
-  Not yet
-*/
-  return(-1);
+  extern OpenFiles_T *pDev;
+  struct mtget mtget;
+  int ret = 0;
+  
+  if (pDev[DeviceFD].devopen == 0)
+    {
+      SCSI_OpenDevice(DeviceFD);
+    }
+
+  if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
+  {
+     dbprintf(("Tape_Status error ioctl %d\n",errno));
+     SCSI_CloseDevice(DeviceFD);
+     return(-1);
+  }
+
+  dbprintf(("ioctl -> mtget.mt_dsreg %lX\n",mtget.mt_dsreg));
+  dbprintf(("ioctl -> mtget.mt_erreg %lX\n",mtget.mt_erreg));
+
+  /*
+   * I have no idea what is the meaning of the bits in mt_erreg
+   * I assume that nothing set is tape loaded
+   * 0x2 is no tape online
+   */
+  if (mtget.mt_erreg == 0)
+    {
+      ret = ret | TAPE_ONLINE;
+    }
+
+  if (mtget.mt_erreg & 0x2)
+    {
+      ret = ret | TAPE_NOT_LOADED;
+    }
+  
+  SCSI_CloseDevice(DeviceFD);
+  return(ret);
 }
 
 /*

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.27 2001/05/07 17:57:12 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.28 2001/05/28 18:25:54 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -49,6 +49,7 @@ extern FILE *debug_file;
 int PrintInquiry(SCSIInquiry_T *);
 int GenericElementStatus(int DeviceFD, int InitStatus);
 int SDXElementStatus(int DeviceFD, int InitStatus);
+int DLT448ElementStatus(int DeviceFD, int InitStatus);
 ElementInfo_T *LookupElement(int addr);
 int GenericResetStatus(int DeviceFD);
 int RequestSense(int, ExtendedRequestSense_T *, int  );
@@ -298,10 +299,22 @@ ChangerCMD_T ChangerIO[] = {
    NoBarCode,
    GenericSearch,
    GenericSenseHandler},
+  {"FastStor DLT",               
+   "ADIC FastStor DLT Library [FastStor DLT]",
+   SDXMove,
+   DLT448ElementStatus,
+   GenericResetStatus,
+   GenericFree,
+   GenericEject,
+   GenericClean,
+   GenericRewind,
+   NoBarCode,
+   GenericSearch,
+   GenericSenseHandler},
   {"Scalar DLT 448",
    "ADIC DLT 448 [Scalar DLT 448]",
    GenericMove,
-   GenericElementStatus,
+   DLT448ElementStatus,
    GenericResetStatus,
    GenericFree,
    GenericEject,
@@ -536,6 +549,8 @@ void PrintConf()
  *
  * ToDo:
  * Check if the tape/changer is ready for the next move
+ * If an tape is loaded unload it and do initialize element status to
+ * get all labels if an bar code reader is installed
  */
 void Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean)
 {
@@ -545,18 +560,48 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
   char *label = malloc(1);       /* the same here ..... */
   char *result;
   int fd;                        /* fd from tape_open */
+  int barcode;                   /* cache the result from the BarCode function */
 
   DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE, "##### START Inventory\n");
+  barcode = BarCode(INDEX_CHANGER);
+
   MapBarCode(labelfile,  "", "", RESET_VALID, 0, 0);
+
+  /*
+   * If we have an bar code reader
+   * Check if an tape is loaded, if yes unload it
+   * and do an INIT ELEMENT STATUS
+   */
+
+  if (barcode == 1)
+    {
+      if (eject)
+	{
+	  eject_tape("", eject);
+	}
+
+      if (pDTE[0].status == 'F')
+	{
+	  (void)unload(INDEX_TAPE, 0, 0);
+	}
+      GenericResetStatus(INDEX_CHANGER);
+    }
+
   for (x = 0; x < STE; x++)
     {
       if (x == clean)
 	{
 	  continue;
 	}
+      
+      /*
+       * Load the tape, on error try the next
+       * error could be an empty slot for example
+       */
       if (load(INDEX_CHANGER, drive, x ) != 0)
 	{
 	  DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE, "Load drive(%d) from(%d) failed\n", drive, x);
+	  continue;
 	}
 
       if (pDev[INDEX_TAPECTL].inqdone == 1 && pDev[INDEX_TAPECTL].SCSI == 1)
@@ -568,28 +613,24 @@ void Inventory(char *labelfile, int drive, int eject, int start, int stop, int c
 
       SCSI_CloseDevice(INDEX_TAPE);
 
-      if ((fd = tape_open(pDev[INDEX_TAPE].dev, O_RDONLY)) != 0)
-	{
-	  if ((result = (char *)tapefd_rdlabel(fd, &datestamp, &label)) == NULL)
-	    {
-	      if (BarCode(INDEX_CHANGER) == 1)
-		{
-		  MapBarCode(labelfile, label, pDTE[drive].VolTag, UPDATE_SLOT, x, 0);
-		} else {
-		  MapBarCode(labelfile, label, "", UPDATE_SLOT, x, 0);
-		}
-	    } else {
-	      DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE, "Read label failed\n");
-	    }
-	  tapefd_close(fd);
-	}
+      if ((result = (char *)tape_rdlabel(pDev[INDEX_TAPE].dev, &datestamp, &label)) == NULL)
+      {
+	if (BarCode(INDEX_CHANGER) == 1)
+	  {
+	    MapBarCode(labelfile, label, pDTE[drive].VolTag, UPDATE_SLOT, x, 0);
+	  } else {
+	    MapBarCode(labelfile, label, "", UPDATE_SLOT, x, 0);
+	  }
+      } else {
+	DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE, "Read label failed\n");
+      }
 
       if (eject)
 	{
 	  eject_tape("", eject);
 	}
 
-      (void)unload(INDEX_CHANGER, drive, x);
+      (void)unload(INDEX_TAPE, drive, x);
     }
   DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE, "##### STOP Inventory\n");
 }
@@ -783,7 +824,12 @@ int unload(int fd, int drive, int slot)
       return(-1);
     }
   
-  if (pSTE[slot].status == 'F')
+  if (pSTE[slot].status == 'F')    {
+      ElementStatusValid = 0;
+      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Can't init status\n");
+      return(-1);
+    }
+
     {
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"unload : Slot %d address %d is full\n", drive, pSTE[slot].address);
       slot = find_empty(fd, 0, 0);
@@ -1150,7 +1196,8 @@ int DecodeModeSense(char *buffer, int offset, char *pstring, char block, FILE *o
 
   /* Jump over the Parameter List header  and an offset if we have something
    * Unknown at the start (ADIC-218) at the moment
-   * */
+   * 
+   */
   buffer = buffer + 4 + offset;
 
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"buffer length = %d\n", length);
@@ -1612,30 +1659,101 @@ int SenseHandler(int DeviceFD, unsigned char flag, unsigned char SenseKey, unsig
 /*
  * Try to get information about the tape,
  * Tape loaded ? Online etc
- * Use the mtio ioctl to get the information
+ * Use the mtio ioctl to get the information if no SCSI Path
+ * to the tape drive is available.
  *
  * TODO:
  * Pass an parameter to identify which unit to use
  * if there are more than one
+ * Implement the SCSI path if available
 */
 void TapeStatus()
 {
+  extern OpenFiles_T *pDev;
   int ret;
+  int true = 1;
+  int cnt = 0;
+  RequestSense_T *pRequestSense;
 
-  dbprintf(("##### START TapeStatus\n"));
-  if (pDTE[0].status == 'F')
-  {
-    ret = Tape_Status(INDEX_TAPE);
-    if ( ret & TAPE_ONLINE)
+  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### START TapeStatus\n");
+
+  /*
+   * If it is an device which understand SCSI commands the
+   * normal ioctl (MTIOCGET for example) may fail
+   * So try an Inquiry
+   */
+  if (pDev[INDEX_TAPE].SCSI == 1)
     {
-      pDTE[0].status ='F'; 
-      dbprintf(("##### FULL\n"));
+      if ((pRequestSense = malloc(sizeof(RequestSense_T))) == NULL)
+	{
+	  dbprintf(("%-20s : malloc failed\n","DLT4000Eject"));
+	  return(-1);
+	}
+      
+      while (true && cnt < 60)
+	{
+	  ret = SCSI_TestUnitReady(INDEX_TAPECTL, pRequestSense);
+	  DebugPrint(DEBUG_INFO, SECTION_SCSI, "TapeStatus TestUnitReady ret %d\n",ret);
+	  switch (ret)
+	    {
+	    case SCSI_OK:
+	    case SCSI_SENSE:
+	      switch (SenseHandler(INDEX_TAPECTL, 0, pRequestSense->SenseKey, pRequestSense->AdditionalSenseCode, pRequestSense->AdditionalSenseCodeQualifier, (char *)pRequestSense))
+		{
+		case SENSE_IGNORE:
+		case SENSE_NO:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"TapeStatus (TestUnitReady) SENSE_NO\n");
+		  pDTE[0].status = 'F';
+		  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### FULL\n");
+		  true = 0;
+		  break;
+		case SENSE_TAPE_NOT_ONLINE:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"GenericEject (TestUnitReady) SENSE_TAPE_NOT_ONLINE\n");
+		  pDTE[0].status = 'E';
+		  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### EMPTY\n");
+		  true = 0;
+		  break;
+		case SENSE_ABORT:
+		  DebugPrint(DEBUG_ERROR, SECTION_SCSI,"TapeStatus (TestUnitReady) SENSE_ABORT\n");
+		  true = 0;
+		  break;
+		case SENSE_RETRY:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"TapeStatus (TestUnitReady) SENSE_RETRY\n");
+		  break;
+		default:
+		  DebugPrint(DEBUG_INFO, SECTION_SCSI,"TapeStatus (TestUnitReady) default (SENSE)\n");
+		  break;
+		}
+	      break;
+	    case SCSI_ERROR:
+	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"TapeStatus (TestUnitReady) SCSI_ERROR\n");
+	      true = 0;
+	      break;
+	    case SCSI_BUSY:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"TapeStatus (TestUnitReady) SCSI_BUSY\n");
+	      break;
+	    case SCSI_CHECK:
+	      DebugPrint(DEBUG_INFO, SECTION_SCSI,"TapeStatus (TestUnitReady) SCSI_CHECK\n");
+	      break;
+	    default:
+	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"TapeStatus (TestUnitReady) unknown (%d)\n",ret);
+	      break;
+	    }
+	  sleep(2);
+	  cnt++;
+	}
     } else {
-      pDTE[0].status = 'E';
-      dbprintf(("##### EMPTY\n"));
+      ret = Tape_Status(INDEX_TAPE);
+      if ( ret & TAPE_ONLINE)
+	{
+	  pDTE[0].status ='F'; 
+	  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### FULL\n");
+	} else {
+	  pDTE[0].status = 'E';
+	  DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### EMPTY\n");
+	}
+      DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP TapeStatus\n");
     }
-  }
-  dbprintf(("##### STOP TapeStatus\n"));
 }
 
 int DLT4000Eject(char *Device, int type)
@@ -2611,6 +2729,206 @@ int GenericElementStatus(int DeviceFD, int InitStatus)
   int loop = 2;    /* Redo it if an error has been reset */
 
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "##### START GenericElementStatus\n");
+
+  if (pEAAPage == NULL)
+    {
+      /*
+       * If this pointer is null
+       * then try to read the parameter with MODE SENSE
+       *
+       */
+      if (pModePage == NULL && LibModeSenseValid == 0)
+        {
+          if ((pModePage = malloc(0xff)) == NULL)
+            {
+              DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GenericElementStatus : malloc failed\n");
+              return(-1);
+            }
+	  if (SCSI_ModeSense(DeviceFD, pModePage, 0xff, 0x8, 0x3f) == 0)
+	    {
+	      LibModeSenseValid = 1;
+	      DecodeModeSense(pModePage, 0, "GenericElementStatus :", 0, debug_file);
+	    } else {
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GetElementStatus : failed SCSI_ModeSense\n");
+	      LibModeSenseValid = -1;
+	    }
+        }
+    }
+  
+  if (GetElementStatus(DeviceFD) == 0 && loop > 0)
+    {
+      loop--;
+      for (x = 0; x < MTE; x++)
+	{
+	  if (pMTE[x].ASC > 0)
+	    {
+	      switch(SenseHandler(DeviceFD, 0, SENSE_CHG_ELEMENT_STATUS, pMTE[x].ASC, pMTE[x].ASCQ, (char *)&pMTE[x]))
+		{
+		case SENSE_IES:
+		  MTEError = 1;
+		  error = 1;
+		  break;
+		case SENSE_ABORT:
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on MTE\n");
+		  return(-1);
+		  break;
+		}
+	    }
+	}
+
+      for (x = 0; x < IEE; x++)
+	{
+	  if (pIEE[x].ASC > 0)
+	    {
+	      switch(SenseHandler(DeviceFD, 0, SENSE_CHG_ELEMENT_STATUS, pIEE[x].ASC, pIEE[x].ASCQ, (char *)&pIEE[x]))
+		{
+		case SENSE_IES:
+		  IEEError = 1;
+		  error = 1;
+		  break;
+		case SENSE_ABORT:
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on IEE\n");
+		  return(-1);
+		  break;
+		}
+	    }
+	}
+
+
+      for (x = 0; x < STE; x++)
+	{
+	  /*
+	   * Needed for the hack to guess the tape status if an error
+	   * for the tape is pending
+	   */
+	  if (pSTE[x].status == 'E')
+	    {
+	      STEEmpty = 1;
+	    }
+
+	  if (pSTE[x].ASC > 0)
+	    {
+	      switch(SenseHandler(DeviceFD, 0, SENSE_CHG_ELEMENT_STATUS, pSTE[x].ASC, pSTE[x].ASCQ, (char *)&pSTE[x]))
+		{
+		case SENSE_IES:
+		  STEError = 1;
+		  error = 1;
+		  break;
+		case SENSE_ABORT:
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on IES\n");
+		  return(-1);
+		  break;
+		}
+	    }
+	}
+
+      for (x = 0; x < DTE; x++)
+	{
+	  if (pDTE[x].ASC > 0)
+	    {
+	      switch(SenseHandler(DeviceFD, 0, SENSE_CHG_ELEMENT_STATUS, pDTE[x].ASC, pDTE[x].ASCQ, (char *)&pDTE[x]))
+		{
+		case SENSE_IES:
+		  DTEError = 1;
+		  error = 1;
+		  break;
+		case SENSE_ABORT:
+		  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Abort on DTE\n");
+		  return(-1);
+		  break;
+		}
+	    }
+	}
+
+      /*
+       * OK, we have an error, do an INIT ELMENT
+       * For the tape if not handled by the robot we have
+       * to do some extra checks
+       */
+      if (error == 1)
+	{
+	  if (GenericResetStatus(DeviceFD) != 0)
+	    {
+	      ElementStatusValid = 0;
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Can't init status\n");
+	      return(-1);
+	    }
+	  error = 0;
+	}
+
+      if (DTEError == 1)
+	{
+	  TapeStatus();
+	  /*
+	   * If the status is empty to an move from tape to tape
+	   * This is if the tape is ejected, but not unloaded
+	   */
+	  if (pDTE[0].status == 'E')
+	    {
+	      DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "GenericElementStatus : try to move tape to tape drive\n");
+	      pDev[DeviceFD].functions->function_move(DeviceFD, pDTE[0].address, pDTE[0].address);
+	    }
+	}
+	  /* Done GetElementStatus */
+    }
+
+  if (error != 0)
+    {
+      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "GenericElementStatus : Can't init status (after loop)\n");
+      return(-1);
+    }
+
+  ElementStatusValid = 1;
+  DebugPrint(DEBUG_ERROR, SECTION_ELEMENT, "#### STOP GenericElementStatus\n");
+  return(0);
+}
+
+
+/*
+ * This is for the ADIC changer, it seems that they have an diferent
+ * offset in the mode sense data before the first mode page (+12)
+ */
+int DLT448ElementStatus(int DeviceFD, int InitStatus)
+{
+  int MTEError = 0;
+  int STEError = 0;
+  int IEEError = 0;
+  int DTEError = 0;
+  int STEEmpty = 0;
+
+  extern OpenFiles_T *pDev;
+
+  int error = 0;   /* If set do an INIT ELEMENT STATUS */
+  int x;           /* The standard loop counter :-) */
+  int loop = 2;    /* Redo it if an error has been reset */
+
+  DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "##### START GenericElementStatus\n");
+
+  if (pEAAPage == NULL)
+    {
+      /*
+       * If this pointer is null
+       * then try to read the parameter with MODE SENSE
+       *
+       */
+      if (pModePage == NULL && LibModeSenseValid == 0)
+        {
+          if ((pModePage = malloc(0xff)) == NULL)
+            {
+              DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GenericElementStatus : malloc failed\n");
+              return(-1);
+            }
+	  if (SCSI_ModeSense(DeviceFD, pModePage, 0xff, 0x8, 0x3f) == 0)
+	    {
+	      LibModeSenseValid = 1;
+	      DecodeModeSense(pModePage, 12, "GenericElementStatus :", 0, debug_file);
+	    } else {
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GetElementStatus : failed SCSI_ModeSense\n");
+	      LibModeSenseValid = -1;
+	    }
+        }
+    }
+  
   if (GetElementStatus(DeviceFD) == 0 && loop > 0)
     {
       loop--;
@@ -2757,6 +3075,32 @@ int SDXElementStatus(int DeviceFD, int InitStatus)
   int loop = 2;    /* Redo it if an error has been reset */
 
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT, "##### START SDXElementStatus\n");
+
+  if (pEAAPage == NULL)
+    {
+      /*
+       * If this pointer is null
+       * then try to read the parameter with MODE SENSE
+       *
+       */
+      if (pModePage == NULL && LibModeSenseValid == 0)
+        {
+          if ((pModePage = malloc(0xff)) == NULL)
+            {
+              DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"SDXElementStatus : malloc failed\n");
+              return(-1);
+            }
+	  if (SCSI_ModeSense(DeviceFD, pModePage, 0xff, 0x8, 0x3f) == 0)
+	    {
+	      LibModeSenseValid = 1;
+	      DecodeModeSense(pModePage, 0, "SDXElementStatus :", 0, debug_file);
+	    } else {
+	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"SDXElementStatus : failed SCSI_ModeSense\n");
+	      LibModeSenseValid = -1;
+	    }
+        }
+    }
+
   if (GetElementStatus(DeviceFD) == 0 && loop)
     {
       loop--;
@@ -2903,30 +3247,6 @@ int GetElementStatus(int DeviceFD)
  
   DebugPrint(DEBUG_INFO, SECTION_ELEMENT,"##### START GetElementStatus\n");
   
-  if (pEAAPage == NULL)
-    {
-      /*
-       * If this pointer is null
-       * then try to read the parameter with MODE SENSE
-       *
-       */
-      if (pModePage == NULL && LibModeSenseValid == 0)
-        {
-          if ((pModePage = malloc(0xff)) == NULL)
-            {
-              DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GenericElementStatus : malloc failed\n");
-              return(-1);
-            }
-	  if (SCSI_ModeSense(DeviceFD, pModePage, 0xff, 0x8, 0x3f) == 0)
-	    {
-	      LibModeSenseValid = 1;
-	      DecodeModeSense(pModePage, 0, "GenericElementStatus :", 0, debug_file);
-	    } else {
-	      DebugPrint(DEBUG_ERROR, SECTION_ELEMENT,"GetElementStatus : failed SCSI_ModeSense\n");
-	      LibModeSenseValid = -1;
-	    }
-        }
-    }
   /* 
    * If the MODE_SENSE was successfull we use this Information to read the Elelement Info 
    */
@@ -4948,7 +5268,8 @@ int SCSI_ReadElementStatus(int DeviceFD,
   type = type & 0xf;
   lun = (lun << 5) & 0xe0;
  
-  /* First try to get the allocation length for a second call
+  /* 
+   * First try to get the allocation length for a second call
    */
 
   while (retry > 0 && retry < MAX_RETRIES)

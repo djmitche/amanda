@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.20 2001/05/07 17:57:12 ant Exp $
+ * $Id: scsi-linux.c,v 1.21 2001/05/28 18:25:55 ant Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -561,6 +561,7 @@ int ScanBus(int print)
   DIR *dir;
   struct dirent *dirent;
   extern OpenFiles_T *pDev;
+  extern int errno;
   int count = 0;
 
   dir = opendir("/dev/");
@@ -620,6 +621,7 @@ int ScanBus(int print)
                 printf("\n");
               }
             count++;
+	    printf("Count %d\n",count);
           } else {
             free(pDev[count].dev);
             pDev[count].dev=NULL;

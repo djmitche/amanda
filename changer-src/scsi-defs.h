@@ -20,6 +20,9 @@ typedef unsigned char PackedBit;
 #define INDEX_TAPE 1
 #define INDEX_TAPECTL 2
 
+#define CHG_MAXDEV 32		/* Maximum number of devices handled by pDev */
+				/* Must be large to hold the result of ScanBus */
+
 #define TAPETYPE 4
 #define IMPORT 3
 #define STORAGE 2

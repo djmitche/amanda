@@ -1,3 +1,19 @@
+2001-05-28 Thomas Hepper <th@ant.han.de>
+	* changer-scsi/chg-scsi.c: Made the array for pDev configurable, #define CHG_MAXDEV
+	* changer-scsi/scsi-defs.h: Added the define for CHG_MAXDEV
+	* changer-src/scsi-cam.c: Set the flag pDev[x].avail to 1 if the device can be openend.
+	Added debug message if the open fails. Implemented the function Tape_Status (not tested)
+	* changer-src/scsi-changer-driver.c: Added the function DLT448ElementStatus, was lost
+	during merge from 2.4.2. The difference to GenericElementStatus is that the DecodeModeSense
+	needs an offset of 12, not 0 as in GenericElementStatus.
+	Added an unload/GenericResetStatus in the Inventory function if an bar code reader is 
+	available. This is to get the label from the loaded tape.
+	The function TapeStatus sets now the status regardless of the status of the tape.
+	If the device is capable for sending SCSI commands use the SCSI interface to get
+	the status of the tape.
+	* docs/TAPE.CHANGERS: Added some notes about the debuglevel keyword and a short
+	description on how to use the sgen interface on solaris 2.8
+	
 2001-05-18 John R. Jackson <jrj@purdue.edu>
 
 	* client-src/patch-system.sh.in: Missed a reference to kamanda in the

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.26 2001/05/07 17:57:12 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.27 2001/05/28 18:25:54 ant Exp $";
 #endif
 /*
  * 
@@ -1050,8 +1050,8 @@ int main(int argc, char *argv[])
   
   parse_args(argc,argv,&com);
 
-  pDev = (OpenFiles_T *)malloc(sizeof(OpenFiles_T) * 3);
-  memset(pDev, 0, sizeof(OpenFiles_T) * 3 );
+  pDev = (OpenFiles_T *)malloc(sizeof(OpenFiles_T) * CHG_MAXDEV);
+  memset(pDev, 0, sizeof(OpenFiles_T) * CHG_MAXDEV );
 
 
   switch(com.command_code) 
