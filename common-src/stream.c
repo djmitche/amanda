@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.10.2.7 2001/02/28 00:53:15 jrjackson Exp $
+ * $Id: stream.c,v 1.10.2.8 2001/06/18 22:23:19 jrjackson Exp $
  *
  * functions for managing stream sockets
  */
@@ -47,7 +47,6 @@ int sendsize, recvsize;
     int r;
 #endif
     struct sockaddr_in server;
-    struct in_addr in_addr;
     int save_errno;
 
     *portp = -1;				/* in case we error exit */
@@ -137,10 +136,9 @@ out:
 #endif
 
     *portp = (int) ntohs(server.sin_port);
-    memcpy(&in_addr, &server.sin_addr, sizeof(server.sin_addr));
     dbprintf(("%s: stream_server: waiting for connection: %s.%d\n",
 	      get_pname(),
-	      inet_ntoa(in_addr),
+	      inet_ntoa(server.sin_addr),
 	      *portp));
     return server_socket;
 }
@@ -155,7 +153,6 @@ int port, sendsize, recvsize, *localport;
     int r;
 #endif
     struct sockaddr_in svaddr, claddr;
-    struct in_addr in_addr;
     struct hostent *hostp;
     int save_errno;
 
@@ -260,15 +257,13 @@ out:
 	return -1;
     }
 
-    memcpy(&in_addr, &svaddr.sin_addr, sizeof(svaddr.sin_addr));
     dbprintf(("%s: stream_client: connected to %s.%d\n",
 	      get_pname(),
-	      inet_ntoa(in_addr),
+	      inet_ntoa(svaddr.sin_addr),
 	      ntohs(svaddr.sin_port)));
-    memcpy(&in_addr, &claddr.sin_addr, sizeof(claddr.sin_addr));
     dbprintf(("%s: stream_client: our side is %s.%d\n",
 	      get_pname(),
-	      inet_ntoa(in_addr),
+	      inet_ntoa(claddr.sin_addr),
 	      ntohs(claddr.sin_port)));
 
     if(sendsize != DEFAULT_SIZE) 
@@ -293,7 +288,6 @@ int server_socket, timeout, sendsize, recvsize;
     struct timeval tv;
     int nfound, connected_socket;
     int save_errno;
-    struct in_addr in_addr;
 
     assert(server_socket >= 0);
 
@@ -344,10 +338,9 @@ int server_socket, timeout, sendsize, recvsize;
 	    errno = save_errno;
 	    return -1;
 	}
-	memcpy(&in_addr, &addr.sin_addr, sizeof(addr.sin_addr));
 	dbprintf(("%s: stream_accept: connection from %s.%d\n",
 	          get_pname(),
-	          inet_ntoa(in_addr),
+	          inet_ntoa(addr.sin_addr),
 	          ntohs(addr.sin_port)));
 	/*
 	 * Make certain we got an inet connection and that it is not
