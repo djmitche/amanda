@@ -1,3 +1,15 @@
+Changes in release 2.4.3b3
+
+* --with-maxtapeblocksize configure options
+* blocksize tapetype option
+* file-pad tapetype option
+* Multiple exclude in dumptype
+* Option include in dumptype
+* New disklist syntax:
+*   hostname diskname [ diskdevice ] dumptype [ spindle [ interface ] ]
+* chg-zd-mtx: Major cleanup and general overhaul.
+* amrecover: new listdisk command.
+
 Changes in release 2.4.3b2
 
 * amrestore try to find the next chunk in the current directory.

@@ -1,3 +1,8 @@
+2002-03-08  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* ReleaseNotes: New file.
+	* NEWS: New item for 2.4.3b3.
+
 2002-03-07 John R. Jackson (jrj@purdue.edu)
 
 	* changer-src/chg-zd-mtx.sh.in: Allow whitespace on a VolumeTag line.

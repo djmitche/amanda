@@ -1,0 +1,19 @@
+2.4.3b3
+
+This release include a change in the behavior of the exclude option
+in a dumptype. It it now possible to have many 'exclude' and many
+'exclude list' simultaneously. In previous release, only the last
+one was used. Look at the amanda man page for a description.
+The command 'amadmin <config> disklist' will show the exclude used.
+
+You need to upgrade the server and client to use multiple exclude, you
+will get the following message from amcheck if your client is not upgraded:
+  ahost   /usr lev 0 FAILED [badly formatted response from ahost]
+
+The new 'include' option in a dumptype and the new format of a disklist
+entry (diskdevice different than the diskname) make it easier to separate
+a disk in multiple disklist entry using GNUTAR. Look at the amanda man page
+and example/disklist file for example on how to use it.
+
+You need to upgrade the server and client to use 'include' or the new
+disklist format.
