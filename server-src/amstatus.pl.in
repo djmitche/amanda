@@ -37,7 +37,7 @@ $result = &NGetOpt (	"summary",
 			"file:s",
 			);
 if($result !=1 ) {
-	usage();
+	&usage();
 }
 
 if( defined $opt_config ) {
@@ -48,7 +48,7 @@ else {
 		$conf=$ARGV[0];
 	}
 	else {
-		usage();
+		&usage();
 	}
 }
 
@@ -469,7 +469,7 @@ foreach $host (sort @hosts) {
 			}
 			elsif($dump_started{$hostpart} == 1 &&
 					$dump_finished{$hostpart} != 1) {
-				$size = dump_size($holding_file{$hostpart});
+				$size = &dump_size($holding_file{$hostpart});
 				if( defined $opt_dumping ) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
 					printf "%8dk", $esize{$hostpart};
