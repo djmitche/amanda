@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: arglist.h,v 1.2 1997/08/27 08:11:53 amcore Exp $
+ * $Id: arglist.h,v 1.3 1997/12/15 23:11:12 blair Exp $
  *
  * support macros for variable argument list declaration and definition
  */
@@ -43,6 +43,10 @@
 #define arglist_function1(fdecl, arg1_type, arg1_name, hook_type, hook_name) \
 	fdecl(arg1_type arg1_name, hook_type hook_name, ...)
 
+#define arglist_function2(fdecl, arg1_type, arg1_name, arg2_type, arg2_name, \
+			  hook_type, hook_name) \
+	fdecl(arg1_type arg1_name, arg2_type arg2_name, hook_type hook_name, ...)
+
 #define arglist_start(arg,hook_name)	va_start(arg,hook_name)
 
 #else
@@ -58,6 +62,13 @@
 	fdecl(arg1_name, hook_name, va_alist)	\
 	arg1_type arg1_name;			\
 	hook_type hook_name;			\
+	va_dcl
+
+#define arglist_function2(fdecl, arg1_type, arg1_name, arg2_type, arg2_name, hook_type, hook_name) \
+	fdecl(arg1_name, arg2_name, hook_name, va_alist)	\
+	arg1_type arg1_name;					\
+	arg2_type arg2_name;					\
+	hook_type hook_name;					\
 	va_dcl
 
 #define arglist_start(arg,hook_name)	va_start(arg)

@@ -54,10 +54,16 @@
  */
 
 /* #include "conf.h"	-- original line from the Apache distribution */
-#include "amanda.h"	/* what we need in Amanda */
+/*
+ * These are what we need in Amanda.
+ */
+#include "amanda.h"
+#include "arglist.h"
+#include <math.h>
 
 #ifndef HAVE_SNPRINTF
 
+/*
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -65,6 +71,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+*/
 
 #ifdef HAVE_CVT
 
@@ -88,8 +95,16 @@
 
 #define	NDIG	80
 
+/*
 static char *
      ap_cvt(double arg, int ndigits, int *decpt, int *sign, int eflag)
+*/
+static char *ap_cvt(arg, ndigits, decpt, sign, eflag)
+double arg;
+int ndigits;
+int *decpt;
+int *sign;
+int eflag;
 {
     register int r2;
     double fi, fj;
@@ -163,14 +178,28 @@ static char *
     return (buf);
 }
 
+/*
 static char *
      ap_ecvt(double arg, int ndigits, int *decpt, int *sign)
+*/
+static char *ap_ecvt(arg, ndigits, decpt, sign)
+double arg;
+int ndigits;
+int *decpt;
+int *sign;
 {
     return (ap_cvt(arg, ndigits, decpt, sign, 1));
 }
 
+/*
 static char *
      ap_fcvt(double arg, int ndigits, int *decpt, int *sign)
+*/
+static char *ap_fcvt(arg, ndigits, decpt, sign)
+double arg;
+int ndigits;
+int *decpt;
+int *sign;
 {
     return (ap_cvt(arg, ndigits, decpt, sign, 0));
 }
@@ -179,9 +208,14 @@ static char *
  * ap_gcvt  - Floating output conversion to
  * minimal length string
  */
-
+/*
 static char *
      ap_gcvt(double number, int ndigit, char *buf)
+*/
+static char *ap_gcvt(number, ndigit, buf)
+double number;
+int ndigit;
+char *buf;
 {
     int sign, decpt;
     register char *p1, *p2;
@@ -353,9 +387,17 @@ typedef struct buf_area buffy;
  * which is a pointer to the END of the buffer + 1 (i.e. if the buffer
  * is declared as buf[ 100 ], buf_end should be &buf[ 100 ])
  */
+/*
 static char *
      conv_10(register wide_int num, register bool_int is_unsigned,
 	  register bool_int * is_negative, char *buf_end, register int *len)
+*/
+static char *conv_10(num, is_unsigned, is_negative, buf_end, len)
+register wide_int num;
+register bool_int is_unsigned;
+register bool_int *is_negative;
+char *buf_end;
+register int *len;
 {
     register char *p = buf_end;
     register u_wide_int magnitude;
@@ -408,9 +450,19 @@ static char *
  * The sign is returned in the is_negative argument (and is not placed
  * in buf).
  */
+/*
 static char *
      conv_fp(register char format, register double num,
 boolean_e add_dp, int precision, bool_int * is_negative, char *buf, int *len)
+*/
+static char *conv_fp(format, num, add_dp, precision, is_negative, buf, len)
+register char format;
+register double num;
+boolean_e add_dp;
+int precision;
+bool_int *is_negative;
+char *buf;
+int *len;
 {
     register char *s = buf;
     register char *p;
@@ -501,9 +553,17 @@ boolean_e add_dp, int precision, bool_int * is_negative, char *buf, int *len)
  * which is a pointer to the END of the buffer + 1 (i.e. if the buffer
  * is declared as buf[ 100 ], buf_end should be &buf[ 100 ])
  */
+/*
 static char *
      conv_p2(register u_wide_int num, register int nbits,
 	     char format, char *buf_end, register int *len)
+*/
+static char *conv_p2(num, nbits, format, buf_end, len)
+register u_wide_int num;
+register int nbits;
+char format;
+char *buf_end;
+register int *len;
 {
     register int mask = (1 << nbits) - 1;
     register char *p = buf_end;
@@ -525,8 +585,14 @@ static char *
 /*
  * Do format conversion placing the output in buffer
  */
+/*
 static int format_converter(register buffy * odp, const char *fmt,
 			      va_list ap)
+*/
+static int format_converter(odp, fmt, ap)
+register buffy *odp;
+const char *fmt;
+va_list ap;
 {
     register char *sp;
     register char *bep;
@@ -611,7 +677,7 @@ static int format_converter(register buffy * odp, const char *fmt,
 		    adjust_width = YES;
 		}
 		else if (*fmt == '*') {
-		    min_width = va_arg(ap, int);
+		    min_width = arglist_val(ap, int);
 		    fmt++;
 		    adjust_width = YES;
 		    if (min_width < 0) {
@@ -636,7 +702,7 @@ static int format_converter(register buffy * odp, const char *fmt,
 			STR_TO_DEC(fmt, precision);
 		    }
 		    else if (*fmt == '*') {
-			precision = va_arg(ap, int);
+			precision = arglist_val(ap, int);
 			fmt++;
 			if (precision < 0)
 			    precision = 0;
@@ -674,9 +740,9 @@ static int format_converter(register buffy * odp, const char *fmt,
 	    switch (*fmt) {
 	    case 'u':
 		if (is_long)
-		    i_num = va_arg(ap, u_wide_int);
+		    i_num = arglist_val(ap, u_wide_int);
 		else
-		    i_num = (wide_int) va_arg(ap, unsigned int);
+		    i_num = (wide_int) arglist_val(ap, unsigned int);
 		/*
 		 * The rest also applies to other integer formats, so fall
 		 * into that case.
@@ -688,9 +754,9 @@ static int format_converter(register buffy * odp, const char *fmt,
 		 */
 		if ((*fmt) != 'u') {
 		    if (is_long)
-			i_num = va_arg(ap, wide_int);
+			i_num = arglist_val(ap, wide_int);
 		    else
-			i_num = (wide_int) va_arg(ap, int);
+			i_num = (wide_int) arglist_val(ap, int);
 		};
 		s = conv_10(i_num, (*fmt) == 'u', &is_negative,
 			    &num_buf[NUM_BUF_SIZE], &s_len);
@@ -709,9 +775,9 @@ static int format_converter(register buffy * odp, const char *fmt,
 
 	    case 'o':
 		if (is_long)
-		    ui_num = va_arg(ap, u_wide_int);
+		    ui_num = arglist_val(ap, u_wide_int);
 		else
-		    ui_num = (u_wide_int) va_arg(ap, unsigned int);
+		    ui_num = (u_wide_int) arglist_val(ap, unsigned int);
 		s = conv_p2(ui_num, 3, *fmt,
 			    &num_buf[NUM_BUF_SIZE], &s_len);
 		FIX_PRECISION(adjust_precision, precision, s, s_len);
@@ -725,9 +791,9 @@ static int format_converter(register buffy * odp, const char *fmt,
 	    case 'x':
 	    case 'X':
 		if (is_long)
-		    ui_num = (u_wide_int) va_arg(ap, u_wide_int);
+		    ui_num = (u_wide_int) arglist_val(ap, u_wide_int);
 		else
-		    ui_num = (u_wide_int) va_arg(ap, unsigned int);
+		    ui_num = (u_wide_int) arglist_val(ap, unsigned int);
 		s = conv_p2(ui_num, 4, *fmt,
 			    &num_buf[NUM_BUF_SIZE], &s_len);
 		FIX_PRECISION(adjust_precision, precision, s, s_len);
@@ -740,7 +806,7 @@ static int format_converter(register buffy * odp, const char *fmt,
 
 
 	    case 's':
-		s = va_arg(ap, char *);
+		s = arglist_val(ap, char *);
 		if (s != NULL) {
 		    s_len = strlen(s);
 		    if (adjust_precision && precision < s_len)
@@ -757,7 +823,7 @@ static int format_converter(register buffy * odp, const char *fmt,
 	    case 'f':
 	    case 'e':
 	    case 'E':
-		fp_num = va_arg(ap, double);
+		fp_num = arglist_val(ap, double);
 
 		s = conv_fp(*fmt, fp_num, alternate_form,
 			(adjust_precision == NO) ? FLOAT_DIGITS : precision,
@@ -780,7 +846,7 @@ static int format_converter(register buffy * odp, const char *fmt,
 		/*
 		 * * We use &num_buf[ 1 ], so that we have room for the sign
 		 */
-		s = ap_gcvt(va_arg(ap, double), precision, &num_buf[1]);
+		s = ap_gcvt(arglist_val(ap, double), precision, &num_buf[1]);
 		if (*s == '-')
 		    prefix_char = *s++;
 		else if (print_sign)
@@ -798,7 +864,7 @@ static int format_converter(register buffy * odp, const char *fmt,
 
 
 	    case 'c':
-		char_buf[0] = (char) (va_arg(ap, int));
+		char_buf[0] = (char) (arglist_val(ap, int));
 		s = &char_buf[0];
 		s_len = 1;
 		pad_char = ' ';
@@ -814,7 +880,7 @@ static int format_converter(register buffy * odp, const char *fmt,
 
 
 	    case 'n':
-		*(va_arg(ap, int *)) = cc;
+		*(arglist_val(ap, int *)) = cc;
 		break;
 
 		/*
@@ -826,7 +892,7 @@ static int format_converter(register buffy * odp, const char *fmt,
 		 * we print "%p" to indicate that we don't handle "%p".
 		 */
 	    case 'p':
-		ui_num = (u_wide_int) va_arg(ap, char *);
+		ui_num = (u_wide_int) arglist_val(ap, char *);
 
 		if (sizeof(char *) <= sizeof(u_wide_int))
 		         s = conv_p2(ui_num, 4, 'x',
@@ -902,8 +968,16 @@ static int format_converter(register buffy * odp, const char *fmt,
 /*
  * This is the general purpose conversion function.
  */
+/*
 static void strx_printv(int *ccp, char *buf, size_t len, const char *format,
 			va_list ap)
+*/
+static void strx_printv(ccp, buf, len, format, ap)
+int *ccp;
+char *buf;
+size_t len;
+const char *format;
+va_list ap;
 {
     buffy od;
     int cc;
@@ -927,19 +1001,29 @@ static void strx_printv(int *ccp, char *buf, size_t len, const char *format,
 }
 
 
+/*
 int ap_snprintf(char *buf, size_t len, const char *format,...)
+*/
+arglist_function2(int ap_snprintf, char *, buf, size_t, len, const char *, format)
 {
     int cc;
     va_list ap;
 
-    va_start(ap, format);
+    arglist_start(ap, format);
     strx_printv(&cc, buf, (len - 1), format, ap);
-    va_end(ap);
+    arglist_end(ap);
     return (cc);
 }
 
 
+/*
 int ap_vsnprintf(char *buf, size_t len, const char *format, va_list ap)
+*/
+int ap_vsnprintf(buf, len, format, ap)
+char *buf;
+size_t len;
+const char *format;
+va_list ap;
 {
     int cc;
 
