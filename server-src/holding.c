@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: holding.c,v 1.9 1998/01/02 18:48:32 jrj Exp $
+ * $Id: holding.c,v 1.9.2.1 1998/03/02 03:49:49 amcore Exp $
  *
  * Functions to access holding disk
  */
@@ -46,14 +46,7 @@ typedef struct sched_s {
 
 disklist_t *diskqp;
 
-int result_argc;
-char *datestamp = NULL;
-char *taper_program, *reporter_program;
-char host[MAX_HOSTNAME_LENGTH+1], *domain;
-
-/* local functions */
-void get_host_and_domain();
-
+static char *datestamp = NULL;
 
 int is_dir(fname)
 char *fname;
