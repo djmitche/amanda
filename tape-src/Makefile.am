@@ -17,7 +17,7 @@ libamtape_la_LDFLAGS =  -release $(VERSION)
 
 libamtape_a_SOURCES =	$(libamtape_la_SOURCES)
 
-noinst_HEADERS = 	tapeio.h
+noinst_HEADERS = 	tapeio.h output-rait.h
 
 EXTRA_PROGRAMS = 	tapetype
 
