@@ -23,17 +23,46 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.2 1997/11/02 23:13:45 george Exp $
+ * $Id: file.c,v 1.3 1997/11/07 10:05:55 george Exp $
  *
  * file and directory bashing routines
  */
 
 #include "amanda.h"
 
-/* Make a directory hierarchy.
+/* Make a directory (internal function).
+** If the directory already exists then we pretend we created it.
 ** XXX - I'm not sure about the use of the chown() stuff.  On most systems
 **       it will do nothing - only root is permitted to change the owner
 **       of a file.
+*/
+int mk1dir(dir, mode, uid, gid)
+char *dir;	/* directory to create */
+int mode;	/* mode for new directory */
+uid_t uid;	/* uid for new directory */
+gid_t gid;	/* gid for new directory */
+{
+    int rc;	/* return code */
+
+    rc = 0;	/* assume the best */
+
+    if(mkdir(dir, mode) == 0) {
+	chmod(dir, mode);	/* mkdir() is affected by the umask */
+	chown(dir, uid, gid);	/* XXX - no-op on most systems? */
+    }
+    else {	/* maybe someone beat us to it */
+	int serrno;
+
+	serrno = errno;
+	if(access(dir, F_OK) != 0) rc = -1;
+	errno = serrno;	/* pass back the real error */
+    }
+
+    return rc;
+}
+
+
+/* Make a directory hierarchy.
 */
 int mkpdir(file, mode, uid, gid)
 char *file;	/* file to create parent directories for */
@@ -44,25 +73,17 @@ gid_t gid;	/* gid for new directories */
     char *dir, *p;
     int rc;	/* return code */
 
+    rc = 0;
+
     dir = stralloc(file);	/* make a copy we can play with */
 
     p = strrchr(dir, '/');
-    if(p == dir)
-	rc = 0; /* no /'s */
-    else {
+    if(p != dir) {	/* got a '/' */
 	*p = '\0';
 
-	if(access(dir, F_OK) == 0)
-	    rc = 0; /* already exists */
-	else {
-	    if(mkpdir(dir, mode, uid, gid) == 0 &&
-	       mkdir(dir, mode) == 0 &&
-	       chmod(dir, mode) == 0) {	/* mkdir() is affected by the umask */
-		chown(dir, uid, gid);
-		rc = 0; /* all done */
-	    }
-	    else
-		rc = -1; /* create failed */
+	if(access(dir, F_OK) != 0) {	/* doesn't exist */
+	    if(mkpdir(dir, mode, uid, gid) != 0 ||
+	       mk1dir(dir, mode, uid, gid) != 0) rc = -1; /* create failed */
 	}
     }
 
