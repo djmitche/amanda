@@ -1,5 +1,12 @@
 1998-12-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/dumper.c (main): rework the command loop a bit.
+	Consolidate all duplicated error cleanup into one place at the
+	end of the loop after each command has been processed.  Exit
+	with exit(), not return.
+
+1998-12-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/dumper.c (main, getcmd, write_dataptr): kill argc and
 	argv globals, pass them as arguments to getcmd() via struct cmdargs.
 	* server-src/dumper.c (getcmd): make the command lookup table driven.

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.80 1998/12/09 23:54:52 kashmir Exp $
+/* $Id: dumper.c,v 1.81 1998/12/10 00:16:55 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -185,8 +185,8 @@ static char *construct_datestamp()
 
 
 int main(main_argc, main_argv)
-int main_argc;
-char **main_argv;
+    int main_argc;
+    char **main_argv;
 {
     struct cmdargs cmdargs;
     cmd_t cmd;
@@ -262,14 +262,14 @@ char **main_argv;
 	switch(cmd) {
 	case QUIT:
 	    break;
+
 	case FILE_DUMP:
 	    /*
 	     * FILE-DUMP handle filename host disk level dumpdate chunksize
 	     *   progname options
 	     */
-	    if(cmdargs.argc != 10) {
+	    if (cmdargs.argc != 10)
 		error("error [dumper FILE-DUMP argc != 10: %d]", cmdargs.argc);
-	    }
 	    handle = newstralloc(handle, cmdargs.argv[2]);
 	    filename = newstralloc(filename, cmdargs.argv[3]);
 	    hostname = newstralloc(hostname, cmdargs.argv[4]);
@@ -294,46 +294,32 @@ char **main_argv;
 
 	    check_options(options);
 
-	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
-	    if(rc) {
+	    rc = startup_dump(hostname, diskname, level, dumpdate, progname,
+		options);
+	    if (rc != 0) {
 		q = squote(errstr);
-		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
-			  handle, q);
-		if(rc == 2) {
-		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
-		}
+		putresult("%s %s %s\n", rc == 2 ? "FAILED" : "TRY-AGAIN",
+		    handle, q);
+		if (rc == 2)
+		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level,
+			errstr);
 		amfree(q);
-		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
-		if (mesgfd != -1)
-		    aclose(mesgfd);
-		if (datafd != -1)
-		    aclose(datafd);
-		if (indexfd != -1)
-		    aclose(indexfd);
-		if (outfd != -1)
-		    aclose(outfd);
-		break;
+	    } else {
+		abort_pending = 0;
+		split_size = chunksize;
+		if (do_dump(mesgfd, datafd, indexfd, outfd)) {
+		}
+		if (abort_pending)
+		    putresult("ABORT-FINISHED %s\n", handle);
 	    }
-
-	    abort_pending = 0;
-	    split_size = chunksize;
-	    if(do_dump(mesgfd, datafd, indexfd, outfd)) {
-	    }
-	    aclose(mesgfd);
-	    aclose(datafd);
-	    if (indexfd != -1)
-		aclose(indexfd);
-	    aclose(outfd);
-	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
 	    break;
 
 	case PORT_DUMP:
 	    /*
 	     * PORT-DUMP handle port host disk level dumpdate progname options
 	     */
-	    if(cmdargs.argc != 9) {
+	    if (cmdargs.argc != 9)
 		error("error [dumper PORT-DUMP argc != 9: %d]", cmdargs.argc);
-	    }
 	    handle = newstralloc(handle, cmdargs.argv[2]);
 	    taper_port = atoi(cmdargs.argv[3]);
 	    filename = newstralloc(filename, "<taper program>");
@@ -349,7 +335,7 @@ char **main_argv;
 
 	    outfd = stream_client("localhost", taper_port,
 				  DATABUF_SIZE, DEFAULT_SIZE, NULL);
-	    if(outfd == -1) {
+	    if (outfd == -1) {
 		q = squotef("[taper port open: %s]", strerror(errno));
 		putresult("FAILED %s %s\n", handle, q);
 		amfree(q);
@@ -359,37 +345,24 @@ char **main_argv;
 
 	    check_options(options);
 
-	    rc = startup_dump(hostname, diskname, level, dumpdate, progname, options);
-	    if(rc) {
+	    rc = startup_dump(hostname, diskname, level, dumpdate, progname,
+		options);
+	    if (rc != 0) {
 		q = squote(errstr);
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
-			  handle, q);
-		if(rc == 2) {
-		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
-		}
+		    handle, q);
+		if (rc == 2)
+		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level,
+			errstr);
 		amfree(q);
-		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
-		if (mesgfd != -1)
-		    aclose(mesgfd);
-		if (datafd != -1)
-		    aclose(datafd);
-		if (indexfd != -1)
-		    aclose(indexfd);
-		if (outfd != -1)
-		    aclose(outfd);
-		break;
+	    } else {
+		abort_pending = 0;
+		split_size = -1;
+		if(do_dump(mesgfd, datafd, indexfd, outfd)) {
+		}
+		if (abort_pending)
+		    putresult("ABORT-FINISHED %s\n", handle);
 	    }
-
-	    abort_pending = 0;
-	    split_size = -1;
-	    if(do_dump(mesgfd, datafd, indexfd, outfd)) {
-	    }
-	    aclose(mesgfd);
-	    aclose(datafd);
-	    if (indexfd != -1)
-		aclose(indexfd);
-	    aclose(outfd);
-	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
 	    break;
 
 	default:
@@ -397,7 +370,16 @@ char **main_argv;
 	    putresult("BAD-COMMAND %s\n", q);
 	    amfree(q);
 	}
-	while(wait(NULL) != -1);
+	while (wait(NULL) != -1)
+	    continue;
+	if (outfd != -1)
+	    aclose(outfd);
+	if (datafd != -1)
+	    aclose(datafd);
+	if (mesgfd != -1)
+	    aclose(mesgfd);
+	if (indexfd != -1)
+	    aclose(indexfd);
     } while(cmd != QUIT);
 
     amfree(errstr);
@@ -416,11 +398,10 @@ char **main_argv;
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
-    if(malloc_size_1 != malloc_size_2) {
+    if (malloc_size_1 != malloc_size_2)
 	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
-    }
 
-    return 0;
+    exit(0);
 }
 
 static cmd_t
