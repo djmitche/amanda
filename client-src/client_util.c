@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1 2002/02/13 14:47:46 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.2 2002/02/13 20:54:15 martinea Exp $
  *
  */
 
@@ -93,7 +93,20 @@ int verbose;
 	    if(*exc != '/') {
 		char *dirname = amname_to_dirname(disk);
 		char *efile = vstralloc(dirname,"/",exc, NULL);
-		options->exclude_list = append_sl(options->exclude_list,efile);
+		if(access(efile, F_OK) != 0) {
+		    /* if exclude list file does not exist, ignore it.
+		     * Should not test for R_OK, because the file may be
+		     * readable by root only! */
+		    dbprintf(("%s: exclude list file \"%s\" does not exist, ignoring\n",
+			      get_pname(), efile));
+		    if(verbose) {
+			printf("ERROR [exclude list file \"%s\" does not exist]\n", efile);
+		    }
+		}
+		else {
+		    options->exclude_list =
+			append_sl(options->exclude_list, efile);
+		}
 		amfree(dirname);
 		amfree(efile);
 	    }

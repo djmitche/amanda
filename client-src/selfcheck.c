@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.3 2002/02/13 14:51:15 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.4 2002/02/13 20:54:15 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -213,12 +213,25 @@ check_options(program, disk, options)
 {
     if(strcmp(program,"GNUTAR") == 0) {
 	need_gnutar=1;
-        if(disk[0] == '/' && disk[1] == '/')
-	  need_samba=1;
+        if(disk[0] == '/' && disk[1] == '/') {
+	    if(options->exclude_file && options->exclude_file->nb_element > 1) {
+		printf("ERROR [samba support only one exclude file]\n");
+	    }
+	    if(options->exclude_list && options->exclude_list->nb_element > 0) {
+		printf("ERROR [samba does not support exclude list]\n");
+	    }
+	    need_samba=1;
+	}
 	else
-	  need_runtar=1;
+	    need_runtar=1;
     }
     if(strcmp(program,"DUMP") == 0) {
+	if(options->exclude_file && options->exclude_file->nb_element > 0) {
+	    printf("ERROR [DUMP does not support exclude file]\n");
+	}
+	if(options->exclude_list && options->exclude_list->nb_element > 0) {
+	    printf("ERROR [DUMP does not support exclude list]\n");
+	}
 #ifdef USE_RUNDUMP
 	need_rundump=1;
 #endif
