@@ -1,3 +1,6 @@
+	Fix buffer use and write() error handling in the index pipeline.
+	-Dietmar Goldbeck <dietmar@telemedia.de>
+
 	Possible fix for "taper syncpipe_get: w: unexpected EOF".  Do not
 	close the taper file descriptor in driver on TAPE-ERROR, but let
 	the protocol clean up nicely.  -JJ with much appreciated testing
