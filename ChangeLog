@@ -1,3 +1,8 @@
+1998-10-15  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/amadmin.c (reuse, no-reuse): don't core dump if tape
+	label not found
+
 1998-10-15  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/conffile.h: remove declaration of holdingdisks and 

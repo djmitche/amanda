@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.47 1998/09/11 23:25:19 jrj Exp $
+ * $Id: amadmin.c,v 1.48 1998/10/15 22:55:20 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -354,6 +354,11 @@ char **argv;
 
     for(count=3; count< argc; count++) {
 	tp = lookup_tapelabel(argv[count]);
+	if ( tp == NULL) {
+	    fprintf(stderr, "reuse: tape label %s not found in tapelist.\n",
+		argv[count]);
+	    continue;
+	}
 	if( tp->reuse == 0 ) tp->reuse = 1;
 	else fprintf(stderr, "reuse: tape %s already reusable.\n",
 		     argv[count]);
@@ -378,6 +383,11 @@ char **argv;
 
     for(count=3; count< argc; count++) {
 	tp = lookup_tapelabel(argv[count]);
+	if ( tp == NULL) {
+	    fprintf(stderr, "no-reuse: tape label %s not found in tapelist.\n",
+		argv[count]);
+	    continue;
+	}
 	if( tp->reuse == 1 ) tp->reuse = 0;
 	else fprintf(stderr, "no-reuse: tape %s already not reusable.\n",
 		     argv[count]);
