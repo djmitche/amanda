@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-proto.c,v 1.2 1998/02/26 19:24:07 jrj Exp $
+ *	$Id: scsi-proto.c,v 1.3 1998/06/13 06:13:25 oliva Exp $
  *
  *	scsi-proto.c -- library routines to handle the changer
  *			Prototype file for customization
@@ -8,6 +8,7 @@
  *	interface based on work by: Larry Pyeatt, pyeatt@cs.colostate.edu 
  *	Copyright: 1997, 1998 Eric Schnoebelen
  *		
+ *      Michael C. Povel 03.06.98 added dummy for eject_tape
  */
 
 #include "config.h"
@@ -33,6 +34,23 @@ int isempty(int fd, int slot)
      */
     return (slot_empty? 1 : 0);
 }
+
+int get_clean_state(char *dev)
+{
+   /* Ask the device, if it needs a cleaning */
+    return (needs_cleaning? 1 : 0);
+
+}
+
+/*
+ *
+ */
+void eject_tape(char *tape)
+/* This function ejects the tape from the drive */
+{
+    eject_it;
+}
+
 
 /*
  * find the first empty slot 

@@ -1,5 +1,5 @@
 /*
- *	$Id: libscsi.h,v 1.3 1998/02/26 19:24:02 jrj Exp $
+ *	$Id: libscsi.h,v 1.4 1998/06/13 06:13:21 oliva Exp $
  *
  *	libscsi.h -- library header for routines to handle the changer
  *			support for chio based systems
@@ -8,12 +8,25 @@
  *	based on work by: Larry Pyeatt,  pyeatt@cs.colostate.edu 
  *	Copyright: 1997, Eric Schnoebelen
  *		
+ *      Michael C. Povel 03.06.98 added function eject_tape
  */
 
 #ifndef LIBSCSI_H
 #define LIBSCSI_H
 
 #include "amanda.h"
+
+/*
+ * This function gets the actual cleaning state of the drive 
+ */
+int get_clean_state(char *tape);
+
+
+/*
+ * Eject the actual tape from the tapedrive
+ */
+void eject_tape(char *tape);
+
 
 /* 
  * is the specified slot empty?

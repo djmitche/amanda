@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.3 1998/03/14 13:48:22 amcore Exp $
+ *	$Id: scsi-chio.c,v 1.4 1998/06/13 06:13:22 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -12,6 +12,10 @@
 
 #include "config.h"
 #include "amanda.h"
+
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/mtio.h>
 
 #if defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)
 
@@ -45,6 +49,68 @@ int rc = 0;
 	changer_info_init++;
     }
     return (rc);
+}
+
+int get_clean_state(char *dev)
+{
+    int status;
+    unsigned char *cmd;
+    unsigned char buffer[255];
+    int filenr;
+
+    if ((filenr = open(dev, O_RDWR)) < 0) {
+        perror(dev);
+        return 0;
+    }
+    memset(buffer, 0, sizeof(buffer));
+
+    *((int *) buffer) = 0;      /* length of input data */
+    *(((int *) buffer) + 1) = 100;     /* length of output buffer */
+
+    cmd = (char *) (((int *) buffer) + 2);
+
+    cmd[0] = 0x4d;         /* LOG SENSE  */
+    cmd[2] = (1 << 6)|0x33;     /* PageControl, PageCode */
+    cmd[7] = 00;                 /* allocation length hi */
+    cmd[8] = 100;                 /* allocation length lo */
+
+    status = ioctl(filenr, 1 /* SCSI_IOCTL_SEND_COMMAND */ , buffer);
+/*
+    if (status)
+        printf("ioctl(SCSI_IOCTL_SEND_COMMAND) status\t= %u\n", status);
+*/
+
+    if (status)
+        return 0;
+
+    if ((buffer[16] & 0x1) == 1)
+          return 1;
+
+    return 0;
+
+}
+void eject_tape(char *tape)
+/* This function ejects the tape from the drive */
+{
+int mtfd;
+struct mtop mt_com;
+
+    if ((mtfd = open(tape, O_RDWR)) < 0) {
+        perror(tape);
+        exit(2);
+    }
+    mt_com.mt_op = MTOFFL;
+    mt_com.mt_count = 1;
+    if (ioctl(mtfd, MTIOCTOP, (char *)&mt_com) < 0) {
+/*
+    If the drive already ejected the tape due an error, or because it
+    was a cleaning tape, threre can be an error, which we should ignore 
+
+       perror(tape);
+       exit(2);
+*/
+    }
+    close(mtfd);
 }
 
 

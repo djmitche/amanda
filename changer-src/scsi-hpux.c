@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-hpux.c,v 1.3 1998/05/27 08:14:24 amcore Exp $
+ *	$Id: scsi-hpux.c,v 1.4 1998/06/13 06:13:23 oliva Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -8,6 +8,7 @@
  *	interface based on work by: Larry Pyeatt, pyeatt@cs.colostate.edu 
  *	Copyright: 1997, 1998 Eric Schnoebelen
  *		
+ *      Michael C. Povel 03.06.98 added dummy for eject_tape
  */
 
 #include "config.h"
@@ -34,6 +35,75 @@ int rc = 0;
 	changer_info_init++;
     }
     return (rc);
+}
+
+int get_clean_state(char *dev)
+{
+#if 0
+/*
+  This code works for Linux .... 
+  maybe someone can do something like this under HPUX
+*/
+    int status;
+    unsigned char *cmd;
+    unsigned char buffer[255];
+    int filenr;
+
+    if ((filenr = open(dev, O_RDWR)) < 0) {
+        perror(dev);
+        return 0;
+    }
+    memset(buffer, 0, sizeof(buffer));
+
+    *((int *) buffer) = 0;      /* length of input data */
+    *(((int *) buffer) + 1) = 100;     /* length of output buffer */
+
+    cmd = (char *) (((int *) buffer) + 2);
+
+    cmd[0] = 0x4d;         /* LOG SENSE  */
+    cmd[2] = (1 << 6)|0x33;     /* PageControl, PageCode */
+    cmd[7] = 00;                 /* allocation length hi */
+    cmd[8] = 100;                 /* allocation length lo */
+
+    status = ioctl(filenr, 1 /* SCSI_IOCTL_SEND_COMMAND */ , buffer);
+
+    if (status)
+        return 0;
+
+    if ((buffer[16] & 0x1) == 1)
+          return 1;
+
+#endif
+    return 0;
+
+}
+
+
+void eject_tape(char *tape)
+/* This function ejects the tape from the drive */
+{
+#if 0
+/*
+  This code works for Linux .... 
+  maybe someone can do something like this under HPUX
+*/
+    int mtfd;
+    struct mtop mt_com;
+
+    if ((mtfd = open(tape, O_RDWR)) < 0) {
+        perror(tape);
+        exit(2);
+    }
+    mt_com.mt_op = MTOFFL;
+    mt_com.mt_count = 1;
+    if (ioctl(mtfd, MTIOCTOP, (char *)&mt_com) < 0) {
+/* Ignore the error
+       perror(tape);
+       exit(2);
+*/
+    }
+    close(mtfd);
+#endif
 }
 
 /* 

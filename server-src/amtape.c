@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.16 1998/04/08 16:25:05 amcore Exp $
+ * $Id: amtape.c,v 1.17 1998/06/13 06:13:32 oliva Exp $
  *
  * tape changer interface program
  */
@@ -42,6 +42,7 @@ void usage P((void));
 int main P((int argc, char **argv));
 void reset_changer P((int argc, char **argv));
 void eject_tape P((int argc, char **argv));
+void clean_tape P((int argc, char **argv));
 void load_slot P((int argc, char **argv));
 void load_label P((int argc, char **argv));
 void show_slots P((int argc, char **argv));
@@ -59,6 +60,7 @@ void usage()
     fprintf(stderr, "\tValid commands are:\n");
     fprintf(stderr, "\t\treset                Reset changer to known state\n");
     fprintf(stderr, "\t\teject                Eject current tape from drive\n");
+    fprintf(stderr, "\t\tclean                Clean the drive\n");
     fprintf(stderr, "\t\tshow                 Show contents of all slots\n");
     fprintf(stderr, "\t\tcurrent              Show contents of current slot\n");
     fprintf(stderr, "\t\tslot <slot #>        load tape from slot <slot #>\n");
@@ -118,6 +120,7 @@ char **argv;
 
     argc -= 2; argv += 2;
     if(strcmp(argv[0], "reset") == 0) reset_changer(argc, argv);
+    else if(strcmp(argv[0], "clean") == 0) clean_tape(argc, argv);
     else if(strcmp(argv[0], "eject") == 0) eject_tape(argc, argv);
     else if(strcmp(argv[0], "slot") == 0) load_slot(argc, argv);
     else if(strcmp(argv[0], "label") == 0) load_label(argc, argv);
@@ -162,6 +165,23 @@ char **argv;
 	error("could not reset changer: %s", changer_resultstr);
     }
     amfree(slotstr);
+}
+
+
+/* ---------------------------- */
+void clean_tape(argc, argv)
+int argc;
+char **argv;
+{
+    char *devstr = NULL;
+
+    if(changer_clean(&devstr) == 0) {
+	fprintf(stderr, "%s: device %s is clean.\n", get_pname(), devstr);
+    } else {
+	fprintf(stderr, "%s: device %s not clean: %s\n",
+		get_pname(), devstr ? devstr : "??", changer_resultstr);
+    }
+    amfree(devstr);
 }
 
 

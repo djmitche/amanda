@@ -1,3 +1,20 @@
+1998-06-13  Michael C. Povel  <mcp@ladyada.han.de>
+
+	* changer-src/chg-scsi.c: added ejetct_tape and sleep for external
+	tape devices, and changed some code to allow multiple drives to use
+	their own slots. Also added support for reserverd slots.
+	* changer-src/libscsi.h (get_clean_state, eject_tape): new functions 
+	* changer-src/scsi-chio.c (get_clean_state, eject_tape): implemented 
+	using Linux ioctls
+	* changer-src/scsi-hpux.c (get_clean_state, eject_tape): do nothing, 
+	until someone implements them
+	* changer-src/scsi-proto.c (get_clean_state, eject_tape): new
+	functions
+	* docs/TAPE.CHANGERS: document new configuration file format
+	* example/chg-scsi.conf: sample configuration file
+	* example/Makefile.am: add chg-scsi.conf to the distribution
+	* server-src/amtape.c: add support for `clean' command
+
 1998-06-13  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/SYSTEM.NOTES: clean-up
