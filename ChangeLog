@@ -1,5 +1,10 @@
 1999-06-15  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* configure.in (bcopy, bzero): Check whether they're available.
+	* common-src/amanda.h (bcopy, bzero): If not, use memmove and
+	memset.
+	Reported by Grant Beattie <Grant.Beattie@fulcrum.com.au>
+
 	* server-src/amcheck.c (start_server_check): If info file does not
 	exist, explain that it is supposed to be created on the next run.
 
