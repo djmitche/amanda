@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.7 1997/08/27 08:12:07 amcore Exp $
+ * $Id: protocol.c,v 1.8 1997/09/01 20:56:39 amcore Exp $
  *
  * implements amanda protocol
  */
@@ -814,6 +814,8 @@ void (*continuation) P((proto_t *p, pkt_t *pkt));
     memcpy(&p->peer.sin_addr, hp->h_addr, hp->h_length);
     p->peer.sin_family = AF_INET;
     p->peer.sin_port = htons(port);
+
+    p->hostname = hostname;
 
     if((rc = add_krb_security(p, inst, realm)))
 	return rc;
