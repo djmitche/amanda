@@ -42,7 +42,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	Samba allows Unix systems to talk to PC clients.  Amanda can
 	back up Microsoft Windows 95/NT clients using samba:
 
-		ftp://nimbus.anu.edu.au/pub/tridge/samba/samba-1.9.18p2.tar.gz
+		ftp://nimbus.anu.edu.au/pub/tridge/samba/samba-1.9.18p4.tar.gz
 
 	You may want to apply patches/samba-largefs.patch, but read
 	its header before you do so.  If you want to use a pre-1.9.17
@@ -75,7 +75,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	packages be installed on your system.  The following packages
 	are used:
 
-	    ftp://ftp.gnu.org/pub/gnu/readline-2.1.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/readline-2.2.tar.gz
 		amrecover optionally uses the readline library for its
 		command-line edition mechanisms.  This library itself
 		requires either termcap, curses or ncurses.  termcap
@@ -88,7 +88,7 @@ to compile some of the Amanda programs (see section 1.2.H below).
 	configuration scripts.  Bison is only needed if you are going
 	to work on the index server and client code.
 	    ftp://ftp.gnu.org/pub/gnu/autoconf-2.12.tar.gz
-	    ftp://ftp.cygnus.com/pub/tromey/automake-1.2f.tar.gz
+	    ftp://ftp.gnu.org/pub/gnu/automake-1.3.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/bison-1.25.tar.gz
 	    ftp://ftp.gnu.org/pub/gnu/flex-2.5.4a.tar.gz
 	    ftp://ftp.gnu.org/gnu/libtool-1.2.tar.gz
