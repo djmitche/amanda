@@ -7,7 +7,7 @@ Note that kerberos 5 isn't supported.  [yet]
 
 The Kerberos-related Amanda source code is available in a separate,
 export restricted, package.  US sites can follow the instructions in
-KERBEROS.HOW-TO-GET on ftp.amanda.org in the pub/amanda directory.
+KERBEROS.HOW-TO-GET on ftp.amanda.org in the /pub/amanda directory.
 
 1. CONFIGURATION
 
@@ -42,6 +42,9 @@ bits are found under some other hierarchy, you can specify this
 via the --with-krb4=DIR, where DIR is where the kerberos bits live.
 It'll look under the 'lib' directory under this hierarchy for
 libkrb.a.
+
+Future versions of amanda will likely use a null instance; this makes
+.klogin file management easier in some situations.
 
 2. INSTALLATION
 
