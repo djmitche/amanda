@@ -1,4 +1,11 @@
-Version 2.4.0
+Version 2.4.0b6p1
+
+	documented etimeout configuration option.  -oliva&jrj
+
+	prevent a few crashes in dumper and reporter.  -jrj
+
+	reporter would report the same host and disk for RESULTS MISSING.
+	-martineau
 
 	fix a few file-locking configure bugs.  -oliva
 
