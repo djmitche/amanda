@@ -1,3 +1,10 @@
+2000-01-06  Alexandre Oliva  <oliva@lsd.ic.unicamp.br>
+
+	* docs/TAPETYPES: Removed all tapetype entries.  Pointed to
+	example/amanda.conf, to the mailing list archives and to the on-line
+	tapetype list.  Explained the meaning of length, filemark and speed,
+	and how to build and use the tapetype utility.
+
 1999-12-12 John R. Jackson  <jrj@purdue.edu>
 
 	* configure.in: egrep was having trouble with quoting on some systems.
@@ -648,7 +655,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.312 1999/12/12 23:50:36 jrj Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.313 2000/01/06 22:18:12 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
