@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.32 1997/12/30 05:24:07 jrj Exp $
+ * $Id: amanda.h,v 1.33 1998/01/07 21:12:00 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -276,12 +276,6 @@ extern int errno;
 /*
  * print debug output, else compile to nothing.
  */
-
-/*
- * This if the file descriptor for the debugging output.  If debugging
- * output is not on, then it is set to stderr.
- */
-extern int db_fd;
 
 #ifdef DEBUG_CODE
 #   define dbopen()    debug_open()

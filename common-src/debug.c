@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.11 1998/01/02 01:05:13 jrj Exp $
+ * $Id: debug.c,v 1.12 1998/01/07 21:12:01 jrj Exp $
  *
  * debug log subroutines
  */
@@ -35,6 +35,8 @@
 
 int debug = 1;
 extern char *pname;
+
+#define	MIN_DB_FD			10
 
 #ifdef DEBUG_CODE
   int db_fd = -1;
@@ -69,6 +71,9 @@ void debug_open()
     int saved_debug;
     int maxtries;
     char *dbfilename = NULL;
+    int fd;
+    int i;
+    int fd_close[MIN_DB_FD+1];
     struct passwd *pwent;
     uid_t uid;
     gid_t gid;
@@ -100,8 +105,21 @@ void debug_open()
 	if (--maxtries == 0)
 	    error("open debug file \"%s\": %s", dbfilename, strerror(errno));
 	unlink(dbfilename);
-	db_fd = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600);
-    } while(db_fd == -1);
+	fd = open(dbfilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600);
+    } while(fd == -1);
+
+    /*
+     * Move the file descriptor up high so it stays out of the way
+     * of other processing, e.g. sendbackup.
+     */
+    i = 0;
+    fd_close[i++] = fd;
+    while((db_fd = dup(fd)) < MIN_DB_FD) {
+	fd_close[i++] = db_fd;
+    }
+    while(--i >= 0) {
+	close(fd_close[i]);
+    }
     db_file = fdopen(db_fd, "w");
 
     chown(dbfilename, uid, gid);

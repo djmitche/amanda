@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.26 1998/01/02 18:47:48 jrj Exp $
+ * $Id: sendbackup.c,v 1.27 1998/01/07 21:11:57 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -60,8 +60,6 @@ char *errorstr = NULL;
 int data_socket, data_port, dataf;
 int mesg_socket, mesg_port, mesgf;
 int index_socket, index_port, indexf;
-
-extern int db_fd;
 
 char *efile = NULL;
 char *estr = NULL;
@@ -865,7 +863,6 @@ char *cmd;
   }
 
   /* now in a child process */
-  save_fd(&db_fd, 4);
   save_fd(&pipefd[0], 4);
   save_fd(&index, 4);
   save_fd(&mesg, 4);
@@ -874,9 +871,13 @@ char *cmd;
   dup2(index, 1);
   dup2(mesg, 2);
   dup2(input, 3);
-  for(index = 4; index < FD_SETSIZE; index++)
-    if (index != db_fd)
+  for(index = 4; index < FD_SETSIZE; index++) {
+    extern int db_fd;
+
+    if (index != db_fd) {
       close(index);
+    }
+  }
 
   /* set up a signal handler for SIGPIPE for when the pipe is finished
      creating the index file */
