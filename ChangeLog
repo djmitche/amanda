@@ -1,3 +1,8 @@
+1999-03-25  Charles Owens  <owensc@enc.edu>
+
+	* changer-src/chg-chio.pl.in (changeTape): do not print status to
+	both stdout and stderr; this causes failures on FreeBSD
+
 1999-03-23  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/stream.c, common-src/stream.h (stream_client):

@@ -347,7 +347,6 @@ if ( $opt_info ) {
 		$currentTape = 1;
 	}
 
-	print STDERR "$currentTape $max_slot 1\n";
 	print "$currentTape $max_slot 1\n";
 	exit 0;
 }
