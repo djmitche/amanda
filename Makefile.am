@@ -1,7 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
 ACLOCAL_M4 = $(top_srcdir)/config/aclocal.m4
-LIBTOOL_M4 = @LIBTOOL_M4@
 ACLOCAL = @ACLOCAL@ -I config @LIBTOOL_M4_MACRO_DIR@
 AUTOCONF = @AUTOCONF@ --localdir=config
 
@@ -38,9 +37,14 @@ EXTRA_DIST = \
 	regex-src/fake/limits.h		regex-src/fake/memmove.c	\
 	regex-src/fake/stdlib.h
 
-$(ACLOCAL_M4): $(srcdir)/configure.in \
-               $(srcdir)/config/acinclude.m4 $(LIBTOOL_M4)
+# even if libtool.m4 is not used at all, aclocal.m4 should be newer
+# than libtool.m4 in a distribution
+$(ACLOCAL_M4): $(srcdir)/config/libtool/libtool.m4
+
+$(ACLOCAL_M4): $(srcdir)/configure.in $(srcdir)/config/acinclude.m4
 	rm -f $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
 	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4)
 	test ! -f $(srcdir)/aclocal.m4 || \
-	mv $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
+	rm -f $(ACLOCAL_M4) && mv $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
+# this last line works around a bug in automake (fixed in release 1.3):
+# it would always generate ./aclocal.m4, despite --output
