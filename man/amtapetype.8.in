@@ -1,0 +1,49 @@
+.\"
+.de EX
+.if t .ft C
+.nf
+..
+.de EE
+.fi
+.if t .ft
+..
+.TH AMTAPETYPE 8
+.SH NAME
+amtapetype \- generate a tapetype definition.
+.SH SYNOPSIS
+.B amtapetype
+[-h]
+[-b blocksize]
+[-e estsize]
+[-f tapedev]
+[-t typename]
+.SH DESCRIPTION
+.B Amtapetype
+generate a tapetype entry for amanda.
+.SH OPTIONS
+.PP
+.TP 10
+.B \-h
+Display an help message.
+.TP
+.BI \-b "\| blocksize\^"
+record block size (default: 32k)
+.TP
+.BI \-e "\| estsize\^"
+estimated tape size (default: 1g == 1024m)
+.TP
+.BI \-f "\| tapedev\^"
+tape device name (default: $TAPE)
+The device to perform the test.
+.TP
+.BI \-t "\| typename\^"
+tapetype name (default: unknown-tapetype)
+.PD
+.SH EXAMPLE
+Generate a tapetype definition for your tape device:
+.LP
+.RS
+.nf
+% amtapetype @DEFAULT_TAPE_DEVICE@
+.SH "SEE ALSO"
+amanda(8)
