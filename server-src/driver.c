@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.82 1999/05/10 22:41:45 kashmir Exp $
+ * $Id: driver.c,v 1.83 1999/05/14 19:08:55 kashmir Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -96,8 +96,6 @@ int main P((int argc, char **argv));
 static int idle_reason;
 char *datestamp;
 
-#define max(a, b)     ((a) > (b)? (a) : (b))
-#define min(a, b)     ((a) < (b)? (a) : (b))
 static const char *idle_strings[] = {
 #define NOT_IDLE		0
     "not-idle",

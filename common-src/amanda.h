@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.80 1999/05/12 16:15:02 kashmir Exp $
+ * $Id: amanda.h,v 1.81 1999/05/14 19:08:42 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -550,6 +550,18 @@ extern char  *areads	      P((int fd));
     pclose(p);								\
     (p) = NULL;								\
 } while(0)
+
+/*
+ * min/max.  Don't do something like
+ *
+ *    x = min(y++, z);
+ *
+ * because the increment will be duplicated.
+ */
+#undef min
+#undef max
+#define	min(a, b)	((a) < (b) ? (a) : (b))
+#define	max(a, b)	((a) > (b) ? (a) : (b))
 
 /*
  * Utility bitmask manipulation macros.

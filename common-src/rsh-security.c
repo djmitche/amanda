@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.3 1999/04/27 16:40:33 kashmir Exp $
+ * $Id: rsh-security.c,v 1.4 1999/05/14 19:08:49 kashmir Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -49,8 +49,6 @@
 #else
 #define	rshprintf(x)
 #endif
-
-#define	min(a, b)	((a) < (b) ? (a) : (b))
 
 /*
  * Path to the rsh binary.  This should be configurable.

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.125 1999/05/10 19:15:23 kashmir Exp $
+/* $Id: dumper.c,v 1.126 1999/05/14 19:08:59 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -112,8 +112,6 @@ static struct {
 #define	NSTREAMS	(sizeof(streams) / sizeof(streams[0]))
 
 /* local functions */
-#define	min(a,b)	((a)<(b)?(a):(b))
-#define	max(a,b)	((a)>(b)?(a):(b))
 int main P((int main_argc, char **main_argv));
 static cmd_t getcmd P((struct cmdargs *));
 static void putresult P((char *format, ...))

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.14 1999/04/17 18:52:41 kashmir Exp $
+ * $Id: event.c,v 1.15 1999/05/14 19:08:47 kashmir Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -90,11 +90,6 @@ static const char *event_type2str P((event_type_t));
 static void signal_handler P((int));
 static event_handle_t *gethandle P((void));
 static void puthandle P((event_handle_t *));
-
-#undef min
-#define	min(a, b)	((a) < (b) ? (a) : (b))
-#undef max
-#define	max(a, b)	((a) > (b) ? (a) : (b))
 
 /*
  * Add a new event.  See the comment in event.h for what the arguments

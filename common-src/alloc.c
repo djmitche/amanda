@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.23 1999/05/12 16:15:04 kashmir Exp $
+ * $Id: alloc.c,v 1.24 1999/05/14 19:08:45 kashmir Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -33,8 +33,6 @@
 #include "amanda.h"
 #include "arglist.h"
 #include "queue.h"
-
-#define	max(a, b)	((a) > (b) ? (a) : (b))
 
 #if defined(USE_DBMALLOC)
 
