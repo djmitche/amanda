@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.4 1999/09/15 00:32:42 jrj Exp $
+ * $Id: amtrmlog.c,v 1.5 2000/09/23 00:27:51 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -64,6 +64,7 @@ char **argv;
     time_t today, date_keep;
     char *logname = NULL;
     struct stat stat_log;
+    struct stat stat_old;
     char *conffile;
     char *conf_diskfile;
     char *conf_tapelist;
@@ -144,14 +145,19 @@ char **argv;
     olddir = vstralloc(conf_logdir, "/oldlog", NULL);
     if (mkpdir(olddir, 02700, (uid_t)-1, (gid_t)-1) != 0)
 	error("could not create parents of %s: %s", olddir, strerror(errno));
-    if (mkdir(olddir, 02700) != 0)
+    if (mkdir(olddir, 02700) != 0 && errno != EEXIST)
 	error("could not create %s: %s", olddir, strerror(errno));
 
-    olddir = vstralloc(getconf_str(CNF_LOGDIR),"/oldlog",NULL);
-    mkdir(olddir, 0700);
+    if (stat(olddir,&stat_old) == -1) {
+	error("can't stat oldlog directory \"%s\": %s", olddir, strerror(errno));
+    }
+
+    if (!S_ISDIR(stat_old.st_mode)) {
+	error("Oldlog directory \"%s\" is not a directory", olddir);
+    }
 
     if ((dir = opendir(conf_logdir)) == NULL)
-	error("could not open log directory \"%s\"", conf_logdir);
+	error("could not open log directory \"%s\": %s", conf_logdir,strerror(errno));
     while ((adir=readdir(dir)) != NULL) {
 	if(strncmp(adir->d_name,"log.",4)==0) {
 	    useful=0;
