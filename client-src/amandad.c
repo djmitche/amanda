@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.4 1999/09/10 23:27:08 jrj Exp $
+ * $Id: amandad.c,v 1.32.2.4.4.1 2001/05/14 20:09:17 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -36,6 +36,7 @@
 #include "dgram.h"
 #include "version.h"
 #include "protocol.h"
+#include "util.h"
 
 #define RECV_TIMEOUT 30
 #define ACK_TIMEOUT  10		/* XXX should be configurable */
@@ -77,7 +78,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    int l, n, s;
+    int n;
     int fd;
     char *errstr = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
@@ -297,23 +298,12 @@ char **argv;
 
     dbprintf(("%s: running service \"%s\"\n", argv[0], cmd));
 
-    /* spawn child to handle request */
+    /* spawn first child to handle the request */
 
     switch(fork()) {
     case -1: error("could not fork for %s: %s", cmd, strerror(errno));
 
     default:		/* parent */
-
-        aclose(req_pipe[0]);
-        aclose(rep_pipe[1]);
-
-        reqlen = strlen(in_msg.dgram.cur);
-	for(l = 0, n = reqlen; l < n; l += s) {
-            if((s = write(req_pipe[1], in_msg.dgram.cur + l, n - l)) < 0) {
-		error("write to child pipe: %s", strerror(errno));
-	    }
-	}
-        aclose(req_pipe[1]);
 
         break; 
 
@@ -329,12 +319,44 @@ char **argv;
 	transfer_session_key();
 #endif
 
+        aclose(req_pipe[0]);
+        aclose(rep_pipe[1]);
+
 	/* run service */
 
 	execle(cmd, cmd, NULL, safe_env());
 	error("could not exec %s: %s", cmd, strerror(errno));
     }
     amfree(cmd);
+
+    aclose(req_pipe[0]);
+    aclose(rep_pipe[1]);
+
+    /* spawn second child to handle writing the packet to the first child */
+
+    switch(fork()) {
+    case -1: error("could not fork for %s: %s", cmd, strerror(errno));
+
+    default:		/* parent */
+
+	break;
+
+    case 0:		/* child */
+
+        aclose(rep_pipe[0]);
+        reqlen = strlen(in_msg.dgram.cur);
+	if((rc = fullwrite(req_pipe[1], in_msg.dgram.cur, reqlen)) != reqlen) {
+	    if(rc < 0) {
+		error("write to child pipe: %s", strerror(errno));
+	    } else {
+		error("write to child pipe: %d instead of %d", rc, reqlen);
+	    }
+	}
+        aclose(req_pipe[1]);
+	exit(0);
+    }
+
+    aclose(req_pipe[1]);
 
     setup_rep(&in_msg, &out_msg);
 #ifdef KRB4_SECURITY
@@ -351,10 +373,14 @@ char **argv;
 	    error("select failed: %s", strerror(errno));
 
 	if(FD_ISSET(rep_pipe[0],&insock)) {
-	    if((rc = read(rep_pipe[0], out_msg.dgram.cur+dglen,
-			  MAX_DGRAM-out_msg.dgram.len)) <= 0) {
-		if (rc < 0)
+	    if(dglen >= MAX_DGRAM) {
+		error("more than %d bytes received from child", MAX_DGRAM);
+	    }
+	    rc = read(rep_pipe[0], out_msg.dgram.cur+dglen, MAX_DGRAM-dglen);
+	    if(rc <= 0) {
+		if (rc < 0) {
 		    error("reading response pipe: %s", strerror(errno));
+		}
 		break;
 	    }
 	    dglen += rc;
