@@ -1225,7 +1225,7 @@ AC_DEFINE_UNQUOTED(GREP,"$GREP")
 AC_PATH_PROGS(GNUTAR,gtar gnutar tar,,$LOCSYSPATH)
 if test "$GNUTAR"; then
   case "`\"$GNUTAR\" --version 2>&1`" in
-   *GNU*tar*)
+   *GNU*tar* | Free*paxutils )
 		AC_DEFINE_UNQUOTED(GNUTAR,"$GNUTAR")
 		;;
    *)
