@@ -1,5 +1,7 @@
 1998-06-24  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* Makefile.am (EXTRA_DIST): moved CHANGES into ChangeLog
+
 	* recover-src/extract_list.c (extract_files_child): handle
 	IS_UNKNOWN dumptype as IS_DUMP
 

@@ -12,7 +12,7 @@ SUBDIRS=config		\
 	example
 
 EXTRA_DIST = \
-	CHANGES				COPYRIGHT			\
+	COPYRIGHT			\
 	COPYRIGHT-APACHE		COPYRIGHT-REGEX 		\
 	docs/FAQ			docs/INDEXING			\
 	docs/INSTALL			docs/INTERNALS			\
