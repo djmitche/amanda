@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.3.2.3.4.3.2.9.2.1 2004/09/15 13:46:48 martinea Exp $
+ * $Id: tapetype.c,v 1.3.2.3.4.3.2.9.2.2 2004/11/10 16:28:43 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -397,11 +397,8 @@ int main(argc, argv)
   if((result = tapefd_rdlabel(fd, &datestamp, &label)) == NULL) {
     is_labeled = 1;
   }
-  else if (strcmp(result,"not an amanda tape") != 0) {
-    fprintf(stderr, "%s: %s: %s\n",
-	    sProgName, tapedev, result);
-    tapefd_close(fd);
-    return 1;
+  else if (strcmp(result,"not an amanda tape") == 0) {
+    is_labeled = 2;
   }
 
   if(tapefd_rewind(fd) == -1) {
@@ -415,6 +412,11 @@ int main(argc, argv)
 
   if(is_labeled == 1 && overwrite_label == 0) {
     fprintf(stderr, "%s: The tape is an amanda tape, use -o to overwrite the tape\n",
+	    sProgName);
+    return 1;
+  }
+  else if(is_labeled == 2 && overwrite_label == 0) {
+    fprintf(stderr, "%s: The tape is already used, use -o to overwrite the tape\n",
 	    sProgName);
     return 1;
   }
