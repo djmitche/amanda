@@ -1,3 +1,9 @@
+1999-04-07  Mike Grupenhoff <kashmir@munge.com>
+
+	* server-src/dumper.c: collect got_info_endline, got_sizeline,
+	got_endline, and header_done into one bitmask global, and make it
+	static.  Also, make 'file' static.
+
 1999-04-06 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/reporter.c (TextRule): Fix to write the full string.

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.108 1999/04/06 22:43:47 kashmir Exp $
+/* $Id: dumper.c,v 1.109 1999/04/07 18:32:39 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -106,7 +106,7 @@ char *recover_cmd = NULL;
 char *compress_suffix = NULL;
 int conf_dtimeout;
 
-dumpfile_t file;
+static dumpfile_t file;
 
 static struct {
     const char *name;
@@ -731,22 +731,25 @@ databuf_flush(db)
     return (0);
 }
 
-int got_info_endline;
-int got_sizeline;
-int got_endline;
-int dump_result;
+static int dump_result;
+static int status;
+#define	GOT_INFO_ENDLINE	(1 << 0)
+#define	GOT_SIZELINE		(1 << 1)
+#define	GOT_ENDLINE		(1 << 2)
+#define	HEADER_DONE		(1 << 3)
+
 
 static void process_dumpeof()
 {
     /* process any partial line in msgbuf? !!! */
     add_msg_data(NULL, 0);
-    if(!got_sizeline && dump_result < 2) {
+    if(!ISSET(status, GOT_SIZELINE) && dump_result < 2) {
 	/* make a note if there isn't already a failure */
 	fputs("? dumper: strange [missing size line from sendbackup]\n",errf);
 	dump_result = max(dump_result, 1);
     }
 
-    if(!got_endline && dump_result < 2) {
+    if(!ISSET(status, GOT_ENDLINE) && dump_result < 2) {
 	fputs("? dumper: strange [missing end line from sendbackup]\n",errf);
 	dump_result = max(dump_result, 1);
     }
@@ -760,7 +763,7 @@ static void parse_info_line(str)
 char *str;
 {
     if(strcmp(str, "end") == 0) {
-	got_info_endline = 1;
+	SET(status, GOT_INFO_ENDLINE);
 	return;
     }
 
@@ -786,8 +789,9 @@ char *str;
 #undef sc
 }
 
-static void process_dumpline(str)
-char *str;
+static void
+process_dumpline(str)
+    char *str;
 {
     char *s, *fp;
     int ch;
@@ -795,7 +799,7 @@ char *str;
     s = str;
     ch = *s++;
 
-    switch(ch) {
+    switch (ch) {
     case '|':
 	/* normal backup output line */
 	break;
@@ -817,14 +821,14 @@ char *str;
 	    skip_whitespace(s, ch);
 	    if(ch) {
 		origsize = (long)atof(str + sizeof(sc)-1);
-		got_sizeline = 1;
+		SET(status, GOT_SIZELINE);
 		break;
 	    }
 	}
 #undef sc
 #define sc "sendbackup: end"
 	if(strncmp(str, sc, sizeof(sc)-1) == 0) {
-	    got_endline = 1;
+	    SET(status, GOT_ENDLINE);
 	    break;
 	}
 #undef sc
@@ -833,7 +837,7 @@ char *str;
 	    s += sizeof(sc)-1;
 	    ch = s[-1];
 #undef sc
-	    got_endline = 1;
+	    SET(status, GOT_ENDLINE);
 	    dump_result = max(dump_result, 2);
 	    skip_whitespace(s, ch);
 	    if(ch == '\0' || ch != '[') {
@@ -1042,7 +1046,6 @@ do_dump(db)
     int maxfd, nfound, eof1, eof2;
     fd_set readset, selectset;
     struct timeval timeout;
-    int header_done;	/* flag - header has been written */
     char *indexfile = NULL;
     char level_str[NUM_STR_SIZE];
     char *fn;
@@ -1072,8 +1075,7 @@ do_dump(db)
 
     dumpsize = origsize = dump_result = 0;
     nb_header_block = 0;
-    got_info_endline = got_sizeline = got_endline = 0;
-    header_done = 0;
+    status = 0;
     amfree(backup_name);
     amfree(recover_cmd);
     amfree(compress_suffix);
@@ -1288,7 +1290,8 @@ do_dump(db)
 		break;
 	    }
 
-	    if (got_info_endline && !header_done) { /* time to do the header */
+	    if (ISSET(status, GOT_INFO_ENDLINE) &&
+		!ISSET(status, HEADER_DONE)) { /* time to do the header */
 		make_tapeheader(&file, F_DUMPFILE);
 		if (write_tapeheader(db->fd, &file)) {
 		    errstr = newstralloc2(errstr, "write_tapeheader: ", 
@@ -1297,7 +1300,7 @@ do_dump(db)
 		}
 		dumpsize += TAPE_BLOCK_SIZE;
 		nb_header_block++;
-		header_done = 1;
+		SET(status, HEADER_DONE);
 
 		if (streams[DATAFD].fd != -1)
 		    FD_SET(streams[DATAFD].fd, &readset);	/* now we can read the data */
