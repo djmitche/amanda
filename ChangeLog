@@ -1,3 +1,7 @@
+2002-01-11  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/planner.c: Check for dp->todo.
+
 2002-01-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Patch by Harlan Stenn <Harlan.Stenn@pfcs.com>
 

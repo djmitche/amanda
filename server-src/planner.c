@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.115 2001/11/10 19:31:06 martinea Exp $
+ * $Id: planner.c,v 1.116 2002/01/11 20:01:38 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1076,11 +1076,8 @@ host_t *hostp;
 	char *s = NULL;
 	int s_len = 0;
 
+	if(dp->todo == 0) continue;
 	if(est(dp)->state != DISK_READY) continue;
-	if(dp->todo == 0) {
-	    est(dp)->state = DISK_DONE;
-	    continue;
-	}
 	est(dp)->got_estimate = 0;
 	if(est(dp)->level[0] == -1) {
 	    est(dp)->state = DISK_DONE;
@@ -1294,9 +1291,9 @@ security_handle_t *sech;
     /* XXX amanda 2.1 treated that case as a bad msg */
 
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	if(dp->todo == 0) continue;
 	if(est(dp)->state != DISK_ACTIVE) continue;
 	est(dp)->state = DISK_DONE;
-	if(dp->todo == 0) continue;
 	if(est(dp)->level[0] == -1) continue;	/* ignore this disk */
 	remove_disk(&waitq, dp);
 	if(est(dp)->got_estimate) {
