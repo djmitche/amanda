@@ -1,3 +1,9 @@
+2003-05-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/tapefile.c (read_tapelist): Ignore blank line.
+	* server-src/tapefile.c (parse_tapeline): Newer status parameter, set
+	  it to '1' when reading blank line.
+
 2003-04-28  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* configure.in (AC_CHECK_HEADERS): Remove linux/ftape-header-segment.h,

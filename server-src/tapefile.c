@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.15.2.6.6.3 2003/02/12 22:29:38 martinea Exp $
+ * $Id: tapefile.c,v 1.15.2.6.6.4 2003/05/12 18:20:37 martinea Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -35,7 +35,7 @@
 static tape_t *tape_list = NULL;
 
 /* local functions */
-static tape_t *parse_tapeline P((char *line));
+static tape_t *parse_tapeline P((int *status, char *line));
 static tape_t *insert P((tape_t *list, tape_t *tp));
 static time_t stamp2time P((int datestamp));
 
@@ -48,6 +48,7 @@ char *tapefile;
     FILE *tapef;
     int pos;
     char *line = NULL;
+    int status;
 
     tape_list = NULL;
     if((tapef = fopen(tapefile,"r")) == NULL) {
@@ -55,9 +56,9 @@ char *tapefile;
     }
 
     while((line = agets(tapef)) != NULL) {
-	tp = parse_tapeline(line);
+	tp = parse_tapeline(&status, line);
 	amfree(line);
-	if(tp == NULL) return 1;
+	if(tp == NULL && status != 0) return 1;
 	tape_list = insert(tape_list, tp);
     }
     afclose(tapef);
@@ -302,13 +303,15 @@ int guess_runs_from_tapelist()
     return runs;
 }
 
-static tape_t *parse_tapeline(line)
+static tape_t *parse_tapeline(status, line)
+int *status;
 char *line;
 {
     tape_t *tp = NULL;
     char *s, *s1;
     int ch;
 
+    *status = 0;
     tp = (tape_t *) alloc(sizeof(tape_t));
 
     tp->prev = NULL;
@@ -318,7 +321,12 @@ char *line;
     ch = *s++;
 
     skip_whitespace(s, ch);
-    if (ch == '\0' || sscanf(s - 1, "%d", &tp->datestamp) != 1) {
+    if(ch == '\0') {
+	amfree(tp);
+	status = 1;
+	return NULL;
+    }
+    if (sscanf(s - 1, "%d", &tp->datestamp) != 1) {
 	amfree(tp);
 	return NULL;
     }
