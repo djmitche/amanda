@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.82 1999/05/27 19:48:37 kashmir Exp $
+ * $Id: amanda.h,v 1.83 1999/06/15 07:10:15 oliva Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -717,16 +717,24 @@ extern int accept P((int s, struct sockaddr *addr, int *addrlen));
 extern double atof P((const char *ptr));
 #endif
 
-#ifndef HAVE_BCOPY_DECL
+#ifndef HAVE_BCOPY
+# define bcopy(from,to,n) ((void)memmove((to), (from), (n)))
+#else
+# ifndef HAVE_BCOPY_DECL
 extern void bcopy P((const void *s1, void *s2, size_t n));
+# endif
 #endif
 
 #ifndef HAVE_BIND_DECL
 extern int bind P((int s, const struct sockaddr *name, int namelen));
 #endif
 
-#ifndef HAVE_BZERO_DECL
+#ifndef HAVE_BZERO
+#define bzero(s,n) ((void)memset((s),0,(n)))
+#else
+# ifndef HAVE_BZERO_DECL
 extern void bzero P((void *s, size_t n));
+# endif
 #endif
 
 #ifndef HAVE_CLOSELOG_DECL
