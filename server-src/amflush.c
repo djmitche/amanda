@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amflush.c,v 1.18.2.3 1998/03/07 15:45:20 martinea Exp $
+ * $Id: amflush.c,v 1.18.2.4 1998/03/08 07:58:50 amcore Exp $
  *
  * write files from work directory onto tape
  */
@@ -178,8 +178,9 @@ char *diskdir;
     char *destname = NULL;
     char *hostname = NULL;
     char *diskname = NULL;
-    int level, filenum;
+    int filenum;
     disk_t *dp;
+    sched_t sp;
 
     dirname = vstralloc(diskdir, "/", datestamp, NULL);
 
@@ -209,7 +210,7 @@ char *diskdir;
 
 	afree(hostname);
 	afree(diskname);
-	if(get_amanda_names(destname, &hostname, &diskname, &level)) {
+	if(get_amanda_names(destname, &hostname, &diskname, &sp.level)) {
 	    log(L_INFO, "%s: ignoring cruft file.", entry->d_name);
 	    continue;
 	}
@@ -222,17 +223,19 @@ char *diskdir;
 	    continue;
 	}
 
-	if(level < 0 || level > 9) {
+	if(sp.level < 0 || sp.level > 9) {
 	    log(L_INFO, "%s: ignoring file with bogus dump level %d.",
-		entry->d_name, level);
+		entry->d_name, sp.level);
 	    continue;
 	}
 
-	taper_cmd(FILE_WRITE, dp, destname, level);
+	sched(dp) = &sp;
+
+	taper_cmd(FILE_WRITE, dp, destname, sp.level);
 	tok = getresult(taper, 0);
 	if(tok == TRYAGAIN) {
 	    /* we'll retry one time */
-	    taper_cmd(FILE_WRITE, dp, destname, level);
+	    taper_cmd(FILE_WRITE, dp, destname, sp.level);
 	    tok = getresult(taper, 0);
 	}
 
@@ -258,7 +261,6 @@ char *diskdir;
 		destname);
 	    break;
 	}
-
     }
 
     closedir(workdir);
