@@ -1,0 +1,41 @@
+--- ./source/client.c~	Tue Oct 21 08:47:16 1997
++++ ./source/client.c	Mon Nov 17 07:34:05 1997
+@@ -137,7 +137,7 @@
+ int put_total_time_ms = 0;
+ 
+ /* totals globals */
+-int dir_total = 0;
++unsigned long long dir_total = 0;
+ 
+ extern int Client;
+ 
+@@ -1131,7 +1131,7 @@
+ 
+   do_dskattr();
+ 
+-  DEBUG(3, ("Total bytes listed: %d\n", dir_total));
++  DEBUG(3, ("Total bytes listed: %llu\n", dir_total));
+ }
+ 
+ 
+--- ./source/clitar.c~	Fri Sep  5 16:44:43 1997
++++ ./source/clitar.c	Mon Nov 17 07:35:03 1997
+@@ -41,7 +41,8 @@
+ #endif
+ 
+ static char *tarbuf;
+-static int tp, ntarf, tbufsiz, ttarf;
++static int tp, ntarf, tbufsiz;
++static unsigned long long ttarf;
+ /* Incremental mode */
+ BOOL tar_inc=False;
+ /* Reset archive bit */
+@@ -1606,7 +1607,7 @@
+     free(tarbuf);
+     
+     DEBUG(0, ("tar: dumped %d tar files\n", ntarf));
+-    DEBUG(0, ("Total bytes written: %d\n", ttarf));
++    DEBUG(0, ("Total bytes written: %llu\n", ttarf));
+     break;
+   }
+ 
