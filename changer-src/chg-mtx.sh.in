@@ -24,7 +24,7 @@ fi
 
 myname=$0
 tape=`getconf$SUF tapedev`
-TAPE=$tape; export TAPE # for mtx command
+TAPE=`getconf$SUF changerdev`; export TAPE # for mtx command
 MT=@MT@
 MTF=@MT_FILE_FLAG@
 MTX=@MTX@
