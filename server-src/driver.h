@@ -99,7 +99,7 @@ GLOBAL int taper, taper_busy, taper_pid;
 GLOBAL disk_t *taper_disk;
 
 GLOBAL int argc;
-GLOBAL char *argv[MAX_ARGS];
+GLOBAL char *argv[MAX_ARGS+1];
 GLOBAL int maxfd;
 GLOBAL int force_parameters, use_lffo;
 GLOBAL char datestamp[80], taper_program[80], dumper_program[80];

@@ -66,7 +66,7 @@ typedef enum { BOGUS, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT, QUIT } cmd_t;
 char *pname = "dumper";
 
 char line[MAX_LINE];
-char *argv[MAX_ARGS];
+char *argv[MAX_ARGS+1];
 int argc;
 int interactive;
 char *handle;
@@ -222,17 +222,19 @@ char **main_argv;
 	    /* FILE-DUMP handle filename host disk level progname options */
 
 	    assert(argc == 8);
-	    handle = argv[1];
-	    filename = argv[2];
-	    hostname = argv[3];
-	    diskname = argv[4];
-	    levelstr = argv[5]; level = atoi(levelstr);
-	    progname = argv[6];
-	    options = argv[7];
+	    handle = argv[2];
+	    filename = argv[3];
+	    hostname = argv[4];
+	    diskname = argv[5];
+	    levelstr = argv[6]; level = atoi(levelstr);
+	    progname = argv[7];
+	    options = argv[8];
 
 	    if((outfd = open(filename, O_WRONLY|O_CREAT, 0666)) == -1) {
-		putresult("FAILED %s [holding file \"%s\": %s]\n",
-			  handle, filename, strerror(errno));
+		putresult("FAILED %s %s\n", handle,
+			  quotef("[holding file \"%s\": %s]",
+				 filename, strerror(errno))
+			 );
 		break;
 	    }
 
@@ -241,7 +243,7 @@ char **main_argv;
 	    rc = startup_dump(hostname, diskname, levelstr, progname, options);
 	    if(rc) {
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
-			  handle, errstr);
+			  handle, quote(errstr));
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		close(mesgfd);
 		close(datafd);
@@ -263,21 +265,21 @@ char **main_argv;
 
 	    /* PORT-DUMP handle port host disk level progname options */
 	    assert(argc == 8);
-	    handle = argv[1];
-	    taper_port = atoi(argv[2]);
-	    hostname = argv[3];
-	    diskname = argv[4];
-	    levelstr = argv[5]; level = atoi(levelstr);
-	    progname = argv[6];
-	    options = argv[7];
+	    handle = argv[2];
+	    taper_port = atoi(argv[3]);
+	    hostname = argv[4];
+	    diskname = argv[5];
+	    levelstr = argv[6]; level = atoi(levelstr);
+	    progname = argv[7];
+	    options = argv[8];
 
 	    /* connect outf to taper port */
 
 	    outfd = stream_client("localhost", taper_port, 
 				  DATABUF_SIZE, DEFAULT_SIZE);
 	    if(outfd == -1) {
-		putresult("FAILED %s [taper port open: %s]\n",
-			  handle, strerror(errno));
+		putresult("FAILED %s %s\n", handle,
+			  quotef("[taper port open: %s]", strerror(errno)));
 		break;
 	    }
 
@@ -286,7 +288,7 @@ char **main_argv;
 	    rc = startup_dump(hostname, diskname, levelstr, progname, options);
 	    if(rc) {
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
-			  handle, errstr);
+			  handle, quote(errstr));
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		close(mesgfd);
 		close(datafd);
@@ -303,7 +305,7 @@ char **main_argv;
 	    break;
 
 	default:
-	    putresult("BAD-COMMAND %s\n", argv[0]);
+	    putresult("BAD-COMMAND %s\n", quote(argv[1]));
 	}
     } while(cmd != QUIT);
     return 0;
@@ -322,29 +324,21 @@ static cmd_t getcmd()
     if(fgets(line, MAX_LINE, stdin) == NULL)
 	return QUIT;
 
-    p = line;
-    argc = 0;
-    while(*p) {
-	while(isspace(*p)) p++;
-	if(argc < MAX_ARGS) argv[argc++] = p;
-	while(*p && !isspace(*p)) p++;
-	if(*p) *p++ = '\0';
-    }
-    for(arg = argc; arg < MAX_ARGS; arg++) argv[arg] = "";
+    argc = split(line, argv, MAX_ARGS+1, " ");
 
 #if DEBUG
     printf("argc = %d\n", argc);
-    for(arg = 0; arg < MAX_ARGS; arg++)
+    for(arg = 0; arg < MAX_ARGS+1; arg++)
 	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
 #endif
 
     /* not enough commands for a table lookup */
 
-    if(!strcmp(argv[0],"FILE-DUMP")) return FILE_DUMP;
-    else if(!strcmp(argv[0],"PORT-DUMP")) return PORT_DUMP;
-    else if(!strcmp(argv[0],"CONTINUE")) return CONTINUE;
-    else if(!strcmp(argv[0],"ABORT")) return ABORT;
-    else if(!strcmp(argv[0],"QUIT")) return QUIT;
+    if(!strcmp(argv[1],"FILE-DUMP")) return FILE_DUMP;
+    else if(!strcmp(argv[1],"PORT-DUMP")) return PORT_DUMP;
+    else if(!strcmp(argv[1],"CONTINUE")) return CONTINUE;
+    else if(!strcmp(argv[1],"ABORT")) return ABORT;
+    else if(!strcmp(argv[1],"QUIT")) return QUIT;
     return BOGUS;
 }
 
@@ -396,8 +390,8 @@ int outf, size;
 		lseek(outf, pos, SEEK_SET);
 
 	    } else if(errno != ENOSPC) {
-		putresult("FAILED %s [data write: %s]\n",
-			  handle, strerror(errno));
+		putresult("FAILED %s %s\n", handle,
+			  quotef("[data write: %s]", strerror(errno)));
 		return 1;
 	    }
 	    putresult("NO-ROOM %s\n", handle);
@@ -892,7 +886,7 @@ int mesgfd, datafd, indexfd, outfd;
 	      walltime_str(runtime), dumpsize, 
 	      dumpsize/(runtime.r.tv_sec+runtime.r.tv_usec/1000000.0),
 	      origsize);
-    putresult("DONE %s [%s]\n", handle, errstr);
+    putresult("DONE %s %s\n", handle, quotef("[%s]", errstr));
 
     fclose(errf);
     switch(dump_result) {
@@ -903,7 +897,7 @@ int mesgfd, datafd, indexfd, outfd;
     return;
 
 failed:
-    putresult("FAILED %s [%s]\n", handle, errstr);
+    putresult("FAILED %s %s\n", handle, quotef("[%s]", errstr));
 
     fclose(errf);
     record_failure(errstr);

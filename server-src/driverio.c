@@ -157,26 +157,22 @@ int fd;
     if((len = read(fd, line, MAX_LINE)) == -1)
 	error("reading result from %s: %s", childstr(fd), strerror(errno));
 
-    line[len] = '\0';
+    if(len > 0 && line[len-1] == '\r') line[len-1] = '\0';
+    else line[len] = '\0';
 
-    printf("driver: result time %s from %s: %s",
+    argc = split(line, argv, MAX_ARGS+1, " ");
+
+    printf("driver: result time %s from %s:",
 	   walltime_str(curclock()),
-	   childstr(fd), line); 
+	   childstr(fd)); 
+    for(arg = 1; arg <= argc; arg++)
+	printf(" %s", argv[arg]);
+    printf("\n");
     fflush(stdout);
-
-    p = line;
-    argc = 0;
-    while(*p) {
-        while(isspace(*p)) p++;
-        if(argc < MAX_ARGS) argv[argc++] = p;
-        while(*p && !isspace(*p)) p++;
-        if(*p) *p++ = '\0';
-    }
-    for(arg = argc; arg < MAX_ARGS; arg++) argv[arg] = "";
 
 #ifdef DEBUG
     printf("argc = %d\n", argc);
-    for(arg = 0; arg < MAX_ARGS; arg++)
+    for(arg = 0; arg < MAX_ARGS+1; arg++)
         printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
 #endif
 

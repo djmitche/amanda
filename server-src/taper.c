@@ -36,6 +36,7 @@
 #include "changer.h"
 #include "version.h"
 #include "arglist.h"
+#include "token.h"
 
 /*
  * XXX update stat collection/printing
@@ -220,7 +221,7 @@ int rdpipe, wrpipe;
 
     /* pass start command on to tape writer */
 
-    strcpy(datestamp, argv[1]);
+    strcpy(datestamp, argv[2]);
 
     syncpipe_put('S');
     syncpipe_putstr(datestamp);
@@ -236,7 +237,7 @@ int rdpipe, wrpipe;
     case 'E':
 	/* no tape, bail out */
 	result = syncpipe_getstr();
-	putresult("TAPE-ERROR [%s]\n", result);
+	putresult("TAPE-ERROR %s\n", quotef("[%s]",result));
 	log(L_ERROR,"no-tape [%s]", result);
 	exit(1);
     default:
@@ -254,10 +255,10 @@ int rdpipe, wrpipe;
 	case PORT_WRITE:
 	    assert(argc == 5);	/* PORT-WRITE <handle> <host> <disk> <lev> */
 
-	    handle = stralloc(argv[1]);
-	    hostname = stralloc(argv[2]);
-	    diskname = stralloc(argv[3]);
-	    level = atoi(argv[4]);
+	    handle = stralloc(argv[2]);
+	    hostname = stralloc(argv[3]);
+	    diskname = stralloc(argv[4]);
+	    level = atoi(argv[5]);
 
 	    data_port = 0;
 	    data_socket = stream_server(&data_port);
@@ -265,7 +266,8 @@ int rdpipe, wrpipe;
 
 	    if((fd = stream_accept(data_socket, CONNECT_TIMEOUT,
 				   DEFAULT_SIZE, BUFFER_SIZE)) == -1) {
-		putresult("TAPE-ERROR %s [port connect timeout]\n", handle);
+		putresult("TAPE-ERROR %s %s\n", handle,
+			  quote("[port connect timeout]"));
 		close(data_socket);
 		free(handle);
 		free(hostname);
@@ -282,13 +284,14 @@ int rdpipe, wrpipe;
 	case FILE_WRITE:
 	    assert(argc == 6);	/* FILE-WRITE <sn> <fname> <hst> <dsk> <lev> */
 
-	    handle = stralloc(argv[1]);
-	    hostname = stralloc(argv[3]);
-	    diskname = stralloc(argv[4]);
-	    level = atoi(argv[5]);
+	    handle = stralloc(argv[2]);
+	    hostname = stralloc(argv[4]);
+	    diskname = stralloc(argv[5]);
+	    level = atoi(argv[6]);
 
-	    if((fd = open(argv[2], O_RDONLY)) == -1) {
-		putresult("TAPE-ERROR %s [%s]\n", handle, strerror(errno));
+	    if((fd = open(argv[3], O_RDONLY)) == -1) {
+		putresult("TAPE-ERROR %s %s\n", handle,
+			  quotef("[%s]",strerror(errno)));
 		free(handle);
 		free(hostname);
 		free(diskname);
@@ -320,7 +323,7 @@ int rdpipe, wrpipe;
 	    exit(0);
 
 	default:
-	    putresult("BAD-COMMAND %s\n", argv[0]);
+	    putresult("BAD-COMMAND %s\n", quote(argv[1]));
 	    break;
 	}
     }
@@ -457,7 +460,7 @@ char *handle, *hostname, *diskname;
 		fflush(stderr);
 
 		strcpy(errstr, "[fatal buffer mismanagement bug]");
-		putresult("TRY-AGAIN %s %s\n", handle, errstr);
+		putresult("TRY-AGAIN %s %s\n", handle, quote(errstr));
 		record_tryagain(hostname, diskname, level, errstr);
 		closing = 1;
 		syncpipe_put('X');	/* X == buffer snafu, bail */
@@ -500,11 +503,11 @@ char *handle, *hostname, *diskname;
 	    sprintf(errstr, "[%s]", syncpipe_getstr());
 
 	    if(tok == 'T') {
-		putresult("TRY-AGAIN %s %s\n", handle, errstr);
+		putresult("TRY-AGAIN %s %s\n", handle, quote(errstr));
 		record_tryagain(hostname, diskname, level, errstr);
 	    }	
 	    else {
-		putresult("TAPE-ERROR %s %s\n", handle, errstr);
+		putresult("TAPE-ERROR %s %s\n", handle, quote(errstr));
 		record_failure(hostname, diskname, level, errstr);
 	    }
 	    return;
@@ -524,7 +527,7 @@ char *handle, *hostname, *diskname;
 	    runtime = stopclock();
 	    if(err) {
 		sprintf(errstr, "[input: %s]", strerror(err));
-		putresult("TAPE-ERROR %s %s\n", handle, errstr);
+		putresult("TAPE-ERROR %s %s\n", handle, quote(errstr));
 		record_failure(hostname, diskname, level, errstr);
 		syncpipe_getstr();	/* reap stats */
 	    }
@@ -555,7 +558,7 @@ char *handle, *hostname, *diskname;
 			record_success(hostname, diskname, level, errstr);
 		    }
 		}
-		putresult("DONE %s %s\n", handle, errstr);
+		putresult("DONE %s %s\n", handle, quote(errstr));
 	    }
 	    return;
 	default:
@@ -891,7 +894,7 @@ char ***argvp;
      * storage it has allocated for that purpose.
      */
     static char line[MAX_LINE];
-    static char *argv[MAX_ARGS];
+    static char *argv[MAX_ARGS+1];
     char *p;
     int arg, argc;
 
@@ -900,39 +903,28 @@ char ***argvp;
 	fflush(stderr);
     }
 
-    if(fgets(line, MAX_LINE, stdin) == NULL) {
-	argc = 1;
-	argv[0] = "QUIT", argv[1] = 0;
+    if(fgets(line, MAX_LINE, stdin) == NULL)
 	return QUIT;
-    }
 
-    p = line;
-    argc = 0;
-    while(*p) {
-	while(isspace(*p)) p++;
-	if(argc < MAX_ARGS) argv[argc++] = p;
-	while(*p && !isspace(*p)) p++;
-	if(*p) *p++ = '\0';
-    }
-    for(arg = argc; arg < MAX_ARGS; arg++) argv[arg] = "";
+    argc = split(line, argv, MAX_ARGS+1, " ");
 
 #ifdef DEBUG
     printf("argc = %d\n", argc);
-    for(arg = 0; arg < MAX_ARGS; arg++)
+    for(arg = 0; arg < MAX_ARGS+1; arg++)
 	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
 #endif
 
-    *argvp = argv;
+    *argvp = argv+1;
     *argcp = argc;
 
     /* not enough commands for a table lookup */
 
-    if(!strcmp(argv[0],"START-TAPER")) return START_TAPER;
-    else if(!strcmp(argv[0],"FILE-WRITE")) return FILE_WRITE;
-    else if(!strcmp(argv[0],"PORT-WRITE")) return PORT_WRITE;
-    else if(!strcmp(argv[0],"PORT-WRITE-SUCCESS")) return PORT_WRITE_SUCCESS;
-    else if(!strcmp(argv[0],"PORT-WRITE-FAILURE")) return PORT_WRITE_FAILURE;
-    else if(!strcmp(argv[0],"QUIT")) return QUIT;
+    if(!strcmp(argv[1],"START-TAPER")) return START_TAPER;
+    else if(!strcmp(argv[1],"FILE-WRITE")) return FILE_WRITE;
+    else if(!strcmp(argv[1],"PORT-WRITE")) return PORT_WRITE;
+    else if(!strcmp(argv[1],"PORT-WRITE-SUCCESS")) return PORT_WRITE_SUCCESS;
+    else if(!strcmp(argv[1],"PORT-WRITE-FAILURE")) return PORT_WRITE_FAILURE;
+    else if(!strcmp(argv[1],"QUIT")) return QUIT;
     return BOGUS;
 }
 
