@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.58 2002/03/03 17:10:32 martinea Exp $
+ * $Id: sendbackup.c,v 1.59 2002/03/11 01:00:04 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -75,8 +75,8 @@ option_t *options;
     static char *optstr = NULL;
     char *compress_opt = "";
     char *record_opt = "";
-    char *bsd_opt = "";
     char *index_opt = "";
+    char *auth_opt = "";
     char *exclude_file_opt;
     char *exclude_list_opt;
     char *exc = NULL;
@@ -87,7 +87,7 @@ option_t *options;
     else if(options->compress == COMPR_FAST)
 	compress_opt = "compress-fast;";
     if(options->no_record) record_opt = "no-record;";
-    if(options->bsd_auth) bsd_opt = "bsd-auth;";
+    if(options->auth) auth_opt = vstralloc("auth=", options->auth, ";", NULL);
     if(options->createindex) index_opt = "index;";
 
     exclude_file_opt = stralloc("");
@@ -108,8 +108,8 @@ option_t *options;
 			  ";",
 			  compress_opt,
 			  record_opt,
-			  bsd_opt,
 			  index_opt,
+			  auth_opt,
 			  exclude_file_opt,
 			  exclude_list_opt,
 			  NULL);

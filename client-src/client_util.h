@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.h,v 1.4 2002/03/03 17:10:32 martinea Exp $
+ * $Id: client_util.h,v 1.5 2002/03/11 01:00:04 martinea Exp $
  *
  */
 
@@ -38,8 +38,8 @@ typedef struct option_s {
     char *str;
     int compress;
     int no_record;
-    int bsd_auth;
     int createindex;
+    char *auth;
     sl_t *exclude_file;
     sl_t *exclude_list;
     sl_t *include_file;

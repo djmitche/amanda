@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.8 2002/03/03 17:10:32 martinea Exp $
+ * $Id: client_util.c,v 1.9 2002/03/11 01:00:04 martinea Exp $
  *
  */
 
@@ -314,8 +314,8 @@ int verbose;
     options->str = stralloc(str);
     options->compress = NO_COMPR;
     options->no_record = 0;
-    options->bsd_auth = 0;
     options->createindex = 0;
+    options->auth = NULL;
     options->exclude_file = NULL;
     options->exclude_list = NULL;
     options->include_file = NULL;
@@ -338,20 +338,12 @@ int verbose;
 	else if(strcmp(tok, "no-record") == 0) {
 	    options->no_record = 1;
 	}
-	else if(strcmp(tok, "bsd-auth") == 0) {
-	    options->bsd_auth = 1;
-	}
 	else if(strcmp(tok, "index") == 0) {
 	    options->createindex = 1;
 	}
-#ifdef KRB4_SECURITY
-	else if(strcmp(tok, "krb4-auth") == 0) {
-	    options->krb4_auth = 1;
+	else if(strncmp(tok,"auth=", 5) == 0) {
+	    options->auth = stralloc(&tok[5]);
 	}
-	else if(strcmp(tok, "kencrypt") == 0) {
-	    options->kencrypt = 1;
-	}
-#endif
 	else if(strncmp(tok,"exclude-file=", 13) == 0) {
 	    exc = &tok[13];
 	    options->exclude_file = append_sl(options->exclude_file,exc);
