@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.18 1998/01/08 19:33:34 jrj Exp $
+ * $Id: protocol.c,v 1.19 1998/01/15 20:38:51 amcore Exp $
  *
  * implements amanda protocol
  */
@@ -805,7 +805,7 @@ char *host_inst, *realm;
 	p->auth_cksum, p->req);
 #endif
 
-    return p->security != NULL;
+    return p->security == NULL;
 }
 
 int make_krb_request(hostname, port, req, datap, repwait, continuation)
