@@ -441,6 +441,7 @@ else
     # FIXME is there a better link_static_flag that works with the bundled CC?
     wl='-Wl,'
     link_static_flag='${wl}-a ${wl}archive'
+    pic_flag='+Z'
     ;;
 
   irix5* | irix6*)
