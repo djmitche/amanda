@@ -1,3 +1,8 @@
+1998-09-24  John R. Jackson  <jrj@purdue.edu>
+
+	* example/disklist: document the "spindle" and "interface" fields.
+	Reported by Brendan M Coffey <bcoffey@connix.com>.
+
 1998-09-24  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* docs/DUMPER-API: added draft description of the DUMPER API
