@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.56 1998/01/13 13:35:17 amcore Exp $
+ * $Id: sendsize.c,v 1.57 1998/01/13 17:23:27 blair Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -625,9 +625,9 @@ int level;
 			     "",
 #  endif						/* } */
 #  ifdef OSF1_VDUMP					/* { */
-			     "b"
+			     "b",
 #  else							/* } { */
-			     "s"
+			     "s",
 #  endif						/* } */
 			     "f",
 			     NULL);
