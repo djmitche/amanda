@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.12.4.3.2.3 2002/01/14 00:27:28 martinea Exp $
+ * $Id: holding.c,v 1.17.2.12.4.3.2.4 2002/02/03 15:51:28 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -207,6 +207,13 @@ char *datestamp;
     char *destname = NULL;
     disk_t *dp;
     dumpfile_t file;
+    holding_t *n, *last_holding_list;
+
+    last_holding_list = *holding_list;
+    if(last_holding_list) {
+	while(last_holding_list->next !=NULL)
+	    last_holding_list = last_holding_list->next;
+    }
 
     dirname = vstralloc(holdp->diskdir, "/", datestamp, NULL);
     if((workdir = opendir(dirname)) == NULL) {
@@ -248,10 +255,14 @@ char *datestamp;
 	    continue;
 	}
 
-	if(insert_dirname(holding_list, destname) == NULL) {
-	    puts("too many non-empty Amanda dirs, can't handle this one.");
-
-	}
+	n = (holding_t *)alloc(sizeof(holding_t));
+	n->name = stralloc(destname);
+	n->next = NULL;
+	if(last_holding_list) /* add at end */
+	    last_holding_list->next = n;
+	else /* first */
+	    *holding_list = n;
+	last_holding_list = n;
     }
 }
 
