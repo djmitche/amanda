@@ -1,3 +1,10 @@
+2001-01-04 John R. Jackson <jrj@purdue.edu>
+
+	* man/amanda.8.in: Try to make it clearer that dumpcycle and maxdumps
+	  changes in the main part of the config file must appear before any
+	  dumptype definitions, and also that inherited dumptypes must appear
+	  before their reference.
+
 2001-01-04  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* server-src/driver.c (continue_dumps): Don't reduce est_size if
