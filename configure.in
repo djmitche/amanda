@@ -2368,7 +2368,6 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 #include "${srcdir-.}/common-src/alloc.c"
 #include "${srcdir-.}/common-src/error.c"
 #include "${srcdir-.}/common-src/snprintf.c"
-char *pname = "lnlock-test";
 ], [
 		    amanda_cv_lnlock_filelocking="yes"
 ], [
