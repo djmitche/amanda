@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.1 2001/01/24 01:37:01 jrjackson Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.2 2001/02/28 02:12:03 jrjackson Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -36,8 +36,6 @@
 #include "getfsent.h"
 #include "../tape-src/tapeio.h"
 #include "amanda.h"
-
-#define DATABUF_SIZE	TAPE_BLOCK_BYTES
 
 #define TIMEOUT 30
 
@@ -369,7 +367,7 @@ char **argv;
 #endif
 
     if(!interactive) {
-      data_socket = stream_server(&data_port, DATABUF_SIZE*2, DATABUF_SIZE*2);
+      data_socket = stream_server(&data_port, DATABUF_SIZE*2, DEFAULT_SIZE);
       if(data_socket < 0) {
 	s = strerror(errno);
 	dbprintf(("ERROR [%s: could not create data socket: %s]\n", argv[0], s));
