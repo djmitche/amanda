@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.63 1998/04/08 16:25:27 amcore Exp $
+ * $Id: planner.c,v 1.64 1998/04/14 17:11:36 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -562,8 +562,9 @@ disk_t *dp;
     /* adjust priority levels */
 
     if(ep->next_level0 < 0) {
-	fprintf(stderr,"%s:%s overdue %d days for level 0\n",
-		dp->host->hostname, dp->name, - ep->next_level0);
+	fprintf(stderr,"%s:%s overdue %d day%s for level 0\n",
+		dp->host->hostname, dp->name,
+		- ep->next_level0, ((- ep->next_level0) == 1) ? "" : "s");
 	ep->dump_priority -= ep->next_level0;
 	/* warn if dump will be overwritten */
 	if(ep->last_level > -1) {
@@ -1692,11 +1693,12 @@ static int promote_highest_priority_incremental P((void))
      * cause total_size to exceed tape_length
      */
     check_limit = conf_dumpcycle - 1;
-    fprintf(stderr, "   promote: checking up to %d days ahead\n",
-	    check_limit - 1);
+    fprintf(stderr, "   promote: checking up to %d day%s ahead\n",
+	    check_limit - 1, (check_limit - 1 == 1) ? "" : "s");
 
     for(check_days = 1; check_days < check_limit; check_days++) {
-	fprintf(stderr, "   promote: checking %d days now\n", check_days);
+	fprintf(stderr, "   promote: checking %d day%s now\n",
+		check_days, (check_days == 1) ? "" : "s");
 
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	    if(dp->skip_full || dp->strategy == DS_NOFULL) {
@@ -1737,8 +1739,9 @@ static int promote_highest_priority_incremental P((void))
 		    total_lev0, total_size);
 
 	    log_add(L_INFO,
-		    "Full dump of %s:%s promoted from %d days ahead.",
-		    dp->host->hostname, dp->name, check_days);
+		    "Full dump of %s:%s promoted from %d day%s ahead.",
+		    dp->host->hostname, dp->name,
+		    check_days, (check_days == 1) ? "" : "s");
 
 	    return 1;
 	}
@@ -1821,8 +1824,9 @@ static int promote_hills P((void))
 		    total_lev0, total_size);
 
 	    log_add(L_INFO,
-		    "Full dump of %s:%s specially promoted from %d days ahead.",
-		    dp->host->hostname, dp->name, hill_days);
+		    "Full dump of %s:%s specially promoted from %d day%s ahead.",
+		    dp->host->hostname, dp->name,
+		    hill_days, (hill_days == 1) ? "" : "s");
 
 	    amfree(sp);
 	    return 1;

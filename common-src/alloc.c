@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: alloc.c,v 1.14 1998/04/08 16:24:33 amcore Exp $
+ * $Id: alloc.c,v 1.15 1998/04/14 17:11:22 jrj Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -313,7 +313,8 @@ va_list argp;
 	    continue;				/* minor optimisation */
 	}
 	if (a >= MAX_VSTRALLOC_ARGS) {
-	    error ("more than %d args to vstralloc", MAX_VSTRALLOC_ARGS);
+	    error ("more than %d arg%s to vstralloc",
+		   MAX_VSTRALLOC_ARGS, (MAX_VSTRALLOC_ARGS == 1) ? "" : "s");
 	}
 	arg[a] = next;
 	len[a] = l;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.40 1998/04/08 16:24:59 amcore Exp $
+ * $Id: amcheck.c,v 1.41 1998/04/14 17:11:33 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -734,8 +734,10 @@ int fd;
     amfree(msg);
 
     fprintf(outf,
-     "Client check: %d hosts checked in %s seconds, %d problems found.\n",
-	    hostcount, walltime_str(curclock()), remote_errors);
+     "Client check: %d host%s checked in %s seconds, %d problem%s found.\n",
+	    hostcount, (hostcount == 1) ? "" : "s",
+	    walltime_str(curclock()),
+	    remote_errors, (remote_errors == 1) ? "" : "s");
     fflush(outf);
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.32 1998/04/12 22:35:51 amcore Exp $
+ * $Id: extract_list.c,v 1.33 1998/04/14 17:11:26 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1063,7 +1063,8 @@ int tapedev;
 	error("error reading tape: %s", strerror(errno));
     }
     else if(bytes_read < buflen) {
-	fprintf(stderr, "%s: short block %d bytes\n", get_pname(), bytes_read);
+	fprintf(stderr, "%s: short block %d byte%s\n",
+		get_pname(), bytes_read, (bytes_read == 1) ? "" : "s");
 	print_header(stdout, file);
 	error("Can't read file header");
     }

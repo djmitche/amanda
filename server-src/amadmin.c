@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.39 1998/04/08 16:24:58 amcore Exp $
+ * $Id: amadmin.c,v 1.40 1998/04/14 17:11:31 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -566,10 +566,12 @@ void balance()
     printf("-------------------------------------------\n");
     printf("TOTAL      %3d %9ld %9ld %8d", sp[total].disks,
 	   sp[total].origsize, sp[total].outsize, balanced);
-    printf("  (estimated %d runs per dumpcycle)\n", runs_per_cycle);
+    printf("  (estimated %d run%s per dumpcycle)\n",
+	   runs_per_cycle, (runs_per_cycle == 1) ? "" : "s");
     if (overdue) {
-	printf(" (%d filesystems overdue, the most being overdue %d days)\n",
-	       overdue, max_overdue);
+	printf(" (%d filesystem%s overdue, the most being overdue %d day%s)\n",
+	       overdue, (overdue == 1) ? "" : "s",
+	       max_overdue, (max_overdue == 1) ? "" : "s");
     }
     amfree(sp);
 }

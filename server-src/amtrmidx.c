@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtrmidx.c,v 1.18 1998/04/08 16:25:06 amcore Exp $
+ * $Id: amtrmidx.c,v 1.19 1998/04/14 17:11:34 jrj Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -106,7 +106,7 @@ char **argv;
 
     /* determine how many indices to keep */
     no_keep = getconf_int(CNF_TAPECYCLE) + 1;
-    dbprintf(("Keeping %d index files\n", no_keep));
+    dbprintf(("Keeping %d index file%s\n", no_keep, (no_keep == 1) ? "" : "s"));
 
     level_position = strlen(COMPRESS_SUFFIX);
     datestamp_position = level_position + 9;

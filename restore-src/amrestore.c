@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.22 1998/04/08 16:24:55 amcore Exp $
+ * $Id: amrestore.c,v 1.23 1998/04/14 17:11:29 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -151,7 +151,8 @@ int tapedev;
 	error("error reading tape: %s", strerror(errno));
     }
     else if(bytes_read < buflen) {
-	fprintf(stderr, "%s: short block %d bytes\n", get_pname(), bytes_read);
+	fprintf(stderr, "%s: short block %d byte%s\n",
+		get_pname(), bytes_read, (bytes_read == 1) ? "" : "s");
 	file->type = F_TAPEEND;
     }
     else {
