@@ -95,6 +95,7 @@ static regex_t re_table[] = {
   { DMP_NORMAL, "^  DUMP:" },
   { DMP_NORMAL, "^dump:" },					/* OSF/1 */
   { DMP_NORMAL, "^vdump:" },					/* OSF/1 */
+  { DMP_NORMAL, "^vxdump:" },                                   /* HPUX10 */
   { DMP_NORMAL, "^xfsdump:" },					/* IRIX xfs */
 
 #ifdef OSF1_VDUMP	/* this is for OSF/1 3.2's vdump for advfs */
