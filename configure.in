@@ -1222,10 +1222,7 @@ if test "$CHS"; then
     CHS=chs
 fi
 
-AC_PATH_PROGS(MTX,mtx,,$LOCSYSPATH)
-if test "$MTX"; then
-    MTX=mtx
-fi
+AC_PATH_PROGS(MTX,mtx,mtx,$LOCSYSPATH)
 
 AC_CACHE_CHECK([for printing support], amanda_cv_print_command, [
 	AC_PATH_PROGS(PRINT, lpr lp)
