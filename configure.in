@@ -1645,12 +1645,20 @@ cat <<EOF >conftest.$ac_ext
 #endif
 #include <sys/uio.h>
 
-int main() { struct iovec test; unsigned long compare = 0, last = 0;
-test.iov_len = 1; while((test.iov_len > 0) && (test.iov_len > last)) {
-if ((last = test.iov_len) > compare) compare = test.iov_len;
-test.iov_len = (test.iov_len << 1) | 0x01; }
-printf("%ld\n",compare/1024); return 0; }
+int main()
+{
+    struct iovec test;
+    unsigned long compare = 0, last = 0;
 
+    test.iov_len = 1;
+    while ((test.iov_len > 0) && (test.iov_len > last)) {
+	if ((last = test.iov_len) > compare)
+	    compare = test.iov_len;
+	test.iov_len = (test.iov_len << 1) | 0x01;
+    }
+    printf("%ld\n", compare / 1024);
+    return 0;
+}
 EOF
 	${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
 	if test $? = 0; then
@@ -1702,19 +1710,36 @@ cat <<EOF >conftest.$ac_ext
 # include <sys/fcntl.h>
 #endif
 
-static struct flock lock = { F_UNLCK, SEEK_SET, 0, 0 };
+static struct flock lock = {F_UNLCK, SEEK_SET, 0, 0};
 
-main() { int lockfd; FILE *fp; if (lockfd =
-open("/tmp/conftest.lock",O_RDWR|O_CREAT,0666) == -1) return(-1);
-close(lockfd); chmod("/tmp/conftest.lock",0666); if (!(fp =
-fopen("/tmp/conftest.lock", "r"))) return(-2); lock.l_type = F_RDLCK;
-if (fcntl(fileno(fp), F_SETLKW, &lock) == -1) exit(1); lock.l_type =
-F_UNLCK; if (fcntl(fileno(fp), F_SETLK, &lock) == -1) exit(2);
-fclose(fp); if (!(fp = fopen("/tmp/conftest.lock", "w"))) return(-3);
-lock.l_type = F_WRLCK; if (fcntl(fileno(fp), F_SETLKW, &lock) == -1)
-exit(3); lock.l_type = F_UNLCK; if (fcntl(fileno(fp), F_SETLK, &lock)
-== -1) exit(4); exit(0); }
+main()
+{
+    int lockfd;
+    FILE *fp;
 
+    if (lockfd = open("/tmp/conftest.lock", O_RDWR | O_CREAT, 0666) == -1)
+	return (-1);
+    close(lockfd);
+    chmod("/tmp/conftest.lock", 0666);
+    if (!(fp = fopen("/tmp/conftest.lock", "r")))
+	return (-2);
+    lock.l_type = F_RDLCK;
+    if (fcntl(fileno(fp), F_SETLKW, &lock) == -1)
+	exit(1);
+    lock.l_type = F_UNLCK;
+    if (fcntl(fileno(fp), F_SETLK, &lock) == -1)
+	exit(2);
+    fclose(fp);
+    if (!(fp = fopen("/tmp/conftest.lock", "w")))
+	return (-3);
+    lock.l_type = F_WRLCK;
+    if (fcntl(fileno(fp), F_SETLKW, &lock) == -1)
+	exit(3);
+    lock.l_type = F_UNLCK;
+    if (fcntl(fileno(fp), F_SETLK, &lock) == -1)
+	exit(4);
+    exit(0);
+}
 EOF
 ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
 if test $? = 0; then
@@ -1757,18 +1782,32 @@ cat <<EOF >conftest.$ac_ext
 # include <sys/fcntl.h>
 #endif
 
-main() { 
+main()
+{
 #if defined(LOCK_EX) && defined(LOCK_UN)
-int lockfd; FILE *fp; if (lockfd =
-open("/tmp/conftest.lock",O_RDWR|O_CREAT,0666) == -1) return(-1);
-close(lockfd); chmod("/tmp/conftest.lock",0666); if (!(fp =
-fopen("/tmp/conftest.lock", "r"))) return(-2); if (flock(fileno(fp),
-LOCK_EX) == -1) exit(1); if (flock(fileno(fp), LOCK_UN) == -1) exit(2);
-fclose(fp); if (!(fp = fopen("/tmp/conftest.lock", "w"))) return(-3);
-if (flock(fileno(fp), LOCK_EX) == -1) exit(3); if (flock(fileno(fp),
-LOCK_UN) == -1) exit(4); exit(0);
+    int lockfd;
+    FILE *fp;
+
+    if (lockfd = open("/tmp/conftest.lock", O_RDWR | O_CREAT, 0666) == -1)
+	return (-1);
+    close(lockfd);
+    chmod("/tmp/conftest.lock", 0666);
+    if (!(fp = fopen("/tmp/conftest.lock", "r")))
+	return (-2);
+    if (flock(fileno(fp), LOCK_EX) == -1)
+	exit(1);
+    if (flock(fileno(fp), LOCK_UN) == -1)
+	exit(2);
+    fclose(fp);
+    if (!(fp = fopen("/tmp/conftest.lock", "w")))
+	return (-3);
+    if (flock(fileno(fp), LOCK_EX) == -1)
+	exit(3);
+    if (flock(fileno(fp), LOCK_UN) == -1)
+	exit(4);
+    exit(0);
 #else
-	exit(42);
+    exit(42);
 #endif
 }
 EOF
@@ -1852,15 +1891,29 @@ int fd, operation;
     return 0;
 }
 
-main() { 
-int lockfd; FILE *fp; if (lockfd =
-open("/tmp/conftest.lock",O_RDWR|O_CREAT,0666) == -1) return(-1);
-close(lockfd); chmod("/tmp/conftest.lock",0666); if (!(fp =
-fopen("/tmp/conftest.lock", "r"))) return(-2); if (flock(fileno(fp),
-LOCK_EX) == -1) exit(1); if (flock(fileno(fp), LOCK_UN) == -1) exit(2);
-fclose(fp); if (!(fp = fopen("/tmp/conftest.lock", "w"))) return(-3);
-if (flock(fileno(fp), LOCK_EX) == -1) exit(3); if (flock(fileno(fp),
-LOCK_UN) == -1) exit(4); exit(0);
+main()
+{
+    int lockfd;
+    FILE *fp;
+
+    if (lockfd = open("/tmp/conftest.lock", O_RDWR | O_CREAT, 0666) == -1)
+	return (-1);
+    close(lockfd);
+    chmod("/tmp/conftest.lock", 0666);
+    if (!(fp = fopen("/tmp/conftest.lock", "r")))
+	return (-2);
+    if (flock(fileno(fp), LOCK_EX) == -1)
+	exit(1);
+    if (flock(fileno(fp), LOCK_UN) == -1)
+	exit(2);
+    fclose(fp);
+    if (!(fp = fopen("/tmp/conftest.lock", "w")))
+	return (-3);
+    if (flock(fileno(fp), LOCK_EX) == -1)
+	exit(3);
+    if (flock(fileno(fp), LOCK_UN) == -1)
+	exit(4);
+    exit(0);
 }
 EOF
 ${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >/dev/null 2>/dev/null
