@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.35 2001/01/25 00:25:31 jrjackson Exp $
+ * $Id: tapeio.c,v 1.36 2001/01/29 22:16:57 jrjackson Exp $
  *
  * implements generic tape I/O functions
  */
@@ -623,7 +623,7 @@ tape_fsf(devname, count)
     if((fd = tape_open(devname, O_RDONLY)) < 0) {
 	r = errstr = newstralloc2(errstr, "tape open: ", strerror(errno));
     } else if(tapefd_fsf(fd, count) == -1) {
-	snprintf(count_str, sizeof(count_str), "%d", count);
+	ap_snprintf(count_str, sizeof(count_str), "%d", count);
 	r = errstr = newvstralloc(errstr,
 			          "forward skip ", count_str, "file",
 			          (count == 1) ? "" : "s",
