@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.8 2001/03/20 00:27:18 jrjackson Exp $
+/* $Id: chunker.c,v 1.9 2001/07/19 22:55:37 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -152,7 +152,7 @@ main(main_argc, main_argv)
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
-	error("could not find config file \"%s\"", conffile);
+	error("errors processing config file \"%s\"", conffile);
     }
     amfree(conffile);
 
