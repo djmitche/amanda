@@ -1,5 +1,10 @@
 2001-12-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/driver.c: Do not go in degraded mode in nodump mode.
+	* server-src/conffile.c:Check many options to be sure they are positive.
+
+2001-12-30  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* changer-src/chg-scsi.c (get_relative_target): return -1;
 	* changer-src/scsi-irix.c (SCSI_ExecuteCommand): Remove Zero variable.
 	* common-src/amanda.h: include strings.h if HAVE_STRINGS_H is defined.
