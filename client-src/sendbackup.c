@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.40 1998/05/20 05:02:24 amcore Exp $
+ * $Id: sendbackup.c,v 1.41 1998/05/28 23:00:03 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -515,7 +515,7 @@ amwait_t w;
 #endif
 
 #ifdef DUMP_RETURNS_1
-    if(pid == dumppid && tarpid != -1)
+    if(pid == dumppid && tarpid == -1)
         /* Ultrix dump returns 1 sometimes; it's ok too */
         if(ret == 1) return 0;
 #endif

@@ -1,3 +1,9 @@
+1998-05-28  Paul R. Johnson  <prj@mit.edu>
+
+	* client-src/sendbackup.c (check_status): when checking whether
+	return status 1 is valid for dump, make sure it was *not* tar that
+	was running.
+
 1998-05-28  Tom Lear <toml@accesscom.com>, John R. Jackson  <jrj@purdue.edu>
 
 	* man/amcheck.8.in: document new -Maddress command line flag.
