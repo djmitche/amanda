@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.50 1998/09/02 03:40:37 oliva Exp $
+ * $Id: conffile.c,v 1.51 1998/09/10 22:13:34 oliva Exp $
  *
  * read configuration file
  */
@@ -983,7 +983,7 @@ static void init_holdingdisk_defaults()
     hdcur.diskdir = stralloc(conf_diskdir.s);
     malloc_mark(hdcur.diskdir);
     hdcur.disksize = 0;
-    hdcur.chunksize = -1;
+    hdcur.chunksize = -INT_MAX/1024;
 
     hdcur.s_comment = 0;
     hdcur.s_disk = 0;
@@ -2270,7 +2270,6 @@ dump_configuration(filename)
 	printf("	PROGRAM \"%s\"\n", dp->program);
 	printf("	PRIORITY %ld\n", (long)dp->priority);
 	printf("	DUMPCYCLE %ld\n", (long)dp->dumpcycle);
-	printf("	RUNSPERCYCLE %ld\n", (long)dp->runspercycle);
 	st = dp->start_t;
 	if(st) {
 	    stm = localtime(&st);

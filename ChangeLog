@@ -1,5 +1,10 @@
 1998-09-10  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
+	* server-src/conffile.c (dump_configuration): runspercycle is not a
+ 	member of dumptype_t
+	(init_holdingdisk_defaults): init chunksize with documented default,
+ 	not -1, because it wouldn't be recalculated
+
 	* docs/INSTALL: URL for SAMBA was broken; note about 1.9.18p10 bug
 
 1998-09-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
