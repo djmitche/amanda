@@ -1,8 +1,21 @@
-1998-06/18  Blair Zajac <blair@gps.caltech.edu>
+1998-06-24  Dan Swartzendruber <dswartz@druber.com>
+	
+	* server-src/conffile.h (RESERVE): new keyword.
+	* server-src/conffile.c (RESERVE): ditto.
+	(getconf_seen): recognize "reserve" keyword.
+	(getconf_int): return value of "reserve" keyword.
+	(read_confline): parse "reserve" line.
+	* server-src/driverio.h (reserved_space): new global
+	* server-src/driver.c (main): compute holding disk space to reserve
+ 	for degraded dumps.
+	(start_degraded_mode): if we haven't hit degraded mode reservation
+ 	limit, allow full dump.
+	
+1998-06-18  Blair Zajac <blair@gps.caltech.edu>
 
 	* config/ltconfig: update to 1.2a
 	* config/ltmain.sh: update to 1.2a
-	* config/libtool/libtool/m4: update to 1.2a
+	* config/libtool/libtool.m4: update to 1.2a
 
 1998-06-17  John R. Jackson  <jrj@purdue.edu>
 

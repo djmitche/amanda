@@ -1,6 +1,8 @@
 Changes in release 2.4.1
  
 * check ChangeLog for more NEWS, until we find time to update this file. 
+* driver now supports configurable level-0 dumps in degraded mode via
+  new amanda.conf keyword "reserve".  See WHATS.NEW for more details.
 
 Changes in release 2.4.0
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.43 1998/06/01 19:27:04 jrj Exp $
+ * $Id: driver.c,v 1.44 1998/06/24 03:54:21 oliva Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -142,6 +142,7 @@ char **main_argv;
     holdingdisk_t *hdp;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    unsigned long reserve = 100;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -194,6 +195,12 @@ char **main_argv;
 	big_dumpers	= inparallel - LITTLE_DUMPERS;
 	use_lffo	= 1;
 
+	reserve = getconf_int(CNF_RESERVE);
+	if (reserve < 0 || reserve > 100) {
+	    log_add(L_WARNING, "WARNING: reserve must be between 0 and 100!");
+	    reserve = 100;
+	}
+
 	for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
 	    hdp->up = (void *)alloc(sizeof(holdalloc_t));
 	    holdalloc(hdp)->allocated_dumpers = 0;
@@ -226,6 +233,12 @@ char **main_argv;
 	    mkdir(newdir, 0770);
 	}
     }
+
+    reserved_space = free_space() / 100 * reserve;
+
+    printf("reserving %ld out of %ld for degraded-mode dumps\n",
+		reserved_space, free_space());
+
     amfree(newdir);
 
     if(inparallel > MAX_DUMPERS) inparallel = MAX_DUMPERS;
@@ -546,7 +559,10 @@ disklist_t *queuep;
 	    /* go ahead and do the disk as-is */
 	    insert_disk(&newq, dp, sort_by_priority_reversed);
 	else {
-	    if(sched(dp)->degr_level != -1) {
+	    if (free_space() > reserved_space) {
+		insert_disk(&newq, dp, sort_by_priority_reversed);
+	    }
+	    else if(sched(dp)->degr_level != -1) {
 		sched(dp)->level = sched(dp)->degr_level;
 		sched(dp)->dumpdate = sched(dp)->degr_dumpdate;
 		sched(dp)->est_size = sched(dp)->degr_size;

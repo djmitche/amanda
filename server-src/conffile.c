@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.46 1998/06/07 22:37:15 kovert Exp $
+ * $Id: conffile.c,v 1.47 1998/06/24 03:54:18 oliva Exp $
  *
  * read configuration file
  */
@@ -74,7 +74,7 @@ typedef enum {
     DISKDIR, DISKSIZE, INDEXDIR, NETUSAGE, INPARALLEL, TIMEOUT,
     TPCHANGER, RUNTAPES,
     DEFINE, DUMPTYPE, TAPETYPE, INTERFACE,
-    PRINTER,
+    PRINTER, RESERVE,
 
     /* holding disk */
     COMMENT, DIRECTORY, USE, CHUNKSIZE,
@@ -171,6 +171,7 @@ static val_t conf_maxdumps;
 static val_t conf_bumpsize;
 static val_t conf_bumpdays;
 static val_t conf_etimeout;
+static val_t conf_reserve;
 
 /* reals */
 static val_t conf_bumpmult;
@@ -194,6 +195,7 @@ static int seen_logdir, seen_bumpsize, seen_bumpmult, seen_bumpdays;
 static int seen_tapetype, seen_dumpcycle, seen_maxcycle, seen_tapecycle;
 static int seen_disksize, seen_netusage, seen_inparallel, seen_timeout;
 static int seen_indexdir, seen_etimeout;
+static int seen_reserve;
 
 static int allow_overwrites;
 static int token_pushed;
@@ -326,6 +328,7 @@ struct byname {
     { "MAXDUMPS", CNF_MAXDUMPS, INT },
     { "ETIMEOUT", CNF_ETIMEOUT, INT },
     { "RAWTAPEDEV", CNF_RAWTAPEDEV, STRING },
+    { "RESERVE", CNF_RESERVE, INT },
     { NULL }
 };
 
@@ -397,6 +400,7 @@ confparm_t parm;
     case CNF_INDEXDIR: return seen_indexdir;
     case CNF_ETIMEOUT: return seen_etimeout;
     case CNF_RAWTAPEDEV: return seen_rawtapedev;
+    case CNF_RESERVE: return seen_reserve;
     default: return 0;
     }
 }
@@ -419,6 +423,7 @@ confparm_t parm;
     /*case CNF_TIMEOUT: r = conf_timeout.i; break;*/
     case CNF_MAXDUMPS: r = conf_maxdumps.i; break;
     case CNF_ETIMEOUT: r = conf_etimeout.i; break;
+    case CNF_RESERVE: r = conf_reserve.i; break;
 
     default:
 	error("error [unknown getconf_int parm: %d]", parm);
@@ -595,6 +600,7 @@ static void init_defaults()
     conf_bumpdays.i	= 2;
     conf_bumpmult.r	= 1.5;
     conf_etimeout.i     = 300;
+    conf_reserve.i	= 100;
 
     /* defaults for internal variables */
 
@@ -609,6 +615,7 @@ static void init_defaults()
     seen_tapetype = seen_dumpcycle = seen_maxcycle = seen_tapecycle = 0;
     seen_disksize = seen_netusage = seen_inparallel = seen_timeout = 0;
     seen_indexdir = seen_etimeout =  0;
+    seen_reserve = 0;
     line_num = got_parserror = 0;
     allow_overwrites = 0;
     token_pushed = 0;
@@ -764,6 +771,7 @@ keytab_t main_keytable[] = {
     { "CHANGERFILE", CHNGRFILE },
     { "ETIMEOUT", ETIMEOUT },
     { "RAWTAPEDEV", RAWTAPEDEV },
+    { "RESERVE", RESERVE },
     { NULL, IDENT }
 };
 
@@ -812,6 +820,7 @@ static int read_confline()
     case TAPETYPE:  get_simple(&conf_tapetype,  &seen_tapetype,  IDENT);  break;
     case INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  STRING); break;
     case ETIMEOUT:  get_simple(&conf_etimeout,  &seen_etimeout,  INT);    break;
+    case RESERVE:   get_simple(&conf_reserve,  &seen_reserve,	 INT);    break;
 
     case LOGFILE: /* XXX - historical */
 	/* truncate the filename part and pretend he said "logdir" */
@@ -938,7 +947,6 @@ static void get_holdingdisk()
 	    if(hdcur.chunksize == 0)
 		hdcur.chunksize = INT_MAX;
 	    break;
-
 	case RBRACE:
 	    done = 1;
 	    break;
@@ -2221,6 +2229,7 @@ dump_configuration(filename)
     /*printf("conf_timeout = %d\n", getconf_int(CNF_TIMEOUT));*/
     printf("conf_maxdumps = %d\n", getconf_int(CNF_MAXDUMPS));
     printf("conf_etimeout = %d\n", getconf_int(CNF_ETIMEOUT));
+    printf("conf_reserve  = %d\n", getconf_int(CNF_RESERVE));
 
     /*printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));*/
     /*printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));*/

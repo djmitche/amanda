@@ -371,3 +371,22 @@ restore the filesystem somewhere, or switch that tape out of rotation
 (substitute a new tape with the same label).  This situation often occurs
 after a hardware failure brings a machine or disk down for some days. 
 
+* LEVEL-0 DUMPS ALLOWED WITH NO TAPE
+
+If there is no tape present (or the tape drive fails during dumping),
+Amanda switches to degraded mode.  In degraded mode, level-0 dumps
+are not allowed.  This can be a pain for unattended sites over the
+weekend (especially when there is a large holding disk that can hold
+any necessary dumps).  Amanda now supports a new configuration file
+directive, "reserve".  This tells Amanda to reserve that percentage
+of total holding disk space for degraded mode dumps.  Example: your
+total holding disk space adds up to 8.4GB.  If you specify a reserve
+of 50, 4.2GB (50%) of the holding disk space will be allowed to be
+used for regular dumps, but if that limit is hit, Amanda will switch
+to degraded dumps.  For backward compatibility, if no 'reserve' keyword
+is present, 100 will be assumed (e.g. never do full dumps if degraded
+mode is in effect).  NOTE: this percentage applies from run to run, so,
+as in the previous example, when Amanda runs the next day, if there is
+3.8GB left on the holding disk, 1.9GB will be reserved for degraded
+mode dumps (e.g. the percentage keeps sliding).
+
