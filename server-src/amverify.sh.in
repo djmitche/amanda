@@ -254,7 +254,7 @@ while [ $SLOT -le $SLOTS ]; do
 				&& cat $TEMP.$CSLOT.oo >>$DEFECTS
 			ERRORS=`expr $ERRORS + 1`
 			[ $ERRORS -gt 5 ] \
-				&& report "To many errors." \
+				&& report "Too many errors." \
 				&& break
 		fi
 	done
