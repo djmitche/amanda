@@ -159,12 +159,12 @@ char *argv[];
 
 	if (argc > 4)
 		for (n = atoi(argv[3]); n > 0; n--) {
-			(void) strncpy(buf, argv[1], sizeof(buf)-1);
+			strncpy(buf, argv[1], sizeof(buf)-1);
 			buf[sizeof(buf)-1] = '\0';
 		}
 	else if (argc > 3)
 		for (n = atoi(argv[3]); n > 0; n--) {
-			(void) strncpy(buf, argv[1], sizeof(buf)-1);
+			strncpy(buf, argv[1], sizeof(buf)-1);
 			buf[sizeof(buf)-1] = '\0';
 			(void) split(buf, fields, MNF, argv[2]);
 		}
@@ -287,7 +287,7 @@ regress()
 	register char *f;
 
 	for (n = 0; tests[n].str != NULL; n++) {
-		(void) strncpy(buf, tests[n].str, sizeof(buf)-1);
+		strncpy(buf, tests[n].str, sizeof(buf)-1);
 		buf[sizeof(buf)-1] = '\0';
 		fields[RNF] = NULL;
 		nf = split(buf, fields, RNF, tests[n].seps);

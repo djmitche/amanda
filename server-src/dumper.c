@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.37 1997/12/16 18:02:32 jrj Exp $
+/* $Id: dumper.c,v 1.38 1997/12/17 04:21:14 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1073,7 +1073,7 @@ pkt_t *pkt;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth && kerberos_handshake(datafd, cred.session) == 0) {
-	strncat(errstr, "[mutual authentication in data stream failed]"
+	strncpy(errstr, "[mutual authentication in data stream failed]"
 		sizeof(errstr)-1);
 	errstr[sizeof(errstr)-1] = '\0';
 	close(datafd);
@@ -1083,7 +1083,7 @@ pkt_t *pkt;
 	return;
     }
     if(krb4_auth && kerberos_handshake(mesgfd, cred.session) == 0) {
-	strncat(errstr, "[mutual authentication in mesg stream failed]",
+	strncpy(errstr, "[mutual authentication in mesg stream failed]",
 		sizeof(errstr)-1);
 	close(datafd);
 	close(indexfd);

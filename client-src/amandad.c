@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.14 1997/12/16 21:38:22 amcore Exp $
+ * $Id: amandad.c,v 1.15 1997/12/17 04:21:05 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -538,7 +538,8 @@ pkt_t *msg;
 		    addrstr(msg->peer.sin_addr));
 	return 0;
     }
-    strncpy(remotehost, hp->h_name, sizeof(remotehost));
+    strncpy(remotehost, hp->h_name, sizeof(remotehost)-1);
+    remotehost[sizeof(remotehost)-1] = '\0';
 
     /* Now let's get the hostent for that hostname */
     hp = gethostbyname( remotehost );
@@ -599,7 +600,8 @@ pkt_t *msg;
     if((pwptr = getpwuid(myuid)) == NULL)
         error("error [getpwuid(%d) fails]", myuid);
 
-    strncpy(localuser, pwptr->pw_name, sizeof(localuser));
+    strncpy(localuser, pwptr->pw_name, sizeof(localuser)-1);
+    localuser[sizeof(localuser)-1] = '\0';
 
     dbprintf(("bsd security: remote host %s user %s local user %s\n",
 	      remotehost, remoteuser, localuser));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: extract_list.c,v 1.12 1997/12/16 17:57:33 jrj Exp $
+ * $Id: extract_list.c,v 1.13 1997/12/17 04:21:09 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -854,11 +854,13 @@ EXTRACT_LIST *elist;
 	perror("Couldn't malloc restore_args[0]");
 	exit(4);
     }
-    if(istar)
+    if(istar) {
 	strncpy(restore_args[0], "tar", RESTORE_ARGS_LEN-1);
-    else
+	restore_args[0][RESTORE_ARGS_LEN-1] = '\0';
+    } else {
         strncpy(restore_args[0], "restore", RESTORE_ARGS_LEN-1);
-    restore_args[0][RESTORE_ARGS_LEN-1] = '\0';
+	restore_args[0][RESTORE_ARGS_LEN-1] = '\0';
+    }
     if ((restore_args[1] = (char *)malloc(RESTORE_ARGS_LEN)) == NULL)
     {
 	perror("Couldn't malloc restore_args[1]");
@@ -911,11 +913,12 @@ EXTRACT_LIST *elist;
 	    restore_args[no_initial_params+i][0]='.';
 	    strncpy(restore_args[no_initial_params+i]+1, fn->path,
 		    RESTORE_ARGS_LEN-1-1);
-	}
-	else
+	    restore_args[no_initial_params+i][RESTORE_ARGS_LEN-1] = '\0';
+	} else {
 	    strncpy(restore_args[no_initial_params+i], fn->path,
 		    RESTORE_ARGS_LEN-1);
-	restore_args[no_initial_params+i][RESTORE_ARGS_LEN-1] = '\0';
+	    restore_args[no_initial_params+i][RESTORE_ARGS_LEN-1] = '\0';
+	}
     }
 
     restore_args[no_initial_params + files_off_tape] = NULL;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.7 1997/12/16 17:52:47 jrj Exp $
+ * $Id: getfsent.c,v 1.8 1997/12/17 04:21:07 jrj Exp $
  *
  * generic version of code to read fstab
  */
@@ -317,11 +317,13 @@ generic_fsent_t *fsent;
             *ep++ = tolower(*dp++);
     }
 
-    if ( mnt.mt_ro_flg == MNT_READONLY )
+    if ( mnt.mt_ro_flg == MNT_READONLY ) {
 	strncpy(opts, "ro", sizeof(opts)-1);
-    else 
+	opts[sizeof(opts)-1] = '\0';
+    } else {
 	strncpy(opts, "rw", sizeof(opts)-1);
-    opts[sizeof(opts)-1] = '\0';
+	opts[sizeof(opts)-1] = '\0';
+    }
 
     fsent->mntopts=opts;
 

@@ -82,8 +82,7 @@ size_t errbuf_size;
 	
 		if (errcode&REG_ITOA) {
 			if (r->code >= 0) {
-				(void) strncpy(convbuf, r->name,
-					       sizeof(convbuf)-1);
+				strncpy(convbuf, r->name, sizeof(convbuf)-1);
 				convbuf[sizeof(convbuf)-1] = '\0';
 			} else {
 				ap_snprintf(convbuf, sizeof(convbuf),
