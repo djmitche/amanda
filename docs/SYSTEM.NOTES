@@ -14,9 +14,8 @@ You may have compilation errors on statfs.c if you're running, on a
 Solaris 2.6 host, a gcc that was not build on a Solaris 2.6 host.
 This happens because gcc stores fixed copies of some Solaris header
 files on an internal directory.  You must rebuild gcc if you get this
-kind of trouble.  However, you must apply the patch in
-patches/gcc-sol26.patch for Solaris 2.6's header files to be fixed
-correctly.
+kind of trouble.  Note, however, that gcc 2.7.2.3 does not support
+Solaris 2.6, you should upgrade to 2.8.0 or higher.
 
 ---------------------------------------------------------------------------
 SunOS 4.x
