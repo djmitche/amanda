@@ -133,7 +133,8 @@ char *fn;
 	fd = open(fn, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (fd == -1) return -1;
 
-	len = sprintf(buff, "%ld\n", pid);
+	sprintf(buff, "%ld\n", pid);
+	len = strlen(buff);
 	assert(len > 0 && len < sizeof(buff));
 
 	rc = write(fd, buff, len);
@@ -244,7 +245,7 @@ inuse:
 	return 1;
 
 steal:
-	rc = delete_lock(lockf);
+	rc = delete_lock(fn);
 	if (rc != 0) goto error;
 
 done:
@@ -279,7 +280,8 @@ int op;    /* true to lock; false to unlock */
 
 	len = resl + 12 + 1/*null*/;
 	lockf = alloc(len);
-	rc = sprintf(lockf, "/tmp/am%s.lock", res);
+	sprintf(lockf, "/tmp/am%s.lock", res);
+	rc = strlen(lockf);
 	assert(rc > 0 && rc < len);
 
 	if (!op) {
@@ -295,14 +297,16 @@ int op;    /* true to lock; false to unlock */
 
 	len = resl + 8 + 10/*pid*/ + 1/*null*/;
 	tlockf = alloc(len);
-	rc = sprintf(tlockf, "/tmp/am%s.%ld", res, mypid);
+	sprintf(tlockf, "/tmp/am%s.%ld", res, mypid);
+	rc = strlen(tlockf);
 	assert(rc > 0 && rc < len);
 
 	rc = create_lock(tlockf, mypid);
 
 	len = resl + 1 + 1/*null*/;
 	mres = alloc(len);
-	rc = sprintf(mres, "%s.", res);
+	sprintf(mres, "%s.", res);
+	rc = strlen(mres);
 	assert(rc > 0 && rc < len);
 
 	while(1) {
@@ -421,30 +425,22 @@ char *resource;
 main()
 {
     int lockfd;
-    FILE *fp;
     char *filen = "/tmp/conftest.lock";
     char *resn = "test";
 
-    if (lockfd = open(filen, O_RDWR|O_CREAT, 0666) == -1)
+    unlink(filen);
+    if ((lockfd = open(filen, O_RDWR|O_CREAT, 0600)) == -1)
 	return (-1);
-    close(lockfd);
-    chmod(filen, 0666);
 
-    if (!(fp = fopen(filen, "r")))
-	return (-2);
-    if (amroflock(fileno(fp), resn) != 0)
+    if (amroflock(lockfd, resn) != 0)
 	exit(1);
-    if (amfunlock(fileno(fp), resn) != 0)
+    if (amfunlock(lockfd, resn) != 0)
 	exit(2);
-    fclose(fp);
-
-    if (!(fp = fopen(filen, "w")))
-	return (-3);
-    if (amflock(fileno(fp), resn) != 0)
+    if (amflock(lockfd, resn) != 0)
 	exit(3);
-    if (amfunlock(fileno(fp), resn) != 0)
+    if (amfunlock(lockfd, resn) != 0)
 	exit(4);
-    fclose(fp);
+    close(lockfd);
 
     exit(0);
 }
