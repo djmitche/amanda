@@ -1,3 +1,7 @@
+1998-09-22  Tim Perkins  <Tim.Perkins@ddg.phar.cam.ac.uk>,  Alexandre Oliva <oliva@dcc.unicamp.br>
+
+	* client-src/selfcheck.c (check_disk): fix VDUMP auto-detection
+
 1998-09-22  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* changer-src/chg-mtx.sh.in: replace rew with rewind

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.39 1998/09/19 00:04:06 oliva Exp $
+ * $Id: selfcheck.c,v 1.40 1998/09/23 03:03:18 oliva Exp $
  *
  * do self-check and send back any error messages
  */
@@ -338,19 +338,18 @@ int level;
 	amode = F_OK;
 	device = amname_to_dirname(disk);
     } else {
-        device = amname_to_devname(disk);
 #ifdef VDUMP
 #ifdef DUMP
-        if (strcmp(amname_to_fstype(device), "advfs") == 0) {
+        if (strcmp(amname_to_fstype(disk), "advfs") == 0) {
 #else
 	if (1) {
 #endif
-	    device = newstralloc(device, amname_to_dirname(disk));
+	    device = amname_to_dirname(disk);
 	    amode = F_OK;
 	} else
 #endif
 	{
-	    device = stralloc(amname_to_devname(disk));
+	    device = amname_to_devname(disk);
 #ifdef USE_RUNDUMP
 	    amode = F_OK;
 #else
