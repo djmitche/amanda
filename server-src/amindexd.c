@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindexd.c,v 1.27 1998/01/27 10:25:08 amcore Exp $
+ * $Id: amindexd.c,v 1.28 1998/01/29 08:30:28 amcore Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -463,6 +463,14 @@ int build_disk_table P((void))
 	    continue;
 	}
 
+#define sc "No dump to list"
+	if (strncmp(line, sc, sizeof(sc)-1) == 0) {
+#undef sc
+	    reply(598, "Error: disk not found.");
+	    apclose(fp);
+	    return -1;
+	}
+	
 	s = line;
 	ch = *s++;
 
