@@ -53,7 +53,7 @@ else {
 }
 
 if ( ! -d "$confdir/$conf" ) {
-    die "amdump$suf: could not find directory $confdir/$conf";
+    die "amstatus$suf: could not find directory $confdir/$conf";
 }
 
 $pwd = `pwd`;
@@ -99,6 +99,9 @@ if( defined $opt_file) {
 		$errfile = "$logdir/$opt_file" if ( ! (-f $errfile ));
 	}
 }
+else {
+	$errfile="$logdir/amflush" if(! (-f $errfile));
+}
 
 open(AMDUMP,"<$errfile") || die("$errfile: $!");
 print "Using $errfile";
@@ -131,11 +134,6 @@ while(<AMDUMP>) {
 	elsif(/setup_estimate: (\S+):(\S+): command .*, options:/) {
 		$host=$1;
 		$partition=$2;
-		if(! defined($hosts{$host})) {
-			push @hosts, $host;
-			$hosts{$host}=1;
-		}
-		push @$host, $partition;
 		$hostpart=&make_hostpart($host,$partition,$gdatestamp);
 		$estimate{$hostpart}=0;
 		$level{$hostpart}=0;
@@ -155,6 +153,9 @@ while(<AMDUMP>) {
 		$esize{$hostpart}=$4;
 	}
 	elsif(/getting estimates took/) {
+		$estimate_done=1;
+	}
+	elsif(/amflush/) {
 		$estimate_done=1;
 	}
 	elsif(/GENERATING SCHEDULE:/) {
@@ -457,6 +458,8 @@ $wsize = 0;
 
 $flpartition = 0;
 $flsize = 0;
+$wfpartition = 0;
+$wfsize = 0;
 
 $dtpartition = 0;
 $dtesize = 0;
@@ -524,7 +527,7 @@ foreach $host (sort @hosts) {
 					$flpartition++;
 					if(!defined $taper_finished{$hostpart} ||
 						$taper_finished{$hostpart}==0) {
-						$flsize = &dump_size($holding_file{$hostpart}) / 1024;
+						$flsize += &dump_size($holding_file{$hostpart}) / 1024;
 					}
 					else {
 						$flsize += $size{$hostpart};
@@ -607,7 +610,7 @@ foreach $host (sort @hosts) {
 						}
 						$tpartition++;
 						$tsize += $size{$hostpart};
-						if(defined $esize{$hostpart}) {
+						if(defined $esize{$hostpart} && $esize{$hostpart} > 1) {
 							$tesize += $esize{$hostpart};
 						}
 						else {
@@ -698,6 +701,8 @@ foreach $host (sort @hosts) {
 					$size = &dump_size($holding_file{$hostpart}) / 1024;
 					printf "%8dk", $size;
 					print " waiting to flush\n";
+					$wfpartition++;
+					$wfsize += $size;
 				}
 				elsif(defined $level{$hostpart}) {
 					printf "%-40s%2d", "$host:$partition", $level{$hostpart};
@@ -736,6 +741,8 @@ if (defined $opt_summary) {
 		$twpartition, $twsize, $twesize,
 		$twesize ? ($twsize * 1.0 / $twesize) * 100 : 0.0,
 		$estsize ? ($twsize * 1.0 / $estsize) * 100 : 0.0;
+	printf "wait to flush   : %3d %8dk %8dk (%6.2f%%) (%6.2f%%)\n",
+		$wfpartition, $wfsize, $wfsize, 100, 0;
 	printf "writing to tape : %3d %8dk %8dk (%6.2f%%) (%6.2f%%)\n",
 		$tapartition, $tasize, $taesize,
 		$taesize ? ($tasize * 1.0 / $taesize) * 100 : 0.0,
@@ -747,7 +754,7 @@ if (defined $opt_summary) {
 	printf "taped           : %3d %8dk %8dk (%6.2f%%) (%6.2f%%)\n",
 		$tpartition , $tsize , $tesize,
 		$tesize ? ($tsize * 1.0 / $tesize) * 100 : 0.0,
-		$estsize ? ($tsize * 1.0 / $estsize) * 100 : 0.0;
+		($estsize+$flsize) ? ($tsize * 1.0 / ($estsize + $flsize)) * 100 : 0.0;
 	if($idle_dumpers ==0) {
 		printf "all dumpers active\n";
 	}
@@ -811,6 +818,17 @@ if(defined $opt_stats) {
 
 sub make_hostpart() {
 	local($host,$partition,$datestamp) = @_;
+
+	if(! defined($hosts{$host})) {
+		push @hosts, $host;
+		$hosts{$host}=1;
+	}
+	my($new_part) = 1;
+	foreach $pp (sort @$host) {
+		$new_part = 0 if ($pp eq $partition);
+	}
+	push @$host, $partition if $new_part==1;
+
 	my($hostpart) = "$host$partition$datestamp";
 	if(!defined $datestamp{$datestamp}) {
 		$datestamp{$datestamp} = 1;
