@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi.c,v 1.6.2.21 2000/10/24 23:49:39 martinea Exp $
+ *  $Id: chg-scsi.c,v 1.6.2.21.2.1 2001/02/27 23:58:02 jrjackson Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -225,7 +225,7 @@ void dump_changer_struct(changer_t chg)
       dbprintf(("  SCSITapedev   : none\n"));
 
     if (chg.conf[i].tapeident != NULL)
-      dbprintf(("  tapeident     : %s\n",chg.conf[i].changerident));
+      dbprintf(("  tapeident     : %s\n",chg.conf[i].tapeident));
     else
       dbprintf(("  tapeident     : none\n"));
 
