@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.30 2001/03/26 22:23:19 jrjackson Exp $
+ * $Id: amtape.c,v 1.31 2001/06/19 20:01:49 jrjackson Exp $
  *
  * tape changer interface program
  */
@@ -79,6 +79,8 @@ static const struct {
 	"slot prev            load tape from previous slot" },
     { "slot" , load_slot,
 	"slot next            load tape from next slot" },
+    { "slot" , load_slot,
+	"slot advance         advance to next slot but do not load" },
     { "slot" , load_slot,
 	"slot first           load tape from first slot" },
     { "slot" , load_slot,
