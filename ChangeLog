@@ -1,5 +1,9 @@
 2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* changer-src/chg-zd-mtx.sh.in: Works if all slot and tape are full.
+
+2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amverifyrun.sh.in: Do not execute amverify if no tape
 	  to verify.
 
