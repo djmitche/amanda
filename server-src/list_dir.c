@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: list_dir.c,v 1.15 1999/02/15 02:30:25 martinea Exp $
+/* $Id: list_dir.c,v 1.16 2000/06/26 13:45:51 martinea Exp $
  *
  * manage directory listings from index files
  */
@@ -63,7 +63,7 @@ void clear_dir_list P((void))
 
 /* add item to list if path not already on list                     */
 /* Since this function is almost called with increasing path order, */
-/* we keep a pointer on the last element added (curr_list), this    */
+/* we keep a pointer on the last element added (cur_list), this     */
 /* reduce the time for the search of a path.                        */
 /* It's true because the output of the index file is sorted         */
 /* Maybe it could be more efficient if the index was sorted when    */
@@ -88,6 +88,18 @@ char *path;
 
     if(strcmp(path,dir_last->path) == 0)
 	return 0; /* found */
+
+    /* add at head of list */
+    if(strcmp(path,dir_list->path) < 0)
+    {
+	if ((cur_list = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
+	    return -1;
+	cur_list->next = dir_list;
+	cur_list->dump = dump;
+	cur_list->path = stralloc(path);
+	dir_list = cur_list;
+	return 0; /* added */
+    }
 
     /* if smaller than last path */
     if(strcmp(path,dir_last->path) < 0)

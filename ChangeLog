@@ -1,3 +1,7 @@
+2000-06-26 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/list_dir.c (add_dir_list_item): add at head of list.
+
 2000-06-24 Thomas Hepper <th@ant.han.de>
 	* changer-src/chg-scsi-chio.c: Merged changes from 2.4.2 
 	* changer-src/chg-scsi.c: Merged changes from 2.4.2
