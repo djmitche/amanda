@@ -3,15 +3,18 @@
 * File:          $RCSfile: disk_history.c,v $
 * Part of:       
 *
-* Revision:      $Revision: 1.1 $
-* Last Edited:   $Date: 1997/03/15 21:30:10 $
-* Author:        $Author: amcore $
+* Revision:      $Revision: 1.2 $
+* Last Edited:   $Date: 1997/07/24 08:04:19 $
+* Author:        $Author: george $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: disk_history.c,v $
-* History:       Revision 1.1  1997/03/15 21:30:10  amcore
-* History:       Initial revision
+* History:       Revision 1.2  1997/07/24 08:04:19  george
+* History:       Remove extra spaces from where they are not needed/wanted.
+* History:
+* History:       Revision 1.1.1.1  1997/03/15 21:30:10  amcore
+* History:       Mass import of 2.3.0.4 as-is.  We can remove generated files later.
 * History:
 * History:       Revision 1.1  1996/12/04 13:17:57  th
 * History:       Add amindex
@@ -78,7 +81,7 @@ int file;
 	disk_hist = new;
 	return;
     }
-    
+
     before = disk_hist;
     item = disk_hist->next;
     while ((item != NULL) && (strcmp(item->date, new->date) >= 0))

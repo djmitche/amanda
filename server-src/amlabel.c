@@ -73,7 +73,7 @@ char **argv;
 	slotstr = "current";
 	slotcommand = 0;
     }
-	
+
     sprintf(confdir, "%s/%s", CONFIG_DIR, confname);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s", confdir, strerror(errno));
@@ -88,8 +88,8 @@ char **argv;
 
     if(!changer_init()) {
 	if(slotcommand) {
-	    fprintf(stderr, 
-	     "%s: no tpchanger specified in %s/%s, so slot command invalid\n", 
+	    fprintf(stderr,
+	     "%s: no tpchanger specified in %s/%s, so slot command invalid\n",
 		    argv[0], confdir, CONFFILE_NAME);
 	    usage(argv[0]);
 	}
@@ -104,7 +104,7 @@ char **argv;
     }
 
     printf("rewinding"); fflush(stdout);
-    
+
     if((errstr = tape_rewind(tapename)) != NULL)
 	error(errstr);
 

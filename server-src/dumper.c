@@ -50,12 +50,12 @@
 
 #define CONNECT_TIMEOUT	5*60
 #define READ_TIMEOUT	30*60
-#define MAX_LINE 	1024
-#define MAX_ARGS 	10
-#define DATABUF_SIZE 	32*1024
-#define MESGBUF_SIZE  	4*1024
+#define MAX_LINE	1024
+#define MAX_ARGS	10
+#define DATABUF_SIZE	32*1024
+#define MESGBUF_SIZE	4*1024
 
-#define STARTUP_TIMEOUT		   60
+#define STARTUP_TIMEOUT 60
 
 typedef enum { BOGUS, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT, QUIT } cmd_t;
 
@@ -168,14 +168,14 @@ char **main_argv;
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
 
-    if(read_conffile(CONFFILE_NAME)) 
+    if(read_conffile(CONFFILE_NAME))
 	error("could not read conf file");
 
     /* set up dgram port first thing */
 
     msg = dgram_alloc();
     if(dgram_bind(msg, &protocol_port) == -1)
-        error("could not bind result datagram port: %s", strerror(errno));
+	error("could not bind result datagram port: %s", strerror(errno));
 
     if(geteuid() == 0) {
 	/* set both real and effective uid's to real uid, likewise for gid */
@@ -213,7 +213,7 @@ char **main_argv;
 	switch(cmd) {
 	case QUIT:
 	    break;
-	case FILE_DUMP:	
+	case FILE_DUMP:
 	    /* FILE-DUMP handle filename host disk level dumpdate progname options */
 
 	    assert(argc == 9);
@@ -257,7 +257,7 @@ char **main_argv;
 	    if(abort_pending) putresult("ABORT-FINISHED %s\n", handle);
 	    break;
 
-	case PORT_DUMP: 
+	case PORT_DUMP:
 
 	    /* PORT-DUMP handle port host disk level dumpdate progname options */
 	    assert(argc == 9);
@@ -272,7 +272,7 @@ char **main_argv;
 
 	    /* connect outf to taper port */
 
-	    outfd = stream_client("localhost", taper_port, 
+	    outfd = stream_client("localhost", taper_port,
 				  DATABUF_SIZE, DEFAULT_SIZE);
 	    if(outfd == -1) {
 		putresult("FAILED %s %s\n", handle,
@@ -363,7 +363,7 @@ int outf, size;
     int rc;
     cmd_t cmd;
     off_t pos;
-    
+
     spaceleft -= size;
     dataptr += size;
 
@@ -581,7 +581,7 @@ char *dname;
 	switch(*s) {
 	case '/': *d = ':'; break;
 	    /* the : -> ::  gives us 1-1 mapping of strings */
-	case ':': *d++ = ':'; *d = ':'; break;	
+	case ':': *d++ = ':'; *d = ':'; break;
 	default:  *d = *s;
 	}
     }
@@ -619,12 +619,12 @@ int outfd;
     }
 
     sprintf(buffer, "AMANDA: FILE %s %s %s lev %d comp %s program %s\n",
-            datestamp, hostname, diskname, level, comp_suf, backup_name);
+	    datestamp, hostname, diskname, level, comp_suf, backup_name);
 
     strcat(buffer,"To restore, position tape at start of file and run:\n");
 
     sprintf(line, "\tdd if=<tape> bs=%dk skip=1 |%s %s\n\014\n",
-            TAPE_BLOCK_SIZE, unc, recover_cmd);
+	    TAPE_BLOCK_SIZE, unc, recover_cmd);
     strcat(buffer, line);
 
     len = strlen(buffer);
@@ -723,20 +723,20 @@ int mesgfd, datafd, indexfd, outfd;
 	    break;
 	case 0:
 	    if (dup2(indexfd, 0) == -1)
-	        error("err dup2 in: %s", strerror(errno));
+		error("err dup2 in: %s", strerror(errno));
 	    indexfd = open(indexfile, O_WRONLY | O_CREAT | O_TRUNC, 0600);
 	    if (indexfd == -1)
-	        error("err open %s: %s", tmpfile, strerror(errno));
+		error("err open %s: %s", tmpfile, strerror(errno));
 	    if (dup2(indexfd,1) == -1)
-	        error("err dup2 out: %s", strerror(errno));
+		error("err dup2 out: %s", strerror(errno));
 	    for(tmpfd = 3; tmpfd <= 255; ++tmpfd)
-	        close(tmpfd);
+		close(tmpfd);
 	    execlp(COMPRESS_PATH, COMPRESS_PATH, COMPRESS_BEST_OPT, (char *)0);
 	    error("error: couldn't exec %s.", COMPRESS_PATH);
 	}
     }
 
-    sprintf(errfname, "/tmp/%s.%s.%d.errout", hostname, 
+    sprintf(errfname, "/tmp/%s.%s.%d.errout", hostname,
 	    diskname2filename(diskname), level);
     if((errf = fopen(errfname, "w")) == NULL) {
 	sprintf(errstr,"errfile open \"%s\": %s", errfname, strerror(errno));
@@ -798,11 +798,11 @@ int mesgfd, datafd, indexfd, outfd;
 	/* Set socket buffering */
 	if (recbuf>0 && !lowwatset) {
 	    if (setsockopt(datafd, SOL_SOCKET, SO_RCVLOWAT,
-	    	       (void *) &lowat, sizeof(lowat))) {
-	        const int errornumber = errno;
-	        fprintf(stderr,
-	    		"dumper: pid %ld setsockopt(SO_RCVLOWAT): %s\n",
-	       		(long) getpid(), strerror(errornumber));
+			   (void *) &lowat, sizeof(lowat))) {
+		const int errornumber = errno;
+		fprintf(stderr,
+			"dumper: pid %ld setsockopt(SO_RCVLOWAT): %s\n",
+			(long) getpid(), strerror(errornumber));
 	    }
 	    lowwatset = 1;
 	}
@@ -819,13 +819,13 @@ int mesgfd, datafd, indexfd, outfd;
 #if DUMPER_SOCKET_BUFFERING
 	if (nfound==0 && lowwatset) {
 	    const int zero = 0;
-	    /* Disable socket buffering and ...  */
+	    /* Disable socket buffering and ... */
 	    if (setsockopt(datafd, SOL_SOCKET, SO_RCVLOWAT,
-	    	       (void *) &zero, sizeof(zero))) {
-	        const int errornumber = errno;
-	        fprintf(stderr,
-	    		"dumper: pid %ld setsockopt(SO_RCVLOWAT): %s\n",
-	       		(long) getpid(), strerror(errornumber));
+			   (void *) &zero, sizeof(zero))) {
+		const int errornumber = errno;
+		fprintf(stderr,
+			"dumper: pid %ld setsockopt(SO_RCVLOWAT): %s\n",
+			(long) getpid(), strerror(errornumber));
 	    }
 	    lowwatset = 0;
 
@@ -851,7 +851,7 @@ int mesgfd, datafd, indexfd, outfd;
 	if(FD_ISSET(datafd, &selectset)) {
 	    size1 = read(datafd, dataptr, spaceleft);
 	    switch(size1) {
-	    case -1: 
+	    case -1:
 		sprintf(errstr, "data read: %s", strerror(errno));
 		goto failed;
 	    case 0:
@@ -864,11 +864,11 @@ int mesgfd, datafd, indexfd, outfd;
 		if(update_dataptr(outfd, size1)) return;
 	    }
 	}
-	
+
 	if(FD_ISSET(mesgfd, &selectset)) {
 	    size2 = read(mesgfd, mesgbuf, MESGBUF_SIZE);
 	    switch(size2) {
-	    case -1: 
+	    case -1:
 		sprintf(errstr, "mesg read: %s", strerror(errno));
 		goto failed;
 	    case 0:
@@ -900,8 +900,8 @@ int mesgfd, datafd, indexfd, outfd;
     if (dumpsize < 0) dumpsize = 0;	/* XXX - maybe this should be fatal? */
 
     sprintf(errstr, "sec %s kb %ld kps %3.1f orig-kb %ld",
-	      walltime_str(runtime), dumpsize, 
-	      dumpsize/dumptime, origsize);
+	    walltime_str(runtime), dumpsize,
+	    dumpsize/dumptime, origsize);
     putresult("DONE %s %ld %ld %ld %s\n", handle, origsize, dumpsize,
 	      (long)(dumptime+0.5), squotef("[%s]", errstr));
 
@@ -947,7 +947,7 @@ failed:
     unlink(errfname);
 
     if (indexfile)
-      unlink(indexfile);
+	unlink(indexfile);
 
     return;
 }
@@ -1010,7 +1010,7 @@ pkt_t *pkt;
     datafd = stream_client(hostname, data_port,
 			   DEFAULT_SIZE, DEFAULT_SIZE);
     if(datafd == -1) {
-	sprintf(errstr, 
+	sprintf(errstr,
 		"[could not connect to data port: %s]", strerror(errno));
 	response_error = 1;
 	return;
@@ -1027,19 +1027,19 @@ pkt_t *pkt;
     }
 
     if (index_port != -1) {
-      indexfd = stream_client(hostname, index_port,
-			     DEFAULT_SIZE, DEFAULT_SIZE);
-      if (indexfd == -1) {
-	sprintf(errstr,
+	indexfd = stream_client(hostname, index_port,
+				DEFAULT_SIZE, DEFAULT_SIZE);
+	if (indexfd == -1) {
+	    sprintf(errstr,
 		"[could not connect to index port: %s]", strerror(errno));
-	close(datafd);
-	close(mesgfd);
-	datafd = mesgfd = -1;
-	response_error = 1;
-	return;
-      }
+	    close(datafd);
+	    close(mesgfd);
+	    datafd = mesgfd = -1;
+	    response_error = 1;
+	    return;
+	}
     }
-    
+
     /* everything worked */
 
 #ifdef KRB4_SECURITY
@@ -1074,18 +1074,18 @@ int level;
 
     sprintf(req,
 	    "SERVICE sendbackup\n%s %s %d %s OPTIONS %s\n",
-            progname, disk, level, dumpdate, options);
+	    progname, disk, level, dumpdate, options);
 
     datafd = mesgfd = indexfd = -1;
 
 #ifdef KRB4_SECURITY
     if(krb4_auth) {
-	rc = make_krb_request(hostname, kamanda_port, req, NULL, 
+	rc = make_krb_request(hostname, kamanda_port, req, NULL,
 			      STARTUP_TIMEOUT, sendbackup_response);
 	if(!rc) {
 	    char inst[256], realm[256];
 #define HOSTNAME_INSTANCE inst
-	    /* 
+	    /*
 	     * This repeats a lot of work with make_krb_request, but it's
 	     * ultimately the kerberos library's fault: krb_mk_req calls
 	     * krb_get_cred, but doesn't make the session key available!
@@ -1098,11 +1098,11 @@ int level;
 		rc = krb_get_cred(CLIENT_HOST_PRINCIPLE, CLIENT_HOST_INSTANCE,
 				  realm, &cred);
 	    if(rc > 0 ) {
-	        sprintf(errstr, "[host %s: krb4 error (krb_get_cred) %d: %s]",
-		    hostname, rc, krb_err_txt[rc]);
-	        return 2;
+		sprintf(errstr, "[host %s: krb4 error (krb_get_cred) %d: %s]",
+			hostname, rc, krb_err_txt[rc]);
+		return 2;
 	    }
-        }
+	}
 	if(rc > 0) {
 	    sprintf(errstr, "[host %s: krb4 error (make_krb_req) %d: %s]",
 		    hostname, rc, krb_err_txt[rc]);
@@ -1113,7 +1113,7 @@ int level;
 	rc = make_request(hostname, amanda_port, req, NULL,
 			  STARTUP_TIMEOUT, sendbackup_response);
     if(rc) {
-        sprintf(errstr, "[could not resolve name \"%s\": error %d]", 
+	sprintf(errstr, "[could not resolve name \"%s\": error %d]",
 		hostname, rc);
 	return 2;
     }

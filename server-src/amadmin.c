@@ -88,16 +88,16 @@ char **argv;
     }
 
     if(read_conffile(CONFFILE_NAME))
-        error("could not find \"%s\" in this directory.\n", CONFFILE_NAME);
+	error("could not find \"%s\" in this directory.\n", CONFFILE_NAME);
 
     if((diskqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-        error("could not load \"%s\"\n", getconf_str(CNF_DISKFILE));
+	error("could not load \"%s\"\n", getconf_str(CNF_DISKFILE));
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
-        error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
+	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
 
     if(open_infofile(getconf_str(CNF_INFOFILE)))
-        error("could not open info db \"%s\"\n", getconf_str(CNF_INFOFILE));
+	error("could not open info db \"%s\"\n", getconf_str(CNF_INFOFILE));
 
     if(!strcmp(argv[2],"force")) force(argc, argv);
     else if(!strcmp(argv[2],"unforce")) unforce(argc, argv);
@@ -210,7 +210,7 @@ disk_t *dp;
     get_info(hostname, diskname, &inf);
     inf.command = PLANNER_FORCE;
     put_info(hostname, diskname, &inf);
-    printf("%s: %s:%s is set to a forced level 0 tonight.\n", 
+    printf("%s: %s:%s is set to a forced level 0 tonight.\n",
 	   pname, hostname, diskname);
 }
 
@@ -285,9 +285,9 @@ char **argv;
 {
     deleted = 0;
     diskloop(argc, argv, "delete", delete_one);
- 
-   if(deleted)	
-       printf(
+
+   if(deleted)
+	printf(
 	 "%s: NOTE: you'll have to remove these from the disklist yourself.\n",
 	 pname);
 }
@@ -345,11 +345,11 @@ void tape()
     tapecycle = getconf_int(CNF_TAPECYCLE);
 
     for ( i=0 ; i < runtapes ; i++ ) {
-        printf("The next Amanda run should go onto ");
+	printf("The next Amanda run should go onto ");
 
-        if((tp = lookup_tapepos(tapecycle)) != NULL)
+	if((tp = lookup_tapepos(tapecycle)) != NULL)
 	    printf("tape %s or ", tp->label);
-        printf("a new tape.\n");
+	printf("a new tape.\n");
 	tapecycle--;
     }
 }
@@ -380,7 +380,7 @@ static int next_level0(dp, ip)
 disk_t *dp;
 info_t *ip;
 {
-    if(dp->strategy == DS_NOFULL) 
+    if(dp->strategy == DS_NOFULL)
 	return 1;	/* fake it */
     else if(ip->inf[0].date == EPOCH)
 	return 0;	/* new disk */
@@ -400,7 +400,7 @@ void balance()
     info_t inf;
 
     total = getconf_int(CNF_TAPECYCLE);
-    max_seq = getconf_int(CNF_DUMPCYCLE)-1;     /* print at least this many */
+    max_seq = getconf_int(CNF_DUMPCYCLE)-1;	/* print at least this many */
     time(&today);
     runtapes = getconf_int(CNF_RUNTAPES);
     dumpcycle = getconf_int(CNF_DUMPCYCLE);
@@ -409,7 +409,7 @@ void balance()
 
     runs_per_cycle = guess_runs_from_tapelist();
 
-    sp = (struct balance_stats *) 
+    sp = (struct balance_stats *)
 	alloc(sizeof(struct balance_stats) * (total+1));
 
     for(seq=0; seq <= total; seq++)
@@ -524,7 +524,7 @@ char **argv;
     maxtape = getconf_int(CNF_TAPECYCLE);
 
     len = strlen(find_hostname)-4;
-    printf("date        host%*s disk lv tape  file status\n", 
+    printf("date        host%*s disk lv tape  file status\n",
 	   len>0?len:0,"");
     for(tape = 1; tape <= maxtape; tape++) {
 	tp = lookup_tapepos(tape);
@@ -556,7 +556,7 @@ char **argv;
 	    logs += search_logfile(tp->label, tp->datestamp, logfile);
 	}
 	if(logs == 0)
-	    printf("Warning: no log files found for tape %s written %s\n", 
+	    printf("Warning: no log files found for tape %s written %s\n",
 		   tp->label, nicedate(tp->datestamp));
     }
 }
@@ -607,7 +607,7 @@ int datestamp;
     tapematch = 0;
     while(!tapematch && get_logline(logf)) {
 	if(curlog == L_START && curprog == P_TAPER) {
-	    rc = sscanf(curstr, " datestamp %d label %s", 
+	    rc = sscanf(curstr, " datestamp %d label %s",
 			&ck_datestamp, ck_label);
 	    if(rc != 2)
 		printf("strange log line \"start taper %s\"\n", curstr);
@@ -624,16 +624,16 @@ int datestamp;
     filenum = 0;
     passlabel = 1;
     while(get_logline(logf) && passlabel) {
-	if(curlog == L_SUCCESS && curprog == P_TAPER && passlabel) filenum++; 
+	if(curlog == L_SUCCESS && curprog == P_TAPER && passlabel) filenum++;
 	if(curlog == L_START && curprog == P_TAPER) {
-            rc = sscanf(curstr, " datestamp %d label %s",
-                        &ck_datestamp2, ck_label);
+	    rc = sscanf(curstr, " datestamp %d label %s",
+			&ck_datestamp2, ck_label);
 	    if(rc != 2)
-                printf("strange log line \"start taper %s\"\n", curstr);
+		printf("strange log line \"start taper %s\"\n", curstr);
 	    else
 		if (strcmp(ck_label,label))
 		    passlabel = !passlabel;
-	} 
+	}
 	if(curlog == L_SUCCESS || curlog == L_FAIL) {
 	    rc =sscanf(curstr,"%s %s %d %[^\n]", host, disk, &level, rest);
 	    if(rc != 4) {
@@ -648,8 +648,8 @@ int datestamp;
 		    else printf(" FAILED %s\n", rest);
 		}
 		else if(curlog == L_FAIL) {	/* print other failures too */
-		    printf("%s  %-4s %-4s %d  %-10s FAILED (%s) %s\n", 
-			   nicedate(datestamp), host, disk, level, 
+		    printf("%s  %-4s %-4s %d  %-10s FAILED (%s) %s\n",
+			   nicedate(datestamp), host, disk, level,
 			   "---", program_str[(int)curprog], rest);
 		}
 	    }
@@ -707,7 +707,7 @@ FILE *logf;
 	if(!strcmp(program_str[curprog], progstr)) break;
 
     return 1;
-} 
+}
 
 /* ------------------------ */
 
@@ -723,7 +723,7 @@ int level;
     while(--level) bump = (int) bump * mult;
     return bump;
 }
-     
+
 void bumpsize()
 {
     int l;
@@ -760,7 +760,7 @@ char **argv;
     curtime = time(0);
     hostname[sizeof(hostname)-1] = '\0';
     gethostname(hostname, sizeof(hostname)-1);
-    printf("# Generated by:\n#    host: %s\n#    date: %s", 
+    printf("# Generated by:\n#    host: %s\n#    date: %s",
 	   hostname, ctime(&curtime));
 
     printf("#    command:");
@@ -801,7 +801,7 @@ disk_t *dp;
     printf("\n");
     for(l=0;l<DUMP_LEVELS;l++) {
 	if(info.inf[l].date == EPOCH) continue;
-	printf("stats: %d %d %d %d %ld %d %s\n", l, 
+	printf("stats: %d %d %d %d %ld %d %s\n", l,
 	       info.inf[l].size, info.inf[l].csize, info.inf[l].secs,
 	       (long)info.inf[l].date, info.inf[l].filenum,
 	       info.inf[l].label);
@@ -835,13 +835,13 @@ char **argv;
 
     newer = (vers_maj != VERSION_MAJOR)? vers_maj > VERSION_MAJOR :
 	    (vers_min != VERSION_MINOR)? vers_min > VERSION_MINOR :
-		                         vers_patch > VERSION_PATCH;
+					 vers_patch > VERSION_PATCH;
     if(newer)
 	fprintf(stderr,
 	     "%s: WARNING: input is from newer Amanda version: %d.%d.%d.\n",
 		pname, vers_maj, vers_min, vers_patch);
 
-    if(strcmp(org, getconf_str(CNF_ORG))) 
+    if(strcmp(org, getconf_str(CNF_ORG)))
 	fprintf(stderr, "%s: WARNING: input is from different org: %s\n",
 		pname, org);
 
@@ -855,7 +855,7 @@ int import_one P((void))
     stats_t onestat;
     int rc, level;
     long onedate;
-    
+
     char hostname[256];
     char diskname[256];
 
@@ -875,24 +875,24 @@ int import_one P((void))
     /* get rate: and comp: lines for full dumps */
 
     if(!impget_line()) goto shortfile_err;
-    rc = sscanf(line, "full-rate: %f %f %f", 
+    rc = sscanf(line, "full-rate: %f %f %f",
 		&info.full.rate[0], &info.full.rate[1], &info.full.rate[2]);
     if(rc != 3) goto parse_err;
 
     if(!impget_line()) goto shortfile_err;
-    rc = sscanf(line, "full-comp: %f %f %f", 
+    rc = sscanf(line, "full-comp: %f %f %f",
 		&info.full.comp[0], &info.full.comp[1], &info.full.comp[2]);
     if(rc != 3) goto parse_err;
 
     /* get rate: and comp: lines for incr dumps */
 
     if(!impget_line()) goto shortfile_err;
-    rc = sscanf(line, "incr-rate: %f %f %f", 
+    rc = sscanf(line, "incr-rate: %f %f %f",
 		&info.incr.rate[0], &info.incr.rate[1], &info.incr.rate[2]);
     if(rc != 3) goto parse_err;
 
     if(!impget_line()) goto shortfile_err;
-    rc = sscanf(line, "incr-comp: %f %f %f", 
+    rc = sscanf(line, "incr-comp: %f %f %f",
 		&info.incr.comp[0], &info.incr.comp[1], &info.incr.comp[2]);
     if(rc != 3) goto parse_err;
 
@@ -958,7 +958,7 @@ int impget_line P((void))
 	for(p = line; isspace(*p); p++);
 	if(*p) {
 	    /* found non-blank, return line */
-	    return 1;	
+	    return 1;
 	}
 	/* otherwise, a blank line, so keep going */
     }
@@ -1019,7 +1019,7 @@ disk_t *dp;
 	break;
     }
     if (dp->compress != COMP_NONE) {
-        printf("        comprate %.2f %.2f\n",
+	printf("        comprate %.2f %.2f\n",
 	       dp->comprate[0], dp->comprate[1]);
     }
 

@@ -41,7 +41,7 @@
 typedef enum logtype_e {
     L_BOGUS,
     L_FATAL,		/* program died for some reason, used by error() */
-    L_ERROR, L_WARNING,	L_INFO, L_SUMMARY, 	 /* information messages */
+    L_ERROR, L_WARNING,	L_INFO, L_SUMMARY,	 /* information messages */
     L_START, L_FINISH,				     /* start/end of run */
     L_SUCCESS, L_FAIL, L_STRANGE,		    /* the end of a dump */
     L_STATS,						   /* statistics */

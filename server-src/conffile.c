@@ -616,7 +616,7 @@ char *filename;
     init_string(&confname, filename);
 
     if((conf = fopen(filename, "r")) == NULL)
-       error("could not open conf file \"%s\": %s", filename, strerror(errno));
+	error("could not open conf file \"%s\": %s", filename, strerror(errno));
 
     line_num = 0;
 
@@ -684,14 +684,14 @@ static int read_confline()
     get_conftoken(ANY);
     switch(tok) {
     case INCLUDEFILE:
-        {
-	  char *fn;
+	{
+	    char *fn;
 
-	  get_conftoken(STRING);
-	  fn = tokenval.s;
-	  read_conffile_recursively(fn);
-        }
-        break;
+	    get_conftoken(STRING);
+	    fn = tokenval.s;
+	    read_conffile_recursively(fn);
+	}
+	break;
 
     case ORG:       get_simple(&conf_org,       &seen_org,       STRING); break;
     case MAILTO:    get_simple(&conf_mailto,    &seen_mailto,    STRING); break;
@@ -1304,6 +1304,27 @@ static void get_dumpopts() /* XXX - for historical compatability */
     keytable = save_kt;
 }
 
+static void get_comprate()
+{
+    val_t var;
+
+    get_simple(&var, &dpcur.s_comprate, REAL);
+    dpcur.comprate[0] = dpcur.comprate[1] = var.r;
+
+    get_conftoken(ANY);
+    switch(tok) {
+    case NL:
+	return;
+    case COMMA:
+	break;
+    default:
+	unget_conftoken();
+    }
+
+    get_conftoken(REAL);
+    dpcur.comprate[1] = tokenval.r;
+}
+
 keytab_t compress_keytable[] = {
     { "BEST", BEST },
     { "CLIENT", CLIENT },
@@ -1312,27 +1333,6 @@ keytab_t compress_keytable[] = {
     { "SERVER", SERVER },
     { NULL, IDENT }
 };
-
-static void get_comprate()
-{
-    val_t var;
-    
-    get_simple(&var, &dpcur.s_comprate, REAL);
-    dpcur.comprate[0] = dpcur.comprate[1] = var.r;
-    get_conftoken(ANY);
-    switch(tok) {
-    case NL:
-      return;
-    case COMMA:
-      break;
-    default:
-      unget_conftoken();
-      break;
-    }
-    get_conftoken(REAL);
-    dpcur.comprate[1] = tokenval.r;
-    get_conftoken(NL);
-}
 
 static void get_compress()
 {
@@ -1756,7 +1756,7 @@ tok_t exp;
 	tok = pushed_tok;
 
 	/* If it looked like a key word before then look it
-        ** up again in the current keyword table. */
+	** up again in the current keyword table. */
 	switch(tok) {
 	case INT:     case REAL:    case STRING:
 	case LBRACE:  case RBRACE:  case COMMA:

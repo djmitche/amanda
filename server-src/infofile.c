@@ -38,7 +38,7 @@
   static int writing;
 #else
 #  define MAX_KEY 256
-#  define HEADER	(sizeof(info_t)-DUMP_LEVELS*sizeof(stats_t)) 
+#  define HEADER	(sizeof(info_t)-DUMP_LEVELS*sizeof(stats_t))
 
   static DBM *infodb = NULL;
   static lockfd = -1;
@@ -160,24 +160,24 @@ info_t *info;
     /* get rate: and comp: lines for full dumps */
 
     if(!fgets(line, 1024, infof)) return -1;
-    rc = sscanf(line, "full-rate: %f %f %f", 
+    rc = sscanf(line, "full-rate: %f %f %f",
 		&info->full.rate[0], &info->full.rate[1], &info->full.rate[2]);
     if(rc != 3) return -2;
 
     if(!fgets(line, 1024, infof)) return -1;
-    rc = sscanf(line, "full-comp: %f %f %f", 
+    rc = sscanf(line, "full-comp: %f %f %f",
 		&info->full.comp[0], &info->full.comp[1], &info->full.comp[2]);
     if(rc != 3) return -2;
 
     /* get rate: and comp: lines for incr dumps */
 
     if(!fgets(line, 1024, infof)) return -1;
-    rc = sscanf(line, "incr-rate: %f %f %f", 
+    rc = sscanf(line, "incr-rate: %f %f %f",
 		&info->incr.rate[0], &info->incr.rate[1], &info->incr.rate[2]);
     if(rc != 3) return -2;
 
     if(!fgets(line, 1024, infof)) return -1;
-    rc = sscanf(line, "incr-comp: %f %f %f", 
+    rc = sscanf(line, "incr-comp: %f %f %f",
 		&info->incr.comp[0], &info->incr.comp[1], &info->incr.comp[2]);
     if(rc != 3) return -2;
 
@@ -231,7 +231,7 @@ info_t *info;
     fprintf(infof, "\n");
     for(l=0; l<DUMP_LEVELS; l++) {
 	if(info->inf[l].date == EPOCH) continue;
-	fprintf(infof, "stats: %d %d %d %d %ld %d %s\n", l, 
+	fprintf(infof, "stats: %d %d %d %d %ld %d %s\n", l,
 	       info->inf[l].size, info->inf[l].csize, info->inf[l].secs,
 	       (long)info->inf[l].date, info->inf[l].filenum,
 	       info->inf[l].label);
@@ -404,9 +404,9 @@ info_t *record;
     int i;
 
     /* setup key */
-    
+
     sprintf(key, "%s:%s", hostname, diskname);
-    k.dptr = key; 
+    k.dptr = key;
     k.dsize = strlen(key)+1;
 
     memset(record, '\0', sizeof(info_t));
@@ -490,9 +490,9 @@ info_t *record;
     int maxlev;
 
     /* setup key */
-    
+
     sprintf(key, "%s:%s", hostname, diskname);
-    k.dptr = key; 
+    k.dptr = key;
     k.dsize = strlen(key)+1;
 
     /* find last non-empty dump level */
@@ -522,9 +522,9 @@ char *hostname, *diskname;
     datum k;
 
     /* setup key */
-    
+
     sprintf(key, "%s:%s", hostname, diskname);
-    k.dptr = key; 
+    k.dptr = key;
     k.dsize = strlen(key)+1;
 
     /* delete key and record */
@@ -566,7 +566,7 @@ char *str;
     datum k,d;
     int rec,r,num;
     info_t record;
-    
+
 
     printf("info database %s:\n--------\n", str);
     rec = 0;

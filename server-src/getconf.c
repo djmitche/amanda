@@ -35,7 +35,7 @@ char *pname = "getconf";
 int main P((int argc, char **argv));
 
 int main(argc, argv)
-int argc; 
+int argc;
 char **argv;
 {
     char *result;
@@ -49,7 +49,7 @@ char **argv;
 	perror(CONFFILE_NAME);
 	exit(1);
     }
-	
+
     result = getconf_byname(argv[1]);
     if(result == NULL) {
 	result = "BUGGY";

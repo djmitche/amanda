@@ -42,7 +42,7 @@ char *cmdstr[] = {
     "FILE-DUMP", "PORT-DUMP", "CONTINUE", "ABORT",	/* dumper cmds */
     "FAILED", "TRY-AGAIN", "NO-ROOM", "ABORT-FINISHED",	/* dumper results */
     "FATAL-TRY-AGAIN",
-    "START-TAPER", "FILE-WRITE", "PORT-WRITE", 		/* taper cmds */
+    "START-TAPER", "FILE-WRITE", "PORT-WRITE",		/* taper cmds */
     "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
     NULL
 };
@@ -127,7 +127,7 @@ dumper_t *dumper;
 	addfd(dumper->outfd);
 	dumper->busy = dumper->down = 0;
 	dumper->dp = NULL;
-	fprintf(stderr,"driver: started %s pid %d\n", 
+	fprintf(stderr,"driver: started %s pid %d\n",
 		dumper->name, dumper->pid);
 	fflush(stderr);
     }
@@ -152,7 +152,7 @@ char line[MAX_LINE];
 tok_t getresult(fd)
 int fd;
 {
-    char *p; 
+    char *p;
     int arg, len;
     tok_t t;
 
@@ -165,7 +165,7 @@ int fd;
 
     printf("driver: result time %s from %s:",
 	   walltime_str(curclock()),
-	   childstr(fd)); 
+	   childstr(fd));
     for(arg = 1; arg <= argc; arg++)
 	printf(" %s", argv[arg]);
     printf("\n");
@@ -174,14 +174,14 @@ int fd;
 #ifdef DEBUG
     printf("argc = %d\n", argc);
     for(arg = 0; arg < MAX_ARGS+1; arg++)
-        printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
+	printf("argv[%d] = \"%s\"\n", arg, argv[arg]);
 #endif
 
     if(argc < 1) return BOGUS;
 
     for(t = BOGUS+1; t < LAST_TOK; t++)
 	if(!strcmp(argv[1], cmdstr[t])) return t;
-    
+
     return BOGUS;
 }
 
@@ -216,10 +216,10 @@ void *ptr;
 	assert(0);
     }
     len = strlen(cmdline);
-printf("driver: send-cmd time %s to taper: %*.*s\n", 
+printf("driver: send-cmd time %s to taper: %*.*s\n",
        walltime_str(curclock()),
        len-1, len-1, cmdline);
-fflush(stdout);    
+fflush(stdout);
     if(write(taper, cmdline, len) < len)
 	error("writing taper command");
 }
@@ -283,7 +283,7 @@ disk_t *dp;
 	assert(0);
     }
     len = strlen(cmdline);
-printf("driver: send-cmd time %s to %s: %*.*s\n", 
+printf("driver: send-cmd time %s to %s: %*.*s\n",
        walltime_str(curclock()), dumper->name,
        len-1, len-1, cmdline);
 fflush(stdout);
@@ -376,7 +376,7 @@ long dumptime;
 	      strerror(errno), rc);
 
     get_info(dp->host->hostname, dp->name, &inf);
-	
+
     infp = &inf.inf[level];
     infp->size = origsize;
     infp->csize = dumpsize;

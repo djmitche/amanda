@@ -3,13 +3,16 @@
 * File:          $RCSfile: amindexd.c,v $
 * Part of:       
 *
-* Revision:      $Revision: 1.4 $
-* Last Edited:   $Date: 1997/07/03 14:32:21 $
+* Revision:      $Revision: 1.5 $
+* Last Edited:   $Date: 1997/07/24 08:04:10 $
 * Author:        $Author: george $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: amindexd.c,v $
+* History:       Revision 1.5  1997/07/24 08:04:10  george
+* History:       Remove extra spaces from where they are not needed/wanted.
+* History:
 * History:       Revision 1.4  1997/07/03 14:32:21  george
 * History:       Put dumptype info directly into the disk structure.
 * History:
@@ -132,7 +135,7 @@ arglist_function1(void reply, int, n, char *, fmt)
     (void)vsprintf(buf+4, fmt, args);
     arglist_end(args);
 
-    if (printf("%s\r\n", buf) <= 0) 
+    if (printf("%s\r\n", buf) <= 0)
     {
 	dbprintf(("! error %d in printf\n", errno));
 	exit(1);
@@ -157,7 +160,7 @@ arglist_function1(void lreply, int, n, char *, fmt)
     (void)vsprintf(buf+4, fmt, args);
     arglist_end(args);
 
-    if (printf("%s\r\n", buf) <= 0) 
+    if (printf("%s\r\n", buf) <= 0)
     {
 	dbprintf(("! error %d in printf\n", errno));
 	exit(1);
@@ -183,18 +186,18 @@ char *host;
     DIR *dirp;
     struct dirent *direntp;
     char cwd[LONG_LINE];
-    
+
     if (strlen(config) == 0)
     {
 	reply(501, "Must set config before setting host.");
 	return -1;
     }
-    
+
 #if 0
     /* only let a client restore itself for now unless it is the server */
     if (strcmp(remote_hostname, local_hostname) == 0)
 	return 0;
-    if (strcmp(remote_hostname, host) != 0) 
+    if (strcmp(remote_hostname, host) != 0)
     {
 	reply(501,
 	      "You don't have the necessary permissions to set dump host to %s.",
@@ -206,12 +209,12 @@ char *host;
     /* check that the config actually handles that host */
     /* assume in config dir already */
     (void)getcwd(cwd, LONG_LINE);
-    if ((dirp = opendir(cwd)) == NULL) 
+    if ((dirp = opendir(cwd)) == NULL)
     {
 	reply(599, "System error: %d.", errno);
 	return -1;
     }
-	
+
     while ((direntp = readdir(dirp)) != NULL)
     {
 	if (strncmp(direntp->d_name, host, strlen(host)) == 0)
@@ -220,7 +223,7 @@ char *host;
 	    return 0;
 	}
     }
-    
+
     reply(501, "No index records for host: %s. Invalid?", host);
     return -1;
 }
@@ -235,15 +238,15 @@ char *disk;
     char *search_str;
     int i;
 
-    if (strlen(dump_hostname) == 0) 
+    if (strlen(dump_hostname) == 0)
     {
 	reply(501, "Must set host before setting disk.");
 	return -1;
     }
-    
+
     /* check that given disk is from given host and handled by given config */
     (void)getcwd(cwd, LONG_LINE);
-    if ((dirp = opendir(cwd)) == NULL) 
+    if ((dirp = opendir(cwd)) == NULL)
     {
 	reply(599, "System error: %d.", errno);
 	return -1;
@@ -253,7 +256,7 @@ char *disk;
        host,disk,date,level to file name mapping and may need changing if
        that is changed */
     i = strlen(dump_hostname) + strlen(disk) + 1;
-	
+
     while ((direntp = readdir(dirp)) != NULL)
     {
 	if (strncmp(direntp->d_name, search_str, i) == 0)
@@ -262,7 +265,7 @@ char *disk;
 	    return 0;
 	}
     }
-    
+
     reply(501, "No index records for disk: %s. Invalid?", disk);
     return -1;
 }
@@ -273,7 +276,7 @@ char *config;
 {
     char conf_dir[1024];
     char *result;
-    
+
     /* check that the config actually exists */
     if (strlen(config) == 0)
     {
@@ -288,21 +291,21 @@ char *config;
 	reply(501, "Couldn't cd into config dir. Misconfiguration?");
 	return -1;
     }
-    
+
     /* read conffile */
     if (read_conffile(CONFFILE_NAME))
     {
 	reply(501, "Couldn't read config file!");
 	return -1;
     }
-    
+
     /* okay, now look for the index directory */
     if (chdir(INDEX_DIR) == -1)
     {
 	reply(501, "Index directory %s does not exist", INDEX_DIR);
 	return -1;
     }
-    if (chdir(getconf_byname("indexdir")) == -1) 
+    if (chdir(getconf_byname("indexdir")) == -1)
     {
 	(void)chdir(INDEX_DIR);
 	reply(501, "There is no index directory for config %s.", config);
@@ -322,13 +325,13 @@ int build_disk_table P((void))
     FILE *fp;
     int first_line = 0;
     char format[LONG_LINE];
-    
+
     if (strlen(disk_name) == 0)
     {
 	reply(590, "Must set disk before building disk table");
 	return -1;
     }
-    
+
     sprintf(cmd, "%s/amadmin%s %s find %s %s", bindir, versionsuffix(),
 	    config, dump_hostname, disk_name);
     if ((fp = popen(cmd, "r")) == NULL)
@@ -405,7 +408,7 @@ char *dir;
 	reply(500, "No dumps available on or before date \"%s\"", date);
 	return -1;
     }
-    
+
     /* go back till we hit a level 0 dump */
     do
     {
@@ -455,7 +458,7 @@ int tapedev_is P((void))
     char orig_dir[1024];
     char conf_dir[1024];
     char *result;
-    
+
     /* check state okay to do this */
     if (strlen(config) == 0)
     {
@@ -465,7 +468,7 @@ int tapedev_is P((void))
 
     /* record cwd */
     (void)getcwd(orig_dir, 1024);
-    
+
     /* cd to confdir */
     sprintf(conf_dir, "%s/%s", CONFIG_DIR, config);
     if (chdir(conf_dir) == -1)
@@ -473,14 +476,14 @@ int tapedev_is P((void))
 	reply(501, "Couldn't cd into config dir. Misconfiguration?");
 	return -1;
     }
-    
+
     /* read conffile */
     if (read_conffile(CONFFILE_NAME))
     {
 	reply(501, "Couldn't read config file!");
 	return -1;
     }
-    
+
     /* get tapedev value */
     if ((result = getconf_byname("tapedev")) == NULL)
     {
@@ -494,7 +497,7 @@ int tapedev_is P((void))
 	reply(501, "Couldn't cd back to orig dir.");
 	return -1;
     }
-    
+
     reply(200, result);
     return 0;
 }
@@ -527,7 +530,7 @@ int are_dumps_compressed P((void))
 
     /* record cwd */
     (void)getcwd(orig_dir, 1024);
-    
+
     /* cd to confdir */
     sprintf(conf_dir, "%s/%s", CONFIG_DIR, config);
     if (chdir(conf_dir) == -1)
@@ -535,21 +538,21 @@ int are_dumps_compressed P((void))
 	reply(501, "Couldn't cd into config dir. Misconfiguration?");
 	return -1;
     }
-    
+
     /* read conffile */
     if (read_conffile(CONFFILE_NAME))
     {
 	reply(501, "Couldn't read config file!");
 	return -1;
     }
-    
+
     /* read the disk file */
     if ((diskl = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
     {
 	reply(501, "Couldn't read disk file");
 	return -1;
     }
-    
+
     /* now go through the list of disks and find which have indexes */
     for (diskp = diskl->head; diskp != NULL; diskp = diskp->next)
 	if ((strcmp(diskp->host->hostname, dump_hostname) == 0)
@@ -567,7 +570,7 @@ int are_dumps_compressed P((void))
 	reply(501, "Couldn't cd back to orig dir.");
 	return -1;
     }
-    
+
     /* send data to caller */
     if (diskp->compress == COMP_NONE)
 	reply(200, "NO");
@@ -591,7 +594,7 @@ char **argv;
     struct sockaddr_in his_addr;
     struct hostent *his_name;
     char buf1[LONG_LINE];
-    
+
 #ifdef FORCE_USERID
 
     /* we'd rather not run as root */
@@ -615,21 +618,21 @@ char **argv;
 
     /* localhost[sizeof(local_hostname)-1] = '\0'; */ /* local_hostname is static */
     if(gethostname(local_hostname, sizeof(local_hostname)-1) == -1)
-        error("gethostname: %s", strerror(errno));
+	error("gethostname: %s", strerror(errno));
 
     if (chdir(INDEX_DIR) == -1)
     {
 	lreply(520, "%s AMANDA index server (%s) not ready.",
 	       local_hostname, server_version);
 	lreply(520, "Configuration error: cannot cd to INDEX_DIR \"%s\"",
-	      INDEX_DIR);
+	       INDEX_DIR);
 	reply(520, "Server exiting!");
 	return 1;
     }
-    
+
     reply(220, "%s AMANDA index server (%s) ready.", local_hostname,
 	  server_version);
-    
+
     /* now trim domain off name */
     for (bptr = local_hostname; *bptr != '\0'; bptr++)
 	if (*bptr == '.')
@@ -669,7 +672,7 @@ char **argv;
 	{
 	    if ((i = getchar()) == EOF)
 		return 1;		/* they hung up? */
-	    if ((char)i == '\r') 
+	    if ((char)i == '\r')
 	    {
 		if ((i = getchar()) == EOF)
 		    return 1;		/* they hung up? */
@@ -682,8 +685,8 @@ char **argv;
 
 	dbprintf(("> %s\n", buffer));
 
-		    
-	if (strncmp(buffer, "QUIT", 4) == 0) 
+
+	if (strncmp(buffer, "QUIT", 4) == 0)
 	{
 	    reply(200, "Good bye.");
 	    return 0;
@@ -691,7 +694,7 @@ char **argv;
 	else if (sscanf(buffer, "HOST %s", buf1) == 1)
 	{
 	    /* set host we are restoring */
-	    if (is_dump_host_valid(buf1) != -1) 
+	    if (is_dump_host_valid(buf1) != -1)
 	    {
 		strcpy(dump_hostname, buf1);
 		reply(200, "Dump host set to %s.", dump_hostname);
@@ -700,7 +703,7 @@ char **argv;
 	}
 	else if (sscanf(buffer, "DISK %s", buf1) == 1)
 	{
-	    if (is_disk_valid(buf1) != -1) 
+	    if (is_disk_valid(buf1) != -1)
 	    {
 		strcpy(disk_name, buf1);
 		if (build_disk_table() != -1)
@@ -752,7 +755,7 @@ char **argv;
 	    reply(500, "Command not recognised/incorrect: %s", buffer);
 	}
     }
-    
+
     /*NOTREACHED*/
     return 0;
 }

@@ -86,10 +86,10 @@ char **argv;
 
     sprintf(confdir, "%s/%s", CONFIG_DIR, confname);
     if(chdir(confdir) != 0)
-        error("could not cd to confdir %s: %s", confdir, strerror(errno));
+	error("could not cd to confdir %s: %s", confdir, strerror(errno));
 
     if(read_conffile(CONFFILE_NAME))
-        error("could not read amanda config file");
+	error("could not read amanda config file");
 
     if(!changer_init())
 	error("no tpchanger specified in %s/%s", confdir, CONFFILE_NAME);
@@ -120,11 +120,11 @@ char **argv;
     char slotstr[256];
     switch(changer_reset(slotstr)) {
     case 0:
-	fprintf(stderr, "%s: changer is reset, slot %s is loaded.\n", 
+	fprintf(stderr, "%s: changer is reset, slot %s is loaded.\n",
 		pname, slotstr);
 	break;
     case 1:
-	fprintf(stderr, "%s: changer is reset, but slot %s not loaded: %s\n", 
+	fprintf(stderr, "%s: changer is reset, but slot %s not loaded: %s\n",
 		pname, slotstr, changer_resultstr);
 	break;
     default:
@@ -144,7 +144,7 @@ char **argv;
     if(changer_eject(slotstr) == 0)
 	fprintf(stderr, "%s: slot %s is ejected.\n", pname, slotstr);
     else
-	fprintf(stderr, "%s: slot %s not ejected: %s\n", 
+	fprintf(stderr, "%s: slot %s not ejected: %s\n",
 		pname, slotstr, changer_resultstr);
 }
 
@@ -163,7 +163,7 @@ char **argv;
     if(changer_loadslot(argv[1], slotstr, devicename))
 	error("could not load slot %s: %s", slotstr, changer_resultstr);
 
-    fprintf(stderr, "%s: changed to slot %s on %s\n", 
+    fprintf(stderr, "%s: changed to slot %s on %s\n",
 	    pname, slotstr, devicename);
 }
 
@@ -180,7 +180,7 @@ int rc, ns, bk;
 {
     if(rc)
 	error("could not get changer info: %s", changer_resultstr);
-	
+
     nslots = ns;
     backwards = bk;
 
@@ -244,7 +244,7 @@ int rc, ns, bk;
 {
     if(rc)
 	error("could not get changer info: %s", changer_resultstr);
-	
+
     nslots = ns;
     backwards = bk;
     fprintf(stderr, "%s: scanning all %d slots in tape-changer rack:\n",
@@ -318,7 +318,7 @@ char *device;
 		found = 1;
 		return 1;
 	    }
-	    else if(!match(labelstr, label)) 
+	    else if(!match(labelstr, label))
 		fprintf(stderr, " (no match)\n");
 	    else {
 		/* not an exact label match, but a labelstr match */
@@ -351,7 +351,7 @@ char **argv;
     char slotstr[32], device[1024];
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
-        error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
+	error("could not load \"%s\"\n", getconf_str(CNF_TAPELIST));
 
     if((tp = lookup_tapepos(getconf_int(CNF_TAPECYCLE))) == NULL)
 	searchlabel = NULL;
@@ -389,7 +389,7 @@ char **argv;
     else if(!found) {
 	fprintf(stderr, "%s: could not find ", pname);
 	if(searchlabel) fprintf(stderr, "tape %s or ", searchlabel);
-        fprintf(stderr, "a new tape in the tape rack.\n");
+	fprintf(stderr, "a new tape in the tape rack.\n");
     }
 
     if(found)

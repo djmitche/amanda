@@ -37,11 +37,11 @@ int level;
   static char buf[1024];
   char *pc;
   sprintf(buf, "%s_%s_%s_%d%s", host, disk, date, level, COMPRESS_SUFFIX);
-  
+
   for (pc = buf; *pc != '\0'; pc++)
     if ((*pc == '/') || (*pc == ' '))
       *pc = '_';
-  
+
   return buf;
 }
 
@@ -50,7 +50,7 @@ char *dir, *host, *disk, *date;
 int level;
 {
   static char name[1024];
-  
+
   sprintf(name, "%s/%s", dir, getindexfname(host, disk, date, level));
 
   return name;

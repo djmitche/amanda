@@ -183,7 +183,7 @@ int get_logline()
 	if(!strcmp(program_str[curprog], progstr)) break;
 
     return 1;
-} 
+}
 
 int contline_next()
 {
@@ -227,21 +227,21 @@ char **argv;
 	testing = 1;
 	logfname = argv[1];
     }
-    else if(argc > 1) 
+    else if(argc > 1)
 	error("Usage: reporter [<logfile>]");
     else
 	erroutput_type |= ERR_AMANDALOG;
- 
+
     /* read configuration files */
 
     if(read_conffile(CONFFILE_NAME))
-        error("could not read amanda config file\n");
+	error("could not read amanda config file\n");
     if((diskq = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-        error("could not read disklist file\n");
+	error("could not read disklist file\n");
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
-        error("parse error in %s", getconf_str(CNF_TAPELIST));
+	error("parse error in %s", getconf_str(CNF_TAPELIST));
     if(open_infofile(getconf_str(CNF_INFOFILE)))
-        error("could not read info database file\n");
+	error("could not read info database file\n");
 
     if(!testing) logfname = getconf_str(CNF_LOGFILE);
 
@@ -281,7 +281,7 @@ char **argv;
 	    getconf_str(CNF_ORG),
 	    amflush_run? "AMFLUSH" : "AMANDA",
 	    nicedate(atoi(datestamp)));
- 
+
    /* open pipe to mailer */
 
     if(testing) {
@@ -378,7 +378,7 @@ void output_stats()
 
     fprintf(mailf,
 	    "Dump Time (hrs:min)       %2d:%02d      %2d:%02d      %2d:%02d",
-	    hrmn(total_time), hrmn(stats[0].taper_time), 
+	    hrmn(total_time), hrmn(stats[0].taper_time),
 	    hrmn(stats[1].taper_time));
 
     fprintf(mailf,"   (%d:%02d start", hrmn(startup_time));
@@ -453,7 +453,7 @@ void output_tapeinfo()
     int run_tapes, pos;
 
     if(degraded_mode) {
-	fprintf(mailf, 
+	fprintf(mailf,
 		"*** A TAPE ERROR OCCURRED: %s.\n", tapestart_error);
 
 	if(amflush_run) {
@@ -462,15 +462,15 @@ void output_tapeinfo()
 	}
 	else {
 	    fputs(
-           "*** PERFORMED ALL DUMPS AS INCREMENTAL DUMPS TO HOLDING DISK.\n\n",
+	"*** PERFORMED ALL DUMPS AS INCREMENTAL DUMPS TO HOLDING DISK.\n\n",
 		  mailf);
 	    fputs("THESE DUMPS WERE TO DISK.  Flush them onto", mailf);
 	}
 
 	tp = lookup_tapepos(getconf_int(CNF_TAPECYCLE));
 	if(tp != NULL) fprintf(mailf, " tape %s or", tp->label);
-        fputs(" a new tape.\n", mailf);
-	
+	fputs(" a new tape.\n", mailf);
+
 	pos = getconf_int(CNF_TAPECYCLE)-1;
     }
     else {
@@ -595,23 +595,23 @@ void output_summary()
 	    continue;
 	}
 
-	fprintf(mailf,"%1d %8.0f %8.0f ", 
+	fprintf(mailf,"%1d %8.0f %8.0f ",
 		data(dp)->level, data(dp)->origsize, data(dp)->outsize);
 
 	if(dp->compress == COMP_NONE)
 	    f = 0.0;
-	else 
+	else
 	    f = data(dp)->origsize;
 	divzero(mailf, pct(data(dp)->outsize), f);
 
 	if(!amflush_run)
-	    fprintf(mailf, " %4d:%02d %6.1f", 
+	    fprintf(mailf, " %4d:%02d %6.1f",
 		    mnsc(data(dp)->dumper.sec), data(dp)->dumper.kps);
 	else
 	    fprintf(mailf, "    N/A    N/A ");
 
 	if(data(dp)->taper.success)
-	    fprintf(mailf, " %4d:%02d %6.1f", 
+	    fprintf(mailf, " %4d:%02d %6.1f",
 		    mnsc(data(dp)->taper.sec), data(dp)->taper.kps);
 	else if(degraded_mode)
 	    fprintf(mailf,"    N/A    N/A");
@@ -641,8 +641,8 @@ int datestamp;
 {
     static char nice[20];
     static char *months[13] = { "BogusMonth",
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
+	"January", "February", "March", "April", "May", "June",
+	"July", "August", "September", "October", "November", "December"
     };
     int year, month, day;
 
@@ -688,7 +688,7 @@ void handle_start()
     }
     if(amflush_run && normal_run) {
 	amflush_run = 0;
-	addline(&notes, 
+	addline(&notes,
      "  reporter: both amflush and driver output in log, ignoring amflush.\n");
     }
 }
@@ -722,7 +722,7 @@ void handle_note()
 void handle_error()
 {
     int rc;
-    
+
     if(curlog == L_ERROR && curprog == P_TAPER) {
 	rc = sscanf(curstr, "no-tape %[^\n]", tapestart_error);
 	if(rc == 1) {
@@ -731,7 +731,7 @@ void handle_error()
 	}
 	/* else some other tape error, handle like other errors */
     }
-    sprintf(tmpstr, "  %s: %s %s", program_str[curprog], 
+    sprintf(tmpstr, "  %s: %s %s", program_str[curprog],
 	    logtype_str[curlog], curstr);
     addline(&errsum, tmpstr);
 }
@@ -778,7 +778,7 @@ void handle_success()
 	return;
     }
 
-    sscanf(curstr,"%s %s %d [sec %f kb %f kps %f", 
+    sscanf(curstr,"%s %s %d [sec %f kb %f kps %f",
 	   hostname, diskname, &level, &sec, &kbytes, &kps);
     dp = lookup_disk(hostname, diskname);
     if(dp == NULL) {
@@ -831,7 +831,7 @@ void handle_strange()
 {
     handle_success();
 
-    sprintf(tmpstr, "  %-10.10s %s lev %d STRANGE\n", 
+    sprintf(tmpstr, "  %-10.10s %s lev %d STRANGE\n",
 	    hostname, diskname, level);
     addline(&errsum, tmpstr);
 
@@ -867,7 +867,7 @@ void handle_failed()
 	}
     }
 
-    sprintf(tmpstr, "  %-10.10s %s lev %d FAILED %s\n", 
+    sprintf(tmpstr, "  %-10.10s %s lev %d FAILED %s\n",
 	    hostname, diskname, level, errstr);
     addline(&errsum, tmpstr);
 

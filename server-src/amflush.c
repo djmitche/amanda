@@ -53,8 +53,8 @@ typedef struct sched_s {
 typedef enum {
     BOGUS, QUIT, DONE,
     FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
-    FAILED, TRYAGAIN, NO_ROOM, ABORT_FINISHED,	 	/* dumper results */
-    START_TAPER, FILE_WRITE, PORT_WRITE, 		/* taper cmds */
+    FAILED, TRYAGAIN, NO_ROOM, ABORT_FINISHED,		/* dumper results */
+    START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
     PORT, TAPE_ERROR, TAPER_OK,				/* taper results */
     LAST_TOK
 } tok_t;
@@ -63,13 +63,13 @@ char *cmdstr[] = {
     "BOGUS", "QUIT", "DONE",
     "FILE-DUMP", "PORT-DUMP", "CONTINUE", "ABORT",	/* dumper cmds */
     "FAILED", "TRY-AGAIN", "NO-ROOM", "ABORT-FINISHED",	/* dumper results */
-    "START-TAPER", "FILE-WRITE", "PORT-WRITE", 		/* taper cmds */
+    "START-TAPER", "FILE-WRITE", "PORT-WRITE",		/* taper cmds */
     "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
     NULL
 };
 
 tok_t tok;
-    
+
 char *pname = "amflush";
 
 int taper, taper_pid;
@@ -122,7 +122,7 @@ char **argv;
 	argc--,argv++;
     }
 
-    if(argc != 2) 
+    if(argc != 2)
 	error("Usage: amflush%s [-f] <confdir>", versionsuffix());
 
     config = argv[1];
@@ -134,10 +134,10 @@ char **argv;
 	error("could not read amanda config file\n");
 
     if((diskqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-        error("could not read disklist file\n");
+	error("could not read disklist file\n");
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
-        error("parse error in %s", getconf_str(CNF_TAPELIST));
+	error("parse error in %s", getconf_str(CNF_TAPELIST));
 
     dumpuser = getconf_str(CNF_DUMPUSER);
     if((pw = getpwnam(dumpuser)) == NULL)
@@ -243,7 +243,7 @@ char *name;
 
     for(p = NULL, d = dir_list; d != NULL; p = d, d = d->next)
 	if((cmp = strcmp(name, d->name)) > 0) continue;
-        else if(cmp == 0) return d;
+	else if(cmp == 0) return d;
 	else break;
 
     if(ndirs == MAX_DIRS)
@@ -378,11 +378,11 @@ void confirm()
 void detach()
 {
     int fd;
-    
+
     fflush(stdout); fflush(stderr);
     if((fd = open("/dev/null", O_RDWR, 0666)) == -1)
 	error("could not open /dev/null: %s", strerror(errno));
-	
+
     switch(fork()) {
     case -1: error("could not fork: %s", strerror(errno));
     case 0:
@@ -425,7 +425,7 @@ char *diskdir;
 	if(is_emptyfile(entry->d_name)) {
 	    if(unlink(entry->d_name) == -1)
 		log(L_INFO,"%s: ignoring zero length file.", entry->d_name);
-	    else 
+	    else
 		log(L_INFO,"%s: removed zero length file.", entry->d_name);
 	    continue;
 	}
@@ -505,7 +505,7 @@ char *diskdir;
 	    unlink(destname);
 	    break;
 	case TRYAGAIN:
-	    log(L_WARNING, "%s: too many taper retries, leaving file on disk", 
+	    log(L_WARNING, "%s: too many taper retries, leaving file on disk",
 		destname);
 	    break;
 	default:
@@ -520,7 +520,7 @@ char *diskdir;
     /* try to zap the now (hopefully) empty working dir */
     chdir(confdir);
     if(rmdir(dirname))
-        log(L_WARNING, "Could not rmdir %s.  Check for cruft.",
+	log(L_WARNING, "Could not rmdir %s.  Check for cruft.",
 	    dirname);
 }
 
@@ -533,7 +533,7 @@ void run_dumps()
 
     chdir(confdir);
     startup_tape_process();
-    taper_cmd(START_TAPER, datestamp, 	NULL, 0);
+    taper_cmd(START_TAPER, datestamp, NULL, 0);
     tok = getresult(taper);
 
     if(tok != TAPER_OK) {
@@ -548,7 +548,7 @@ void run_dumps()
 	    flush_holdingdisk(hdisk->diskdir);
 
 	/* tell taper to quit, then wait for it */
-	taper_cmd(QUIT, NULL, 	NULL, 0);
+	taper_cmd(QUIT, NULL, NULL, 0);
 	while(wait(NULL) != -1);
 
     }
@@ -613,7 +613,7 @@ char line[MAX_LINE];
 tok_t getresult(fd)
 int fd;
 {
-    char *p; 
+    char *p;
     int arg, len;
     tok_t t;
 
@@ -625,22 +625,22 @@ int fd;
     p = line;
     result_argc = 0;
     while(*p) {
-        while(isspace(*p)) p++;
-        if(result_argc < MAX_ARGS) result_argv[result_argc++] = p;
-        while(*p && !isspace(*p)) p++;
-        if(*p) *p++ = '\0';
+	while(isspace(*p)) p++;
+	if(result_argc < MAX_ARGS) result_argv[result_argc++] = p;
+	while(*p && !isspace(*p)) p++;
+	if(*p) *p++ = '\0';
     }
     for(arg = result_argc; arg < MAX_ARGS; arg++) result_argv[arg] = "";
 
 #ifdef DEBUG
     printf("argc = %d\n", result_argc);
     for(arg = 0; arg < MAX_ARGS; arg++)
-        printf("argv[%d] = \"%s\"\n", arg, result_argv[arg]);
+	printf("argv[%d] = \"%s\"\n", arg, result_argv[arg]);
 #endif
 
     for(t = BOGUS+1; t < LAST_TOK; t++)
 	if(!strcmp(result_argv[0], cmdstr[t])) return t;
-    
+
     return BOGUS;
 }
 
@@ -661,13 +661,13 @@ int level;
 	break;
     case FILE_WRITE:
 	dp = (disk_t *) ptr;
-	sprintf(cmdline, "FILE-WRITE handle %s %s %s %d\n", 
+	sprintf(cmdline, "FILE-WRITE handle %s %s %s %d\n",
 		destname, dp->host->hostname, dp->name,
 		level);
 	break;
     case PORT_WRITE:
 	dp = (disk_t *) ptr;
-	sprintf(cmdline, "PORT-WRITE handle %s %s %d\n", 
+	sprintf(cmdline, "PORT-WRITE handle %s %s %d\n",
 		dp->host->hostname, dp->name, level);
 	break;
     case QUIT:

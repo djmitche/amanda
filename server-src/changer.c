@@ -85,7 +85,7 @@ char *slotstr;
 bad_resultstr:
     strncpy(result_copy, changer_resultstr, 256);
     result_copy[255] = '\0';
-    sprintf(changer_resultstr, 
+    sprintf(changer_resultstr,
 	    "badly formed result from changer: \"%s\"", result_copy);
     return 2;
 }
@@ -111,7 +111,7 @@ char *slotstr;
 bad_resultstr:
     strncpy(result_copy, changer_resultstr, 256);
     result_copy[255] = '\0';
-    sprintf(changer_resultstr, 
+    sprintf(changer_resultstr,
 	    "badly formed result from changer: \"%s\"", result_copy);
     return 2;
 }
@@ -121,7 +121,7 @@ char *inslotstr, *outslotstr, *devicename;
 {
     char cmd[64], result_copy[256];
     int exitcode, rc;
-    
+
     sprintf(cmd, "-slot %s", inslotstr);
 
     if((exitcode = changer_command(cmd, changer_resultstr, ERRSTR_LEN)) != 0) {
@@ -138,7 +138,7 @@ char *inslotstr, *outslotstr, *devicename;
 bad_resultstr:
     strncpy(result_copy, changer_resultstr, 256);
     result_copy[255] = '\0';
-    sprintf(changer_resultstr, 
+    sprintf(changer_resultstr,
 	    "badly formed result from changer: \"%s\"", result_copy);
     return 2;
 }
@@ -149,7 +149,7 @@ char *curslotstr;
 {
     char result_copy[256];
     int rc, exitcode;
-    
+
     exitcode = changer_command("-info", changer_resultstr, ERRSTR_LEN);
     if(exitcode != 0) {
 	rc=sscanf(changer_resultstr,"%[^ \n\t] %[^\n]",curslotstr,result_copy);
@@ -158,7 +158,7 @@ char *curslotstr;
 	return exitcode;
     }
 
-    rc = sscanf(changer_resultstr, "%[^ \t\n] %d %d", 
+    rc = sscanf(changer_resultstr, "%[^ \t\n] %d %d",
 		curslotstr, nslotsp, backwardsp);
     if(rc != 3) goto bad_resultstr;
     return 0;
@@ -166,7 +166,7 @@ char *curslotstr;
 bad_resultstr:
     strncpy(result_copy, changer_resultstr, 256);
     result_copy[255] = '\0';
-    sprintf(changer_resultstr, 
+    sprintf(changer_resultstr,
 	    "badly formed result from changer: \"%s\"", result_copy);
     return 2;
 }
@@ -191,7 +191,7 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
 	rc = changer_loadslot(slotstr, curslotstr, device);
 	if(rc > 0)
 	    done = user_slot(rc, curslotstr, device);
-	else if(!done) 
+	else if(!done)
 	    done = user_slot(0,  curslotstr, device);
 
 	checked += 1;
@@ -218,7 +218,7 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
     rc = changer_loadslot(slotstr, curslotstr, device);
     if(rc > 0)
 	done = user_slot(rc, curslotstr, device);
-    else if(!done) 
+    else if(!done)
 	done = user_slot(0,  curslotstr, device);
 }
 
@@ -242,7 +242,7 @@ int resultlen;
 
     if((cmdpipe = popen(cmd, "r")) == NULL)
 	error("could not open pipe to \"%s\": %s", cmd, strerror(errno));
-    
+
     if(fgets(resultstr, resultlen, cmdpipe) == NULL)
 	error("could not read result from \"%s\": %s", cmd, strerror(errno));
 

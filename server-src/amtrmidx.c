@@ -1,5 +1,5 @@
 /* $RCSfile: amtrmidx.c,v $
-   $Date: 1997/07/16 05:28:17 $
+   $Date: 1997/07/24 08:04:13 $
 
    amtrmidx - trims number of index files to only those still in system.
    Well actually, it keeps a few extra, plus goes back to the last
@@ -42,11 +42,11 @@ char **argv;
     /* get the list of disks being dumped and their types */
     sprintf(buf, "%s/%s", CONFIG_DIR, argv[1]);
     if (chdir(buf) != 0)
-        error("could not cd to confdir %s: %s", buf, strerror(errno));
+	error("could not cd to confdir %s: %s", buf, strerror(errno));
     if (read_conffile(CONFFILE_NAME))
-        error("could not read amanda config file");
+	error("could not read amanda config file");
     if ((diskl = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-        error("could not load \"%s\".", getconf_str(CNF_DISKFILE));
+	error("could not load \"%s\".", getconf_str(CNF_DISKFILE));
 
     /* determine how many indices to keep */
     no_keep = getconf_int(CNF_TAPECYCLE) + 1;
@@ -58,7 +58,7 @@ char **argv;
     if (chdir(getconf_str(CNF_INDEXDIR)) == -1)
 	error("couldn't change into index config directory \"%s\".",
 	      CNF_INDEXDIR);
-    
+
     level_position = strlen(COMPRESS_SUFFIX)+1;
 
     /* now go through the list of disks and find which have indexes */
@@ -75,7 +75,7 @@ char **argv;
 
 	    /* get listing of indices, newest first */
 	    /* We have to be careful here of
-             * trigraph replacement by some compilers.  */
+	     * trigraph replacement by some compilers.  */
 	    sprintf(cmd, "ls -r '%s_%s_'????%s-??_?%s",
 		    diskp->host->hostname, diskp->name,
 		    "-??", COMPRESS_SUFFIX);
@@ -91,7 +91,7 @@ char **argv;
 		(void)pclose(fp);
 		continue;		/* not enough to consider */
 	    }
-	    
+
 	    /* skip indices until find a level 0 */
 	    while (fgets(buf, 1024, fp) != NULL)
 	    {
@@ -101,7 +101,7 @@ char **argv;
 		if (buf[strlen(buf)-level_position] == '0')
 		    break;
 	    }
-	    
+
 	    /* okay, delete the rest */
 	    while (fgets(buf, 1024, fp) != NULL)
 	    {

@@ -128,7 +128,7 @@ char **main_argv;
 
     if(!force_parameters) {
 	inparallel	= getconf_int(CNF_INPARALLEL);
-	big_dumpers     = inparallel - LITTLE_DUMPERS;
+	big_dumpers	= inparallel - LITTLE_DUMPERS;
 	use_lffo	= 1;
 
 	for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
@@ -136,15 +136,15 @@ char **main_argv;
 	    holdalloc(hdp)->allocated_dumpers = 0;
 	    holdalloc(hdp)->allocated_space = 0;
 
-	    if(get_fs_stats(hdp->diskdir, &fs) == -1 ||
-	       access(hdp->diskdir, W_OK) == -1) {
+	    if(get_fs_stats(hdp->diskdir, &fs) == -1
+	       || access(hdp->diskdir, W_OK) == -1) {
 		log(L_WARNING, "WARNING: ignoring holding disk %s: %s\n",
 		    hdp->diskdir, strerror(errno));
 		hdp->disksize = 0;
 		continue;
 	    }
 	    if(fs.avail != -1 && fs.avail < hdp->disksize) {
-		log(L_WARNING, 
+		log(L_WARNING,
 		    "WARNING: %s: %d KB requested, but only %d KB available.",
 		    hdp->diskdir, hdp->disksize, fs.avail);
 		hdp->disksize = fs.avail;
@@ -162,7 +162,7 @@ char **main_argv;
 
     startup_dump_processes();
 
-    /* 
+    /*
      * Read schedule from stdin.  Usually, this is a pipe from planner,
      * so the effect is that we wait here for the planner to
      * finish, but meanwhile the taper is rewinding the tape, reading
@@ -228,7 +228,7 @@ fflush(stdout);
 		log(L_FAIL, "%s %s %d [dump to tape failed]",
 		    diskp->host->hostname, diskp->name, sched(diskp)->level);
 	}
-	else 
+	else
 	    log(L_FAIL, "%s %s %d [%s]",
 		diskp->host->hostname, diskp->name, sched(diskp)->level,
 		diskp->no_hold ?
@@ -236,7 +236,7 @@ fflush(stdout);
 		    "no more holding disk space");
     }
 
-printf("driver: QUITTING time %s telling children to quit\n", 
+printf("driver: QUITTING time %s telling children to quit\n",
        walltime_str(curclock()));
 fflush(stdout);
 
@@ -318,7 +318,7 @@ disklist_t *rq;
      * tie up the host and eliminate its longest disk from consideration the
      * first pass through.  This could cause a big delay in starting that long
      * disk, which could drag out the whole night's dumps.
-     * 
+     *
      * While starting from the top of the dump time distribution solves the
      * above problem, this turns out to be a bad idea, because the big dumps
      * will almost certainly pack the holding disk completely, leaving no
@@ -410,9 +410,9 @@ char *str;
     disk_t *dp;
 
     printf("dump of driver schedule %s:\n--------\n", str);
-    
+
     for(dp = qp->head; dp != NULL; dp = dp->next) {
-	printf("  %-10.10s %-4.4s lv %d t %5d s %8ld p %d\n", 
+	printf("  %-10.10s %-4.4s lv %d t %5d s %8ld p %d\n",
 	       dp->host->hostname, dp->name, sched(dp)->level,
 	       sched(dp)->est_time, sched(dp)->est_size, sched(dp)->priority);
     }
@@ -479,7 +479,7 @@ void handle_taper_result()
 
 	delete_diskspace(dp);
 
-	printf("driver: finished-cmd time %s taper wrote %s:%s\n", 
+	printf("driver: finished-cmd time %s taper wrote %s:%s\n",
 	       walltime_str(curclock()), dp->host->hostname, dp->name);
 	fflush(stdout);
 
@@ -519,7 +519,7 @@ void handle_taper_result()
 	/* re-insert into taper queue */
 
 	if(sched(dp)->attempted) {
-	    log(L_FAIL, "%s %s %d [too many taper retries]", 
+	    log(L_FAIL, "%s %s %d [too many taper retries]",
 		dp->host->hostname, dp->name, sched(dp)->level);
 	    /* XXX should I do this? */
 	    delete_diskspace(dp);
@@ -540,7 +540,7 @@ void handle_taper_result()
     case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
 	dp = serial2disk(argv[2]);
 	free_serial(argv[2]);
-	printf("driver: finished-cmd time %s taper wrote %s:%s\n", 
+	printf("driver: finished-cmd time %s taper wrote %s:%s\n",
 	       walltime_str(curclock()), dp->host->hostname, dp->name);
 	fflush(stdout);
 	/* Note: fall through code... */
@@ -567,7 +567,7 @@ void handle_taper_result()
 }
 
 
-dumper_t *idle_dumper() 
+dumper_t *idle_dumper()
 {
     dumper_t *dumper;
 
@@ -577,7 +577,7 @@ dumper_t *idle_dumper()
     return NULL;
 }
 
-int some_dumps_in_progress() 
+int some_dumps_in_progress()
 {
     dumper_t *dumper;
 
@@ -587,7 +587,7 @@ int some_dumps_in_progress()
     return taper_busy;
 }
 
-int num_busy_dumpers() 
+int num_busy_dumpers()
 {
     dumper_t *dumper;
     int n;
@@ -639,7 +639,7 @@ int fd;
     if(tok != BOGUS) {
 	sdp = serial2disk(argv[2]); /* argv[2] always contains the serial number */
 	assert(sdp == dp);
-    }	
+    }
 
     switch(tok) {
 
@@ -659,8 +659,8 @@ int fd;
 	dp->host->inprogress -= 1;
 	dp->inprogress = 0;
 	sched(dp)->attempted = 0;
-	printf("driver: finished-cmd time %s %s dumped %s:%s\n", 
-	       walltime_str(curclock()), dumper->name, 
+	printf("driver: finished-cmd time %s %s dumped %s:%s\n",
+	       walltime_str(curclock()), dumper->name,
 	       dp->host->hostname, dp->name);
 	fflush(stdout);
 
@@ -685,9 +685,9 @@ int fd;
 	dumper->busy = 0;
 	dp->host->inprogress -= 1;
 	dp->inprogress = 0;
-	
+
 	if(sched(dp)->attempted) {
-	    log(L_FAIL, "%s %s %d [could not connect to %s]", 
+	    log(L_FAIL, "%s %s %d [could not connect to %s]",
 		dp->host->hostname, dp->name,
 		sched(dp)->level, dp->host->hostname);
 	}
@@ -698,7 +698,7 @@ int fd;
 
 	if(tok == FATAL_TRYAGAIN) {
 	    /* dumper is confused, start another */
-	    log(L_WARNING, "%s (pid %d) confused, restarting it.", 
+	    log(L_WARNING, "%s (pid %d) confused, restarting it.",
 		dumper->name, dumper->pid);
 	    FD_CLR(fd,&readset);
 	    close(fd);
@@ -723,7 +723,7 @@ int fd;
 	    /* no disk space due to be freed */
 	    dumper_cmd(dumper, ABORT, NULL);
 	    pending_aborts++;
-	    /* 
+	    /*
 	     * if this is the only outstanding dump, it must be too big for
 	     * the holding disk, so force it to go directly to tape on the
 	     * next attempt.
@@ -759,7 +759,7 @@ int fd;
 
     case BOGUS:
 	/* either EOF or garbage from dumper.  Turn it off */
-	log(L_WARNING, "%s pid %d is messed up, ignoring it.\n", 
+	log(L_WARNING, "%s pid %d is messed up, ignoring it.\n",
 	    dumper->name, dumper->pid);
 	FD_CLR(fd,&readset);
 	close(fd);
@@ -773,12 +773,12 @@ int fd;
 	    dp->host->inprogress -= 1;
 	    dp->inprogress = 0;
 	    if(sched(dp)->attempted) {
-		log(L_FAIL, "%s %s %d [%s died]", 
+		log(L_FAIL, "%s %s %d [%s died]",
 		    dp->host->hostname, dp->name,
 		    sched(dp)->level, dumper->name);
 	    }
 	    else {
-		log(L_WARNING, "%s died while dumping %s:%s lev %d.", 
+		log(L_WARNING, "%s died while dumping %s:%s lev %d.",
 		    dumper->name, dp->host->hostname, dp->name,
 		    sched(dp)->level);
 		sched(dp)->attempted++;
@@ -816,8 +816,8 @@ disklist_t *waitqp;
     */
     rc = open_infofile(getconf_str(CNF_INFOFILE));
     if(rc)
-        error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
-              strerror(errno), rc);
+	error("could not open infofile %s: %s (%d)", getconf_str(CNF_INFOFILE),
+	      strerror(errno), rc);
 
     /* read schedule from stdin */
 
@@ -826,11 +826,11 @@ disklist_t *waitqp;
 	line++;
 
 	rc = sscanf(inpline, "%s %s %d %d %ld %d %d %ld %d\n",
-		    hostname, diskname, 
+		    hostname, diskname,
 		    &priority, &level, &size, &time,
 		    &degr_level, &degr_size, &degr_time);
 	if(rc != 6 && rc != 9) {
-	    error("schedule line %d: syntax error", line); 
+	    error("schedule line %d: syntax error", line);
 	    continue;
 	}
 
@@ -842,7 +842,7 @@ disklist_t *waitqp;
 	}
 
 	get_info(hostname, diskname, &inf);
-	
+
 	sp = (sched_t *) alloc(sizeof(sched_t));
 	sp->level    = level;
 	sp->dumpdate = stralloc(get_dumpdate(&inf, level));
@@ -889,7 +889,7 @@ disklist_t *waitqp;
     return rq;
 }
 
-int free_kps(ip) 
+int free_kps(ip)
 interface_t *ip;
 {
     int res;
@@ -910,7 +910,7 @@ interface_t *ip;
     return res;
 }
 
-void allocate_bandwidth(ip, kps) 
+void allocate_bandwidth(ip, kps)
 interface_t *ip;
 int kps;
 {
@@ -926,7 +926,7 @@ int kps;
 }
 
 /* ------------ */
-int free_space() 
+int free_space()
 {
     holdingdisk_t *hdp;
     int total_free, diff;
@@ -981,7 +981,7 @@ disk_t *diskp;
 {
 #ifdef HOLD_DEBUG
     printf("assigning disk %s:%s size %ld to disk %s\n",
-	   diskp->host->hostname, diskp->name, 
+	   diskp->host->hostname, diskp->name,
 	   sched(diskp)->est_size, holdp->diskdir);
 #endif
 
@@ -1027,7 +1027,7 @@ tok_t tok;
 	       diskp->host->hostname, diskp->name, kbytes,
 	       sched(diskp)->act_size, diff);
 #endif
-       
+
 	sched(diskp)->act_size = kbytes;
 	holdalloc(holdp)->allocated_space += diff;
 	holdalloc(holdp)->allocated_dumpers -= 1;
@@ -1060,7 +1060,7 @@ disk_t *diskp;
 {
 #ifdef HOLD_DEBUG
     printf("delete: file %s size %ld hdisk %s\n",
-	   sched(diskp)->destname, sched(diskp)->act_size, 
+	   sched(diskp)->destname, sched(diskp)->act_size,
 	   sched(diskp)->holdp->diskdir);
 #endif
     holdalloc(sched(diskp)->holdp)->allocated_space -= sched(diskp)->act_size;
@@ -1080,7 +1080,7 @@ char *time_str;
 
     for(hdp = holdingdisks, dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
 	diff = hdp->disksize - holdalloc(hdp)->allocated_space;
-	printf(" hdisk %d: free %d dumpers %d", dsk, diff, 
+	printf(" hdisk %d: free %d dumpers %d", dsk, diff,
 	       holdalloc(hdp)->allocated_dumpers);
     }
     printf("\n");
@@ -1144,8 +1144,8 @@ disk_t *dp;
 	/* either eof or garbage from dumper */
 	log(L_WARNING, "%s pid %d is messed up, ignoring it.\n",
 	    dumper->name, dumper->pid);
-	dumper->down = 1;       /* mark it down so it isn't used again */
-	failed = 1;     /* dump failed, must still finish up with taper */
+	dumper->down = 1;	/* mark it down so it isn't used again */
+	failed = 1;	/* dump failed, must still finish up with taper */
 	break;
 
     case DONE: /* DONE <handle> <origsize> <dumpsize> <dumptime> <err str> */
@@ -1246,7 +1246,7 @@ void short_dump_state()
     for(i = 0; i < inparallel; i++) if(!dmptable[i].busy) nidle++;
     printf(" idle dumpers: %d", nidle);
     printf(" qlen tapeq: %d", queue_length(tapeq));
-    printf(" runq: %d",       queue_length(runq));
+    printf(" runq: %d", queue_length(runq));
     printf(" stoppedq: %d", queue_length(stoppedq));
     printf(" wakeup: %d", (int)sleep_time.tv_sec);
     printf(" driver-idle: %s\n", idle_strings[idle_reason]);
@@ -1265,8 +1265,8 @@ char *str;
     printf("free kps: %d, space: %d\n", free_kps((interface_t *)0), free_space());
     if(degraded_mode) printf("taper: DOWN\n");
     else if(!taper_busy) printf("taper: idle\n");
-    else printf("taper: writing %s:%s.%d est size %ld\n", 
-		taper_disk->host->hostname, taper_disk->name, 
+    else printf("taper: writing %s:%s.%d est size %ld\n",
+		taper_disk->host->hostname, taper_disk->name,
 		sched(taper_disk)->level,
 		sched(taper_disk)->est_size);
     for(i = 0; i < inparallel; i++) {

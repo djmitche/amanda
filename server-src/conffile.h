@@ -66,11 +66,13 @@ typedef struct tapetype_s {
 } tapetype_t;
 
 /* Dump strategies */
-#define DS_NORMAL	0	/* Normal (0 1 1 1 1 2 2 2 ...) */
-#define DS_NOFULL	1	/* No full's (1 1 1 ...) */
-#define DS_2		2	/* ? (0 1 2 3 4 5 6 7 8 9 10 11 ...) */
-#define DS_3		3	/* ? (0 1 1 1 1 1 1 1 1 1 1 1 ...) */
-#define DS_HANOI	4	/* Tower of Hanoi (? ? ? ? ? ...) */
+#define DS_NODUMP	0	/* Don't do any dumps at all */
+#define DS_NORMAL	1	/* Normal (0 1 1 1 1 2 2 2 ...) */
+#define DS_NOFULL	2	/* No full's (1 1 1 ...) */
+#define DS_NOINC	3	/* No inc's (0 0 0 ...) */
+#define DS_4		4	/* ? (0 1 2 3 4 5 6 7 8 9 10 11 ...) */
+#define DS_5		5	/* ? (0 1 1 1 1 1 1 1 1 1 1 1 ...) */
+#define DS_HANOI	6	/* Tower of Hanoi (? ? ? ? ? ...) */
 
 /* Compression types */
 #define COMP_NONE	0	/* No compression */

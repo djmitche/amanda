@@ -84,7 +84,7 @@ typedef enum {
     FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
     FAILED, TRYAGAIN, NO_ROOM, ABORT_FINISHED,		/* dumper results */
     FATAL_TRYAGAIN,
-    START_TAPER, FILE_WRITE, PORT_WRITE, 		/* taper cmds */
+    START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
     PORT, TAPE_ERROR, TAPER_OK,				/* taper results */
     LAST_TOK
 } tok_t;

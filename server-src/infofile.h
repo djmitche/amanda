@@ -32,12 +32,12 @@
 
 #include "amanda.h"
 
-#define DUMP_LEVELS	 10
-#define MAX_LABEL	 80
+#define DUMP_LEVELS	10
+#define MAX_LABEL	80
 #define EPOCH		((time_t)0)
 
 #define AVG_COUNT	3
-/* weighted average.  # items should agree w/ AVG_COUNT*/
+/* weighted average.  # items should agree w/ AVG_COUNT */
 #define newperf(ary,f)	( ary[2]=ary[1], ary[1]=ary[0], ary[0]=(f) )
 
 typedef struct stats_s {
@@ -58,8 +58,8 @@ typedef struct perf_s {
 
 typedef struct info_s {
     int  command;		/* command word */
-#	define NO_COMMAND      0	/* no outstanding commands */
-#	define PLANNER_FORCE   1	/* force level 0 tonight */
+#	define NO_COMMAND	0	/* no outstanding commands */
+#	define PLANNER_FORCE	1	/* force level 0 tonight */
     perf_t  full;
     perf_t  incr;
     stats_t inf[DUMP_LEVELS];

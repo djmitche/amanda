@@ -3,13 +3,16 @@
 * File:          $RCSfile: list_dir.c,v $
 * Part of:       
 *
-* Revision:      $Revision: 1.3 $
-* Last Edited:   $Date: 1997/07/16 05:28:18 $
-* Author:        $Author: amcore $
+* Revision:      $Revision: 1.4 $
+* Last Edited:   $Date: 1997/07/24 08:04:31 $
+* Author:        $Author: george $
 *
 * Notes:         
 * Private Func:  
 * History:       $Log: list_dir.c,v $
+* History:       Revision 1.4  1997/07/24 08:04:31  george
+* History:       Remove extra spaces from where they are not needed/wanted.
+* History:
 * History:       Revision 1.3  1997/07/16 05:28:18  amcore
 * History:       Quote index filename when it is given to a shell, so that variable
 * History:       substitution is prevented.
@@ -107,7 +110,7 @@ char *path;
 	strcpy(dir_list->path, path);
 	return 0;
     }
-    
+
     if (strcmp(path, dir_list->path) == 0)
 	return 0;
 
@@ -118,7 +121,7 @@ char *path;
 	if (strcmp(path, last->path) == 0)
 	    return 0;
     }
-    
+
     if ((last->next = (DIR_ITEM *)malloc(sizeof(DIR_ITEM))) == NULL)
 	return -1;
     last->next->next = NULL;
@@ -153,7 +156,7 @@ DUMP_ITEM *dump_item;
 	    if (*c == '/')
 		no_fields++;
     }
-    
+
     sprintf(cmd, "%s %s '%s' 2>/dev/null | grep \"^%s\" | cut -d/ -f1-%d | sort | uniq",
 	    UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
@@ -193,7 +196,7 @@ char *dir;
     int last_level;
 
     clear_dir_list();
-    
+
     if (strlen(disk_name) == 0)
     {
 	reply(502, "Must set config,host,disk before listing a directory");
@@ -215,7 +218,7 @@ char *dir;
 	reply(500, "No dumps available on or before date \"%s\"", date);
 	return -1;
     }
-    
+
     /* get data from that dump */
     if (process_ls_dump(dir, dump_item) == -1)
 	return -1;

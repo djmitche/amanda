@@ -55,15 +55,15 @@ char *filename;
     extern int errno;
 
     /* initialize */
-    
+
     hostlist = NULL;
     lst.head = lst.tail = NULL;
     init_string(&diskfname, filename);
     line_num = got_parserror = 0;
 
     if((diskf = fopen(filename, "r")) == NULL)
-       error("could not open disklist file \"%s\": %s", 
-	     filename, strerror(errno));
+	error("could not open disklist file \"%s\": %s",
+	      filename, strerror(errno));
 
     while(read_diskline());
     fclose(diskf);
@@ -240,7 +240,7 @@ static int read_diskline()
     disk->platter = -1;
     disk->up = NULL;
     disk->inprogress = 0;
-    
+
     get_string();
     if(*str == '\0' || *str == '\n') {
 	parserror("disk dumptype expected");
@@ -289,16 +289,17 @@ static int read_diskline()
 	    free(disk);
 	    eat_line();
 	    return 1;
-	    }
+	}
 	get_string();
-    } else
-      netif = lookup_interface("");
+    }
+    else
+	netif = lookup_interface("");
 
     if(*str != '\n' && *str != '\0')	/* now we have garbage, ignore it */
 	parserror("end of line expected");
 
     if(dtype->ignore)
-      return 1;
+	return 1;
 
     /* success, add disk to lists */
 
@@ -347,7 +348,7 @@ static void eat_line()
     int ch;
 
     do {
-	ch = getc(diskf); 
+	ch = getc(diskf);
     } while(ch != '\n' && ch != EOF);
 }
 
@@ -396,7 +397,7 @@ FILE *f;
     fprintf(f, "%s QUEUE:\n", st);
     for(pos = 0, d = q.head, p = NULL; d != NULL; p = d, d = d->next, pos++) {
 	if(pos < npr) fprintf(f, "%3d: %-10s %-4s\n",
-			     pos, d->host->hostname, d->name);
+			      pos, d->host->hostname, d->name);
     }
     if(pos > npr) {
 	if(pos > npr+2) fprintf(f, "  ...\n");
@@ -429,8 +430,8 @@ dump_disklist()
 	    dump_disk(dp);
 	putchar('\n');
     }
-    
-    
+
+
     printf("DISKLIST IN FILE ORDER:\n");
 
     prev = NULL;

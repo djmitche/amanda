@@ -36,7 +36,7 @@
 char *logtype_str[] = {
     "BOGUS",
     "FATAL",		/* program died for some reason, used by error() */
-    "ERROR", "WARNING",	"INFO", "SUMMARY", 	 /* information messages */
+    "ERROR", "WARNING",	"INFO", "SUMMARY",	 /* information messages */
     "START", "FINISH",				   /* start/end of a run */
     "SUCCESS", "FAIL", "STRANGE",		    /* the end of a dump */
     "STATS",						   /* statistics */
@@ -114,7 +114,7 @@ void log_start_multiline()
     assert(multiline == -1);
 
     multiline = 0;
-    open_log();	
+    open_log();
 }
 
 
@@ -145,8 +145,9 @@ char *datestamp;
 static void open_log()
 {
     logfd = open(getconf_str(CNF_LOGFILE), O_WRONLY|O_CREAT|O_APPEND, 0666);
-    if(logfd == -1) error("could not open log file %s: %s", 
-		       getconf_str(CNF_LOGFILE),strerror(errno));
+    if(logfd == -1)
+	error("could not open log file %s: %s",
+	      getconf_str(CNF_LOGFILE),strerror(errno));
     if(amflock(logfd, "log") == -1)
 	error("could not lock log file %s: %s", getconf_str(CNF_LOGFILE),
 	      strerror(errno));

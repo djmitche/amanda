@@ -134,7 +134,7 @@ char **argv;
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file");
 
-    /* 
+    /*
      * If both server and client side checks are being done, the server
      * check output goes to the main output, while the client check output
      * goes to a temporary file and is copied to the main output when done.
@@ -228,9 +228,9 @@ char **argv;
 	if(close(mainfd) == -1)
 	    error("close main file: %s", strerror(errno));
 
-	sprintf(cmd, 
-	   "%s -s \"%s AMANDA PROBLEM: FIX BEFORE RUN, IF POSSIBLE\" %s < %s", 
-		MAILER, getconf_str(CNF_ORG), getconf_str(CNF_MAILTO), 
+	sprintf(cmd,
+	   "%s -s \"%s AMANDA PROBLEM: FIX BEFORE RUN, IF POSSIBLE\" %s < %s",
+		MAILER, getconf_str(CNF_ORG), getconf_str(CNF_MAILTO),
 		mainfname);
 	if(system(cmd) != 0)
 	    error("mail command failed: %s", cmd);
@@ -254,7 +254,7 @@ int rc, ns, bk;
 {
     if(rc)
 	error("could not get changer info: %s", changer_resultstr);
-	
+
     nslots = ns;
     backwards = bk;
 
@@ -269,7 +269,7 @@ char *device;
     char *errstr;
 
     if(rc == 2) {
-	fprintf(errf, "%s: fatal slot %s: %s\n", 
+	fprintf(errf, "%s: fatal slot %s: %s\n",
 		pname, slotstr, changer_resultstr);
 	return 1;
     }
@@ -291,7 +291,7 @@ char *device;
 		found = 1;
 		return 1;
 	    }
-	    else if(!match(labelstr, label)) 
+	    else if(!match(labelstr, label))
 		fprintf(errf, " (no match)\n");
 	    else {
 		/* not an exact label match, but a labelstr match */
@@ -341,7 +341,7 @@ char *taper_scan()
     }
     else if(!found) {
 	if(searchlabel)
-	    sprintf(changer_resultstr, 
+	    sprintf(changer_resultstr,
 		    "label %s or new tape not found in rack", searchlabel);
 	else
 	    strcpy(changer_resultstr, "new tape not found in rack");
@@ -372,7 +372,7 @@ int fd;
     startclock();
 
     if(read_tapelist(getconf_str(CNF_TAPELIST)))
-        error("parse error in %s", getconf_str(CNF_TAPELIST));
+	error("parse error in %s", getconf_str(CNF_TAPELIST));
 
     if((outf = fdopen(fd, "w")) == NULL)
 	error("fdopen %d: %s", fd, strerror(errno));
@@ -387,7 +387,7 @@ int fd;
 
     for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
 	if(get_fs_stats(hdp->diskdir, &fs) == -1) {
-	    fprintf(outf, "ERROR: statfs %s: %s\n", 
+	    fprintf(outf, "ERROR: statfs %s: %s\n",
 		    hdp->diskdir, strerror(errno));
 	    disklow = 1;
 	}
@@ -397,7 +397,7 @@ int fd;
 	    disklow = 1;
 	}
 	else if(fs.avail == -1) {
-	    fprintf(outf, 
+	    fprintf(outf,
 	       "WARNING: avail disk space unknown for %s. %ld KB requested.\n",
 		    hdp->diskdir, hdp->disksize);
 	    disklow = 1;
@@ -408,8 +408,8 @@ int fd;
 		    hdp->diskdir, fs.avail, hdp->disksize);
 	    disklow = 1;
 	}
-	else 
-	    fprintf(outf, "%s: %ld KB disk space available, that's plenty.\n", 
+	else
+	    fprintf(outf, "%s: %ld KB disk space available, that's plenty.\n",
 		    hdp->diskdir, fs.avail);
     }
 
@@ -422,14 +422,14 @@ int fd;
     tapename = getconf_str(CNF_TAPEDEV);
 
     if (getconf_seen(CNF_TAPEDEV) && getconf_seen(CNF_TPCHANGER)) {
-        fprintf(outf,
+	fprintf(outf,
 		"WARNING: when both tapedev and tpchanger are specified, tapedev is ignored.\n"
 		"WARNING: the device to be used is hard-coded in the changer script.\n");
     }
 
     if (!getconf_seen(CNF_TPCHANGER) && getconf_int(CNF_RUNTAPES) != 1) {
-        fprintf(outf,
-	        "WARNING: if a tape changer is not available, runtapes must be set to 1.\n");
+	fprintf(outf,
+		"WARNING: if a tape changer is not available, runtapes must be set to 1.\n");
     }
 
     if(changer_init() && (tapename = taper_scan()) == NULL) {
@@ -461,7 +461,7 @@ int fd;
 
     if(!tapebad && overwrite) {
 	if((errstr = tape_writeable(tapename)) != NULL) {
-	    fprintf(outf, 
+	    fprintf(outf,
 		    "ERROR: tape %s label ok, but is not writeable.\n", label);
 	    tapebad = 1;
 	}
@@ -473,14 +473,14 @@ int fd;
 	fprintf(outf, "Tape %s label ok.\n", label);
 
     {
-      char *indexdir = getconf_str(CNF_INDEXDIR);
-      struct stat statbuf;
-      if ((stat(indexdir, &statbuf) == -1)
-	  || !S_ISDIR(statbuf.st_mode)
-	  || (access(indexdir, W_OK) == -1)) {
-	fprintf(outf, "Index dir \"%s\" doesn't exist or is not writable.\n",
-		indexdir);
-      }
+	char *indexdir = getconf_str(CNF_INDEXDIR);
+	struct stat statbuf;
+	if((stat(indexdir, &statbuf) == -1)
+	   || !S_ISDIR(statbuf.st_mode)
+	   || (access(indexdir, W_OK) == -1)) {
+	    fprintf(outf, "Index dir \"%s\" doesn't exist or is not writable.\n",
+		    indexdir);
+	}
     }
 
     fprintf(outf, "Server check took %s seconds.\n", walltime_str(curclock()));
@@ -525,7 +525,7 @@ int fd;
     startclock();
 
     if((origqp = read_diskfile(getconf_str(CNF_DISKFILE))) == NULL)
-        error("could not load \"%s\"\n", getconf_str(CNF_DISKFILE));
+	error("could not load \"%s\"\n", getconf_str(CNF_DISKFILE));
 
     if((outf = fdopen(fd, "w")) == NULL)
 	error("fdopen %d: %s", fd, strerror(errno));
@@ -542,29 +542,29 @@ int fd;
 
     /* get remote service port */
     if((amandad = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL)
-        amanda_port = AMANDA_SERVICE_DEFAULT;
+	amanda_port = AMANDA_SERVICE_DEFAULT;
     else
-        amanda_port = ntohs(amandad->s_port);
+	amanda_port = ntohs(amandad->s_port);
 
 #ifdef KRB4_SECURITY
     if((amandad = getservbyname(KAMANDA_SERVICE_NAME, "udp")) == NULL)
-        kamanda_port = KAMANDA_SERVICE_DEFAULT;
+	kamanda_port = KAMANDA_SERVICE_DEFAULT;
     else
-        kamanda_port = ntohs(amandad->s_port);
+	kamanda_port = ntohs(amandad->s_port);
 #endif
 
     hostcount = remote_errors = 0;
 
     while(!empty(*origqp)) {
-        hostp = origqp->head->host;
-        sprintf(req, "SERVICE selfcheck\n");
-	strcat(req, "OPTIONS ;\n"); 	/* no options yet */
+	hostp = origqp->head->host;
+	sprintf(req, "SERVICE selfcheck\n");
+	strcat(req, "OPTIONS ;\n");	/* no options yet */
 
-        for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
-            remove_disk(origqp, dp);
-            sprintf(line, "%s %s 0\n", dp->program, dp->name);
-            strcat(req, line);
-        }
+	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
+	    remove_disk(origqp, dp);
+	    sprintf(line, "%s %s 0\n", dp->program, dp->name);
+	    strcat(req, line);
+	}
 	hostcount++;
 
 #ifdef KRB4_SECURITY
@@ -573,19 +573,19 @@ int fd;
 				  hostp, CHECK_TIMEOUT, handle_response);
 	else
 #endif
-	    rc = make_request(hostp->hostname, amanda_port, stralloc(req), 
+	    rc = make_request(hostp->hostname, amanda_port, stralloc(req),
 			      hostp, CHECK_TIMEOUT, handle_response);
 	if(rc) {
-            /* couldn't resolve hostname */
-            fprintf(outf, 
+	    /* couldn't resolve hostname */
+	    fprintf(outf,
 		    "ERROR: %s: couldn't resolve hostname\n", hostp->hostname);
 	    remote_errors++;
-        }
-        check_protocol();
+	}
+	check_protocol();
     }
     run_protocol();
 
-    fprintf(outf, 
+    fprintf(outf,
      "Client check: %d hosts checked in %s seconds, %d problems found.\n",
 	    hostcount, walltime_str(curclock()), remote_errors);
     fflush(outf);
@@ -606,23 +606,23 @@ pkt_t *pkt;
     hostp = (host_t *) p->datap;
 
     if(p->state == S_FAILED) {
-        if(pkt == NULL)
-            fprintf(outf, 
+	if(pkt == NULL)
+	    fprintf(outf,
 		    "WARNING: %s: selfcheck request timed out.  Host down?\n",
 		    hostp->hostname);
-        else if(sscanf(pkt->body, "ERROR %[^\n]", errstr) == 1)
-            fprintf(outf, "ERROR: %s NAK: %s\n", hostp->hostname, errstr);
-        else
-            fprintf(outf, "ERROR: %s NAK: [NAK parse failed]\n",
+	else if(sscanf(pkt->body, "ERROR %[^\n]", errstr) == 1)
+	    fprintf(outf, "ERROR: %s NAK: %s\n", hostp->hostname, errstr);
+	else
+	    fprintf(outf, "ERROR: %s NAK: [NAK parse failed]\n",
 		    hostp->hostname);
 	remote_errors++;
-        return;
+	return;
     }
 
 #ifdef KRB4_SECURITY
     if(hostp->disks->auth == AUTH_KRB4 &&
        !check_mutual_authenticator(host2key(hostp->hostname), pkt, p)) {
-	fprintf(outf, "ERROR: %s [mutual-authentication failed]\n", 
+	fprintf(outf, "ERROR: %s [mutual-authentication failed]\n",
 		hostp->hostname);
 	remote_errors++;
 	return;
@@ -632,7 +632,7 @@ pkt_t *pkt;
     resp = pkt->body;
 /*
     fprintf(errf, "got response from %s:\n----\n%s----\n\n",
-            hostp->hostname, resp);
+	    hostp->hostname, resp);
 */
 
     if(!strncmp(resp, "OPTIONS", 7)) {

@@ -46,7 +46,7 @@ char *pname = "planner";
 #define RUNS_REDZONE		    5	/* should be in conf file? */
 
 #define PROMOTE_THRESHOLD	 0.05	/* if <5% unbalanced, don't promote */
-#define DEFAULT_DUMPRATE         30.0	/* K/s */
+#define DEFAULT_DUMPRATE	 30.0	/* K/s */
 
 /* configuration file stuff */
 char *conf_diskfile;
@@ -178,7 +178,7 @@ char **argv;
     /*
      * From this point on we are running under our real uid, so we don't
      * have to worry about opening security holes below.  Find out who we
-     * are running as.  
+     * are running as.
      */
 
     if((pwptr = getpwuid(getuid())) == NULL)
@@ -193,7 +193,7 @@ char **argv;
      */
 
     fprintf(stderr,"READING CONF FILES...\n");
-     
+
     if(read_conffile(CONFFILE_NAME))
 	error("could not find \"%s\" in this directory.\n", CONFFILE_NAME);
 
@@ -247,7 +247,7 @@ char **argv;
 
     fprintf(stderr,"\nSETTING UP FOR ESTIMATES...\n");
     startclock();
-     
+
     startq.head = startq.tail = NULL;
     while(!empty(*origqp)) setup_estimate(dequeue_disk(origqp));
 
@@ -481,7 +481,7 @@ disk_t *dp;
     if(inf.command == PLANNER_FORCE) {
 	/* force a level 0, kind of like a new disk */
 	if(dp->strategy == DS_NOFULL) {
-	    /* 
+	    /*
 	     * XXX - Not sure what it means to force a no-full disk.  The
 	     * purpose of no-full is to just dump changes relative to a
 	     * stable base, for example root partitions that vary only
@@ -527,7 +527,7 @@ disk_t *dp;
 	if(ep->last_level > -1) {
 	    int overwrite_runs = when_overwrite(inf.inf[0].label);
 	    if(overwrite_runs == 0) {
-		log(L_WARNING, 
+		log(L_WARNING,
 		 "Last full dump of %s:%s on tape %s overwritten on this run.",
 		    dp->host->hostname, dp->name, inf.inf[0].label);
 	    }
@@ -572,7 +572,7 @@ disk_t *dp;
 	    askfor(ep, 2, -1, &inf);
 	    fprintf(stderr, "planner: SKIPPED %s %s 0 [skip-full]\n",
 		    dp->host->hostname, dp->name);
-	    log(L_SUCCESS, "%s %s 0 [skipped: skip-full]", 
+	    log(L_SUCCESS, "%s %s 0 [skipped: skip-full]",
 		dp->host->hostname, dp->name);
 	    return;
 	}
@@ -581,7 +581,7 @@ disk_t *dp;
 	    log(L_WARNING, "Skipping full dump of %s:%s tommorrow.",
 		dp->host->hostname, dp->name);
 	}
-	
+
     }
 
     /* handle "skip-incr" type archives */
@@ -603,7 +603,7 @@ disk_t *dp;
     }
 
     if(ep->last_level == -1 && ep->next_level0 > 0 && dp->strategy != DS_NOFULL) {
-	log(L_WARNING, 
+	log(L_WARNING,
 	    "%s:%s mismatch: no tapelist record, but curinfo next_level0: %d.",
 	    dp->host->hostname, dp->name, ep->next_level0);
 	ep->next_level0 = 0;
@@ -667,7 +667,7 @@ disk_t *dp;
     fprintf(stderr, "\n    last_level %d next_level0 %d level_days %d\n",
 	    ep->last_level, ep->next_level0, ep->level_days);
     fprintf(stderr, "    getting estimates %d (%ld) %d (%ld) %d (%ld)\n",
-	    ep->level[0], ep->est_size[0], 
+	    ep->level[0], ep->est_size[0],
 	    ep->level[1], ep->est_size[1],
 	    ep->level[2], ep->est_size[2]);
 
@@ -718,13 +718,13 @@ int level;
     if(level == 0) ratio = est(dp)->fullcomp;
     else ratio = est(dp)->incrcomp;
 
-/* 
+/*
  * make sure over-inflated compression ratios don't throw off the
  * estimates, this is mostly for when you have a small dump getting
  * compressed which takes up alot more disk/tape space relatively due
  * to the overhead of the compression.  This is specifically for
  * Digital Unix vdump.  This patch is courtesy of Rudolf Gabler
- * (RUG@USM.Uni-Muenchen.DE) 
+ * (RUG@USM.Uni-Muenchen.DE)
  */
 
     if(ratio > 1.1) ratio = 1.1;
@@ -757,16 +757,16 @@ info_t *ip;
     }
     return min_level;
 }
- 
+
 /* when is next level 0 due? 0 = today, 1 = tommorrow, etc*/
 static int next_level0(dp, ip)
 disk_t *dp;
 info_t *ip;
 {
-    if(dp->strategy == DS_NOFULL) 
+    if(dp->strategy == DS_NOFULL)
 	return 1;		/* fake it */
     else if(ip->inf[0].date == EPOCH)
-	return -days_diff(EPOCH, today);        /* new disk  */
+	return -days_diff(EPOCH, today);	/* new disk */
     else
 	return dp->dumpcycle - days_diff(ip->inf[0].date, today);
 }
@@ -933,7 +933,7 @@ pkt_t *pkt;
     if(p->state == S_FAILED) {
 	if(pkt == NULL)
 	    sprintf(errbuf, "Request to %s timed out.", hostp->hostname);
-	else if(sscanf(pkt->body, "ERROR %[^\n]", remoterr) == 1) 
+	else if(sscanf(pkt->body, "ERROR %[^\n]", remoterr) == 1)
 	    sprintf(errbuf, "%s NAK: %s", hostp->hostname, remoterr);
 	else {
 	    sprintf(errbuf, "%s NAK: [NAK parse failed]", hostp->hostname);
@@ -1195,7 +1195,7 @@ disk_t *dp;
 
     fprintf(stderr,
 	    "   pick: size %ld level %d days %d (thresh %ldK, %d days)\n",
-	    base_size, base_level, est(dp)->level_days, 
+	    base_size, base_level, est(dp)->level_days,
 	    thresh, conf_bumpdays);
 
     if(base_level == 9
@@ -1433,8 +1433,8 @@ static void delay_dumps P((void))
 	}
 
 	/* Clean up - dont be too fancy! */
-        free(bi->errstr);
-        free(bi);
+	free(bi->errstr);
+	free(bi);
     }
 
     fprintf(stderr, "  delay: Total size now %ld.\n", total_size);
@@ -1514,19 +1514,19 @@ static int promote_highest_priority_incremental P((void))
      * cause total_size to exceed tape_length
      */
     check_limit = conf_dumpcycle - 1;
-    fprintf(stderr, "   promote: checking up to %d days ahead\n", 
+    fprintf(stderr, "   promote: checking up to %d days ahead\n",
 	    check_limit - 1);
 
     for(check_days = 1; check_days < check_limit; check_days++) {
 	fprintf(stderr, "   promote: checking %d days now\n", check_days);
 
-        for(dp = schedq.head; dp != NULL; dp = dp->next) {
+	for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	    if(dp->skip_full || dp->strategy == DS_NOFULL) {
 		fprintf(stderr,
 	"    promote: can't move %s:%s: no full dumps allowed.\n",
 			dp->host->hostname, dp->name);
-                continue;
-            }
+		continue;
+	    }
 
 	    if(est(dp)->next_level0 != check_days)
 		continue; /* totals continue here too */
@@ -1535,12 +1535,12 @@ static int promote_highest_priority_incremental P((void))
 	    new_total = total_size - est(dp)->size + new_size;
 	    new_lev0 = total_lev0 + new_size;
 
-	    if(new_total > tape_length 
+	    if(new_total > tape_length
 	       || new_lev0 > balanced_size + balance_threshold) {
 
 		fprintf(stderr,
 	"  promote: %s:%s too big: new size %ld total %ld, bal size %1.0f thresh %1.0f\n",
-			dp->host->hostname, dp->name, new_size, 
+			dp->host->hostname, dp->name, new_size,
 			new_lev0, balanced_size, balance_threshold);
 		continue;
 	    }
@@ -1555,12 +1555,12 @@ static int promote_highest_priority_incremental P((void))
 
 	    fprintf(stderr,
 	"   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
-		    dp->host->hostname, dp->name, 
+		    dp->host->hostname, dp->name,
 		    total_lev0, total_size);
 
 	    log(L_INFO,
-	        "Full dump of %s:%s promoted from %d days ahead.",
-	        dp->host->hostname, dp->name, check_days);
+		"Full dump of %s:%s promoted from %d days ahead.",
+		dp->host->hostname, dp->name, check_days);
 
 	    return 1;
 	}
@@ -1616,7 +1616,7 @@ static int promote_hills P((void))
 	    }
 	}
 
-	if(hill_size <= 0) break;       /* no suitable hills */
+	if(hill_size <= 0) break;	/* no suitable hills */
 
 	/* Find all the dumps in that hill and try and remove one */
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
@@ -1650,7 +1650,7 @@ static int promote_hills P((void))
 	    return 1;
 	}
 	/* All the disks in that hill were unsuitable. */
-	sp[hill_days].disks = 0;        /* Don't get tricked again */
+	sp[hill_days].disks = 0;	/* Don't get tricked again */
     }
 
     free(sp);
@@ -1674,10 +1674,10 @@ disk_t *dp;
 
     if(ep->size == -1) {
 	/* no estimate, fail the disk */
-	fprintf(stderr, 
-		"planner: FAILED %s %s %d [no estimate or historical data]\n", 
+	fprintf(stderr,
+		"planner: FAILED %s %s %d [no estimate or historical data]\n",
 		dp->host->hostname, dp->name, ep->curr_level);
-	log(L_FAIL, "%s %s %d [no estimate or historical data]", 
+	log(L_FAIL, "%s %s %d [no estimate or historical data]",
 	    dp->host->hostname, dp->name, ep->curr_level);
 	return;
     }

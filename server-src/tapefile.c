@@ -52,13 +52,13 @@ char *tapefile;
     tape_list = NULL;
     if((tapef = fopen(tapefile,"r")) != NULL) {
 
-        while(fgets(buffer, MAXLINE, tapef) != NULL) {
+	while(fgets(buffer, MAXLINE, tapef) != NULL) {
 	    tp = parse_tapeline(buffer);
 	    if(tp == NULL) return 1;
 	    tape_list = insert(tape_list, tp);
-        }
+	}
 
-        fclose(tapef);
+	fclose(tapef);
     }
 
     for(pos=1,tp=tape_list; tp != NULL; pos++,tp=tp->next) {
