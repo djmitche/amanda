@@ -1,5 +1,9 @@
 2001-07-11 John R. Jackson <jrj@purdue.edu>
 
+	* tape-src/tapetype.c: Use tapefd_write() instead of write().
+
+2001-07-11 John R. Jackson <jrj@purdue.edu>
+
 	* common-src/file.c: Fix a memory leak.  Grab exponentially larger
 	  chunks of memory up to a point, then level out.
 
