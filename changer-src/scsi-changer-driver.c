@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-changer-driver.c,v 1.1.2.27 2001/01/08 20:08:04 ant Exp $
+ * $Id: scsi-changer-driver.c,v 1.1.2.27.2.1 2001/02/27 23:57:24 jrjackson Exp $
  *
  * Interface to control a tape robot/library connected to the SCSI bus
  *
@@ -1594,6 +1594,32 @@ int GenericRewind(int DeviceFD)
           dbprintf(("GenericRewind : malloc failed\n"));
           return(-1);
       }
+
+
+/*
+* Check if the Unit accepts commands
+*/
+   true = 1;
+
+  while (true && cnt < 300)
+    {
+      ret = SCSI_TestUnitReady(DeviceFD, pRequestSense);
+      if (ret)
+        {
+          true = 0;
+          break;
+        }
+        DecodeSense(pRequestSense, "GenericRewind : ", debug_file);
+        cnt++;
+        sleep(2);
+     }
+/*
+* OK not ready, return error
+*/
+  if (ret == 0)
+  {
+      return(-1);
+  }
 
   CDB[0] = SC_COM_REWIND;
   CDB[1] = 1;             
@@ -5105,6 +5131,12 @@ int SCSI_LoadUnload(int DeviceFD, RequestSense_T *pRequestSense, unsigned char b
   return(ret);
 }
 
+
+/*
+* Check if the unit is ready to accept commands
+* true  == 1
+* false == 0
+*/
 int SCSI_TestUnitReady(int DeviceFD, RequestSense_T *pRequestSense)
 {
   CDB_T CDB;

@@ -1,3 +1,9 @@
+2001-02-21 Thomas Hepper <thqant.han.de>
+	* changer-src/scsi-changer-driver.c: Do an Test Unit Ready
+	  before sending SCSI commands in GenericRewind
+	* changer-src/chg-scsi.c: Fixed an type in the debug print
+	  of the config file
+
 2001-02-09 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/diskfile.c: Fix core dump in test program.
