@@ -42,6 +42,9 @@
 
 Version 2.4.0p1
 
+	amindexd no longer considers prefixes of hostnames as valid
+	hostnames. -oliva
+
 	fix strappend2 so that it accepts a NULL first argument.
 	-Rob Riggs <rob@devilsthumb.com>
 
