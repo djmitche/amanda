@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.20 1998/01/26 21:16:04 jrj Exp $
+ * $Id: protocol.c,v 1.21 1998/01/27 02:17:43 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -575,7 +575,7 @@ proto_t *p;
 #endif
 
     if(dgram_send_addr(p->peer, &outmsg))
-	error("send req failed: %s", strerror(errno));
+	fprintf(stderr,"send req failed: %s\n", strerror(errno));
 }
 
 static void send_ack(p)
@@ -894,7 +894,7 @@ static void handle_incoming_packet()
     dgram_zero(&inpkt.dgram);
     dgram_socket(&inpkt.dgram, proto_socket);
     if(dgram_recv(&inpkt.dgram, 0, &inpkt.peer) == -1)
-	error("protocol packet receive: %s", strerror(errno));
+	fprintf(stderr,"protocol packet receive: %s\n", strerror(errno));
 
 #ifdef PROTO_DEBUG
     fprintf(stderr, "time %d: got packet:\n----\n%s----\n\n",
