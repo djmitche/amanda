@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.12 1999/09/15 00:33:05 jrj Exp $
+ * $Id: find.c,v 1.13 2001/01/01 00:01:22 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -46,28 +46,12 @@ static int parse_taper_datestamp_log P((char *, int *, char **));
 
 static char *find_sort_order = NULL;
 
-static int find_nhosts;
-static char *find_hostname;
-static int find_ndisks;
-static char **find_diskstrs;
-
-find_result_t *find_dump(lfind_hostname, lfind_ndisks, lfind_diskstrs)
-char *lfind_hostname;
-int lfind_ndisks;
-char **lfind_diskstrs;
+find_result_t *find_dump()
 {
     char *conf_logdir, *logfile = NULL;
     int tape, maxtape, seq, logs;
     tape_t *tp;
     find_result_t *output_find = NULL;
-
-    find_hostname=lfind_hostname;
-    find_ndisks=lfind_ndisks;
-    find_diskstrs=lfind_diskstrs;
-    if(find_hostname == NULL)
-	find_nhosts=0;
-    else
-	find_nhosts=1;
 
     conf_logdir = getconf_str(CNF_LOGDIR);
     if (*conf_logdir == '/') {
@@ -459,17 +443,8 @@ find_result_t **output_find;
 int find_match(host, disk)
 char *host, *disk;
 {
-    int d;
-
-    if(find_nhosts == 0) return 1;
-    if(strcmp(host, find_hostname)) return 0;
-    if(find_ndisks == 0) return 1;
-
-    for(d = 0; d < find_ndisks; d++) {
-	if(match(find_diskstrs[d], disk))
-	    return 1;
-    }
-    return 0;
+    disk_t *dp = lookup_disk(host,disk);
+    return (dp && dp->todo);
 }
 
 char *find_nicedate(datestamp)

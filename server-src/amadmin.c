@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.69 2000/12/31 18:37:26 martinea Exp $
+ * $Id: amadmin.c,v 1.70 2001/01/01 00:01:22 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -882,18 +882,13 @@ void find(argc, argv)
 int argc;
 char **argv;
 {
-    host_t *hp;
     int start_argc;
     char *sort_order = NULL;
     find_result_t *output_find;
-    char *find_hostname;
-    char **find_diskstrs;
-    int  find_ndisks;
-    int  find_nhosts;
 
     if(argc < 3) {
 	fprintf(stderr,
-		"%s: expecting \"find [--sort <hkdlb>] [hostname [<disk> ...]]\"\n",
+		"%s: expecting \"find [--sort <hkdlb>] [hostname [<disk>]]*\"\n",
 		get_pname());
 	usage();
     }
@@ -929,23 +924,8 @@ char **argv;
     } else {
 	start_argc=4;
     }
-    if(argc < start_argc) {
-	find_nhosts = 0;
-	find_hostname = NULL;
-	find_ndisks = 0;
-	find_diskstrs = NULL;
-    }
-    else {
-	find_nhosts = 1;
-        find_hostname = argv[start_argc-1];
-        if((hp = lookup_host(find_hostname)) == NULL)
-	    printf("Warning: host %s not in disklist.\n", find_hostname);
-        else
-	    find_hostname = hp->hostname;
-        find_ndisks = argc - start_argc;
-        find_diskstrs = &argv[start_argc];
-    }
-    output_find = find_dump(find_hostname, find_ndisks, find_diskstrs);
+    match_disklist(&diskq,argc-(start_argc-1), argv+(start_argc-1));
+    output_find = find_dump();
     sort_find_result(sort_order, &output_find);
     print_find_result(output_find);
     free_find_result(&output_find);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.55 2000/12/30 23:02:10 jrjackson Exp $
+ * $Id: amindexd.c,v 1.56 2001/01/01 00:01:22 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -465,7 +465,7 @@ static int build_disk_table()
     }
 
     if(output_find == NULL) { /* do it the first time only */
-	output_find = find_dump(NULL,0,NULL);
+	output_find = find_dump();
 	sort_find_result("DLKHB", &output_find);
     }
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.24 1999/09/15 00:32:40 jrj Exp $
+ * $Id: amtrmidx.c,v 1.25 2001/01/01 00:01:22 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -132,7 +132,7 @@ char **argv;
 	error("could not load tapelist \"%s\"", conf_tapelist);
     amfree(conf_tapelist);
 
-    output_find = find_dump(NULL,0,NULL);
+    output_find = find_dump();
 
     conf_indexdir = getconf_str(CNF_INDEXDIR);
     if(*conf_indexdir == '/') {

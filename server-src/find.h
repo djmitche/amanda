@@ -15,7 +15,7 @@ typedef struct find_result_s {
     char *status;
 } find_result_t;
 
-find_result_t *find_dump P((char *find_hostname, int find_ndisks, char **find_diskstrs));
+find_result_t *find_dump P((void));
 char **find_log P((void));
 void sort_find_result P((char *sort_order, find_result_t **output_find));
 void print_find_result P((find_result_t *output_find));

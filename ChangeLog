@@ -1,5 +1,14 @@
 2000-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/find.c (find_match): Use todo bit.
+	* server-src/find.c (find_dump): No arguments.
+	* server-src/find.h (find_dump): Change prototype.
+	* server-src/amadmin.c (find): New [host disk]* pair arguments.
+	* server-src/amindexd.c: Change call to find_dump().
+	* server-src/amtrmidx.c: Change call to find_dump().
+
+2000-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* configure.in: Don't check krb5 include if krb5 is not selected.
 
 2000-12-31  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
