@@ -117,6 +117,9 @@ char **argv;
 	scanres = sscanf(line, "%s %s %d %d %s\n",
 			 prog, disk, &level, &platter, exclude+2);
 	switch(scanres) {
+	case 3:
+	  platter = 0;
+	  /* do not break; */
 	case 4:
 	  *exclude = 0;
 	  break;
