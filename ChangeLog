@@ -1,5 +1,9 @@
 2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/driver.c: Typo.
+
+2004-08-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/amstatus.pl.in: Parse CONTINUE and RQ-MORE-DISK line,
 	  print if a dump is waiting for holding disk space (roomq).
 
