@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.h,v 1.14 1998/12/07 23:53:05 martinea Exp $
+ * $Id: holding.h,v 1.15 1999/02/13 21:10:06 martinea Exp $
  *
  */
 
@@ -50,6 +50,7 @@ char get_letter_from_user P((void));
 /*int select_dir P((void));*/
 void scan_holdingdisk P((char *diskdir,int verbose));
 char **pick_datestamp P((void));
+char **pick_all_datestamp P((void));
 filetype_t get_amanda_names P((char *fname,
 			       char **hostname,
 			       char **diskname,
