@@ -1,3 +1,9 @@
+1999-03-06  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* configure.in (openbsd): according to Ralf Gebhart
+	<rgebhart@cybernet-ag.net>, sparc-unknown-openbsd2.3 is supported;
+	I assume other openbsd platforms work too.
+
 1999-03-05 Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* configure.in: set SAMBA_VERSION
