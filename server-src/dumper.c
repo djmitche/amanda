@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.63 1998/05/05 21:47:45 martinea Exp $
+/* $Id: dumper.c,v 1.64 1998/05/12 15:31:31 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -294,6 +294,9 @@ char **main_argv;
 		q = squote(errstr);
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
 			  handle, q);
+		if(rc == 2) {
+		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
+		}
 		amfree(q);
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		if (mesgfd != -1)
@@ -355,6 +358,9 @@ char **main_argv;
 		q = squote(errstr);
 		putresult("%s %s %s\n", rc == 2? "FAILED" : "TRY-AGAIN",
 			  handle, q);
+		if(rc == 2) {
+		    log_add(L_FAIL, "%s %s %d [%s]", hostname, diskname, level, errstr);
+		}
 		amfree(q);
 		/* do need to close if TRY-AGAIN, doesn't hurt otherwise */
 		if (mesgfd != -1)
@@ -1303,7 +1309,9 @@ pkt_t *pkt;
 	    if(ch == '\0') {
 		goto request_NAK;
 	    }
-	    errstr = newvstralloc(errstr, s - 1, NULL);
+	    errstr = newvstralloc(errstr, "nak error:", s - 1, NULL);
+	    if(errstr[strlen(errstr)] == '\n' )
+		errstr[strlen(errstr)] = '\0';
 	    response_error = 2;
 	    return;
 	}
