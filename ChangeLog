@@ -1,3 +1,12 @@
+2000-07-17 Thomas Hepper <th@ant.han.de>
+	* configure.in: Added check for BSD SCSI CAM Support
+	* changer-src/scsi-cam.c: New, functions for SCSI CAM Support
+	( at the moment for FreeBSD 4.0)
+	* changer-src/Makefile.am: added scsi-cam.s to the list of sources
+	* changer-src/chg-scsi.c: The structs for the OpenFiles_T is now
+	allocated in chg-scsi and passed to OpenDevice.
+	* changer-src/scsi-changer-driver.c: New Parameter for OpenDevice
+	(OpenFiles_T)
 2000-07-10 Marc Mengel <mengel@fnal.gov>
 	* tape-src/tapeio.c -- add tape_{stat,access}, allow "plain:" prefix
 		on tape device names

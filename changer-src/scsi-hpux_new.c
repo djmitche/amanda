@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.7 2000/06/25 18:48:11 ant Exp $";
+static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.8 2000/07/17 18:55:47 ant Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on an HP-UX Workstation
@@ -31,16 +31,13 @@ static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.7 2000/06/25 18:48:11 ant Exp $"
 
 #include <scsi-defs.h>
 
-OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
+int SCSI_OpenDevice(OpenFiles_T *pwork, char *DeviceName)
 {
   int DeviceFD;
   int i;
-  OpenFiles_T *pwork;
 
   if ((DeviceFD = open(DeviceName, O_RDWR| O_NDELAY)) > 0)
     {
-      pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
-      memset(pwork, 0, sizeof(OpenFiles_T));
       pwork->fd = DeviceFD;
       pwork->SCSI = 0;
       pwork->dev = strdup(DeviceName);
@@ -58,22 +55,21 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
                   }
                 pwork->SCSI = 1;
                 PrintInquiry(pwork->inquiry);
-                return(pwork);    
+                return(1);    
               } else {
                 close(DeviceFD);
                 free(pwork->inquiry);
-                free(pwork);
-                return(NULL);
+                return(0);
               }
           } else {
             free(pwork->inquiry);
             pwork->inquiry = NULL;
-            return(pwork);
+            return(1);
           }
-      return(pwork);
+      return(1);
     }
 
-  return(NULL); 
+  return(0); 
 }
 
 int SCSI_CloseDevice(int DeviceFD)

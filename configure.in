@@ -1648,6 +1648,8 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS(\
 	arpa/inet.h \
 	camlib.h \
+	cam/cam.h \
+	cam/scsi/scsi_message.h \
 	chio.h \
 	db.h \
 	dbm.h \
@@ -1859,6 +1861,33 @@ if test x"$ac_cv_header_sys_tape_h" = x"yes" &&
 		NO_SCSI_CHANGER_MODE=false
 	fi
 fi
+dnl
+dnl BSD CAM SCSI
+dnl
+if test x"$ac_cv_header_cam_cam_h" = x"yes";then
+	AC_CACHE_CHECK([for CAM like scsi support],
+	amanda_cv_cam_scsi,
+	AC_TRY_COMPILE([
+#include <stdio.h>
+# include <fcntl.h>
+# include <cam/cam.h>
+# include <cam/cam_ccb.h>
+# include <cam/scsi/scsi_message.h>
+# include <cam/scsi/scsi_pass.h>
+# include <camlib.h>
+],[
+	struct cam_device *curdev;
+
+	curdev = cam_open_pass("", O_RDWR, NULL);
+], amanda_cv_cam_scsi=yes, amanda_cv_cam_scsi=no)])
+	if test x"$amanda_cv_cam_scsi" = x"yes";then
+		AC_DEFINE(HAVE_CAM_LIKE_SCSI,1,[Define to enable CAM tape-changer support])
+		NO_SCSI_CHANGER_MODE=false
+		AC_CHECK_LIB(cam,main)
+	fi
+fi
+
+
 dnl
 dnl BSD SCSI
 dnl

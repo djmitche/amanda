@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-linux.c,v 1.10 2000/06/25 18:48:11 ant Exp $";
+static char rcsid[] = "$Id: scsi-linux.c,v 1.11 2000/07/17 18:55:47 ant Exp $";
 #endif
 /*
  * Interface to execute SCSI commands on Linux
@@ -54,12 +54,11 @@ int SCSI_CloseDevice(int DeviceFD)
 }
 
 #ifdef LINUX_SG
-OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
+int SCSI_OpenDevice(OpenFiles_T * pwork, char *DeviceName)
 {
   int DeviceFD;
   int i;
   int timeout;
-  OpenFiles_T *pwork;
   struct stat pstat;
   char *buffer = NULL ;           /* Will contain the device name after checking */
   int usesg = 0;        /* Do we work with an sg device ?, if yes open RDWR, else RDONLY */
@@ -76,7 +75,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
               if ((buffer = (char *)malloc(512)) == NULL)
                 {
                   dbprintf(("SCSI_OpenDevice : malloc failed\n"));
-                  return(NULL);
+                  return(0);
                 }
               memset(buffer, 0, 512);
               if (( i = readlink(DeviceName, buffer, 512)) == -1)
@@ -101,7 +100,7 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
             }
         } else {/* lstat(DeviceName, &pstat) != -1 */ 
           dbprintf(("can't stat device %s\n", DeviceName));
-          return(NULL);
+          return(0);
         }
     } else {
       buffer = strdup(DeviceName);
@@ -115,12 +114,9 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
 
   if ((DeviceFD = open(buffer, openmode)) > 0)
     {
-      pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
-      memset(pwork, 0, sizeof(OpenFiles_T));
       pwork->fd = DeviceFD;
     } else {
-      free(pwork);
-      return(NULL);
+      return(0);
     }
       
   if (usesg == 1)
@@ -154,22 +150,20 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
                 }
               pwork->SCSI = 1;
               PrintInquiry(pwork->inquiry);
-              return(pwork);
+              return(1);
             } else {
               free(pwork->inquiry);
-              free(pwork);
               close(DeviceFD);
-              return(NULL);
+              return(0);
             }
         } else {
           pwork->SCSI = 0;
           free(pwork->inquiry);
           pwork->inquiry = NULL;
-          return(pwork);
+          return(1);
         }
     }
-  return(pwork);
-  return(NULL); 
+  return(1);
 }
 
 #define SCSI_OFF sizeof(struct sg_header)
@@ -262,15 +256,13 @@ static inline int max(int x, int y)
   return (x > y ? x : y);
 }
 
-OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
+int SCSI_OpenDevice(OpenFiles_T *pwork, char *DeviceName)
 {
   int DeviceFD;
   int i;
-  OpenFiles_T *pwork;
 
   if ((DeviceFD = open(DeviceName, O_RDWR)) > 0)
     {
-      pwork = (OpenFiles_T *)malloc(sizeof(OpenFiles_T));
       pwork->fd = DeviceFD;
       pwork->SCSI = 0;
       pwork->dev = strdup(DeviceName);
@@ -285,21 +277,20 @@ OpenFiles_T * SCSI_OpenDevice(char *DeviceName)
               pwork->ident[i] = '\0';
               pwork->SCSI = 1;
               PrintInquiry(pwork->inquiry);
-              return(pwork);
+              return(1);
             } else {
               free(pwork->inquiry);
-                  free(pwork);
                   close(DeviceFD);
-                  return(NULL);
+                  return(0);
             }
             } else {
               free(pwork->inquiry);
               pwork->inquiry = NULL;
-              return(pwork);
+              return(1);
             }
       
     }
-  return(pwork); 
+  return(1); 
 }
 
 

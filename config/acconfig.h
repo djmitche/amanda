@@ -100,6 +100,9 @@
 /* For BSD tape-changer support */
 #undef HAVE_BSD_LIKE_SCSI
 
+/* For CAM tape-changer support */
+#undef HAVE_CAM_LIKE_SCSI
+
 /* For Linux systems with floppy tapes: 
  * QIC volume table support via raw tape device.  */
 #undef DEFAULT_RAW_TAPE_DEVICE

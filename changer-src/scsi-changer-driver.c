@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.13 2000/07/05 20:30:53 ant Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.14 2000/07/17 18:55:47 ant Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -681,15 +681,14 @@ int get_drive_count(int fd)
  * The OS has to decide if it is an SCSI Commands capable device
  */
 
-OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName, char *ident)
+int OpenDevice(OpenFiles_T *pwork, char *DeviceName, char *ConfigName, char *ident)
 {
-  OpenFiles_T *pwork;
   ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
   
   dbprintf(("##### START OpenDevice\n"));
   dbprintf(("OpenDevice : %s\n", DeviceName));
   
-  if ((pwork = SCSI_OpenDevice(DeviceName)) != NULL )
+  if (SCSI_OpenDevice(pwork, DeviceName) != 0 )
     {
       
       pwork->ConfigName = strdup(ConfigName);
@@ -703,7 +702,7 @@ OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName, char *ident)
                 pwork->functions = p;
 		strncpy(pwork->ident, ident, 17);
                 dbprintf(("override using ident = %s, type = %s\n",p->ident, p->type));
-                return(pwork);
+                return(1);
               }
             p++;
           }
@@ -715,7 +714,7 @@ OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName, char *ident)
               {
                 pwork->functions = p;
                 dbprintf(("using ident = %s, type = %s\n",p->ident, p->type));
-                return(pwork);
+                return(1);
               }
             p++;
           }
@@ -728,12 +727,12 @@ OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName, char *ident)
             {
               pwork->functions = p;
               dbprintf(("using ident = %s, type = %s\n",p->ident, p->type));
-              return(pwork);
+              return(1);
             }
           p++;
         }  
     }
-  return(NULL); 
+  return(0); 
 }
 
 
@@ -1568,7 +1567,7 @@ int GenericRewind(int DeviceFD)
   while (true)
     {
       ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
-                                0, 0, 
+                                NULL, 0, 
                                 (char *) pRequestSense,
                                 sizeof(RequestSense_T));
       
@@ -1664,7 +1663,7 @@ int GenericResetStatus(int DeviceFD)
 
 
       ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
-                                0, 0,
+                                NULL, 0,
                                 (char *) pRequestSense,
                                 sizeof(RequestSense_T));
 
@@ -4322,7 +4321,7 @@ int SCSI_AlignElements(int DeviceFD, int MTE, int DTE, int STE)
       CDB[11] = 0;
       
       ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,
-                                0, 0, (char *)pRequestSense, sizeof(RequestSense_T)); 
+                                NULL, 0, (char *)pRequestSense, sizeof(RequestSense_T)); 
 
       dbprintf(("SCSI_AlignElements : SCSI_ExecuteCommand = %d\n", ret));
       DecodeSense(pRequestSense, "SCSI_AlignElements :",debug_file);
@@ -4401,7 +4400,7 @@ int SCSI_Move(int DeviceFD, unsigned char chm, int from, int to)
       CDB[11] = 0;
       
       ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 12,
-                                0, 0, (char *)pRequestSense, sizeof(RequestSense_T)); 
+                                NULL, 0, (char *)pRequestSense, sizeof(RequestSense_T)); 
 
       dbprintf(("SCSI_Move : SCSI_ExecuteCommand = %d\n", ret));
       DecodeSense(pRequestSense, "SCSI_Move :",debug_file);
@@ -4465,7 +4464,7 @@ int SCSI_LoadUnload(int DeviceFD, RequestSense_T *pRequestSense, unsigned char b
   
  
   ret = SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
-                            0, 0, 
+                            NULL, 0, 
                             (char *) pRequestSense,
                             sizeof(RequestSense_T));
     
@@ -4492,7 +4491,7 @@ int SCSI_TestUnitReady(int DeviceFD, RequestSense_T *pRequestSense)
   CDB[5] = 0;
 
   SCSI_ExecuteCommand(DeviceFD, Input, CDB, 6,
-                      0, 0, 
+                      NULL, 0, 
                       (char *) pRequestSense,
                       sizeof(RequestSense_T));
 

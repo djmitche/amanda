@@ -143,7 +143,7 @@ typedef unsigned char PackedBit;
 #define MSB3(s,v)               *(s)=B(v,16),  (s)[1]=B(v,8), (s)[2]=B1(v)
 #define MSB4(s,v) *(s)=B(v,24),(s)[1]=B(v,16), (s)[2]=B(v,8), (s)[3]=B1(v)
 
-#define LABEL_DB_VERSION 1
+#define LABEL_DB_VERSION 2
 #define BARCODE_PUT 1
 #define BARCODE_VOL 2
 #define BARCODE_BARCODE 3
@@ -153,6 +153,19 @@ typedef struct {
   char barcode[TAG_SIZE];
   unsigned char valid;
 } LabelV1_T;
+
+typedef struct {
+  char voltag[128];
+  char barcode[TAG_SIZE];
+  unsigned char from;		/* from where it comes, needed to move
+				 * a tape back to the right slot from the drive
+				 */
+
+  unsigned int LoadCount;	/* How many times has the tape been loaded */
+  unsigned int RecovError;	/* How many recovered errors */
+  unsigned int UnrecovError;	/* How man unrecoverd errors */
+  unsigned char valid;		/* Is this tape in the current magazin */
+} LabelV2_T;
 
 /* ======================================================= */
 /* RequestSense_T */
@@ -999,6 +1012,9 @@ typedef struct {
 
 typedef struct OpenFiles {
     int fd;                       /* The foledescriptor */
+#ifdef HAVE_CAM_LIKE_SCSI
+    struct cam_device *curdev;
+#endif
     unsigned char SCSI;           /* Can we send SCSI commands */
     char *dev;                    /* The device which is used */
     char *ConfigName;             /* The name in the config */
@@ -1027,8 +1043,8 @@ typedef struct {
 /* ======================================================= */
 /* Funktion-Declaration */
 /* ======================================================= */
-OpenFiles_T *SCSI_OpenDevice(char *DeviceName);
-OpenFiles_T *OpenDevice(char *DeviceName, char *ConfigName, char *ident);
+int SCSI_OpenDevice(OpenFiles_T *,char *DeviceName);
+int OpenDevice(OpenFiles_T *,char *DeviceName, char *ConfigName, char *ident);
 
 int SCSI_CloseDevice(int DeviceFD); 
 int CloseDevice(int ); 
