@@ -44,7 +44,8 @@ $(ACLOCAL_M4): $(srcdir)/config/libtool/libtool.m4
 $(ACLOCAL_M4): $(srcdir)/configure.in $(srcdir)/config/acinclude.m4
 	rm -f $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
 	cd $(srcdir) && $(ACLOCAL) --output=$(ACLOCAL_M4)
-	test ! -f $(srcdir)/aclocal.m4 || \
-	rm -f $(ACLOCAL_M4) && mv $(srcdir)/aclocal.m4 $(ACLOCAL_M4)
+	if test -f $(srcdir)/aclocal.m4; then \
+	    rm -f $(ACLOCAL_M4) && mv $(srcdir)/aclocal.m4 $(ACLOCAL_M4); \
+	fi
 # this last line works around a bug in automake (fixed in release 1.3):
 # it would always generate ./aclocal.m4, despite --output
