@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.5 2001/02/08 19:19:08 ant Exp $
+ * $Id: scsi-cam.c,v 1.6 2001/02/17 18:48:42 ant Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
@@ -327,12 +327,80 @@ int Tape_Status( int DeviceFD)
   return(-1);
 }
 
-int ScanBus()
-{
 /*
-  Not yet
-*/
-  return(-1);
+ * Scans the bus for device with the type 'tape' or 'robot'
+ *
+ */
+int ScanBus(int print)
+{
+  int bus,target,lun;
+  int count = 0;
+  extern OpenFiles_T *pDev;
+  
+  for (bus = 0;bus < 3; bus++)
+    {
+      pDev[count].dev = malloc(10);
+      for (target = 0;target < 8; target++)
+        {
+          for (lun = 0; lun < 8; lun++)
+            {
+              sprintf(pDev[count].dev, "%d:%d:%d", bus, target, lun);
+              pDev[count].inqdone = 0;
+              if (OpenDevice(count, pDev[count].dev, "Scan", NULL))
+                {
+                  if (pDev[count].inquiry->type == TYPE_TAPE ||
+                      pDev[count].inquiry->type == TYPE_CHANGER)
+                    {
+                      count++;
+                      pDev[count].dev = malloc(10);
+                    } else {
+                      if (print)
+                        {
+                          printf("bus:target:lun -> %s == ",pDev[count].dev);
+                          
+                          switch (pDev[count].inquiry->type)
+                            {
+                            case TYPE_DISK:
+                              printf("Disk");
+                              break;
+                            case TYPE_TAPE:
+                              printf("Tape");
+                              break;
+                            case TYPE_PRINTER:
+                              printf("Printer");
+                              break;
+                            case TYPE_PROCESSOR:
+                              printf("Processor");
+                              break;
+                            case TYPE_WORM:
+                              printf("Worm");
+                              break;
+                            case TYPE_CDROM:
+                              printf("Cdrom");
+                              break;
+                            case TYPE_SCANNER:
+                              printf("Scanner");
+                              break;
+                            case TYPE_OPTICAL:
+                              printf("Optical");
+                              break;
+                            case TYPE_CHANGER:
+                              printf("Changer");
+                              break;
+                            case TYPE_COMM:
+                              printf("Comm");
+                              break;
+                            default:
+                              printf("unknown %d",pDev[count].inquiry->type);
+                              break;
+                            }
+                          printf("\n");
+                        }
+                    } 
+                }
+            }
+        }
+    }
 }
 
 #endif

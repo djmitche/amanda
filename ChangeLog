@@ -1,3 +1,22 @@
+2001-02-17 Thomas Hepper <th@ant.han.de>
+
+	* changer-scsi/chg-scsi.c: New Option -genconf to create an example config file
+	 based on the information found on the system, works for Linux and BSD with cam
+	 support. New config option debuglevel
+	* changer-src/scsi-changer-deriver.c: Reworked the debug output, it is now possible
+	 to control the amount of information by the config option debuglevel in the config
+	 file (docs follow), not complete yet.
+	* changer-src/scsi-changer-driver.c: New function PrintConf to create an example
+	  config file.
+	  New function DebugPrint to print debug information based on the variable debuglevel.
+	  Replaced a lot of dbprintf with new Function DebugPrint
+	* changer-src/scsi-aix.c: changed parameter for ScanBus
+	* changer-src/scsi-irix.c: changed parameter for ScanBus
+	* changer-src/scsi-solaris.c: changed parameter for ScanBus
+	* changer-src/scsi-bsd.c: changed parameter for ScanBus
+	* changer-src/scsi-cam.c: Implemented function ScanBus
+	* changer-src/scsi-linux.c: Implemented function ScanBus
+	
 2001-02-09 John R. Jackson <jrj@purdue.edu>
 
 	* server-src/diskfile.c: Fix core dump in test program.

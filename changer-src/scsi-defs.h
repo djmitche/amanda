@@ -25,7 +25,7 @@ typedef unsigned char PackedBit;
 #define CHANGER 1
 
 #define TAG_SIZE 36
-
+#define MAXTRIES 100  /* How many tries until SCSI_TestUnitReady should return an ok */
 /*
  * Sense Key definitions
 */
@@ -144,6 +144,17 @@ typedef unsigned char PackedBit;
 #define FIND_SLOT 5
 #define RESET_VALID 6
 #define BARCODE_DUMP 7
+
+#define DEBUG_INFO 9
+#define DEBUG_ERROR 1
+#define DEBUG_ALL 0
+
+#define SECTION_ALL 0
+#define SECTION_INFO 1
+#define SECTION_SCSI 2
+#define SECTION_MAP_BARCODE 3
+#define SECTION_ELEMENT 4
+#define SECTION_BARCODE 5
 /*----------------------------------------------------------------------------*/
 /* Some stuff for our own configurationfile */
 typedef struct {  /* The information we can get for any drive (configuration) */
@@ -165,6 +176,7 @@ typedef struct {
   int number_of_configs; /* How many different configurations are used */
   int eject;             /* Do the drives need an eject-command */
   int havebarcode;       /* Do we have an barcode reader installed */
+  char *debuglevel;      /* How many debug info to print */
   unsigned char emubarcode;	/* Emulate the barcode feature,  used for keeping an inventory of the lib */
   int sleep;             /* How many seconds to wait for the drive to get ready */
   int cleanmax;          /* How many runs could be done with one cleaning tape */
@@ -1121,8 +1133,8 @@ int Tape_Ready(int fd, int wait_time);
 void Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean);
 void ChangerDriverVersion();
 int LogSense(int fd);
-int ScanBus();
-
+int ScanBus(int print);
+void DebugPrint(int level, int section, char * fmt, ...);
 /*
  * Local variables:
  * indent-tabs-mode: nil

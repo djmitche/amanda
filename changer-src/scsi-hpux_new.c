@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-hpux_new.c,v 1.11 2001/02/08 19:19:08 ant Exp $
+ * $Id: scsi-hpux_new.c,v 1.12 2001/02/17 18:48:42 ant Exp $
  *
  * Interface to execute SCSI commands on an HP-UX Workstation
  *
@@ -246,7 +246,7 @@ int Tape_Status( int DeviceFD)
   return(ret); 
 }
 
-int ScanBus()
+int ScanBus(int print)
 {
 /*
   Not yet

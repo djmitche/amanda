@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.16 2001/01/17 17:08:57 ant Exp $
+ * $Id: scsi-solaris.c,v 1.17 2001/02/17 18:48:42 ant Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -220,7 +220,7 @@ int Tape_Status( int DeviceFD)
   return(-1); 
 }
 
-int ScanBus()
+int ScanBus(int print)
 {
 	return(-1);
 }

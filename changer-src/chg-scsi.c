@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.21 2001/01/17 17:08:57 ant Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.22 2001/02/17 18:48:42 ant Exp $";
 #endif
 /*
  * 
@@ -101,7 +101,7 @@ changer_t chg;
 typedef enum{
   NUMDRIVE,EJECT,SLEEP,CLEANMAX,DRIVE,START,END,CLEAN,DEVICE,STATFILE,CLEANFILE,DRIVENUM,
     CHANGERDEV,USAGECOUNT,SCSITAPEDEV, TAPESTATFILE, LABELFILE, CHANGERIDENT,
-    TAPEIDENT, EMUBARCODE, HAVEBARCODE
+    TAPEIDENT, EMUBARCODE, HAVEBARCODE, DEBUGLEVEL
     } token_t;
 
 typedef struct {
@@ -131,6 +131,7 @@ tokentable_t t_table[]={
   { "tapeident", TAPEIDENT},
   { "emubarcode", EMUBARCODE},
   { "havebarcode", HAVEBARCODE},
+  { "debuglevel", DEBUGLEVEL},
   { NULL,-1 }
 };
 
@@ -147,6 +148,7 @@ void init_changer_struct(changer_t *chg,int number_of_config)
   chg->emubarcode = 0;	
   chg->device = NULL;
   chg->labelfile = NULL;
+  chg->debuglevel = NULL;
   chg->conf = malloc(sizeof(config_t)*number_of_config);
   if (chg->conf != NULL){
     for (i=0; i < number_of_config; i++){
@@ -176,6 +178,7 @@ void dump_changer_struct(changer_t chg)
   dbprintf(("Number of configurations: %d\n",chg.number_of_configs));
   dbprintf(("Tapes need eject: %s\n",(chg.eject>0?"Yes":"No")));
   dbprintf(("barcode reader  : %s\n",(chg.havebarcode>0?"Yes":"No")));
+  dbprintf(("debug level     : %s\n", chg.debuglevel));
   dbprintf(("Tapes need sleep: %d seconds\n",chg.sleep));
   dbprintf(("Cleancycles     : %d\n",chg.cleanmax));
   dbprintf(("Changerdevice   : %s\n",chg.device));
@@ -317,9 +320,12 @@ int read_config(char *configfile, changer_t *chg)
           fprintf(stderr,"Error: number_drives at wrong place, should be "\
                   "first in file\n");
         break;
-	case EMUBARCODE:
-	  chg->emubarcode = 1;
-	  break;
+        case EMUBARCODE:
+          chg->emubarcode = 1;
+          break;
+        case DEBUGLEVEL:
+          chg->debuglevel = strdup(value);
+          break;
         case EJECT:
           chg->eject = atoi(value);
           break;
@@ -496,21 +502,21 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
   int volseen = 0;
   char *retstr = malloc(17);    /* Return buffer to hold an int value formatted by an sprintf slot:from*/
 
-  dbprintf(("MapBarCode : Parameter\n"));
-  dbprintf(("labelfile -> %s, vol -> %s, barcode -> %s, action -> %c, slot -> %d, from -> %d\n",
-            labelfile,
-            vol,
-            barcode,
-            action,
-            slot,
-            from));
-
+  DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : Parameter\n");
+  DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"labelfile -> %s, vol -> %s, barcode -> %s, action -> %c, slot -> %d, from -> %d\n",
+             labelfile,
+             vol,
+             barcode,
+             action,
+             slot,
+             from);
+  
   if (access(labelfile, F_OK) == -1)
     {
-      dbprintf(("MapBarCode : creating %s", labelfile));
+      DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE, "MapBarCode : creating %s", labelfile);
       if ((fp = fopen(labelfile, "w+")) == NULL)
         {
-          dbprintf((" failed\n"));
+          DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE," failed\n");
           return(NULL);
         }
       fprintf(fp,":%d:", LABEL_DB_VERSION);
@@ -519,12 +525,12 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
   
   if ((fp = fopen(labelfile, "r+")) == NULL)
     {
-      dbprintf(("MapBarCode : failed to open %s\n", labelfile));
+       DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE,"MapBarCode : failed to open %s\n", labelfile);
       return(NULL);
     }
   
   fscanf(fp,":%d:", &version);
-  dbprintf(("MapBarCode : DB version %d\n", version));
+   DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : DB version %d\n", version);
 
   pos = ftell(fp);
 
@@ -532,7 +538,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
     {
      if (( plabel = (LabelV1_T *)malloc(sizeof(LabelV1_T))) == NULL)
        {
-         dbprintf(("MapBarCode : malloc failed\n"));
+         DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE,"MapBarCode : malloc failed\n");
          return(NULL);
        }
 
@@ -540,10 +546,10 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
      while(fread(plabel, 1, sizeof(LabelV1_T), fp) > 0)
        {
          record++;
-         dbprintf(("MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d\n",record,
+         DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d\n",record,
                    plabel->voltag,
                    plabel->barcode,
-                   plabel->valid));
+                   plabel->valid);
          switch (action)
            {
            case BARCODE_PUT:
@@ -559,7 +565,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
 
              if (strcmp(plabel->barcode, barcode) == 0)
                {
-                 dbprintf(("MapBarCode : update entry\n"));
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : update entry\n");
                  fseek(fp, pos, SEEK_SET);
                  plabel->valid = 1;
                  strcpy(plabel->voltag, vol);
@@ -571,7 +577,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
            case BARCODE_VOL:
              if (strcmp(plabel->voltag, vol) == 0)
                {
-                 dbprintf(("MapBarCode : VOL %s match\n", vol));
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : VOL %s match\n", vol);
                  fclose(fp);
                  return(strdup(plabel->barcode));
                }
@@ -579,14 +585,14 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
            case BARCODE_BARCODE:
              if (strcmp(plabel->barcode, barcode) == 0)
                {
-                 dbprintf(("MapBarCode : BARCODE %s match\n", barcode));
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : BARCODE %s match\n", barcode);
                  fclose(fp);
                  return(strdup(plabel->voltag));
                }
           
              break;
            default:
-             dbprintf(("MapBarCode : unsupported function %d\n", action));
+             DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE,"MapBarCode : unsupported function %d\n", action);
              break;
            }
          pos = ftell(fp);
@@ -598,7 +604,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
        {
          if (unusedpos != 0)
            {
-             dbprintf(("MapBarCode : reuse record %d\n", unusedrec));
+             DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : reuse record %d\n", unusedrec);
              fseek(fp, unusedpos, SEEK_SET);
            }
          
@@ -615,7 +621,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
     {
      if (( plabelv2 = (LabelV2_T *)malloc(sizeof(LabelV2_T))) == NULL)
        {
-         dbprintf(("MapBarCode : malloc failed\n"));
+         DebugPrint(DEBUG_ERROR,SECTION_MAP_BARCODE,"MapBarCode : malloc failed\n");
          return(NULL);
        }
 
@@ -623,10 +629,10 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
      while(fread(plabelv2, 1, sizeof(LabelV2_T), fp) > 0)
        {
          record++;
-         dbprintf(("MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d\n",record,
+         DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : (%d) VolTag %s, BarCode %s, inuse %d\n",record,
                    plabelv2->voltag,
                    plabelv2->barcode,
-                   plabelv2->valid));
+                   plabelv2->valid);
          switch (action)
            {
            case BARCODE_DUMP:
@@ -655,7 +661,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
 
              if (strcmp(plabelv2->barcode, barcode) == 0)
                {
-                 dbprintf(("MapBarCode : update entry\n"));
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : update entry\n");
                  fseek(fp, pos, SEEK_SET);
                  plabelv2->valid = 1;
                  plabelv2->from = from;
@@ -669,7 +675,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
            case FIND_SLOT:
              if (strcmp(plabelv2->voltag, vol) == 0)
                {
-                 dbprintf(("MapBarCode FIND_SLOT : \n"));
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode FIND_SLOT : \n");
                  sprintf(retstr,"%d:%d",plabelv2->slot,plabelv2->from);
                  return(retstr);
                }
@@ -678,7 +684,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
              /*             if (strcmp(plabelv2->voltag, vol) == 0) */
                if (plabelv2->slot == slot)
                {
-                 dbprintf(("MapBarCode UPDATE_SLOT : update entry\n"));
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode UPDATE_SLOT : update entry\n");
                  fseek(fp, pos, SEEK_SET);
                  strcpy(plabelv2->voltag, vol);
                  plabelv2->valid = 1;
@@ -691,7 +697,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
            case BARCODE_VOL:
              if (strcmp(plabelv2->voltag, vol) == 0)
                {
-                 dbprintf(("MapBarCode : VOL %s match\n", vol));
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : VOL %s match\n", vol);
                  fclose(fp);
                  return(strdup(plabelv2->barcode));
                }
@@ -699,7 +705,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
            case BARCODE_BARCODE:
              if (strcmp(plabelv2->barcode, barcode) == 0)
                {
-                 dbprintf(("MapBarCode : BARCODE %s match\n", barcode));
+                 DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : BARCODE %s match\n", barcode);
                  fclose(fp);
                  return(strdup(plabelv2->voltag));
                }
@@ -715,7 +721,7 @@ char *MapBarCode(char *labelfile, char *vol, char *barcode, unsigned char action
          memset(plabelv2, 0, sizeof(LabelV2_T));
          if (unusedpos != 0)
            {
-             dbprintf(("MapBarCode : reuse record %d\n", unusedrec));
+             DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode : reuse record %d\n", unusedrec);
              fseek(fp, unusedpos, SEEK_SET);
            }
          
@@ -753,7 +759,7 @@ typedef struct com_stru
 
 
 /* major command line args */
-#define COMCOUNT 12
+#define COMCOUNT 13
 #define COM_SLOT 0
 #define COM_INFO 1
 #define COM_RESET 2
@@ -766,6 +772,7 @@ typedef struct com_stru
 #define COM_INVENTORY 9
 #define COM_DUMPDB 10
 #define COM_SCAN 11
+#define COM_GEN_CONF 12
 argument argdefs[]={{"-slot",COM_SLOT,1},
                     {"-info",COM_INFO,0},
                     {"-reset",COM_RESET,0},
@@ -777,7 +784,8 @@ argument argdefs[]={{"-slot",COM_SLOT,1},
                     {"-trace",COM_TRACE,1},
                     {"-inventory", COM_INVENTORY,0},
                     {"-dumpdb", COM_DUMPDB,0},
-                    {"-scan", COM_SCAN,0}
+                    {"-scan", COM_SCAN,0},
+                    {"-genconf", COM_GEN_CONF,0}
 	};
 
 
@@ -1035,7 +1043,27 @@ int main(int argc, char *argv[])
     }
   
   parse_args(argc,argv,&com);
-  
+
+  pDev = (OpenFiles_T *)malloc(sizeof(OpenFiles_T) * 3);
+  memset(pDev, 0, sizeof(OpenFiles_T) * 3 );
+
+
+
+  switch(com.command_code) 
+    {
+    case COM_SCAN:
+      ScanBus(1);
+      return(0);
+      break;
+    case COM_GEN_CONF:
+      ScanBus(0);
+      PrintConf();
+      return(0);
+      break;
+    default:
+      break;
+    }
+
   if(read_conffile(CONFFILE_NAME)) {
     perror(CONFFILE_NAME);
     exit(1);
@@ -1085,8 +1113,6 @@ int main(int argc, char *argv[])
       tapestatfile = strdup(chg.conf[confnum].tapestatfile);
     dump_changer_struct(chg);
 
-    pDev = (OpenFiles_T *)malloc(sizeof(OpenFiles_T) * 3);
-    memset(pDev, 0, sizeof(OpenFiles_T) * 3 );
 
     /* 
      * The changer device.
@@ -1152,7 +1178,9 @@ int main(int argc, char *argv[])
       use_slots    = slotcnt;
       slot_offset  = 0;
     }
+    /*
     free_changer_struct(&chg);
+    */
   } else {
       printf("Please specify a number as tape_device [0-9]\n");
       dbprintf(("tape_device is not a number %s\n", tape_device));
@@ -1385,9 +1413,6 @@ int main(int argc, char *argv[])
       }
     break;
 
-  case COM_SCAN:
-    ScanBus();
-    break;
   case COM_RESET:
     target=get_current_slot(changer_file);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-bsd.c,v 1.9 2001/02/08 19:19:08 ant Exp $
+ * $Id: scsi-bsd.c,v 1.10 2001/02/17 18:48:42 ant Exp $
  *
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
  *
@@ -197,7 +197,7 @@ int Tape_Status( int DeviceFD)
   return(-1);
 }
 
-int ScanBus()
+int ScanBus(int print)
 {
 /*
   Not yet
