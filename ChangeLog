@@ -1,5 +1,15 @@
 1999-09-19 John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/util.c: fix math in bind_portrange so ports requested
+	  are between those the caller passed and make sure port 0 does not
+	  accidentally get requested, which returns a non-privileged port.
+	* common-src/dgram.c: bind_portrange last port argument is inclusive.
+	* common-src/stream.c: ditto.
+	* recover-src/amrecover.c: ditto.
+	* recover-src/extract_list.c: ditto.
+
+1999-09-19 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/driver.c: do not send a FILE_WRITE to the taper when the
 	  tape queue is empty during a TRYAGAIN (driver core dumped).
 

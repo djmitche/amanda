@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.50 1999/09/05 23:27:20 jrj Exp $
+ * $Id: extract_list.c,v 1.51 1999/09/19 19:17:45 jrj Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1066,7 +1066,7 @@ static int extract_files_setup P((void))
     myname.sin_family = hp->h_addrtype;
     seteuid(0);					/* it either works ... */
     setegid(0);
-    if (bind_portrange(tape_server_socket, &myname, 512, IPPORT_RESERVED) != 0)
+    if (bind_portrange(tape_server_socket, &myname, 512, IPPORT_RESERVED - 1) != 0)
     {
 	perror("amrecover: Error binding socket");
 	exit(2);
