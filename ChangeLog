@@ -1,5 +1,10 @@
 1998-11-24  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/writev.c (writev): new file, implements writev for
+	systems that lack it
+
+1998-11-24  Mike Grupenhoff <kashmir@munge.com>
+
 	* common-src/amanda.h: include <sys/uio.h> if it exists.  Otherwise,
 	define struct iovec
 
