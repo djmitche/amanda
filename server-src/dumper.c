@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.25 1997/08/31 17:58:57 amcore Exp $
+/* $Id: dumper.c,v 1.26 1997/09/11 04:33:18 amcore Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -50,6 +50,9 @@
 
 #ifndef SEEK_SET
 #define SEEK_SET 0
+#endif
+
+#ifndef SEEK_CUR
 #define SEEK_CUR 1
 #endif
 
