@@ -1,3 +1,9 @@
+2000-11-03 John R. Jackson  <jrj@purdue.edu>
+
+	* server-src/driver.c (handle_taper_result): the holding disk entry
+	should not be removed just because taper could not write it out in
+	the "too many taper retries" case.  It should be left for amflush.
+
 2000-11-01 John R. Jackson  <jrj@purdue.edu>
 
 	* server-src/amverify.sh.in: use common form for getting the first
@@ -1130,7 +1136,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.402 2000/11/01 21:09:21 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.403 2000/11/03 20:39:04 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
