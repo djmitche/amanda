@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlabel.c,v 1.7 1998/01/02 18:48:20 jrj Exp $
+ * $Id: amlabel.c,v 1.8 1998/01/26 21:16:13 jrj Exp $
  *
  * write an Amanda label on a tape
  */
@@ -56,6 +56,8 @@ char **argv;
 {
     char *confdir, *outslot = NULL;
     char *errstr, *confname, *label, *tapename = NULL, *labelstr, *slotstr;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
     int fd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -67,6 +69,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = ERR_INTERACTIVE;
 
@@ -139,7 +143,15 @@ char **argv;
 
     afree(outslot);
     afree(tapename);
+    afree(confdir);
 
     printf(", done.\n");
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+    }
+
     return 0;
 }

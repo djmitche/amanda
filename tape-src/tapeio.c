@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.c,v 1.10 1997/12/30 05:25:29 jrj Exp $
+ * $Id: tapeio.c,v 1.11 1998/01/26 21:16:41 jrj Exp $
  *
  * implements tape I/O functions
  */
@@ -296,8 +296,8 @@ char **datestamp, **label;
 	errstr = newstralloc(errstr, "not an amanda tape");
 	return errstr;
     }
-    *datestamp = stralloc(file.datestamp);
-    *label = stralloc(file.name);
+    *datestamp = newstralloc(*datestamp, file.datestamp);
+    *label = newstralloc(*label, file.name);
 
     return NULL;
 }

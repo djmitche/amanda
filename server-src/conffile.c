@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.34 1998/01/17 14:29:09 amcore Exp $
+ * $Id: conffile.c,v 1.35 1998/01/26 21:16:19 jrj Exp $
  *
  * read configuration file
  */
@@ -264,6 +264,7 @@ char *filename;
     }
 
     ip = alloc(sizeof(interface_t));
+    malloc_mark(ip);
     ip->name = "";
     ip->seen = seen_netusage;
     ip->comment = "implicit from NETUSAGE";
@@ -507,7 +508,9 @@ static void init_defaults()
 		"YOUR ORG"
 #endif
 		);
+    malloc_mark(conf_org.s);
     conf_mailto.s = newstralloc(conf_mailto.s, "operators");
+    malloc_mark(conf_mailto.s);
     conf_dumpuser.s = newstralloc(conf_dumpuser.s,
 #ifdef CLIENT_LOGIN
 		CLIENT_LOGIN
@@ -515,6 +518,7 @@ static void init_defaults()
 		"bin"
 #endif
 		);
+    malloc_mark(conf_dumpuser.s);
     conf_tapedev.s = newstralloc(conf_tapedev.s,
 #ifdef DEFAULT_TAPE_DEVICE
 		DEFAULT_TAPE_DEVICE
@@ -522,7 +526,9 @@ static void init_defaults()
 		"/dev/rmt8"
 #endif
 		);
+    malloc_mark(conf_tapedev.s);
     conf_tpchanger.s = newstralloc(conf_tpchanger.s, "");
+    malloc_mark(conf_tpchanger.s);
     conf_chngrdev.s = newstralloc(conf_chngrdev.s,
 #ifdef DEFAULT_CHANGER_DEVICE
 				  DEFAULT_CHANGER_DEVICE
@@ -530,16 +536,26 @@ static void init_defaults()
 				  "/dev/null"
 #endif
 				  );
+    malloc_mark(conf_chngrdev.s);
     conf_chngrfile.s =
 		newstralloc(conf_chngrfile.s, "/usr/adm/amanda/changer-status");
+    malloc_mark(conf_chngrfile.s);
     conf_labelstr.s = newstralloc(conf_labelstr.s, ".*");
+    malloc_mark(conf_labelstr.s);
     conf_tapelist.s = newstralloc(conf_tapelist.s, "tapelist");
+    malloc_mark(conf_tapelist.s);
     conf_infofile.s = newstralloc(conf_infofile.s, "/usr/adm/amanda/curinfo");
+    malloc_mark(conf_infofile.s);
     conf_logdir.s = newstralloc(conf_logdir.s, "/usr/adm/amanda");
+    malloc_mark(conf_logdir.s);
     conf_diskfile.s = newstralloc(conf_diskfile.s, "disklist");
+    malloc_mark(conf_diskfile.s);
     conf_diskdir.s  = newstralloc(conf_diskdir.s,  "/dumps/amanda");
+    malloc_mark(conf_diskdir.s);
     conf_tapetype.s = newstralloc(conf_tapetype.s, "EXABYTE");
+    malloc_mark(conf_tapetype.s);
     conf_indexdir.s = newstralloc(conf_indexdir.s, "/usr/adm/amanda/index");
+    malloc_mark(conf_indexdir.s);
 
     conf_dumpcycle.i	= 10;
     conf_tapecycle.i	= 15;
@@ -862,6 +878,7 @@ static void get_holdingdisk()
 
     get_conftoken(IDENT);
     hdcur.name = stralloc(tokenval.s);
+    malloc_mark(hdcur.name);
     hdcur.seen = line_num;
 
     get_conftoken(LBRACE);
@@ -906,6 +923,7 @@ static void init_holdingdisk_defaults()
 {
     hdcur.comment = "";
     hdcur.diskdir = stralloc(conf_diskdir.s);
+    malloc_mark(hdcur.diskdir);
     hdcur.disksize = 0;
 
     hdcur.s_comment = 0;
@@ -920,6 +938,7 @@ static void save_holdingdisk()
     holdingdisk_t *hp;
 
     hp = alloc(sizeof(holdingdisk_t));
+    malloc_mark(hp);
     *hp = hdcur;
     hp->next = holdingdisks;
     holdingdisks = hp;
@@ -970,6 +989,7 @@ static void get_dumptype()
 
     get_conftoken(IDENT);
     dpcur.name = stralloc(tokenval.s);
+    malloc_mark(dpcur.name);
     dpcur.seen = line_num;
 
     get_conftoken(LBRACE);
@@ -1142,6 +1162,7 @@ static void save_dumptype()
     }
 
     dp = alloc(sizeof(dumptype_t));
+    malloc_mark(dp);
     *dp = dpcur;
     dp->next = dumplist;
     dumplist = dp;
@@ -1208,6 +1229,7 @@ static void get_tapetype()
 
     get_conftoken(IDENT);
     tpcur.name = stralloc(tokenval.s);
+    malloc_mark(tpcur.name);
     tpcur.seen = line_num;
 
     get_conftoken(LBRACE);
@@ -1279,6 +1301,7 @@ static void save_tapetype()
     }
 
     tp = alloc(sizeof(tapetype_t));
+    malloc_mark(tp);
     *tp = tpcur;
     tp->next = tapelist;
     tapelist = tp;
@@ -1325,6 +1348,7 @@ static void get_interface()
 
     get_conftoken(IDENT);
     ifcur.name = stralloc(tokenval.s);
+    malloc_mark(ifcur.name);
     ifcur.seen = line_num;
 
     get_conftoken(LBRACE);
@@ -1389,6 +1413,7 @@ static void save_interface()
     }
 
     ip = alloc(sizeof(interface_t));
+    malloc_mark(ip);
     *ip = ifcur;
     ip->next = interface_list;
     interface_list = ip;
@@ -1718,6 +1743,7 @@ tok_t type;
     case IDENT:
 	get_conftoken(type);
 	var->s = stralloc(tokenval.s);
+	malloc_mark(var->s);
 	break;
     case INT:
 	var->i = get_number();
@@ -2230,6 +2256,8 @@ char *argv[];
 {
   int result;
   int fd;
+  unsigned long malloc_hist_1, malloc_size_1;
+  unsigned long malloc_hist_2, malloc_size_2;
 
   for(fd = 3; fd < FD_SETSIZE; fd++) {
     /*
@@ -2241,11 +2269,20 @@ char *argv[];
     close(fd);
   }
 
+  malloc_size_1 = malloc_inuse(&malloc_hist_1);
+
   startclock();
   if (argc>1)
     chdir(argv[1]);
   result = read_conffile(CONFFILE_NAME);
   dump_configuration(CONFFILE_NAME);
+
+  malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+  if(malloc_size_1 != malloc_size_2) {
+    malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+  }
+
   return result;
 }
 

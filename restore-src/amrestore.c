@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amrestore.c,v 1.17 1998/01/12 22:32:40 blair Exp $
+ * $Id: amrestore.c,v 1.18 1998/01/26 21:16:07 jrj Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -114,16 +114,21 @@ char *make_filename(file)
 dumpfile_t *file;
 {
     char number[NUM_STR_SIZE];
+    char *sfn;
+    char *fn;
 
     ap_snprintf(number, sizeof(number), "%d", file->dumplevel);
-    return vstralloc(file->name,
-		     ".",
-		     sanitise_filename(file->disk), 
-		     ".",
-		     file->datestamp,
-		     ".",
-		     number,
-		     NULL);
+    sfn = sanitise_filename(file->disk);
+    fn = vstralloc(file->name,
+		   ".",
+		   sfn, 
+		   ".",
+		   file->datestamp,
+		   ".",
+		   number,
+		   NULL);
+    afree(sfn);
+    return fn;
 }
 
 

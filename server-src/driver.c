@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.26 1998/01/12 22:32:48 blair Exp $
+ * $Id: driver.c,v 1.27 1998/01/26 21:16:23 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -140,6 +140,8 @@ char **main_argv;
     char *newdir = NULL;
     generic_fs_stats_t fs;
     holdingdisk_t *hdp;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -150,6 +152,8 @@ char **main_argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
 
@@ -313,9 +317,9 @@ char **main_argv;
 		    "no more holding disk space");
     }
 
-printf("driver: QUITTING time %s telling children to quit\n",
-       walltime_str(curclock()));
-fflush(stdout);
+    printf("driver: QUITTING time %s telling children to quit\n",
+           walltime_str(curclock()));
+    fflush(stdout);
 
     if(!degraded_mode)
 	taper_cmd(QUIT, NULL, NULL, 0);
@@ -341,6 +345,12 @@ fflush(stdout);
     printf("driver: FINISHED time %s\n", walltime_str(curclock()));
     fflush(stdout);
     log(L_FINISH,"date %s time %s", datestamp, walltime_str(curclock()));
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+    }
 
     return 0;
 }
@@ -1145,6 +1155,8 @@ void assign_holdingdisk(holdp, diskp)
 holdingdisk_t *holdp;
 disk_t *diskp;
 {
+    char *sfn;
+
 #ifdef HOLD_DEBUG
     printf("assigning disk %s:%s size %lu to disk %s\n",
 	   diskp->host->hostname, diskp->name,
@@ -1154,10 +1166,12 @@ disk_t *diskp;
     sched(diskp)->holdp = holdp;
     sched(diskp)->act_size = sched(diskp)->est_size;
 
+    sfn = sanitise_filename(diskp->name);
     ap_snprintf(sched(diskp)->destname, sizeof(sched(diskp)->destname),
 		"%s/%s/%s.%s.%d",
 		holdp->diskdir, datestamp, diskp->host->hostname,
-		sanitise_filename(diskp->name), sched(diskp)->level);
+		sfn, sched(diskp)->level);
+    afree(sfn);
 
     holdalloc(holdp)->allocated_space += sched(diskp)->act_size;
     holdalloc(holdp)->allocated_dumpers += 1;

@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: alloc.c,v 1.11 1998/01/14 23:48:46 george Exp $
+ * $Id: alloc.c,v 1.12 1998/01/26 21:15:53 jrj Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * error() is called, relieving the caller from checking the return
@@ -32,18 +32,171 @@
 #include "amanda.h"
 #include "arglist.h"
 
+#if defined(USE_DBMALLOC)
+
+/*
+ *=====================================================================
+ * caller_loc -- keep track of all allocation callers
+ *
+ * char *caller_loc(char *s, int l)
+ *
+ * entry:	s = source file
+ *		l = source line
+ * exit:	a string like "genversion.c@999"
+ *
+ * The debug malloc library has a concept of a call stack that can be used
+ * to fine tune what was running when a particular allocation was done.
+ * We use it to tell who called our various allocation wrappers since
+ * it wouldn't do much good to tell us a problem happened because of
+ * the malloc call in alloc (they are all from there at some point).
+ *
+ * But the library expects the string passed to malloc_enter/malloc_leave
+ * to be static, so we build a linked list of each one we get (there are
+ * not really that many during a given execution).  When we get a repeat
+ * we return the previously allocated string.  For a bit of performance,
+ * we keep the list in least recently used order, which helps because
+ * the calls to us come in pairs (one for malloc_enter and one right
+ * after for malloc_leave).
+ *=====================================================================
+ */
+
+static char *
+caller_loc(s, l)
+char *s;
+int l;
+{
+    static int filename_len = -1;
+    struct loc_str {
+	char *str;
+	struct loc_str *next;
+    };
+    static struct loc_str *root = NULL;
+    struct loc_str *ls, *ls_last;
+    int len;
+    int size;
+    char *p;
+    static char *loc = NULL;
+    static int loc_size = 0;
+
+    if ((p = strrchr(s, '/')) == NULL) {
+	p = s;					/* keep the whole name */
+    } else {
+	p++;					/* just the last path element */
+    }
+
+    len = strlen (p);
+    size = len + 1 + NUM_STR_SIZE + 1;
+    if (size > loc_size) {
+	size = ((size + 64 - 1) / 64) * 64;	/* might as well get a bunch */
+	/*
+	 * We should free the previous loc area, but we have marked it
+	 * as a non-leak and the library considers it an error to free
+	 * such an area, so we just ignore it.  We probably grabbed
+	 * enough the first time that this will not even happen.
+	 */
+	loc = malloc (size);
+	if (loc == NULL) {
+	    return "??";			/* not much better than abort */
+	}
+	malloc_mark (loc);
+	loc_size = size;
+    }
+
+    strcpy (loc, p);
+    ap_snprintf(loc + len, 1 + NUM_STR_SIZE, "@%d", l);
+
+    for (ls_last = NULL, ls = root; ls != NULL; ls_last = ls, ls = ls->next) {
+	if (strcmp (loc, ls->str) == 0) {
+	    break;
+	}
+    }
+
+    if (ls == NULL) {
+	/*
+	 * This is a new entry.  Put it at the head of the list.
+	 */
+	ls = malloc (sizeof (*ls));
+	if (ls == NULL) {
+	    return "??";			/* not much better than abort */
+	}
+	malloc_mark (ls);
+	size = strlen (loc) + 1;
+	ls->str = malloc (size);
+	if (ls->str == NULL) {
+	    free (ls);
+	    return "??";			/* not much better than abort */
+	}
+	malloc_mark (ls->str);
+	strcpy (ls->str, loc);
+	ls->next = root;
+	root = ls;
+    } else if (ls_last != NULL) {
+	/*
+	 * This is a repeat and was not at the head of the list.
+	 * Unlink it and move it to the front.
+	 */
+	ls_last->next = ls->next;
+	ls->next = root;
+	root = ls;
+    } else {
+	/*
+	 * This is a repeat but was already at the head of the list,
+	 * so nothing else needs to be done.
+	 */
+    }
+    return ls->str;
+}
+
+/*
+ *=====================================================================
+ * Save the current source line for vstralloc/newvstralloc.
+ *
+ * int debug_alloc_save (char *s, int l)
+ *
+ * entry:	s = source file
+ *		l = source line
+ * exit:	always zero
+ * 
+ * See the comments in amanda.h about what this is used for.
+ *=====================================================================
+ */
+
+static char	*saved_file;
+static int	saved_line;
+
+int
+debug_alloc_save (s, l)
+char *s;
+int l;
+{
+    saved_file = s;
+    saved_line = l;
+    return 0;
+}
+
+#else
+#define caller_loc(s,l)	__FILE__
+#endif
 
 /*
 ** alloc - a wrapper for malloc.
 */
+#if defined(USE_DBMALLOC)
+void *debug_alloc(s, l, size)
+char *s;
+int l;
+#else
 void *alloc(size)
+#endif
 int size;
 {
     void *addr;
 
+    malloc_enter(caller_loc(s, l));
     addr = (void *)malloc(size>0 ? size : 1);
     if(addr == NULL)
 	error("memory allocation failed");
+    malloc_leave(caller_loc(s, l));
     return addr;
 }
 
@@ -51,12 +204,23 @@ int size;
 /*
 ** newalloc - free existing buffer and then alloc a new one.
 */
+#if defined(USE_DBMALLOC)
+void *debug_newalloc(s, l, old, size)
+char *s;
+int l;
+#else
 void *newalloc(old, size)
+#endif
 void *old;
 int size;
 {
+    char *addr;
+
+    malloc_enter(caller_loc(s, l));
     afree(old);
-    return alloc(size);
+    addr = alloc(size);
+    malloc_leave(caller_loc(s, l));
+    return addr;
 }
 
 
@@ -64,19 +228,28 @@ int size;
 ** stralloc - copies the given string into newly allocated memory.
 **            Just like strdup()!
 */
+#if defined(USE_DBMALLOC)
+char *debug_stralloc(s, l, str)
+char *s;
+int l;
+#else
 char *stralloc(str)
+#endif
 char *str;
 {
     char *addr;
 
+    malloc_enter(caller_loc(s, l));
     addr = alloc(strlen(str)+1);
     strcpy(addr, str);
+    malloc_leave(caller_loc(s, l));
     return addr;
 }
 
 
 /*
-** vstralloc - copies up to MAX_STR_ARGS strings into newly allocated memory.
+** internal_vstralloc - copies up to MAX_STR_ARGS strings into newly
+** allocated memory.
 **
 ** The MAX_STR_ARGS limit is purely an efficiency issue so we do not have
 ** to scan the strings more than necessary.
@@ -136,14 +309,20 @@ va_list argp;
 /*
 ** vstralloc - copies multiple strings into newly allocated memory.
 */
+#if defined(USE_DBMALLOC)
+arglist_function(char *debug_vstralloc, char *, str)
+#else
 arglist_function(char *vstralloc, char *, str)
+#endif
 {
     va_list argp;
     char *result;
 
+    malloc_enter(caller_loc(saved_file, saved_line));
     arglist_start(argp, str);
     result = internal_vstralloc(str, argp);
     arglist_end(argp);
+    malloc_leave(caller_loc(saved_file, saved_line));
     return result;
 }
 
@@ -151,27 +330,44 @@ arglist_function(char *vstralloc, char *, str)
 /*
 ** newstralloc - free existing string and then stralloc a new one.
 */
+#if defined(USE_DBMALLOC)
+char *debug_newstralloc(s, l, oldstr, newstr)
+char *s;
+int l;
+#else
 char *newstralloc(oldstr, newstr)
+#endif
 char *oldstr;
 char *newstr;
 {
+    char *addr;
+
+    malloc_enter(caller_loc(s, l));
     afree(oldstr);
-    return stralloc(newstr);
+    addr = stralloc(newstr);
+    malloc_leave(caller_loc(s, l));
+    return addr;
 }
 
 
 /*
 ** newvstralloc - free existing string and then vstralloc a new one.
 */
+#if defined(USE_DBMALLOC)
+arglist_function1(char *debug_newvstralloc, char *, oldstr, char *, newstr)
+#else
 arglist_function1(char *newvstralloc, char *, oldstr, char *, newstr)
+#endif
 {
     va_list argp;
     char *result;
 
+    malloc_enter(caller_loc(saved_file, saved_line));
     afree(oldstr);
     arglist_start(argp, newstr);
     result = internal_vstralloc(newstr, argp);
     arglist_end(argp);
+    malloc_leave(caller_loc(saved_file, saved_line));
     return result;
 }
 

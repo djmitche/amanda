@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.63 1998/01/25 15:24:15 amcore Exp $
+ * $Id: sendsize.c,v 1.64 1998/01/26 21:15:47 jrj Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -83,6 +83,7 @@ char *host;				/* my hostname from the server */
 int main P((int argc, char **argv));
 void add_diskest P((char *disk, int level, char *exclude, int spindle, char *prog));
 void calc_estimates P((disk_estimates_t *est));
+void free_estimates P((disk_estimates_t *est));
 void dump_calc_estimates P((disk_estimates_t *));
 void smbtar_calc_estimates P((disk_estimates_t *));
 void gnutar_calc_estimates P((disk_estimates_t *));
@@ -97,11 +98,14 @@ char **argv;
     int level, new_maxdumps, spindle;
     char *prog, *disk, *dumpdate, *exclude;
     disk_estimates_t *est;
+    disk_estimates_t *est_prev;
     char *line;
     char *s, *fp;
     int ch;
     char *err_extra = NULL;
     int fd;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
 
     /* initialize */
 
@@ -114,6 +118,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     chdir("/tmp");
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
@@ -239,6 +245,23 @@ char **argv;
       --dumpsrunning;
     }
 
+    est_prev = NULL;
+    for(est = est_list; est != NULL; est = est->next) {
+	free_estimates(est);
+	afree(est_prev);
+	est_prev = est;
+    }
+    afree(est_prev);
+    afree(host);
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	extern int db_fd;
+
+	malloc_list(db_fd, malloc_hist_1, malloc_hist_2);
+    }
+
     dbclose();
     return 0;
  err:
@@ -276,7 +299,7 @@ int level, spindle;
     newp->next = est_list;
     est_list = newp;
     newp->amname = stralloc(disk);
-    newp->dirname = stralloc(amname_to_dirname(newp->amname));
+    newp->dirname = amname_to_dirname(newp->amname);
     newp->exclude = stralloc(exclude);
     newp->program = stralloc(prog);
     newp->spindle = spindle;
@@ -296,6 +319,15 @@ int level, spindle;
     }
 }
 
+
+void free_estimates(est)
+disk_estimates_t *est;
+{
+    afree(est->amname);
+    afree(est->dirname);
+    afree(est->exclude);
+    afree(est->program);
+}
 
 /*
  * ------------------------------------------------------------------------
@@ -540,6 +572,7 @@ int level;
     FILE *dumpout;
     char *dumpkeys = NULL;
     char *device = NULL;
+    char *fstype = NULL;
     int status;
     char *cmd = NULL;
     char *line = NULL;
@@ -550,7 +583,7 @@ int level;
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
-    device = stralloc(amname_to_devname(disk));
+    device = amname_to_devname(disk);
 
     cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
 
@@ -558,7 +591,8 @@ int level;
     pipe(pipefd);
 #ifdef XFSDUMP						/* { */
 #ifdef DUMP						/* { */
-    if (strcmp(amname_to_fstype(device), "xfs") == 0)
+    fstype = amname_to_fstype(device);
+    if (strcmp(fstype, "xfs") == 0)
 #else							/* } { */
     if (1)
 #endif							/* } */
@@ -576,7 +610,8 @@ int level;
 #endif							/* } */
 #ifdef VXDUMP						/* { */
 #ifdef DUMP						/* { */
-    if (strcmp(amname_to_fstype(device), "vxfs") == 0)
+    fstype = amname_to_fstype(device);
+    if (strcmp(fstype, "vxfs") == 0)
 #else							/* } { */
     if (1)
 #endif							/* } */
@@ -669,13 +704,15 @@ int level;
 	aclose(pipefd[0]);
 
 #ifdef XFSDUMP
-	if (strcmp(amname_to_fstype(device), "xfs") == 0)
+	fstype = amname_to_fstype(device);
+	if (strcmp(fstype, "xfs") == 0)
 	    execle(cmd, "xfsdump", "-F", "-J", "-l", level_str, "-", device,
 		   (char *)0, safe_env());
 	else
 #endif
 #ifdef VXDUMP
-	if (strcmp(amname_to_fstype(device), "vxfs") == 0)
+	fstype = amname_to_fstype(device);
+	if (strcmp(fstype, "vxfs") == 0)
 	    execle(cmd, "vxdump", dumpkeys, "100000", "-", device, (char *)0,
 		   safe_env());
 	else
@@ -740,7 +777,8 @@ int level;
     /*
      * We know xfsdump ignores SIGTERM, so arrange to hit it hard.
      */
-    sig = (strcmp(amname_to_fstype(device), "xfs") == 0 ? SIGKILL : SIGTERM);
+    fstype = amname_to_fstype(device);
+    sig = ((strcmp(fstype, "xfs") == 0 ? SIGKILL : SIGTERM);
 #else
     sig = SIGTERM;
 #endif
@@ -762,6 +800,7 @@ int level;
     afclose(dumpout);
 
     afree(device);
+    afree(fstype);
 
     return size;
 }
@@ -889,8 +928,8 @@ time_t dumpsince;
     int pipefd[2], nullfd, dumppid;
     long size;
     FILE *dumpout;
-    char *incrname;
-    char *dirname;
+    char *incrname = NULL;
+    char *dirname = NULL;
     char *line = NULL;
     char *cmd = NULL;
     char *cmd_line;
@@ -933,6 +972,7 @@ notincremental:
 	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
 	  afree(incrname);
 	  afree(basename);
+	  afree(dirname);
 	  return -1;
 	}
 
@@ -941,6 +981,7 @@ notincremental:
 	  out = NULL;
 	  afree(incrname);
 	  afree(basename);
+	  afree(dirname);
 	  return -1;
 	}
 	out = NULL;
@@ -968,6 +1009,7 @@ notincremental:
 	  afree(incrname);
 	  afree(basename);
 	  afree(inputname);
+	  afree(dirname);
 	  return -1;
 	}
 
@@ -978,6 +1020,7 @@ notincremental:
 	    afree(incrname);
 	    afree(basename);
 	    afree(inputname);
+	    afree(dirname);
 	    return -1;
 	  }
 
@@ -987,6 +1030,7 @@ notincremental:
 	  afree(incrname);
 	  afree(basename);
 	  afree(inputname);
+	  afree(dirname);
 	  return -1;
 	}
 
@@ -996,6 +1040,7 @@ notincremental:
 	  afree(incrname);
 	  afree(basename);
 	  afree(inputname);
+	  afree(dirname);
 	  return -1;
 	}
 	in = NULL;
@@ -1006,6 +1051,7 @@ notincremental:
 	  afree(incrname);
 	  afree(basename);
 	  afree(inputname);
+	  afree(dirname);
 	  return -1;
 	}
 	out = NULL;
@@ -1070,6 +1116,7 @@ notincremental:
     switch(dumppid = fork()) {
     case -1:
       afree(cmd);
+      afree(dirname);
       return -1;
     default:
       break;
@@ -1136,6 +1183,7 @@ notincremental:
 
     unlink(incrname);
     afree(incrname);
+    afree(dirname);
 
     aclose(nullfd);
     afclose(dumpout);

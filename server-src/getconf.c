@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.4 1998/01/02 18:48:31 jrj Exp $
+ * $Id: getconf.c,v 1.5 1998/01/26 21:16:28 jrj Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -42,6 +42,8 @@ char **argv;
 {
     char *result;
     int fd;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -52,6 +54,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     if(argc != 2) {
 	fprintf(stderr, "Usage: %s <parmname>\n", argv[0]);
@@ -71,5 +75,14 @@ char **argv;
     }
 
     puts(result);
+
+    afree(result);
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+    }
+
     return 0;
 }

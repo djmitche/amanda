@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.18 1998/01/22 17:42:53 jrj Exp $
+ * $Id: reporter.c,v 1.19 1998/01/26 21:16:34 jrj Exp $
  *
  * nightly Amanda Report generator
  */
@@ -102,6 +102,8 @@ line_t *errsum = NULL;
 line_t *errdet = NULL;
 line_t *notes = NULL;
 
+char *hostname = NULL, *diskname = NULL;
+
 /* local functions */
 int contline_next P((void));
 void addline P((line_t **lp, char *str));
@@ -164,6 +166,8 @@ char **argv;
 {
     char *logfname, *subj_str = NULL;
     int fd;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -174,6 +178,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     /* open input log file */
 
@@ -299,6 +305,18 @@ char **argv;
 	apclose(mailf);
 	log_rename(datestamp);
     }
+
+    afree(hostname);
+    afree(diskname);
+    afree(datestamp);
+    afree(tape_labels);
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+    }
+
     return 0;
 }
 
@@ -480,10 +498,15 @@ void output_lines(lp, f)
 line_t *lp;
 FILE *f;
 {
+    line_t *next;
+
     while(lp) {
 	fputs(lp->str, f);
+	afree(lp->str);
 	fputc('\n', f);
-	lp = lp->next;
+	next = lp->next;
+	afree(lp);
+	lp = next;
     }
 }
 
@@ -531,7 +554,7 @@ void output_summary()
  "HOSTNAME  DISK           L  ORIG-KB   OUT-KB COMP%%  MMM:SS   KB/s  MMM:SS   KB/s\n");
     fprintf(mailf,
  "-------------------------- -------------------------------------- --------------\n");
-    for(dp = sortq.head; dp != NULL; dp = dp->next) {
+    for(dp = sortq.head; dp != NULL; free(dp->up), dp = dp->next) {
 #if 0
 	/* should we skip missing dumps for amflush? */
 	if(amflush_run && data(dp)->result == L_BOGUS)
@@ -889,7 +912,6 @@ void setup_data()
 	setup_disk(dp);
 }
 
-char *hostname = NULL, *diskname = NULL;
 int level;
 
 void handle_success()

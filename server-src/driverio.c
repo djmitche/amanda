@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.24 1998/01/12 22:32:50 blair Exp $
+ * $Id: driverio.c,v 1.25 1998/01/26 21:16:25 jrj Exp $
  *
  * I/O-related functions for driver program
  */
@@ -261,11 +261,13 @@ disk_t *dp;
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
     int l, n, s;
+    char *o;
 
     switch(cmd) {
     case FILE_DUMP:
     case PORT_DUMP:
 	ap_snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	o = optionstr(dp);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", sched(dp)->destname,
@@ -274,8 +276,9 @@ disk_t *dp;
 			    " ", number,
 			    " ", sched(dp)->dumpdate,
 			    " ", dp->program,
-			    " |", optionstr(dp),
+			    " |", o,
 			    "\n", NULL);
+	afree(o);
 	break;
     case QUIT:
     case ABORT:

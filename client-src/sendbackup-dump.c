@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.48 1998/01/22 21:36:50 amcore Exp $
+ * $Id: sendbackup-dump.c,v 1.49 1998/01/26 21:15:37 jrj Exp $
  *
  * send backup data using BSD dump
  */
@@ -141,6 +141,7 @@ char *dumpdate;
     char *cmd = NULL;
     char *indexcmd = NULL;
     char level_str[NUM_STR_SIZE];
+    char *fstype = NULL;
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
 
@@ -164,9 +165,9 @@ char *dumpdate;
 
     /* invoke dump */
 #ifdef VDUMP
-    device = stralloc(amname_to_dirname(disk));
+    device = amname_to_dirname(disk);
 #else
-    device = stralloc(amname_to_devname(disk));
+    device = amname_to_devname(disk);
 #endif
 
 #if defined(USE_RUNDUMP) || !defined(DUMP)
@@ -179,7 +180,8 @@ char *dumpdate;
     /* normal dump */
 #ifdef XFSDUMP						/* { */
 #ifdef DUMP						/* { */
-    if (strcmp(amname_to_fstype(device), "xfs") == 0)
+    fstype = amname_to_fstype(device);
+    if (strcmp(fstype, "xfs") == 0)
 #else							/* } { */
     if (1)
 #endif							/* } */
@@ -225,7 +227,8 @@ char *dumpdate;
 #endif							/* } */
 #ifdef VXDUMP						/* { */
 #ifdef DUMP
-    if (strcmp(amname_to_fstype(device), "vxfs") == 0)
+    fstype = amname_to_fstype(device);
+    if (strcmp(fstype, "vxfs") == 0)
 #else
     if (1)
 #endif
@@ -340,6 +343,7 @@ char *dumpdate;
 
     afree(dumpkeys);
     afree(device);
+    afree(fstype);
     afree(cmd);
     afree(indexcmd);
 

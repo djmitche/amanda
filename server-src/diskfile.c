@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.20 1998/01/08 04:56:01 george Exp $
+ * $Id: diskfile.c,v 1.21 1998/01/26 21:16:21 jrj Exp $
  *
  * read disklist file
  */
@@ -58,6 +58,7 @@ char *filename;
     hostlist = NULL;
     lst.head = lst.tail = NULL;
     diskfname = newstralloc(diskfname, filename);
+    malloc_mark(diskfname);
     line_num = got_parserror = 0;
 
     if((diskf = fopen(filename, "r")) == NULL)
@@ -225,6 +226,7 @@ static int read_diskline()
     host = lookup_host(fp);
     if (host == NULL) {
       hostname = stralloc(fp);
+      malloc_mark(hostname);
     } else {
       hostname = host->hostname;
     }
@@ -246,8 +248,10 @@ static int read_diskline()
     }
 
     disk = alloc(sizeof(disk_t));
+    malloc_mark(disk);
     disk->line = line_num;
     disk->name = stralloc(fp);
+    malloc_mark(disk->name);
     disk->spindle = -1;
     disk->up = NULL;
     disk->inprogress = 0;
@@ -327,6 +331,7 @@ static int read_diskline()
 
     if(host == NULL) {			/* new host */
 	host = alloc(sizeof(host_t));
+	malloc_mark(host);
 	host->next = hostlist;
 	hostlist = host;
 
@@ -504,6 +509,8 @@ char *argv[];
 {
   int result;
   int fd;
+  unsigned long malloc_hist_1, malloc_size_1;
+  unsigned long malloc_hist_2, malloc_size_2;
 
   for(fd = 3; fd < FD_SETSIZE; fd++) {
     /*
@@ -515,12 +522,21 @@ char *argv[];
     close(fd);
   }
 
+  malloc_size_1 = malloc_inuse(&malloc_hist_1);
+
   if (argc>1)
     chdir(argv[1]);
   if((result = read_conffile(CONFFILE_NAME)) == 0) {
     result = (read_diskfile(getconf_str(CNF_DISKFILE)) == NULL);
   }
   dump_disklist();
+
+  malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+  if(malloc_size_1 != malloc_size_2) {
+    malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+  }
+
   return result;
 }
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.21 1998/01/11 21:19:37 jrj Exp $
+ * $Id: amandad.c,v 1.22 1998/01/26 21:15:30 jrj Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -116,6 +116,8 @@ char **argv;
     int l, n, s;
     int fd;
     char *errstr = NULL;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -126,6 +128,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
 
@@ -427,6 +431,14 @@ send_response:
 	}		
     }
     /* XXX log if retry count exceeded */
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	extern int db_fd;
+
+	malloc_list(db_fd, malloc_hist_1, malloc_hist_2);
+    }
 
     dbclose();
     return 0;

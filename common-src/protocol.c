@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: protocol.c,v 1.19 1998/01/15 20:38:51 amcore Exp $
+ * $Id: protocol.c,v 1.20 1998/01/26 21:16:04 jrj Exp $
  *
  * implements amanda protocol
  */
@@ -668,6 +668,9 @@ pkt_t *pkt;
 		    p->state = S_FAILED;
 		    free_handle(p);
 		    p->continuation(p, NULL);
+		    afree(p->req);
+		    afree(p->security);
+		    afree(p);
 		    return;
 		}
 		else {
@@ -701,6 +704,9 @@ pkt_t *pkt;
 		p->state = S_FAILED;
 		free_handle(p);
 		p->continuation(p, pkt);
+		afree(p->req);
+		afree(p->security);
+		afree(p);
 		return;
 	    }
 	    else if(pkt->type == P_REP) {
@@ -719,6 +725,9 @@ pkt_t *pkt;
 		    p->state = S_FAILED;
 		    free_handle(p);
 		    p->continuation(p, NULL);
+		    afree(p->req);
+		    afree(p->security);
+		    afree(p);
 		    return;
 		}
 		else {
@@ -739,6 +748,9 @@ pkt_t *pkt;
 	    p->state = S_SUCCEEDED;
 	    free_handle(p);
 	    p->continuation(p, pkt);
+	    afree(p->req);
+	    afree(p->security);
+	    afree(p);
 	    return;
 
 	default:
@@ -947,4 +959,5 @@ void run_protocol()
 	    state_machine(p, A_TIMEOUT, NULL);
 	}
     }
+    afree(proto_handle_table);
 }

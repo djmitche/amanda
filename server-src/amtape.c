@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.c,v 1.12 1998/01/02 18:48:21 jrj Exp $
+ * $Id: amtape.c,v 1.13 1998/01/26 21:16:15 jrj Exp $
  *
  * tape changer interface program
  */
@@ -82,6 +82,8 @@ char **argv;
     char *confdir;
     char *confname;
     char *argv0 = argv[0];
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
     int fd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -93,6 +95,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = ERR_INTERACTIVE;
 
@@ -124,6 +128,16 @@ char **argv;
 	fprintf(stderr, "%s: unknown command \"%s\"\n", argv0, argv[0]);
 	usage();
     }
+
+    afree(changer_resultstr);
+    afree(confdir);
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+    }
+
     return 0;
 }
 
@@ -231,9 +245,13 @@ char *device;
 	else {
 	    fprintf(stderr, " (exact label match)\n");
 	    found = 1;
+	    afree(datestamp);
+	    afree(label);
 	    return 1;
 	}
     }
+    afree(datestamp);
+    afree(label);
     return 0;
 }
 
@@ -291,6 +309,8 @@ char *slotstr, *device;
 	fprintf(stderr, "slot %s: date %-8s label %s\n",
 		slotstr, datestamp, label);
     }
+    afree(datestamp);
+    afree(label);
     return 0;
 }
 
@@ -339,6 +359,8 @@ char *device;
 		/* it's the one we are looking for, stop here */
 		fprintf(stderr, " (exact label match)\n");
 		found = 1;
+		afree(datestamp);
+		afree(label);
 		return 1;
 	    }
 	    else if(!match(labelstr, label))
@@ -358,12 +380,16 @@ char *device;
 		    fprintf(stderr, " (first labelstr match)\n");
 		    if(!backwards || !searchlabel) {
 			found = 2;
+			afree(datestamp);
+			afree(label);
 			return 1;
 		    }
 		}
 	    }
 	}
     }
+    afree(datestamp);
+    afree(label);
     return 0;
 }
 
@@ -379,7 +405,7 @@ char **argv;
     if((tp = lookup_tapepos(getconf_int(CNF_TAPECYCLE))) == NULL)
 	searchlabel = NULL;
     else
-	searchlabel = tp->label;
+	searchlabel = stralloc(tp->label);
 
     tapedays	= getconf_int(CNF_TAPECYCLE);
     labelstr	= getconf_str(CNF_LABELSTR);
@@ -395,13 +421,13 @@ char **argv;
     if(found == 2) {
 	fprintf(stderr, "%s: %s: settling for first labelstr match\n", pname,
 		searchlabel? "gravity stacker": "looking only for new tape");
-	searchlabel = first_match_label;
+	searchlabel = newstralloc(searchlabel, first_match_label);
     }
     else if(!found && got_match) {
 	fprintf(stderr,
 		"%s: %s not found, going back to first labelstr match %s\n",
 		pname, searchlabel, first_match_label);
-	searchlabel = first_match_label;
+	searchlabel = newstralloc(searchlabel, first_match_label);
 	if(changer_loadslot(first_match, &slotstr, &device) == 0) {
 	    found = 1;
 	} else {
@@ -419,4 +445,8 @@ char **argv;
 
     if(found)
 	fprintf(stderr, "%s: label %s is now loaded.\n", pname, searchlabel);
+
+    afree(searchlabel);
+    afree(first_match);
+    afree(first_match_label);
 }

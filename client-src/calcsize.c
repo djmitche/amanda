@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: calcsize.c,v 1.18 1998/01/12 22:32:26 blair Exp $
+ * $Id: calcsize.c,v 1.19 1998/01/26 21:15:33 jrj Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -138,6 +138,8 @@ char **argv;
     int i;
     char *dirname, *amname;
     int fd;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -148,6 +150,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
 #if 0
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
@@ -272,6 +276,12 @@ char **argv;
 	fflush(stdout);
 
 	amfunlock(1, "size");
+    }
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
     }
 
     return 0;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: changer.c,v 1.7 1998/01/12 22:32:47 blair Exp $
+ * $Id: changer.c,v 1.8 1998/01/26 21:16:17 jrj Exp $
  *
  * interface routines for tape changers
  */
@@ -108,7 +108,7 @@ char **rest;
     slot = s - 1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
-    *slotstr = stralloc(slot);
+    *slotstr = newstralloc(*slotstr, slot);
     s[-1] = ch;
 
     skip_whitespace(s, ch);
@@ -150,7 +150,7 @@ char *inslotstr, **outslotstr, **devicename;
 
     if(*rest == '\0') return report_bad_resultstr();
 
-    *devicename = stralloc(rest);
+    *devicename = newstralloc(*devicename, rest);
     return 0;
 }
 
@@ -182,16 +182,18 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
 
     rc = changer_info(&nslots, &curslotstr, &backwards);
     done = user_init(rc, nslots, backwards);
+    afree(curslotstr);
 
     slotstr = "current";
     checked = 0;
 
-    for(; !done && checked < nslots; free(curslotstr)) {
+    while(!done && checked < nslots) {
 	rc = changer_loadslot(slotstr, &curslotstr, &device);
 	if(rc > 0)
 	    done = user_slot(rc, curslotstr, device);
 	else if(!done)
 	    done = user_slot(0,  curslotstr, device);
+	afree(curslotstr);
 	afree(device);
 
 	checked += 1;
@@ -206,16 +208,16 @@ void changer_current(user_init, user_slot)
 int (*user_init) P((int rc, int nslots, int backwards));
 int (*user_slot) P((int rc, char *slotstr, char *device));
 {
-    char *slotstr, *device = NULL, *curslotstr = NULL;
+    char *device = NULL, *curslotstr = NULL;
     int nslots, checked, backwards, rc, done;
 
     rc = changer_info(&nslots, &curslotstr, &backwards);
     done = user_init(rc, nslots, backwards);
+    afree(curslotstr);
 
-    slotstr = "current";
     checked = 0;
 
-    rc = changer_loadslot(slotstr, &curslotstr, &device);
+    rc = changer_loadslot("current", &curslotstr, &device);
     if(rc > 0) {
 	done = user_slot(rc, curslotstr, device);
     } else if(!done) {

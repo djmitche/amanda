@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.43 1998/01/23 22:49:48 amcore Exp $
+ * $Id: sendbackup-gnutar.c,v 1.44 1998/01/26 21:15:40 jrj Exp $
  *
  * send backup data using GNU tar
  */
@@ -113,7 +113,7 @@ char *dumpdate;
     int dumpin, dumpout;
     char *cmd = NULL;
     char *indexcmd = NULL;
-    char *dirname;
+    char *dirname = NULL;
     int l;
     char dumptimestr[80];
     struct tm *gmtm;
@@ -416,6 +416,7 @@ notincremental:
     }
 #endif
 
+    afree(dirname);
     afree(cmd);
     afree(indexcmd);
 

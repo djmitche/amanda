@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.27 1998/01/14 18:02:39 amcore Exp $
+ * $Id: amadmin.c,v 1.28 1998/01/26 21:16:09 jrj Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -52,6 +52,7 @@ struct find_result {
     char *status;
 };
 struct find_result *output_find=NULL;
+struct find_result **array_find_result = NULL;
 
 int main P((int argc, char **argv));
 void usage P((void));
@@ -90,6 +91,8 @@ char **argv;
 {
     char *confdir = NULL;
     int fd;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -100,6 +103,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = ERR_INTERACTIVE;
 
@@ -145,6 +150,14 @@ char **argv;
 	usage();
     }
     close_infofile();
+    clear_tapelist();
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+    }
+
     return 0;
 }
 
@@ -239,9 +252,13 @@ disk_t *dp;
 
     get_info(hostname, diskname, &inf);
     inf.command = PLANNER_FORCE;
-    put_info(hostname, diskname, &inf);
-    printf("%s: %s:%s is set to a forced level 0 tonight.\n",
-	   pname, hostname, diskname);
+    if(put_info(hostname, diskname, &inf) == 0) {
+	printf("%s: %s:%s is set to a forced level 0 tonight.\n",
+	       pname, hostname, diskname);
+    } else {
+	fprintf(stderr, "%s: %s:%s could not be forced.\n",
+		pname, hostname, diskname);
+    }
 }
 
 
@@ -475,6 +492,7 @@ void balance()
 
     if(sp[total].outsize == 0) {
 	printf("\nNo data to report on yet.\n");
+	afree(sp);
 	return;
     }
 
@@ -498,6 +516,7 @@ void balance()
 	printf(" (%d filesystems overdue, the most being overdue %d days)\n",
 	       overdue, max_overdue);
     }
+    afree(sp);
 }
 
 
@@ -625,6 +644,9 @@ char **argv;
     sort_find_result();
 
     print_find_result();
+
+    afree(sort_order);
+    afree(array_find_result);
 }
 
 void search_holding_disk()
@@ -748,7 +770,6 @@ const void *j1;
 
 void sort_find_result()
 {
-    struct find_result **array_find_result;
     struct find_result *output_find_result;
     int nb_result=0;
     int no_result;
@@ -788,7 +809,7 @@ void sort_find_result()
 
 void print_find_result()
 {
-    struct find_result *output_find_result;
+    struct find_result *output_find_result, *next;
     int max_len_datestamp = 4;
     int max_len_hostname  = 4;
     int max_len_diskname  = 4;
@@ -838,7 +859,7 @@ void print_find_result()
 	       max_len_filenum-4  ,"");
         for(output_find_result=output_find;
 	    output_find_result;
-	    output_find_result=output_find_result->next) {
+	    output_find_result=next) {
 
 	    printf("%-*s %-*s %-*s %*d %-*s %*d %-*s\n",
 		    max_len_datestamp, output_find_result->datestamp,
@@ -848,6 +869,13 @@ void print_find_result()
 		    max_len_label,     output_find_result->label,
 		    max_len_filenum,   output_find_result->filenum,
 		    max_len_status,    output_find_result->status);
+	    afree(output_find_result->datestamp);
+	    afree(output_find_result->hostname);
+	    afree(output_find_result->diskname);
+	    afree(output_find_result->label);
+	    afree(output_find_result->status);
+	    next = output_find_result->next;
+	    afree(output_find_result);
 	}
     }
 }

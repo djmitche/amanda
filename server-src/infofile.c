@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.35 1998/01/15 23:24:58 jrj Exp $
+ * $Id: infofile.c,v 1.36 1998/01/26 21:16:29 jrj Exp $
  *
  * manage current info file
  */
@@ -60,8 +60,8 @@ char *mode;
 
     writing = (*mode == 'w');
 
-    host = stralloc(sanitise_filename(host));
-    disk = stralloc(sanitise_filename(disk));
+    host = sanitise_filename(host);
+    disk = sanitise_filename(disk);
 
     infofile = vstralloc(infodir,
 			 "/", host,
@@ -324,9 +324,8 @@ char *disk;
     char *fn = NULL, *fn_new = NULL;
     int rc;
 
-    host = stralloc(sanitise_filename(host));
-    disk = stralloc(sanitise_filename(disk));
-
+    host = sanitise_filename(host);
+    disk = sanitise_filename(disk);
     fn = vstralloc(infodir,
 		   "/", host,
 		   "/", disk,
@@ -755,6 +754,8 @@ char *argv[];
 {
   int i;
   int fd;
+  unsigned long malloc_hist_1, malloc_size_1;
+  unsigned long malloc_hist_2, malloc_size_2;
 
   for(fd = 3; fd < FD_SETSIZE; fd++) {
     /*
@@ -765,6 +766,8 @@ char *argv[];
      */
     close(fd);
   }
+
+  malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
   for(i = 1; i < argc; ++i) {
 #ifdef TEXTDB
@@ -777,6 +780,13 @@ char *argv[];
 #endif
     close_infofile();
   }
+
+  malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+  if(malloc_size_1 != malloc_size_2) {
+    malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+  }
+
 }
 
 char *pname = "infofile";

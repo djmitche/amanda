@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: taper.c,v 1.21 1998/01/02 18:48:38 jrj Exp $
+/* $Id: taper.c,v 1.22 1998/01/26 21:16:38 jrj Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -121,6 +121,8 @@ char *label = NULL;
 int filenum;
 char *errstr = NULL;
 int tape_fd;
+static unsigned long malloc_hist_1, malloc_size_1;
+static unsigned long malloc_hist_2, malloc_size_2;
 
 /*
  * ========================================================================
@@ -143,6 +145,8 @@ char **main_argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     /* print prompts and debug messages if running interactive */
 
@@ -345,6 +349,13 @@ int rdpipe, wrpipe;
 
 	    detach_buffers(buftable);
 	    destroy_buffers();
+
+	    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+	    if(malloc_size_1 != malloc_size_2) {
+		malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+	    }
+
 	    exit(0);
 
 	default:
@@ -692,6 +703,13 @@ int getp, putp;
 
 	case 'Q':
 	    end_tape(0);	/* XXX check results of end tape ?? */
+
+	    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+	    if(malloc_size_1 != malloc_size_2) {
+		malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+	    }
+
 	    exit(0);
 	default:
 	    assert(0);

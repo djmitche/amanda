@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: planner.c,v 1.57 1998/01/16 12:11:41 amcore Exp $
+ * $Id: planner.c,v 1.58 1998/01/26 21:16:32 jrj Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -146,6 +146,8 @@ char **argv;
     int moved_one;
     char *datestamp = NULL, **vp;
     struct passwd *pwptr;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
     int fd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -157,6 +159,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     startclock();
@@ -408,6 +412,12 @@ char **argv;
 
     close_infofile();
     log(L_FINISH, "date %s", datestamp);
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+    }
 
     return 0;
 }

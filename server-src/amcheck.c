@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amcheck.c,v 1.30 1998/01/12 22:32:44 blair Exp $
+ * $Id: amcheck.c,v 1.31 1998/01/26 21:16:11 jrj Exp $
  *
  * checks for common problems in server and clients
  */
@@ -78,13 +78,18 @@ void usage()
     error("Usage: amcheck%s [-mwsc] <conf>", versionsuffix());
 }
 
+static unsigned long malloc_hist_1, malloc_size_1;
+static unsigned long malloc_hist_2, malloc_size_2;
+
+char *tempfname = NULL;
+
 int main(argc, argv)
 int argc;
 char **argv;
 {
     char buffer[BUFFER_SIZE], *cmd = NULL;
     char *confdir, *version_string;
-    char *mainfname = NULL, *tempfname = NULL;
+    char *mainfname = NULL;
     char pid_str[NUM_STR_SIZE];
     char *confname;
     int do_clientchk, clientchk_pid, client_probs;
@@ -104,6 +109,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     ap_snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
 
@@ -153,6 +160,7 @@ char **argv;
     confdir = vstralloc(CONFIG_DIR, "/", confname, NULL);
     if(chdir(confdir) != 0)
 	error("could not cd to confdir %s: %s", confdir, strerror(errno));
+    afree(confdir);
 
     if(read_conffile(CONFFILE_NAME))
 	error("could not read amanda config file");
@@ -220,19 +228,20 @@ char **argv;
 	}
 	else {
 	    char number[NUM_STR_SIZE];
-	    char *msg = NULL;
+	    char *wait_msg = NULL;
 
 	    ap_snprintf(number, sizeof(number), "%ld", (long)pid);
-	    msg = vstralloc("parent: reaped bogus pid ", number, "\n", NULL);
+	    wait_msg = vstralloc("parent: reaped bogus pid ", number, "\n",
+				 NULL);
 	    for(l = 0, n = strlen(buffer); l < n; l += s) {
 		if((s = write(mainfd, buffer + l, n - l)) < 0) {
 		    error("write main file: %s", strerror(errno));
 		}
 	    }
-	    afree(msg);
+	    afree(wait_msg);
 	}
     }
-
+    afree(msg);
 
     /* copy temp output to main output and write tagline */
 
@@ -252,11 +261,18 @@ char **argv;
 	aclose(tempfd);
 	unlink(tempfname);
     }
+    afree(tempfname);
 
     for(l = 0, n = strlen(version_string); l < n; l += s) {
 	if((s = write(mainfd, version_string + l, n - l)) < 0) {
 	    error("write main file: %s", strerror(errno));
 	}
+    }
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
     }
 
     /* send mail if requested, but only if there were problems */
@@ -419,6 +435,8 @@ int fd;
     default:
 	return pid;
     }
+    afree(msg);
+    afree(tempfname);
 
     startclock();
 
@@ -560,9 +578,19 @@ int fd;
 	}
     }
 
+    afree(datestamp);
+    afree(label);
+
     fprintf(outf, "Server check took %s seconds.\n", walltime_str(curclock()));
 
     fflush(outf);
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fd, malloc_hist_1, malloc_hist_2);
+    }
+
     exit(tapebad || disklow || logbad);
     /* NOTREACHED */
     return 0;
@@ -598,6 +626,7 @@ int fd;
     default:
 	return pid;
     }
+    afree(tempfname);
 
     startclock();
 
@@ -639,17 +668,20 @@ int fd;
 	hostp = origqp->head->host;
 	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	    char *t;
+	    char *o;
 
 	    remove_disk(origqp, dp);
+	    o = optionstr(dp);
 	    t = vstralloc(req,
 			  dp->program, 
 			  " ",
 			  dp->name,
 			  " 0 OPTIONS |",
-			  optionstr(dp),
+			  o,
 			  "\n",
 			  NULL);
 	    afree(req);
+	    afree(o);
 	    req = t;
 	}
 	hostcount++;
@@ -674,11 +706,19 @@ int fd;
 	check_protocol();
     }
     run_protocol();
+    afree(msg);
 
     fprintf(outf,
      "Client check: %d hosts checked in %s seconds, %d problems found.\n",
 	    hostcount, walltime_str(curclock()), remote_errors);
     fflush(outf);
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fd, malloc_hist_1, malloc_hist_2);
+    }
+
     exit(remote_errors > 0);
     /* NOTREACHED */
     return 0;

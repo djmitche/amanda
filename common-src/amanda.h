@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amanda.h,v 1.41 1998/01/26 18:35:40 jrj Exp $
+ * $Id: amanda.h,v 1.42 1998/01/26 21:15:56 jrj Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -199,6 +199,41 @@
 #  include <krb.h>
 #endif
 
+/*
+ * The dbmalloc package comes from:
+ *
+ *  http://www.clark.net/pub/dickey/dbmalloc/dbmalloc.tar.gz
+ *
+ * or
+ *
+ *  ftp://gatekeeper.dec.com/pub/usenet/comp.sources.misc/volume32/dbmalloc/
+ *
+ * The following functions are sprinkled through the code, but are
+ * disabled unless USE_DBMALLOC is defined:
+ *
+ *  malloc_enter(char *) -- stack trace for malloc reports
+ *  malloc_leave(char *) -- stack trace for malloc reports
+ *  malloc_leave(void *) -- mark an area as never to be free-d
+ *  malloc_chain_check(void) -- check the malloc area now
+ *  malloc_dump(int fd) -- report the malloc contents to a file descriptor
+ *  malloc_list(int fd, ulong a, ulong b) -- report memory activated since
+ *	history stamp a that is still active as of stamp b (leak check)
+ *  malloc_inuse(ulong *h) -- create history stamp h and return the amount
+ *	of memory currently in use.
+ */
+
+#ifdef USE_DBMALLOC
+#include "dbmalloc.h"
+#else
+#define	malloc_enter(func)
+#define	malloc_leave(func)
+#define	malloc_mark(ptr)
+#define	malloc_chain_check()
+#define	malloc_dump(fd)
+#define	malloc_list(a,b,c)
+#define	malloc_inuse(hist)	(*(hist) = 0, 0)
+#endif
+
 #if !defined(HAVE_SIGACTION) && defined(HAVE_SIGVEC)
 /* quick'n'dirty hack for NextStep31 */
 #  define sa_flags sv_flags
@@ -344,14 +379,67 @@ extern int    erroutput_type;
 extern void   error     P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
 extern int    onerror         P((void (*errf)(void)));
+
+#if defined(USE_DBMALLOC)
+extern void  *debug_alloc           P((char *c, int l, int size));
+extern void  *debug_newalloc        P((char *c, int l, void *old, int size));
+extern char  *debug_stralloc        P((char *c, int l, char *str));
+extern char  *debug_newstralloc     P((char *c, int l, char *oldstr, char *newstr));
+
+#define	alloc(s)		debug_alloc(__FILE__, __LINE__, (s))
+#define	newalloc(p,s)		debug_newalloc(__FILE__, __LINE__, (p), (s))
+#define	stralloc(s)		debug_stralloc(__FILE__, __LINE__, (s))
+#define	newstralloc(p,s)	debug_newstralloc(__FILE__, __LINE__, (p), (s))
+
+/*
+ * Voodoo time.  We want to be able to mark these calls with the source
+ * line, but CPP does not handle variable argument lists so we cannot
+ * do what we did above (e.g. for alloc()).
+ *
+ * What we do is call a function to save the file and line number
+ * and have it return "false".  That triggers the "?" operator to
+ * the right side of the ":" which is a call to the debug version of
+ * vstralloc/newvstralloc but without parameters.  The compiler gets
+ * those from the next input tokens:
+ *
+ *  xx = vstralloc(a,b,NULL);
+ *
+ * becomes:
+ *
+ *  xx = debug_alloc_save(__FILE__,__LINE__)?0:debug_vstralloc(a,b,NULL);
+ *
+ * This works as long as vstralloc/newvstralloc are not part of anything
+ * very complicated.  Assignment is fine, as is an argument to another
+ * function (but you should not do that because it creates a memory leak).
+ * This will not work in arithmetic or comparison, but it is unlikely
+ * they are used like that.
+ *
+ *  xx = vstralloc(a,b,NULL);			OK
+ *  return vstralloc(j,k,NULL);			OK
+ *  sub(a, vstralloc(g,h,NULL), z);		OK, but a leak
+ *  if(vstralloc(s,t,NULL) == NULL) { ...	NO, but unneeded
+ *  xx = vstralloc(x,y,NULL) + 13;		NO, but why do it?
+ */
+
+#define vstralloc debug_alloc_save(__FILE__,__LINE__)?0:debug_vstralloc
+#define newvstralloc debug_alloc_save(__FILE__,__LINE__)?0:debug_newvstralloc
+
+extern char  *debug_vstralloc       P((char *str, ...));
+extern char  *debug_newvstralloc    P((char *oldstr, char *newstr, ...));
+
+#else
+
 extern void  *alloc           P((int size));
 extern void  *newalloc        P((void *old, int size));
 extern char  *stralloc        P((char *str));
-extern char  *vstralloc       P((char *str, ...));
-#define	stralloc2(s1,s2)      vstralloc((s1),(s2),NULL)
 extern char  *newstralloc     P((char *oldstr, char *newstr));
+extern char  *vstralloc       P((char *str, ...));
 extern char  *newvstralloc    P((char *oldstr, char *newstr, ...));
+#endif
+
+#define	stralloc2(s1,s2)      vstralloc((s1),(s2),NULL)
 #define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
+
 extern void  *sbuf_man        P((void *bufs, void *ptr));
 extern char **safe_env        P((void));
 extern char  *validate_regexp P((char *regex));

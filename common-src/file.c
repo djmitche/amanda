@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.8 1998/01/12 21:34:19 blair Exp $
+ * $Id: file.c,v 1.9 1998/01/26 21:15:59 jrj Exp $
  *
  * file and directory bashing routines
  */
@@ -156,13 +156,13 @@ char *topdir;	/* where to stop removing */
 char *sanitise_filename(inp)
 char *inp;
 {
-    static char *buf = NULL;
+    char *buf;
     int buf_size;
     char *s, *d;
     int ch;
 
     buf_size = 2 * strlen(inp) + 1;		/* worst case */
-    buf = newalloc(buf, buf_size);
+    buf = alloc(buf_size);
     d = buf;
     s = inp;
     while((ch = *s++) != '\0') {

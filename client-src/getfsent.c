@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getfsent.c,v 1.12 1998/01/22 21:11:51 amcore Exp $
+ * $Id: getfsent.c,v 1.13 1998/01/26 21:15:35 jrj Exp $
  *
  * generic version of code to read fstab
  */
@@ -385,6 +385,7 @@ char *name;
     }
     ch = *s++;
   }
+  afree(fname);
   return stralloc(name);			/* no match */
 }
 
@@ -436,6 +437,8 @@ generic_fsent_t *fsent;
   rc = 0;
   while(get_fstab_nextentry(fsent)) {
     struct stat estat;
+
+    afree(rdev);
     if ((fsent->mntdir != NULL
 	 && stat(fsent->mntdir, &estat) != -1
 	 && samefile(stats, &estat)) ||
@@ -487,27 +490,23 @@ char *amname_to_dirname(str)
 char *str;
 {
     generic_fsent_t fsent;
-    static char *dirname = NULL;
 
     if(search_fstab(str, &fsent))
       if (fsent.mntdir != NULL)
 	str = fsent.mntdir;
 
-    dirname = newstralloc(dirname, str);
-    return dirname;
+    return stralloc(str);
 }
 
 char *amname_to_fstype(str)
 char *str;
 {
     generic_fsent_t fsent;
-    static char *fstype = NULL;
 
     if (!search_fstab(str, &fsent))
-      return "";
+      return stralloc("");
 
-    fstype = newstralloc(fstype, fsent.fstype);
-    return fstype;
+    return stralloc(fsent.fstype);
 }
 
 #ifdef TEST
@@ -527,6 +526,9 @@ int main()
 {
     generic_fsent_t fsent;
     int fd;
+    char *s;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -537,6 +539,8 @@ int main()
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     if(!open_fstab()) {
 	fprintf(stderr, "getfsent_test: could not open fstab\n");
@@ -561,17 +565,43 @@ int main()
     else 
 	printf("Mount for /usr not found\n");
 
-    printf("fstype of `/': %s\n", amname_to_fstype("/"));
-    printf("fstype of `/dev/root': %s\n", amname_to_fstype("/dev/root"));
-    printf("fstype of `/usr': %s\n", amname_to_fstype("/usr"));
-    printf("fstype of `c0t3d0s0': %s\n", amname_to_fstype("c0t3d0s0"));
+    s = amname_to_fstype("/");
+    printf("fstype of `/': %s\n", s);
+    afree(s);
+    s = amname_to_fstype("/dev/root");
+    printf("fstype of `/dev/root': %s\n", s);
+    afree(s);
+    s = amname_to_fstype("/usr");
+    printf("fstype of `/usr': %s\n", s);
+    afree(s);
+    s = amname_to_fstype("c0t3d0s0");
+    printf("fstype of `c0t3d0s0': %s\n", s);
+    afree(s);
 
-    printf("device of `/tmp/foo': %s\n", amname_to_devname("/tmp/foo"));
-    printf("dirname of `/tmp/foo': %s\n", amname_to_dirname("/tmp/foo"));
-    printf("fstype of `/tmp/foo': %s\n", amname_to_fstype("/tmp/foo"));
-    printf("device of `./foo': %s\n", amname_to_devname("./foo"));
-    printf("dirname of `./foo': %s\n", amname_to_dirname("./foo"));
-    printf("fstype of `./foo': %s\n", amname_to_fstype("./foo"));
+    s = amname_to_devname("/tmp/foo");
+    printf("device of `/tmp/foo': %s\n", s);
+    afree(s);
+    s = amname_to_dirname("/tmp/foo");
+    printf("dirname of `/tmp/foo': %s\n", s);
+    afree(s);
+    s = amname_to_fstype("/tmp/foo");
+    printf("fstype of `/tmp/foo': %s\n", s);
+    afree(s);
+    s = amname_to_devname("./foo");
+    printf("device of `./foo': %s\n", s);
+    afree(s);
+    s = amname_to_dirname("./foo");
+    printf("dirname of `./foo': %s\n", s);
+    afree(s);
+    s = amname_to_fstype("./foo");
+    printf("fstype of `./foo': %s\n", s);
+    afree(s);
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+    }
 
     return 0;
 }

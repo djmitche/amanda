@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: dumper.c,v 1.48 1998/01/22 18:05:03 jrj Exp $
+/* $Id: dumper.c,v 1.49 1998/01/26 21:16:26 jrj Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -180,6 +180,8 @@ char **main_argv;
     int outfd, protocol_port, taper_port, rc;
     struct passwd *pwptr;
     dgram_t *msg;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
     int fd;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
@@ -191,6 +193,8 @@ char **main_argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
 
@@ -347,6 +351,13 @@ char **main_argv;
 	    putresult("BAD-COMMAND %s\n", squote(argv[1]));
 	}
     } while(cmd != QUIT);
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+    }
+
     return 0;
 }
 
@@ -745,6 +756,7 @@ int mesgfd, datafd, indexfd, outfd;
     char kb_str[NUM_STR_SIZE];
     char kps_str[NUM_STR_SIZE];
     char orig_kb_str[NUM_STR_SIZE];
+    char *sfn;
 
 #ifndef DUMPER_SOCKET_BUFFERING
 #define DUMPER_SOCKET_BUFFERING 0
@@ -848,13 +860,15 @@ int mesgfd, datafd, indexfd, outfd;
     }
 
     ap_snprintf(level_str, sizeof(level_str), "%d", level);
+    sfn = sanitise_filename(diskname);
     errfname = newvstralloc(errfname,
 			    "/tmp",
 			    "/", hostname,
-			    ".", sanitise_filename(diskname),
+			    ".", sfn,
 			    ".", level_str,
 			    ".errout",
 			    NULL);
+    afree(sfn);
     if((errf = fopen(errfname, "w")) == NULL) {
 	errstr = newvstralloc(errstr,
 			      "errfile open \"", errfname, "\": ",

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.26 1998/01/22 21:36:48 amcore Exp $
+ * $Id: selfcheck.c,v 1.27 1998/01/26 21:15:36 jrj Exp $
  *
  * do self-check and send back any error messages
  */
@@ -77,6 +77,8 @@ char **argv;
     char *s;
     int ch;
     int fd;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
 
     /* initialize */
 
@@ -89,6 +91,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     chdir("/tmp");
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
@@ -171,6 +175,15 @@ char **argv;
     check_overall();
 
     afree(line);
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	extern int db_fd;
+
+	malloc_list(db_fd, malloc_hist_1, malloc_hist_2);
+    }
+
     dbclose();
     return 0;
 
@@ -188,6 +201,7 @@ char *program, *disk, *str;
 {
     int as_index = 0;
     char *device = NULL;
+    char *fstype = NULL;
 
     if(strstr(str,"index") != NULL)
 	as_index=1;
@@ -202,7 +216,7 @@ char *program, *disk, *str;
 	need_rundump=1;
 #endif
 #ifndef AIX_BACKUP
-	device = stralloc(amname_to_devname(disk));
+	device = amname_to_devname(disk);
 
 #ifdef VDUMP
 #ifdef DUMP
@@ -220,7 +234,8 @@ char *program, *disk, *str;
 #endif /* VDUMP */
 #ifdef XFSDUMP
 #ifdef DUMP
-	if (strcmp(amname_to_fstype(device), "xfs") == 0)
+	fstype = amname_to_fstype(device);
+	if (strcmp(fstype, "xfs") == 0)
 #else
 	if (1)
 #endif
@@ -233,7 +248,8 @@ char *program, *disk, *str;
 #endif /* XFSDUMP */
 #ifdef VXDUMP
 #ifdef DUMP
-	if (strcmp(amname_to_fstype(device), "vxfs") == 0)
+	fstype = amname_to_fstype(device);
+	if (strcmp(fstype, "vxfs") == 0)
 #else
 	if (1)
 #endif
@@ -262,6 +278,7 @@ char *program, *disk, *str;
 	/* do nothing */
     }
     afree(device);
+    afree(fstype);
 }
 
 static void check_disk(program, disk, level)
@@ -318,9 +335,9 @@ int level;
 	    return;
 	}
 #endif
-	device = stralloc(amname_to_dirname(disk));
+	device = amname_to_dirname(disk);
     } else {
-        device = stralloc(amname_to_devname(disk));
+        device = amname_to_devname(disk);
 #ifdef VDUMP
 #ifdef DUMP
         if (strcmp(amname_to_fstype(device), "advfs") == 0)

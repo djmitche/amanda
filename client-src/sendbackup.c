@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.28 1998/01/12 22:32:28 blair Exp $
+ * $Id: sendbackup.c,v 1.29 1998/01/26 21:15:42 jrj Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -185,6 +185,8 @@ char **argv;
     char *err_extra = NULL;
     char *s, *fp;
     int ch;
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
     int fd;
 
     /* initialize */
@@ -198,6 +200,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     chdir("/tmp");
     interactive = (argc > 1 && strcmp(argv[1],"-t") == 0);
@@ -452,6 +456,13 @@ char **argv;
     parse_backup_messages(mesgpipe[0]);
 
     dbclose();
+
+    malloc_size_2 = malloc_inuse(&malloc_hist_2);
+
+    if(malloc_size_1 != malloc_size_2) {
+	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+    }
+
     return 0;
 
  err:
