@@ -1,5 +1,7 @@
 Version 2.4.0b2
 
+	Several bugfixes by John R. Jackson <jrj@cc.purdue.edu>
+
 	AIX's restore support added to amrecover.  -David B. Anderson
 	<dbanders@mail.physics.utah.edu>
 
