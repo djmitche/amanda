@@ -207,7 +207,7 @@ AC_SUBST(USE_VERSION_SUFFIXES)
 
 BUILD_CLIENT_PROGS_LIBEXEC="amandad calcsize rundump runtar selfcheck sendbackup sendsize"
 BUILD_CLIENT_SCRIPTS_LIBEXEC="patch-system"
-BUILD_CLIENT_LIB="libamclient.a"
+BUILD_CLIENT_LIB="libamclient.la"
 AMCLIENT_EXTRA_OBJS=
 
 BUILD_RECOVER_PROGS_SBIN="amrecover"
@@ -215,12 +215,12 @@ BUILD_RECOVER_PROGS_SBIN="amrecover"
 BUILD_CHANGER_PROGS_LIBEXEC="seagate-changer"
 BUILD_CHANGER_SCRIPTS_LIBEXEC="chg-generic hp-changer no-changer rth-changer"
 
-BUILD_TAPE_LIB="libamtape.a"
+BUILD_TAPE_LIB="libamtape.la"
 
 BUILD_SERVER_PROGS_SBIN="amadmin amcheck amflush amlabel amtape"
 BUILD_SERVER_PROGS_LIBEXEC="amindexd amtrmidx driver dumper getconf planner reporter taper"
 BUILD_SERVER_SCRIPTS_SBIN="amcheckdb amcleanup amdump amoverview amrmtape amtoc amverify"
-BUILD_SERVER_LIB="libamserver.a"
+BUILD_SERVER_LIB="libamserver.la"
 
 BUILD_RESTORE_PROGS_SBIN="amrestore"
 BUILD_RESTORE_PROGS_LIBEXEC="amidxtaped"
@@ -511,7 +511,7 @@ AC_ARG_WITH(smbclient,
 )
 if test "$SAMBA_CLIENT"; then
     LIBSRCS_CLIENT="$LIBSRCS_CLIENT findpass.c"
-    LIBOBJS_CLIENT="$LIBOBJS_CLIENT findpass.o"
+    LIBOBJS_CLIENT="$LIBOBJS_CLIENT findpass.lo"
     AC_DEFINE_UNQUOTED(SAMBA_CLIENT,"$SAMBA_CLIENT")
 fi
 
@@ -1146,6 +1146,7 @@ AC_MSG_CHECKING(for no rewinding tape device)
 AC_MSG_RESULT($TAPE_NO_REWIND_DEVICE)
 
 dnl Checks for compilers, typedefs, structures, and compiler characteristics.
+AM_PROG_LIBTOOL
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
 AC_C_CONST
@@ -1926,6 +1927,12 @@ if ${NO_CLIENT_MODE-false}; then
     BUILD_CLIENT_LIB=
     BUILD_RECOVER_PROGS_SBIN=
 fi
+
+dnl for libtool support on autoconf 2.12 and earlier
+LTLIBOBJS=`echo "$LIBOBJS" | sed 's/\.o/\.lo/g'`
+AC_SUBST(LTLIBOBJS)
+LTALLOCA=`echo "$ALLOCA" | sed 's/\.o/\.lo/g'`
+AC_SUBST(LTALLOCA)
 
 AC_OUTPUT( \
 	common-src/versuff.c		common-src/Makefile		\

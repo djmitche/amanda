@@ -1,12 +1,14 @@
 # Makefile for Amanda client programs.
 
+libclient_version = 0:0:0
+
 INCLUDES =		-I$(top_srcdir)/common-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-LDADD =	libamclient.a ../common-src/libamanda.a ../common-src/libamnolog.a
+LDADD =	libamclient.la ../common-src/libamanda.la ../common-src/libamnolog.la
 
 SUFFIXES =		.sh .pl
 
@@ -37,17 +39,19 @@ EXTRA_DIST =		amhpfixdevs.sh
 sendbackup_SOURCES = 	sendbackup.c			sendbackup.h	\
 			sendbackup-dump.c		sendbackup-gnutar.c
 
-noinst_LIBRARIES =	@BUILD_CLIENT_LIB@
+lib_LTLIBRARIES =	@BUILD_CLIENT_LIB@
 
-EXTRA_LIBRARIES = 	libamclient.a
+EXTRA_LTLIBRARIES = 	libamclient.la
 
-libamclient_a_SOURCES =	amandates.c	fnmatch.c	getfsent.c	\
+libamclient_la_SOURCES=	amandates.c	fnmatch.c	getfsent.c	\
 			unctime.c	add_exclude.c	check_exclude.c \
 			@LIBSRCS_CLIENT@
 
-EXTRA_libamclient_a_SOURCES = findpass.c
-libamclient_a_DEPENDENCIES = @LIBOBJS_CLIENT@
-libamclient_a_LIBADD =	@LIBOBJS_CLIENT@
+EXTRA_libamclient_la_SOURCES = findpass.c
+libamclient_la_DEPENDENCIES = @LIBOBJS_CLIENT@
+libamclient_la_LIBADD =	@LIBOBJS_CLIENT@
+
+libamclient_la_LDFLAGS = -version-info $(libclient_version) -rpath $(libdir)
 
 noinst_HEADERS	= 	amandates.h	fnmatch.h	getfsent.h	\
 			findpass.h

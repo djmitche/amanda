@@ -1,5 +1,8 @@
 # Makefile for Amanda library.
 
+libamanda_version = 0:0:0
+libnolog_version = 0:0:0
+
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
@@ -8,17 +11,21 @@ BUILT_SOURCES = 	version.c
 
 noinst_DATA =		versuff.c
 
-noinst_LIBRARIES =	libamanda.a libamnolog.a
+lib_LTLIBRARIES =	libamanda.la libamnolog.la
 
-libamanda_a_SOURCES =	alloc.c		debug.c		dgram.c		\
+libamanda_la_SOURCES =	alloc.c		debug.c		dgram.c		\
 			error.c		match.c		protocol.c	\
 			regex.c		statfs.c	\
 			stream.c	token.c		version.c	\
 			versuff.c	amflock.c
 
-libamanda_a_LIBADD =	@ALLOCA@ @LIBOBJS@
+libamanda_la_LIBADD =	@LTALLOCA@ @LTLIBOBJS@
 
-libamnolog_a_SOURCES = 	nolog.c
+libamanda_la_LDFLAGS =  -version-info $(libamanda_version)
+
+libamnolog_la_SOURCES =	nolog.c
+
+libamnolog_la_LDFLAGS = -version-info $(libnolog_version)
 
 noinst_HEADERS =	amanda.h	arglist.h	\
 			dgram.h		protocol.h	\
@@ -43,5 +50,5 @@ version.c:	$(srcdir)/genversion.c versuff.c $(srcdir)/version.h
 statfs: $(srcdir)/statfs.c $(srcdir)/statfs.h
 	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/statfs.c -o statfs
 
-token: $(srcdir)/token.c $(srcdir)/token.h libamanda.a libamnolog.a
-	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/token.c libamanda.a libamnolog.a -o token
+token: $(srcdir)/token.c $(srcdir)/token.h libamanda.la libamnolog.la
+	$(COMPILE) $(LDFLAGS) -DTEST -I.. $(srcdir)/token.c libamanda.la libamnolog.la -o token

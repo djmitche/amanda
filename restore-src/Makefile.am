@@ -6,8 +6,8 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-LDADD = ../tape-src/libamtape.a \
-	../common-src/libamanda.a ../common-src/libamnolog.a
+LDADD = ../tape-src/libamtape.la \
+	../common-src/libamanda.la ../common-src/libamnolog.la
 
 sbin_PROGRAMS = 	@BUILD_RESTORE_PROGS_SBIN@
 

@@ -6,8 +6,8 @@ AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
  
-LDADD = ../client-src/libamclient.a ../common-src/libamanda.a \
-	../common-src/libamnolog.a @LEXLIB@
+LDADD = ../client-src/libamclient.la ../common-src/libamanda.la \
+	../common-src/libamnolog.la @LEXLIB@
 
 EXTRA_PROGRAMS = 	amrecover
 

@@ -1,14 +1,16 @@
 # Makefile for Amanda server programs.
 
+libserver_version = 0:0:0
+
 INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/tape-src
 
 AMANDA_CFLAGS =		@AMANDA_CFLAGS@
 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(AMANDA_CFLAGS)
 
-LDADD =	libamserver.a ../tape-src/libamtape.a ../common-src/libamanda.a \
-        libamserver.a ../common-src/libamanda.a
-# libamserver.a must be duplicated in some systems
+LDADD =	libamserver.la ../tape-src/libamtape.la ../common-src/libamanda.la \
+        libamserver.la ../common-src/libamanda.la
+# libamserver.la must be duplicated in some systems
 
 SUFFIXES =		.sh .pl
 
@@ -46,13 +48,15 @@ amindexd_SOURCES =	amindexd.c			amindexd.h	\
 driver_SOURCES =	driver.c			driver.h	\
 			driverio.c
 
-noinst_LIBRARIES = 	@BUILD_SERVER_LIB@
+lib_LTLIBRARIES = 	@BUILD_SERVER_LIB@
 
-EXTRA_LIBRARIES = 	libamserver.a
+EXTRA_LTLIBRARIES = 	libamserver.la
 
-libamserver_a_SOURCES =	amindex.c	changer.c	clock.c		\
+libamserver_la_SOURCES=	amindex.c	changer.c	clock.c		\
 			conffile.c	diskfile.c	infofile.c	\
 			logfile.c	tapefile.c
+
+libamserver_la_LDFLAGS= -version-info $(libserver_version) -rpath $(libdir)
 
 noinst_HEADERS = 	amindex.h	changer.h	clock.h		\
 			conffile.h	diskfile.h	infofile.h	\
