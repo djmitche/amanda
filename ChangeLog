@@ -1,5 +1,14 @@
 2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/driver.c: Build holding disk name with timestamp.
+	* server-src/holding.c (is_datestr): Check also for timestamp.
+	* server-src/planner.c: Flush today's dump with autoflush.
+	* server-src/find.c: Find holding disk with timestamp.
+	* NEWS: holding disk disk use timestamped directory.
+	* NEWS: autoflush flush today's dump.
+
+2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* changer-src/chg-zd-mtx.sh.in: Works if all slot and tape are full.
 
 2004-02-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>

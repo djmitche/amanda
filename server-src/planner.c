@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.32 2004/01/07 12:56:13 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.1 2004/02/02 20:29:12 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -528,7 +528,7 @@ char **argv;
 	dumpfile_t file;
 	sl_t *holding_list;
 	sle_t *holding_file;
-	holding_list = get_flush(NULL, datestamp, 0, 0);
+	holding_list = get_flush(NULL, NULL, 0, 0);
 	for(holding_file=holding_list->first; holding_file != NULL;
 				       holding_file = holding_file->next) {
 	    get_dumpfile(holding_file->name, &file);
