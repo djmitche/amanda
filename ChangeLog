@@ -1,3 +1,7 @@
+1998-08-06  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ: some notes about driving real tape changers
+
 1998-08-05  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* man/amreport.8.in (SYNOPSIS): replace `amtoc' with `amreport'

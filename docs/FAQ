@@ -169,9 +169,37 @@ return in the terminal where you started the controlling program.
    If you have several tape units, which you want to use to emulate a
 tape changer, you want chg-multi.  Even if you do own a real tape
 changer, that operates based on ejecting a tape or such, chg-multi may
-be useful.  Other tape changers may require specialized changer
-programs; read docs/TAPE.CHANGERS for details about the ones provided
-with Amanda.
+be useful.
+
+   Actual tape changers usually require specialized changer programs,
+such as `mtx', `chio' or specific system calls.  The availability of
+these programs is much more dependent on the operating system you're
+running than on the particular tape changer hardware you have.
+
+   `mtx', for example, is available for several platforms.  However,
+even if you find it for your platform, beware that there exist several
+different programs named `mtx', that require different command line
+arguments, and print different output, and Amanda's chg-mtx does not
+support them all.  You may have to edit the script, which shouldn't be
+hard to do.
+
+   In section BUILT-IN TAPE CHANGERS of docs/TAPE.CHANGERS, you will
+find details about the tape changer interfacing programs provided with
+Amanda, that can interact with common tape changer programs and with
+tape changer-related system calls provided by some operating system.
+If none of them matches your needs, you may have to develop your own
+tape changer interface script.
+
+   Before posting a question to the Amanda mailing lists, *please*
+search the archives, and try to obtain as much information about
+driving your tape changer hardware from the vendor of the changer
+hardware and of the operating system, rather than from the Amanda
+mailing lists.  We usually don't have much to say about tape changer
+units, and several questions about them remain unanswered.  :-(
+
+   Anyway, if you decide to post a question, make sure you specify
+both the tape changer hardware *and* the OS/platform that is going to
+interface with it.  Good luck! :-)
 
 
 Q: Should I use software or hardware compression?
