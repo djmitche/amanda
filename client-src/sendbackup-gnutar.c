@@ -24,8 +24,25 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
+
 /* 
  * sendbackup-gnutar.c - send backup data using GNU tar
+ */
+
+/*
+ * File:	$RCSFile: sendbackup-dump.c,v $
+ * Part of:	
+ *
+ * Revision:	$Revision: 1.3 $
+ * Last Edited:	$data: 1997/03/24 10:10:10 $
+ * Author:	$Author: blair $
+ *
+ * History:	$Log: sendbackup-gnutar.c,v $
+ * History:	Revision 1.3  1997/03/24 17:14:43  blair
+ * History:	Instead of just listing gtar in the header, put in the
+ * History:	full path to gtar.
+ * History:
+ *
  */
 
 #include "amanda.h"
@@ -56,8 +73,13 @@ regex_t re_table[] = {
 
 extern char efile[256];
 
-char *backup_program_name = "gtar";	/* for printing purposes */
+#ifdef GNUTAR
+char *backup_program_name = GNUTAR;	/* for printing purposes */
+char *restore_program_name = GNUTAR;
+#else
+char *backup_program_name = "gtar";
 char *restore_program_name = "gtar";
+#endif
 char *amanda_backup_program = "GNUTAR";	/* for the header */
 
 int cur_level;
