@@ -1,5 +1,10 @@
 1998-12-10  John R. Jackson  <jrj@purdue.edu>
 
+	* common-src/amflock.c (main): report CONFIGURE_TEST error messages to
+	stderr.
+
+1998-12-10  John R. Jackson  <jrj@purdue.edu>
+
 	* common-src/amflock.c (main): call set_pname() for CONFIGURE_TEST.
 	* configure.in: do not set up pname global for lnlock CONFIGURE_TEST.
 

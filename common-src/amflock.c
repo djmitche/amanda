@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflock.c,v 1.17.4.1 1998/12/10 22:29:11 jrj Exp $
+ * $Id: amflock.c,v 1.17.4.2 1998/12/10 23:11:10 jrj Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -430,24 +430,36 @@ main()
     set_pname("lnlock test");
 
     unlink(filen);
-    if ((lockfd = open(filen, O_RDONLY|O_CREAT|O_EXCL, 0600)) == -1)
-	return (-1);
+    if ((lockfd = open(filen, O_RDONLY|O_CREAT|O_EXCL, 0600)) == -1) {
+	perror (filen);
+	exit(10);
+    }
 
-    if (amroflock(lockfd, resn) != 0)
+    if (amroflock(lockfd, resn) != 0) {
+	perror ("amroflock");
 	exit(1);
-    if (amfunlock(lockfd, resn) != 0)
+    }
+    if (amfunlock(lockfd, resn) != 0) {
+	perror ("amfunlock/2");
 	exit(2);
+    }
 
     aclose(lockfd);
 
     unlink(filen);
-    if ((lockfd = open(filen, O_WRONLY|O_CREAT|O_EXCL, 0600)) == -1)
-	return (-1);
+    if ((lockfd = open(filen, O_WRONLY|O_CREAT|O_EXCL, 0600)) == -1) {
+	perror (filen);
+	exit(20);
+    }
 
-    if (amflock(lockfd, resn) != 0)
+    if (amflock(lockfd, resn) != 0) {
+	perror ("amflock");
 	exit(3);
-    if (amfunlock(lockfd, resn) != 0)
+    }
+    if (amfunlock(lockfd, resn) != 0) {
+	perror ("amfunlock/4");
 	exit(4);
+    }
 
     aclose(lockfd);
 
