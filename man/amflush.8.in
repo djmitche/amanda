@@ -13,7 +13,11 @@ amflush \- flush Amanda backup files from holding disk to tape
 .SH SYNOPSIS
 .B amflush
 [
+.B -b
+] [
 .B -f
+] [
+.B -s
 ] [
 .B -D
 .I datestamp
@@ -36,9 +40,36 @@ is run.
 When this happens, the problem must be corrected and
 .B amflush
 run by hand.
-.LP
-.B -D
-.I datestamp
+.SH OPTIONS
+.TP
+.B \-b
+Run
+.B amflush
+in batch mode. All datestamp are selected unless specified.
+The flush is started without confirmation.
+.TP
+.B \-f
+Run
+.B amflush
+in foreground.
+.B Amflush
+normally detaches itself from the tty and runs as a background process.
+With the
+.B -f
+option,
+.B amflush
+stays in the foreground.
+This is useful if
+.B amflush
+is run as part of another script that, for example, advances the tape
+after the flush is completed.
+.TP
+.B \-s
+Write log to stdout/stderr instead of the amflush log file. Require the
+.B \-f
+option.
+.TP
+.B \-D datestamp
 specify a  datestamp expression you want to flush, see the 
 "DATASTAMP EXPRESSION" section of
 .IR amanda (8)
@@ -65,17 +96,6 @@ The work directories in the holding disks are named by the date at the time
 was run, e.g.\&
 .IR 19910215 .
 .PP
-.B Amflush
-normally detaches itself from the tty and runs as a background process.
-With the
-.B -f
-option,
-.B amflush
-stays in the foreground.
-This is useful if
-.B amflush
-is run as part of another script that, for example, advances the tape
-after the flush is completed.
 .LP
 See the
 .IR amanda (8)

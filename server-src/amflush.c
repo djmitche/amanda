@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.13.4.6.2.8 2002/12/30 15:52:32 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.13.4.6.2.9 2003/06/05 17:06:20 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -52,6 +52,7 @@ sl_t *datestamp_list;
 int main P((int main_argc, char **main_argv));
 void flush_holdingdisk P((char *diskdir, char *datestamp));
 void confirm P((void));
+void redirect_stderr P((void));
 void detach P((void));
 void run_dumps P((void));
 
@@ -61,6 +62,8 @@ int main_argc;
 char **main_argv;
 {
     int foreground;
+    int batch;
+    int redirect;
     struct passwd *pw;
     char *dumpuser;
     char **datearg = NULL;
@@ -100,12 +103,18 @@ char **main_argv;
 
     erroutput_type = ERR_INTERACTIVE;
     foreground = 0;
+    batch = 0;
+    redirect = 1;
 
     /* process arguments */
 
-    while((opt = getopt(main_argc, main_argv, "fD:")) != EOF) {
+    while((opt = getopt(main_argc, main_argv, "bfsD:")) != EOF) {
 	switch(opt) {
+	case 'b': batch = 1;
+		  break;
 	case 'f': foreground = 1;
+		  break;
+	case 's': redirect = 0;
 		  break;
 	case 'D': if (datearg == NULL)
 			datearg = alloc(21*sizeof(char *));
@@ -118,10 +127,15 @@ char **main_argv;
 		  break;
 	}
     }
+    if(!foreground && !redirect) {
+	fprintf(stderr,"Can't redirect to stdout/stderr if not in forground.\n");
+	exit(1);
+    }
+
     main_argc -= optind, main_argv += optind;
 
     if(main_argc < 1) {
-	error("Usage: amflush%s [-f] [-D date]* <confdir> [host [disk]* ]*", versionsuffix());
+	error("Usage: amflush%s [-b] [-f] [-s] [-D date]* <confdir> [host [disk]* ]*", versionsuffix());
     }
 
     config_name = main_argv[0];
@@ -199,16 +213,35 @@ char **main_argv;
 	}
     }
     else {
-	datestamp_list = pick_datestamp(1);
+	if(batch) {
+	    datestamp_list = pick_all_datestamp(1);
+	}
+	else {
+	    datestamp_list = pick_datestamp(1);
+	}
     }
-    confirm();
+
+    if(datestamp_list == NULL) {
+	printf("Could not find any Amanda directories to flush.\n");
+	exit(1);
+    }
+
+    if(!batch) confirm();
 
     for(dp = diskqp->head; dp != NULL; dp = dp->next) {
 	if(dp->todo)
 	    log_add(L_DISK, "%s %s", dp->host->hostname, dp->name);
     }
 
+    if(!foreground) { /* write it before redirecting stdout */
+	puts("Running in background, you can log off now.");
+	puts("You'll get mail when amflush is finished.");
+    }
+
+    if(redirect) redirect_stderr();
+
     if(!foreground) detach();
+
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
     today = time(NULL);
@@ -281,7 +314,7 @@ char **main_argv;
     free_sl(holding_list);
     holding_list = NULL;
 
-    if(!foreground) { /* rename errfile */
+    if(redirect) { /* rename errfile */
 	char *errfile, *errfilex, *nerrfilex, number[100];
 	int tapecycle;
 	int maxdays, days;
@@ -363,7 +396,7 @@ char **main_argv;
      */
 
     execle(logroll_program,
-	   "amreport", config_name, (char *)0,
+	   "amlogroll", config_name, (char *)0,
 	   safe_env());
     error("cannot exec %s: %s", logroll_program, strerror(errno));
     return 0;				/* keep the compiler happy */
@@ -400,10 +433,6 @@ void confirm()
     int ch;
     char *extra;
 
-    if(datestamp_list == NULL) {
-	printf("Could not find any Amanda directories to flush.\n");
-	exit(1);
-    }
     printf("\nToday is: %s\n",datestamp);
     printf("Flushing dumps in");
     extra = "";
@@ -441,33 +470,39 @@ void confirm()
     exit(1);
 }
 
+void redirect_stderr()
+{
+    int fderr;
+    char *errfile;
+
+    fflush(stdout); fflush(stderr);
+    errfile = vstralloc(conf_logdir, "/amflush", NULL);
+    if((fderr = open(errfile, O_WRONLY| O_CREAT | O_TRUNC, 0600)) == -1)
+	error("could not open %s: %s", errfile, strerror(errno));
+    dup2(fderr,1);
+    dup2(fderr,2);
+    aclose(fderr);
+    amfree(errfile);
+}
+
 void detach()
 {
-    int fd, fderr;
-    char *errfile;
+    int fd;
 
     fflush(stdout); fflush(stderr);
     if((fd = open("/dev/null", O_RDWR, 0666)) == -1)
 	error("could not open /dev/null: %s", strerror(errno));
 
+    dup2(fd,0);
+    aclose(fd);
+
     switch(fork()) {
     case -1: error("could not fork: %s", strerror(errno));
     case 0:
-	dup2(fd,0);
-	aclose(fd);
-	errfile = vstralloc(conf_logdir, "/amflush", NULL);
-	if((fderr = open(errfile, O_WRONLY| O_CREAT | O_TRUNC, 0600)) == -1)
-	    error("could not open %s: %s", errfile, strerror(errno));
-	dup2(fderr,1);
-	dup2(fderr,2);
-	aclose(fderr);
 	setsid();
-	amfree(errfile);
 	return;
     }
 
-    puts("Running in background, you can log off now.");
-    puts("You'll get mail when amflush is finished.");
     exit(0);
 }
 

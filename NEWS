@@ -1,5 +1,6 @@
 Changes in release 2.4.4p1
 
+* new amflush -b and -s options, change -r behavior.
 * new chg-mcutil changer.
 * amrecover_changer works with chg-multi.
 * default driveslot for chg-zd-mtx is now 0.
