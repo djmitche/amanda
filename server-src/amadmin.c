@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.42 1998/06/07 21:59:03 martinea Exp $
+ * $Id: amadmin.c,v 1.43 1998/06/18 21:46:51 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -736,7 +736,7 @@ void bumpsize()
 	   getconf_int(CNF_BUMPSIZE));
     printf("  bumpdays %5d\t- minimum days at each level\n",
 	   getconf_int(CNF_BUMPDAYS));
-    printf("  bumpmult %5.5g\t- threshold = bumpsize * (level-1)**bumpmult\n\n",
+    printf("  bumpmult %5.5g\t- threshold = bumpsize * bumpmult**(level-1)\n\n",
 	   getconf_real(CNF_BUMPMULT));
 
     printf("      Bump -> To  Threshold\n");
