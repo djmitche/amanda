@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.14 1999/09/19 19:33:09 jrj Exp $
+#	$Id: amverify.sh.in,v 1.15 1999/09/20 00:24:58 jrj Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -23,26 +23,54 @@ else
 	SUF=
 fi
 
-report() {
+# If the shell/system echo support \r and \c, use them to write some
+# status messages over the top of each other as things progress, otherwise
+# use a normal echo and let them go on new lines.  Define $Echoe to be
+# an echo that goes to stderr.  In the code, $Echoe is used and it may
+# be either echoe or echone, the latter being code that knows about echon.
+
+t=`echo "abc\r\c" | wc -c`
+if [ $t -eq 4 ]; then
+	Echon=echon
+else
+	Echon=echo
+fi
+Echoe=echoe
+elen=0
+echoe() {
 	echo "$@" >&2
+	Echoe=echoe
+}
+echon() {
+        newelen=`expr "$1" : '.*'`
+	blanks=
+        while [ $newelen -lt $elen ]; do
+		blanks="$blanks "
+                elen=`expr $elen - 1`
+        done
+        echo "$1""$blanks\r\c"
+        elen=$newelen
+	Echoe=echone
+}
+echone() {
+	echon
+	echoe "$@"
+	Echoe=echoe
+}
+
+report() {
+	$Echoe "$@"
 	echo "$@" >> $REPORT
 }
 
 getparm() {
-	(cd $CONFIG_DIR/$CONFIG; $AMGETCONF $1 2>/dev/null) | grep -v BUGGY
-}
-
-# echo a string with no newline appended
-# support \r and other special chars
-pecho() {
-	@PERL@ -e "print \"$@\""
+	$AMGETCONF $CONFIG $1 2>/dev/null | grep -v BUGGY
 }
 
 sendreport() {
-	TAPES=`cat $TAPELIST`
 	if [ -f $REPORT -a X"$REPORTTO" != X"" ]; then
 		(
-		echo "Tapes: $TAPES"
+		echo "Tapes: $TAPELIST"
 		if [ -s $DEFECTS ]; then
 			echo "Errors found: "
 			cat $DEFECTS
@@ -53,7 +81,7 @@ sendreport() {
 
 		[ -s $REPORT ] \
 			&& cat $REPORT
-		) | $MAIL -s "$ORG AMANDA VERIFY REPORT FOR $TAPES" $REPORTTO
+		) | $MAIL -s "$ORG AMANDA VERIFY REPORT FOR$TAPELIST" $REPORTTO
 	fi
 }
 
@@ -127,10 +155,14 @@ doonefile() {
 		fi
 	fi
 	if [ X"$CMD" != X"" ]; then
-		$CMD $ARGS > /dev/null 2> $TEMP/errors
-		result=$?
+		if [ -x $CMD ]; then
+			$CMD $ARGS > /dev/null 2> $TEMP/errors
+			result=$?
+		else
+			echo "** Cannot execute $CMD" > $TEMP/errors
+		fi
 	fi
-	cat >/dev/null
+	cat >/dev/null				# soak up the rest of the image
 	echo $result
 }
 
@@ -179,8 +211,17 @@ MTOPT=@MT_FILE_FLAG@
 MAIL=@MAILER@
 if [ X"`/bin/uname -s 2>/dev/null`" = X"AIX" ]; then
 	IS_AIX=1
+
+	# The AIX "mt stat" function does not really do anything w.r.t.
+	# checking the drive for ready, and in fact, will fail under
+	# some conditions (e.g. if the tape "file" is a symlink to the
+	# real device).  We let the rewind do the equivalent since all
+	# we use this for is to wait for device ready.
+
+	DEVICE_READY=:
 else
 	IS_AIX=0
+	DEVICE_READY='$MT $MTOPT $DEVICE stat'
 fi
 
 #
@@ -189,31 +230,31 @@ fi
 SLOT=0
 CONFIG=$1
 [ X"$CONFIG" = X"" ] \
-	&& echo "usage: amverify$SUF <config>" >&2 \
+	&& $Echoe "usage: amverify$SUF <config>" \
 	&& exit 1
 
 AMCONFIG=$CONFIG_DIR/$CONFIG/amanda.conf
 [ ! -f $AMCONFIG ] \
-	&& echo "Cannot find config file $AMCONFIG" >&2 \
+	&& $Echoe "Cannot find config file $AMCONFIG" \
 	&& exit 1
 
 cd $CONFIG_DIR/$CONFIG
 
 TPCHANGER=`getparm tpchanger`
 if [ X"$TPCHANGER" = X"" ]; then
-	echo "No tape changer..."
+	$Echoe "No tape changer..."
 	DEVICE=`getparm tapedev`
 	[ X"$DEVICE" = X"" ] \
-		&& echo "No tape device..." >&2 \
+		&& $Echoe "No tape device..." \
 		&& exit 1
 	[ ! -c $DEVICE ] \
-		&& echo "Not a character special device: $DEVICE" >&2 \
+		&& $Echoe "Not a character special device: $DEVICE" \
 		&& exit 1
-	echo "Tape device is $DEVICE..."
+	$Echoe "Tape device is $DEVICE..."
 	SLOTS=1
 else
 	CHANGER_SLOT=${2:-current}
-	echo "Tape changer is $TPCHANGER..."
+	$Echoe "Tape changer is $TPCHANGER..."
 	SLOTS=`getparm runtapes`
 	[ X"$SLOTS" = X"" ] && SLOTS=1
 	if [ $SLOTS -eq 1 ]; then
@@ -221,7 +262,7 @@ else
 	else
 		p=s
 	fi
-	echo "$SLOTS slot${p}..."
+	$Echoe "$SLOTS slot${p}..."
 	MAXRETRIES=2
 fi
 
@@ -229,23 +270,29 @@ fi
 # check the accessability
 #
 [ X"$TAR" != X"" -a ! -x "$TAR" ] \
-	&& echo "GNU tar not found: $TAR" >&2
+	&& $Echoe "GNU tar not found: $TAR"
 [ X"$DUMP" != X"" -a \( X"$RESTORE" = X"" -o ! -x "$RESTORE" \) ] \
-	&& echo "System restore program not found: $RESTORE" >&2
+	&& $Echoe "System restore program not found: $RESTORE"
+[ X"$VDUMP" != X"" -a \( X"$VRESTORE" = X"" -o ! -x "$VRESTORE" \) ] \
+	&& $Echoe "System restore program not found: $VRESTORE"
+[ X"$VXDUMP" != X"" -a \( X"$VXRESTORE" = X"" -o ! -x "$VXRESTORE" \) ] \
+	&& $Echoe "System restore program not found: $VXRESTORE"
+[ X"$XFSDUMP" != X"" -a \( X"$XFSRESTORE" = X"" -o ! -x "$XFSRESTORE" \) ] \
+	&& $Echoe "System restore program not found: $XFSRESTORE"
 [ ! -x $AMRESTORE ] \
-	&& echo "amrestore not found: $AMRESTORE" >&2 \
+	&& $Echoe "amrestore not found: $AMRESTORE" \
 	&& exit 1
 
 REPORTTO=`getparm mailto`
 if [ X"$REPORTTO" = X"" ]; then
-	echo "No notification by mail!"
+	$Echoe "No notification by mail!"
 else
-	echo "Verify summary to $REPORTTO"
+	$Echoe "Verify summary to $REPORTTO"
 fi
 
 ORG=`getparm org`
 if [ X"$ORG" = X"" ]; then
-	echo "No org in amanda.conf -- using $CONFIG"
+	$Echoe "No org in amanda.conf -- using $CONFIG"
 	ORG=$CONFIG
 fi
 
@@ -261,17 +308,17 @@ trap 'rm -fr $TEMP' 0
 if ( umask 077 ; mkdir $TEMP ) ; then
 	:
 else
-	echo "Cannot create $TEMP" >&2
+	$Echoe "Cannot create $TEMP"
 	exit 1
 fi
 DEFECTS=$TEMP/defects; rm -f $DEFECTS
 REPORT=$TEMP/report; rm -f $REPORT
-TAPELIST=$TEMP/tapelist; rm -f $TAPELIST
+TAPELIST=
 EXITSTAT=$TEMP/amrecover.exit; rm -rf $EXITSTAT
 
 trap 'report "aborted!"; echo "aborted!" >> $DEFECTS; sendreport; rm -fr $TEMP; exit 1' 1 2 3 4 5 6 7 8 10 12 13 14 15
 
-echo "Defects file is $DEFECTS" >&2
+$Echoe "Defects file is $DEFECTS"
 report "amverify $CONFIG"
 report "`date`"
 report ""
@@ -297,25 +344,15 @@ while [ $SLOT -lt $SLOTS ]; do
 		DEVICE=`$AMTAPE $CONFIG device`
 	fi
 	report "Using device $DEVICE"
-	if [ $IS_AIX -eq 0 ]; then
-
-		# The AIX "mt stat" function does not really do anything
-		# w.r.t. checking the drive for ready, and in fact, will
-		# fail under some conditions (e.g. if the tape "file"
-		# is a symlink to the real device).  We let the rewind
-		# right after this take care of the cases "mt stat"
-		# does not catch.
-
-		pecho "Waiting for device to go ready...\r" >&2
-		until $MT $MTOPT $DEVICE stat >/dev/null 2>&1; do
-			sleep 3
-		done
-	fi
-	pecho "Rewinding...                             \r" >&2
+	$Echon "Waiting for device to go ready..."
+	until eval $DEVICE_READY >/dev/null 2>&1; do
+		sleep 3
+	done
+	$Echon "Rewinding..."
 	until $MT $MTOPT $DEVICE rewind; do
 		sleep 3
 	done
-	pecho "Processing label...\r" >&2
+	$Echon "Processing label..."
 	$DD if=$DEVICE count=1 bs=32k 2> $TEMP/errors > $TEMP/header
 	[ ! -s $TEMP/header ] \
 		&& report "** Error reading label on tape" \
@@ -333,32 +370,27 @@ while [ $SLOT -lt $SLOTS ]; do
 	[ X"$DWRITTEN" = X"0" -o X"$DWRITTEN" = X"X" ] \
 		&& report "Fresh tape. Skipping..." \
 		&& continue
-	echo "$VOLUME" >> $TAPELIST
-	pecho "Rewinding...\r" >&2
+	TAPELIST="$TAPELIST $VOLUME"
+	$Echon "Rewinding..."
 	until $MT $MTOPT $DEVICE rewind; do
 		sleep 3
 	done
 	ERG=0
 	ERRORS=0
 	while [ $ERG = 0 ]; do
-		if [ $IS_AIX -eq 0 ]; then
-
-			# The AIX "mt stat" function does not really do anything
-			# w.r.t. checking the drive for ready, and in fact, will
-			# fail under some conditions (e.g. if the tape "file"
-			# is a symlink to the real device).  We let the rewind
-			# right after this take care of the cases "mt stat"
-			# does not catch.
-
-			pecho "Waiting for device to go ready...\r" >&2
-			until $MT $MTOPT $DEVICE stat >/dev/null 2>&1; do
-				sleep 3
-			done
+		if [ $Echon = echon ]; then
+			$Echon "Waiting for device to go ready..."
 		fi
-		pecho "Reading...           \r" >&2
+		until eval $DEVICE_READY >/dev/null 2>&1; do
+			sleep 3
+		done
+		if [ $Echon = echon ]; then
+			$Echon "Reading..."
+		fi
 		RESULT=`$AMRESTORE -h -p $DEVICE 2> $TEMP/amrestore.out \
 			| doonefile 2> $TEMP/onefile.errors`
-		FILE=`grep restoring $TEMP/amrestore.out | sed 's/^.*restoring //'`
+		FILE=`grep restoring $TEMP/amrestore.out \
+			| sed 's/^.*restoring //'`
 		EOF=`grep "reached end of tape" $TEMP/amrestore.out`
 		# amrestore:   0: restoring sundae._mnt_sol1_usr.19961127.1
 		if [ X"$FILE" != X"" -a X"$RESULT" = X"0" ]; then
@@ -386,11 +418,10 @@ while [ $SLOT -lt $SLOTS ]; do
 				&& break
 		fi
 	done
-	pecho "Rewinding...\r" >&2
+	$Echon "Rewinding..."
 	until $MT $MTOPT $DEVICE rewind; do
 		sleep 3
 	done
-	echo
 	rm -f $TEMP/header \
 	      $TEMP/amtape.out \
 	      $TEMP/amrestore.out \
@@ -408,10 +439,8 @@ if [ X"$TPCHANGER" != X"" ]; then
 		&& cat $TEMP/amtape.out >> $DEFECTS
 fi
 
-echo >> $TAPELIST
-
 [ -s $DEFECTS ] \
-	&& echo "Errors found: " \
+	&& $Echoe "Errors found: " \
 	&& cat $DEFECTS
 
 sendreport

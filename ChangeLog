@@ -1,5 +1,12 @@
 1999-09-19 John R. Jackson  <jrj@purdue.edu>
 
+	* server-src/amverify.sh.in: this script is important enough it should
+	  not depend on having perl installed.  Clean up the AIX "mt status"
+	  code.  Test for presense of other restore programs and check that
+	  they are executable during processing.
+
+1999-09-19 John R. Jackson  <jrj@purdue.edu>
+
 	* server-src/amverify.sh.in: put back an "mt status" wait loop I
 	  erroneously removed, but protect it from AIX.
 
