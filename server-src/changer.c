@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.23 2001/12/30 17:42:07 martinea Exp $
+ * $Id: changer.c,v 1.24 2003/01/01 23:28:18 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -221,7 +221,7 @@ int (*user_slot) P((int rc, char *slotstr, char *device));
    the tape could not be found, then the normal scan is done like 
    in changer_scan.
 */
-void changer_find(user_init, user_slot,searchlabel)
+void changer_find(user_init, user_slot, searchlabel)
 int (*user_init) P((int rc, int nslots, int backwards));
 int (*user_slot) P((int rc, char *slotstr, char *device));
 char *searchlabel;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uparse.y,v 1.10 2002/08/21 19:20:57 martinea Exp $
+ * $Id: uparse.y,v 1.11 2003/01/01 23:28:17 martinea Exp $
  *
  * parser for amrecover interactive language
  */
@@ -73,16 +73,16 @@ ucommand:
   ;
 
 set_command:
-	LISTDISK PATH { list_disk($2); }
+	LISTDISK PATH { list_disk($2); amfree($2); }
   |	LISTDISK { list_disk(NULL); }
-  |	SETDATE DATE { set_date($2); }
-  |     SETHOST PATH { set_host($2); }
-  |     SETDISK PATH PATH { set_disk($2, $3); }
-  |     SETDISK PATH { set_disk($2, NULL); }
-  |     SETTAPE PATH { set_tape($2); }
+  |	SETDATE DATE { set_date($2); amfree($2); }
+  |     SETHOST PATH { set_host($2); amfree($2); }
+  |     SETDISK PATH PATH { set_disk($2, $3); amfree($2); amfree($3); }
+  |     SETDISK PATH { set_disk($2, NULL); amfree($2); }
+  |     SETTAPE PATH { set_tape($2); amfree($2); }
   |     SETTAPE { set_tape(""); }
-  |     CD PATH { cd_glob($2); }
-  |     CDX PATH { cd_regex($2); }
+  |     CD PATH { cd_glob($2); amfree($2); }
+  |     CDX PATH { cd_regex($2); amfree($2); }
   |     SETMODE SMB {
 #ifdef SAMBA_CLIENT
 			 set_mode(SAMBA_SMBCLIENT);
@@ -98,7 +98,7 @@ set_command:
 display_command:
 	DHIST { list_disk_history(); }
   |     LS { list_directory(); }
-  |     LIST PATH { display_extract_list($2); }
+  |     LIST PATH { display_extract_list($2); amfree($2); }
   |     LIST { display_extract_list(NULL); }
   |     PWD { show_directory(); }
   |     CLEAR { clear_extract_list(); }    
@@ -114,8 +114,8 @@ add_command:
   ;
 
 add_path:
-	add_path PATH { add_glob($2); }
-  |     PATH { add_glob($1); }
+	add_path PATH { add_glob($2); amfree($2); }
+  |     PATH { add_glob($1); amfree($1); }
   ;
 
 addx_command:
@@ -123,8 +123,8 @@ addx_command:
   ;
 
 addx_path:
-	addx_path PATH { add_regex($2); }
-  |     PATH { add_regex($1); }
+	addx_path PATH { add_regex($2); amfree($2); }
+  |     PATH { add_regex($1); amfree($1); }
   ;
 
 delete_command:
@@ -132,8 +132,8 @@ delete_command:
   ;
 
 delete_path:
-	delete_path PATH { delete_glob($2); }
-  |     PATH { delete_glob($1); }
+	delete_path PATH { delete_glob($2); amfree($2); }
+  |     PATH { delete_glob($1); amfree($1); }
   ;
 
 deletex_command:
@@ -141,8 +141,8 @@ deletex_command:
   ;
 
 deletex_path:
-	deletex_path PATH { delete_regex($2); }
-  |     PATH { delete_regex($1); }
+	deletex_path PATH { delete_regex($2); amfree($2); }
+  |     PATH { delete_regex($1); amfree($1); }
   ;
 
 local_command:
@@ -151,6 +151,7 @@ local_command:
 		if (chdir($2) == -1) {
 			perror($2);
 		}
+		amfree($2);
 	}
   ;
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.138 2002/12/30 16:22:12 martinea Exp $
+ * $Id: planner.c,v 1.139 2003/01/01 23:28:20 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1155,6 +1155,7 @@ host_t *hostp;
 		char *l;
 		char *exclude1 = "";
 		char *exclude2 = "";
+		char *excludefree = NULL;
 		char spindle[NUM_STR_SIZE];
 		char level[NUM_STR_SIZE];
 		int lev = est(dp)->level[i];
@@ -1166,6 +1167,7 @@ host_t *hostp;
 		if(am_has_feature(hostp->features, fe_sendsize_req_options)) {
 		    exclude1 = " OPTIONS |";
 		    exclude2 = optionstr(dp, hostp->features, NULL);
+		    excludefree = exclude2;
 		}
 		else {
 		    if(dp->exclude_file && dp->exclude_file->nb_element == 1) {
@@ -1197,6 +1199,7 @@ host_t *hostp;
 		strappend(s, l);
 		s_len += strlen(l);
 		amfree(l);
+		amfree(excludefree);
 	    }
 	    /*
 	     * Allow 2X for err response.
@@ -1554,6 +1557,9 @@ disk_t *dp;
     if(get_info(dp->host->hostname, dp->name, &info) == 0) {
 	have_info = 1;
     }
+
+    ep->degr_level = -1;
+    ep->degr_size = -1;
 
     if(ep->next_level0 <= 0
        || (have_info && ep->last_level == 0 && (info.command & FORCE_NO_BUMP))) {

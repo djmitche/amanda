@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.79 2002/12/19 19:35:10 martinea Exp $
+ * $Id: extract_list.c,v 1.80 2003/01/01 23:28:16 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1263,10 +1263,11 @@ int fsf;
 
 	dbprintf(("Started amidxtaped with arguments \"6 -h -p %s %s %s %s\"\n",
 		  dump_device_name, host_regex, disk_regex, clean_datestamp));
-
-	amfree(disk_regex);
-	amfree(host_regex);
     }
+
+    amfree(disk_regex);
+    amfree(host_regex);
+    amfree(clean_datestamp);
 
     return tape_server_socket;
 }

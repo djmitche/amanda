@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.128 2002/12/27 19:39:21 martinea Exp $
+ * $Id: driver.c,v 1.129 2003/01/01 23:28:19 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -64,6 +64,7 @@ static int conf_taperalgo;
 static time_t sleep_time;
 static int idle_reason;
 static char *datestamp;
+static host_t *flushhost = NULL;
 
 static void allocate_bandwidth P((interface_t *ip, int kps));
 static int assign_holdingdisk P((assignedhd_t **holdp, disk_t *diskp));
@@ -734,6 +735,12 @@ start_some_dumps(dumper, rq)
 		    diskp_accept = diskp;
 		    holdp_accept = holdp;
 		}
+		else {
+		    free_assignedhd(holdp);
+		}
+	    }
+	    else {
+		free_assignedhd(holdp);
 	    }
 	}
     }
@@ -756,6 +763,7 @@ start_some_dumps(dumper, rq)
 	sched(diskp)->act_size = 0;
 	allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
 	sched(diskp)->activehd = assign_holdingdisk(holdp, diskp);
+	amfree(holdp);
 	sched(diskp)->destname = newstralloc(sched(diskp)->destname,
 					     sched(diskp)->holdp[0]->destname);
 	diskp->host->inprogress++;	/* host is now busy */
@@ -1009,6 +1017,8 @@ handle_taper_result(cookie)
 
 	    amfree(sched(dp)->destname);
 	    amfree(sched(dp)->dumpdate);
+	    amfree(sched(dp)->degr_dumpdate);
+	    amfree(sched(dp)->datestamp);
 	    amfree(dp->up);
 
 	    taper_busy = 0;
@@ -1609,10 +1619,22 @@ read_flush()
 	*dp1 = *dp;
 	dp1->next = dp1->prev = NULL;
 
+	/* add it to the flushhost list */
+	if(!flushhost) {
+	    flushhost = alloc(sizeof(host_t));
+	    flushhost->next = NULL;
+	    flushhost->hostname = stralloc("FLUSHHOST");
+	    flushhost->up = NULL;
+	    flushhost->features = NULL;
+	}
+	dp1->hostnext = flushhost->disks;
+	flushhost->disks = dp1;
+
 	sp = (sched_t *) alloc(sizeof(sched_t));
 	sp->destname = stralloc(destname);
 	sp->level = file.dumplevel;
 	sp->dumpdate = NULL;
+	sp->degr_dumpdate = NULL;
 	sp->datestamp = stralloc(file.datestamp);
 	sp->est_size = 0;
 	sp->est_time = 0;
@@ -1806,6 +1828,7 @@ read_schedule(waitqp)
 	    sp->degr_time = degr_time;
 	} else {
 	    sp->degr_level = -1;
+	    sp->degr_dumpdate = NULL;
 	}
 
 	if(time <= 0)
@@ -1830,7 +1853,9 @@ read_schedule(waitqp)
 	sp->no_space = 0;
 
 	dp->up = (char *) sp;
-	dp->host->features = am_string_to_feature(features);
+	if(dp->host->features == NULL) {
+	    dp->host->features = am_string_to_feature(features);
+	}
 	remove_disk(waitqp, dp);
 	enqueue_disk(&rq, dp);
     }
@@ -2247,6 +2272,7 @@ char *destname;
 	}
     }
 
+    amfree(used);
     return result;
 }
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.23 2002/11/25 18:06:31 martinea Exp $
+ * $Id: client_util.c,v 1.24 2003/01/01 23:28:15 martinea Exp $
  *
  */
 
@@ -124,13 +124,13 @@ char *disk, *exin;
 	filename = get_name(diskname, exin, curtime, n);
 	afilename = newvstralloc(afilename, dbgdir, filename, NULL);
 	if((fd=open(afilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600)) < 0){
-	    amfree(filename);
 	    amfree(afilename);
 	    n++;
 	}
 	else {
 	    close(fd);
 	}
+	amfree(filename);
     } while(!afilename && n < 1000);
 
     if(afilename == NULL) {
@@ -157,6 +157,10 @@ char *aexc;
     int l;
 
     l = strlen(aexc);
+    if(aexc[l-1] == '\n') {
+	aexc[l-1] = '\0';
+	l--;
+    }
     if(l > MAXPATHLEN-1) {
 	dbprintf(("%s: exclude too long: %s\n", debug_prefix(NULL), aexc));
 	if(verbose)
@@ -164,11 +168,7 @@ char *aexc;
 	return 0;
     }
     else {
-        if(aexc[l-1] != '\n') {
-	    aexc[l] = '\n';
-	    aexc[l+1] = '\0';
-	 }
-	 fprintf(file_exclude, "%s", aexc);
+	fprintf(file_exclude, "%s\n", aexc);
     }
     return 1;
 }
@@ -553,6 +553,7 @@ int verbose;
 	}
 	tok = strtok(NULL, ";");
     }
+    amfree(p);
     return options;
 }
 
@@ -655,5 +656,6 @@ int verbose;
     }
     if(g_options->maxdumps == 0) /* default */
 	g_options->maxdumps = 1;
+    amfree(p);
     return g_options;
 }

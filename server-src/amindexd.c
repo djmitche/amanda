@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.70 2002/11/05 01:58:52 martinea Exp $
+ * $Id: amindexd.c,v 1.71 2003/01/01 23:28:17 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -243,6 +243,7 @@ char **emsg;
 	    }
 	    if(old_line == NULL || strcmp(line, old_line) != 0) {
 		add_dir_list_item(dump_item, line);
+		amfree(old_line);
 		old_line = line;
 		line = NULL;
 	    }
@@ -343,6 +344,7 @@ char *host;
 {
     struct stat dir_stat;
     char *fn;
+    host_t *ihost;
 
     if (config_name == NULL) {
 	reply(501, "Must set config before setting host.");
@@ -363,10 +365,16 @@ char *host;
 #endif
 
     /* check that the config actually handles that host */
-    /* assume in index dir already */
+    ihost = lookup_host(host);
+    if(ihost == NULL) {
+	reply(501, "Host %s is not in your disklist.", host);
+	return -1;
+    }
+
+    /* assume an index dir already */
     fn = getindexfname(host, NULL, NULL, 0);
     if (stat (fn, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode)) {
-	reply(501, "No index records for host: %s. Invalid?", host);
+	reply(501, "No index records for host: %s. Have you enabled indexing?", host);
 	amfree(fn);
 	return -1;
     }
@@ -381,14 +389,22 @@ char *disk;
 {
     char *fn;
     struct stat dir_stat;
+    disk_t *idisk;
 
     if (config_name == NULL || dump_hostname == NULL) {
 	reply(501, "Must set config,host before setting disk.");
 	return -1;
     }
 
-    fn = getindexfname(dump_hostname, disk, NULL, 0);
+    /* check that the config actually handles that disk */
+    idisk = lookup_disk(dump_hostname, disk);
+    if(idisk == NULL) {
+	reply(501, "Disk %s:%s is not in your disklist.", dump_hostname, disk);
+	return -1;
+    }
 
+    /* assume an index dir already */
+    fn = getindexfname(dump_hostname, disk, NULL, 0);
     if (stat (fn, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode)) {
 	reply(501, "No index records for disk: %s. Invalid?", disk);
 	amfree(fn);
@@ -613,6 +629,7 @@ char *dir;
 	    }
 	    amfree(filename);
 	    amfree(ldir);
+	    amfree(line);
 	    afclose(fp);
 	    return 0;
 	}
@@ -1112,6 +1129,8 @@ char **argv;
 	    char *our_feature_string = NULL;
 	    char *their_feature_string = NULL;
 	    s[-1] = '\0';
+	    am_release_feature_set(our_features);
+	    am_release_feature_set(their_features);
 	    our_features = am_init_feature_set();
 	    our_feature_string = am_feature_to_string(our_features);
 	    their_feature_string = newstralloc(target_date, arg);
@@ -1144,6 +1163,7 @@ char **argv;
 	    reply(500, "Command not recognised/incorrect: %s", cmd);
 	}
     }
+    amfree(line);
 
     uncompress_remove = remove_files(uncompress_remove);
     free_find_result(&output_find);

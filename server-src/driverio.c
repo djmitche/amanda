@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.64 2002/04/19 14:24:12 martinea Exp $
+ * $Id: driverio.c,v 1.65 2003/01/01 23:28:19 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -312,6 +312,7 @@ char *datestamp;
     if (fullwrite(taper, cmdline, strlen(cmdline)) < 0) {
 	printf("writing taper command: %s\n", strerror(errno));
 	fflush(stdout);
+	amfree(cmdline);
 	return 0;
     }
     amfree(cmdline);
@@ -409,6 +410,7 @@ disk_t *dp;
 	if (fullwrite(dumper->fd, cmdline, strlen(cmdline)) < 0) {
 	    printf("writing %s command: %s\n", dumper->name, strerror(errno));
 	    fflush(stdout);
+	    amfree(cmdline);
 	    return 0;
 	}
     }
@@ -496,6 +498,7 @@ disk_t *dp;
     if (fullwrite(chunker->fd, cmdline, strlen(cmdline)) < 0) {
 	printf("writing %s command: %s\n", chunker->name, strerror(errno));
 	fflush(stdout);
+	amfree(cmdline);
 	return 0;
     }
     amfree(cmdline);

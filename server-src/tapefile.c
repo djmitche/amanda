@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.22 2002/03/23 17:39:55 martinea Exp $
+ * $Id: tapefile.c,v 1.23 2003/01/01 23:28:20 martinea Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -226,6 +226,8 @@ char *label;
 	    next->position--;
 	    next = next->next;
 	}
+	amfree(tp->label);
+	amfree(tp);
     }
 }
 

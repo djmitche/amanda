@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.33 2002/11/05 01:58:52 martinea Exp $
+ * $Id: amtape.c,v 1.34 2003/01/01 23:28:17 martinea Exp $
  *
  * tape changer interface program
  */
@@ -592,4 +592,6 @@ char **argv;
 	error("Could not load current slot.\n");
 
     printf("%s\n", device);
+    amfree(slot);
+    amfree(device);
 }

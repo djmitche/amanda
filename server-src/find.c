@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.17 2002/03/24 04:12:55 jrjackson Exp $
+ * $Id: find.c,v 1.18 2003/01/01 23:28:20 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -103,6 +103,7 @@ find_result_t *find_dump()
 		   tp->label, find_nicedate(tp->datestamp));
     }
     amfree(logfile);
+    amfree(conf_logdir);
 
     search_holding_disk(&output_find);
     return(output_find);
@@ -182,6 +183,7 @@ char **find_log()
 		   tp->label, find_nicedate(tp->datestamp));
     }
     amfree(logfile);
+    amfree(conf_logdir);
     *current_log = NULL;
     return(output_find_log);
 }
@@ -353,7 +355,7 @@ find_result_t **output_find;
     }
     array_find_result[nb_result-1]->next=NULL;
     *output_find=array_find_result[0];
-
+    amfree(array_find_result);
 }
 
 void print_find_result(output_find)
@@ -438,6 +440,7 @@ find_result_t **output_find;
 	amfree(output_find_result->diskname);
 	amfree(output_find_result->label);
 	amfree(output_find_result->status);
+	prev = output_find_result;
     }
     if(prev != NULL) amfree(prev);
     output_find = NULL;
@@ -655,7 +658,7 @@ int datestamp, datestamp_aux;
 		}
 		else if(curlog == L_FAIL) {	/* print other failures too */
 		    find_result_t *new_output_find =
-			alloc(sizeof(find_result_t));
+			(find_result_t *)alloc(sizeof(find_result_t));
 		    new_output_find->next=*output_find;
 		    new_output_find->datestamp=datestamp;
 		    new_output_find->datestamp_aux=datestamp_aux;
