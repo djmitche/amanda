@@ -5,6 +5,7 @@
 typedef struct {
     int nopen;
     int nfds;
+    int fd_count;
     int *fds;
     int *readres;
     int xorbuflen;

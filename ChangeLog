@@ -1,3 +1,64 @@
+2001-07-31 John R. Jackson (jrj@purdue.edu)
+
+	* server-src/conffile.h: Add support for tapetype "blocksize" keyword.
+	* server-src/conffile.c: Add tapetype "blocksize" keyword.  Use
+	  DISK_BLOCK_KB where appropriate instead of TAPE_BLOCK_SIZE.  Disallow
+	  negative tape length and tapemark size.
+	* client-src/sendbackup.c: Use new STREAM_BUFSIZE constant.  Use -1
+	  for new default buffer size flag.
+	* common-src/alloc.c: Add new amtable_free() function.  Adjust args
+	  to amtable_alloc() to be consistent with amtable_free().
+	* common-src/amanda.h: Add new am_round() and am_floor() macros.
+	  Define new DISK_BLOCK_KB, DISK_BLOCK_BYTES, MAX_TAPE_BLOCK_KB,
+	  MAX_TAPE_BLOCK_BYTES constants.  Remove TAPE_BLOCK_SIZE and
+	  TAPE_BLOCK_BYTES.
+	* common-src/fileheader.c: Change write_header() to build_header().
+	  Add blocksize arg.  Get rid of unused fill_buffer() function.
+	* common-src/fileheader.h: Ditto.
+	* common-src/stream.c: Use negative value to indicate default buffer
+	  size.
+	* common-src/stream.h: Add NETWORK_BLOCK_BYTES and STREAM_BUFSIZE
+	  constants.  Remove DATABUF_SIZE and DEFAULT_SIZE.
+	* man/amanda.8.in: Document the new "blocksize" tapetype keyword.
+	  Document that "length" in tapetype has meaning to some output
+	  drivers.  Fix "bumpdays" and "speed" defaults.  Document new "file:"
+	  output driver record length data file.
+	* man/amrestore.8: Add new "-b blocksize" arg.  Add description of
+	  how to catalogue the images on a tape.
+	* recover-src/amrecover.c: DEFAULT_SIZE -> -1.
+	* recover-src/extract_list.c: DEFAULT_SIZE -> -1.  Use DISK_BLOCK_BYTES
+	  instead of TAPE_BLOCK_BYTES for the header size.
+	* restore-src/amrestore.c: Add new "-b blocksize" arg.  Document how
+	  the header is handled.  Deal with arbritrary tape record sizes.
+	* server-src/amlabel.c: Use the tapetype blocksize.
+	* server-src/driver.c: Use DISK_BLOCK_KB where appropriate instead of
+	  TAPE_BLOCK_SIZE.
+	* server-src/dumper.c: Use DISK_BLOCK_BYTES and DISK_BLOCK_KB as
+	  appropropriate instead of older constants.  Rewrite disk I/O buffer
+	  management.  Never pad output stream (e.g. to holding disk).  Use
+	  -1 for default stream buffer size.
+	* server-src/holding.c: Change TAPE_BLOCK_BYTES to DISK_BLOCK_BYTES.
+	  Use fullread() instead of fill_buffer().
+	* server-src/planner.c: Use tapetype blocksize instead of constant
+	  for tape length calculations.
+	* server-src/taper.c: Support tapetype blocksize.  Only pad writes if
+	  blocksize is negative.  Reorganize shared memory buffers to put
+	  data on page boundaries.  Try reducing tapebuf count if allocation
+	  fails.
+	* tape-src/output-file.c: Maintain record size information.  Use mask
+	  and flags from caller.
+	* tape-src/output-null.c: Use new amtable_alloc() arg order.
+	* tape-src/output-rait.c: Use new amtable_alloc() arg order.  Add
+	  private version of amtable_free() for standalone build.  Fix off
+	  by one and other table allocation problems.
+	* tape-src/output-rait.h: Maintain file descriptor count in the
+	  structure.
+	* tape-src/tapeio.c: Support tapetype blocksize.  Use new
+	  amtable_alloc() arg order.  Fix some error message text.  
+	* tape-src/tapeio.h: New prototypes with blocksize arg.
+	* tape-src/tapetype.c: Add "-b blocksize" arg.  Fix some end case
+	  aborts.
+
 2001-07-31 Ben Lewis (bhlewis@purdue.edu) via John R. Jackson (jrj@purdue.edu)
 
 	* configure.in: Add missing CAM header checks from the 2.5 branch.

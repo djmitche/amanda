@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.11.4.1 1998/12/07 23:53:54 martinea Exp $
+ * $Id: fileheader.c,v 1.11.4.1.4.1 2001/07/31 22:38:39 jrjackson Exp $
  *
  */
 
@@ -333,10 +333,11 @@ int buflen;
 }
 
 
-void write_header(buffer, file, buflen)
+void build_header(buffer, file, buflen, blocksize)
 char *buffer;
 dumpfile_t *file;
 int buflen;
+long blocksize;
 {
     char *line = NULL;
     char number[NUM_STR_SIZE];
@@ -376,7 +377,7 @@ int buflen;
 			"To restore, position tape at start of file and run:\n",
 			buflen-strlen(buffer));
 		      ap_snprintf(number, sizeof(number),
-				  "%d", TAPE_BLOCK_SIZE);
+				  "%d", blocksize / 1024);
 		      line = newvstralloc(line, "\t",
 				       "dd",
 				       " if=<tape>",
@@ -454,35 +455,4 @@ dumpfile_t *file;
 	return 1;
 #endif
     return 0;
-}
-
-
-int fill_buffer(fd, buffer, size)
-int fd, size;
-char *buffer;
-{
-    char *curptr;
-    int spaceleft, cnt;
-
-    curptr = buffer;
-    spaceleft = size;
-
-    do {
-	cnt = read(fd, curptr, spaceleft);
-	switch(cnt) {
-	case 0:
-	    if(spaceleft ==  size) {
-		return 0;
-	    }
-	    else {
-		return size;
-	    }
-	case -1:
-	    return -1;
-	default:
-	    spaceleft -= cnt;
-	    curptr +=cnt;
-	}
-    } while(spaceleft > 0);
-    return size;
 }

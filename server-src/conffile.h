@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.24.2.8.4.1 2001/01/24 01:37:01 jrjackson Exp $
+ * $Id: conffile.h,v 1.24.2.8.4.2 2001/07/31 22:38:39 jrjackson Exp $
  *
  * interface for config file reading code
  */
@@ -87,13 +87,15 @@ typedef struct tapetype_s {
 
     char *comment;
     char *lbl_templ;
-    unsigned int length;
-    unsigned int filemark;
+    long blocksize;
+    unsigned long length;
+    unsigned long filemark;
     int speed;
 
     /* seen flags */
     int s_comment;
     int s_lbl_templ;
+    int s_blocksize;
     int s_length;
     int s_filemark;
     int s_speed;

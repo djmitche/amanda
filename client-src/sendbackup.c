@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.3 2001/03/15 02:18:24 jrjackson Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.4 2001/07/31 22:38:38 jrjackson Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -368,19 +368,19 @@ char **argv;
 #endif
 
     if(!interactive) {
-      data_socket = stream_server(&data_port, DATABUF_SIZE*2, DEFAULT_SIZE);
+      data_socket = stream_server(&data_port, STREAM_BUFSIZE, -1);
       if(data_socket < 0) {
 	error("ERROR [%s: could not create data socket: %s]",
 	      get_pname(), strerror(errno));
       }
-      mesg_socket = stream_server(&mesg_port, DEFAULT_SIZE, DEFAULT_SIZE);
+      mesg_socket = stream_server(&mesg_port, -1, -1);
       if(mesg_socket < 0) {
 	error("ERROR [%s: could not create mesg socket: %s]",
 	      get_pname(), strerror(errno));
       }
     }
     if (!interactive && createindex) {
-      index_socket = stream_server(&index_port, DEFAULT_SIZE, DEFAULT_SIZE);
+      index_socket = stream_server(&index_port, -1, -1);
       if(index_socket < 0) {
 	error("ERROR [%s: could not create index socket: %s]",
 	      get_pname(), strerror(errno));
@@ -408,11 +408,11 @@ char **argv;
       }
       mesgf = 2;
     } else {
-      dataf = stream_accept(data_socket, TIMEOUT, DEFAULT_SIZE, DEFAULT_SIZE);
+      dataf = stream_accept(data_socket, TIMEOUT, -1, -1);
       if(dataf == -1) {
         dbprintf(("%s: timeout on data port %d\n", get_pname(), data_port));
       }
-      mesgf = stream_accept(mesg_socket, TIMEOUT, DEFAULT_SIZE, DEFAULT_SIZE);
+      mesgf = stream_accept(mesg_socket, TIMEOUT, -1, -1);
       if(mesgf == -1) {
         dbprintf(("%s: timeout on mesg port %d\n", get_pname(), mesg_port));
       }
@@ -420,8 +420,7 @@ char **argv;
     if(interactive) {
       indexf = 1;
     } else if (createindex) {
-      indexf = stream_accept(index_socket,
-			     TIMEOUT, DEFAULT_SIZE, DEFAULT_SIZE);
+      indexf = stream_accept(index_socket, TIMEOUT, -1, -1);
       if (indexf == -1) {
 	dbprintf(("%s: timeout on index port %d\n", get_pname(), index_port));
       }

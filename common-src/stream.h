@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.h,v 1.4.2.1.4.1 2001/02/28 02:12:03 jrjackson Exp $
+ * $Id: stream.h,v 1.4.2.1.4.2 2001/07/31 22:38:39 jrjackson Exp $
  *
  * interface to stream module
  */
@@ -38,8 +38,8 @@
  * client-src/sendbackup-krb4.c, or kerberos encryption won't work...
  *	- Chris Ross (cross@uu.net)  4-Jun-1998
  */
-#define DATABUF_SIZE TAPE_BLOCK_BYTES
-#define DEFAULT_SIZE -1
+#define NETWORK_BLOCK_BYTES	DISK_BLOCK_BYTES
+#define STREAM_BUFSIZE		(NETWORK_BLOCK_BYTES * 2)
 
 int stream_server P((int *port, int sendsize, int recvsize));
 int stream_accept P((int sock, int timeout, int sendsize, int recvsize));

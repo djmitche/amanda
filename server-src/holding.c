@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.17.2.12.4.1 2001/06/19 20:04:22 jrjackson Exp $
+ * $Id: holding.c,v 1.17.2.12.4.2 2001/07/31 22:38:39 jrjackson Exp $
  *
  * Functions to access holding disk
  */
@@ -287,7 +287,7 @@ char *fname, **hostname, **diskname;
 int *level;
 {
     dumpfile_t file;
-    char buffer[TAPE_BLOCK_BYTES];
+    char buffer[DISK_BLOCK_BYTES];
     int fd;
     *hostname = *diskname = NULL;
 
@@ -316,7 +316,7 @@ void get_dumpfile(fname, file)
 char *fname;
 dumpfile_t *file;
 {
-    char buffer[TAPE_BLOCK_BYTES];
+    char buffer[DISK_BLOCK_BYTES];
     int fd;
 
     fh_init(file);
@@ -340,7 +340,7 @@ char *holding_file;
 {
     int fd;
     int buflen;
-    char buffer[TAPE_BLOCK_BYTES];
+    char buffer[DISK_BLOCK_BYTES];
     dumpfile_t file;
     char *filename;
     long size=0;
@@ -353,7 +353,7 @@ char *holding_file;
 	    amfree(filename);
 	    return -1;
 	}
-	buflen=fill_buffer(fd, buffer, sizeof(buffer));
+	buflen = fullread(fd, buffer, sizeof(buffer));
 	parse_file_header(buffer, &file, buflen);
 	close(fd);
 	if(stat(filename, &finfo) == -1) {
@@ -373,7 +373,7 @@ char *holding_file;
 {
     int fd;
     int buflen;
-    char buffer[TAPE_BLOCK_BYTES];
+    char buffer[DISK_BLOCK_BYTES];
     dumpfile_t file;
     char *filename;
 
@@ -384,7 +384,7 @@ char *holding_file;
 	    amfree(filename);
 	    return 0;
 	}
-	buflen=fill_buffer(fd, buffer, sizeof(buffer));
+	buflen = fullread(fd, buffer, sizeof(buffer));
 	parse_file_header(buffer, &file, buflen);
 	close(fd);
 	unlink(filename);
@@ -401,7 +401,7 @@ int complete;
 {
     int fd;
     int buflen;
-    char buffer[TAPE_BLOCK_BYTES];
+    char buffer[DISK_BLOCK_BYTES];
     dumpfile_t file;
     char *filename;
     char *filename_tmp = NULL;
@@ -415,7 +415,7 @@ int complete;
 	    amfree(filename_tmp);
 	    return 0;
 	}
-	buflen=fill_buffer(fd, buffer, sizeof(buffer));
+	buflen = fullread(fd, buffer, sizeof(buffer));
 	parse_file_header(buffer, &file, buflen);
 	close(fd);
 	if(complete == 0 ) {
@@ -428,7 +428,7 @@ int complete;
 
 	    }
 	    file.is_partial = 1;
-	    write_header(buffer, &file, sizeof(buffer));
+	    build_header(buffer, &file, sizeof(buffer), sizeof(buffer));
 	    write(fd, buffer, sizeof(buffer));
 	    close(fd);
 	}

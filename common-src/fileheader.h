@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.h,v 1.6.4.1 1998/12/07 23:53:56 martinea Exp $
+ * $Id: fileheader.h,v 1.6.4.1.4.1 2001/07/31 22:38:39 jrjackson Exp $
  *
  */
 
@@ -60,9 +60,11 @@ typedef struct file_s {
 
 void  fh_init             P((dumpfile_t *file));
 void  parse_file_header   P((char *buffer, dumpfile_t *file, int buflen));
-void  write_header        P((char *buffer, dumpfile_t *file, int buflen));
+void  build_header        P((char *buffer,
+			     dumpfile_t *file,
+			     int buflen,
+			     long blocksize));
 void  print_header        P((FILE *outf, dumpfile_t *file));
 int   known_compress_type P((dumpfile_t *file));
-int   fill_buffer         P((int fd, char *buffer, int size));
 
 #endif /* !FILEHEADER_H */
