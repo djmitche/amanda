@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.44.2.9.4.4.2.8 2002/04/20 01:59:04 martinea Exp $
+ * $Id: sendbackup.c,v 1.44.2.9.4.4.2.9 2002/04/21 23:13:42 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -141,7 +141,6 @@ char **argv;
     int interactive = 0;
     int level, mesgpipe[2];
     char *prog, *disk, *amdevice, *dumpdate, *stroptions;
-    char *host;				/* my hostname from the server */
     char *line = NULL;
     char *err_extra = NULL;
     char *s;
@@ -192,9 +191,6 @@ char **argv;
 	fflush(stderr);
     }
 
-    host = alloc(MAX_HOSTNAME_LENGTH+1);
-    gethostname(host, MAX_HOSTNAME_LENGTH);
-    host[MAX_HOSTNAME_LENGTH] = '\0';
     prog = NULL;
     disk = NULL;
     amdevice = NULL;
@@ -212,9 +208,10 @@ char **argv;
 	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
 #undef sc
 	    g_options = parse_g_options(line+8, 1);
-	    if(g_options->hostname) {
-		amfree(host);
-		host = g_options->hostname;
+	    if(!g_options->hostname) {
+		g_options->hostname = alloc(MAX_HOSTNAME_LENGTH+1);
+		gethostname(g_options->hostname, MAX_HOSTNAME_LENGTH);
+		g_options->hostname[MAX_HOSTNAME_LENGTH] = '\0';
 	    }
 	    continue;
 	}
@@ -360,7 +357,7 @@ char **argv;
     printf("CONNECT DATA %d MESG %d INDEX %d\n",
 	   data_port, mesg_port, index_port);
     printf("OPTIONS features=%s;hostname=%s;%s\n",
-	   our_feature_string, host, optionstr(options));
+	   our_feature_string, g_options->hostname, optionstr(options));
     fflush(stdout);
     freopen("/dev/null", "w", stdout);
 
@@ -445,8 +442,8 @@ char **argv;
       error("error [opening mesg pipe: %s]", strerror(errno));
     }
 
-    program->start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgpipe[1],
-			  indexf);
+    program->start_backup(g_options->hostname, disk, amdevice, level, dumpdate,
+			  dataf, mesgpipe[1], indexf);
     parse_backup_messages(mesgpipe[0]);
 
     amfree(prog);

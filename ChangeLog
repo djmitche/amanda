@@ -1,3 +1,9 @@
+2002-04-21  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* client-src/selfcheck.c (host):Remove variable,use g_options->hostname.
+	* client-src/sendbackup.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+
 2002-04-20  Thomas Hepper <th@ant.han.de>
 	* changer-src/scsi-aix.c: Fixed bug with the setting of the GSC driver
 	  Added detection and setting of device type tape/robot
@@ -20,6 +26,7 @@
 	  retrun only 4 byte, expected are 52)
 	* changer-src/scsi-defs.h: Fixed the some defines in 
 	  ElementStatusPage_T, 
+
 2002-04-19  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* client-src/client_util.c (parse_g_options) New function to parse

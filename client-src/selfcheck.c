@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.14 2002/04/20 01:59:04 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.15 2002/04/21 23:13:42 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -80,7 +80,6 @@ int argc;
 char **argv;
 {
     int level;
-    char *host = NULL;
     char *line = NULL;
     char *program = NULL;
     char *disk = NULL;
@@ -120,10 +119,6 @@ char **argv;
     our_features = am_init_feature_set();
     our_feature_string = am_feature_to_string(our_features);
 
-    host = alloc(MAX_HOSTNAME_LENGTH+1);
-    gethostname(host, MAX_HOSTNAME_LENGTH);
-    host[MAX_HOSTNAME_LENGTH] = '\0';
-
     /* handle all service requests */
 
     for(; (line = agets(stdin)) != NULL; free(line)) {
@@ -131,13 +126,14 @@ char **argv;
 	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
 #undef sc
 	    g_options = parse_g_options(line+8, 1);
-	    if(g_options->hostname) {
-		amfree(host);
-		host = g_options->hostname;
+	    if(!g_options->hostname) {
+		g_options->hostname = alloc(MAX_HOSTNAME_LENGTH+1);
+		gethostname(g_options->hostname, MAX_HOSTNAME_LENGTH);
+		g_options->hostname[MAX_HOSTNAME_LENGTH] = '\0';
 	    }
 
 	    printf("OPTIONS features=%s;hostname=%s;\n",
-		   our_feature_string, host);
+		   our_feature_string, g_options->hostname);
 	    fflush(stdout);
 	    continue;
 	}
