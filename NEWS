@@ -3,7 +3,7 @@ Changes in release 2.3.0.4
   chg-generic work on tape drives that need multiple 'mt offline'
   commands.  See examples/chg-generic.conf for more information.
 * New configure options:
-  --with-db=DBLIB	   Force databse library choice from {db,dbm,gdbm,ndbm}
+  --with-db=DBLIB	   Force database library choice from {db,dbm,gdbm,ndbm}
   --enable-buffered-dump   Use buffered sockets on server for faster dumps
   --with-group=GROUPNAME   Install all files into group GROUPNAME
 * Include the file seagate-changer.c which controls
@@ -28,7 +28,7 @@ Changes in release 2.3.0.4b3
   improvements.  Amplot requires gnuplot and a version of awk that
   understands command line variable assignment.
 * Include amoverview which creates a list of each disk dumped and the level
-  and sucess or failure of those dumps over a complete tapecycle.
+  and success or failure of those dumps over a complete tapecycle.
 * Amanda now supports backups of clients in different domains.  Requires
   using the configure --with-fqdn options and fully qualified domain
   names (FQDNs) in the disklist file.
@@ -65,7 +65,7 @@ Changes in release 2.3.0.4b2
 * Better AIX, Linux, OSF support.
 * configure checks if /dev/r devices exist or not.
 * Amanda uses POSIX fcntl locking before flock or lockf locking if available.
-* dumper.c uses less agressive I/O values for SunOS server support.
+* dumper.c uses less aggressive I/O values for SunOS server support.
 * Many bug fixes in the configure script for various platforms.
 * Many bug fixes to codes.
 
