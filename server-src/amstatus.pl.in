@@ -120,9 +120,9 @@ $start_time = 0;
 
 while(<AMDUMP>) {
 	chomp;
-	if(/amdump: start at (.*)/) {
-		print " from $1";
-		$starttime=&unctime(split(/[ 	]+/,$1));
+	if(/(amdump|amflush): start at (.*)/) {
+		print " from $2";
+		$starttime=&unctime(split(/[ 	]+/,$2));
 	}
 	elsif(/amdump: datestamp (\S+)/) {
 		$gdatestamp = $1;
