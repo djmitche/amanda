@@ -1,3 +1,7 @@
+2001-04-03 John R. Jackson <jrj@purdue.edu>
+
+	* Makefile.am: Remove *.test.c from the distribution.
+
 2001-04-02  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 	Upgrade to the 2.5.0 code.
 
