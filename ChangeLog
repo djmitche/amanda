@@ -1,5 +1,17 @@
 1999-03-05  Mike Grupenhoff <kashmir@munge.com>
 
+	* common-src/amanda.h: use ssize_t in writev return value
+	* common-src/bsd-security.c (bsd_stream_write,bsd_stream_read):
+	use ssize_t over int
+	* common-src/file.c (areads): use ssize_t to hold read() return val
+	* common-src/fileheader.c (fill_buffer): usse ssize_t to hold read()
+	return val
+	* common-src/security.h: stream_read's callback now takes a ssize_t
+	as the third argument.
+	* common-src/writev.c (writev): return a ssize_t
+
+1999-03-05  Mike Grupenhoff <kashmir@munge.com>
+
 	* configure.in: check for ssize_t, make it int if not present
 	* config/acconfig.h: add def for ssize_t
 

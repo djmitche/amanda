@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.7 1999/03/01 22:50:32 kashmir Exp $
+ * $Id: security.h,v 1.8 1999/03/04 22:40:07 kashmir Exp $
  *
  * security api
  */
@@ -141,7 +141,7 @@ typedef struct security_driver {
      * Read asyncronously from a stream.  Only one request can exist
      * per stream.
      */
-    void (*stream_read) P((void *, void (*)(void *, void *, int), void *));
+    void (*stream_read) P((void *, void (*)(void *, void *, ssize_t), void *));
 
     /*
      * Cancel a stream read request

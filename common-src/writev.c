@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: writev.c,v 1.1 1998/11/25 01:54:39 kashmir Exp $
+ * $Id: writev.c,v 1.2 1999/03/04 22:40:08 kashmir Exp $
  *
  * emulation of writev that simply copies all iovecs into a contiguous
  * buffer and writes that out in one write.
@@ -33,7 +33,7 @@
 #include "amanda.h"
 #ifndef HAVE_WRITEV
 
-int
+ssize_t
 writev(fd, iov, iovcnt)
     int fd;
     const struct iovec *iov;
@@ -41,6 +41,7 @@ writev(fd, iov, iovcnt)
 {
     size_t bufsize;
     int i;
+    ssize_t ret;
     char *buf, *writeptr;
 
     /*
@@ -61,8 +62,8 @@ writev(fd, iov, iovcnt)
     /*
      * Write the buffer, free it, and return write's result
      */
-    i = write(fd, buf, bufsize);
+    ret = write(fd, buf, bufsize);
     amfree(buf);
-    return (i);
+    return (ret);
 }
 #endif	/* HAVE_WRITEV */

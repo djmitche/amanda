@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.13 1999/01/11 21:38:16 kashmir Exp $
+ * $Id: fileheader.c,v 1.14 1999/03/04 22:40:05 kashmir Exp $
  *
  */
 
@@ -463,7 +463,8 @@ int fd, size;
 char *buffer;
 {
     char *curptr;
-    int spaceleft, cnt;
+    int spaceleft;
+    ssize_t cnt;
 
     curptr = buffer;
     spaceleft = size;

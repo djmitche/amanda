@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.73 1998/12/14 20:23:00 kashmir Exp $
+ * $Id: amanda.h,v 1.74 1999/03/04 22:39:58 kashmir Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1105,7 +1105,7 @@ extern pid_t waitpid P((pid_t pid, amwait_t *stat_loc, int options));
 #endif
 
 #ifndef HAVE_WRITEV_DECL
-extern int writev P((int fd, const struct iovec *iov, int iovcnt));
+extern ssize_t writev P((int fd, const struct iovec *iov, int iovcnt));
 #endif
 
 #ifndef STDIN_FILENO

@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.14 1998/07/04 00:18:43 oliva Exp $
+ * $Id: file.c,v 1.15 1999/03/04 22:40:02 kashmir Exp $
  *
  * file and directory bashing routines
  */
@@ -295,7 +295,7 @@ areads (fd)
     static char buffer[BUFSIZ+1];
     static char *line_buffer = NULL;
     char *t;
-    int r;
+    ssize_t r;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
 
