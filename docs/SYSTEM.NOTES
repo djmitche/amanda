@@ -1,87 +1,38 @@
-Amanda 2.1 - System-Specific Installation Notes
+Amanda 2.4 - System-Specific Installation Notes
 
 Please read the notes that correspond to the architectures you are
 installing for.  If you find additional gotchas, or anything incorrect
-in these notes, please send your updates to me at jds@cs.umd.edu.
+in these notes, please send your updates to amanda-hackers@cs.umd.edu,
+after checking that they are not known/fixed problems in the amanda
+patches page: http://www.amanda.org/patches.html
 
 ---------------------------------------------------------------------------
 SunOS 4.x
 ---------
 
-This is the main architecture that Amanda is developed under.  We run
-both the client and server sides under SunOS 4.1.3 at our site.
-
 Many people see problems with "No buffer space available" when running
 the server under 4.1.x (although we have not here).  Read the file
 SUNOS4.BUG if you encounter this problem.
 
+gcc 2.7.2.* cannot handle the way amanda creates shared libraries, so
+you have to --disable-shared when you configure amanda.  Current
+development snapshots of gcc (as well as the egcs branch) do not
+present this problem, so, if you wish to use shared libraries, you may
+consider installing one of them.
 
 ---------------------------------------------------------------------------
 Ultrix
 ------
 
-The Ultrix dump program contains an explicit check that it is being run
-by root.  This defeats the usual practice of a non-root "operator"
-userid for dumps.
-
-Because of this, on Ultrix client hosts you must set root's .rhosts to
-allow in the dumpuser from the server host, rather than setting the
-dumpuser's .rhosts as described in the INSTALL document.
-
-We have the client-side running at our site under Ultrix 4.2.
-
-
----------------------------------------------------------------------------
-SOLARIS 2.x (SunOS 5.x)
------------------------
-
-Thanks to the following people for supplying patches to Amanda 2.2.5
-for Solaris 2 - I may have implemented things differently, but I at
-least studied them all:
-
-	Michael Kutzner <futzi@uni-paderborn.de>
-	Michael Chang <chang@cs.umd.edu>
-	Steve Cliffe <steve@gorgon.cs.uow.edu.au>
-	<aidan@cse.unsw.edu.au>
-
+The Ultrix dump program contains an explicit check that it is being
+run by root.  This defeats the usual practice of a non-root "operator"
+userid for dumps.  For this reason, the rundump program (a setuid-root
+wrapper for dump) is enabled by default.  If you find rundump is not
+necessary for you, just configure --without-rundump.
 
 ---------------------------------------------------------------------------
 HP/UX
 -----
-
-The HP/UX port was originally done by Neal Becker <neal@ctd.comsat.com>
-against 2.0.5.  He also provided patches to 2.2.5.  As usual, I
-incorporated some of his changes, and did some my own way.  Which means
-they might not work well, since I do not have access to an HP/UX
-system.
-
-A few words concerning client installation on HPUX V9.* systems:
-
-1)  The device files for disks don't allow world read access. Therefore
-you have to add 'bin' to the group 'sys' which has read access to the
-device files.
-
-2)  Forget about the following if you don't use logical volumes!!!
-
-You'll find a perl script 'amhpfixdevs'. Call this script before you
-start Amanda for the first time and any time you add a new disk.
-
-Suppose you have a volume group 'vg99' which holds a logical volume
-'foo'. Calling the script will create the following symbolic links:
- 
-	/dev/vg99/foo   --> /dev/dsk/vg99_foo
-	/dev/vg99/rfoo  --> /dev/rdsk/vg99_foo
- 
-To back up this logical volume add the following line to the disklist
-file:
-
-myhost vg99_foo
-
-If you don't call the script, '/etc/dump' will definitely fail!
- 
-Michael Schmitz (mc@col.sw-ley.de)
-Fri Oct 25 17:35:39 MET 1996
- 
 
 It has been reported that amandad core dumps on HP/UX 10 if compiled
 against a shared amanda or amclient library.  Issuing
@@ -90,53 +41,23 @@ get shared libraries running correctly on HP/UX, please report this to
 the amanda-hackers mailing list so that this note can be updated, as
 it may be a transitory gcc (2.7.2) or libtool (1.0) bug.
 
-Alexandre Oliva
-Thu Oct 28 16:40:20 EDT 1997
-
----------------------------------------------------------------------------
-IRIX 5.2
---------
-
-The SGI IRIX (4.0.1) port was originally done by John Benjamins
-<johnb@edge.cis.mcmaster.ca> against Amanda 2.0.5.  I incorporated some
-of his changes, and did some my own way.
-
-We have the client-side running under IRIX 5.2 at our site.
-
-
+If you use logical volumes, you may refer to mountpoints or full
+device pathnames instead of device names in the disk list file.
+ 
 ---------------------------------------------------------------------------
 AIX 3.2
 -------
 
-We have the client-side running under IBM AIX 3.2 at our site, but as
-far as I know, the server-side should work as well.
-
-The IBM AIX (RS6000) client-side port was originally done by John
-Benjamins <johnb@edge.cis.mcmaster.ca> against Amanda 2.0.5.  Patches
-to Amanda 2.2.5 for AIX 3.2, including server-side tapeio, were
-contributed by Semih CEMILOGLU <semih@knidos.cc.metu.edu.tr>.  As
-usual, I incorporated some of their changes, and did some my own way.
-
+People have found problems regarding shared libraries support on AIX.
+We hope the current version of libtool, distributed within amanda
+package, fixes this problem.  If it does not, --disable-shared at
+configure time.
 
 ---------------------------------------------------------------------------
-DEC Alpha OSF/1
----------------
+Linux
+-----
 
-We have the client-side running under Alpha OSF/1 2.0 at our site.
-Amanda should also work under OSF/1 3.0, but vdump is not yet
-supported.
-
-As of amanda 2.4.0, vdump is supported.
-
----------------------------------------------------------------------------
-BSDI BSD/386 1.1
-----------------
-
-We have the client-side running under BSD/386 v1.1 at our site.
-
-
----------------------------------------------------------------------------
-NetBSD/i386 1.0
----------------
-
-We have the client-side running under NetBSD/i386 v1.0 at our site.
+Linux hosts intended to back up efs partitions with dump should
+install the dump package, as it is not installed by default on the
+Linux distributions I know of.  It is possible to find compiled
+versions of dump on most Linux sites.
