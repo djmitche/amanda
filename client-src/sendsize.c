@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.61.2.11 1998/03/18 21:22:31 amcore Exp $
+ * $Id: sendsize.c,v 1.61.2.12 1998/04/01 09:31:48 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -535,6 +535,7 @@ regex_t re_size[] = {
     {"  VXDUMP: estimated [0-9][0-9]* blocks", 512},                /* Sinix */
     {"Total bytes listed: [0-9][0-9]*", 1},		     /* Samba client */
     {"Total bytes written: [0-9][0-9]*", 1},		    /* Gnutar client */
+    {"[0-9][0-9]* blocks", 1024},			  /* DU 4.0 dump  -E */
 
     { NULL, 0 }
 };
