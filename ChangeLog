@@ -1,5 +1,18 @@
 1999-04-09  Mike Grupenhoff <kashmir@munge.com>
 
+	* server-src/conffile.h: aggregate all of the compress defines
+	(COMP_{NONE,FAST,BEST,...}) into an enum and typedef it to comp_t.
+	Make dumptype_t->compress a comp_t.
+	* server-src/dumper.c: make srvcompress global a comp_t.
+	* server-src/dumper.c (runcompress): add a comp_t third arg
+	that specifies the level of compression for this fd.
+	* server-src/dumper.c (do_dump): always compress index files
+	with COMP_BEST compression, as pointed out by Jean-Louis Martineau.
+	* server-src/dumper.c (read_indexfd): read the indexfd, not the
+	datafd.  Also noted by Jean-Louis Martineau.
+
+1999-04-09  Mike Grupenhoff <kashmir@munge.com>
+
 	* server-src/planner.c (main): ignore SIGPIPE.  tcp based
 	security drivers may get this while getting estimates.
 	Set the real uid to root, and the effective uid to the amanda

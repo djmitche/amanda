@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.28 1999/03/21 14:21:50 oliva Exp $
+ * $Id: conffile.h,v 1.29 1999/04/09 18:49:26 kashmir Exp $
  *
  * interface for config file reading code
  */
@@ -79,11 +79,13 @@ typedef struct tapetype_s {
 #define DS_INCRONLY	7	/* Forced fulls (0 1 1 2 2 FORCE0 1 1 ...) */
 
 /* Compression types */
-#define COMP_NONE	0	/* No compression */
-#define COMP_FAST	1	/* Fast compression on client */
-#define COMP_BEST	2	/* Best compression on client */
-#define COMP_SERV_FAST	3	/* Fast compression on server */
-#define COMP_SERV_BEST	4	/* Best compression on server */
+typedef enum {
+    COMP_NONE,		/* No compression */
+    COMP_FAST,		/* Fast compression on client */
+    COMP_BEST,		/* Best compression on client */
+    COMP_SERV_FAST,	/* Fast compression on server */
+    COMP_SERV_BEST,	/* Best compression on server */
+} comp_t;
 
 typedef struct dumptype_s {
     struct dumptype_s *next;
@@ -102,7 +104,7 @@ typedef struct dumptype_s {
     int maxdumps;
     time_t start_t;
     int strategy;
-    int compress;
+    comp_t compress;
     float comprate[2]; /* first is full, second is incremental */
     /* flag options */
     unsigned int record:1;

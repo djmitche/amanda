@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.115 1999/04/08 23:47:58 kashmir Exp $
+/* $Id: dumper.c,v 1.116 1999/04/09 18:49:29 kashmir Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -92,7 +92,8 @@ char *errstr = NULL;
 int abort_pending;
 long dumpsize, origsize;
 int nb_header_block;
-static enum { srvcomp_none, srvcomp_fast, srvcomp_best } srvcompress;
+
+static comp_t srvcompress = COMP_NONE;
 
 char *errfname = NULL;
 FILE *errf = NULL;
@@ -144,7 +145,7 @@ static void process_dumpline P((const char *));
 static void add_msg_data P((const char *str, size_t len));
 static void log_msgout P((logtype_t typ));
 
-static int runcompress P((int, pid_t *));
+static int runcompress P((int, pid_t *, comp_t));
 
 static void sendbackup_response P((proto_t *p, pkt_t *pkt));
 static int startup_dump P((const char *, const char *, int, const char *,
@@ -166,11 +167,11 @@ char *options;
     kencrypt = strstr(options, "kencrypt;") != NULL;
 #endif
     if (strstr(options, "srvcomp-best;") != NULL)
-      srvcompress = srvcomp_best;
+      srvcompress = COMP_BEST;
     else if (strstr(options, "srvcomp-fast;") != NULL)
-      srvcompress = srvcomp_fast;
+      srvcompress = COMP_FAST;
     else
-      srvcompress = srvcomp_none;
+      srvcompress = COMP_NONE;
 }
 
 void service_ports_init()
@@ -1006,7 +1007,7 @@ finish_tapeheader(file)
      * If we're doing the compression here, we need to override what
      * sendbackup told us the compression was.
      */
-    if (srvcompress != srvcomp_none) {
+    if (srvcompress != COMP_NONE) {
 	file->compressed = 1;
 #ifndef UNCOMPRESS_OPT
 #define	UNCOMPRESS_OPT	""
@@ -1118,7 +1119,7 @@ do_dump(db)
 		strerror(errno), NULL);
 	    goto failed;
 	} else {
-	    if (runcompress(indexout, &indexpid) < 0) {
+	    if (runcompress(indexout, &indexpid, COMP_BEST) < 0) {
 		aclose(indexout);
 		goto failed;
 	    }
@@ -1308,8 +1309,8 @@ read_mesgfd(cookie)
 	 * Now, setup the compress for the data output, and start
 	 * reading the datafd.
 	 */
-	if (srvcompress != srvcomp_none) {
-	    if (runcompress(db->fd, &db->compresspid) < 0) {
+	if (srvcompress != COMP_NONE) {
+	    if (runcompress(db->fd, &db->compresspid, srvcompress) < 0) {
 		dump_result = 2;
 		stop_dump();
 		return;
@@ -1378,7 +1379,7 @@ static void
 read_indexfd(cookie)
     void *cookie;
 {
-    ssize_t size = read(streams[DATAFD].fd, buf, sizeof(buf));
+    ssize_t size = read(streams[INDEXFD].fd, buf, sizeof(buf));
     int n, fd;
     char *cbuf = buf;
 
@@ -1471,9 +1472,10 @@ stop_dump()
  * process.
  */
 static int
-runcompress(outfd, pid)
+runcompress(outfd, pid, comptype)
     int outfd;
     pid_t *pid;
+    comp_t comptype;
 {
     int outpipe[2], tmpfd;
 
@@ -1509,7 +1511,7 @@ runcompress(outfd, pid)
 	    error("err dup2 out: %s", strerror(errno));
 	for (tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd)
 	    close(tmpfd);
-	execlp(COMPRESS_PATH, COMPRESS_PATH, (srvcompress == srvcomp_best ?
+	execlp(COMPRESS_PATH, COMPRESS_PATH, (comptype == COMP_BEST ?
 	    COMPRESS_BEST_OPT : COMPRESS_FAST_OPT), NULL);
 	error("error: couldn't exec %s: %s", COMPRESS_PATH, strerror(errno));
     }
