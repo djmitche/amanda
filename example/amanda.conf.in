@@ -1,3 +1,13 @@
+###  !!! WARNING !!!  !!! WARNING !!!  !!! WARNING !!!  !!! WARNING !!!  ###
+###                                                                      ###
+###  This file is not meant to be installed "as is", and in fact, it     ###
+###  WILL NOT WORK!  You must go through it and make changes appropriate ###
+###  to your own situation.  See the documentation in this file, in the  ###
+###  "man amanda" man page, in the "docs" directory and at the Amanda    ###
+###  web page (www.amanda.org).                                          ###
+###                                                                      ###
+###  !!! WARNING !!!  !!! WARNING !!!  !!! WARNING !!!  !!! WARNING !!!  ###
+
 #
 # amanda.conf - sample Amanda configuration file.  This started off life as
 #               the actual config file in use at CS.UMD.EDU.
