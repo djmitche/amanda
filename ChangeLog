@@ -1,3 +1,11 @@
+2000-10-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* server-src/diskfile.c (headqueue_disk): new function to
+	insert at the head of the queue.
+	* server-src/diskfile.h (headqueue_disk): prototype.
+	* server-src/driver.c (taper_queuedisk): insert with
+	headqueue_disk() if disk already attempted.
+
 2000-10-09  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
 	* AUTHORS: fix my email address.

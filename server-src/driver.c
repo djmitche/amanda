@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.95 2000/05/29 20:22:23 martinea Exp $
+ * $Id: driver.c,v 1.96 2000/10/10 21:47:23 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1410,7 +1410,9 @@ taper_queuedisk(dp)
 {
 
     if (taper_busy) {
-	if (use_lffo)
+	if(sched(dp)->attempted)
+	    headqueue_disk(&tapeq, dp)
+	else if (use_lffo)
 	    insert_disk(&tapeq, dp, sort_by_size_reversed);
 	else
 	    enqueue_disk(&tapeq, dp);
