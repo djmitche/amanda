@@ -1,5 +1,11 @@
 2000-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/driver.c (start_some_dumps): don't check free_kps if
+	curusage == 0.
+	* server-src/driver.c (free_kps): remove the kludge.
+
+2000-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/conffile.c: It's an error to have a negative chunksize.
 	* man/amanda.8.in: remove documentation of negative chunksize.
 	* example/amanda.conf.in: ditto
