@@ -61,9 +61,12 @@ fi
 cd $confdir/$conf || exit 1
 
 logdir=`amgetconf$SUF $conf logdir`
+[ $? -ne 0 ]  && exit 1
 errfile=$logdir/amdump
 tapecycle=`amgetconf$SUF $conf tapecycle`
+[ $? -ne 0 ]  && exit 1
 dumpuser=`amgetconf$SUF $conf dumpuser`
+[ $? -ne 0 ]  && exit 1
 runuser=${LOGNAME-`whoami`}
 
 if [ $runuser != $dumpuser ]; then

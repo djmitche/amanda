@@ -62,6 +62,7 @@ fi
 cd $confdir/$conf
 
 logdir=`amgetconf$SUF logdir`
+[ $? -ne 0 ]  && exit 1
 logfile=$logdir/log
 errfile=$logdir/amdump
 erramflush=$logdir/amflush

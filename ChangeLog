@@ -1,5 +1,11 @@
 2000-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* server-src/amdump.sh.in: exit if amgetconf exit with status != 0.
+	* server-src/amcleanup.sh.in: ditto
+	* server-src/amstatus.pl.in: ditto
+
+2000-11-07  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/driver.c (start_some_dumps): don't check free_kps if
 	curusage == 0.
 	* server-src/driver.c (free_kps): remove the kludge.
