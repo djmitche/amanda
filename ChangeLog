@@ -1,3 +1,8 @@
+2000-12-24 John R. Jackson <jrj@purdue.edu>
+
+	* server-src/getconf.c: Fix free() of static text string (BUGGY) when
+	  the parameter being looked up is bad.
+
 2000-12-23 David Wolfskill  <dhw@whistle.com>
 
         * server-src/amcheck.c (start_server_check): Change directory
@@ -1320,7 +1325,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.423.2.2 2000/12/24 21:42:57 jrjackson Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.423.2.3 2000/12/24 23:15:58 jrjackson Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
