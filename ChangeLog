@@ -1,3 +1,9 @@
+1998-12-09  John R. Jackson  <jrj@purdue.edu>
+
+	* common-src/stream.c (stream_server): do not request a reserved port
+	if we are root but PORTRANGE is defined.  Also, clean up the code
+	and make sure *portp is -1 on all error returns.
+
 1998-12-08  John R. Jackson  <jrj@purdue.edu>
 
 	* Makefile.am: add the user-contributed area.

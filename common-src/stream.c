@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.10.2.1 1998/11/17 18:10:02 jrj Exp $
+ * $Id: stream.c,v 1.10.2.2 1998/12/09 18:38:52 jrj Exp $
  *
  * functions for managing stream sockets
  */
@@ -44,9 +44,22 @@ int sendsize, recvsize;
     int server_socket, len;
     int on = 1;
     struct sockaddr_in server;
+    struct sockaddr *sa = (struct sockaddr *)&server;
+    /* portrange is supposed to be a pair of port numbers */
+    static unsigned portrange[2] =
+#ifdef PORTRANGE
+        { PORTRANGE };
+#else
+        { INADDR_ANY, INADDR_ANY };
+#endif
+    unsigned portnum;
 
-    if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    assert(portrange[0] <= portrange[1]);
+
+    *portp = -1;				/* in case we error exit */
+    if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 	return -1;
+    }
     if(server_socket < 0 || server_socket >= FD_SETSIZE) {
 	aclose(server_socket);
 	errno = EMFILE;				/* out of range */
@@ -61,42 +74,30 @@ int sendsize, recvsize;
     if(recvsize != DEFAULT_SIZE) 
         try_socksize(server_socket, SO_RCVBUF, recvsize);
 
-    if(geteuid() == 0) {
+    if(portrange[0] == INADDR_ANY && geteuid() == 0) {
+	/*
+	 * If we do not care what port is allocated and we are running
+	 * as root, try for a reserved port.
+	 */
 	if(bind_reserved(server_socket, &server) == -1) {
 	    aclose(server_socket);
 	    return -1;
 	}
-    }
-    else {
-#ifdef PORTRANGE
-	/* portrange is supposed to be a pair of port numbers */
-	static unsigned portrange[2] = { PORTRANGE };
-	unsigned portnum;
-	assert(portrange[0] <= portrange[1]);
-	
+    } else {
 	for (portnum = portrange[0]; portnum <= portrange[1]; ++portnum) {
-	    server.sin_port = htons(portnum);
-#else
-
-	    /* pick any available non-reserved port */
-	    server.sin_port = INADDR_ANY;
-#endif
-
-	    if(bind(server_socket, (struct sockaddr *)&server, sizeof(server)) 
-	       == -1) {
-#ifdef PORTRANGE
-		if (portnum != portrange[1])
-		    continue;
-#endif
-		aclose(server_socket);
-		*portp = -1;
-		return -1;
+	    if(portnum == INADDR_ANY) {
+		server.sin_port = INADDR_ANY;	/* any available port */
+	    } else {
+		server.sin_port = htons(portnum);
 	    }
-
-#ifdef PORTRANGE
-	    break;
+	    if(bind(server_socket, sa, sizeof(server)) != -1) {
+		break;				/* got a port */
+	    }
 	}
-#endif
+	if(portnum > portrange[1]) {
+	    aclose(server_socket);
+	    return -1;
+	}
     }
 
     listen(server_socket, 1);
@@ -104,7 +105,7 @@ int sendsize, recvsize;
     /* find out what port was actually used */
 
     len = sizeof(server);
-    if(getsockname(server_socket, (struct sockaddr *)&server, &len) == -1) {
+    if(getsockname(server_socket, sa, &len) == -1) {
 	aclose(server_socket);
 	return -1;
     }
