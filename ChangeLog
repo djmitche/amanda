@@ -1,3 +1,9 @@
+2001-04-23 John R. Jackson <jrj@purdue.edu>
+
+	* client-src/selfcheck.c: Allow Samba shares with no password.
+	* client-src/sendbackup-gnutar.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+
 2001-04-16 Thomas Hepper <th@ant.han.de>
 	* example/chg-scsi-tandberg-slr.conf.in: New example for an Tandberg
 	config on linux (contrib by Martin Seine <m.seine@buelow-masiak.de> )
