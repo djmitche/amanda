@@ -1,6 +1,6 @@
 AMANDA SECURITY API
 
-$Id: SECURITY-API,v 1.4 1998/11/07 14:30:49 kashmir Exp $
+$Id: SECURITY-API,v 1.5 1998/11/10 20:23:26 kashmir Exp $
 
 by Mike Grupenhoff <kashmir@munge.com>
 
@@ -171,7 +171,23 @@ Returns a security_stream_t on success, and NULL on error.  Error
 messages can be obtained by calling security_geterror() on the security
 handle associated with this stream.
 
-3.2.3. security_stream_id
+3.2.3. security_stream_close
+
+    void security_stream_close(security_stream_t *s);
+
+Closes a security stream and frees up resources associated with it.
+
+3.2.4. security_stream_auth
+
+    int security_stream_auth(security_stream_t *s);
+
+Authenticate a connected security stream.
+
+Returns 0 on success, and -1 on error.  Error messages can be obtained
+by calling security_geterror() on the security handle associated with
+this stream.
+
+3.2.5. security_stream_id
 
     int security_stream_id(security_stream_t *s);
 
@@ -183,7 +199,7 @@ with security_stream_server(), and then transmit the id for that stream
 to the other side.  The other side will then connect to that id with
 security_stream_client().
 
-3.2.4. security_stream_write
+3.2.6. security_stream_write
 
     int security_stream_write(security_stream_t *s, const void *buf,
 	size_t bufsize);
@@ -193,7 +209,7 @@ or negative on error.  Error messages can be obtained by calling
 security_geterror() on the security handle associated with this
 stream.
 
-3.2.5. security_stream_read
+3.2.7. security_stream_read
 
     void security_stream_read(security_stream_t *s,
 	void (*callback)(void *arg, void *buf, int bufsize), void *arg);
@@ -209,7 +225,7 @@ associated with this stream.
 This function uses the event interface.  Callbacks will only be
 generated while in event_loop().
 
-3.2.6. security_stream_read_cancel
+3.2.8. security_stream_read_cancel
 
     void security_stream_read_cancel(security_stream_t *s);
 
