@@ -1,6 +1,13 @@
 # Makefile for Amanda server programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/tape-src
+###
+# Yes, I really mean ../common-src.  The genversion.h file ends up getting
+# built there rather than into the source tree.
+###
+
+INCLUDES =		-I$(top_srcdir)/common-src \
+			-I../common-src \
+			-I$(top_srcdir)/tape-src
 
 if WANT_LIBTOOL
 lib_LTLIBRARIES = 	libamserver.la

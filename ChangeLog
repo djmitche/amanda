@@ -1,3 +1,9 @@
+2001-09-21 John R. Jackson (jrj@purdue.edu)
+
+	* server-src/Makefile.am: Add -I../common-src so genversion.h can be
+	  found (since it is built on the fly).  Only fails when build is done
+	  in a different directory than the sources.
+
 2001-09-17 John R. Jackson (jrj@purdue.edu)
 
 	* server-src/getconf.c: Add capabilities to amgetconf to return
