@@ -1,3 +1,9 @@
+2004-01-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/planner.c (handle_result): Detect bad estimate (-1).
+	* server-src/planner.c (analyze_estimate): Don't schedule level
+	  if the estimate is bad.
+
 2003-12-19  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* client-src/Makefile.am (EXTRA_DIST): Add amandad-krb4.c,

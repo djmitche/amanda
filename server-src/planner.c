@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.31 2003/10/27 16:57:27 kovert Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.32 2004/01/07 12:56:13 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1503,17 +1503,6 @@ pkt_t *pkt;
 	if(est(dp)->level[0] == -1) continue;   /* ignore this disk */
 	remove_disk(&waitq, dp);
 	if(est(dp)->got_estimate) {
-	    if(est(dp)->est_size[0] >= 0) {
-		enqueue_disk(&estq, dp);
-	    } else {
-		enqueue_disk(&failq, dp);
-
-		est(dp)->errstr = vstralloc("disk ", dp->name,
-					    " offline on ", dp->host->hostname,
-					    "?",
-					    NULL);
-	    }
-
 	    fprintf(stderr,"%s: time %s: got result for host %s disk %s:",
 		    get_pname(), walltime_str(curclock()),
 		    dp->host->hostname, dp->name);
@@ -1521,6 +1510,40 @@ pkt_t *pkt;
 		    est(dp)->level[0], est(dp)->est_size[0],
 		    est(dp)->level[1], est(dp)->est_size[1],
 		    est(dp)->level[2], est(dp)->est_size[2]);
+
+	    if((est(dp)->level[0] != -1 && est(dp)->est_size[0] > 0) ||
+	       (est(dp)->level[1] != -1 && est(dp)->est_size[1] > 0) ||
+	       (est(dp)->level[2] != -1 && est(dp)->est_size[2] > 0)) {
+
+		if(est(dp)->level[2] != -1 && est(dp)->est_size[2] < 0) {
+		    log_add(L_WARNING,
+			    "disk %s:%s, estimate of level %d failed: %d.",
+			    dp->host->hostname, dp->name,
+			    est(dp)->level[2], est(dp)->est_size[2]);
+		    est(dp)->level[2] = -1;
+		}
+		if(est(dp)->level[1] != -1 && est(dp)->est_size[1] < 0) {
+		    log_add(L_WARNING,
+			    "disk %s:%s, estimate of level %d failed: %d.",
+			    dp->host->hostname, dp->name,
+			    est(dp)->level[1], est(dp)->est_size[1]);
+		    est(dp)->level[1] = -1;
+		}
+		if(est(dp)->level[0] != -1 && est(dp)->est_size[0] < 0) {
+		    log_add(L_WARNING,
+			    "disk %s:%s, estimate of level %d failed: %d.",
+			    dp->host->hostname, dp->name,
+			    est(dp)->level[0], est(dp)->est_size[0]);
+		    est(dp)->level[0] = -1;
+		}
+
+		enqueue_disk(&estq, dp);
+	    }
+	    else {
+		enqueue_disk(&failq, dp);
+		est(dp)->errstr = vstralloc("disk ", dp->name,
+					    ", all estimate failed", NULL);
+	    }
 	}
 	else {
 	    enqueue_disk(&failq, dp);
@@ -1623,6 +1646,11 @@ disk_t *dp;
 		    "(no estimate for level 0, picking an incr level)\n");
 	    ep->dump_level = pick_inclevel(dp);
 	    ep->dump_size = est_tape_size(dp, ep->dump_level);
+
+	    if(ep->dump_size == -1) {
+		ep->dump_level = ep->dump_level + 1;
+		ep->dump_size = est_tape_size(dp, ep->dump_level);
+	    }
 	}
 	else {
 	    total_lev0 += (double) ep->dump_size;
@@ -1634,9 +1662,18 @@ disk_t *dp;
 	    }
 	    else {
 		/* fill in degraded mode info */
-		fprintf(stderr,"(picking inclevel for degraded mode)\n");
+		fprintf(stderr,"(picking inclevel for degraded mode)");
 		ep->degr_level = pick_inclevel(dp);
 		ep->degr_size = est_tape_size(dp, ep->degr_level);
+		if(ep->degr_size == -1) {
+		    ep->degr_level = ep->degr_level + 1;
+		    ep->degr_size = est_tape_size(dp, ep->degr_level);
+		}
+		if(ep->degr_size == -1) {
+		    fprintf(stderr,"(no inc estimate)");
+		    ep->degr_level = -1;
+		}
+		fprintf(stderr,"\n");
 	    }
 	}
     }
@@ -1645,6 +1682,19 @@ disk_t *dp;
 	/* XXX - if this returns -1 may be we should force a total? */
 	ep->dump_level = pick_inclevel(dp);
 	ep->dump_size = est_tape_size(dp, ep->dump_level);
+
+	if(ep->dump_size == -1) {
+	    ep->dump_level = ep->last_level;
+	    ep->dump_size = est_tape_size(dp, ep->dump_level);
+	}
+	if(ep->dump_size == -1) {
+	    ep->dump_level = ep->last_level + 1;
+	    ep->dump_size = est_tape_size(dp, ep->dump_level);
+	}
+	if(ep->dump_size == -1) {
+	    ep->dump_level = 0;
+	    ep->dump_size = est_tape_size(dp, ep->dump_level);
+	}
     }
 
     fprintf(stderr,"  curr level %d size %ld ", ep->dump_level, ep->dump_size);
