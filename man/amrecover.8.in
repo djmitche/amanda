@@ -26,6 +26,14 @@ amrecover \- Amanda index database browser
 .B \-s
 .I index-server
 ]
+[
+.B \-t
+.I tape-server
+]
+[
+.B \-d
+.I tape-device
+]
 .SH DESCRIPTION
 .B Amrecover
 browses the database of Amanda index files to determine
@@ -43,6 +51,14 @@ Amanda configuration
 .CP -s index-server
 Host that runs the index daemon
 (default: @DEFAULT_SERVER@).
+.TP
+.CP -t tape-server
+Host that runs the tape server daemon
+(default: @DEFAULT_TAPE_SERVER@).
+.TP
+.CP -d tape-device
+Tape device to use on the tape server host
+(default: @DEFAULT_TAPE_DEVICE@).
 .SH COMMANDS
 .B Amrecover
 connects to the index server and then presents a command line prompt.
