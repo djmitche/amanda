@@ -1163,6 +1163,14 @@ case "$target" in
 			;;
   *-sni-sysv4)
 			;;
+  *-pc-cygwin)
+			AC_DEFINE(IGNORE_TAR_ERRORS,1,[Define on Cygwin. ])
+			# Cygwin needs PATH to find cygwin1.dll
+			AC_DEFINE(NEED_PATH_ENV,1,[Define on Cygwin. ])
+			AC_DEFINE(IGNORE_UID_CHECK,1,[Define on Cygwin. ])
+			AC_DEFINE(IGNORE_FSTAB,1,[Define on Cygwin. ])
+			AC_DEFINE(DONT_SUID_ROOT,1,[Define on Cygwin. ])
+			;;
   *)
 			cat <<END
 

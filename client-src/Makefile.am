@@ -89,7 +89,7 @@ install-exec-hook:
 	@list="calcsize killpgrp rundump runtar"; \
 	for p in $$list; do \
 		if echo "$(libexec_PROGRAMS)" | grep $$p >/dev/null 2>&1; then \
-			pa=$(DESTDIR)$(libexecdir)/`echo $$p|sed '$(transform)'`; \
+			pa=$(DESTDIR)$(libexecdir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
 			echo chown root $$pa; \
 			chown root $$pa; \
 			echo chmod u+s,o-rwx $$pa; \

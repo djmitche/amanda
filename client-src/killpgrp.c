@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: killpgrp.c,v 1.8.4.2 2001/01/05 02:18:21 jrjackson Exp $
+ * $Id: killpgrp.c,v 1.8.4.2.4.1 2002/10/27 14:31:18 martinea Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -85,7 +85,9 @@ char **argv;
     }
 #endif	/* FORCE_USERID */
 
+#if !defined (DONT_SUID_ROOT)
     setuid(0);
+#endif
 
     if (AM_GETPGRP() != getpid()) {
 	error("error [must be the process group leader]");

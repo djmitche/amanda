@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.29.4.7.4.6.2.4 2002/10/22 23:35:40 martinea Exp $
+ * $Id: amrecover.c,v 1.29.4.7.4.6.2.5 2002/10/27 14:31:18 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -439,10 +439,12 @@ char **argv;
     set_pname("amrecover");
     dbopen();
 
+#ifndef IGNORE_UID_CHECK
     if (geteuid() != 0) {
 	erroutput_type |= ERR_SYSLOG;
 	error("amrecover must be run by root");
     }
+#endif
 
     localhost = alloc(MAX_HOSTNAME_LENGTH+1);
     if (gethostname(localhost, MAX_HOSTNAME_LENGTH) != 0) {

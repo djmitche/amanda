@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: runtar.c,v 1.11.4.2 1999/09/10 23:27:13 jrj Exp $
+ * $Id: runtar.c,v 1.11.4.2.6.1 2002/10/27 14:31:18 martinea Exp $
  *
  * runs GNUTAR program as root
  */
@@ -83,7 +83,9 @@ char **argv;
     }
 #endif
 
+#if !defined (DONT_SUID_ROOT)
     setuid(0);
+#endif
 
     dbprintf(("running: %s: ",GNUTAR));
     for (i=0; argv[i]; i++)

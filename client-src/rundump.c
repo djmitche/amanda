@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.23.2.3 1999/09/11 01:14:05 jrj Exp $
+ * $Id: rundump.c,v 1.23.2.3.6.1 2002/10/27 14:31:18 martinea Exp $
  *
  * runs DUMP program as root
  */
@@ -98,7 +98,9 @@ char **argv;
     }
 #endif	/* FORCE_USERID */
 
+#if !defined (DONT_SUID_ROOT)
     setuid(0);
+#endif
 
 #ifdef XFSDUMP
 
