@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.37 1998/03/07 18:07:20 martinea Exp $
+ * $Id: driver.c,v 1.38 1998/03/09 23:03:23 blair Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -207,9 +207,9 @@ char **main_argv;
 
 	    if(fs.avail != -1) {
 		if(hdp->disksize > fs.avail) {
-		    log(L_WARNING,
-			"WARNING: %s: %ld KB requested, but only %ld KB available.",
-			hdp->diskdir, hdp->disksize, fs.avail);
+		    log_add(L_WARNING,
+			    "WARNING: %s: %ld KB requested, but only %ld KB available.",
+			    hdp->diskdir, hdp->disksize, fs.avail);
 
 		    hdp->disksize = fs.avail;
 		}
