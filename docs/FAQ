@@ -124,6 +124,25 @@ information about backups stored in that tape from the Amanda
 database.
 
 
+Q: Which tape changer configuration should I use in amanda.conf?
+
+A: If you only have one tape unit, you have to choices: (i) don't use
+a tape changer at all, i.e., set runtapes to 1, set tapedev to the
+non-rewinding device corresponding to the tape unit, and comment out
+tpchanger, changerfile and changerdev; or (ii) set up chg-manual, so
+that you can change tapes manually.  If you select chg-manual, you
+will not be able to start `amdump' as a cron job, and you should
+always run `amflush -f', because chg-manual will ask you to press
+return in the terminal where you started the controlling program.
+
+   If you have several tape units, which you want to use to emulate a
+tape changer, you want chg-multi.  Even if you do own a real tape
+changer, that operates based on ejecting a tape or such, chg-multi may
+be useful.  Other tape changers may require specialized changer
+programs; read docs/TAPE.CHANGERS for details about the ones provided
+with Amanda.
+
+
 Q: How can I configure Amanda so that it performs full backups on the
 week-end and incrementals on weekdays?
 
