@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-defs.h,v 1.1.2.16 2000/10/25 00:21:16 martinea Exp $
+ * $Id: scsi-defs.h,v 1.1.2.17 2001/01/04 01:51:41 martinea Exp $
  *
  */
 /*
@@ -110,19 +110,6 @@ typedef unsigned char PackedBit;
 #define SENSE_IES 3
 #define SENSE_TAPE_NOT_UNLOADED 4
 #define SENSE_NO 5
-/*
- * Defines for the function types in Changer_CMD_T
- */
-#define CHG_MOVE 0
-#define CHG_STATUS 1
-#define CHG_RESET_STATUS 2
-#define CHG_FREE 3
-#define CHG_EJECT 4
-#define CHG_CLEAN 5
-#define CHG_REWIND 6
-#define CHG_BARCODE 7
-#define CHG_SEARCH 8
-#define CHG_ERROR 9
 /*
  * Defines for the type field in the inquiry command
  */
@@ -1009,11 +996,19 @@ typedef struct ElementInfo
 } ElementInfo_T;
 
 
-
 typedef struct {
     char *ident;                  /* Name of the device from inquiry */
     char *type;                   /* Device Type, tape|robot */
-    int (*function[10])();        /* New way to call the device dependend functions move/eject ... */
+    int (*function_move)(int, int, int);
+    int (*function_status)(int, int);
+    int (*function_reset_status)(int);
+    int (*function_free)();
+    int (*function_eject)(char *, int);
+    int (*function_clean)(char *);
+    int (*function_rewind)(int);
+    int (*function_barcode)(int);
+    int (*function_search)();
+    int (*function_error)(int, int , char *);
 } ChangerCMD_T ;
 
 typedef struct {

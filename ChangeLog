@@ -1,5 +1,11 @@
 2001-01-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* changer-src/scsi-defs.h (ChangerCMD_T): replace array function
+	  pointer by enumerated pointers.
+	* changer-src/scsi-changer-driver.c: Use new calling convention.
+
+2001-01-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/amstatus.pl.in: Better support for TRY-AGAIN and
 	  ABORT-FINISHED result.
 
@@ -1333,7 +1339,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.429 2001/01/04 01:47:24 martinea Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.430 2001/01/04 01:51:40 martinea Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
