@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.41.2.1 1999/01/17 14:00:04 martinea Exp $
+ * $Id: amflush.c,v 1.41.2.2 1999/01/20 01:33:55 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -142,24 +142,29 @@ char **main_argv;
 	/* First, find out the last existing errfile,           */
 	/* to avoid ``infinite'' loops if tapecycle is infinite */
 
-	snprintf(number,100,"%d",days);
+	ap_snprintf(number,100,"%d",days);
 	errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
-	while ( days < maxdays && stat(errfilex,&stat_buf)) {
+	while ( days < maxdays && stat(errfilex,&stat_buf)==0) {
 	    days++;
-	    snprintf(number,100,"%d",days);
+	    ap_snprintf(number,100,"%d",days);
 	    errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
 	}
-	snprintf(number,100,"%d",days);
+	ap_snprintf(number,100,"%d",days);
 	errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
 	nerrfilex = NULL;
-	while (days > 2) {
+	while (days > 1) {
 	    amfree(nerrfilex);
 	    nerrfilex = errfilex;
 	    days--;
-	    snprintf(number,100,"%d",days);
-	    errfilex = newvstralloc(errfilex, errfile, ".", number, NULL);
+	    ap_snprintf(number,100,"%d",days);
+	    errfilex = vstralloc(errfile, ".", number, NULL);
 	    rename(errfilex, nerrfilex);
 	}
+	errfilex = newvstralloc(errfilex, errfile, ".1", NULL);
+	rename(errfile,errfilex);
+	amfree(errfile);
+	amfree(errfilex);
+	amfree(nerrfilex);
     }
 
     /* now, have reporter generate report and send mail */
