@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.161 2005/02/09 13:52:10 martinea Exp $
+ * $Id: planner.c,v 1.162 2005/02/09 14:31:06 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -174,6 +174,8 @@ char **argv;
 	 */
 	close(fd);
     }
+
+    setvbuf(stderr, (char *)NULL, _IOLBF, 0);
 
     if (argc > 1) {
 	config_name = stralloc(argv[1]);
@@ -879,15 +881,13 @@ setup_estimate(dp)
 
     /* debug output */
 
-    fprintf(stderr, "setup_estimate: %s:%s: command %d, options:",
-	    dp->host->hostname, dp->name, info.command);
-    if(dp->strategy == DS_NOFULL) fputs(" no-full", stderr);
-    if(dp->strategy == DS_INCRONLY) fputs(" incr-only", stderr);
-    if(dp->skip_full) fputs(" skip-full", stderr);
-    if(dp->skip_incr) fputs(" skip-incr", stderr);
-    fprintf(stderr, "\n    last_level %d next_level0 %d level_days %d\n",
-	    ep->last_level, ep->next_level0, ep->level_days);
-    fprintf(stderr, "    getting estimates %d (%ld) %d (%ld) %d (%ld)\n",
+    fprintf(stderr, "setup_estimate: %s:%s: command %d, options: %s    last_level %d next_level0 %d level_days %d    getting estimates %d (%ld) %d (%ld) %d (%ld)\n",
+	    dp->host->hostname, dp->name, info.command,
+	    dp->strategy == DS_NOFULL ? "no-full" :
+		 dp->strategy == DS_INCRONLY ? "incr-only" :
+		 dp->skip_full ? "skip-full" :
+		 dp->skip_incr ? "skip-incr" : "none",
+	    ep->last_level, ep->next_level0, ep->level_days,
 	    ep->level[0], ep->est_size[0],
 	    ep->level[1], ep->est_size[1],
 	    ep->level[2], ep->est_size[2]);
