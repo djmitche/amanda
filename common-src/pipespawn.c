@@ -46,11 +46,11 @@ va_dcl
 	argc++;
 	dbprintf((" "));
 	for(i = 0; (ch = arg[i]) != '\0' && isprint(ch) && ch != ' '; i++) {}
-	if(ch != '\0') {
+	if(ch != '\0' || i == 0) {
 	    dbprintf(("\""));
 	}
 	dbprintf(("%s", arg));
-	if(ch != '\0') {
+	if(ch != '\0' || i == 0) {
 	    dbprintf(("\""));
 	}
     }
