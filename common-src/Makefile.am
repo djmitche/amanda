@@ -24,10 +24,10 @@ INCLUDES = -I$(REGsrcdir)
 
 libamanda_la_SOURCES = \
 	alloc.c		amflock.c	debug.c		dgram.c		\
-	error.c		file.c		match.c		protocol.c	\
-	security.c	statfs.c	stream.c	token.c		\
-	version.c	versuff.c	fileheader.c			\
-	regcomp.c	regerror.c	regexec.c	regfree.c
+	error.c		file.c		fileheader.c	match.c		\
+	protocol.c	regcomp.c	regerror.c	regexec.c	\
+	regfree.c	security.c	statfs.c	stream.c	\
+	token.c		version.c	versuff.c
 
 libamanda_la_LIBADD =	@LTLIBOBJS@
 
