@@ -1,5 +1,15 @@
 2001-11-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
 
+	* recover-src/amrecover.h (cd_glob, cd_regex, cd_dir): New prototypes.
+	* recover-src/set_commands.c (cd_glob, cd_regex, cd_dir): New functions.
+	* recover-src/uparse.y: Add new token CDX, call cd_glob instead
+	of set_directory for cd command, call cd_regex for cdx command.
+	* recover-src/uscan.l: On cdx string return CDX token.
+	* recover-src/help.c: Document it.
+	* man/amrecover.8.in: Document it.
+
+2001-11-03  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
 	* server-src/taper.c: Backport from 2.5.0 the change to use only
 	one cmd_t type for all program.
 	* server-src/server_util.h: Likewise.
