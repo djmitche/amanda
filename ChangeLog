@@ -1,3 +1,7 @@
+1998-09-10  Jean-Louis Martineau <martineau@IRO.UMontreal.CA>
+
+	* doc/SAMBA: 1.9.18p10 has a bug
+
 1998-09-09  Terje Malmedal  <tm@funcom.com>
 
 	* common-src/stream.c (stream_server, stream_client): added
