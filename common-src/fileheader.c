@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.21 2002/01/31 19:14:07 martinea Exp $
+ * $Id: fileheader.c,v 1.22 2002/02/01 01:04:13 martinea Exp $
  */
 
 #include "amanda.h"
@@ -177,14 +177,6 @@ parse_file_header(buffer, file, buflen)
 	}
 #undef SC
 
-#define SC "BLOCKSIZE="
-	if (strncmp(line, SC, sizeof(SC) - 1) == 0) {
-	    line += sizeof(SC) - 1;
-	    file->blocksize = atoi(line);
-	    continue;
-	}
-#undef SC
-
 #define SC "To restore, position tape at start of file and run:"
 	if (strncmp(line, SC, sizeof(SC) - 1) == 0)
 	    continue;
@@ -249,8 +241,8 @@ build_header(buffer, file, buflen)
     switch (file->type) {
     case F_TAPESTART:
 	snprintf(buffer, buflen,
-	    "AMANDA: TAPESTART DATE %s TAPE %s\nBLOCKSIZE=%ld\n\014\n",
-	    file->datestamp, file->name, file->blocksize);
+	    "AMANDA: TAPESTART DATE %s TAPE %s\n014\n",
+	    file->datestamp, file->name);
 	break;
 
     case F_CONT_DUMPFILE:
@@ -285,14 +277,10 @@ build_header(buffer, file, buflen)
 	    file->blocksize / 1024, file->uncompress_cmd, file->recover_cmd);
 	buffer += n;
 	buflen -= n;
-
-	n = snprintf(buffer, buflen, "BLOCKSIZE=%ld\n", file->blocksize);
-	buffer += n;
-	buflen -= n;
 	break;
 
     case F_TAPEEND:
-	snprintf(buffer, buflen, "AMANDA: TAPEEND DATE %s\nBLOCKSIZE=%ld\n\014\n",
+	snprintf(buffer, buflen, "AMANDA: TAPEEND DATE %s\n\014\n",
 	    file->datestamp, file->blocksize);
 	break;
 
