@@ -117,7 +117,7 @@ char *dumpdate;
 	int len = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR) +
 	    strlen(host) + strlen(disk);
 
-	incrname = malloc(len+11);
+	incrname = alloc(len+11);
 	sprintf(incrname, "%s/%s", GNUTAR_LISTED_INCREMENTAL_DIR, host);
 	i = strlen(incrname);
 	strcat(incrname, disk);
@@ -146,6 +146,7 @@ char *dumpdate;
 
 	    if (in == NULL) {
 	      free(inputname);
+	      inputname = 0;
 	      goto notincremental;
 	    }
 	    
@@ -330,7 +331,8 @@ int goterror;
         if (rename(incrname, nodotnew))
             error("error [renaming %s to %s: %s]", 
 		  incrname, nodotnew, strerror(errno));
-	free(nodotnew); 
+	free(nodotnew);
+	free(incrname);
 #ifdef SAMBA_CLIENT
       }
 #endif

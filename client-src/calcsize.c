@@ -79,9 +79,11 @@ long final_size_gnutar P((int, char *));
 void add_file_unknown P((int, struct stat *));
 long final_size_unknown P((int, char *));
 
+#ifdef BUILTIN_EXCLUDE_SUPPORT
 int use_gtar_excl = 0;
 char exclude_string[] = "--exclude=";
 char exclude_list_string[] = "--exclude-list=";
+#endif
 
 char *pname = "calcsize";
 
@@ -141,7 +143,11 @@ char **argv;
 
     if(argc < 2) {
       usage:
-	error("Usage: %s [DUMP|GNUTAR [-X --exclude[-list]=regexp]] name dir [level date] ...", pname);
+	error("Usage: %s [DUMP|GNUTAR "
+#ifdef BUILTIN_EXCLUDE_SUPPORT
+	      "[-X --exclude[-list]=regexp]] "
+#endif
+	      "name dir [level date] ...", pname);
 	return 1;
     }
 
@@ -162,19 +168,22 @@ char **argv;
 #endif
 	add_file = add_file_gnutar;
 	final_size = final_size_gnutar;
+#ifdef BUILTIN_EXCLUDE_SUPPORT
 	use_gtar_excl++;
+#endif
     }
     else {
 	add_file = add_file_unknown;
 	final_size = final_size_unknown;
     }
     argc--, argv++;
+#ifdef BUILTIN_EXCLUDE_SUPPORT
     if ((argc > 1) && !strcmp(*argv,"-X")) {
 	char *cp = (char *)0;
 	argv++;
 
 	if (!use_gtar_excl) {
-	  error("%s: exclusion list available only with GNUTAR", pname);
+	  error("%s: exclusion specification not supported", pname);
 	  return 1;
 	}
 	
@@ -198,6 +207,7 @@ char **argv;
 	argv++;
     } else
 	use_gtar_excl = 0;
+#endif
 
     /* the amanda name can be different from the directory name */
 
@@ -276,11 +286,13 @@ char *parent_dir;
 
     for(dirname = pop_name(); dirname; free(dirname), dirname = pop_name()) {
 
+#ifdef BUILTIN_EXCLUDE_SUPPORT
 	if(use_gtar_excl &&
 	   (check_exclude(basename(dirname)) ||
 	    check_exclude(dirname)))
 	    /* will not be added by gnutar */
 	    continue;
+#endif
 
 	if(chdir(dirname) == -1 || (d = opendir(".")) == NULL) {
 	    perror(dirname);
@@ -315,7 +327,10 @@ char *parent_dir;
 
 	    for(i = 0; i < ndumps; i++) {
 		if(finfo.st_ctime >= dumpdate[i])
-		    if (!check_exclude(f->d_name) &&
+		    if (
+#ifdef BUILTIN_EXCLUDE_SUPPORT
+			!check_exclude(f->d_name) &&
+#endif
 			/* regular files */
 			((finfo.st_mode & S_IFMT) == S_IFREG)
 			  /* directories */

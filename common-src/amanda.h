@@ -323,9 +323,6 @@ extern time_t unctime   P((char *timestr));
 extern int    amflock   P((int fd, char *resource));
 extern int    amroflock P((int fd, char *resource));
 extern int    amfunlock P((int fd, char *resource));
-extern void add_exclude P((char *name));
-extern void add_exclude_file P((char *file));
-extern int check_exclude P((const char *name));
 
 extern int debug;
 extern char *version_info[];

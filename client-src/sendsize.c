@@ -55,7 +55,7 @@ char line[MAXLINE];
 char *pname = "sendsize";
 
 typedef struct level_estimates_s {
-    int dumpsince;
+    time_t dumpsince;
     int estsize;
     int needestimate;
 } level_estimate_t;
@@ -82,6 +82,7 @@ void add_diskest P((char *disk, int level, char *exclude, int platter, char *pro
 void calc_estimates P((disk_estimates_t *est));
 void dump_calc_estimates P((disk_estimates_t *));
 void smbtar_calc_estimates P((disk_estimates_t *));
+void gnutar_calc_estimates P((disk_estimates_t *));
 void generic_calc_estimates P((disk_estimates_t *));
 
 
@@ -215,20 +216,22 @@ disk_estimates_t *est;
 {
     dbprintf(("calculating for amname '%s', dirname '%s'\n", est->amname,
 	      est->dirname));
-    while(dumpsrunning >= maxdumps) {
-      wait(NULL);
-      --dumpsrunning;
-    }
-    ++dumpsrunning;
-    switch(fork()) {
-    case 0:
-      break;
+    if (maxdumps > 1) {
+      while(dumpsrunning >= maxdumps) {
+	wait(NULL);
+	--dumpsrunning;
+      }
+      ++dumpsrunning;
+      switch(fork()) {
+      case 0:
+	break;
       
-    case -1:
-    default:
-      return;
+      case -1:
+      default:
+	return;
+      }
     }
-
+    
     /* Now in the child process */
 #ifndef USE_GENERIC_CALCSIZE
     if(!strcmp(est->program, "DUMP"))
@@ -236,12 +239,19 @@ disk_estimates_t *est;
     else
 #endif
 #ifdef SAMBA_CLIENT
-	if (est->amname[0] == '/' && est->amname[1] == '/')
-	    smbtar_calc_estimates(est);
+      if (!strcmp(est->program, "GNUTAR") &&
+	  est->amname[0] == '/' && est->amname[1] == '/')
+	smbtar_calc_estimates(est);
+      else
+#endif
+#ifdef GNUTAR
+	if (!strcmp(est->program, "GNUTAR"))
+	  gnutar_calc_estimates(est);
 	else
 #endif
-	generic_calc_estimates(est);
-    exit(0);
+	  generic_calc_estimates(est);
+    if (maxdumps > 1)
+      exit(0);
 }
 
 void generic_calc_estimates(est)
@@ -255,10 +265,12 @@ disk_estimates_t *est;
 
     argv[i++] = "calcsize";
     argv[i++] = est->program;
+#ifdef BUILTIN_EXCLUDE_SUPPORT
     if(est->exclude && *est->exclude) {
 	argv[i++] = "-X";
 	argv[i++] = est->exclude;
     }
+#endif
     argv[i++] = est->amname;
     argv[i++] = est->dirname;
     
@@ -310,6 +322,8 @@ disk_estimates_t *est;
 void dump_calc_estimates P((disk_estimates_t *est));
 long getsize_dump P((char *disk, int level));
 long getsize_smbtar P((char *disk, int level));
+long getsize_gnutar P((char *disk, int level,
+		       char *exclude, time_t dumpsince));
 long handle_dumpline P((char *str));
 double first_num P((char *str));
 
@@ -347,7 +361,7 @@ disk_estimates_t *est;
 
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
-	    dbprintf(("%s: getting size via dump for %s level %d\n",
+	    dbprintf(("%s: getting size via smbclient for %s level %d\n",
 		      pname, est->amname, level));
 	    size = getsize_smbtar(est->amname, level);
 	    sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
@@ -360,6 +374,33 @@ disk_estimates_t *est;
 	    amfunlock(1, "size");
 	}
     }
+}
+#endif
+
+#ifdef GNUTAR
+void gnutar_calc_estimates(est)
+disk_estimates_t *est;
+{
+  int level;
+  long size;
+  char result[1024];
+
+  for(level = 0; level < DUMP_LEVELS; level++) {
+      if (est->est[level].needestimate) {
+	  dbprintf(("%s: getting size via gnutar for %s level %d\n",
+		    pname, est->amname, level));
+	  size = getsize_gnutar(est->amname, level,
+				est->exclude, est->est[level].dumpsince);
+	  sprintf(result, "%s %d SIZE %ld\n", est->amname, level, size);
+
+	  amflock(1, "size");
+
+	  lseek(1, (off_t)0, SEEK_END);
+	  write(1, result, strlen(result));
+
+	  amfunlock(1, "size");
+      }
+  }
 }
 #endif
 	    
@@ -388,6 +429,7 @@ regex_t re_size[] = {
     {"DUMP: estimated [0-9][0-9]* KB output", 1024},                 /* HPUX */
     {"xfsdump: estimated dump size: [0-9][0-9]* bytes", 1},  /* Irix 6.2 xfs */
     {"Total bytes listed: [0-9][0-9]*", 1},		     /* Samba client */
+    {"Total bytes written: [0-9][0-9]*", 1},		    /* Gnutar client */
 
     { NULL, 0 }
 };
@@ -593,11 +635,208 @@ int level;
 
     dbprintf((".....\n"));
     if(size == -1)
-	dbprintf(("(no size line match in above dump output)\n.....\n"));
+	dbprintf(("(no size line match in above smbclient output)\n.....\n"));
     if(size==0 && level ==0)
 	size=-1;
 
     kill(-dumppid, SIGTERM);
+
+    close(nullfd);
+    fclose(dumpout);
+
+    return size;
+}
+#endif
+
+#ifdef GNUTAR
+long getsize_gnutar(disk, level, efile, dumpsince)
+char *disk;
+int level;
+char *efile;
+time_t dumpsince;
+{
+    int pipefd[2], nullfd, dumppid;
+    long size;
+    FILE *dumpout;
+    char *incrname;
+    char *host;
+    char *dirname;
+    char cmd[256], dumptimestr[80];
+    struct tm *gmtm;
+    time_t prev_dumptime;
+    int l;
+
+    host = getenv("HOSTNAME");
+    if (host == NULL) {
+      dbprintf(("environment variable HOSTNAME must be set\n"));
+      return -1;
+    }
+
+#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+    {
+      int i;
+      int len = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR) +
+	strlen(host) + strlen(disk);
+
+      incrname = alloc(len+11);
+      sprintf(incrname, "%s/%s", GNUTAR_LISTED_INCREMENTAL_DIR, host);
+      i = strlen(incrname);
+      strcat(incrname, disk);
+      for (i = sizeof(GNUTAR_LISTED_INCREMENTAL_DIR); i<len; ++i)
+	if (incrname[i] == '/' || incrname[i] == ' ')
+	  incrname[i] = '_';
+
+      sprintf(incrname + len, "_%d.new", level);
+      unlink(incrname);
+      umask(0007);
+
+      if (level == 0) {
+      notincremental:
+	;
+      } else {
+	FILE *in = NULL, *out;
+	char *inputname = stralloc(incrname);
+	char buf[512];
+	int baselevel = level;
+
+	while (in == NULL && --baselevel >= 0) {
+	  sprintf(inputname+len, "_%d", baselevel);
+	  in = fopen(inputname, "r");
+	}
+
+	if (in == NULL) {
+	  free(inputname);
+	  inputname = 0;
+	  goto notincremental;
+	}
+	    
+	out = fopen(incrname, "w");
+	if (out == NULL) {
+	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
+	  return -1;
+	}
+
+	while(fgets(buf, sizeof(buf), in) != NULL)
+	  if (fputs(buf, out) == EOF) {
+	    dbprintf(("error [writing to %s: %s]\n", incrname,
+		      strerror(errno)));
+	    return -1;
+	  }
+
+	if (ferror(in)) {
+	  incrname[len] = '\0';
+	  dbprintf(("error [reading from %s: %s]\n", inputname,
+		    strerror(errno)));
+	  return -1;
+	}
+
+	if (fclose(in) == EOF) {
+	  dbprintf(("error [closing %s: %s]\n", inputname, strerror(errno)));
+	  return -1;
+	}
+
+	if (fclose(out) == EOF) {
+	  dbprintf(("error [closing %s: %s]\n", incrname, strerror(errno)));
+	  return -1;
+	}
+
+	free(inputname);
+      }
+    }
+#endif
+
+    gmtm = gmtime(&dumpsince);
+    sprintf(dumptimestr, "%04d-%02d-%02d %2d:%02d:%02d GMT",
+	    gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
+	    gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
+
+    dirname = amname_to_dirname(disk);
+
+    sprintf(cmd, "%s/runtar%s", libexecdir, versionsuffix());
+
+    dbprintf(("%s: running \"%s --create --directory %s "
+#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+	      "--listed-incremental %s "
+#else
+	      "--incremental --newer %s "
+#endif
+	      "--sparse --one-file-system "
+#ifdef ENABLE_GNUTAR_ATIME_PRESERVE
+	      "--atime-preserve "
+#endif
+	      "--ignore-failed-read --totals --file /dev/null %s.\"\n",
+	      pname, cmd, dirname,
+#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+	      incrname,
+#else
+	      dumptimestr,
+#endif
+	      ));
+
+    nullfd = open("/dev/null", O_RDWR);
+    pipe(pipefd);
+
+    switch(dumppid = fork()) {
+    case -1:
+      return -1;
+      break;
+
+    default:
+      break;
+    case 0:
+      dup2(nullfd, 0);
+      dup2(nullfd, 1);
+      dup2(pipefd[1], 2);
+      close(pipefd[0]);
+
+      execl(cmd,
+#ifdef GNUTAR
+	    GNUTAR,
+#else
+	    "tar",
+#endif
+	    "--create", "--directory", dirname,
+#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+	    "--listed-incremental", incrname,
+#else
+	    "--incremental", "--newer", dumptimestr,
+#endif
+	    "--sparse", "--one-file-system",
+#ifdef ENABLE_GNUTAR_ATIME_PRESERVE
+	    "--atime-preserve",
+#endif
+	    "--ignore-failed-read", "--totals", "--file", "/dev/null",
+	    efile[0] ? efile : ".",
+	    efile[0] ? "." : (char *)0,
+	    (char *)0);
+
+      exit(1);
+      break;
+    }
+    close(pipefd[1]);
+    dumpout = fdopen(pipefd[0],"r");
+
+    size = -1;
+    while(fgets(line,MAXLINE,dumpout) != NULL) {
+	dbprintf(("%s",line));
+	size = handle_dumpline(line);
+	if(size > -1) {
+	    if(fgets(line, MAXLINE, dumpout) != NULL)
+		dbprintf(("%s",line));
+	    break;
+	}
+    }
+
+    dbprintf((".....\n"));
+    if(size == -1)
+	dbprintf(("(no size line match in above gnutar output)\n.....\n"));
+    if(size==0 && level ==0)
+	size=-1;
+
+    kill(-dumppid, SIGTERM);
+
+    unlink(incrname);
+    free(incrname);
 
     close(nullfd);
     fclose(dumpout);

@@ -43,8 +43,7 @@ lib_LTLIBRARIES =	@BUILD_CLIENT_LIB@
 
 EXTRA_LTLIBRARIES = 	libamclient.la
 
-libamclient_la_SOURCES=	amandates.c	fnmatch.c	getfsent.c	\
-			unctime.c	add_exclude.c	check_exclude.c \
+libamclient_la_SOURCES=	amandates.c	getfsent.c	unctime.c	\
 			@LIBSRCS_CLIENT@
 
 EXTRA_libamclient_la_SOURCES = findpass.c
@@ -53,8 +52,7 @@ libamclient_la_LIBADD =	@LIBOBJS_CLIENT@
 
 libamclient_la_LDFLAGS = -version-info $(libclient_version) -rpath $(libdir)
 
-noinst_HEADERS	= 	amandates.h	fnmatch.h	getfsent.h	\
-			findpass.h
+noinst_HEADERS	= 	amandates.h	getfsent.h	findpass.h
 
 install-exec-hook:
 	@list="$(sbin_SCRIPTS)"; \
