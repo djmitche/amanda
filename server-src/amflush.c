@@ -529,7 +529,8 @@ static void getindex()
     char cmd[1024];
     sprintf(cmd, "%s/amgetidx%s %s on %s",
 	    libexecdir, versionsuffix(), config, datestamp);
-    system(cmd);
+    if (system(cmd))
+      log(L_WARNING, "failed to fetch index files");
 }
 
 void run_dumps()
