@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.160 2004/09/17 11:44:37 martinea Exp $
+ * $Id: planner.c,v 1.161 2005/02/09 13:52:10 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -2073,6 +2073,8 @@ static void delay_dumps P((void))
     char est_kb[20];     /* Text formatted dump size */
     int nb_forced_level_0;
     info_t info;
+    int delete;
+    char *message;
 
     biq.head = biq.tail = NULL;
 
@@ -2098,30 +2100,29 @@ static void delay_dumps P((void))
 	snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
 
 	if(est(dp)->dump_level == 0) {
-	    if(est(dp)->last_level == -1 || dp->skip_incr) {
-		delay_one_dump(dp, 1,
-			       "dump larger than tape,",
-			       est_kb,
-			       "but cannot incremental dump",
-			       dp->skip_incr ? "skip-incr": "new",
-			       "disk",
-			       NULL);
+	    if(dp->skip_incr) {
+		delete = 1;
+		message = "but cannot incremental dump skip-incr disk";
+	    }
+	    else if(est(dp)->last_level < 0) {
+		delete = 1;
+		message = "but cannot incremental dump new disk";
+	    }
+	    else if(est(dp)->degr_level < 0) {
+		delete = 1;
+		message = "but no incremental estimate";
 	    }
 	    else {
-		delay_one_dump(dp, 0,
-			       "dump larger than tape,",
-			       est_kb,
-			       "full dump delayed",
-			       NULL);
+		delete = 0;
+		message = "full dump delayed";
 	    }
 	}
 	else {
-	    delay_one_dump(dp, 1,
-			   "dump larger than tape,",
-			   est_kb,
-			   "skipping incremental",
-			   NULL);
+	    delete = 1;
+	    message = "skipping incremental";
 	}
+	delay_one_dump(dp, delete, "dump larger than tape,", est_kb,
+		       message, NULL);
     }
 
     /*
@@ -2163,22 +2164,24 @@ static void delay_dumps P((void))
             /* Format dumpsize for messages */
 	    snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
 
-	    if(est(dp)->last_level == -1 || dp->skip_incr) {
-		delay_one_dump(dp, 1,
-			       "dumps too big,",
-			       est_kb,
-			       "but cannot incremental dump",
-			       dp->skip_incr ? "skip-incr": "new",
-			       "disk",
-			       NULL);
+	    if(dp->skip_incr) {
+		delete = 1;
+		message = "but cannot incremental dump skip-incr disk";
+	    }
+	    else if(est(dp)->last_level < 0) {
+		delete = 1;
+		message = "but cannot incremental dump new disk";
+	    }
+	    else if(est(dp)->degr_level < 0) {
+		delete = 1;
+		message = "but no incremental estimate";
 	    }
 	    else {
-		delay_one_dump(dp, 0,
-			       "dumps too big,",
-			       est_kb,
-			       "full dump delayed",
-			       NULL);
+		delete = 0;
+		message = "full dump delayed";
 	    }
+	    delay_one_dump(dp, delete, "dumps too big,", est_kb,
+			   message, NULL);
 	}
     }
 
@@ -2194,22 +2197,24 @@ static void delay_dumps P((void))
 		/* Format dumpsize for messages */
 		snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
 
-		if(est(dp)->last_level == -1 || dp->skip_incr) {
-		    delay_one_dump(dp, 1,
-				   "dumps too big,",
-				   est_kb,
-				   "but cannot incremental dump",
-				   dp->skip_incr ? "skip-incr": "new",
-				   "disk",
-				   NULL);
+		if(dp->skip_incr) {
+		    delete = 1;
+		    message = "but cannot incremental dump skip-incr disk";
+		}
+		else if(est(dp)->last_level < 0) {
+		    delete = 1;
+		    message = "but cannot incremental dump new disk";
+		}
+		else if(est(dp)->degr_level < 0) {
+		    delete = 1;
+		    message = "but no incremental estimate";
 		}
 		else {
-		    delay_one_dump(dp, 0,
-				   "dumps too big,",
-				   est_kb,
-				   "full dump delayed",
-				   NULL);
+		    delete = 0;
+		    message = "full dump delayed";
 		}
+		delay_one_dump(dp, delete, "dumps too big,", est_kb,
+			       message, NULL);
 	    }
 	}
     }
