@@ -34,7 +34,7 @@ fi
 
 myname=$0
 
-EGREP=@EGREP@
+EGREP='@EGREP@'
 
 firstslot=1
 totalslots=200
