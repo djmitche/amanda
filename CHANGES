@@ -1,9 +1,13 @@
 Version 2.4.0
 
+	New --disable-libtool configure option, for those who really don't
+	want libraries to be installed.  Shared libraries won't be
+	built, of course.  -oliva
+
 	samba-related bugfixes.
 	-Klaus Thiele <kth@becker-software.com>
 
-	xfsdump and DNS bugfixes. -martineau
+	xfsdump, DNS and amidxtaped bugfixes. -martineau
 
 	exclude-list support was broken, the filename was not copied
 	to the gnutar argument list.
