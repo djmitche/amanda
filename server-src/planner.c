@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.75 1998/11/04 01:38:44 martinea Exp $
+ * $Id: planner.c,v 1.76 1998/11/04 01:48:07 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1376,7 +1376,7 @@ disk_t *dp;
     /* if we didn't get an estimate, we can't do an inc */
     if(base_size == -1) {
 	fprintf(stderr,"   picklev: no estimate for level %d, so no incs\n", base_level);
-	return -1;
+	return base_level;
     }
 
     thresh = bump_thresh(base_level);
@@ -1920,7 +1920,7 @@ disk_t *dp;
     if(ep->dump_level == 0) {
 	dump_time = ep->dump_size / fix_rate(ep->fullrate);
 
-	if(ep->degr_level != -1) {
+	if(ep->degr_size != -1) {
 	    degr_time = ep->degr_size / fix_rate(ep->incrrate);
 	}
     }
@@ -1928,7 +1928,7 @@ disk_t *dp;
 	dump_time = ep->dump_size / fix_rate(ep->incrrate);
     }
 
-    if(ep->dump_level == 0 && ep->degr_level != -1) {
+    if(ep->dump_level == 0 && ep->degr_size != -1) {
 	ap_snprintf(degr_level_str, sizeof(degr_level_str),
 		    "%d", ep->degr_level);
 	ap_snprintf(degr_size_str, sizeof(degr_size_str),
