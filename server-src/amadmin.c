@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.27.2.1 1998/02/25 18:38:05 martinea Exp $
+ * $Id: amadmin.c,v 1.27.2.2 1998/02/28 16:53:43 amcore Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -44,6 +44,8 @@ disklist_t *diskqp;
 struct find_result {
     struct find_result *next;
     char *datestamp;
+    int datestamp_aux;
+    	/* aux is secondary key for intra-day comparisons -- could be timestamp, I just use seq# */
     char *hostname;
     char *diskname;
     int level;
@@ -75,7 +77,7 @@ void find P((int argc, char **argv));
 int find_match P((char *host, char *disk));
 char *nicedate P((int datestamp));
 int bump_thresh P((int level));
-int search_logfile P((char *label, int datestamp, char *logfile));
+int search_logfile P((char *label, int datestamp, int datestamp_aux, char *logfile));
 void export_db P((int argc, char **argv));
 void import_db P((int argc, char **argv));
 void disklist P((int argc, char **argv));
@@ -601,7 +603,7 @@ char **argv;
 	    logfile = newvstralloc(logfile,
 			conflogdir, "/log.", ds_str, ".", seq_str, NULL);
 	    if(access(logfile, R_OK) != 0) break;
-	    logs += search_logfile(tp->label, tp->datestamp, logfile);
+	    logs += search_logfile(tp->label, tp->datestamp, seq, logfile);
 	}
 
 	/* search old-style amflush log, if any */
@@ -609,14 +611,14 @@ char **argv;
 	logfile = newvstralloc(logfile,
 			       conflogdir, "/log.", ds_str, ".amflush", NULL);
 	if(access(logfile,R_OK) == 0) {
-	    logs += search_logfile(tp->label, tp->datestamp, logfile);
+	    logs += search_logfile(tp->label, tp->datestamp, 1000, logfile);
 	}
 
 	/* search old-style main log, if any */
 
 	logfile = newvstralloc(logfile, conflogdir, "/log.", ds_str, NULL);
 	if(access(logfile,R_OK) == 0) {
-	    logs += search_logfile(tp->label, tp->datestamp, logfile);
+	    logs += search_logfile(tp->label, tp->datestamp, -1, logfile);
 	}
 	if(logs == 0)
 	    printf("Warning: no log files found for tape %s written %s\n",
@@ -690,6 +692,7 @@ void search_holding_disk()
 			alloc(sizeof(struct find_result));
 		    new_output_find->next=output_find;
 		    new_output_find->datestamp=stralloc(nicedate(atoi(dir->name)));
+		    new_output_find->datestamp_aux=1001;
 		    new_output_find->hostname=hostname;
 		    hostname = NULL;
 		    new_output_find->diskname=diskname;
@@ -732,8 +735,12 @@ const void *j1;
 	case 'K' : compare=strcmp((*j)->diskname,(*i)->diskname);
 		   break;
 	case 'd' : compare=strcmp((*i)->datestamp,(*j)->datestamp);
+		   if (compare == 0)
+			compare = (*i)->datestamp_aux - (*j)->datestamp_aux;
 		   break;
 	case 'D' : compare=strcmp((*j)->datestamp,(*i)->datestamp);
+		   if (compare == 0)
+			compare = (*j)->datestamp_aux - (*i)->datestamp_aux;
 		   break;
 	case 'l' : compare=(*j)->level - (*i)->level;
 		   break;
@@ -939,9 +946,9 @@ char **label;
     return 1;
 }
 
-int search_logfile(label, datestamp, logfile)
+int search_logfile(label, datestamp, datestamp_aux, logfile)
 char *label, *logfile;
-int datestamp;
+int datestamp, datestamp_aux;
 {
     FILE *logf;
     char *host, *host_undo, host_undo_ch;
@@ -1036,6 +1043,7 @@ int datestamp;
 			(struct find_result *)alloc(sizeof(struct find_result));
 		    new_output_find->next=output_find;
 		    new_output_find->datestamp=stralloc(nicedate(datestamp));
+		    new_output_find->datestamp_aux=datestamp_aux;
 		    new_output_find->hostname=stralloc(host);
 		    new_output_find->diskname=stralloc(disk);
 		    new_output_find->level=level;
@@ -1052,6 +1060,7 @@ int datestamp;
 			alloc(sizeof(struct find_result));
 		    new_output_find->next=output_find;
 		    new_output_find->datestamp=stralloc(nicedate(datestamp));
+		    new_output_find->datestamp_aux=datestamp_aux;
 		    new_output_find->hostname=stralloc(host);
 		    new_output_find->diskname=stralloc(disk);
 		    new_output_find->level=level;

@@ -24,7 +24,7 @@
  *			   Computer Science Department
  *			   University of Maryland at College Park
  */
-/* $Id: disk_history.c,v 1.5 1997/12/30 05:25:05 jrj Exp $
+/* $Id: disk_history.c,v 1.5.2.1 1998/02/28 16:53:45 amcore Exp $
  *
  * functions for obtaining backup history
  */
@@ -74,7 +74,7 @@ int file;
 	return;
     }
 
-    if (strcmp(disk_hist->date, new->date) < 0)
+    if (strcmp(disk_hist->date, new->date) <= 0)
     {
 	new->next = disk_hist;
 	disk_hist = new;
@@ -83,7 +83,7 @@ int file;
 
     before = disk_hist;
     item = disk_hist->next;
-    while ((item != NULL) && (strcmp(item->date, new->date) >= 0))
+    while ((item != NULL) && (strcmp(item->date, new->date) > 0))
     {
 	before = item;
 	item = item->next;

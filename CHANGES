@@ -1,5 +1,9 @@
 Version 2.4.0
 
+	ensure that `amadmin find' reports multiple backups performed on
+	the same day in the correct sequence.
+	-Liudvikas Bukys <bukys@cs.rochester.edu>
+
 	if backup server has multiple IP addresses, security code
 	might reject it.  -Gunnar Gunnarsson <gunnar@ki.ericsson.se>
 
