@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.61 2004/11/08 18:31:04 martinea Exp $
+ * $Id: diskfile.c,v 1.62 2004/11/16 16:28:04 martinea Exp $
  *
  * read disklist file
  */
@@ -470,7 +470,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	    }
 	}
 	if(is_digit == 0) {
-	    parserror("non-integer spindle `%s'", fp);
+	    parserror(filename, line_num, "non-integer spindle `%s'", fp);
 	    if(host == NULL) amfree(hostname);
 	    amfree(disk->name);
 	    amfree(disk);

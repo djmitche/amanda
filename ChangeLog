@@ -1,5 +1,9 @@
 2004-11-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/diskfile.c: Compilation fix.
+
+2004-11-16  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/conffile.c: Parse displayunit,
 	  new fonction getcont_unit_divisor().
 	* server-src/conffile.h: Prototype of getcont_unit_divisor().
