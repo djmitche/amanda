@@ -1,3 +1,8 @@
+1998-12-05  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* docs/FAQ (large filesystems): fixed reference to results missing
+	(results missing): updated to 64Kb UDP packets
+
 1998-12-04  Mike Grupenhoff <kashmir@munge.com>
 
 	* common-src/amanda.h: implement WIFSIGNALED() if not already
