@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup.c,v 1.17 1997/11/04 22:40:16 blair Exp $
+ * $Id: sendbackup.c,v 1.18 1997/11/12 10:49:26 amcore Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -179,7 +179,7 @@ char **argv;
 
 	str = strstr(line, "hostname=");
 	if(str != NULL)
-	    sscanf(str, "hostname=%s;", host);
+	    sscanf(str, "hostname=%[^;]", host);
 
 	if(fgets(line, MAX_LINE, stdin) == NULL)
 	    goto err;

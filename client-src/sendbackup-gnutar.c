@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.25 1997/10/07 05:20:54 george Exp $
+ * $Id: sendbackup-gnutar.c,v 1.26 1997/11/12 10:49:24 amcore Exp $
  *
  * send backup data using GNU tar
  */
@@ -132,7 +132,15 @@ char *dumpdate;
 	umask(0007);
 
 	if (level == 0) {
+	  FILE *out;
 	notincremental:
+	  out = fopen(incrname, "w");
+	  if (out == NULL)
+	    error("error [opening %s: %s]", incrname, strerror(errno));
+
+	  if (fclose(out) == EOF)
+	    error("error [closing %s: %s]", incrname, strerror(errno));
+
 	  dbprintf(("%s: doing level %d dump as listed-incremental: %s\n",
 		    pname, level, incrname));
 	} else {

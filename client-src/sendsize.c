@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.38 1997/11/04 22:43:37 blair Exp $
+ * $Id: sendsize.c,v 1.39 1997/11/12 10:49:27 amcore Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -127,7 +127,7 @@ char **argv;
 
 	    str = strstr(line, "hostname=");
 	    if(str != NULL)
-		sscanf(str, "hostname=%s;", host);
+		sscanf(str, "hostname=%[^;]", host);
 
 	    sprintf(opt, "OPTIONS maxdumps=%d;\n", maxdumps);
 	    write(1, opt, strlen(opt));
@@ -756,8 +756,20 @@ time_t dumpsince;
       umask(0007);
 
       if (level == 0) {
+	FILE *out;
+	
       notincremental:
-	;
+	out = fopen(incrname, "w");
+	if (out == NULL) {
+	  dbprintf(("error [opening %s: %s]\n", incrname, strerror(errno)));
+	  return -1;
+	}
+
+	if (fclose(out) == EOF) {
+	  dbprintf(("error [closing %s: %s]\n", incrname, strerror(errno)));
+	  return -1;
+	}
+
       } else {
 	FILE *in = NULL, *out;
 	char *inputname = stralloc(incrname);
