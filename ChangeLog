@@ -1,3 +1,7 @@
+1999-06-29  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* man/amrestore.8: Document holding-file usage.
+
 1999-06-25  Alexandre Oliva  <oliva@dcc.unicamp.br>
 
 	* Makefile.am (pkgdata_DATA): Install COPYRIGHTs.
@@ -44,7 +48,7 @@
 	* changer-src/scsi-aix.c: (SCSI_ExecuteCommand) Add missing
 	parameter to DecodeExtSense.
 
-	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.224 1999/06/25 22:50:45 oliva Exp $";
+	* changer-src/scsi-hpux.c: Added static char rcsid[] = "$Id: ChangeLog,v 1.205.2.225 1999/06/29 08:11:44 oliva Exp $";
 	* changer-src-/chg-scsi.c: dito
 	* changer-src/scsi-changer-driver.c: dito
 
