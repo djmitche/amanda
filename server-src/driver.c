@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driver.c,v 1.24 1998/01/02 18:48:27 jrj Exp $
+ * $Id: driver.c,v 1.25 1998/01/08 04:56:03 george Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -356,14 +356,14 @@ disk_t *dp;
 	return 1;
     }
 
-    /* next, check conflict with other dumps on same platter */
+    /* next, check conflict with other dumps on same spindle */
 
-    if(dp->platter == -1) {	/* but platter -1 never conflicts by def. */
+    if(dp->spindle == -1) {	/* but spindle -1 never conflicts by def. */
 	return 0;
     }
 
     for(dp2 = dp->host->disks; dp2 != NULL; dp2 = dp2->hostnext)
-	if(dp2->inprogress && dp2->platter == dp->platter) {
+	if(dp2->inprogress && dp2->spindle == dp->spindle) {
 	    return 1;
 	}
 

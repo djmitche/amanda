@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.19 1998/01/02 18:48:25 jrj Exp $
+ * $Id: diskfile.c,v 1.20 1998/01/08 04:56:01 george Exp $
  *
  * read disklist file
  */
@@ -248,7 +248,7 @@ static int read_diskline()
     disk = alloc(sizeof(disk_t));
     disk->line = line_num;
     disk->name = stralloc(fp);
-    disk->platter = -1;
+    disk->spindle = -1;
     disk->up = NULL;
     disk->inprogress = 0;
 
@@ -293,8 +293,8 @@ static int read_diskline()
 
     skip_whitespace(s, ch);
     fp = s - 1;
-    if(ch && ch != '#') {		/* get optional platter number */
-	disk->platter = atoi(fp);
+    if(ch && ch != '#') {		/* get optional spindle number */
+	disk->spindle = atoi(fp);
 	skip_integer(s, ch);
     }
 
@@ -492,10 +492,10 @@ dump_disklist()
 dump_disk(dp)
 disk_t *dp;
 {
-    printf("  DISK %s (HOST %s, LINE %d) TYPE %s NAME %s PLATTER %d\n",
+    printf("  DISK %s (HOST %s, LINE %d) TYPE %s NAME %s SPINDLE %d\n",
 	   dp->name, dp->host->hostname, dp->line, dp->dtype_name,
 	   dp->name == NULL? "(null)": dp->name,
-	   dp->platter);
+	   dp->spindle);
 }
 
 main(argc, argv)

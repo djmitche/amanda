@@ -958,7 +958,7 @@ The file contains one line per disk:
 .RS
 .I hostname diskdevice dumptype
 [
-.I platter
+.I spindle
 [
 .I interface
 ] ]
@@ -994,11 +994,11 @@ whether to record backup results in
 the disk's relative priority,
 etc.
 .TP
-.I platter
+.I spindle
 Default:
 .IR \-1 .
 A number used to balance backup load on a host.
-Amanda will try not to run multiple backups on a given platter.
+Amanda will try not to run multiple backups on a given spindle.
 .TP
 .I interface
 Default:

@@ -33,7 +33,7 @@ slithy rz3g comp-user
 # busy enough running amanda.
 master sd0a nocomp-root -1 local
 master sd0g nocomp-user -1 local
-# note: -1 is a placeholder for the platter number
+# note: -1 is a placeholder for the spindle number
 # the holding disk can't be dumped to itself, it uses a disktype that
 # specifies the "no-hold" option (see amanda.conf).
 master sd1c holding-disk -1 local

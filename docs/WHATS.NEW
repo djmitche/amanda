@@ -60,7 +60,7 @@ Amanda doesn't really have any per-host parameters, just per-disk, so the
 per-client-host maxdumps is taken from the last disk listed for that host.
 
 Just to make things more complicated, I've added the ability to specify a
-"platter number" for each filesystem in the disklist file.  For example:
+"spindle number" for each filesystem in the disklist file.  For example:
 
         wiggum /        fast-comp-user  0
         wiggum /usr     fast-comp-user  0
@@ -70,23 +70,23 @@ Just to make things more complicated, I've added the ability to specify a
         wiggum /itchy   fast-comp-user  2
         wiggum /scratchy fast-comp-user 3
 
-The platter number represents the disk number, eg every filesystem on sd0
-can get a platter number of 0, everything on sd1 gets platter 1, etc (but
+The spindle number represents the disk number, eg every filesystem on sd0
+can get a spindle number of 0, everything on sd1 gets spindle 1, etc (but
 there's no enforced requirement that there be a match with the underlying
 hardware situation).  Now, even with a high maxdumps, amanda will refrain
-from scheduling two disks on the same platter at the same time, which would
+from scheduling two disks on the same spindle at the same time, which would
 just slow them both down by adding a lot of seeks.
 
-The default platter if you don't specify one is -1, which is defined to be
-a platter that doesn't interfere with itself.  That is if you don't specify
-any platter numbers, any and all filesystems on the host can be scheduled
+The default spindle if you don't specify one is -1, which is defined to be
+a spindle that doesn't interfere with itself.  That is if you don't specify
+any spindle numbers, any and all filesystems on the host can be scheduled
 concurrently up to the maxdumps.
 
-Just to be clear, there's no relation between platter numbers and maxdumps:
-number the platters by the disks that you have, even if that's more than
+Just to be clear, there's no relation between spindle numbers and maxdumps:
+number the spindles by the disks that you have, even if that's more than
 maxdumps.
 
-Also, I'm not sure that putting platter numbers everywhere is of much
+Also, I'm not sure that putting spindle numbers everywhere is of much
 value: their purpose is to prevent multiple big dumps from being run at the
 same time on two partitions on the same disk, on the theory that the extra
 seeking between the partitions would cause the dumps to run slower than

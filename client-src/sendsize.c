@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: sendsize.c,v 1.52 1998/01/05 10:32:37 amcore Exp $
+ * $Id: sendsize.c,v 1.53 1998/01/08 04:55:53 george Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -68,7 +68,7 @@ typedef struct disk_estimates_s {
     char *dirname;
     char *exclude;
     char *program;
-    int platter;
+    int spindle;
     level_estimate_t est[DUMP_LEVELS];
 } disk_estimates_t;
 
@@ -81,7 +81,7 @@ char *host;				/* my hostname from the server */
 
 /* local functions */
 int main P((int argc, char **argv));
-void add_diskest P((char *disk, int level, char *exclude, int platter, char *prog));
+void add_diskest P((char *disk, int level, char *exclude, int spindle, char *prog));
 void calc_estimates P((disk_estimates_t *est));
 void dump_calc_estimates P((disk_estimates_t *));
 void smbtar_calc_estimates P((disk_estimates_t *));
@@ -94,7 +94,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-    int level, new_maxdumps, platter;
+    int level, new_maxdumps, spindle;
     char *prog, *disk, *dumpdate, *exclude;
     disk_estimates_t *est;
     int scanres;
@@ -204,14 +204,14 @@ char **argv;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 
-	platter = 0;				/* default platter */
+	spindle = 0;				/* default spindle */
 	exclude = "";				/* default is no exclude list */
 
-	skip_whitespace(s, ch);			/* find the platter */
+	skip_whitespace(s, ch);			/* find the spindle */
 	if(ch != '\0') {
-	    if(sscanf(s - 1, "%d", &platter) != 1) {
-		err_extra = "bad platter";
-		goto err;			/* bad platter */
+	    if(sscanf(s - 1, "%d", &spindle) != 1) {
+		err_extra = "bad spindle";
+		goto err;			/* bad spindle */
 	    }
 	    skip_integer(s, ch);
 
@@ -226,7 +226,7 @@ char **argv;
 	    }
 	}
 
-	add_diskest(disk, level, exclude, platter, prog);
+	add_diskest(disk, level, exclude, spindle, prog);
     }
 
     finish_amandates();
@@ -254,10 +254,10 @@ char **argv;
 }
 
 
-void add_diskest(disk, level, exclude, platter, prog)
+void add_diskest(disk, level, exclude, spindle, prog)
 char *disk, *prog;
 char *exclude;
-int level, platter;
+int level, spindle;
 {
     disk_estimates_t *newp, *curp;
     amandates_t *amdp;
@@ -280,7 +280,7 @@ int level, platter;
     newp->dirname = stralloc(amname_to_dirname(newp->amname));
     newp->exclude = stralloc(exclude);
     newp->program = stralloc(prog);
-    newp->platter = platter;
+    newp->spindle = spindle;
     newp->est[level].needestimate = 1;
 
     /* fill in dump-since dates */

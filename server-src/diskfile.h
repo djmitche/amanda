@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.9 1997/12/09 07:16:09 amcore Exp $
+ * $Id: diskfile.h,v 1.10 1998/01/08 04:56:02 george Exp $
  *
  * interface for disklist file reading code
  */
@@ -73,7 +73,7 @@ typedef struct disk_s {
     int no_hold:1;			/* don't use holding disk ? */
     int kencrypt:1;
     int index:1;			/* produce an index ? */
-    int platter;			/* platter # - for parallel dumps */
+    int spindle;			/* spindle # - for parallel dumps */
     int inprogress;			/* being dumped now? */
     void *up;				/* generic user pointer */
 } disk_t;
