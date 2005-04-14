@@ -1,5 +1,10 @@
 2005-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* changer-src/chg-zd-mtx.sh.in: Improve handling of
+	  "Unknown Storage Element Loaded".
+
+2005-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* man/amcheckdb.8: Update from latest xml-docs.
 
 2005-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
