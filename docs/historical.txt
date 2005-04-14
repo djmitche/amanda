@@ -1,0 +1,138 @@
+
+Part VI. Historical files
+Prev                 Next
+
+-------------------------------------------------------------------------------
+
+
+Historical files
+
+
+
+Old and outdated material, proposals and drafts.
+
+Here you find some chapters which contain outdated informations. These chapters
+nonetheless can help to get a more complete picture of AMANDA.
+
+Note
+
+Please realize that the following does not necessarily describe current
+features of AMANDA. There are also features described which were never added to
+AMANDA.
+Table of Contents
+
+
+  27._Response_to_CPIO_Security_Notice_Issue_11:
+
+
+        Affected_Versions
+
+        Workaround
+
+        Acknowledgements
+
+
+  28._Upgrade_Issues
+
+  29._What_once_was_new
+
+
+        What's_new_in_AMANDA_2.3
+
+
+              Indexing_backups_for_easier_restore
+
+              Samba_Support
+
+              GnuTar_Support
+
+              Multiple_backups_in_parallel_from_one_client_host
+
+              Multiple_tapes_in_one_run
+
+              Bottleneck_determination
+
+              2_Gb_limit_removed
+
+              amadmin_import/export
+
+
+        What's_new_in_AMANDA_2.2
+
+
+              Client_side_setup_has_changed
+
+              Version_suffixes_on_executables
+
+              Kerberos
+
+              Multiple_holding_disks
+
+              Remote_self-checks
+
+              mmap_support
+
+              gzip_support
+
+              Mount_point_names_in_disklist
+
+              Initial_tape-changer_support_included
+
+              Generic_tape_changer_wrapper_script
+
+              New_command_amtape
+
+              Changer_support_added_to_command_amlabel
+
+              Tape_changer_support_improved
+
+              A_few_words_about_multi-tape_runs
+
+              Big_planner_changes
+
+              Level-0_dumps_allowed_with_no_tape
+
+
+
+  30._Multitape_support_in_AMANDA_2.2
+
+
+        Introduction
+
+        New_Planner_Algorithm
+
+
+              Time
+
+              Full_Backups
+
+              Schedule_Balancing
+
+              Overwrite_Detection
+
+
+        Taper_Algorithm
+
+
+              Choosing_a_tape
+
+              End_of_tape_handling
+
+              Tape_Format_Changes
+
+              Tapelist_File_Changes
+
+
+
+  31._Thoughts_about_a_Strategy_API
+
+  32._Y2K_Compliancy
+
+  33._Usage_of_floppy_tape_drives_on_Linux
+
+-------------------------------------------------------------------------------
+
+Prev                             Up                                    Next
+Chapter 26. Using Kerberos with Home  Chapter 27. Response to CPIO Security
+AMANDA                                                     Notice Issue 11:
+

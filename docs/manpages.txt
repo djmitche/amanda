@@ -1,0 +1,68 @@
+
+Chapter 35. The AMANDA Manual Pages.
+Prev  Part VII. References      Next
+
+-------------------------------------------------------------------------------
+
+Chapter 35. The AMANDA Manual Pages.
+
+Table of Contents
+
+
+  amadmin - administrative interface to control AMANDA backups
+
+  amanda - Advanced Maryland Automatic Network Disk Archiver
+
+  amcheck - run AMANDA self-checks
+
+  amcheckdb - check AMANDA database for tape consistency
+
+  amcleanup - run the AMANDA cleanup process after a failure
+
+  amdd - AMANDA version of dd
+
+  amdump - back up all disks in an AMANDA configuration
+
+  amflush - flush AMANDA backup files from holding disk to tape
+
+  amgetconf - look up amanda.conf variables
+
+  amlabel - label an AMANDA tape
+
+  ammt - AMANDA version of mt
+
+  amoverview - display file systems processed by AMANDA over time
+
+  amplot - visualize the behavior of AMANDA
+
+  amrecover - AMANDA index database browser
+
+  amreport - generate a formatted output of statistics for an AMANDA run
+
+  amrestore - extract backup images from an AMANDA tape
+
+  amrmtape - remove a tape from the AMANDA database
+
+  amstatus - display the state of an AMANDA run
+
+  amtape - user interface to AMANDA tape changer controls
+
+  amtapetype - generate a tapetype definition.
+
+  amtoc - generate TOC (Table Of Contents) for an AMANDA run
+
+  amverify - check an Amanda tape for errors
+
+  amverifyrun - check the tapes written by the last AMANDA run
+
+
+Note
+
+Refer to http://www.amanda.org/docs/manpages.html for the current version of
+this document.
+This chapter contains the manual pages from the official AMANDA distribution.
+-------------------------------------------------------------------------------
+
+Prev                         Up      Next
+Chapter 34. Web Ressources  Home  amadmin
+

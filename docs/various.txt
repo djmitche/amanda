@@ -1,0 +1,208 @@
+
+Part IV. Various Information
+Prev                    Next
+
+-------------------------------------------------------------------------------
+
+
+Various Information
+
+
+
+Additional information about AMANDA
+
+Here you find various other documents like the AMANDA FAQ, the Top Ten
+Questions and the AMANDA-Wishlist. You can also find the last AMANDA-Survey in
+here (although it still needs formatting ... sorry, Jon ...). The latest
+addition is the famous AMANDA-chapter by John R. Jackson.
+Table of Contents
+
+
+  15._Using_AMANDA
+
+
+        An_Introduction
+
+        AMANDA_Features
+
+        Future_Capabilities_of_AMANDA
+
+        AMANDA_Resources
+
+        Installing_AMANDA
+
+
+              Install_Related_Packages
+
+              Perform_Preliminary_Setup
+
+              Configure_the_AMANDA_Build
+
+              Build_and_Install_AMANDA
+
+              Configuring_AMANDA
+
+              Decide_on_a_Tape_Server
+
+              Decide_Which_Tape_Devices_to_Use
+
+              Decide_Whether_to_Use_Compression
+
+              Decide_Where_the_Holding_Space_Will_Be
+
+              Compute_Your_Dump_Cycle
+
+              Copy_and_Edit_the_Default_Configuration_File
+
+              Configure_the_Holding_Disk
+
+              Configure_Tape_Devices_and_Label_Tapes
+
+              Configure_Backup_Clients
+
+              Test_and_Debug_Setup
+
+
+        Operating_Amanda
+
+
+              Run_amdump
+
+              Read_AMANDA's_Reports
+
+              Monitor_Tape_and_Holding_Disk_Status
+
+              Adding_Tapes_at_a_Particular_Position_in_the_Cycle
+
+              Miscellanous_Operational_Notes
+
+
+        Advanced_AMANDA_Configuration
+
+
+              Adjust_the_Backup_Cycle
+
+              Adjust_Parallelism
+
+              Monitor_for_Possible_Improvements
+
+              Excluding_Files
+
+
+        Restoring_with_AMANDA
+
+
+              Configuring_and_Using_amrecover
+
+              Using_amrestore
+
+              Restoring_Without_AMANDA
+
+
+
+  16._AMANDA_FAQ
+
+
+        QUESTION:_Why_does_AMANDA_fail_to_build_on_my_system?
+
+        QUESTION:_Why_does_amdump_report_that_all_disks_failed?
+
+        QUESTION:_Why_does_amcheck_say_port_NNN_is_not_secure?
+
+        QUESTION:_Why_does_amcheck_claim_that_the_tape_is_not_an_amanda_tape?
+
+        QUESTION:_Why_does_amcheck_report_selfcheck_request_timed_out?
+
+        QUESTION:_Why_does_amandad.debug_contain_error_receiving_message?
+
+        QUESTION:_Why_does_amcheck_say_access_as_<username>_not_allowed...?
+
+        QUESTION:_Why_does_amcheck_report_ip_address_#.#.#.#_is_not_in_the_ip
+        list_list_for_<hostname>'?
+
+        QUESTION:_Why_does_amcheck_say_cannot_overwrite_active_tape?
+
+        QUESTION:_Why_does_amcheck_tell_me_DUMP_program_not_available?
+
+        QUESTION:_Which_tape_changer_configuration_should_I_use_in_amanda.conf?
+
+        QUESTION:_Should_I_use_software_or_hardware_compression?
+
+        QUESTION:_How_can_I_configure_AMANDA_so_that_it_performs_full_backups
+        on_the_week-end_and_incrementals_on_weekdays?
+
+        QUESTION:_What_if_my_tape_unit_uses_expensive_tapes,_and_I_don't_want
+        to_use_one_tape_per_day?_Can't_AMANDA_append_to_tapes?
+
+        QUESTION:_How_can_I_configure_AMANDA_for_long-term_archiving?
+
+        QUESTION:_Can_I_backup_separate_disks_of_the_same_host_in_different
+        configurations?
+
+        QUESTION:_Can_AMANDA_span_large_filesystems_across_multiple_tapes?
+
+        QUESTION:_What's_the_difference_between_option_skip-full_and_strategy
+        nofull?
+
+        QUESTION:_Why_does_amdump_report_results_missing?
+
+        QUESTION:_Why_does_amdump_report_disk_offline?
+
+        QUESTION:_What_if_amdump_reports_dumps_way_too_big,_must_skip
+        incremental_dumps?
+
+        QUESTION:_amdump_reported_infofile_update_failed._What_should_I_do?
+
+        QUESTION:_Why_does_AMANDA_sometimes_promote_full_dumps?
+
+        QUESTION:_Why_does_amrecover_report_no_index_records_or_disk_not_found?
+
+        QUESTION:_Ok,_I'm_done_with_testing_AMANDA,_now_I_want_to_put_it_in
+        production._How_can_I_reset_its_databases_so_as_to_start_from_scratch?
+
+        QUESTION:_The_man-page_of_dump_says_that_active_filesystems_may_be
+        backed_up_inconsistently._What_does_AMANDA_do_to_prevent_inconsistent
+        backups?
+
+        QUESTION:_Which_version_of_GNU-tar_should_I_use?
+
+
+  17._Collection_of_the_top_ten_AMANDA_questions._And_answers.
+
+
+        Reason_for_starting_this_list.
+
+        the_DLE-question
+
+        the_localhost-question
+
+        the_friday-tape-question
+
+        the_multiple-dumps-question
+
+        the_mailing-list-question
+
+        the_distro-question
+
+        the_index-question
+
+        the_tapetype-questions
+
+        the_size-question
+
+        the_GUI-question
+
+        the_holding-disk_question
+
+        ...
+
+
+  18._AMANDA_WISHLIST
+
+  19._AMANDA_Survey_Results
+
+-------------------------------------------------------------------------------
+
+Prev                    Up                       Next
+Chapter 14. AFS HOWTO  Home  Chapter 15. Using AMANDA
+

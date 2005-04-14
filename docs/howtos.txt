@@ -1,0 +1,71 @@
+
+Part III. HOWTOs
+Prev        Next
+
+-------------------------------------------------------------------------------
+
+
+HOWTOs
+
+
+
+How to do this?
+
+This section contains some HOWTO-style-documents which should help you to get
+AMANDA up and going with Cygwin, AFS or chg-disk ...
+Table of Contents
+
+
+  12._AMANDA_on_Cygwin_HOWTO
+
+
+        Install_Cygwin
+
+        Other_Preparation
+
+        Compile_AMANDA
+
+        Configure_Cygwin_files
+
+        Configure_Windows_System_Files
+
+        Configure_inetd_to_run_automatically_as_a_service
+
+        Windows_98/ME
+
+        Windows_NT/2000/XP
+
+        Notes_on_AMANDA_backup_options
+
+
+              Compression
+
+              Exclude_Lists
+
+              Debugging_Files
+
+
+
+  13._How_to_use_the_AMANDA_file-driver
+
+
+        Introduction
+
+        Possible_Uses
+
+        Setup
+
+
+              Basics
+
+
+        Recovery
+
+
+  14._AFS_HOWTO
+
+-------------------------------------------------------------------------------
+
+Prev                             Up                                 Next
+Chapter 11. Printing of Labels  Home  Chapter 12. AMANDA on Cygwin HOWTO
+

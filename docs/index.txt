@@ -1,0 +1,828 @@
+
+The Official AMANDA Documentation
+                             Next
+
+-------------------------------------------------------------------------------
+
+
+The Official AMANDA Documentation
+
+
+Edited by
+
+
+Stefan G. Weichinger
+
+
+AMANDA Core Team
+
+-------------------------------------------------------------------------------
+Table of Contents
+
+
+  Abstract
+
+  Copyright_Information
+
+  Attributions
+
+  I._Installation
+
+
+        1._AMANDA_2.4.x_-_System-Specific_Installation_Notes
+
+
+              Solaris_2.6
+
+              Trusted_Solaris
+
+              SunOS_4.x
+
+              Ultrix
+
+              HP/UX
+
+              Linux
+
+              Digital_Unix_4
+
+              Sinix_5.43_(Reliant_Unix)
+
+              IRIX_(all)
+
+              IRIX_6
+
+              IRIX_6.5.x
+
+              SCO
+
+              FreeBSD_3.0
+
+              FreeBSD_4.9
+
+              FreeBSD_5.1
+
+              AIX
+
+              Microsoft_Windows
+
+              Mac_OS_X
+
+
+        2._AMANDA_Installation_Notes
+
+
+              Before_doing_anything
+
+              Compiling_the_AMANDA_sources
+
+              Setting_up_your_AMANDA_Configuration
+
+
+                    Setting_up_the_Tape_Server_Host
+
+                    Set_up_the_Backup_Client_Hosts
+
+
+
+        3._Excluding
+
+
+              Introduction
+
+              Please_Read
+
+              Before_We_Begin
+
+              Choosing_an_exclude_mechanism
+
+
+                    Exclude_Mechanisms
+
+
+              Expression
+
+              Wildcard_Expansion
+
+              Troubleshooting
+
+
+                    Broken_gnutar?
+
+                    The_ps_command_is_your_friend.
+
+
+
+        4._Indexing_with_AMANDA
+
+
+              Database_Format
+
+              Database_Browsing
+
+              File_Extraction
+
+              Protocol_Between_amindexd_and_amrecover
+
+              Installation_Notes
+
+              Permissions
+
+              Changes_from_amindex-1.0
+
+              Changes_from_amindex-0.3
+
+              Changes_from_amindex-0.2
+
+              Changes_from_amindex-0.1
+
+              Changes/additions_to_2.3.0
+
+              Known_Bugs
+
+
+        5._Backup_PC_hosts_using_Samba
+
+
+              Installation
+
+              Setup
+
+              Example
+
+              Bugs_and_notes
+
+
+        6._Restore
+
+
+  II._About_Tapes_and_Changers
+
+
+        7._Tapetypes
+
+        8._AMANDA_Tape_Changer_Support
+
+
+              Introduction
+
+              Specifying_a_tape_changer_in_amanda.conf
+
+              Device-specific_tapechanger_script
+
+              Slot_names_and_the_current_slot
+
+              Operator_interface
+
+              How_amdump_interacts_with_the_tape_changer
+
+              Builtin_tape-changers
+
+
+                    chg-multi_(formerly_chg-generic)
+
+                    chg-manual_(formerly_no-changer)
+
+                    chg-mtx_(formerly_hp-changer)
+
+                    chg-zd-mtx
+
+                    chg-scsi-chio_(formerly_seagate-changer,_then_chg-chio)
+
+                    chg-scsi_(new_interface,_try_to_drive_a_robot_with_direct
+                    scsi_commands)
+
+                    chg-chio
+
+                    chg-chs
+
+                    chg-rth
+
+                    chg-juke
+
+                    chg-rait
+
+                    chg-disk
+
+                    chg-iomega
+
+                    chg-null
+
+
+
+        9._chg-scsi
+
+
+              Command_line_options
+
+              Notes_about_changer.conf
+
+              AMANDA's_actual_usage_of_chg-scsi
+
+              Configuration_notes
+
+              Hacking_notes
+
+
+        10._RAIT_(Redundant_Array_of_Inexpensive_Tape)_Support
+
+
+              What_is_a_RAIT?
+
+              Using_a_RAIT
+
+              Disaster_Recovery
+
+
+        11._Printing_of_Labels
+
+
+              The_New_Feature
+
+              Labels_provided
+
+              History
+
+              How_it_works
+
+
+
+  III._HOWTOs
+
+
+        12._AMANDA_on_Cygwin_HOWTO
+
+
+              Install_Cygwin
+
+              Other_Preparation
+
+              Compile_AMANDA
+
+              Configure_Cygwin_files
+
+              Configure_Windows_System_Files
+
+              Configure_inetd_to_run_automatically_as_a_service
+
+              Windows_98/ME
+
+              Windows_NT/2000/XP
+
+              Notes_on_AMANDA_backup_options
+
+
+                    Compression
+
+                    Exclude_Lists
+
+                    Debugging_Files
+
+
+
+        13._How_to_use_the_AMANDA_file-driver
+
+
+              Introduction
+
+              Possible_Uses
+
+              Setup
+
+
+                    Basics
+
+
+              Recovery
+
+
+        14._AFS_HOWTO
+
+
+  IV._Various_Information
+
+
+        15._Using_AMANDA
+
+
+              An_Introduction
+
+              AMANDA_Features
+
+              Future_Capabilities_of_AMANDA
+
+              AMANDA_Resources
+
+              Installing_AMANDA
+
+
+                    Install_Related_Packages
+
+                    Perform_Preliminary_Setup
+
+                    Configure_the_AMANDA_Build
+
+                    Build_and_Install_AMANDA
+
+                    Configuring_AMANDA
+
+                    Decide_on_a_Tape_Server
+
+                    Decide_Which_Tape_Devices_to_Use
+
+                    Decide_Whether_to_Use_Compression
+
+                    Decide_Where_the_Holding_Space_Will_Be
+
+                    Compute_Your_Dump_Cycle
+
+                    Copy_and_Edit_the_Default_Configuration_File
+
+                    Configure_the_Holding_Disk
+
+                    Configure_Tape_Devices_and_Label_Tapes
+
+                    Configure_Backup_Clients
+
+                    Test_and_Debug_Setup
+
+
+              Operating_Amanda
+
+
+                    Run_amdump
+
+                    Read_AMANDA's_Reports
+
+                    Monitor_Tape_and_Holding_Disk_Status
+
+                    Adding_Tapes_at_a_Particular_Position_in_the_Cycle
+
+                    Miscellanous_Operational_Notes
+
+
+              Advanced_AMANDA_Configuration
+
+
+                    Adjust_the_Backup_Cycle
+
+                    Adjust_Parallelism
+
+                    Monitor_for_Possible_Improvements
+
+                    Excluding_Files
+
+
+              Restoring_with_AMANDA
+
+
+                    Configuring_and_Using_amrecover
+
+                    Using_amrestore
+
+                    Restoring_Without_AMANDA
+
+
+
+        16._AMANDA_FAQ
+
+
+              QUESTION:_Why_does_AMANDA_fail_to_build_on_my_system?
+
+              QUESTION:_Why_does_amdump_report_that_all_disks_failed?
+
+              QUESTION:_Why_does_amcheck_say_port_NNN_is_not_secure?
+
+              QUESTION:_Why_does_amcheck_claim_that_the_tape_is_not_an_amanda
+              tape?
+
+              QUESTION:_Why_does_amcheck_report_selfcheck_request_timed_out?
+
+              QUESTION:_Why_does_amandad.debug_contain_error_receiving_message?
+
+              QUESTION:_Why_does_amcheck_say_access_as_<username>_not
+              allowed...?
+
+              QUESTION:_Why_does_amcheck_report_ip_address_#.#.#.#_is_not_in
+              the_ip_list_list_for_<hostname>'?
+
+              QUESTION:_Why_does_amcheck_say_cannot_overwrite_active_tape?
+
+              QUESTION:_Why_does_amcheck_tell_me_DUMP_program_not_available?
+
+              QUESTION:_Which_tape_changer_configuration_should_I_use_in
+              amanda.conf?
+
+              QUESTION:_Should_I_use_software_or_hardware_compression?
+
+              QUESTION:_How_can_I_configure_AMANDA_so_that_it_performs_full
+              backups_on_the_week-end_and_incrementals_on_weekdays?
+
+              QUESTION:_What_if_my_tape_unit_uses_expensive_tapes,_and_I_don't
+              want_to_use_one_tape_per_day?_Can't_AMANDA_append_to_tapes?
+
+              QUESTION:_How_can_I_configure_AMANDA_for_long-term_archiving?
+
+              QUESTION:_Can_I_backup_separate_disks_of_the_same_host_in
+              different_configurations?
+
+              QUESTION:_Can_AMANDA_span_large_filesystems_across_multiple
+              tapes?
+
+              QUESTION:_What's_the_difference_between_option_skip-full_and
+              strategy_nofull?
+
+              QUESTION:_Why_does_amdump_report_results_missing?
+
+              QUESTION:_Why_does_amdump_report_disk_offline?
+
+              QUESTION:_What_if_amdump_reports_dumps_way_too_big,_must_skip
+              incremental_dumps?
+
+              QUESTION:_amdump_reported_infofile_update_failed._What_should_I
+              do?
+
+              QUESTION:_Why_does_AMANDA_sometimes_promote_full_dumps?
+
+              QUESTION:_Why_does_amrecover_report_no_index_records_or_disk_not
+              found?
+
+              QUESTION:_Ok,_I'm_done_with_testing_AMANDA,_now_I_want_to_put_it
+              in_production._How_can_I_reset_its_databases_so_as_to_start_from
+              scratch?
+
+              QUESTION:_The_man-page_of_dump_says_that_active_filesystems_may
+              be_backed_up_inconsistently._What_does_AMANDA_do_to_prevent
+              inconsistent_backups?
+
+              QUESTION:_Which_version_of_GNU-tar_should_I_use?
+
+
+        17._Collection_of_the_top_ten_AMANDA_questions._And_answers.
+
+
+              Reason_for_starting_this_list.
+
+              the_DLE-question
+
+              the_localhost-question
+
+              the_friday-tape-question
+
+              the_multiple-dumps-question
+
+              the_mailing-list-question
+
+              the_distro-question
+
+              the_index-question
+
+              the_tapetype-questions
+
+              the_size-question
+
+              the_GUI-question
+
+              the_holding-disk_question
+
+              ...
+
+
+        18._AMANDA_WISHLIST
+
+        19._AMANDA_Survey_Results
+
+
+  V._Technical_Background
+
+
+        20._How_AMANDA_uses_UDP_and_TCP_ports
+
+
+              TCP_port_allocation
+
+              User_TCP_port_range_(--with-tcpportrange)_summary
+
+              UDP_port_allocation
+
+              User_UDP_port_range_(--with-udpportrange)_summary
+
+              Firewalls_and_NAT
+
+
+        21._AMANDA_dumper_API
+
+
+              Introduction
+
+              The_Problem
+
+              Overview_of_the_API
+
+
+                    The_`support'_command
+
+
+              The_`selfcheck'_command
+
+              The_`estimate'_and_`estimate-parse'_commands
+
+              The_`backup'_and_`backup-parse'_commands
+
+              The_`index-from-output'_and_`index-from-image'_commands
+
+              The_`restore'_command
+
+              The_`print-command'_command
+
+              Conclusion
+
+
+        22._AMANDA_Internals
+
+
+              Protocols
+
+              server_and_amandad_on_client
+
+              planner_and_driver
+
+              driver_and_dumper
+
+              taper(read)_and_taper(write)
+
+
+        23._AMANDA_Event_API
+
+
+              Introduction
+
+              The_API
+
+
+                    event_register
+
+                    event_release
+
+                    event_loop
+
+                    event_wakeup
+
+
+              Data_types
+
+
+                    event_handle_t
+
+                    event_id_t
+
+                    event_type_t
+
+                    event_fn_t
+
+
+              Event_Types
+
+
+                    EV_READFD
+
+                    EV_WRITEFD
+
+                    EV_SIG
+
+                    EV_TIME
+
+                    EV_WAIT
+
+
+
+        24._AMANDA_Security_API
+
+
+              Introduction
+
+              The_Problem
+
+              The_API
+
+
+                    protocol_packet_transmission_functions
+
+                    stream_functions
+
+
+              Data_Types
+
+
+                    security_driver_t
+
+                    security_handle_t
+
+                    security_stream_t
+
+                    security_status_t
+
+
+              SECURITY_DRIVERS
+
+
+                    name
+
+                    connect
+
+                    accept
+
+                    close
+
+                    sendpkt
+
+                    recvpkt
+
+                    recvpkt_cancel
+
+                    stream_server
+
+                    stream_accept
+
+                    stream_client
+
+                    stream_close
+
+                    stream_auth
+
+                    stream_id
+
+                    stream_write
+
+                    stream_read
+
+                    stream_read_cancel
+
+
+
+        25._Virtual_Tape_API
+
+        26._Using_Kerberos_with_AMANDA
+
+
+              AMANDA_2.5.0_-_KERBEROS_v4_SUPPORT_NOTES
+
+
+                    Configuration
+
+                    Installation
+
+                    conf_file
+
+
+              AMANDA_2.5.0_-_KERBEROS_v5_SUPPORT_NOTES
+
+
+                    Building
+
+                    Installation
+
+                    conf_file
+
+                    Destination_Host_Permissions_file
+
+
+
+
+  VI._Historical_files
+
+
+        27._Response_to_CPIO_Security_Notice_Issue_11:
+
+
+              Affected_Versions
+
+              Workaround
+
+              Acknowledgements
+
+
+        28._Upgrade_Issues
+
+        29._What_once_was_new
+
+
+              What's_new_in_AMANDA_2.3
+
+
+                    Indexing_backups_for_easier_restore
+
+                    Samba_Support
+
+                    GnuTar_Support
+
+                    Multiple_backups_in_parallel_from_one_client_host
+
+                    Multiple_tapes_in_one_run
+
+                    Bottleneck_determination
+
+                    2_Gb_limit_removed
+
+                    amadmin_import/export
+
+
+              What's_new_in_AMANDA_2.2
+
+
+                    Client_side_setup_has_changed
+
+                    Version_suffixes_on_executables
+
+                    Kerberos
+
+                    Multiple_holding_disks
+
+                    Remote_self-checks
+
+                    mmap_support
+
+                    gzip_support
+
+                    Mount_point_names_in_disklist
+
+                    Initial_tape-changer_support_included
+
+                    Generic_tape_changer_wrapper_script
+
+                    New_command_amtape
+
+                    Changer_support_added_to_command_amlabel
+
+                    Tape_changer_support_improved
+
+                    A_few_words_about_multi-tape_runs
+
+                    Big_planner_changes
+
+                    Level-0_dumps_allowed_with_no_tape
+
+
+
+        30._Multitape_support_in_AMANDA_2.2
+
+
+              Introduction
+
+              New_Planner_Algorithm
+
+
+                    Time
+
+                    Full_Backups
+
+                    Schedule_Balancing
+
+                    Overwrite_Detection
+
+
+              Taper_Algorithm
+
+
+                    Choosing_a_tape
+
+                    End_of_tape_handling
+
+                    Tape_Format_Changes
+
+                    Tapelist_File_Changes
+
+
+
+        31._Thoughts_about_a_Strategy_API
+
+        32._Y2K_Compliancy
+
+        33._Usage_of_floppy_tape_drives_on_Linux
+
+
+  VII._References
+
+
+        34._Web_Ressources
+
+        35._The_AMANDA_Manual_Pages.
+
+
+  Index
+
+List of Tables
+
+
+  4.1. Protocol_between_amindexd_and_amrecover
+
+List of Examples
+
+
+  15.1. A_C_Program_to_Check_the_AMANDA_Service_Numbers
+
+-------------------------------------------------------------------------------
+
+         Next
+     Abstract
+

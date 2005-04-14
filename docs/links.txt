@@ -1,0 +1,31 @@
+
+    Chapter 34. Web Ressources
+Prev  Part VII. References  Next
+
+-------------------------------------------------------------------------------
+
+Chapter 34. Web Ressources
+
+
+Stefan G. Weichinger
+
+Original text
+AMANDA Core Team
+<sgw@amanda.org>
+
+Note
+
+Refer to http://www.amanda.org/docs/links.html for the current version of this
+document.
+See some original AMANDA-papers by James da Silva and Olafur Gundmundsson here:
+The presentation of AMANDA:
+Postscript: http://www.amanda.org/docs/lisa-vii.ps
+PDF: http://www.amanda.org/docs/lisa-vii.pdf
+A document about the performance of AMANDA:
+Postscript: http://www.amanda.org/docs/usenix92.ps
+PDF: http://www.amanda.org/docs/usenix92.pdf
+-------------------------------------------------------------------------------
+
+Prev                   Up                                   Next
+Part VII. References  Home  Chapter 35. The AMANDA Manual Pages.
+
