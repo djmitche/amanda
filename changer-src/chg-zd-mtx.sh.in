@@ -463,6 +463,10 @@ get_loaded_info() {
     s/.*(Storage Element \([0-9][0-9]*\) Loaded):VolumeTag *= *\([^     ]*\)/\1 \2/p
     q
 }
+/^Data Transfer Element '$driveslot':Full (Unknown Storage Element Loaded):VolumeTag *= *\([^     ]*\)/	{
+    s/.*:VolumeTag *= *\([^     ]*\)/-2 \1/p
+    q
+}
 /^Data Transfer Element:Full (Storage Element \([0-9][0-9]*\) Loaded)/                           {
     s/.*(Storage Element \([0-9][0-9]*\) Loaded).*/\1/p
     q
@@ -472,14 +476,8 @@ get_loaded_info() {
     q
 }
 /^Data Transfer Element '$driveslot':Full (Unknown Storage Element Loaded)/	{
-    : loop
-    n
-    /^.*Storage Element \([0-9][0-9]*\):Empty/ {
-	s/.*Storage Element \([0-9][0-9]*\):Empty/\1/p
-        q
-    }
     s/.*/-2/p
-    b loop
+    q
 }
 ' < $mtx_status 2>&1`
 	shift					# get rid of the "x"
@@ -489,6 +487,42 @@ get_loaded_info() {
 		Exit 2 "<none>" "could not determine current slot, are you sure your drive slot is $driveslot"
 		return $?			# in case we are internal
 	fi
+
+	#Use the current slot if it's empty and we don't know which slot is loaded'
+	if [ $loadedslot -eq -2 ]; then
+		set x `sed -n '
+{
+    /^.*Storage Element '$currentslot':Empty/ {
+	s/.*Storage Element \([0-9][0-9]*\):Empty/\1/p
+        q
+    }
+    /^.*Storage Element '$currentslot':Full/ {
+	s/.*Storage Element \([0-9][0-9]*\):Full/-2/p
+        q
+    }
+}
+' < $mtx_status 2>& 1`
+		shift				# get rid of the "x"
+		loadedslotx=$1
+		if [ ! -z $loadedslotx ]; then
+			loadedslot=$loadedslotx
+		fi
+	fi
+
+	#Use the first empty slot if we don't know which slot is loaded'
+	if [ $loadedslot -eq -2 ]; then
+		set x `sed -n '
+{
+    /^.*Storage Element \([0-9][0-9]*\):Empty/ {
+	s/.*Storage Element \([0-9][0-9]*\):Empty/\1/p
+        q
+    }
+}
+' < $mtx_status 2>& 1`
+		shift				# get rid of the "x"
+		loadedslot=$1
+	fi
+
 	if IsNumeric "$loadedslot" ; then
 		:
 	else
