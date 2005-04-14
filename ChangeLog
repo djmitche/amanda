@@ -1,5 +1,9 @@
 2005-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* man/amcheckdb.8: Update from latest xml-docs.
+
+2005-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* docs/*: New documentation from xml-docs.
 	* docs/Makefile.am (pkgdata_DATA): UPdate for new files.
 
