@@ -41,7 +41,7 @@ MESSAGES
 
 
   amdump: waiting for hold file to be removed
-      The hold file exists and amdump is waiting for it to be removed before
+      The "hold" file exists and amdump is waiting for it to be removed before
       starting backups.
 
   amdump: amdump or amflush is already running, or you must run amcleanup

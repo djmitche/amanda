@@ -31,7 +31,7 @@ amgetconf [config] parameter
 
 DESCRIPTION
 
-AMANDA is the Advanced Maryland Automatic Network Disk Archiver. This manual
+AMANDA is the "Advanced Maryland Automatic Network Disk Archiver". This manual
 page gives an overview of the AMANDA commands and configuration files for quick
 reference.
 Here are all the AMANDA commands. Each one has its own manual page. See them
@@ -341,7 +341,7 @@ some of which have a multiplier effect:
       labels generated (see amlabel(8)) and used by this configuration must
       match the regular expression. If multiple configurations are run from the
       same tape server host, it is helpful to set their labels to different
-      strings (for example, DAILY[0-9][0-9]* vs. ARCHIVE[0-9][0-9]*) to
+      strings (for example, "DAILY[0-9][0-9]*" vs. "ARCHIVE[0-9][0-9]*") to
       avoid overwriting each other's tapes.
 
   tapetype string
@@ -649,7 +649,7 @@ The dumptype options and values are:
       For exclude list, if the file name is relative, the disk name being
       backed up is prepended. So if this is entered:
 
-            exclude list .amanda.excludes
+            exclude list ".amanda.excludes"
 
       the actual file used would be /var/.amanda.excludes for a backup of /var,
       /usr/local/.amanda.excludes for a backup of /usr/local, and so on.
@@ -1009,7 +1009,7 @@ The supported drivers are:
   null
       This driver throws away anything written to it and returns EOF for any
       reads except a special case is made for reading a label, in which case a
-      fake value is returned that AMANDA checks for and allows through
+      "fake" value is returned that AMANDA checks for and allows through
       regardless of what you have set in labelstr. The driver-info field is not
       used and may be left blank:
 

@@ -56,8 +56,8 @@ into the table "vtable" in tape-src/tapeio.c:
 * int xxx_tapefd_write(xxx_tapefd, buffer, count)
 
 Along with a prefix string which will identify the type. The initial vtape
-layer has two types plain and rait (Redundant Array of Inexpensive Tapes)
-but we hope to add a rmt (remote tape client), and possibly dvd types soon.
+layer has two types "plain" and "rait" (Redundant Array of Inexpensive Tapes)
+but we hope to add a "rmt" (remote tape client), and possibly "dvd" types soon.
 -------------------------------------------------------------------------------
 
 Prev                              Up                                     Next

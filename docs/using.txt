@@ -117,7 +117,7 @@ An Introduction
 Note
 
 This chapter was written by John R. Jackson with input from Alexandre Oliva. It
-is part of the O'Reilly book Unix Backup & Recovery by W. Curtis Preston and
+is part of the O'Reilly book "Unix Backup & Recovery" by W. Curtis Preston and
 has been provided online at http://www.backupcentral.com/amanda.html since the
 first edition of this book.
 During the Docbook-conversion of the AMANDA-docs we asked for permission to
@@ -153,17 +153,17 @@ Note
 Since AMANDA is optimized to take advantage of tape drives, we will use the
 word tape throughout this section. However, that doesn't mean that you couldnt
 use it with an optical or CD-R drive.
-The AMANDA approach is to use a holding disk on the tape server machine, do
+The AMANDA approach is to use a "holding disk" on the tape server machine, do
 several dumps in parallel into files in the holding disk, and have an
 independent process take data out of the holding disk. Because most dumps are
 small partials, even a modest amount of holding disk space can provide an
 almost optimal flow of dump images onto tape.
-AMANDA also has a unique approach to scheduling dumps. A dump cycle is
+AMANDA also has a unique approach to scheduling dumps. A "dump cycle" is
 defined for each area to control the maximum time between full dumps. AMANDA
 takes that information, statistics about past dump performance, and estimates
 on the size of dumps for this run to decide which backup level to do. This gets
-away from the traditional static it's Friday so do a full dump of /usr on
-client A approach and frees AMANDA to balance the dumps so the total run time
+away from the traditional static "it's Friday so do a full dump of /usr on
+client A" approach and frees AMANDA to balance the dumps so the total run time
 is roughly constant from day to day.
 AMANDA is freely-available software maintained by the AMANDA Users Group. Based
 on membership of AMANDA-related mailing lists, there are probably well over
@@ -388,7 +388,7 @@ put the AMANDA user in the group that currently owns the raw devices, as the
 primary group or as a secondary, or pick a new group for AMANDA and change the
 group ownership of the devices. AMANDA (actually, the vendor dump program)
 needs only read access, so turn off group write permission. Turn off all
-world access.
+"world" access.
 To use GNU-tar, AMANDA runs it under a setuid-root program that grants the
 needed permissions. The GNU version of tar must be used with AMANDA. Vendor
 supplied versions (unless they originated from GNU and are at least version
@@ -484,7 +484,7 @@ different ./configure options, the following sequence makes sure everything is
 cleaned up from the previous build: make distclean ./configure ... make make
 install (as root) Problems with the ./configure step can sometimes be diagnosed
 by looking at the config.log file. It contains detailed output of tests ./
-configure runs. Note that it is normal for many of the tests to fail as part
+configure runs. Note that it is normal for many of the tests to "fail" as part
 of ./configure determining how to access various features on the system.
 A common problem when using the GNU C compiler is not re-installing it after
 the underlying operating system version changes. Gcc is particularly sensitive
@@ -552,7 +552,7 @@ Decide Which Tape Devices to Use
 
 Unix operating systems typically incorporate device characteristics into the
 file name used to access a tape device. The two to be concerned with are
-rewind and compression. AMANDA must be configured with the non-rewinding
+"rewind" and "compression." AMANDA must be configured with the non-rewinding
 tape device, so called because when the device is opened and closed it stays at
 the same position and does not automatically rewind. This is typically a name
 with an n in it, such as /dev/rmt/0n or /dev/nst0. On AIX, it is a name with a
@@ -560,7 +560,7 @@ with an n in it, such as /dev/rmt/0n or /dev/nst0. On AIX, it is a name with a
 Put the AMANDA user in the group that currently owns the tape device, either as
 the primary group or as a secondary, or pick a new group for AMANDA and change
 the group ownership of the device. AMANDA needs both read and write access.
-Turn off all world access.
+Turn off all "world" access.
 
 Decide Whether to Use Compression
 
@@ -591,7 +591,7 @@ space allocated.
 
 Compute Your Dump Cycle
 
- Decide how often AMANDA should do full dumps. This is the dump cycle. Short
+ Decide how often AMANDA should do full dumps. This is the "dump cycle." Short
 periods make restores easier because there are fewer partials, but use more
 tape and time. Longer periods let AMANDA spread the load better but may require
 more steps during a restore.
@@ -604,7 +604,7 @@ them more often and at various times during the cycle as it balances the backup
 load. It violates the limit only if a dump fails repeatedly, and issues
 warnings in the e-mail report if that is about to happen.
 By default, AMANDA assumes it is run every day. If that is not the case, set
-runs per cycle (described below) to a different value. For instance, a dump
+"runs per cycle" (described below) to a different value. For instance, a dump
 cycle of seven days and runs per cycle of five would be used if runs are done
 only on weekdays.
 Normally, AMANDA uses one tape per run. With a tape changer (even the chg-
@@ -615,7 +615,7 @@ end of tape (or any other error) while writing an image, that tape is
 unmounted, the next one is loaded, and the image starts over from the
 beginning. This sequence continues if the image cannot fit on a tape.
 Runs per cycle and tapes per run determine the minimum number of tapes needed,
-called the tape cycle. To ensure the current run is not overwriting the last
+called the "tape cycle." To ensure the current run is not overwriting the last
 full dump, one more run should be included. For instance, a dump cycle of two
 weeks, with default runs per cycle of 14 (every day) and default tapes per run
 of one, needs at least 15 tapes (14+1 runs * one tape/run). Using two tapes per

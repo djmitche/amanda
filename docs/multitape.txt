@@ -96,7 +96,7 @@ leap seconds. Give me a break. :-)
 The first thing planner does is calculate when each filesystem is due for a
 full backup. This is trivial for normal backups:
 full_is_due = days_diff(<time of last full>, <curtime>) >= dumpcycle
-There is a complication for skip-full filesystems. Under 2.2, these will be
+There is a complication for "skip-full" filesystems. Under 2.2, these will be
 skipped on any runs that occur on the day the full is due, but we have to do
 the right thing if multiple runs are done that day, and if no runs are done
 that day (in which case we should be doing an incremental). Also, the time of

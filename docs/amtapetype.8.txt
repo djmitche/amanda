@@ -78,7 +78,7 @@ the math still works out the same. The -e flag is there to keep the number of
 file marks down because they can be slow (since they force the drive to flush
 all its buffers to physical media).
 All sorts of things might happen to cause the amount of data written to vary
-enough to generate a big file mark size guess. A little more shoe shining
+enough to generate a big file mark size guess. A little more "shoe shining"
 because of the additional file marks (and flushes), dirt left on the heads from
 the first pass of a brand new tape, the temperature/humidity changed during the
 multi-hour run, a different amount of data was written after the last file mark

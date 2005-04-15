@@ -38,13 +38,13 @@ OPTIONS
       -f option.
 
   -D datestamp
-      specify a datestamp expression you want to flush, see the DATESTAMP
-      EXPRESSION section of amanda(8) for a description. -D 20001225-7 will
+      specify a datestamp expression you want to flush, see the "DATESTAMP
+      EXPRESSION" section of amanda(8) for a description. -D 20001225-7 will
       flush all dumps from 25 december 2000 to 27 december 2000.
 
 You can specify many host/disk expressions, only disks that match an expression
 will be flushed. All disks are flushed if no expressions are given. see the
-HOST & DISK EXPRESSION section of amanda(8) for a description.
+"HOST & DISK EXPRESSION" section of amanda(8) for a description.
 Amflush will look in the holding disks specified by the amanda.conf file in /
 usr/local/etc/amanda/config for any non-empty AMANDA work directories. It then
 prompts you to select a directory or to process all of the directories. The

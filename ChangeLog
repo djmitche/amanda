@@ -1,3 +1,6 @@
+2005-04-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	* docs/*: Update from latest xml-docs.
+
 2005-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* changer-src/chg-zd-mtx.sh.in: Improve handling of
@@ -10,7 +13,7 @@
 2005-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* docs/*: New documentation from xml-docs.
-	* docs/Makefile.am (pkgdata_DATA): UPdate for new files.
+	* docs/Makefile.am (pkgdata_DATA): Update for new files.
 
 2005-04-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	- https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=144052

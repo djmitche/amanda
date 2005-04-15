@@ -217,10 +217,10 @@ Oct. 2004.
   Copilot handles this well. We should too.
 
 
-* What if we made the length in a tapetype definition always be the no
-  compression value? Then change the dumptype compress option to accept
-  hardware as another type (ala client and server) and let planner do its
-  normal thing with that information (including comprate, which at the
+* What if we made the "length" in a tapetype definition always be the "no
+  compression" value? Then change the dumptype "compress" option to accept
+  "hardware" as another type (ala "client" and "server") and let planner do its
+  normal thing with that information (including "comprate", which at the
   current default of 50% is the usual first guess for hardware compression).
   This would make setting the tape length value less confusing, and make the
   amtapetype program easier to run. You could even get more accurate planning

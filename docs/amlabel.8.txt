@@ -35,13 +35,13 @@ See the amanda(8) man page for more details about AMANDA.
 
 EXAMPLE
 
-Write an AMANDA label with the string DMP000 on the tape loaded in the device
+Write an AMANDA label with the string "DMP000" on the tape loaded in the device
 named in the tapedev option in /usr/local/etc/amanda/daily/amanda.conf:
 
   % amlabel daily DMP000
 
 Label the tape in slot 3 of the currently configured tape changer with the
-string DMP003:
+string "DMP003":
 
   % amlabel daily DMP003 slot 3
 

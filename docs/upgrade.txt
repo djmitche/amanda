@@ -54,7 +54,7 @@ to have three levels instead of being flat. This greatly reduces the number of
 files in a given directory, which was a problem for some systems.
 The new layout is:
 [indexdir]/hostname/filesystem/YYYYMMDD_L.gz
-where hostname and filesystem are sanitized versions of the names from
+where hostname and filesystem are "sanitized" versions of the names from
 disklist, i.e. '/' characters are converted to '_' and so on. This new naming
 convention matches the one used for the text formatted database.
 A script is available to convert the flat directory structure to the new

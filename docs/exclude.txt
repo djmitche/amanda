@@ -56,7 +56,7 @@ arise be confident that AMANDA has this capability. (Actually it's not AMANDA,
 it's tar.) There are three ways of excluding data in an AMANDA backup:
 
 * Exclude an individual item explicitly in the dumptype
-* Utilize an Exclude List
+* Utilize an "Exclude List"
 * Do not include the data in the disklist
 
 This document is based on AMANDA 2.4.2 and some of this might not work with
@@ -83,10 +83,10 @@ The only exception that I am aware of is to just not include the data in
 question in the disklist. This option may not be suitable for everyone's needs
 and can confuse the issue some, so I have elected to include this mechanism in
 its own section named Do_not_include_the_data_in_the_disklist.
-For the purpose of this document an AMANDA backup configuration named exclude-
-test will be used. The machine that contains the tape drive which receives
-data to be archived will be referred to as SERVER. The machine that data is
-being archived from will be referred to as CLIENT. These two systems are
+For the purpose of this document an AMANDA backup configuration named "exclude-
+test" will be used. The machine that contains the tape drive which receives
+data to be archived will be referred to as "SERVER". The machine that data is
+being archived from will be referred to as "CLIENT". These two systems are
 usually different machines but are not required to be, and may be the same
 machine. Parts of this setup are on the server and some are on the client.
 
@@ -120,16 +120,16 @@ way to tell if your dumptype is using gnutar is to run the following:
 
   $ amadmin exclude-test disklist CLIENT
 
-Among all the output is the program value currently in use. This value is
-also specified with the program option in the dumptype. If the dumptype has
-the line program GNUTAR your setup should be ready to exclude data.
-If GNU-tar is not in use add the line program GNUTAR to the dumptype, and
+Among all the output is the "program" value currently in use. This value is
+also specified with the "program" option in the dumptype. If the dumptype has
+the line "program GNUTAR" your setup should be ready to exclude data.
+If GNU-tar is not in use add the line "program GNUTAR" to the dumptype, and
 then run amcheck again to verify that backups should work. The capitalization
 of GNUTAR is required.
 The dumptype should look something like:
 
   define dumptype exclude-test {
-  comment test dumptype for documentation
+  comment "test dumptype for documentation"
   priority high
   program "GNUTAR"
   }
@@ -147,13 +147,13 @@ the need is to exclude multiple files or directories then use an Exclude List.
  Exclude an individual item explicitly in the dumptype
 
 The easiest way to exclude a file or directory is to specify it with the
-exclude option in the dumptype. This option accepts an argument of the file
+"exclude" option in the dumptype. This option accepts an argument of the file
 or directory to be excluded. AMANDA allows only one exclude option in any
 dumptype at a time.
 
 Note
 
-UPDATE: Recent AMANDA-releases bring the option exclude append which enables
+UPDATE: Recent AMANDA-releases bring the option "exclude append" which enables
 the administrator to define more than one exclusion-pattern within one dumptype
 without using a exclude-list. Please look at the amanda.8-manpage for details.
 Any path specified to be excluded must be encapsulated with quotes. Continuing
@@ -232,9 +232,9 @@ exclude list.
 AMANDA uses disklist entries to define which directories or partitions should
 be archived. This allows us to exclude data by just not placing the data in
 question in the disklist. Assume that there is a disk mounted on /example. The
-directory /example has five subdirectories a, b, c, d, and e. The
-directories a, b, and c need to be archived, while d and e should
-not. This can be accomplished by not specifying d and e in the disklist.
+directory /example has five subdirectories "a", "b", "c", "d", and "e". The
+directories "a", "b", and "c" need to be archived, while "d" and "e" should
+not. This can be accomplished by not specifying "d" and "e" in the disklist.
 Using the same dumptype and host in the above examples the disklist would
 contain:
 
@@ -262,7 +262,7 @@ backup image but nothing below it.
 
 AMANDA has the ability to use wildcard expansion while excluding data as
 implemented by tar(1). The only places that wildcard expansion is allowed is in
-the exclude option in the dumptype, or in the exclude list. Some simple
+the "exclude" option in the dumptype, or in the exclude list. Some simple
 examples:
 Exclude any file or directory that ends in ".log" e.g. ppp.log, XFree86.0.log
 

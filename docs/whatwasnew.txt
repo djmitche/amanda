@@ -98,7 +98,7 @@ Read more about this in the file named Backup_PC_hosts_using_Samba.
  GnuTar Support
 
 AMANDA now supports dumps made via GnuTAR. To use this, set your dumptypes set
-the program name to GNUTAR:
+the program name to "GNUTAR":
 
   dumptype tar-client {
   ....
@@ -119,7 +119,7 @@ possible to to avoid potential security holes.
 
  Multiple backups in parallel from one client host
 
-A new maxdumps parameter for the conf file gives the default value for the
+A new "maxdumps" parameter for the conf file gives the default value for the
 amount of parallelism per client:
 
   maxdumps 2 # default max num. dumps to do in parallel per client
@@ -134,14 +134,14 @@ If this default parameter is not specified, the default for the default :-0 is
   }
   	
 
-If the maxdumps parameter isn't given in the dumptypes, the default is used.
+If the "maxdumps" parameter isn't given in the dumptypes, the default is used.
 The idea is that maxdumps is set roughly proportional to the speed of the
 client host. You probably wont get much benefit from setting it very high, but
 all but the slowest hosts should be able to handle a maxdumps of at least 2.
 AMANDA doesn't really have any per-host parameters, just per-disk, so the per-
 client-host maxdumps is taken from the last disk listed for that host.
 Just to make things more complicated, I've added the ability to specify a
-spindle number for each filesystem in the disklist file. For example:
+"spindle number" for each filesystem in the disklist file. For example:
 
           wiggum /        fast-comp-user  0
           wiggum /usr     fast-comp-user  0
@@ -182,7 +182,7 @@ been made to driver and reporter - planner already had support. There are a
 couple other places that should probably be updated, like amcheck. Dumps are
 not split across tapes - when taper runs into the end of a tape, it loads the
 next tape and tells driver to try sending the dump again.
-If you are feeling brave, set runtapes to something other than 1.
+If you are feeling brave, set "runtapes" to something other than 1.
 The new taper also keeps the tape open the entire time it is writing the files
 out - no more having amchecks or other accesses/rewinds in the middle of the
 run screw you royally if they hit when the tape is closed for writing a
@@ -192,9 +192,9 @@ filemark.
 
 I've made some experimental changes to driver to determine what the bottleneck
 is at any time. Since AMANDA tries to do many things at once, it's hard to
-pinpoint a single bottleneck, but I think I've got it down well enough to say
+pinpoint a single bottleneck, but I "think" I've got it down well enough to say
 something useful. For now it just outputs the current bottleneck as part of its
-driver: state line in the debug output, but once I'm comfortable with its
+"driver: state" line in the debug output, but once I'm comfortable with its
 conclusions, I'll output it to the log file and have the reporter generate a
 nice table. The current choices are:
 
@@ -216,7 +216,7 @@ going to long-long or some other non-portable type for the size.
 
  amadmin import/export
 
-amadmin now has import and export commands, to convert the curinfo database
+amadmin now has "import" and "export" commands, to convert the curinfo database
 to/from text format, for: moving an AMANDA server to a different arch,
 compressing the database after deleting lots of hosts, or editing one or all
 entries in batch form or via a script.
@@ -250,10 +250,10 @@ everything, and vice-versa)
 
 The new USE_VERSION_SUFFIXES define in options.h controls whether to install
 the AMANDA executables with the version number attached to the name, eg
-amdump-2.2.1. I recommend that you leave this defined, since this allows
+"amdump-2.2.1". I recommend that you leave this defined, since this allows
 multiple versions to co-exist - particularly important while AMANDA 2.2 is
 under development. You can always symlink the names without the version suffix
-to the version you want to be your production version.
+to the version you want to be your "production" version.
 
  Kerberos
 
@@ -318,8 +318,8 @@ because the sysv stuff is better).
 
 This was most requested feature #1; I've finally slipped it in. Define
 HAVE_GZIP in options.h. See options.h-vanilla for details. There are two new
-amanda.conf dumptype options compress-fast and compress-best. The default
-is compress-fast. With gzip, compress-fast seems to always do better than the
+amanda.conf dumptype options "compress-fast" and "compress-best". The default
+is "compress-fast". With gzip, compress-fast seems to always do better than the
 old lzw compress (in particular it will never expand the file), and runs faster
 too. Gzip's compress-best does very good compression, but is about twice as
 slow as the old lzw compress, so you don't want to use it for filesystems that
@@ -386,10 +386,10 @@ The specs in AMANDA_Tape_Changer_Support have been updated, and the code
 changed to match. The major difference is that AMANDA no longer assumes slots
 in the tape rack are numbered from 0 to N-1. They can be numbered or labeled in
 any manner that suits your tape-changer, AMANDA doesn't care what the actual
-slot names are. Also added first and last slot specifiers, and an -eject
+slot names are. Also added "first" and "last" slot specifiers, and an -eject
 command.
-The chg-generic.sh tape changer script now has new firstslot, lastslot, and
-needeject parameters for the chg-generic.conf file. It now keeps track of
+The chg-generic.sh tape changer script now has new "firstslot", "lastslot", and
+"needeject" parameters for the chg-generic.conf file. It now keeps track of
 whether the current slot is loaded into the drive, so that it can issue an
 explicit eject command for those tape changers that need one. See example/chg-
 generic.conf for more info.
@@ -420,20 +420,20 @@ should work.
 The support for writing to multiple tapes in one run is almost finished now.
 See Multitape_support_in_AMANDA_2.2 for an outline of the design. The planner
 support for this is included in this snapshot, but the taper part is not.
-There is a new amanda.conf variable runtapes which specifies the number of
+There is a new amanda.conf variable "runtapes" which specifies the number of
 tapes to use on each amdump run. For now this should stay at 1, the default.
-Also, the old mincycle and maxcycle amanda.conf variables are deprecated,
-but still work for now. maxcycle was never used, and mincycle is now called
-dumpcycle.
+Also, the old "mincycle" and "maxcycle" amanda.conf variables are deprecated,
+but still work for now. "maxcycle" was never used, and "mincycle" is now called
+"dumpcycle".
 There are two visible differences in the new planner: First, planner now thinks
 in real-time, rather than by the number of tapes as before. That is, a
 filesystem is due for a full backup once every <dumpcycle> days, regardless of
 how many times AMANDA is run in that interval. As a consequence, you need to
 make sure the dumpcycle variable marks real time instead of the number of days.
-For example, previously mincycle 10 worked for a two week cycle if you ran
+For example, previously "mincycle 10" worked for a two week cycle if you ran
 amdump only on weekdays (for 10 runs in a cycle). Now a two week cycle must be
-specified as dumpcycle 14 or dumpcycle 2 weeks. The 2 weeks specifier
-works with both the old and new versions of planner, because previously weeks
+specified as "dumpcycle 14" or "dumpcycle 2 weeks". The "2 weeks" specifier
+works with both the old and new versions of planner, because previously "weeks"
 multiplied by 5, and now it multiplies by 7.
 Second, planner now warns about impending overwrites of full backups. If a
 filesystem's last full backup is on a tape that is due to be overwritten in the
@@ -448,7 +448,7 @@ If there is no tape present (or the tape drive fails during dumping), AMANDA
 switches to degraded mode. In degraded mode, level-0 dumps are not allowed.
 This can be a pain for unattended sites over the weekend (especially when there
 is a large holding disk that can hold any necessary dumps). AMANDA now supports
-a new configuration file directive, reserve. This tells AMANDA to reserve
+a new configuration file directive, "reserve". This tells AMANDA to reserve
 that percentage of total holding disk space for degraded mode dumps. Example:
 your total holding disk space adds up to 8.4GB. If you specify a reserve of 50,
 4.2GB (50%) of the holding disk space will be allowed to be used for regular

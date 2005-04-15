@@ -36,7 +36,7 @@ have what machines, partitions, and the level of the dump the tape has on it.
 This is achieved by adding the lbl-templ field to the tapetype definition.
 Since the labels are specific to the type of tape you have, that seemed to most
 logical place to add it.
-You can also specify an alternate printer definition to print the label to
+You can also specify an alternate "printer" definition to print the label to
 other than the system default printer.
 If you don't add this line to your tapetype definition, AMANDA works as it
 always has.
@@ -72,7 +72,7 @@ logfile. When the reporter prints out the report, the postscript label template
 is copied, and the successful machines, partitions, and dump levels are
 appended to this. The output either goes to /tmp/reporter.out.ps (when running
 in testing mode) or through a pipe to the printer (default printer, if an
-alternate printer is not specified).
+alternate "printer" is not specified).
 -------------------------------------------------------------------------------
 
 Prev                                                    Up               Next

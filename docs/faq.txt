@@ -23,22 +23,22 @@ Table of Contents
 
   QUESTION:_Why_does_amdump_report_that_all_disks_failed?
 
-  QUESTION:_Why_does_amcheck_say_port_NNN_is_not_secure?
+  QUESTION:_Why_does_amcheck_say_"port_NNN_is_not_secure"?
 
-  QUESTION:_Why_does_amcheck_claim_that_the_tape_is_not_an_amanda_tape?
+  QUESTION:_Why_does_amcheck_claim_that_the_tape_is_"not_an_amanda_tape"?
 
-  QUESTION:_Why_does_amcheck_report_selfcheck_request_timed_out?
+  QUESTION:_Why_does_amcheck_report_"selfcheck_request_timed_out"?
 
-  QUESTION:_Why_does_amandad.debug_contain_error_receiving_message?
+  QUESTION:_Why_does_amandad.debug_contain_"error_receiving_message"?
 
-  QUESTION:_Why_does_amcheck_say_access_as_<username>_not_allowed...?
+  QUESTION:_Why_does_amcheck_say_"access_as_<username>_not_allowed..."?
 
-  QUESTION:_Why_does_amcheck_report_ip_address_#.#.#.#_is_not_in_the_ip_list
+  QUESTION:_Why_does_amcheck_report_"ip_address_#.#.#.#"_is_not_in_the_ip_list
   list_for_<hostname>'?
 
-  QUESTION:_Why_does_amcheck_say_cannot_overwrite_active_tape?
+  QUESTION:_Why_does_amcheck_say_"cannot_overwrite_active_tape"?
 
-  QUESTION:_Why_does_amcheck_tell_me_DUMP_program_not_available?
+  QUESTION:_Why_does_amcheck_tell_me_"DUMP_program_not_available"?
 
   QUESTION:_Which_tape_changer_configuration_should_I_use_in_amanda.conf?
 
@@ -57,20 +57,21 @@ Table of Contents
 
   QUESTION:_Can_AMANDA_span_large_filesystems_across_multiple_tapes?
 
-  QUESTION:_What's_the_difference_between_option_skip-full_and_strategy_nofull?
+  QUESTION:_What's_the_difference_between_option_"skip-full"_and_"strategy
+  nofull"?
 
-  QUESTION:_Why_does_amdump_report_results_missing?
+  QUESTION:_Why_does_amdump_report_"results_missing"?
 
-  QUESTION:_Why_does_amdump_report_disk_offline?
+  QUESTION:_Why_does_amdump_report_"disk_offline"?
 
-  QUESTION:_What_if_amdump_reports_dumps_way_too_big,_must_skip_incremental
-  dumps?
+  QUESTION:_What_if_amdump_reports_"dumps_way_too_big,_must_skip_incremental
+  dumps"?
 
-  QUESTION:_amdump_reported_infofile_update_failed._What_should_I_do?
+  QUESTION:_amdump_reported_"infofile_update_failed"._What_should_I_do?
 
   QUESTION:_Why_does_AMANDA_sometimes_promote_full_dumps?
 
-  QUESTION:_Why_does_amrecover_report_no_index_records_or_disk_not_found?
+  QUESTION:_Why_does_amrecover_report_"no_index_records"_or_"disk_not_found"?
 
   QUESTION:_Ok,_I'm_done_with_testing_AMANDA,_now_I_want_to_put_it_in
   production._How_can_I_reset_its_databases_so_as_to_start_from_scratch?
@@ -126,13 +127,13 @@ amdump.
 Make sure you run amcheck as the same user that is supposed to start amdump,
 otherwise you may get incorrect results.
 
- QUESTION: Why does amcheck say port NNN is not secure?
+ QUESTION: Why does amcheck say "port NNN is not secure"?
 
 ANSWER: Because amcheck, as some other AMANDA programs, must be installed as
-setuid-root. Run make install as root, or chown all AMANDA setuid programs to
-root, then chown u+s them again, if chown drops the setuid bit.
+setuid-root. Run make install as "root", or chown all AMANDA setuid programs to
+"root", then chown u+s them again, if chown drops the setuid bit.
 
- QUESTION: Why does amcheck claim that the tape is not an amanda tape?
+ QUESTION: Why does amcheck claim that the tape is "not an amanda tape"?
 
 ANSWER: Because AMANDA requires you to label tapes before it uses them. Run
 amlabel in order to label a tape.
@@ -141,12 +142,12 @@ regular expression specified in amanda.conf matches the label you have
 specified, and check whether you have configured non-rewinding tape devices for
 AMANDA to use. For example, use /dev/nrst0 instead of /dev/rst0, /dev/rmt/0bn
 instead of /dev/rmt/0b, or some other system-dependent device name that
-contains an n, instead of one that does not. The n stands for non-
+contains an "n", instead of one that does not. The "n" stands for non-
 rewinding.
 If you have labeled any tapes using the rewiding device configuration, you'll
 have to label them again.
 
- QUESTION: Why does amcheck report selfcheck request timed out?
+ QUESTION: Why does amcheck report "selfcheck request timed out"?
 
 ANSWER: This can occur under several different situations. First, make sure
 this problem is repeatable; if AMANDA programs are NFS-auto-mounted, some
@@ -174,11 +175,11 @@ hand, as the AMANDA user. It should just time-out after 30 seconds waiting for
 a UDP packet. If you type anything, it will abort immediately, because it can't
 read a UDP packet from the keyboard.
 As soon as you have properly configured /etc/inetd.conf so as to run amandad,
-you should no longer get the selfcheck request timed out message. A nice tool
+you should no longer get the "selfcheck request timed out" message. A nice tool
 to help make sure inetd is really listening on the amandad port is lsof,
 available at ftp://vic.cc.purdue.edu/pub/tools/unix/lsof.
 
- QUESTION: Why does amandad.debug contain error receiving message?
+ QUESTION: Why does amandad.debug contain "error receiving message"?
 
 ANSWER: One possibility is that you have run amandad from the command line
 prompt and typed anything instead of waiting for it to time-out: in this case,
@@ -189,7 +190,7 @@ directory that the AMANDA user cannot write to, so you should wipe it out.
 Another possibility is that the AMANDA service was not properly configured as a
 UDP service; check /etc/services and /etc/inetd.conf.
 
- QUESTION: Why does amcheck say access as <username> not allowed...?
+ QUESTION: Why does amcheck say "access as <username> not allowed..."?
 
 ANSWER: There must be something wrong with .amandahosts configuration (or
 .rhosts, if you have configured --without-amandahosts).
@@ -201,7 +202,7 @@ after the `@' sign in .amandahosts/.rhosts. You'll need a fully-qualified
 domain name or not, depending on how your client resolves IP addresses to host
 names.
 
- QUESTION: Why does amcheck report ip address #.#.#.# is not in the ip list
+ QUESTION: Why does amcheck report "ip address #.#.#.#" is not in the ip list
 list for <hostname>'?
 
 ANSWER: Check your DNS configuration tables. In order to avoid DNS-spoofing,
@@ -209,7 +210,7 @@ AMANDA double-checks hostname<->IP address mapping. If the IP address the
 request comes from maps to a hostname, but this hostname does not map back to
 the incoming IP address, the request is denied.
 
- QUESTION: Why does amcheck say cannot overwrite active tape?
+ QUESTION: Why does amcheck say "cannot overwrite active tape"?
 
 ANSWER: Because, if you configure AMANDA to use N tapes, by setting tapecycle
 to N in amanda.conf, before AMANDA overwrites a tape, it must write to at least
@@ -222,7 +223,7 @@ this tape from the tapelist file, that is used to manage the tape cycle, and
 will delete information about backups stored in that tape from the AMANDA
 database.
 
- QUESTION: Why does amcheck tell me DUMP program not available?
+ QUESTION: Why does amcheck tell me "DUMP program not available"?
 
 ANSWER: Because configure could not find dump when it was first run. This is a
 common problem on Linux hosts, because most Linux distributions do not install
@@ -295,7 +296,7 @@ backups of each filesystem (dumpcycle). If you don't run it once a daily
 (including Saturdays and Sundays :-), you'll also want to tell AMANDA how many
 times you'll run it per dumpcycle (runspercycle). It will spread full backups
 along the dumpcycle, so you won't have any full-only or incremental-only runs.
-Please also refer to the friday-tape-question in Collection_of_the_top_ten
+Please also refer to "the friday-tape-question" in Collection_of_the_top_ten
 AMANDA_questions._And_answers..
 
  QUESTION: What if my tape unit uses expensive tapes, and I don't want to use
@@ -364,18 +365,18 @@ Update September 2004: Refer to the archive of the amanda-hackers mailinglist
 being discussed there, which allows splitting and spanning.
 The current work-around is to use GNU tar to back up subdirectories of the huge
 filesystem separately. But be aware of the problems listed in the question
-about results missing.
+about "results missing".
 
- QUESTION: What's the difference between option skip-full and strategy
-nofull?
+ QUESTION: What's the difference between option "skip-full" and "strategy
+nofull"?
 
-ANSWER: strategy nofull is supposed to handle the following situation: you
+ANSWER: "strategy nofull" is supposed to handle the following situation: you
 run a full dump off-line once a millenium :-), because that disk isn't supposed
 to change at all and, if it does, changes are minimal. AMANDA will run only
 level 1 backups of that filesystem, to avoid the risk of overwriting a level 1
 backup needed to do a restore. Remember, you run full dumps once a millenium,
 and your tape cycle probably won't last that long :-)
-skip-full, OTOH, is supposed to let the user run full dumps off-line
+"skip-full", OTOH, is supposed to let the user run full dumps off-line
 regularly (i.e., as often as specified in the dumpcycle), while AMANDA takes
 care of the incrementals. Currently, AMANDA will tell you when you're supposed
 to run the level 0 backups but, if you fail to do so, AMANDA will not only skip
@@ -386,7 +387,7 @@ might perform a level 2 on the next day, just after you have run the level 0,
 so, if the disk should crash, you'd have to restore a level 0 then a level 2,
 but not the level 1! Not a real problem, but definitely strange, eh?
 
- QUESTION: Why does amdump report results missing?
+ QUESTION: Why does amdump report "results missing"?
 
 ANSWER: One of the possible reasons is that you have requested too many backups
 of the host. In this case, the estimate request or the reply may not fit in a
@@ -417,7 +418,7 @@ subdirectories of a filesystem separately. The others can be backed up together
 with the root of the filesystem, using an exclude list that prevents duplicate
 backups.
 
- QUESTION: Why does amdump report disk offline?
+ QUESTION: Why does amdump report "disk offline"?
 
 ANSWER: Well, assuming the disk is not really off line :-), it may be a
 permission problem, but then, amcheck would have reported it.
@@ -434,8 +435,8 @@ of printing error messages like `Read error at byte 0, reading 512 bytes, in
 file ./var/log/lastlog: Bad file number' in sendsize.debug and being very slow.
 Check the patches directory of the AMANDA distribution.
 
- QUESTION: What if amdump reports dumps way too big, must skip incremental
-dumps?
+ QUESTION: What if amdump reports "dumps way too big, must skip incremental
+dumps"?
 
 ANSWER: It means AMANDA couldn't back up some disk because it wouldn't fit in
 the tape(s) you have configured AMANDA to use. It considered performing some
@@ -454,7 +455,7 @@ space for degraded dumps, dumps that would be stored in the second tape of a
 run will be performed to the holding disk, so you can flush them to tape in the
 morning.
 
- QUESTION: amdump reported infofile update failed. What should I do?
+ QUESTION: amdump reported "infofile update failed". What should I do?
 
 ANSWER: Make sure all directories and files are readable and writable by the
 AMANDA user, within the directory you specified as `infofile' in amanda.conf.
@@ -471,7 +472,7 @@ it should stop promoting dumps. You can see how well it is doing with amadmin
 <conf> balance. If you find the results surprising, you may want to adjust
 dumpcycle or runspercycle.
 
- QUESTION: Why does amrecover report no index records or disk not found?
+ QUESTION: Why does amrecover report "no index records" or "disk not found"?
 
 ANSWER: The most common cause of this problem is not having enabled index
 generation in amanda.conf. The `index yes' option must be present in every
@@ -531,8 +532,8 @@ ANSWER: (slightly adapted from a posting by Paul Bijnens
   anymore. But you can read the archive with a good tar version (i.e. the tar
   images produced are fine).
 * 1.15.1 is good: no problems found (yet).
-  Paul Bijnens: I'm using this version on most of my clients since january
-  this year (2005), and have already done successful restore too.
+  Paul Bijnens: "I'm using this version on most of my clients since january
+  this year (2005), and have already done successful restore too."
 
 -------------------------------------------------------------------------------
 

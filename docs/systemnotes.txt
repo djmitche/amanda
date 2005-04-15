@@ -96,7 +96,7 @@ of filesystems. A patch for GNUtar is available in the patches directory.
  Ultrix
 
 The Ultrix dump program contains an explicit check that it is being run by
-root. This defeats the usual practice of a non-root operator userid for
+root. This defeats the usual practice of a non-root "operator" userid for
 dumps. For this reason, the rundump program (a setuid-root wrapper for dump) is
 enabled by default. If you find rundump is not necessary for you, just run
 
@@ -191,7 +191,7 @@ HAVE_DUMP_ESTIMATE in config/config.h; if you prefer to have incorrect
 estimates for SAMBA backups, follow the instructions in client-src/sendsize.c
 on removing the compile-time error.
 According to Oren Laadan <orenl@cs.huji.ac.il>, DEC compiler version "DEC C
-V5.2-033 on Digital UNIX V4.0 (Rev. 564)" (obtained with cc -V) does not
+V5.2-033 on Digital UNIX V4.0 (Rev. 564)" (obtained with "cc -V") does not
 build AMANDA properly, in particular, taper.c. Using gcc is OK.
 
  Sinix 5.43 (Reliant Unix)
@@ -204,7 +204,7 @@ Sinix port originally by Michael Schmitz <mschmitz@iname.com>.
  IRIX (all)
 
 When setting the tape device name in either amanda.conf or one of the changer
-configuration files, make sure you specify the variable device name, which
+configuration files, make sure you specify the "variable" device name, which
 has a 'v' on the end. If not, IRIX will write 4KByte blocks instead of the
 32KByte blocks AMANDA tells it to. This apparantly works OK unless you take the
 tape to a non-IRIX system, where amrestore will complain about a short (4096)
@@ -240,13 +240,13 @@ the AMANDA operator:group in /etc/ioperms. Here's my configuration:
 
   /etc/ioperms: /dev/scsi/sc8d6l0 0600 amanda backup
 
-Otherwise the ownership:group is changed to root:sys after each reboot. When
+Otherwise the ownership:group is changed to "root:sys" after each reboot. When
 you do upgrades, check the file /var/sysgen/master.d/scsi to see if it has
 changed. Otherwise your jukebox could be rendered unuseable. In particular,
-check if it has been replaced by a new version and renamed to ./scsi.O/..
+check if it has been replaced by a new version and renamed to "./scsi.O/.".
 If you use the AMANDA package provided by freeware.sgi.com, you are not
 affected by the first question since at compile time the AMANDA operator is
-root:sys.
+"root:sys".
 
  SCO
 
@@ -267,7 +267,7 @@ instead.
 Sep. 28th, 2004: Jason Miller <jwm@interlinc.net> reported problems with
 setting up the AMANDA-client on FreeBSD 4.9. He wrote:
 Due to the need for read permissions for AMANDA-client the default user and
-group for this on FreeBSD 4.9 is operator:operator which I found a write up
+group for this on FreeBSD 4.9 is "operator:operator" which I found a write up
 on that as well. Just a note the port wanted to install it with these user
 permissions by default and I initially changed them to match my Redhat 9.0
 install. So just doing a
@@ -297,7 +297,7 @@ in the file /etc/sysctl.conf.
  AIX
 
 sendsize is reported to coredump on AIX 4.3.3, this is a linking problem, try
-configuring AMANDA with the option --disable-shared.
+configuring AMANDA with the option "--disable-shared".
 
  Microsoft Windows
 

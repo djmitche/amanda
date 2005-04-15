@@ -113,7 +113,7 @@ The security API was designed to be a layer in between the core logic of AMANDA
 and the transport and authentication of the protocol and dumps.
 The component server and client programs now deal with abstract concepts
 instead of concrete udp and tcp handles.
-The prefix security_ is reserved for use as the namespace of this API.
+The prefix "security_" is reserved for use as the namespace of this API.
 
  protocol packet transmission functions
 

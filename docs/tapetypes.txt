@@ -26,7 +26,7 @@ If none of the sample tapetype entries match your needs, you may search the
 mailing list archives or look up the on-line list of tapetype entries. Just
 follow the links from http://www.amanda.org.
 AMANDA provides the amtapetype utility to calculate the size of a tape, to
-generate a tapetype entry for your amanda.conf.
+generate a "tapetype" entry for your amanda.conf.
 Specifying the appropriate tape device, but beware that it may take many hours
 to run (it fills the tape twice ...). Make sure you do not use hardware
 compression, even if you plan to use hardware compression in the future.

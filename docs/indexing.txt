@@ -55,7 +55,7 @@ used.
 
 The database consists of a directory tree of the format: $host/$disk/
 $date_$level.gz
-The host and disk are those listed in the disklist file, the $host/$disk/ is
+The host and disk are those listed in the disklist file, the "$host/$disk/" is
 like the curinfo database, '/' are changed for '_'. There is an index file for
 each dump, the name of the file is made of the date and the level, they will
 have the .gz suffix if they are compressed with gzip.
@@ -80,14 +80,14 @@ FTP client. The file system contains all files backed up on the specified date,
 or before that date, back to the last level 0 backup. Only the most recent
 version of any file is shown.
 As the file system is traversed, the user can add and delete files to a
-shopping list, and print the list out.
+"shopping list", and print the list out.
 
  File Extraction
 
 When a user has built up a list of files to extract, they can be extracted by
 issuing the command extract within amrecover.
 Files are extracted by the following, for each different tape needed.
-As part of the installation, a tape server daemon amidxtaped is installed on
+As part of the installation, a "tape server" daemon amidxtaped is installed on
 one or more designated hosts, which have an attached tape drive. This is used
 to read the tapes. See the config files for the options for specifying a
 default.
@@ -155,10 +155,10 @@ Table 4.1. Protocol between amindexd and amrecover
      which is stored local to the client, for later recovery by amgetidx (which
      is called by amdump).
   3. AMANDA saves all the index files under a directory specified by
-     indexdir in amanda.conf. You need to create this directory by hand. It
+     "indexdir" in amanda.conf. You need to create this directory by hand. It
      needs to have read/write permissions set for the user you defined to run
      AMANDA.
-     If you are using the text database option you may set indexdir and
+     If you are using the "text database" option you may set indexdir and
      infofile to be the same directory.
   4. The index browser, amrecover, currently gets installed as part of the
      client software. Its location may not be appropriate for your system and

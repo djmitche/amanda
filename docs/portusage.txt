@@ -44,9 +44,9 @@ When a process on the tape server wants to talk to a client, it creates a UDP
 socket and binds it to a port on its side, then sends the packet to the well
 known amandad service port on the client. Because security information is
 passed, the port bound on the connecting (tape server) side must be privileged
-(less than 1024). This proves to amandad whoever is connecting is running as
+(less than 1024). This "proves" to amandad whoever is connecting is running as
 root, and therefore is trustworthy (there are all sorts of issues with the
-validity of this trust that are beyond the scope of this document).
+validity of this "trust" that are beyond the scope of this document).
 A similar sequence of events happens when amrecover on a client wants to
 contact amindexd or amidxtaped on the tape server. The port that amrecover
 binds to its TCP socket must be privileged, which is one of the reasons it must
@@ -109,7 +109,7 @@ If a user TCP port range (--with-tcpportrange) is defined, it needs to be
 unprivileged because sendbackup is not running as root.
 A user TCP port range needs to be large enough for three ports (data, message
 and index) times the number of simultaneous backups the client may be asked to
-perform (maxdumps in amanda.conf).
+perform ("maxdumps" in amanda.conf).
 The stream_client() routine is used in two ways:
 
 * dumper to connect to taper for a direct to tape operation. Except for making
@@ -124,7 +124,7 @@ If a user TCP port range (--with-tcpportrange) is defined, it needs to be
 unprivileged because dumper is not running as root (at this point).
 A user TCP port range needs to be large enough for two ports (one to sendbackup
 on the client, and possibly one to taper) times the number of dumpers
-(inparallel in amanda.conf).
+("inparallel" in amanda.conf).
 The stream_client_privileged() routine is used in one way:
 
 * amrecover to connect to amindexd and amidxtaped.
@@ -160,12 +160,12 @@ connection be a privileged port, so a user UDP port range (--with-udpportrange)
 must specify privileged port numbers.
 A user UDP port range must allow for one port for each client that might be
 contacted at a time. planner and amcheck use a single socket to contact all
-their clients, but there may be multiple dumpers (based on inparallel in
+their clients, but there may be multiple dumpers (based on "inparallel" in
 amanda.conf) and each needs its own port.
 
  User UDP port range (--with-udpportrange) summary
 
-Allocate at least inparallel many ports in the privileged (1023 or smaller)
+Allocate at least "inparallel" many ports in the privileged (1023 or smaller)
 range. Stay away from other well known ports (e.g. in your /etc/services file)
 or account for their potential use by making the portrange larger.
 
@@ -179,9 +179,9 @@ Firewalls and AMANDA should be pretty easy to set up. Just pick user UDP and
 TCP port ranges, build AMANDA with them (--with-udpportrange and --with-
 tcpportrange) and let them through the firewall. You also need to let the well
 known AMANDA ports through, just as you would ftp or telnet.
-NAT has other issues. If the AMANDA client is outside NAT, there should not
+NAT has other issues. If the AMANDA client is "outside" NAT, there should not
 be a problem for backups. Sendbackup will set up the ports and tell dumper what
-they are. Then dumper will connect to them from inside and NAT should leave
+they are. Then dumper will connect to them from "inside" and NAT should leave
 that alone, although it doesn't really matter since sendbackup does not care
 who connects to it (other than it not be ftp port 20).
 If the AMANDA tape server is outside, NAT will have to be told how to translate

@@ -50,18 +50,18 @@ document.
  Reason for starting this list.
 
 Jon LaBadie once wrote to me:
-I think a good what is AMANDA, how is it different, can I use it in my
-setup, why is it so different kinda document is needed to stop the constant
-how do I put 10 dumps on one tape, or how do I make AMANDA do full backups
-on saturday and incrementals ... queries off the list :))
+" I think a good "what is AMANDA", "how is it different", "can I use it in my
+setup", "why is it so different" kinda document is needed to stop the constant
+"how do I put 10 dumps on one tape", or "how do I make AMANDA do full backups
+on saturday and incrementals ..." queries off the list :)) "
 Stefan G. Weichinger
 
  the DLE-question
 
 A posting from the amanda-users mailing-list (mailto://amanda-users@amanda.org)
 asked:
-What, please, is a DLE? May it mean: Down Loadable Entity ??? Stupid. Do
-Less Errors ??? Stupid again. Hmmmm ...
+"What, please, is a "DLE"? May it mean: Down Loadable Entity ??? Stupid. Do
+Less Errors ??? Stupid again. Hmmmm ..."
 People consulting the amanda-users-mailinglist for the first time often get
 confused by the use of the abbreviation DLE.
 It has become very common for regular mailinglist-participants to use the
@@ -81,12 +81,12 @@ People get something like:
   >ERROR: localhost: [access as amanda not allowed from
   >amanda@localhost.localdomain] amandahostsauth failed
 
-and ask Why?
+and ask "Why?"
 SHORT ANSWER:
-DO NOT USE localhost as host entry in your disklist entries (aka DLEs). Use
+DO NOT USE "localhost" as host entry in your disklist entries (aka DLEs). Use
 the FQDN (Fully Qualified Domain Name) instead.
 In AMANDA-releases newer than 2004-03-22 there is a WARNING issued when you use
-something like localhost or localhost.localdomain.net in your disklist.
+something like "localhost" or localhost.localdomain.net in your disklist.
 Example (applies to Linux, syntax may be different on other systems):
 
   $ hostname --fqdn
@@ -99,7 +99,7 @@ Example (applies to Linux, syntax may be different on other systems):
 GOOD ANSWER (provided by John R. Jackson):
 There are (at least) two things going on here and they should have their own
 question/answer.
-Completely independent of the localhost vs. FQDN issue are the people who get
+Completely independent of the "localhost" vs. FQDN issue are the people who get
 this message because of any number of problems. Let me reword the error and
 then give some typical goofs:
 
@@ -108,31 +108,31 @@ then give some typical goofs:
   amandahostsauth failed
 
 (error message reformatted here ...)
-The first thing to understand is how to read this message. When it says access
-as amanda ... it is telling you the client side ( amandad) is running as user
-amanda. The ... from amanda@some.amanda.server part tells you the server
-trying to connect is some.amanda.server and the AMANDA command (e.g. amcheck
-or amdump) is running as user amanda.
+The first thing to understand is how to read this message. When it says "access
+as amanda ..." it is telling you the client side ( amandad) is running as user
+"amanda". The "... from amanda@some.amanda.server" part tells you the server
+trying to connect is "some.amanda.server" and the AMANDA command (e.g. amcheck
+or amdump) is running as user "amanda".
 The user names are typically the same on both client and server, but some
 situations use different names and it is important to understand which is
-which. For instance, amrecover connects as root (... from
-root@some.amanda.server) regardless of what the usual AMANDA user is.
+which. For instance, amrecover connects as root ("... from
+root@some.amanda.server") regardless of what the usual AMANDA user is.
 Potential problems:
 
-* some.server is not spelled exactly that way in ~amanda/.amandahosts. A
+* "some.server" is not spelled exactly that way in ~amanda/.amandahosts. A
   typical error is to not use a fully qualified name (although simple typos
   happen as well). For instance, this line:
 
 
   some	amanda
 
-does not match some.amanda.server even though both names may be equivalent.
+does not match "some.amanda.server" even though both names may be equivalent.
 When AMANDA looks up the host name in .amandahosts, it uses the exact name it
 lists in the message. It does not try to look up abbreviations.
 The only exception to this is that the lookup is case insensitive.
 
 * The user name listed in ~amanda/.amandahosts is not the one trying to connect
-  from the server. In particular, watch out for the root case listed above
+  from the server. In particular, watch out for the "root" case listed above
   for amrecover. The AMANDA server typically needs lines like this in its
   .amandahosts file:
 
@@ -140,50 +140,50 @@ The only exception to this is that the lookup is case insensitive.
   some.amanda.client	root
 
 
-* There are permission problems on the client preventing user amanda from
+* There are permission problems on the client preventing user "amanda" from
   reading its own .amandahosts file. Make sure the file itself is readable to
-  the user amanda and all the parent directories down to it can be traversed.
+  the user "amanda" and all the parent directories down to it can be traversed.
   A simple test is:
 
 
   su - amanda -c "cat ~amanda/.amandahosts"
 
 Now, back to the localhost issue. This:
-Do NOT USE localhost as host entry in your disklist entries (aka DLEs). Use
+Do NOT USE "localhost" as host entry in your disklist entries (aka DLEs). Use
 the FQDN (Fully Qualified Domain Name) instead.
 is not really an answer, more of a command :-).
-There are a couple of reasons to NOT use localhost. First is amrecover will
+There are a couple of reasons to NOT use "localhost". First is amrecover will
 not work as expected. When it connects to the server (even though they are the
 same machine), the server will look for the matching DLE's using the real host
-name, not localhost. The sethost command inside amrecover can fix this, but
+name, not "localhost". The sethost command inside amrecover can "fix" this, but
 why not just set it up right in the first place?
-Another reason to not use localhost is because it helps with future changes.
+Another reason to not use "localhost" is because it helps with future changes.
 As the AMANDA configuration grows, it's not at all unusual to take a server and
-make it a client of a new, larger, server. But now localhost does not point
+make it a client of a new, larger, server. But now "localhost" does not point
 to the same machine it used to. If the FQDN of the machine had been used all
 along, this upgrade would have been much easier.
-There is also no performance reason (any more) to use localhost instead of
+There is also no performance reason (any more) to use "localhost" instead of
 the FQDN. Modern OS network stacks know to shortstop packets destined for the
 local machine and never let them hit the wire. Yes, I'm old enough to remember
 when they didn't :-).
 
  the friday-tape-question
 
-How do I make AMANDA do full backups on Saturday and incrementals ... ?
-My backup screwed up on tuesday and now it keeps asking for the tuesday tape
-even though it is wednesday!
+"How do I make AMANDA do full backups on Saturday and incrementals ... ?"
+"My backup screwed up on tuesday and now it keeps asking for the tuesday tape
+even though it is wednesday!"
 ANSWER:
 The short answer is: You can't.
 The longer answer is: You can. But you should not.
-The reason: AMANDA is designed to schedule your backups. Let her do it.
+The reason: AMANDA is designed to schedule your backups. Let "her" do it.
 When you want to make the best use of AMANDA, you have to let go the classic
 schedule where one used to have one tape dedicated to each day of the week, and
 one for the friday.
 The main difference in concept is this:
 In the classic backup scheme you said:
-I want to have incremental backups from Mo-Th and a full backup on Fr.
+"I want to have incremental backups from Mo-Th and a full backup on Fr."
 Using AMANDA you say:
-I want to have at least one full backup in 5 days.
+"I want to have at least one full backup in 5 days."
 So you don't have to specify exactly WHEN the full backup should happen. You
 just tell AMANDA some goals it should reach and let it work out the details.
 There are several advantages in this:
@@ -207,7 +207,7 @@ If you set the goals in a reasonable way, AMANDA will just do the rest.
 
  the multiple-dumps-question
 
-How do I put 10 dumps on one tape?
+"How do I put 10 dumps on one tape?"
 ANSWER (provided by Jon LaBadie):
 Use another backup scheduler.
 This question is most often asked by individual computer users as a cost
@@ -221,12 +221,12 @@ loss of, or damage to, a single tape would be the loss of many days worth of
 dumps. That is too much to chance.
 Thus, AMANDA was designed to never overwrite a non-AMANDA tape, nor an AMANDA
 tape from a different configuration, nor an AMANDA tape from the current
-configuration that is still active, i.e. has backups on the tape more recent
+configuration that is still "active", i.e. has backups on the tape more recent
 than the dumpcycle length.
 If you still feel you want AMANDA to put multiple dumps on a single tape, there
 is a crude way to accomplish your goal.
-But first ask yourself, If my data is worth so little that I can not afford a
-few more tapes, why am I backing it up?
+But first ask yourself, "If my data is worth so little that I can not afford a
+few more tapes, why am I backing it up?"
 
 Note
 
@@ -241,7 +241,7 @@ tape. I.e. if you want a weeks' worth of backups on a single tape, leave the
 tape out for a week. Then stick it in and run amflush.
 (Better make sure you have sufficient disk space on your holding disk.)
 Note, a slight variant of this is to have the parameter autoflush in
-amanda.conf set to yes. (Users of older AMANDA-releases should check out if
+amanda.conf set to "yes". (Users of older AMANDA-releases should check out if
 their version already supports that parameter.)
 Then after several dumps have collected in the holding disk, put the tape in
 before that day's amdump is scheduled. amdump will both flush the holding disk
@@ -249,10 +249,10 @@ to tape and add the regularly scheduled dump.
 
  the mailing-list-question
 
-How do i get off this damn mailing list?
+"How do i get off this damn mailing list?"
 ANSWER:
 Frequent users of the AMANDA-users-mailing-list get mails like containing
-unsubscribe
+"unsubscribe"
 as people are trying desperately to get off the list.
 Everyone that subscribes to AMANDA-users gets a mail in which the following is
 contained:
@@ -267,7 +267,7 @@ to <amanda-users@amanda.org> !
 
  the distro-question
 
-Where can i get binary distributions of AMANDA?
+"Where can i get binary distributions of AMANDA?"
 ANSWER:
 It is well known that various distributions of Linux contain precompiled
 packages of AMANDA-servers and -clients.
@@ -281,7 +281,7 @@ much more improved understanding of the way AMANDA does backups.
 
  the index-question
 
-Why does amrecover say there are no index files?
+"Why does amrecover say there are no index files?"
 ANSWER:
 It is very likely that AMANDA is right about that. Check your dumptypes and
 make sure they include the line:
@@ -296,12 +296,12 @@ that line was edited?
 
  the tapetype-questions
 
-amtapetype has been running for 9 days, is this normal?
-Will AMANDA work with my frozboz tape drive/library?
-Which device is my changer?
-amtapetype is broken, it says my 200GB tape only holds 65GB.
-My file marks are HUGE, 1.3MB (on a 200GB tape, i.e. about 0.05% of the total
-capacity, or expressed another way, maybe 2 mm of a 125000 mm tape ...)
+" amtapetype has been running for 9 days, is this normal?"
+"Will AMANDA work with my frozboz tape drive/library?"
+"Which device is my changer?"
+" amtapetype is broken, it says my 200GB tape only holds 65GB."
+"My file marks are HUGE, 1.3MB (on a 200GB tape, i.e. about 0.05% of the total
+capacity, or expressed another way, maybe 2 mm of a 125000 mm tape ...)"
 ANSWER:
 It is crucial to tell AMANDA the truth about the tape-device(s) you want to
 use. Given the wrong values, AMANDA can't calculate proper dumpsizes, free
@@ -337,16 +337,16 @@ tape marks every 10 MBytes (by default) which forces the drive to flush its
 internal buffers and slows the process down. You can shorten this by giving
 amtapetype a better estimate of the expected capacity:
 $ amtapetype -e 100g -f /dev/nst0
-This prepares amtapetype to expect a tape with 100 GB capacity.
+This "prepares" amtapetype to expect a tape with 100 GB capacity.
 If amtapetype really runs for 9 days, you can be pretty sure there is something
 wrong with your approach.
 And for the filemark-size: Just read the question again.
 
  the size-question
 
-How do I back up a partition that won't fit on a tape?
+"How do I back up a partition that won't fit on a tape?"
 aka
-Can AMANDA span one file over multiple tapes?
+"Can AMANDA span one file over multiple tapes?"
 ANSWER:
 There are two basic rules when it comes to these things:
 
@@ -404,10 +404,10 @@ DLE-spanning might be supported by AMANDA in a future release.
 
  the GUI-question
 
-Is anyone working on a GUI for AMANDA?
+"Is anyone working on a GUI for AMANDA?"
 ANSWER:
 Actually there are people working on GUIs for AMANDA. Aside from that the
-question really is: Does anyone need a GUI for AMANDA?
+question really is: "Does anyone need a GUI for AMANDA?"
 Given the fact that backups tend to be run at night while people tend to sleep,
 who would need a fancy GUI showing 3D-backup-diagrams via X11? The only part of
 backups where GUIs maybe could add some comfort is recovery for unexperienced
@@ -415,8 +415,8 @@ users.
 
  the holding-disk question
 
-Why does it say Some dumps may have been left in the holding disk. and there
-is nothing in the holding disk?
+"Why does it say "Some dumps may have been left in the holding disk." and there
+is nothing in the holding disk?"
 ANSWER:
 The third word in the message. Some dumps MAY have been left.
 

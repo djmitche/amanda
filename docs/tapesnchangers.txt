@@ -29,7 +29,7 @@ Table of Contents
 
         Device-specific_tapechanger_script
 
-        Slot_names_and_the_current_slot
+        Slot_names_and_the_"current"_slot
 
         Operator_interface
 

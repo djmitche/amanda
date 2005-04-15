@@ -35,11 +35,11 @@ collaboration on integrating it with the other tape changers is needed.
 
  What is a RAIT?
 
-RAIT is an acronym for Redundant Array of Inexpensive Tapes, where data is
+RAIT is an acronym for "Redundant Array of Inexpensive Tapes", where data is
 striped over several tape drives, with one drive writing an exclusive-or-sum of
 the others which can be used for error recovery. Any one of the data streams
 can be lost, and the data can still be recovered.
-This means that a 3-drive RAIT set will write 2 data streams and one parity
+This means that a 3-drive RAIT set will write 2 "data" streams and one "parity"
 stream, and give you twice the capacity, twice the throughput, and the square
 of the failure rate (i.e. a 1/100 failure rate becomes 1/10,000, since a
 double-tape failure is required to lose data).
@@ -93,7 +93,7 @@ to tell AMANDA about the multiple drive set.
 
 To assist in disaster recovery (as well as changer scripts) the AMANDA package
 now also includes amdd, which is a simple dd(1) replacement which supports
-(only) the if=xxx, of=xxx, bs=nnn[kMb] skip=nnn and count=nnn
+(only) the "if=xxx", "of=xxx", "bs=nnn[kMb]" "skip=nnn" and "count=nnn"
 options, but which can read and write RAIT tapesets.
 Using amdd and your usual AMANDA unpack instructions will suffice for disaster
 recovery from RAIT tape-sets.

@@ -219,11 +219,11 @@ AMANDA programs (see section 1.2.H below).
      Make sure that you specify the *no-rewind* version of the tape device in
      your amanda.conf file. This is a frequently encountered problem for new
      sites.
-     Note that you might want to temporarily set the option no-record in all
+     Note that you might want to temporarily set the option "no-record" in all
      your dumptypes when first installing AMANDA if you'd like to run tests of
      AMANDA in parallel with your existing dump scheme. AMANDA will then run
      but will not interfere with your current dumpdates. However, you don't
-     want to run with no-record under normal operations.
+     want to run with "no-record" under normal operations.
   b. Put AMANDA into your crontab. Here's a sample:
 
        0 16 * * 1-5 /usr/local/bin/amcheck -m confname

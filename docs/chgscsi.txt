@@ -64,8 +64,8 @@ Note that Quantum/ATL's L-series changers follow the SCSI command set, and do
 not use any proprietary commands. Thus, it was fairly simple to make this work.
 I had to install AMANDA --with-suffixes and setup my server's client side of
 things using AMANDA-2.4.2p2 --with-suffixes.
-Please note that my usage of barcode and barcode reader throughout this
-document really refers to physical tape identification system. for example:
+Please note that my usage of "barcode" and "barcode reader" throughout this
+document really refers to "physical tape identification system". for example:
 the EEPROM in the AIT cartridge.
 
  Command line options
@@ -158,34 +158,34 @@ chg-scsi doesn't know about your changer explicitly, it will default to a
 default changer. the default changer has no barcode reader.
 In a patch I plan to post, I have added a generic changer that does use a
 barcode. set "changerident" to "genericbarcode" to use this.
-sleep number of seconds for chg-scsi to wait for a tape drive ready command
+"sleep" number of seconds for chg-scsi to wait for a "tape drive ready" command
 after loading a new tape. Mine is 140 as I have a DLT tape drive, and my tape
 drive manual reports a max of 133 seconds to be ready.
-config this is a header telling chg-scsi that all values following, up to the
-next config line apply to this drive number. It is this number that is
+"config" this is a header telling chg-scsi that all values following, up to the
+next "config" line apply to this drive number. It is this number that is
 refered to in your amanda.conf file as line tapedev
-drivenum this is the tape drive number in your changer. For a single tape
+"drivenum" this is the tape drive number in your changer. For a single tape
 drive, this is zero. Mine can handle up to three, so I expect I could make this
 0, 1, or 2.
-dev the SCSI device of your tape drive. under linux, in my case it is /dev/
+"dev" the SCSI device of your tape drive. under linux, in my case it is /dev/
 nst1. This MUST be defined.
-SCSItapedev The generic SCSI device of your tape drive. this is simply the
-generic interface to the device dev above. This entry is optional. In my
+"SCSItapedev" The generic SCSI device of your tape drive. this is simply the
+generic interface to the device "dev" above. This entry is optional. In my
 case, it is /dev/sg2. If this entry exists and is legitimate, then SCSI
 commands are formed directly instead of using ioctl commands.
-startuse enduse The start and end slots of your changer. Note that these
+"startuse" "enduse" The start and end slots of your changer. Note that these
 also start with zero.
-eject chg-scsi tells the tape changer to eject. You might need to explicitly
+"eject" chg-scsi tells the tape changer to eject. You might need to explicitly
 tell the tape drive to unload first. That's what this setting is for. Have you
 ever removed a loaded VCR tape by hand?
-changerident chg-scsi will first read the changer's identification from the
-return of the SCSI inquiry command. If changerident is set in the
+"changerident" chg-scsi will first read the changer's identification from the
+return of the SCSI "inquiry" command. If changerident is set in the
 configuration file, the SCSI inquiry's value is overridden. chg-scsi will
 attempt to match the value with its built-in changertypes.
-generic is what the chg-scsi will default to genericbarcode is a hack of
+"generic" is what the chg-scsi will default to "genericbarcode" is a hack of
 mine that forces the changer's barcode reader to work. Note that if your
 changer uses a superset of the SCSI command set, this probably won't work.
-L500 is another addition of mine that will enable a quantum/atl L500 to work
+"L500" is another addition of mine that will enable a quantum/atl L500 to work
 correctly. It might even work with an L200.
 other values are (taken from the code)
 
@@ -200,16 +200,16 @@ other values are (taken from the code)
 * Quad 7 (Breece Hill)
 * DLT7000, DLT4000 (DLT Tape)
 
-debuglevel setting this to 9:0 is very informative.
-statfile stores which slot that the tape in the drive came from
-labelfile binary file that stores the tape header and barcode information
+"debuglevel" setting this to "9:0" is very informative.
+"statfile" stores which "slot" that the tape in the drive came from
+"labelfile" binary file that stores the tape header and barcode information
 cleanmax cleancart cleanfile I have my changer set to autoclean, and the slot
 the cleaning cartridge is in is not available for any other use.
 
  AMANDA's actual usage of chg-scsi
 
-this should be brief: AMANDA really only issues slot next type commands.
-Currently AMANDA doesn't ask chg-scsi to load tape x with label Daily_set023.
+this should be brief: AMANDA really only issues "slot next" type commands.
+Currently AMANDA doesn't ask chg-scsi to load "tape x with label Daily_set023".
 the chg-scsi mechanism is there for use, and functions quite well for the user
 to load a particular tape. I understand they (the AMANDA team) are working on
 this.
@@ -231,16 +231,16 @@ run "chg-scsi -scan" from your AMANDA configuration directory I get: name /dev/
 sg0 Tape Count 1 name /dev/sg1 Changer Count 2 name /dev/sg2 Tape Count 3
 I set SCSItapedev to /dev/sg0 to test with, then ran chg-scsi -info. Check the
 chg-scsi debug file for tapeidentification details. This is where I discoverd
-that sg0 was not the correct tape!
+that "sg0" was not the correct tape!
 set SCSItapedev to "/dev/<generic device>"
-if you have no barcode, try changerident generic if you have a barcode reader
-try changerident genericbarcode
+if you have no barcode, try "changerident generic" if you have a barcode reader
+try "changerident genericbarcode"
 
  Hacking notes
 
 My hacks are:
 
-* adding printout of emubarcode values in the debug file
+* adding printout of "emubarcode" values in the debug file
 * added dlt8000 tape drive to ChangerIO[], and SenseType[]
 * added genericbarcode to ChangerIO[], and SenseType[]
 * added L500 to ChangerIO[], and SenseType[]

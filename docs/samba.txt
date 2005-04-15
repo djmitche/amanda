@@ -97,14 +97,14 @@ fields, separated by whitespace:
 * Workgroup (optional).
 
 This file must be owned by the AMANDA-user, and disallow world access
-privileges. Blank lines are ignored. A # on a line at the start of a field
+privileges. Blank lines are ignored. A "#" on a line at the start of a field
 (including start of line) causes the rest of the line to be ignored.
 
  Example
 
-The AMANDA client software and (patched) Samba is installed on host pcserver.
-A share to be backed up called backupc is on PC thepc. The share will be
-accessed via PC user bozo and password f00bar and does not require a
+The AMANDA client software and (patched) Samba is installed on host "pcserver".
+A share to be backed up called "backupc" is on PC "thepc". The share will be
+accessed via PC user "bozo" and password "f00bar" and does not require a
 workgroup.
 The entry in the file disklist is:
 
@@ -159,20 +159,20 @@ backup was empty.
 The estimate and totals are probably a bit off since tar pads to the nearest
 512 bytes after each file (I think). Not sure how much of a problem this is.
 smbclient only supports excluding a single file from the command line, not a
-file of patterns like GNU tar. So exclude is supported from a dumptype but
-not exclude list.
+file of patterns like GNU tar. So "exclude" is supported from a dumptype but
+not "exclude list".
 
 Note
 
-Also the new option exclude append is not yet supported with smbclient.
+Also the new option "exclude append" is not yet supported with smbclient.
 
 Note
 
 Since Samba-3.0.2a smbclient supports multiple exclusion-patterns. It is one of
-the Ongoing Projects to make use of this in AMANDA. Refer to http://
+the "Ongoing Projects" to make use of this in AMANDA. Refer to http://
 www.amanda.org/ongoing.php for details.
 The size estimate calculation does not use the same method as the dump, so it
-may be inaccurate. It also does not support any type of exclusion (exclude is
+may be inaccurate. It also does not support any type of exclusion ("exclude" is
 ignored). Things are done this way because doing a simulated dump to /dev/null,
 like other dump programs, would take forever with current implementations of
 Samba.

@@ -40,7 +40,7 @@ Stefan G. Weichinger, November - December, 2003 ; minor updates in April, 2005.
 
 Introduction
 
-Since release 2.4.3 AMANDA supports the usage of a output driver called file.
+Since release 2.4.3 AMANDA supports the usage of a output driver called "file".
 See man amanda, section OUTPUT DRIVERS, for more information on its
 implementation. As the name suggests, this driver uses files as virtual (or
 file) tapes. Once created and labeled, these file tapes can be selected and
@@ -71,8 +71,8 @@ changed with the standard tape-changer-interface of the AMANDA server.
 
 This guide assumes you have setup the basic AMANDA-services as described in
 Amanda_Installation_Notes
-The configuration in this HOWTO is called daily. The file tapes are also
-called  vtapes in this document, which stands for virtual tapes.
+The configuration in this HOWTO is called "daily". The file tapes are also
+called  vtapes in this document, which stands for "virtual tapes".
 Please be sure to understand the differences between holding disks and file
 tapes. The two serve different purposes; holding disks allow for parallelism of
 multiple DLE's being backed up while file tapes are a replacement for physical
@@ -146,7 +146,7 @@ Steps
 
   3. Create a tapetype definition.
      Add a new tapetype definition similar to the following to your
-     amanda.conf. I named my definition HARD-DISK. Choose whatever name you
+     amanda.conf. I named my definition "HARD-DISK". Choose whatever name you
      consider appropriate.
 
        	define tapetype HARD-DISK {
@@ -211,15 +211,15 @@ Steps
      The parameter tpchanger tells AMANDA to use the generic tape-changer-
      script to handle the vtapes. You can think of it as a virtual tape-
      changer-device.
-     The parameter changerfile is used to give chg-disk the prefix for the
-     %s-changer, %s-clean, %s-slot files it needs. Use something like
-     changer in your config-dir. Please note that this file does NOT have to
+     The parameter changerfile is used to give chg-disk the "prefix" for the
+     "%s-changer, %s-clean, %s-slot" files it needs. Use something like
+     "changer" in your config-dir. Please note that this file does NOT have to
      exist, but it won't hurt anyway.
      The parameter tapedev tells the chg-disk-script where the root-dir for
      your vtapes is.
      In our example the vtape-files go to /amandatapes.
      To separate multiple configurations, we decided to use subdirectories
-     according to the configuration name daily.
+     according to the configuration name "daily".
 
      Note
 
@@ -274,7 +274,7 @@ Steps
        	$ touch /amandatapes/daily/info
        	
 
-     and link the first slot to the data-file (to load the vtape into the
+     and link the first slot to the data-file (to "load" the vtape into the
      first slot):
 
        	$ ln -s /amandatapes/daily/slot1 /amandatapes/daily/data
@@ -335,7 +335,7 @@ Steps
 
  Recovery
 
-Recovering files from vtapes is very similar to recovering files from a real
+Recovering files from vtapes is very similar to recovering files from a "real"
 tapechanger.
 Make sure you read the chapter Restore.
 I will simply paste a amrecover-session here (provided by JC Simonetti, author
@@ -394,7 +394,7 @@ you have to run the following in a second terminal:
 This step is necessary to load the proper tape into your virtual changer.
 Let me express this in a more general way:
 When amrecover prompts for the tape it needs to restore the files you
-requested, you have to load the tape it requests.
+requested, you have to "load" the tape it requests.
 The recommended way to do this is to use amtape. The options that make sense in
 this context are:
 
@@ -423,10 +423,10 @@ amtape will return something like:
 
 After this you can return to your amrecover-session and continue restoring your
 files.
-Please be aware of the fact reported by JC Simonetti: I have never never used
-the settape command of amrecover [with chg-disk] since there's some problems
+Please be aware of the fact reported by JC Simonetti: " I have never never used
+the "settape" command of amrecover [with chg-disk] since there's some problems
 with it (tape not loaded correctly, or impossible to change from tape to tape
-when restoring data shared accross multiple tapes...)
+when restoring data shared accross multiple tapes...) "
 -------------------------------------------------------------------------------
 
 Prev                                 Up                    Next

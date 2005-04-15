@@ -24,7 +24,7 @@ document.
 AMANDA now supports the ftape driver version 3.04d (see http://www-
 math.math.rwth-aachen.de/~LBFM/claus/ftape ). It adjusts the blocksize
 automatically to 32k and supports QIC volume tables.
-It uses only one open() call for writing backups to one tape, so the busy-
+It uses only one open() call for writing backups to one tape, so the "busy"-
 lamp of the drive will be on all the time. (With normal AMANDA code it would be
 off in pauses between two files written to tape.)
 For volume table support you have to get libvtblc first (available at ftp://
@@ -37,7 +37,7 @@ amanda.conf (configure checks for /dev/rawft[0-3], to get a guess for this
 value). Dont forget to make this device read/writeable for your backup user.
 For compilation you need the header files from ftape 3.04d in your include
 tree.
-The volumetable of a tape amlabeled TEST-VOL2 with 4 backups on it would look
+The volumetable of a tape "amlabeled" TEST-VOL2 with 4 backups on it would look
 like (listed with vtblc utility from ftape):
 
   prompt: vtblc
@@ -88,7 +88,7 @@ with an internal Iomega Ditto 3200 (TR-3) drive attached to an Iomega Ditto
 Dash controller (at 2000 Kbps). My tapetype follows:
 
   define tapetype DITTO-TR3 {
-      comment Iomega DITTO 3200 Travan 3 tape drives
+      comment "Iomega DITTO 3200 Travan 3 tape drives"
       length 1500 mbytes          #
       filemark 29 kbytes          # ???
       speed 256 kbytes            # = 2000 Kbit/s ?
