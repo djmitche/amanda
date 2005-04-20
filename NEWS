@@ -1,4 +1,4 @@
-Change in release 2.4.5b2
+Change in release 2.4.5
 
 * new displayunit global option to select the unit use to display number
   k=kilo, m=mega, g=giga, t=tera.

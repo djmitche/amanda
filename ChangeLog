@@ -1,5 +1,11 @@
 2005-04-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* Amanda 2.4.5 released.
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.4.5).
+	* NEWS: Update for 2.4.5.
+
+2005-04-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* docs/*: Update from latest xml-docs.
 
 2005-04-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
