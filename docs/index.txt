@@ -817,6 +817,8 @@ List of Tables
 
   4.1. Protocol_between_amindexd_and_amrecover
 
+  19.1. Operating_Systems_Running_on_AMANDA_Server_Hosts
+
 List of Examples
 
 

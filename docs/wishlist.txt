@@ -48,7 +48,7 @@ Oct. 2004.
   way, I think. Samba is working well, is documented and developed further, so
   I think this will be a stable path to go and support. And people don't need
   to compile/install anything on their Win-boxes, just add a user and shares
-  ...
+  ... opinions welcome.
 
 
 * Samba: Samba should be treated as a different backup program, not as GNUTAR,
@@ -74,7 +74,7 @@ Oct. 2004.
 
 
 * image span / multiple tape. John Stange <building@nap.edu> is working on it.
-  His patch could go into a development-branch.
+  His patch will very likely go into a development-branch.
 
 
 * retry failed backups in a single run. If backup fails because of active
@@ -264,8 +264,8 @@ Oct. 2004.
   The xml-docs need more formatting and reviewing.
   The tapetypes from the FOM should go into the XML-docs.
   The docs would benefit from adding some illustrations.
-  The WISHLIST should get shortened.
 
+The WISHLIST should get shortened.
 -------------------------------------------------------------------------------
 
 Prev                                   Up                                Next

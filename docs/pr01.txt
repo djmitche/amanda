@@ -29,7 +29,7 @@ Planned:
 * addition of more chapters ...
 
 Feel free to contact me with corrections, additions or updates. Thank you.
-Stefan G. Weichinger, AMANDA Core Team, March 2005.
+Stefan G. Weichinger, for the AMANDA Core Team, April 2005.
 <sgw@amanda.org>
 -------------------------------------------------------------------------------
 

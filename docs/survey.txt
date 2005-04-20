@@ -148,7 +148,7 @@ AMANDA servers
 |6_____|1_|
 |7_____|1_|
 
-<title>Operating Systems Running on AMANDA Server Hosts</title>
+Table 19.1. Operating Systems Running on AMANDA Server Hosts
  _____________________________________
 |FreeBSD:_______|Total_10,_including__|
 |2______________|4-STABLE_____________|

@@ -465,8 +465,8 @@ amcleanup) as the AMANDA user, not as root.
  QUESTION: Why does AMANDA sometimes promote full dumps?
 
 ANSWER: To spread the full dumps along the dumpcycle, so that daily runs take
-roughtly the same amount of tape and time. As soon as you start using AMANDA,
-it will run full dumps of all filesystems. Then, on the following runs, it will
+roughly the same amount of tape and time. As soon as you start using AMANDA, it
+will run full dumps of all filesystems. Then, on the following runs, it will
 promote some backups, so as to adjust the balance. After one or two dumpcycles,
 it should stop promoting dumps. You can see how well it is doing with amadmin
 <conf> balance. If you find the results surprising, you may want to adjust

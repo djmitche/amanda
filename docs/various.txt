@@ -14,7 +14,7 @@ Additional information about AMANDA
 Here you find various other documents like the AMANDA FAQ, the Top Ten
 Questions and the AMANDA-Wishlist. You can also find the last AMANDA-Survey in
 here (although it still needs formatting ... sorry, Jon ...). The latest
-addition is the famous AMANDA-chapter by John R. Jackson.
+addition is the "famous" AMANDA-chapter by John R. Jackson.
 Table of Contents
 
 
