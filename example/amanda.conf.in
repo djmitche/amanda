@@ -350,6 +350,17 @@ define tapetype MIMSY-MEGATAPE {
 #		  Default: [compress client fast]
 #   dumpcycle	- set the number of days in the dump cycle, ie, set how often a
 #		  full dump should be performed.  Default: from DUMPCYCLE above
+#   estimate      Determine the way AMANDA does it's estimate. 
+#		  "client"	- Use the same program as the dumping program,
+#				this is the most accurate way to do estimates, 
+#				but it can take a long time.
+#		  "calcsize"	- Use a faster program to do estimates, but the
+#		  		result is less accurate.
+#		  "server"	- Use only statistics from the previous run to 
+#				give an estimate, 
+#				it takes only a few seconds but the result is not 
+#				accurate if your disk usage changes from day to day.
+#		  Default: [client]
 #   exclude	- specify files and directories to be excluded from the dump.
 #		  Useful with gnutar only; silently ignored by dump and samba.
 #		  Valid values are:
