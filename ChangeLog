@@ -1,3 +1,14 @@
+2005-05-05  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/rsh-security.c (net_read_fillbuf): Read only a packet,
+	  nothing more.
+	* common-src/ssh-security.c (net_read_fillbuf): Read only a packet,
+	  nothing more.
+	* common-src/rsh-security.c (conn_put): Don't kill the process, only do
+	  a wait with WNOHANG.
+	* common-src/ssh-security.c (conn_put): Don't kill the process, only do
+	  a wait with WNOHANG.
+
 2005-04-14  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* changer-src/chg-zd-mtx.sh.in: Improve handling of

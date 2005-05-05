@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.12 2004/03/09 19:37:05 martinea Exp $
+ * $Id: rsh-security.c,v 1.13 2005/05/05 17:38:59 martinea Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -223,7 +223,7 @@ static void conn_read_cancel P((struct rsh_conn *));
 static void conn_read_callback P((void *));
 static int net_writev P((int, struct iovec *, int));
 static ssize_t net_read P((struct rsh_conn *, void *, size_t, int));
-static int net_read_fillbuf P((struct rsh_conn *, int));
+static int net_read_fillbuf P((struct rsh_conn *, int, int));
 static void parse_pkt P((pkt_t *, const void *, size_t));
 
 
@@ -418,8 +418,7 @@ conn_put(rc)
     if (rc->write != -1)
 	aclose(rc->write);
     if (rc->pid != -1) {
-	kill(rc->pid, SIGTERM);
-	waitpid(rc->pid, &status, 0);
+	waitpid(rc->pid, &status, WNOHANG);
     }
     if (rc->ev_read != NULL)
 	event_release(rc->ev_read);
@@ -1163,7 +1162,7 @@ net_read(rc, vbuf, origsize, timeout)
 
     while (size > 0) {
 	if (rc->readbuf.left == 0) {
-	    if (net_read_fillbuf(rc, timeout) < 0)
+	    if (net_read_fillbuf(rc, timeout, size) < 0)
 		return (-1);
 	    if (rc->readbuf.size == 0)
 		return (0);
@@ -1183,12 +1182,14 @@ net_read(rc, vbuf, origsize, timeout)
  * net_read likes to do a lot of little reads.  Buffer it.
  */
 static int
-net_read_fillbuf(rc, timeout)
+net_read_fillbuf(rc, timeout, size)
     struct rsh_conn *rc;
     int timeout;
+    int size;
 {
     fd_set readfds;
     struct timeval tv;
+    if(size > sizeof(rc->readbuf.buf)) size = sizeof(rc->readbuf.buf);
 
     FD_ZERO(&readfds);
     FD_SET(rc->read, &readfds);
@@ -1208,8 +1209,7 @@ net_read_fillbuf(rc, timeout)
 	break;
     }
     rc->readbuf.left = 0;
-    rc->readbuf.size = read(rc->read, rc->readbuf.buf,
-	sizeof(rc->readbuf.buf));
+    rc->readbuf.size = read(rc->read, rc->readbuf.buf, size);
     if (rc->readbuf.size < 0)
 	return (-1);
     rc->readbuf.left = rc->readbuf.size;

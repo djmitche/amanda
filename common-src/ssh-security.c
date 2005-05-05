@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.1 2004/03/16 19:09:39 martinea Exp $
+ * $Id: ssh-security.c,v 1.2 2005/05/05 17:39:00 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -223,7 +223,7 @@ static void conn_read_cancel P((struct ssh_conn *));
 static void conn_read_callback P((void *));
 static int net_writev P((int, struct iovec *, int));
 static ssize_t net_read P((struct ssh_conn *, void *, size_t, int));
-static int net_read_fillbuf P((struct ssh_conn *, int));
+static int net_read_fillbuf P((struct ssh_conn *, int, int));
 static void parse_pkt P((pkt_t *, const void *, size_t));
 
 
@@ -418,8 +418,7 @@ conn_put(rc)
     if (rc->write != -1)
 	aclose(rc->write);
     if (rc->pid != -1) {
-	kill(rc->pid, SIGTERM);
-	waitpid(rc->pid, &status, 0);
+	waitpid(rc->pid, &status, WNOHANG);
     }
     if (rc->ev_read != NULL)
 	event_release(rc->ev_read);
@@ -1161,12 +1160,18 @@ net_read(rc, vbuf, origsize, timeout)
     int nread;
     size_t size = origsize;
 
+    sshprintf(("%s: ssh: net_read: begin %d\n", debug_prefix_time(NULL), origsize));
     while (size > 0) {
+	sshprintf(("%s: ssh: net_read: while %d\n", debug_prefix_time(NULL), size));
 	if (rc->readbuf.left == 0) {
-	    if (net_read_fillbuf(rc, timeout) < 0)
+	    if (net_read_fillbuf(rc, timeout, size) < 0) {
+    		sshprintf(("%s: ssh: net_read: end retrun(-1)\n", debug_prefix_time(NULL)));
 		return (-1);
-	    if (rc->readbuf.size == 0)
+	    }
+	    if (rc->readbuf.size == 0) {
+    		sshprintf(("%s: ssh: net_read: end retrun(0)\n", debug_prefix_time(NULL)));
 		return (0);
+	    }
 	}
 	nread = min(rc->readbuf.left, size);
 	off = rc->readbuf.buf + rc->readbuf.size - rc->readbuf.left;
@@ -1176,6 +1181,7 @@ net_read(rc, vbuf, origsize, timeout)
 	size -= nread;
 	rc->readbuf.left -= nread;
     }
+    sshprintf(("%s: ssh: net_read: end %d\n", debug_prefix_time(NULL), origsize));
     return ((ssize_t)origsize);
 }
 
@@ -1183,13 +1189,16 @@ net_read(rc, vbuf, origsize, timeout)
  * net_read likes to do a lot of little reads.  Buffer it.
  */
 static int
-net_read_fillbuf(rc, timeout)
+net_read_fillbuf(rc, timeout, size)
     struct ssh_conn *rc;
     int timeout;
+    int size;
 {
     fd_set readfds;
     struct timeval tv;
+    if(size > sizeof(rc->readbuf.buf)) size = sizeof(rc->readbuf.buf);
 
+    sshprintf(("%s: ssh: net_read_fillbuf: begin\n", debug_prefix_time(NULL)));
     FD_ZERO(&readfds);
     FD_SET(rc->read, &readfds);
     tv.tv_sec = timeout;
@@ -1199,20 +1208,23 @@ net_read_fillbuf(rc, timeout)
 	errno = ETIMEDOUT;
 	/* FALLTHROUGH */
     case -1:
+	sshprintf(("%s: ssh: net_read_fillbuf: case -1\n", debug_prefix_time(NULL)));
 	return (-1);
     case 1:
+	sshprintf(("%s: ssh: net_read_fillbuf: case 1\n", debug_prefix_time(NULL)));
 	assert(FD_ISSET(rc->read, &readfds));
 	break;
     default:
+	sshprintf(("%s: ssh: net_read_fillbuf: case default\n", debug_prefix_time(NULL)));
 	assert(0);
 	break;
     }
     rc->readbuf.left = 0;
-    rc->readbuf.size = read(rc->read, rc->readbuf.buf,
-	sizeof(rc->readbuf.buf));
+    rc->readbuf.size = read(rc->read, rc->readbuf.buf, size);
     if (rc->readbuf.size < 0)
 	return (-1);
     rc->readbuf.left = rc->readbuf.size;
+    sshprintf(("%s: ssh: net_read_fillbuf: end %d\n", debug_prefix_time(NULL),rc->readbuf.size));
     return (0);
 }
 
