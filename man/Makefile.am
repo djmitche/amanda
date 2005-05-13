@@ -6,7 +6,7 @@ if WANT_AMPLOT
 AMPLOT_MAN_PAGES = amplot.8
 endif
 
-COMMON_MAN_PAGES = amanda.8
+COMMON_MAN_PAGES = amanda.8 amanda.conf.5
 
 if WANT_SERVER
 SERVER_MAN_PAGES = amadmin.8 \
