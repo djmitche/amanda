@@ -1,5 +1,9 @@
 2005-05-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* example/amanda.conf.in: Update from 2.4.5.
+
+2005-05-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* docs/*: New documentation from xml-docs.
 	* docs/Makefile.am (pkgdata_DATA): Update for new files.
 

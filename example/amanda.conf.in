@@ -32,6 +32,25 @@ dumporder "sssS"	# specify the priority order of each dumper
 			#   B -> biggest bandwitdh
 			# try "BTBTBTBTBTBT" if you are not holding
 			# disk constrained
+
+taperalgo first		# The algorithm used to choose which dump image to send
+			# to the taper.
+
+			# Possible values: [first|firstfit|largest|largestfit|smallest|last]
+			# Default: first. 
+
+			# first		First in - first out.
+			# firstfit 	The first dump image that will fit on the current tape.
+			# largest 	The largest dump image.
+			# largestfit 	The largest dump image that will fit on the current tape.
+			# smallest 	The smallest dump image.
+			# last 		Last in - first out.
+
+displayunit "k"		# Possible values: "k|m|g|t"
+			# Default: k. 
+			# The unit used to print many numbers.
+			# k=kilo, m=mega, g=giga, t=tera
+			
 netusage  600 Kbps	# maximum net bandwidth for Amanda, in KB per sec
 
 dumpcycle 4 weeks	# the number of days in the normal dump cycle
@@ -331,6 +350,17 @@ define tapetype MIMSY-MEGATAPE {
 #		  Default: [compress client fast]
 #   dumpcycle	- set the number of days in the dump cycle, ie, set how often a
 #		  full dump should be performed.  Default: from DUMPCYCLE above
+#   estimate      Determine the way AMANDA does it's estimate. 
+#		  "client"	- Use the same program as the dumping program,
+#				this is the most accurate way to do estimates, 
+#				but it can take a long time.
+#		  "calcsize"	- Use a faster program to do estimates, but the
+#		  		result is less accurate.
+#		  "server"	- Use only statistics from the previous run to 
+#				give an estimate, 
+#				it takes only a few seconds but the result is not 
+#				accurate if your disk usage changes from day to day.
+#		  Default: [client]
 #   exclude	- specify files and directories to be excluded from the dump.
 #		  Useful with gnutar only; silently ignored by dump and samba.
 #		  Valid values are:
