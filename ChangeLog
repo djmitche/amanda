@@ -1,5 +1,10 @@
 2005-05-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* docs/*: New documentation from xml-docs.
+	* docs/Makefile.am (pkgdata_DATA): Update for new files.
+
+2005-05-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* man/Makefile.am (COMMON_MAN_PAGES): Add amanda.conf.5.
 
 2005-05-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>

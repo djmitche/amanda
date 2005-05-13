@@ -1,0 +1,27 @@
+
+                           amverifyrun
+Prev  Chapter 35. The AMANDA Manual Pages.  Next
+
+-------------------------------------------------------------------------------
+
+Name
+
+amverifyrun  check the tapes written by the last AMANDA run
+
+Synopsis
+
+amverifyrun config
+
+DESCRIPTION
+
+Amverifyrun read the log from the last AMANDA run to find the slot of the first
+tape used and the number of tapes used. It call amverify with these argument.
+
+SEE ALSO
+
+amanda(8), amverify(8)
+-------------------------------------------------------------------------------
+
+Prev       Up                         Next
+amverify  Home  Chapter 36. Web Ressources
+

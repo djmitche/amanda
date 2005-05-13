@@ -1,0 +1,143 @@
+
+Part IV. Various Information
+Prev                    Next
+
+-------------------------------------------------------------------------------
+
+
+Various Information
+
+
+
+Additional information about AMANDA
+
+Here you find various other documents like the AMANDA FAQ, the Top Ten
+Questions and the AMANDA-Wishlist. You can also find the last AMANDA-Survey in
+here (although it still needs formatting ... sorry, Jon ...). The latest
+addition is the "famous" AMANDA-chapter by John R. Jackson.
+Table of Contents
+
+
+  16._Using_AMANDA
+
+
+        An_Introduction
+
+        AMANDA_Features
+
+        Future_Capabilities_of_AMANDA
+
+        AMANDA_Resources
+
+        Installing_AMANDA
+
+
+              Install_Related_Packages
+
+              Perform_Preliminary_Setup
+
+              Configure_the_AMANDA_Build
+
+              Build_and_Install_AMANDA
+
+              Configuring_AMANDA
+
+              Decide_on_a_Tape_Server
+
+              Decide_Which_Tape_Devices_to_Use
+
+              Decide_Whether_to_Use_Compression
+
+              Decide_Where_the_Holding_Space_Will_Be
+
+              Compute_Your_Dump_Cycle
+
+              Copy_and_Edit_the_Default_Configuration_File
+
+              Configure_the_Holding_Disk
+
+              Configure_Tape_Devices_and_Label_Tapes
+
+              Configure_Backup_Clients
+
+              Test_and_Debug_Setup
+
+
+        Operating_Amanda
+
+
+              Run_amdump
+
+              Read_AMANDA's_Reports
+
+              Monitor_Tape_and_Holding_Disk_Status
+
+              Adding_Tapes_at_a_Particular_Position_in_the_Cycle
+
+              Miscellanous_Operational_Notes
+
+
+        Advanced_AMANDA_Configuration
+
+
+              Adjust_the_Backup_Cycle
+
+              Adjust_Parallelism
+
+              Monitor_for_Possible_Improvements
+
+              Excluding_Files
+
+
+        Restoring_with_AMANDA
+
+
+              Configuring_and_Using_amrecover
+
+              Using_amrestore
+
+              Restoring_Without_AMANDA
+
+
+
+  17._AMANDA_FAQ
+
+  18._Collection_of_the_top_ten_AMANDA_questions._And_answers.
+
+
+        Reason_for_starting_this_list.
+
+        the_DLE-question
+
+        the_localhost-question
+
+        the_friday-tape-question
+
+        the_multiple-dumps-question
+
+        the_mailing-list-question
+
+        the_distro-question
+
+        the_index-question
+
+        the_tapetype-questions
+
+        the_size-question
+
+        the_GUI-question
+
+        the_holding-disk_question
+
+        ...
+
+
+  19._AMANDA_WISHLIST
+
+  20._AMANDA_Survey_Results
+
+-------------------------------------------------------------------------------
+
+Prev                               Up                       Next
+Chapter 15. How to use a wrapper  Home  Chapter 16. Using AMANDA
+

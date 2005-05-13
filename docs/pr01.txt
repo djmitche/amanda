@@ -1,0 +1,38 @@
+
+   Abstract
+Prev     Next
+
+-------------------------------------------------------------------------------
+
+Abstract
+
+
+Note
+
+This is the first release of the Docbook/XML-version of the official AMANDA
+documentation. Please refer to http://www.amanda.org/docs/AMANDA-docs.html for
+the latest versions of these documents. They are available as html, ps and pdf.
+This is an effort to give the AMANDA-documentation a general overhaul. There
+are many parts that need to be reviewed and corrected, updated and added. The
+conversion of the old ASCII-formatted documentation to Docbook/XML should help
+to enhance the possibilities and to ease the generation of various output-
+formats.
+Recent changes:
+
+* addition of the AMANDA-chapter by John R. Jackson (with kind permission of W.
+  Curtis Preston).
+
+Planned:
+
+* addition of some historical AMANDA-papers.
+* addition of some illustrations and charts.
+* addition of more chapters ...
+
+Feel free to contact me with corrections, additions or updates. Thank you.
+Stefan G. Weichinger, for the AMANDA Core Team, April 2005.
+<sgw@amanda.org>
+-------------------------------------------------------------------------------
+
+Prev                                Up   Next
+The Official AMANDA Documentation  Home      
+
