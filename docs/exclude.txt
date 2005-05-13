@@ -155,7 +155,8 @@ Note
 
 UPDATE: Recent AMANDA-releases bring the option "exclude append" which enables
 the administrator to define more than one exclusion-pattern within one dumptype
-without using a exclude-list. Please look at the amanda.8-manpage for details.
+without using a exclude-list. Please look at the amanda.conf.5-manpage for
+details.
 Any path specified to be excluded must be encapsulated with quotes. Continuing
 with our example from above /var/log/somefile and using the same dumptype as
 above, the dumptype would now look like:

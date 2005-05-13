@@ -1,10 +1,10 @@
 
-         Chapter 23. AMANDA Event API
+         Chapter 24. AMANDA Event API
 Prev  Part V. Technical Background  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 23. AMANDA Event API
+Chapter 24. AMANDA Event API
 
 
 Mike Grupenhoff
@@ -163,5 +163,5 @@ argument equal to the argument this event was registered with.
 -------------------------------------------------------------------------------
 
 Prev                           Up                              Next
-Chapter 22. AMANDA Internals  Home  Chapter 24. AMANDA Security API
+Chapter 23. AMANDA Internals  Home  Chapter 25. AMANDA Security API
 

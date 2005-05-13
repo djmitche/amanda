@@ -17,7 +17,7 @@ the internals of AMANDA.
 Table of Contents
 
 
-  20._How_AMANDA_uses_UDP_and_TCP_ports
+  21._How_AMANDA_uses_UDP_and_TCP_ports
 
 
         TCP_port_allocation
@@ -31,7 +31,7 @@ Table of Contents
         Firewalls_and_NAT
 
 
-  21._AMANDA_dumper_API
+  22._AMANDA_dumper_API
 
 
         Introduction
@@ -59,7 +59,7 @@ Table of Contents
         Conclusion
 
 
-  22._AMANDA_Internals
+  23._AMANDA_Internals
 
 
         Protocols
@@ -73,7 +73,7 @@ Table of Contents
         taper(read)_and_taper(write)
 
 
-  23._AMANDA_Event_API
+  24._AMANDA_Event_API
 
 
         Introduction
@@ -117,7 +117,7 @@ Table of Contents
 
 
 
-  24._AMANDA_Security_API
+  25._AMANDA_Security_API
 
 
         Introduction
@@ -181,9 +181,9 @@ Table of Contents
 
 
 
-  25._Virtual_Tape_API
+  26._Virtual_Tape_API
 
-  26._Using_Kerberos_with_AMANDA
+  27._Using_Kerberos_with_AMANDA
 
 
         AMANDA_2.5.0_-_KERBEROS_v4_SUPPORT_NOTES
@@ -212,6 +212,6 @@ Table of Contents
 -------------------------------------------------------------------------------
 
 Prev                                Up                                  Next
-Chapter 19. AMANDA Survey Results  Home  Chapter 20. How AMANDA uses UDP and
+Chapter 20. AMANDA Survey Results  Home  Chapter 21. How AMANDA uses UDP and
                                                                    TCP ports
 

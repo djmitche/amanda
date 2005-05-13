@@ -82,7 +82,8 @@ AMANDA programs (see section 1.2.H below).
      Samba allows Unix systems to talk to PC clients. AMANDA can back up
      Microsoft Windows clients using Samba:
      http://www.samba.org
-     Read Samba for configuration tips and known limitations.
+     Read Backup_PC_hosts_using_Samba for configuration tips and known
+     limitations.
      Look at http://www.amanda.org/patches.html for up to date information on
      patches.
   b. If you wish to make use of some of the scripts that come with AMANDA, you
@@ -226,8 +227,8 @@ AMANDA programs (see section 1.2.H below).
      want to run with "no-record" under normal operations.
   b. Put AMANDA into your crontab. Here's a sample:
 
-       0 16 * * 1-5 /usr/local/bin/amcheck -m confname
-       45 0 * * 2-6 /usr/local/bin/amdump confname
+       0 16 * * 1-5 /usr/local/sbin/amcheck -m confname
+       45 0 * * 2-6 /usr/local/sbin/amdump confname
 
      This is for SunOS 4.x, which has a per-user crontab; most other systems
      also require a userid on each cron line. See your cron(8) for details.

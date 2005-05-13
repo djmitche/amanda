@@ -1,10 +1,10 @@
 
-Chapter 31. Thoughts about a Strategy API
+Chapter 32. Thoughts about a Strategy API
 Prev  Part VI. Historical files      Next
 
 -------------------------------------------------------------------------------
 
-Chapter 31. Thoughts about a Strategy API
+Chapter 32. Thoughts about a Strategy API
 
 
 Alexandre Oliva
@@ -61,5 +61,5 @@ of this document.
 -------------------------------------------------------------------------------
 
 Prev                                          Up                         Next
-Chapter 30. Multitape support in AMANDA 2.2  Home  Chapter 32. Y2K Compliancy
+Chapter 31. Multitape support in AMANDA 2.2  Home  Chapter 33. Y2K Compliancy
 

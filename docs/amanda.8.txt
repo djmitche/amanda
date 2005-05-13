@@ -10,24 +10,28 @@ amanda  Advanced Maryland Automatic Network Disk Archiver
 
 Synopsis
 
+amadmin config command [options]
+amcheck [options] config
+amcheckdb config
+amcleanup config
+amdd [options]
 amdump config
 amflush [-f ] config
-amcleanup config
-amrecover [config] [options]
-amrestore [options] tapedevice [ hostname [diskname]]
+amgetconf [config] parameter
 amlabel config label [ slot slot ]
-amcheck [options] config
-amadmin config command [options]
-amtape config command [options]
-amverify config
-amrmtape [options] config label
-amstatus config [options]
+ammt [options]
 amoverview config [options]
 amplot [options] amdump-files
+amrecover [config] [options]
 amreport [config] [options]
+amrestore [options] tapedevice [ hostname [diskname]]
+amrmtape [options] config label
+amstatus config [options]
+amtape config command [options]
+amtapetype [options]
 amtoc [options] logfile
-amcheckdb config
-amgetconf [config] parameter
+amverify config
+amverifyrun config
 
 DESCRIPTION
 
@@ -115,15 +119,19 @@ for all the gory details.
   amgetconf
       Look up parameters in the AMANDA configuration file.
 
+  amtapetype
+      Generate a tapetype definition.
+
 
 CONFIGURATION
 
-There are three user-editable files that control the behavior of AMANDA. The
-first is amanda.conf, the main configuration file. It contains parameters to
-customize AMANDA for the site. Second is the disklist file, which lists hosts
-and disk partitions to back up. Third is the tapelist file, which lists tapes
-that are currently active. These files are described in more detail in the
-following sections.
+There are three user-editable files that control the behavior of AMANDA.
+The first is amanda.conf, the main configuration file. It contains parameters
+to customize AMANDA for the site. Refer to the amanda.conf(5), manpage for
+details on AMANDA configuration parameters.
+Second is the disklist file, which lists hosts and disk partitions to back up.
+Third is the tapelist file, which lists tapes that are currently active. These
+files are described in more detail in the following sections.
 All files are stored in individual configuration directories under /usr/local/
 etc/amanda/. A site will often have more than one configuration. For example,
 it might have a normal configuration for everyday backups and an archive
@@ -150,755 +158,6 @@ administrator to remove them from this directory when desired.
 Index (backup image catalogue) files older than the full dump matching the
 oldest backup image for a given client and disk are removed by amdump at the
 end of each run.
-
-CONFIG FILE PARAMETERS
-
-There are a number of configuration parameters that control the behavior of the
-AMANDA programs. All have default values, so you need not specify the parameter
-in amanda.conf if the default is suitable.
-Lines starting with # are ignored, as are blank lines. Comments may be placed
-on a line with a directive by starting the comment with a #. The remainder of
-the line is ignored.
-Keywords are case insensitive, i.e. mailto and MailTo are treated the same.
-Integer arguments may have one of the following (case insensitive) suffixes,
-some of which have a multiplier effect:
-
-
-  b byte bytes
-      Some number of bytes.
-
-  bps
-      Some number of bytes per second.
-
-  k kb kbyte kbytes kilobyte kilobytes
-      Some number of kilobytes (bytes*1024).
-
-  kps kbps
-      Some number of kilobytes per second (bytes*1024).
-
-  m mb meg mbyte mbytes megabyte megabytes
-      Some number of megabytes (bytes*1024*1024).
-
-  mps mbps
-      Some number of megabytes per second (bytes*1024*1024).
-
-  g gb gbyte gbytes gigabyte gigabytes
-      Some number of gigabytes (bytes*1024*1024*1024).
-
-  tape tapes
-      Some number of tapes.
-
-  day days
-      Some number of days.
-
-  week weeks
-      Some number of weeks (days*7).
-
-      Note
-
-      The value inf may be used in most places where an integer is expected to
-      mean an infinite amount.
-      Boolean arguments may have any of the values y, yes, t, true or on to
-      indicate a true state, or n, no, f, false or off to indicate a false
-      state. If no argument is given, true is assumed.
-
-
-
-  org string
-      Default: daily. A descriptive name for the configuration. This string
-      appears in the Subject line of mail reports. Each AMANDA configuration
-      should have a different string to keep mail reports distinct.
-
-  mailto string
-      Default: operators. A space separated list of recipients for mail
-      reports.
-
-  dumpcycle int
-      Default: 10 days. The number of days in the backup cycle. Each disk will
-      get a full backup at least this often. Setting this to zero tries to do a
-      full backup each run.
-
-      Note
-
-      This parameter may also be set in a specific dumptype (see below). This
-      value sets the default for all dumptypes so must appear in amanda.conf
-      before any dumptypes are defined.
-
-  runspercycle int
-      Default: same as dumpcycle. The number of amdump runs in dumpcycle days.
-      A value of 0 means the same value as dumpcycle. A value of -1 means guess
-      the number of runs from the tapelist file, which is the number of tapes
-      used in the last dumpcycle days / runtapes.
-
-  tapecycle int
-      Default: 15 tapes. Typically tapes are used by AMANDA in an ordered
-      rotation. The tapecycle parameter defines the size of that rotation. The
-      number of tapes in rotation must be larger than the number of tapes
-      required for a complete dump cycle (see the dumpcycle parameter).
-      This is calculated by multiplying the number of amdump runs per dump
-      cycle (runspercycle parameter) times the number of tapes used per run
-      (runtapes parameter). Typically two to four times this calculated number
-      of tapes are in rotation. While AMANDA is always willing to use a new
-      tape in its rotation, it refuses to reuse a tape until at least
-      'tapecycle -1' number of other tapes have been used.
-      It is considered good administrative practice to set the tapecycle
-      parameter slightly lower than the actual number of tapes in rotation.
-      This allows the administrator to more easily cope with damaged or
-      misplaced tapes or schedule adjustments that call for slight adjustments
-      in the rotation order.
-
-
-
-  dumpuser string
-      Default: amanda. The login name AMANDA uses to run the backups. The
-      backup client hosts must allow access from the tape server host as this
-      user via .rhosts or .amandahosts, depending on how the AMANDA software
-      was built.
-
-  printer string
-      Printer to use when doing tape labels. See the lbl-templ tapetype option.
-
-  tapedev string
-      Default: /dev/nst0. The path name of the non-rewinding tape device. Non-
-      rewinding tape device names often have an 'n' in the name, e.g. /dev/rmt/
-      0mn, however this is operating system specific and you should consult
-      that documentation for detailed naming information.
-      If a tape changer is configured (see the tpchanger option), this option
-      might not be used.
-      If the null output driver is selected (see the OUTPUT_DRIVERS section
-      later for more information), programs such as amdump will run normally
-      but all images will be thrown away. This should only be used for
-      debugging and testing, and probably only with the record option set to
-      no.
-
-  rawtapedev string
-      Default: /dev/null. The path name of the raw tape device. This is only
-      used if AMANDA is compiled for Linux machines with floppy tapes and is
-      needed for QIC volume table operations.
-
-  tpchanger string
-      Default: none. The name of the tape changer. If a tape changer is not
-      configured, this option is not used and should be commented out of the
-      configuration file.
-      If a tape changer is configured, choose one of the changer scripts (e.g.
-      chg-scsi) and enter that here.
-
-
-
-  changerdev string
-      Default: /dev/null. A tape changer configuration parameter. Usage depends
-      on the particular changer defined with the tpchanger option.
-
-  changerfile string
-      Default: /usr/adm/amanda/log/changer-status. A tape changer configuration
-      parameter. Usage depends on the particular changer defined with the
-      tpchanger option.
-
-  runtapes int
-      Default: 1. The maximum number of tapes used in a single run. If a tape
-      changer is not configured, this option is not used and should be
-      commented out of the configuration file.
-      If a tape changer is configured, this may be set larger than one to let
-      AMANDA write to more than one tape.
-      Note that this is an upper bound on the number of tapes, and AMANDA may
-      use less.
-      Also note that as of this release, AMANDA does not support true tape
-      overflow. When it reaches the end of one tape, the backup image AMANDA
-      was processing starts over again on the next tape.
-
-
-
-  maxdumpsize int
-      Default: runtapes*tape_length. Maximum number of bytes the planner will
-      schedule for a run.
-
-  taperalgo [first|firstfit|largest|largestfit|smallest|last]
-      Default: first. The algorithm used to choose which dump image to send to
-      the taper.
-
-
-        first
-            First in, first out.
-
-        firstfit
-            The first dump image that will fit on the current tape.
-
-        largest
-            The largest dump image.
-
-        largestfit
-            The largest dump image that will fit on the current tape.
-
-        smallest
-            The smallest dump image.
-
-        last
-            Last in, first out.
-
-
-  labelstr string
-      Default: .*. The tape label constraint regular expression. All tape
-      labels generated (see amlabel(8)) and used by this configuration must
-      match the regular expression. If multiple configurations are run from the
-      same tape server host, it is helpful to set their labels to different
-      strings (for example, "DAILY[0-9][0-9]*" vs. "ARCHIVE[0-9][0-9]*") to
-      avoid overwriting each other's tapes.
-
-  tapetype string
-      Default: EXABYTE. The type of tape drive associated with tapedev or
-      tpchanger. This refers to one of the defined tapetypes in the config file
-      (see below), which specify various tape parameters, like the length,
-      filemark size, and speed of the tape media and device.
-
-  ctimeout int
-      Default: 30 seconds. Maximum amount of time that amcheck will wait for
-      each client host.
-
-  dtimeout int
-      Default: 1800 seconds. Amount of idle time per disk on a given client
-      that a dumper running from within amdump will wait before it fails with a
-      data timeout error.
-
-  etimeout int
-      Default: 300 seconds. Amount of time per disk on a given client that the
-      planner step of amdump will wait to get the dump size estimates. For
-      instance, with the default of 300 seconds and four disks on client A,
-      planner will wait up to 20 minutes for that machine. A negative value
-      will be interpreted as a total amount of time to wait per client instead
-      of per disk.
-
-  netusage int
-      Default: 300 Kbps. The maximum network bandwidth allocated to AMANDA, in
-      Kbytes per second. See also the interface section.
-
-  inparallel int
-      Default: 10. The maximum number of backups that AMANDA will attempt to
-      run in parallel. AMANDA will stay within the constraints of network
-      bandwidth and holding disk space available, so it doesn't hurt to set
-      this number a bit high. Some contention can occur with larger numbers of
-      backups, but this effect is relatively small on most systems.
-
-  displayunit "k|m|g|t"
-      Default: "k". The unit used to print many numbers, k=kilo, m=mega,
-      g=giga, t=tera.
-
-  dumporder string
-      Default: tttTTTTTTT. The priority order of each dumper:
-
-      * s: smallest size
-      * S: largest size
-      * t: smallest time
-      * T: largest time
-      * b: smallest bandwidth
-      * B: largest bandwidth
-
-
-
-
-  maxdumps int
-      Default: 1. The maximum number of backups from a single host that AMANDA
-      will attempt to run in parallel. See also the inparallel option.
-      Note that this parameter may also be set in a specific dumptype (see
-      below). This value sets the default for all dumptypes so must appear in
-      amanda.conf before any dumptypes are defined.
-
-
-
-  bumpsize int
-      Default: 10 Mbytes. The minimum savings required to trigger an automatic
-      bump from one incremental level to the next. If AMANDA determines that
-      the next higher backup level will be this much smaller than the current
-      level, it will do the next level. See also the bumpmult option.
-
-  bumpmult float
-      Default: 1.5. The bump size multiplier. AMANDA multiplies bumpsize by
-      this factor for each level. This prevents active filesystems from bumping
-      too much by making it harder to bump to the next level. For example, with
-      the default bumpsize and bumpmult set to 2.0, the bump threshold will be
-      10 Mbytes for level one, 20 Mbytes for level two, 40 Mbytes for level
-      three, and so on.
-
-  bumpdays int
-      Default: 2 days. To insure redundancy in the dumps, AMANDA keeps
-      filesystems at the same incremental level for at least bumpdays days,
-      even if the other bump threshold criteria are met.
-
-  diskfile string
-      Default: disklist. The file name for the disklist file holding client
-      hosts, disks and other client dumping information.
-
-  infofile string
-      Default: /usr/adm/amanda/curinfo. The file or directory name for the
-      historical information database. If AMANDA was configured to use DBM
-      databases, this is the base file name for them. If it was configured to
-      use text formated databases (the default), this is the base directory and
-      within here will be a directory per client, then a directory per disk,
-      then a text file of data.
-
-  logdir string
-      Default: /usr/adm/amanda. The directory for the amdump and log files.
-
-  indexdir string
-      Default /usr/adm/amanda/index. The directory where index files (backup
-      image catalogues) are stored. Index files are only generated for
-      filesystems whose dumptype has the index option enabled.
-
-  tapelist string
-      Default: tapelist. The file name for the active tapelist file. AMANDA
-      maintains this file with information about the active set of tapes.
-
-  tapebufs int
-      Default: 20. The number of buffers used by the taper process run by
-      amdump and amflush to hold data as it is read from the network or disk
-      before it is written to tape. Each buffer is a little larger than 32
-      KBytes and is held in a shared memory region.
-
-  reserve number
-      Default: 100. The part of holding-disk space that should be reserved for
-      incremental backups if no tape is available, expressed as a percentage of
-      the available holding-disk space (0-100). By default, when there is no
-      tape to write to, degraded mode (incremental) backups will be performed
-      to the holding disk. If full backups should also be allowed in this case,
-      the amount of holding disk space reserved for incrementals should be
-      lowered.
-
-  autoflush bool
-      Default: off. Whether an amdump run will flush the dump already on
-      holding disk to tape.
-
-  amrecover_do_fsf bool
-      Default: off. Amrecover will call amrestore with the -f flag for faster
-      positioning of the tape.
-
-  amrecover_check_label bool
-      Default: off. Amrecover will call amrestore with the -l flag to check the
-      label.
-
-  amrecover_changer string
-      Default: ''. Amrecover will use the changer if you use 'settape <string>'
-      and that string is the same as the amrecover_changer setting.
-
-  columnspec string
-      Defines the width of columns amreport should use. String is a comma (',')
-      separated list of triples. Each triple consists of three parts which are
-      separated by a equal sign ('=') and a colon (':') (see the example).
-      These three parts specify:
-
-      * the name of the column, which may be:
-
-        o Compress (compression ratio)
-        o Disk (client disk name)
-        o DumpRate (dump rate in KBytes/sec)
-        o DumpTime (total dump time in hours:minutes)
-        o HostName (client host name)
-        o Level (dump level)
-        o OrigKB (original image size in KBytes)
-        o OutKB (output image size in KBytes)
-        o TapeRate (tape writing rate in KBytes/sec)
-        o TapeTime (total tape time in hours:minutes)
-
-      * the amount of space to display before the column (used to get
-        whitespace between columns).
-      * the width of the column itself. If set to a negative value, the width
-        will be calculated on demand to fit the largest entry in this column.
-
-      Here is an example:
-
-        columnspec "Disk=1:18,HostName=0:10,OutKB=1:7"
-
-      The above will display the disk information in 18 characters and put one
-      space before it. The hostname column will be 10 characters wide with no
-      space to the left. The output KBytes column is seven characters wide with
-      one space before it.
-
-
-
-  includefile string
-      Default: none. The name of an AMANDA configuration file to include within
-      the current file. Useful for sharing dumptypes, tapetypes and interface
-      definitions among several configurations.
-
-
-HOLDINGDISK SECTION
-
-The amanda.conf file may define one or more holding disks used as buffers to
-hold backup images before they are written to tape. The syntax is:
-
-  holdingdisk name {
-      holdingdisk-option holdingdisk-value
-      ...
-  }
-
-Name is a logical name for this holding disk.
-The options and values are:
-
-
-  comment string
-      Default: none. A comment string describing this holding disk.
-
-  directory disk
-      Default: /dumps/amanda. The path to this holding area.
-
-  use int
-      Default: 0 Gb. Amount of space that can be used in this holding disk
-      area. If the value is zero, all available space on the file system is
-      used. If the value is negative, AMANDA will use all available space minus
-      that value.
-
-  chunksize int
-      Default: 1 Gb. Holding disk chunk size. Dumps larger than the specified
-      size will be stored in multiple holding disk files. The size of each
-      chunk will not exceed the specified value. However, even though dump
-      images are split in the holding disk, they are concatenated as they are
-      written to tape, so each dump image still corresponds to a single
-      continuous tape section.
-      If 0 is specified, AMANDA will create holding disk chunks as large as (
-      (INT_MAX/1024)-64) Kbytes.
-      Each holding disk chunk includes a 32 Kbyte header, so the minimum chunk
-      size is 64 Kbytes (but that would be really silly).
-      Operating systems that are limited to a maximum file size of 2 Gbytes
-      actually cannot handle files that large. They must be at least one byte
-      less than 2 Gbytes. Since AMANDA works with 32 Kbyte blocks, and to
-      handle the final read at the end of the chunk, the chunk size should be
-      at least 64 Kbytes (2 * 32 Kbytes) smaller than the maximum file size,
-      e.g. 2047 Mbytes.
-
-
-DUMPTYPE SECTION
-
-The amanda.conf file may define multiple sets of backup options and refer to
-them by name from the disklist file. For instance, one set of options might be
-defined for file systems that can benefit from high compression, another set
-that does not compress well, another set for file systems that should always
-get a full backup and so on.
-A set of backup options are entered in a dumptype section, which looks like
-this:
-
-  define dumptype name {
-      dumptype-option dumptype-value
-      ...
-  }
-
-Name is the name of this set of backup options. It is referenced from the
-disklist file.
-Some of the options in a dumptype section are the same as those in the main
-part of amanda.conf. The main option value is used to set the default for all
-dumptype sections. For instance, setting dumpcycle to 50 in the main part of
-the config file causes all following dumptype sections to start with that
-value, but the value may be changed on a section by section basis. Changes to
-variables in the main part of the config file must be done before (earlier in
-the file) any dumptypes are defined.
-The dumptype options and values are:
-
-
-  auth string
-      Default: bsd. Type of authorization to perform between tape server and
-      backup client hosts. May be krb4 to use Kerberos-IV authorization.
-
-  comment string
-      Default: none. A comment string describing this set of backup options.
-
-  comprate float [, float ]
-      Default: 0.50, 0.50. The expected full and incremental compression factor
-      for dumps. It is only used if AMANDA does not have any history
-      information on compression rates for a filesystem, so should not usually
-      need to be set. However, it may be useful for the first time a very large
-      filesystem that compresses very little is backed up.
-
-  compress [client|server] string
-      Default: client fast. If AMANDA does compression of the backup images, it
-      can do so either on the backup client host before it crosses the network
-      or on the tape server host as it goes from the network into the holding
-      disk or to tape. Which place to do compression (if at all) depends on how
-      well the dump image usually compresses, the speed and load on the client
-      or server, network capacity, holding disk capacity, availability of tape
-      hardware compression, etc.
-      For either type of compression, AMANDA also allows the selection of two
-      styles of compression. Best is the best compression available, often at
-      the expense of CPU overhead. Fast is often not as good a compression as
-      best, but usually less CPU overhead.
-      So the compress options line may be one of:
-
-      * compress none
-      * compress [client] fast
-      * compress [client] best
-      * compress server fast
-      * compress server best
-
-      Note that some tape devices do compression and this option has nothing to
-      do with whether that is used. If hardware compression is used (usually
-      via a particular tape device name or mt option), AMANDA (software)
-      compression should be disabled.
-
-  dumpcycle int
-      Default: 10 days. The number of days in the backup cycle. Each disk using
-      this set of options will get a full backup at least this often. Setting
-      this to zero tries to do a full backup each run.
-
-  exclude [ list|file ][[optional][ append ][ string ]+]
-      Default: file. There are two exclude lists, exclude file and exclude
-      list. With exclude file , the string is a GNU-tar exclude expression.
-      With exclude list , the string is a file name on the client containing
-      GNU-tar exclude expressions.
-      All exclude expressions are concatenated in one file and passed to GNU-
-      tar as an --exclude-from argument.
-      With the append keyword, the string is appended to the current list,
-      without it, the string overwrites the list.
-      If optional is specified for exclude list, then amcheck will not complain
-      if the file doesn't exist or is not readable.
-      For exclude list, if the file name is relative, the disk name being
-      backed up is prepended. So if this is entered:
-
-            exclude list ".amanda.excludes"
-
-      the actual file used would be /var/.amanda.excludes for a backup of /var,
-      /usr/local/.amanda.excludes for a backup of /usr/local, and so on.
-
-  holdingdisk boolean
-      Default: yes. Whether a holding disk should be used for these backups or
-      whether they should go directly to tape. If the holding disk is a portion
-      of another file system that AMANDA is backing up, that file system should
-      refer to a dumptype with holdingdisk set to no to avoid backing up the
-      holding disk into itself.
-
-  ignore boolean
-      Default: no. Whether disks associated with this backup type should be
-      backed up or not. This option is useful when the disklist file is shared
-      among several configurations, some of which should not back up all the
-      listed file systems.
-
-  include [ list|file ][[optional][ append ][ string ]+]
-      Default: file ".". There are two include lists, include file and include
-      list. With include file , the string is a glob expression. With include
-      list , the string is a file name on the client containing glob
-      expressions.
-      All include expressions are expanded by AMANDA, concatenated in one file
-      and passed to GNU-tar as a --files-from argument. They must start with
-      "./" and contain no other "/".
-      With the append keyword, the string is appended to the current list,
-      without it, the string overwrites the list.
-      If optional is specified for include list, then amcheck will not complain
-      if the file doesn't exist or is not readable.
-      For include list, If the file name is relative, the disk name being
-      backed up is prepended.
-
-  index boolean
-      Default: no. Whether an index (catalogue) of the backup should be
-      generated and saved in indexdir. These catalogues are used by the
-      amrecover utility.
-
-  kencrypt boolean
-      Default: no. Whether the backup image should be encrypted by Kerberos as
-      it is sent across the network from the backup client host to the tape
-      server host.
-
-  maxdumps int
-      Default: 1. The maximum number of backups from a single host that AMANDA
-      will attempt to run in parallel. See also the main section parameter
-      inparallel.
-
-  maxpromoteday int
-      Default: 10000. The maximum number of day for a promotion, set it 0 if
-      you don't want promotion, set it to 1 or 2 if your disks get
-      overpromoted.
-
-  priority string
-      Default: medium. When there is no tape to write to, AMANDA will do
-      incremental backups in priority order to the holding disk. The priority
-      may be high (2). medium (1), low (0) or a number of your choice.
-
-  program string
-      Default: DUMP. The type of backup to perform. Valid values are DUMP for
-      the native operating system backup program, and GNUTAR to use GNU-tar or
-      to do PC backups using Samba.
-
-  record boolean
-      Default: yes. Whether to ask the backup program to update its database
-      (e.g. /etc/dumpdates for DUMP or /usr/local/var/amanda/gnutar-lists for
-      GNUTAR) of time stamps. This is normally enabled for daily backups and
-      turned off for periodic archival runs.
-
-  skip-full boolean
-      Default: no. If true and planner has scheduled a full backup, these disks
-      will be skipped, and full backups should be run off-line on these days.
-      It was reported that AMANDA only schedules level 1 incrementals in this
-      configuration; this is probably a bug.
-
-  skip-incr boolean
-      Default: no. If true and planner has scheduled an incremental backup,
-      these disks will be skipped.
-
-  starttime int
-      Default: none. Backups will not start until after this time of day. The
-      value should be hh*100+mm, e.g. 6:30PM (18:30) would be entered as 1830.
-
-  strategy string
-      Default: standard. Strategy to use when planning what level of backup to
-      run next. Values are:
-
-The following dumptype entries are predefined by AMANDA:
-
-  define dumptype no-compress {
-      compress none
-  }
-  define dumptype compress-fast {
-      compress client fast
-  }
-  define dumptype compress-best {
-      compress client best
-  }
-  define dumptype srvcompress {
-      compress server fast
-  }
-  define dumptype bsd-auth {
-      auth bsd
-  }
-  define dumptype krb4-auth {
-      auth krb4
-  }
-  define dumptype no-record {
-      record no
-  }
-  define dumptype no-hold {
-      holdingdisk no
-  }
-  define dumptype no-full {
-      skip-full yes
-  }
-
-In addition to options in a dumptype section, one or more other dumptype names
-may be entered, which make this dumptype inherit options from other previously
-defined dumptypes. For instance, two sections might be the same except for the
-record option:
-
-  define dumptype normal {
-      comment "Normal backup, no compression, do indexing"
-      no-compress
-      index yes
-      maxdumps 2
-  }
-  define dumptype testing {
-      comment "Test backup, no compression, do indexing, no recording"
-      normal
-      record no
-  }
-
-AMANDA provides a dumptype named global in the sample amanda.conf file that all
-dumptypes should reference. This provides an easy place to make changes that
-will affect every dumptype.
-
-TAPETYPE SECTION
-
-The amanda.conf file may define multiple types of tape media and devices. The
-information is entered in a tapetype section, which looks like this in the
-config file:
-
-  define tapetype name {
-      tapetype-option tapetype-value
-      ...
-  }
-
-Name is the name of this type of tape medium/device. It is referenced from the
-tapetype option in the main part of the config file.
-The tapetype options and values are:
-
-
-  comment string
-      Default: none. A comment string describing this set of tape information.
-
-  filemark int
-      Default: 1000 bytes. How large a file mark (tape mark) is, measured in
-      bytes. If the size is only known in some linear measurement (e.g.
-      inches), convert it to bytes using the device density.
-
-  length int
-      Default: 2000 kbytes. How much data will fit on a tape.
-      Note that this value is only used by AMANDA to schedule which backups
-      will be run. Once the backups start, AMANDA will continue to write to a
-      tape until it gets an error, regardless of what value is entered for
-      length (but see the OUTPUT_DRIVERS section later for exceptions).
-
-  blocksize int
-      Default: 32. How much data will be written in each tape record expressed
-      in KiloBytes. The tape record size (= blocksize) can not be reduced below
-      the default 32 KBytes. The parameter blocksize can only be raised if
-      AMANDA was compiled with the configure option --with-maxtapeblocksize=N
-      set with "N" greater than 32 during configure.
-
-  file-pad boolean
-      Default: true. If true, every record, including the last one in the file,
-      will have the same length. This matches the way AMANDA wrote tapes prior
-      to the availability of this parameter. It may also be useful on devices
-      that only support a fixed blocksize.
-      Note that the last record on the tape probably includes trailing null
-      byte padding, which will be passed back to gzip, compress or the restore
-      program. Most programs just ignore this (although possibly with a
-      warning).
-      If this parameter is false, the last record in a file may be shorter than
-      the block size. The file will contain the same amount of data the dump
-      program generated, without trailing null byte padding. When read, the
-      same amount of data that was written will be returned.
-
-  speed int
-      Default: 200 bps. How fast the drive will accept data, in bytes per
-      second. This parameter is NOT currently used by AMANDA.
-
-  lbl-templ string
-      A PostScript template file used by amreport to generate labels. Several
-      sample files are provided with the AMANDA sources in the example
-      directory. See the amreport(8) man page for more information.
-
-In addition to options, another tapetype name may be entered, which makes this
-tapetype inherit options from another tapetype. For instance, the only
-difference between a DLT4000 tape drive using Compact-III tapes and one using
-Compact-IV tapes is the length of the tape. So they could be entered as:
-
-  define tapetype DLT4000-III {
-      comment "DLT4000 tape drives with Compact-III tapes"
-      length 12500 mbytes         # 10 Gig tapes with some compression
-      filemark 2000 kbytes
-      speed 1536 kps
-  }
-  define tapetype DLT4000-IV {
-      DLT4000-III
-      comment "DLT4000 tape drives with Compact-IV tapes"
-      length 25000 mbytes         # 20 Gig tapes with some compression
-  }
-
-
-INTERFACE SECTION
-
-The amanda.conf file may define multiple types of network interfaces. The
-information is entered in an interface section, which looks like this:
-
-  define interface name {
-      interface-option interface-value
-      ...
-  }
-
-name is the name of this type of network interface. It is referenced from the
-disklist file.
-Note that these sections define network interface characteristics, not the
-actual interface that will be used. Nor do they impose limits on the bandwidth
-that will actually be taken up by AMANDA. AMANDA computes the estimated
-bandwidth each file system backup will take based on the estimated size and
-time, then compares that plus any other running backups with the limit as
-another of the criteria when deciding whether to start the backup. Once a
-backup starts, AMANDA will use as much of the network as it can leaving
-throttling up to the operating system and network hardware.
-The interface options and values are:
-
-
-  comment string
-      Default: none. A comment string describing this set of network
-      information.
-
-  use int
-      Default: 300 Kbps. The speed of the interface in Kbytes per second.
-
-In addition to options, another interface name may be entered, which makes this
-interface inherit options from another interface. At the moment, this is of
-little use.
 
 DISKLIST FILE
 
@@ -1117,66 +376,66 @@ expression at left with a '^'. You can anchor the expression at right with a
 '$'. The matcher is case insensitive for host but is case sensitive for disk. A
 match succeeds if all words in your expression match contiguous words in the
 host or disk.
-
-   .   word separator for a host
-   /   word separator for a disk
-   ^   anchor at left
-   $   anchor at right
-   ?   match exactly one character except the separator
-   *   match zero or more characters except the separator
-   **  match zero or more characters including the separator
+ ________________________________________________________
+|._|word_separator_for_a_host____________________________|
+|/_|word_separator_for_a_disk____________________________|
+|^_|anchor_at_left_______________________________________|
+|$_|anchor_at_right______________________________________|
+|?_|match_exactly_one_character_except_the_separator_____|
+|*_|match_zero_or_more_characters_except_the_separator___|
+|**|match_zero_or_more_characters_including_the_separator|
 
 Some examples:
-
-    EXPRESSION      WILL MATCH              WILL NOT MATCH
-    hosta           hosta                   hostb
-                    hoSTA.dOMAIna.ORG
-                    foo.hosta.org
-    host            host                    hosta
-    host?           hosta                   host
-                    hostb
-    ho*na           hoina                   ho.aina.org
-    ho**na          hoina
-                    ho.aina.org
-    ^hosta          hosta                   foo.hosta.org
-    sda*            /dev/sda1
-                    /dev/sda12
-    /opt/           opt (disk)              opt (host)
-    .opt.           opt (host)              opt (disk)
-    /               /                       any other disk
-    /usr            /usr
-                    /usr/opt
-    /usr$           /usr                    /usr/opt
+ ___________________________________________
+|EXPRESSION|WILL_MATCH_______|WILL_NOT_MATCH|
+|hosta_____|hosta____________|hostb_________|
+|__________|hoSTA.dOMAIna.ORG|______________|
+|__________|foo.hosta.org____|______________|
+|host______|host_____________|hosta_________|
+|host?_____|hosta____________|host__________|
+|__________|hostb____________|______________|
+|ho*na_____|hoina____________|ho.aina.org___|
+|ho**na____|hoina____________|______________|
+|__________|ho.aina.org______|______________|
+|^hosta____|hosta____________|foo.hosta.org_|
+|sda*______|/dev/sda1________|______________|
+|__________|/dev/sda12_______|______________|
+|/opt/_____|opt_(disk)_______|opt_(host)____|
+|.opt._____|opt_(host)_______|opt_(disk)____|
+|/_________|/________________|any_other_disk|
+|/usr______|/usr_____________|______________|
+|__________|/usr/opt_________|______________|
+|/usr$_____|/usr_____________|/usr/opt______|
 
 
 DATESTAMP EXPRESSION
 
 A datestamp expression is a range expression where we only match the prefix.
 Leading ^ is removed. Trailing $ forces an exact match.
-
-    20001212-14  match all dates beginning with 20001212, 20001213 or 20001214
-    20001212-4   same as previous
-    20001212-24  match all dates between 20001212 and 20001224
-    2000121      match all dates that start with 2000121 (20001210-20001219)
-    2            match all dates that start with 2 (20000101-29991231)
-    2000-10      match all dates between 20000101-20101231
-    200010$      match only 200010
+ _________________________________________________________________________
+|20001212-14|match_all_dates_beginning_with_20001212,_20001213_or_20001214|
+|20001212-4_|same_as_previous_____________________________________________|
+|20001212-24|match_all_dates_between_20001212_and_20001224________________|
+|2000121____|match_all_dates_that_start_with_2000121_(20001210-20001219)__|
+|2__________|match_all_dates_that_start_with_2_(20000101-29991231)________|
+|2000-10____|match_all_dates_between_20000101-20101231____________________|
+|200010$____|match_only_200010____________________________________________|
 
 
 AUTHOR
 
 James da Silva, <jds@amanda.org> : Original text
 Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
-XML-conversion,major update
+XML-conversion, major update
 
 SEE ALSO
 
-amadmin(8), amcheck(8), amcheckdb(8), amcleanup(8), amdd(8), amdump(8), amflush
-(8), amgetconf(8), amlabel(8), ammt(8), amoverview(8), amplot(8), amrecover(8),
-amreport(8), amrestore(8), amrmtape(8), amstatus(8), amtape(8), amtoc(8),
-amverify(8), amverifyrun(8)
+amadmin(8), amanda.conf(5), amcheck(8), amcheckdb(8), amcleanup(8), amdd(8),
+amdump(8), amflush(8), amgetconf(8), amlabel(8), ammt(8), amoverview(8), amplot
+(8), amrecover(8), amreport(8), amrestore(8), amrmtape(8), amstatus(8), amtape
+(8), amtapetype(8), amtoc(8), amverify(8), amverifyrun(8)
 -------------------------------------------------------------------------------
 
-Prev      Up      Next
-amadmin  Home  amcheck
+Prev      Up          Next
+amadmin  Home  amanda.conf
 

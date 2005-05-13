@@ -1,10 +1,10 @@
 
-        Chapter 28. Upgrade Issues
+        Chapter 29. Upgrade Issues
 Prev  Part VI. Historical files  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 28. Upgrade Issues
+Chapter 29. Upgrade Issues
 
 
 Stefan G. Weichinger
@@ -63,6 +63,6 @@ http://www.amanda.org/2.4-conv/msg00428.html
 -------------------------------------------------------------------------------
 
 Prev                                   Up                            Next
-Chapter 27. Response to CPIO Security Home  Chapter 29. What once was new
+Chapter 28. Response to CPIO Security Home  Chapter 30. What once was new
 Notice Issue 11: 
 

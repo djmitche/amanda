@@ -1,10 +1,10 @@
 
-Chapter 30. Multitape support in AMANDA 2.2
+Chapter 31. Multitape support in AMANDA 2.2
 Prev  Part VI. Historical files        Next
 
 -------------------------------------------------------------------------------
 
-Chapter 30. Multitape support in AMANDA 2.2
+Chapter 31. Multitape support in AMANDA 2.2
 
 
 James da Silva
@@ -178,5 +178,5 @@ whether or not the end of tape was reached.
 -------------------------------------------------------------------------------
 
 Prev                            Up                                        Next
-Chapter 29. What once was new  Home  Chapter 31. Thoughts about a Strategy API
+Chapter 30. What once was new  Home  Chapter 32. Thoughts about a Strategy API
 

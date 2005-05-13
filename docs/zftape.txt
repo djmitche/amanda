@@ -1,10 +1,10 @@
 
-Chapter 33. Usage of floppy tape drives on Linux
+Chapter 34. Usage of floppy tape drives on Linux
 Prev  Part VI. Historical files             Next
 
 -------------------------------------------------------------------------------
 
-Chapter 33. Usage of floppy tape drives on Linux
+Chapter 34. Usage of floppy tape drives on Linux
 
 
 Albrecht Gebhardt
@@ -105,5 +105,5 @@ waste 29 kb.
 -------------------------------------------------------------------------------
 
 Prev                         Up                   Next
-Chapter 32. Y2K Compliancy  Home  Part VII. References
+Chapter 33. Y2K Compliancy  Home  Part VII. Appendixes
 

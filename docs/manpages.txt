@@ -1,6 +1,6 @@
 
 Chapter 35. The AMANDA Manual Pages.
-Prev  Part VII. References      Next
+Prev  Part VII. Appendixes      Next
 
 -------------------------------------------------------------------------------
 
@@ -12,6 +12,9 @@ Table of Contents
   amadmin - administrative interface to control AMANDA backups
 
   amanda - Advanced Maryland Automatic Network Disk Archiver
+
+  amanda.conf - Main configuration file for AMANDA, the Advanced Maryland
+  Automatic Network Disk Archiver
 
   amcheck - run AMANDA self-checks
 
@@ -63,6 +66,6 @@ this document.
 This chapter contains the manual pages from the official AMANDA distribution.
 -------------------------------------------------------------------------------
 
-Prev                         Up      Next
-Chapter 34. Web Ressources  Home  amadmin
+Prev                   Up      Next
+Part VII. Appendixes  Home  amadmin
 

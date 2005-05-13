@@ -1,10 +1,10 @@
 
-         Chapter 22. AMANDA Internals
+         Chapter 23. AMANDA Internals
 Prev  Part V. Technical Background  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 22. AMANDA Internals
+Chapter 23. AMANDA Internals
 
 
 George Scott
@@ -177,5 +177,5 @@ Quit Q --->
 -------------------------------------------------------------------------------
 
 Prev                            Up                           Next
-Chapter 21. AMANDA dumper API  Home  Chapter 23. AMANDA Event API
+Chapter 22. AMANDA dumper API  Home  Chapter 24. AMANDA Event API
 

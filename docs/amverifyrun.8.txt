@@ -22,6 +22,6 @@ SEE ALSO
 amanda(8), amverify(8)
 -------------------------------------------------------------------------------
 
-Prev       Up    Next
-amverify  Home  Index
+Prev       Up                         Next
+amverify  Home  Chapter 36. Web Ressources
 

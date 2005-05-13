@@ -1,10 +1,10 @@
 
-        Chapter 21. AMANDA dumper API
+        Chapter 22. AMANDA dumper API
 Prev  Part V. Technical Background  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 21. AMANDA dumper API
+Chapter 22. AMANDA dumper API
 
 
 Alexandre Oliva
@@ -320,6 +320,6 @@ and/or the API. Some help on its implementation would be welcome, too.
 -------------------------------------------------------------------------------
 
 Prev                                     Up                           Next
-Chapter 20. How AMANDA uses UDP and TCP Home  Chapter 22. AMANDA Internals
+Chapter 21. How AMANDA uses UDP and TCP Home  Chapter 23. AMANDA Internals
 ports 
 

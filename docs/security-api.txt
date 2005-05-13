@@ -1,10 +1,10 @@
 
-      Chapter 24. AMANDA Security API
+      Chapter 25. AMANDA Security API
 Prev  Part V. Technical Background  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 24. AMANDA Security API
+Chapter 25. AMANDA Security API
 
 
 Mike Grupenhoff
@@ -443,5 +443,5 @@ Implementation of security_stream_read_cancel.
 -------------------------------------------------------------------------------
 
 Prev                           Up                           Next
-Chapter 23. AMANDA Event API  Home  Chapter 25. Virtual Tape API
+Chapter 24. AMANDA Event API  Home  Chapter 26. Virtual Tape API
 

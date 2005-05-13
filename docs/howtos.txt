@@ -64,6 +64,8 @@ Table of Contents
 
   14._AFS_HOWTO
 
+  15._How_to_use_a_wrapper
+
 -------------------------------------------------------------------------------
 
 Prev                             Up                                 Next

@@ -1,10 +1,10 @@
 
-    Chapter 34. Web Ressources
-Prev  Part VII. References  Next
+    Chapter 36. Web Ressources
+Prev  Part VII. Appendixes  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 34. Web Ressources
+Chapter 36. Web Ressources
 
 
 Stefan G. Weichinger
@@ -28,6 +28,6 @@ See some original AMANDA-papers by James da Silva and Olafur Gundmundsson here:
 
 -------------------------------------------------------------------------------
 
-Prev                   Up                                   Next
-Part VII. References  Home  Chapter 35. The AMANDA Manual Pages.
+Prev          Up    Next
+amverifyrun  Home  Index
 

@@ -71,6 +71,11 @@ AFS_HOWTO
 
 * Stefan G. Weichinger <sgw@amanda.org> (XML-conversion;Updates)
 
+How_to_use_a_wrapper
+
+* Bert de Ridder (Original text)
+* Stefan G. Weichinger <sgw@amanda.org> (XML-conversion; Updates)
+
 Using_AMANDA
 
 * John R. Jackson <jrj@purdue.edu> (Original text)

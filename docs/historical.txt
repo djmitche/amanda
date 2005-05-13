@@ -22,7 +22,7 @@ AMANDA.
 Table of Contents
 
 
-  27._Response_to_CPIO_Security_Notice_Issue_11:
+  28._Response_to_CPIO_Security_Notice_Issue_11:
 
 
         Affected_Versions
@@ -32,9 +32,9 @@ Table of Contents
         Acknowledgements
 
 
-  28._Upgrade_Issues
+  29._Upgrade_Issues
 
-  29._What_once_was_new
+  30._What_once_was_new
 
 
         What's_new_in_AMANDA_2.3
@@ -94,7 +94,7 @@ Table of Contents
 
 
 
-  30._Multitape_support_in_AMANDA_2.2
+  31._Multitape_support_in_AMANDA_2.2
 
 
         Introduction
@@ -124,15 +124,15 @@ Table of Contents
 
 
 
-  31._Thoughts_about_a_Strategy_API
+  32._Thoughts_about_a_Strategy_API
 
-  32._Y2K_Compliancy
+  33._Y2K_Compliancy
 
-  33._Usage_of_floppy_tape_drives_on_Linux
+  34._Usage_of_floppy_tape_drives_on_Linux
 
 -------------------------------------------------------------------------------
 
 Prev                             Up                                    Next
-Chapter 26. Using Kerberos with Home  Chapter 27. Response to CPIO Security
+Chapter 27. Using Kerberos with Home  Chapter 28. Response to CPIO Security
 AMANDA                                                     Notice Issue 11:
 

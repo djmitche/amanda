@@ -29,7 +29,7 @@ and checkout project 'amanda-afs'
 The patch to AMANDA is already included in this distribution.
 -------------------------------------------------------------------------------
 
-Prev                                     Up                           Next
-Chapter 13. How to use the AMANDA file- Home  Part IV. Various Information
+Prev                                     Up                               Next
+Chapter 13. How to use the AMANDA file- Home  Chapter 15. How to use a wrapper
 driver 
 

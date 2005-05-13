@@ -298,11 +298,13 @@ Table of Contents
 
         14._AFS_HOWTO
 
+        15._How_to_use_a_wrapper
+
 
   IV._Various_Information
 
 
-        15._Using_AMANDA
+        16._Using_AMANDA
 
 
               An_Introduction
@@ -384,82 +386,9 @@ Table of Contents
 
 
 
-        16._AMANDA_FAQ
+        17._AMANDA_FAQ
 
-
-              QUESTION:_Why_does_AMANDA_fail_to_build_on_my_system?
-
-              QUESTION:_Why_does_amdump_report_that_all_disks_failed?
-
-              QUESTION:_Why_does_amcheck_say_"port_NNN_is_not_secure"?
-
-              QUESTION:_Why_does_amcheck_claim_that_the_tape_is_"not_an_amanda
-              tape"?
-
-              QUESTION:_Why_does_amcheck_report_"selfcheck_request_timed_out"?
-
-              QUESTION:_Why_does_amandad.debug_contain_"error_receiving
-              message"?
-
-              QUESTION:_Why_does_amcheck_say_"access_as_<username>_not
-              allowed..."?
-
-              QUESTION:_Why_does_amcheck_report_"ip_address_#.#.#.#"_is_not_in
-              the_ip_list_list_for_<hostname>'?
-
-              QUESTION:_Why_does_amcheck_say_"cannot_overwrite_active_tape"?
-
-              QUESTION:_Why_does_amcheck_tell_me_"DUMP_program_not_available"?
-
-              QUESTION:_Which_tape_changer_configuration_should_I_use_in
-              amanda.conf?
-
-              QUESTION:_Should_I_use_software_or_hardware_compression?
-
-              QUESTION:_How_can_I_configure_AMANDA_so_that_it_performs_full
-              backups_on_the_week-end_and_incrementals_on_weekdays?
-
-              QUESTION:_What_if_my_tape_unit_uses_expensive_tapes,_and_I_don't
-              want_to_use_one_tape_per_day?_Can't_AMANDA_append_to_tapes?
-
-              QUESTION:_How_can_I_configure_AMANDA_for_long-term_archiving?
-
-              QUESTION:_Can_I_backup_separate_disks_of_the_same_host_in
-              different_configurations?
-
-              QUESTION:_Can_AMANDA_span_large_filesystems_across_multiple
-              tapes?
-
-              QUESTION:_What's_the_difference_between_option_"skip-full"_and
-              "strategy_nofull"?
-
-              QUESTION:_Why_does_amdump_report_"results_missing"?
-
-              QUESTION:_Why_does_amdump_report_"disk_offline"?
-
-              QUESTION:_What_if_amdump_reports_"dumps_way_too_big,_must_skip
-              incremental_dumps"?
-
-              QUESTION:_amdump_reported_"infofile_update_failed"._What_should_I
-              do?
-
-              QUESTION:_Why_does_AMANDA_sometimes_promote_full_dumps?
-
-              QUESTION:_Why_does_amrecover_report_"no_index_records"_or_"disk
-              not_found"?
-
-              QUESTION:_Ok,_I'm_done_with_testing_AMANDA,_now_I_want_to_put_it
-              in_production._How_can_I_reset_its_databases_so_as_to_start_from
-              scratch?
-
-              QUESTION:_The_man-page_of_dump_says_that_active_filesystems_may
-              be_backed_up_inconsistently._What_does_AMANDA_do_to_prevent
-              inconsistent_backups?
-
-              QUESTION:_Which_version_of_GNU-tar_should_I_use?
-
-
-        17._Collection_of_the_top_ten_AMANDA_questions._And_answers.
+        18._Collection_of_the_top_ten_AMANDA_questions._And_answers.
 
 
               Reason_for_starting_this_list.
@@ -489,15 +418,15 @@ Table of Contents
               ...
 
 
-        18._AMANDA_WISHLIST
+        19._AMANDA_WISHLIST
 
-        19._AMANDA_Survey_Results
+        20._AMANDA_Survey_Results
 
 
   V._Technical_Background
 
 
-        20._How_AMANDA_uses_UDP_and_TCP_ports
+        21._How_AMANDA_uses_UDP_and_TCP_ports
 
 
               TCP_port_allocation
@@ -511,7 +440,7 @@ Table of Contents
               Firewalls_and_NAT
 
 
-        21._AMANDA_dumper_API
+        22._AMANDA_dumper_API
 
 
               Introduction
@@ -539,7 +468,7 @@ Table of Contents
               Conclusion
 
 
-        22._AMANDA_Internals
+        23._AMANDA_Internals
 
 
               Protocols
@@ -553,7 +482,7 @@ Table of Contents
               taper(read)_and_taper(write)
 
 
-        23._AMANDA_Event_API
+        24._AMANDA_Event_API
 
 
               Introduction
@@ -597,7 +526,7 @@ Table of Contents
 
 
 
-        24._AMANDA_Security_API
+        25._AMANDA_Security_API
 
 
               Introduction
@@ -661,9 +590,9 @@ Table of Contents
 
 
 
-        25._Virtual_Tape_API
+        26._Virtual_Tape_API
 
-        26._Using_Kerberos_with_AMANDA
+        27._Using_Kerberos_with_AMANDA
 
 
               AMANDA_2.5.0_-_KERBEROS_v4_SUPPORT_NOTES
@@ -693,7 +622,7 @@ Table of Contents
   VI._Historical_files
 
 
-        27._Response_to_CPIO_Security_Notice_Issue_11:
+        28._Response_to_CPIO_Security_Notice_Issue_11:
 
 
               Affected_Versions
@@ -703,9 +632,9 @@ Table of Contents
               Acknowledgements
 
 
-        28._Upgrade_Issues
+        29._Upgrade_Issues
 
-        29._What_once_was_new
+        30._What_once_was_new
 
 
               What's_new_in_AMANDA_2.3
@@ -765,7 +694,7 @@ Table of Contents
 
 
 
-        30._Multitape_support_in_AMANDA_2.2
+        31._Multitape_support_in_AMANDA_2.2
 
 
               Introduction
@@ -795,19 +724,19 @@ Table of Contents
 
 
 
-        31._Thoughts_about_a_Strategy_API
+        32._Thoughts_about_a_Strategy_API
 
-        32._Y2K_Compliancy
+        33._Y2K_Compliancy
 
-        33._Usage_of_floppy_tape_drives_on_Linux
-
-
-  VII._References
+        34._Usage_of_floppy_tape_drives_on_Linux
 
 
-        34._Web_Ressources
+  VII._Appendixes
+
 
         35._The_AMANDA_Manual_Pages.
+
+        36._Web_Ressources
 
 
   Index
@@ -817,12 +746,12 @@ List of Tables
 
   4.1. Protocol_between_amindexd_and_amrecover
 
-  19.1. Operating_Systems_Running_on_AMANDA_Server_Hosts
+  20.1. Operating_Systems_Running_on_AMANDA_Server_Hosts
 
 List of Examples
 
 
-  15.1. A_C_Program_to_Check_the_AMANDA_Service_Numbers
+  16.1. A_C_Program_to_Check_the_AMANDA_Service_Numbers
 
 -------------------------------------------------------------------------------
 

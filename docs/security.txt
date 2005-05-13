@@ -1,10 +1,10 @@
 
-Chapter 27. Response to CPIO Security Notice Issue 11:
+Chapter 28. Response to CPIO Security Notice Issue 11:
 Prev  Part VI. Historical files                   Next
 
 -------------------------------------------------------------------------------
 
-Chapter 27. Response to CPIO Security Notice Issue 11:
+Chapter 28. Response to CPIO Security Notice Issue 11:
 
 
 AMANDA Core Team
@@ -75,5 +75,5 @@ improving AMANDA.
 -------------------------------------------------------------------------------
 
 Prev                        Up                         Next
-Part VI. Historical files  Home  Chapter 28. Upgrade Issues
+Part VI. Historical files  Home  Chapter 29. Upgrade Issues
 

@@ -1,10 +1,10 @@
 
-        Chapter 32. Y2K Compliancy
+        Chapter 33. Y2K Compliancy
 Prev  Part VI. Historical files  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 32. Y2K Compliancy
+Chapter 33. Y2K Compliancy
 
 
 AMANDA Core Team
@@ -29,6 +29,6 @@ where years are represented with the century-included notation.
 -------------------------------------------------------------------------------
 
 Prev                                   Up                               Next
-Chapter 31. Thoughts about a Strategy Home  Chapter 33. Usage of floppy tape
+Chapter 32. Thoughts about a Strategy Home  Chapter 34. Usage of floppy tape
 API                                                          drives on Linux
 

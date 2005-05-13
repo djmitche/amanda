@@ -1,10 +1,10 @@
 
-Chapter 20. How AMANDA uses UDP and TCP ports
+Chapter 21. How AMANDA uses UDP and TCP ports
 Prev  Part V. Technical Background       Next
 
 -------------------------------------------------------------------------------
 
-Chapter 20. How AMANDA uses UDP and TCP ports
+Chapter 21. How AMANDA uses UDP and TCP ports
 
 
 John R. Jackson
@@ -202,5 +202,5 @@ up on the documentation that comes with them.
 -------------------------------------------------------------------------------
 
 Prev                           Up                            Next
-Part V. Technical Background  Home  Chapter 21. AMANDA dumper API
+Part V. Technical Background  Home  Chapter 22. AMANDA dumper API
 

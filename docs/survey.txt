@@ -1,10 +1,10 @@
 
-     Chapter 19. AMANDA Survey Results
+     Chapter 20. AMANDA Survey Results
 Prev  Part IV. Various Information  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 19. AMANDA Survey Results
+Chapter 20. AMANDA Survey Results
 
 
 Jon LaBadie
@@ -148,7 +148,7 @@ AMANDA servers
 |6_____|1_|
 |7_____|1_|
 
-Table 19.1. Operating Systems Running on AMANDA Server Hosts
+Table 20.1. Operating Systems Running on AMANDA Server Hosts
  _____________________________________
 |FreeBSD:_______|Total_10,_including__|
 |2______________|4-STABLE_____________|
@@ -619,5 +619,5 @@ client in the near future.
 -------------------------------------------------------------------------------
 
 Prev                          Up                           Next
-Chapter 18. AMANDA WISHLIST  Home  Part V. Technical Background
+Chapter 19. AMANDA WISHLIST  Home  Part V. Technical Background
 

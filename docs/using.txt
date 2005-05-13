@@ -1,10 +1,10 @@
 
-            Chapter 15. Using AMANDA
+            Chapter 16. Using AMANDA
 Prev  Part IV. Various Information  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 15. Using AMANDA
+Chapter 16. Using AMANDA
 
 
 John R. Jackson
@@ -293,7 +293,7 @@ development.
 
 AMANDA Resources
 
-AMANDA may be obtained via the http://www.amanda.org web page or with anonymous
+AMANDA may be obtained via the web page http://www.amanda.org or with anonymous
 ftp at ftp://ftp.amanda.org/pub/amanda.A typical release is a gzip compressed
 tar file with a name like amanda-2.4.1.tar.gz, which means it is major version
 2.4 and minor version 1. There are occasional patch releases that have a name
@@ -943,7 +943,7 @@ try:
   C program in Figure 4-1 uses the same system call as AMANDA to look up
   entries:
 
-Example 15.1. A C Program to Check the AMANDA Service Numbers
+Example 16.1. A C Program to Check the AMANDA Service Numbers
 
   	
   	    #include <stdio.h>
@@ -1979,5 +1979,5 @@ the principles and techniques are familiar when disaster strikes.
 -------------------------------------------------------------------------------
 
 Prev                           Up                     Next
-Part IV. Various Information  Home  Chapter 16. AMANDA FAQ
+Part IV. Various Information  Home  Chapter 17. AMANDA FAQ
 

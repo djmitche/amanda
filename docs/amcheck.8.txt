@@ -362,6 +362,6 @@ SEE ALSO
 amanda(8), amdump(8)
 -------------------------------------------------------------------------------
 
-Prev     Up        Next
-amanda  Home  amcheckdb
+Prev          Up        Next
+amanda.conf  Home  amcheckdb
 

@@ -1,10 +1,10 @@
 
-         Chapter 25. Virtual Tape API
+         Chapter 26. Virtual Tape API
 Prev  Part V. Technical Background  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 25. Virtual Tape API
+Chapter 26. Virtual Tape API
 
 
 Stefan G. Weichinger
@@ -61,5 +61,5 @@ but we hope to add a "rmt" (remote tape client), and possibly "dvd" types soon.
 -------------------------------------------------------------------------------
 
 Prev                              Up                                     Next
-Chapter 24. AMANDA Security API  Home  Chapter 26. Using Kerberos with AMANDA
+Chapter 25. AMANDA Security API  Home  Chapter 27. Using Kerberos with AMANDA
 

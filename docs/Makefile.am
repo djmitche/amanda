@@ -1,7 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 pkgdata_DATA = \
+	Appendix.txt \
 	amadmin.8.txt \
 	amanda.8.txt \
+	amanda.conf.5.txt \
 	amcheck.8.txt \
 	amcheckdb.8.txt \
 	amcleanup.8.txt \
@@ -32,6 +34,7 @@ pkgdata_DATA = \
 	howto-afs.txt \
 	howto-cygwin.txt \
 	howto-filedriver.txt \
+	howto-wrapper.txt \
 	howtos.txt \
 	index.txt \
 	indexing.txt \
