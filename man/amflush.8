@@ -49,10 +49,10 @@ Write log to stdout/stderr instead of the amflush log file\&. Requires the \fB\-
 
 .TP
 \fB\-D datestamp\fR
-specify a datestamp expression you want to flush, see the ``\fBDATESTAMP EXPRESSION\fR'' section of \fBamanda\fR(8) for a description\&. \fB\-D 20001225\-7\fR will flush all dumps from 25 december 2000 to 27 december 2000\&.
+specify a datestamp expression you want to flush, see the "DATESTAMP EXPRESSION" section of \fBamanda\fR(8) for a description\&. \fB\-D 20001225\-7\fR will flush all dumps from 25 december 2000 to 27 december 2000\&.
 
 .PP
-You can specify many host/disk expressions, only disks that match an expression will be flushed\&. All disks are flushed if no expressions are given\&. see the ``\fBHOST & DISK EXPRESSION\fR'' section of \fBamanda\fR(8) for a description\&.
+You can specify many host/disk expressions, only disks that match an expression will be flushed\&. All disks are flushed if no expressions are given\&. see the "HOST & DISK EXPRESSION" section of \fBamanda\fR(8) for a description\&.
 
 .PP
 \fBAmflush\fR will look in the holding disks specified by the \fBamanda\&.conf\fR file in /usr/local/etc/amanda/\fBconfig\fR for any non\-empty \fBAMANDA\fR work directories\&. It then prompts you to select a directory or to process all of the directories\&. The work directories in the holding disks are named by the date at the time \fBamdump\fR was run, e\&.g\&. 19910215\&.
