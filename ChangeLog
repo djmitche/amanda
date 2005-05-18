@@ -1,3 +1,7 @@
+2005-05-17  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amadmin.c: Add [--days <num>] argument to tape subcommand.
+
 2005-05-13  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* man/Makefile.am (COMMON_MAN_PAGES, EXTRA_DIST): Add amadmin.8.
