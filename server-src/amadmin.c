@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.98 2005/03/29 16:34:52 martinea Exp $
+ * $Id: amadmin.c,v 1.99 2005/05/18 00:01:22 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -113,7 +113,7 @@ static const struct {
     { "balance", balance,
 	" [-days <num>]\t\t# Show nightly dump size balance." },
     { "tape", tape,
-	"\t\t\t\t# Show which tape is due next." },
+	" [-days <num>]\t\t\t# Show which tape is due next." },
     { "bumpsize", bumpsize,
 	"\t\t\t# Show current bump thresholds." },
     { "export", export_db,
@@ -757,19 +757,32 @@ int argc;
 char **argv;
 {
     tape_t *tp, *lasttp;
-    int runtapes, i;
+    int runtapes, i, j;
+    int nb_days = 1;
+
+    if(argc > 4 && strcmp(argv[3],"--days") == 0) {
+	nb_days = atoi(argv[4]);
+	if(nb_days < 1) {
+	    printf("days must be an integer bigger than 0\n");
+	    return;
+	}
+    }
 
     runtapes = getconf_int(CNF_RUNTAPES);
     tp = lookup_last_reusable_tape(0);
 
-    for ( i=0 ; i < runtapes ; i++ ) {
-	printf("The next Amanda run should go onto ");
-
-	if(tp != NULL)
-	    printf("tape %s or ", tp->label);
-	printf("a new tape.\n");
+    for ( j=0 ; j < nb_days ; j++ ) {
+	for ( i=0 ; i < runtapes ; i++ ) {
+	    if(i==0)
+		printf("The next Amanda run should go onto ");
+	    else
+		printf("                                   ");
+	    if(tp != NULL)
+		printf("tape %s or ", tp->label);
+	    printf("a new tape.\n");
 	
-	tp = lookup_last_reusable_tape(i + 1);
+	    tp = lookup_last_reusable_tape(i + 1);
+	}
     }
     lasttp = lookup_tapepos(lookup_nb_tape());
     i = runtapes;
@@ -831,7 +844,7 @@ char **argv;
     if(argc > 4 && strcmp(argv[3],"--days") == 0) {
 	later = atoi(argv[4]);
 	if(later < 0) later = conf_dumpcycle;
-	}
+    }
 
     if(conf_runspercycle == 0) {
 	runs_per_cycle = conf_dumpcycle;
