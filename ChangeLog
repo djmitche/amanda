@@ -1,4 +1,12 @@
 2005-06-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	    Stefan G. Weichinger <monitor@oops.co.at>
+
+	* example/amanda.conf.in: edited the default-value for the
+	                          holdingdisk-usage to "use -100 Mb".
+	                          The old value "use 290 Mb" didn't make much
+	                          sense anymore.
+
+2005-06-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amverifyrun.sh.in: Remove buggy space.
 
