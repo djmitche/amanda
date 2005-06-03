@@ -1,3 +1,7 @@
+2005-06-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amverifyrun.sh.in: Remove buggy space.
+
 2005-05-28  Stefan G. Weichinger <monitor@oops.co.at>
 
 	* example/amanda.conf.in: edited the default-value for the

@@ -48,8 +48,8 @@ else
 fi
 
 
-FIRST_SLOT=`grep "taper: slot" $AMLOG | fgrep 'exact label match 
-new tape 
+FIRST_SLOT=`grep "taper: slot" $AMLOG | fgrep 'exact label match
+new tape
 first labelstr match' | sed 1q | sed 's/://g' | awk '{print $3}'`
 if [ X"$FIRST_SLOT" = X"" ]; then
   FIRST_SLOT='-1'
