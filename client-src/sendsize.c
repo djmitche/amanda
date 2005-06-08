@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.144 2005/04/06 12:30:59 martinea Exp $
+ * $Id: sendsize.c,v 1.145 2005/06/08 11:57:33 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -579,6 +579,7 @@ disk_estimates_t *est;
 #ifdef SAMBA_CLIENT
 	  if (est->amdevice[0] == '/' && est->amdevice[1] == '/')
 	    dbprintf(("%s: Can't use CALCSIZE for samba estimate: %s %s\n",
+		      debug_prefix_time(NULL),
 		      est->amname, est->dirname));
 	  else
 #endif
