@@ -1,3 +1,7 @@
+2005-06-23  Stefan G. Weichinger <monitor@oops.co.at>
+
+	* client-src/sendbackup-gnutar.c: Added RE for new Samba-releases.
+
 2005-06-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Jay Fenlason <fenlason@redhat.com>
 
