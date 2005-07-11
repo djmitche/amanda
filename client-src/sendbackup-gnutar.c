@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.90 2004/08/31 13:38:50 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.91 2005/07/11 12:05:59 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -110,6 +110,7 @@ static regex_t re_table[] = {
 #if SAMBA_VERSION >= 2
   /* Backup attempt of nonexisting directory */
   AM_ERROR_RE("ERRDOS - ERRbadpath (Directory invalid.)"),
+  AM_NORMAL_RE("^Domain="),
 #endif
 
   /* catch-all: DMP_STRANGE is returned for all other lines */

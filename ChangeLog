@@ -1,4 +1,9 @@
 2005-07-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Stefan G. Weichinger <monitor@oops.co.at>
+
+	* client-src/sendbackup-gnutar.c: Added RE for new Samba-releases.
+
+2005-07-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	Bug found by John E Hein <jhein@timing.com>.
 	* server-src/amadmin.c: Fix of by one with NB_HISTORY.
