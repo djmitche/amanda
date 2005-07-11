@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.44.4.4.8.2 2005/03/16 18:15:28 martinea Exp $
+ * $Id: infofile.c,v 1.44.4.4.8.3 2005/07/11 12:00:41 martinea Exp $
  *
  * manage current info file
  */
@@ -274,7 +274,7 @@ info_t *info;
     rc = 0;
 
     nb_history = 0;
-    for(i=0;i<=NB_HISTORY+1;i++) {
+    for(i=0;i<=NB_HISTORY;i++) {
 	info->history[i].level = -2;
     }
     for(rc = -2; (line = agets(infof)) != NULL; free(line)) {

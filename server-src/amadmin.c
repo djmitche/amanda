@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.10 2005/05/18 00:02:03 martinea Exp $
+ * $Id: amadmin.c,v 1.49.2.13.2.3.2.15.2.11 2005/07/11 12:00:41 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1488,7 +1488,7 @@ int import_one P((void))
 	info.inf[level] = onestat;
     }
     nb_history = 0;
-    for(i=0;i<=NB_HISTORY+1;i++) {
+    for(i=0;i<=NB_HISTORY;i++) {
 	info.history[i].level = -2;
     }
     while(1) {
