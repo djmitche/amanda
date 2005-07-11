@@ -1,3 +1,9 @@
+2005-07-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	Bug found by John E Hein <jhein@timing.com>.
+	* server-src/amadmin.c: Fix of by one with NB_HISTORY.
+	* server-src/infofile.c:x: Fix of by one with NB_HISTORY.
+
 2005-06-08  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Jay Fenlason <fenlason@redhat.com>
 
