@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.149 2005/02/09 18:12:22 martinea Exp $
+ * $Id: driver.c,v 1.150 2005/09/07 17:00:41 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -59,7 +59,7 @@ static char *dumper_program;
 static char *chunker_program;
 static int  inparallel;
 static int nodump = 0;
-static long tape_length, tape_left = 0;
+static unsigned long tape_length, tape_left = 0;
 static int conf_taperalgo;
 static time_t sleep_time;
 static int idle_reason;
