@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.16 2005/03/16 18:09:50 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.17 2005/09/07 18:05:29 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -2158,6 +2158,10 @@ static void delay_dumps P((void))
 	    else if(est(dp)->degr_level < 0) {
 		delete = 1;
 		message = "but no incremental estimate";
+	    }
+	    else if (est(dp)->degr_size > tape->length) {
+		delete = 1;
+		message = "incremental dump also larger than tape";
 	    }
 	    else {
 		delete = 0;
