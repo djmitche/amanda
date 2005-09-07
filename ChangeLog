@@ -1,4 +1,10 @@
 2005-09-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch Paul Bijnens <paul.bijnens@xplanation.com>
+
+	* server-src/planner.c(delay_dumps): Delay incremental dump also
+	  larger than tape.
+
+2005-09-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch by Orion Poplawski <orion@cora.nwra.com>
 
 	* server-src/amoverview.pl.in: Add options -last, -num0 and -togo0.
