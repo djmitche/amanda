@@ -24,7 +24,7 @@ amoverview \- display file systems processed by AMANDA over time
 .ad l
 .hy 0
 .HP 11
-\fBamoverview\fR [[\-config]\ \fIconfig\fR] [\-hostwidth\ \fIwidth\fR] [\-diskwidth\ \fIwidth\fR] [\-skipmissed] [\-verbose]
+\fBamoverview\fR [[\-config]\ \fIconfig\fR] [\-hostwidth\ \fIwidth\fR] [\-diskwidth\ \fIwidth\fR] [\-skipmissed] [\-last] [\-num0] [\-togo0] [\-verbose]
 .ad
 .hy
 
@@ -53,6 +53,18 @@ Set \fBdisk\fR field column width to \fBwidth\fR characters instead of 20\&.
 .TP
 \fB\-skipmissed\fR
 Compacts the output by only printing stats for the days \fBAMANDA\fR actually ran\&.
+
+.TP
+\fB\-last\fR
+Outputs the last status of each disk at the start.  Useful for long tapecycles and/or sparse reports\&.
+
+.TP
+\fB\-num0\fR
+Outputs the number of level 0 dumps for each disk\&.
+
+.TP
+\fB\-togo0\fR
+Outputs the number of runs until the last level 0 dump is overwritten\&.
 
 .TP
 \fB\-verbose\fR
