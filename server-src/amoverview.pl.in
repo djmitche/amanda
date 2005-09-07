@@ -14,7 +14,7 @@ use POSIX;
 
 sub Usage {
     print STDERR <<END;
-Usage: $0 [[-config] CONFIG] [-hostwidth width] [-diskwidth width] [-skipmissed] [-verbose]
+Usage: $0 [[-config] CONFIG] [-hostwidth width] [-diskwidth width] [-skipmissed] [-last] [-num0] [-togo0] [-verbose]
 
 This script generates to standard output an overview of the filesystems
 dumped over time and the type of dump done on a particular day, such as
@@ -56,12 +56,18 @@ my $opt_config		= "$config";
 my $opt_hostwidth	= 8;
 my $opt_diskwidth	= 20;
 my $opt_skipmissed	= 0;
+my $opt_last		= 0;
+my $opt_num0		= 0;
+my $opt_togo0		= 0;
 my $opt_verbose		= 0;
 
 GetOptions('config=s'		=> \$opt_config,
 	   'hostwidth=i'	=> \$opt_hostwidth,
 	   'diskwidth=i'	=> \$opt_diskwidth,
 	   'skipmissed'		=> \$opt_skipmissed,
+	   'last'		=> \$opt_last,
+	   'num0'		=> \$opt_num0,
+	   'togo0'		=> \$opt_togo0,
 	   'verbose'		=> \$opt_verbose)
 or Usage();
 
@@ -128,19 +134,51 @@ $fh->close or
     die "$0: error in closing `$amadmin $opt_config find|' pipe: $!\n";
 
 # Process the status to arrive at a "last" status
-for $host (sort keys %disks) {
-    for $disk (sort keys %{$disks{$host}}) {
-	$level{$host}{$disk}{"0000-LA-ST"} = '';
-	for $date (sort keys %dates) {
-	    if ($level{$host}{$disk}{$date} eq "E"
-		 && $level{$host}{$disk}{"0000-LA-ST"} =~ /^\d/ ) {
-		$level{$host}{$disk}{"0000-LA-ST"} .= $level{$host}{$disk}{$date};
-	    } elsif ($level{$host}{$disk}{$date} eq "") {
-		$level{$host}{$disk}{"0000-LA-ST"} =~ s/E//;
-	    } else {
-		$level{$host}{$disk}{"0000-LA-ST"} = $level{$host}{$disk}{$date};
+if ($opt_last) {
+    for $host (sort keys %disks) {
+        for $disk (sort keys %{$disks{$host}}) {
+	    $level{$host}{$disk}{"0000-LA-ST"} = '';
+	    for $date (sort keys %dates) {
+	        if ($level{$host}{$disk}{$date} eq "E"
+		     && $level{$host}{$disk}{"0000-LA-ST"} =~ /^\d/ ) {
+		    $level{$host}{$disk}{"0000-LA-ST"} .= $level{$host}{$disk}{$date};
+	        } elsif ($level{$host}{$disk}{$date} eq "") {
+		    $level{$host}{$disk}{"0000-LA-ST"} =~ s/E//;
+	        } else {
+		    $level{$host}{$disk}{"0000-LA-ST"} = $level{$host}{$disk}{$date};
+	        }
 	    }
-	}
+        }
+    }
+}
+
+# Number of level 0 backups
+if ($opt_num0) {
+    for $host (sort keys %disks) {
+        for $disk (sort keys %{$disks{$host}}) {
+            $level{$host}{$disk}{'0000-NM-L0'} = 0;
+            for $date (sort keys %dates) {
+                if ($level{$host}{$disk}{$date} =~ /0/) {
+                    $level{$host}{$disk}{'0000-NM-L0'} += 1;
+                }
+            }
+        }
+    }
+}
+
+# Runs to the last level 0
+if ($opt_togo0) {
+    for $host (sort keys %disks) {
+        for $disk (sort keys %{$disks{$host}}) {
+            $level{$host}{$disk}{'0000-TO-GO'} = 0;
+            my $togo=0;
+            for $date (sort keys %dates) {
+                if ($level{$host}{$disk}{$date} =~ /0/) {
+                    $level{$host}{$disk}{'0000-TO-GO'} = $togo;
+                }
+                $togo++;
+            }
+        }
     }
 }
 
@@ -161,7 +199,13 @@ unless ($opt_skipmissed)
 }
 
 #Add the "last" entry    
-$dates{"0000-LA-ST"}=1;
+$dates{"0000-LA-ST"}=1 if ($opt_last);
+
+#Add the "Number of Level 0s" entry
+$dates{"0000-NM-L0"}=1 if ($opt_num0);
+
+#Add the "Runs to go" entry
+$dates{"0000-TO-GO"}=1 if ($opt_togo0);
 
 # make formats
 
