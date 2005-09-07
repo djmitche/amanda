@@ -1,6 +1,11 @@
-2005-07-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+2005-09-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Orion Poplawski <orion@cora.nwra.com>
 
+	* server-src/driver.c: Make tape_length and tape_left unsigned long.
+
+2005-07-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Bug found by John E Hein <jhein@timing.com>.
+
 	* server-src/amadmin.c: Fix of by one with NB_HISTORY.
 	* server-src/infofile.c: Fix of by one with NB_HISTORY.
 

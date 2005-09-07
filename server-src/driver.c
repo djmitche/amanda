@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.14 2005/02/09 18:12:31 martinea Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.15 2005/09/07 17:00:52 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -55,7 +55,7 @@ unsigned long total_disksize;
 char *dumper_program;
 int  inparallel;
 int nodump = 0;
-long tape_length, tape_left = 0;
+unsigned long tape_length, tape_left = 0;
 int conf_taperalgo;
 am_host_t *flushhost = NULL;
 
