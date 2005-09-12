@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.70 2005/03/16 18:15:05 martinea Exp $
+ * $Id: driverio.c,v 1.71 2005/09/12 13:39:49 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -660,15 +660,17 @@ void update_info_dumper(dp, origsize, dumpsize, dumptime)
 	info.consecutive_runs = 1;
     }
 
-    for(i=NB_HISTORY-1;i>0;i--) {
-	info.history[i] = info.history[i-1];
-    }
+    if(origsize >=0 && dumpsize >=0) {
+	for(i=NB_HISTORY-1;i>0;i--) {
+	    info.history[i] = info.history[i-1];
+	}
 
-    info.history[0].level = level;
-    info.history[0].size  = origsize;
-    info.history[0].csize = dumpsize;
-    info.history[0].date  = sched(dp)->timestamp;
-    info.history[0].secs  = dumptime;
+	info.history[0].level = level;
+	info.history[0].size  = origsize;
+	info.history[0].csize = dumpsize;
+	info.history[0].date  = sched(dp)->timestamp;
+	info.history[0].secs  = dumptime;
+    }
 
     if(put_info(dp->host->hostname, dp->name, &info))
 	error("infofile update failed (%s,%s)\n", dp->host->hostname, dp->name);
