@@ -1,4 +1,9 @@
 2005-09-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Geert Uytterhoeven <geert@linux-m68k.org>
+
+	* server-src/planner.c: Don't use history with size < 0.
+
+2005-09-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 	Patch Paul Bijnens <paul.bijnens@xplanation.com>
 
 	* server-src/planner.c(delay_dumps): Delay incremental dump also
