@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.17 2005/09/07 18:05:29 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.18 2005/09/12 13:33:56 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1393,6 +1393,7 @@ am_host_t *hostp;
 
 			for(j=NB_HISTORY-2;j>=0;j--) {
 			    if(info.history[j].level == 0) {
+				if(info.history[j].size < 0) continue;
 				est_size = info.history[j].size;
 				nb_est++;
 			    }
@@ -1421,6 +1422,7 @@ am_host_t *hostp;
 
 			for(j=NB_HISTORY-2;j>=0;j--) {
 			    if(info.history[j].level <= 0) continue;
+			    if(info.history[j].size < 0) continue;
 			    if(info.history[j].level == info.history[j+1].level) {
 				if(nb_day <NB_DAY-1) nb_day++;
 				est_size_day[nb_day] += info.history[j].size;
@@ -1453,6 +1455,7 @@ am_host_t *hostp;
 
 			for(j=NB_HISTORY-2;j>=0;j--) {
 			    if(info.history[j].level <= 0) continue;
+			    if(info.history[j].size < 0) continue;
 			    if(info.history[j].level == info.history[j+1].level + 1 ) {
 				est_size += info.history[j].size;
 				nb_est++;
@@ -2139,7 +2142,7 @@ static void delay_dumps P((void))
     for(dp = schedq.head; dp != NULL; dp = ndp) {
 	ndp = dp->next; /* remove_disk zaps this */
 
-	if (est(dp)->dump_size <= tape->length) {
+	if (est(dp)->dump_size == -1 || est(dp)->dump_size <= tape->length) {
 	    continue;
 	}
 
