@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.7.2.13.4.5.2.6.2.2 2004/11/19 18:12:30 martinea Exp $
+#	$Id: amverify.sh.in,v 1.7.2.13.4.5.2.6.2.3 2005/09/15 13:26:45 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -436,9 +436,6 @@ while [ $SLOT -lt $SLOTS ]; do
 			report "Skipped $FILE (`cat $TEMP/errors`)"
 		elif [ -n "$EOF" ]; then
 			report "End-of-Tape detected."
-			break
-		elif [ -n "$EOI" ]; then
-			report "End-of-Information detected."
 			break
 		else
 			report "** Error detected ($FILE)"
