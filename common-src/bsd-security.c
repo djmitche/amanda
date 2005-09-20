@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.44 2003/04/26 02:02:14 kovert Exp $
+ * $Id: bsd-security.c,v 1.45 2005/09/20 16:30:35 martinea Exp $
  *
  * "BSD" security module
  */
@@ -76,6 +76,7 @@ struct bsd_handle {
      * older clients who send a handle made up of two parts, an offset
      * and a hex address.
      */
+    int event_id; /* unique event_id */
     int proto_handle_offset;
     int proto_handle;
 
@@ -110,7 +111,11 @@ struct bsd_handle {
      * Timeout handle for a recv
      */
     event_handle_t *ev_timeout;
+
+    struct bsd_handle *prev, *next;
 };
+
+struct bsd_handle *bh_first=NULL, *bh_last=NULL;
 
 /*
  * This is the internal security_stream data
@@ -220,6 +225,7 @@ static struct {
 
 /* generate new handles from here */
 static int newhandle = 0;
+static int newevent = 0;
 
 /*
  * We register one event handler for our network fd which takes
@@ -426,6 +432,12 @@ inithandle(bh, he, port, handle_offset, handle, sequence)
     bh->peer.sin_port = port;
     bh->peer.sin_family = AF_INET;
 
+    bh->prev = bh_last;
+    if(bh_last) {bh->prev->next = bh;}
+    if(!bh_first) {bh_first = bh;}
+    bh->next = NULL;
+    bh_last = bh;
+
     /*
      * Do a forward lookup of the hostname.  This is unnecessary if we
      * are initiating the connection, but is very serious if we are
@@ -479,6 +491,7 @@ inithandle(bh, he, port, handle_offset, handle, sequence)
     }
 
     bh->sequence = sequence;
+    bh->event_id = newevent++;
     bh->proto_handle_offset = handle_offset;
     bh->proto_handle = handle;
     bh->fn = NULL;
@@ -493,11 +506,24 @@ inithandle(bh, he, port, handle_offset, handle, sequence)
  * Frees a handle allocated by the above
  */
 static void
-bsd_close(bh)
-    void *bh;
+bsd_close(cookie)
+    void *cookie;
 {
+    struct bsd_handle *bh = cookie;
 
     bsd_recvpkt_cancel(bh);
+    if(bh->next) {
+	bh->next->prev = bh->prev;
+    }
+    else {
+	bh_last = bh->prev;
+    }
+    if(bh->prev) {
+	bh->prev->next = bh->next;
+    }
+    else {
+	bh_first = bh->prev;
+    }
     amfree(bh);
 }
 
@@ -576,7 +602,7 @@ bsd_recvpkt(cookie, fn, arg, timeout)
      */
     if (bh->ev_read == NULL) {
 	netfd_addref();
-	bh->ev_read = event_register(bh->proto_handle, EV_WAIT,
+	bh->ev_read = event_register(bh->event_id, EV_WAIT,
 	    recvpkt_callback, bh);
     }
     if (bh->ev_timeout != NULL)
@@ -647,7 +673,15 @@ netfd_read_callback(cookie)
     /*
      * If there are events waiting on this handle, we're done
      */
-    if (event_wakeup(netfd.handle) > 0)
+    bh = bh_first;
+    while(bh != NULL && (bh->proto_handle != netfd.handle ||
+			 bh->proto_handle_offset != netfd.handle_offset ||
+			 bh->sequence != netfd.sequence ||
+			 bh->peer.sin_addr.s_addr != netfd.peer.sin_addr.s_addr ||
+			 bh->peer.sin_port != netfd.peer.sin_port)) {
+	bh = bh->next;
+    }
+    if (bh && event_wakeup(bh->event_id) > 0)
 	return;
 
     /*
@@ -670,6 +704,19 @@ netfd_read_callback(cookie)
 		   netfd.handle,
 		   netfd.sequence);
     if (a < 0) {
+	if(bh->next) {
+	    bh->next->prev = bh->prev;
+	}
+	else {
+	    bh_last = bh->prev;
+	}
+	if(bh->prev) {
+	    bh->prev->next = bh->next;
+	}
+	else {
+	    bh_first = bh->prev;
+	}
+
 	amfree(bh);
 	return;
     }

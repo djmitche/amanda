@@ -1,6 +1,11 @@
+2005-09-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/bsd-security.c: Generate a unique event_id, thei
+	  proto_handle is not always unique.
+
 2005-09-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
-	* server-src/amverify.sh.in: Don't check for IOI, it's buggy.
+	* server-src/amverify.sh.in: Don't check for EOI, it's buggy.
 
 2005-09-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
