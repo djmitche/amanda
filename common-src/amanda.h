@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.12.2.4 2004/08/02 18:56:32 martinea Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.12.2.5 2005/09/20 19:06:37 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -373,6 +373,7 @@ extern int errno;
 
 #ifdef DEBUG_CODE							/* { */
 #   define dbopen()	debug_open()
+#   define dbreopen(a,b) debug_reopen(a,b)
 #   define dbclose()	debug_close()
 #   define dbprintf(p)	(debug? (debug_printf p, 0) : 0)
 #   define dbfd()	debug_fd()
@@ -380,6 +381,7 @@ extern int errno;
 #   define dbfn()	debug_fn()
 
 extern void debug_open P((void));
+extern void debug_reopen P((char *file, char *notation));
 extern void debug_close P((void));
 extern void debug_printf P((char *format, ...))
     __attribute__ ((format (printf, 1, 2)));
@@ -391,6 +393,7 @@ extern char *debug_prefix P((char *));
 extern char *debug_prefix_time P((char *));
 #else									/* }{ */
 #   define dbopen()
+#   define dbreopen(a,b)
 #   define dbclose()
 #   define dbprintf(p)
 #   define dbfd()	(-1)
