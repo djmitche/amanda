@@ -1,3 +1,8 @@
+2005-09-20  John R. Jackson <jrj@purdue.edu>
+
+	* client-src/sendbackup-dump.c: Ignore a new message from Solaris
+	  vxdump.
+
 2005-09-20  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* common-src/bsd-security.c: Generate a unique event_id, thei
