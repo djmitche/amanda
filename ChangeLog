@@ -1,5 +1,10 @@
 2005-09-20  John R. Jackson <jrj@purdue.edu>
 
+	* server-src/reporter.c: Fix minor typo noticed by Scott R. Burns
+	  <Scott.Burns@Netcontech.Com>.
+
+2005-09-20  John R. Jackson <jrj@purdue.edu>
+
 	* common-src/file.c: Create safe_fd() to do common file descriptor
 	  safety operations at the start of every program.  In addition
 	  to closing everything from three on up that used to be done

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.7 2005/09/20 21:31:52 jrjackson Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.8 2005/09/20 21:47:36 jrjackson Exp $
  *
  * nightly Amanda Report generator
  */
@@ -853,7 +853,7 @@ void output_tapeinfo()
     if (run_tapes <= 1)
 	fputs("The next tape Amanda expects to use is: ", mailf);
     else
-	fprintf(mailf, "The next %d tapes Amanda expects to used are: ",
+	fprintf(mailf, "The next %d tapes Amanda expects to use are: ",
 		run_tapes);
     
     while(run_tapes > 0) {
