@@ -1,5 +1,11 @@
 2005-09-20  John R. Jackson <jrj@purdue.edu>
 
+	* client-src/calcsize.c: Fix format string.
+	* server-src/diskfile.c: Fix compiler warnings.
+	* server-src/planner.c: Fix compiler warnings.
+
+2005-09-20  John R. Jackson <jrj@purdue.edu>
+
 	* common-src/amanda.h: Add dbreopen() so debug file can be closed
 	  and then reopened if needed.
 	* common-src/debug.c: Ditto.
