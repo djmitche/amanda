@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.c,v 1.22.8.3 2003/10/22 17:32:33 kovert Exp $
+ * $Id: token.c,v 1.22.8.3.2.1 2005/09/20 21:31:52 jrjackson Exp $
  *
  * token bashing routines
  */
@@ -410,15 +410,7 @@ int main()
 	int i;
 	int fd;
 
-	for(fd = 3; fd < FD_SETSIZE; fd++) {
-		/*
-		 * Make sure nobody spoofs us with a lot of extra open files
-		 * that would cause an open we do to get a very high file
-		 * descriptor, which in turn might be used as an index into
-		 * an array (e.g. an fd_set).
-		 */
-		close(fd);
-	}
+	safe_fd(-1, 0);
 
 	set_pname("token test");
 

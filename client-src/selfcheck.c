@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.40.2.3.4.4.2.22.2.2 2004/08/12 12:30:53 martinea Exp $
+ * $Id: selfcheck.c,v 1.40.2.3.4.4.2.22.2.3 2005/09/20 21:31:52 jrjackson Exp $
  *
  * do self-check and send back any error messages
  */
@@ -90,23 +90,13 @@ char **argv;
     char *err_extra = NULL;
     char *s, *fp;
     int ch;
-    int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     option_t *options;
 
     /* initialize */
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
-
+    safe_fd(-1, 0);
     safe_cd();
 
     set_pname("selfcheck");

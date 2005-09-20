@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.24.2.3.6.1.2.4 2005/09/20 19:38:44 jrjackson Exp $
+ * $Id: calcsize.c,v 1.24.2.3.6.1.2.5 2005/09/20 21:31:52 jrjackson Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -108,17 +108,8 @@ char **argv;
     unsigned long dump_total=0, gtar_total=0;
     char *d;
     int l, w;
-    int fd;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
+    safe_fd(-1, 0);
 
     set_pname("calcsize");
 
@@ -142,23 +133,13 @@ char **argv;
 #else
     int i;
     char *dirname=NULL, *amname=NULL, *filename=NULL;
-    int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
+    safe_fd(-1, 0);
+    safe_cd();
 
     set_pname("calcsize");
-
-    safe_cd();
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

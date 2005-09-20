@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.97.2.13.4.6.2.23.2.4 2005/06/08 11:57:49 martinea Exp $
+ * $Id: sendsize.c,v 1.97.2.13.4.6.2.23.2.5 2005/09/20 21:31:52 jrjackson Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -119,7 +119,6 @@ char **argv;
     char *s, *fp;
     int ch;
     char *err_extra = NULL;
-    int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     int done;
@@ -129,16 +128,7 @@ char **argv;
 
     /* initialize */
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
-
+    safe_fd(-1, 0);
     safe_cd();
 
     set_pname("sendsize");

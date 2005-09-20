@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: versionsuffix.c,v 1.6 1998/07/04 00:18:28 oliva Exp $
+ * $Id: versionsuffix.c,v 1.6.12.1 2005/09/20 21:31:52 jrjackson Exp $
  *
  * prints the (possibly empty) suffix appended to amanda program names
  */
@@ -33,17 +33,7 @@
 
 int main()
 {
-	int fd;
-
-	for(fd = 3; fd < FD_SETSIZE; fd++) {
-		/*
-		 * Make sure nobody spoofs us with a lot of extra open files
-		 * that would cause an open we do to get a very high file
-		 * descriptor, which in turn might be used as an index into
-		 * an array (e.g. an fd_set).
-		 */
-		close(fd);
-	}
+	safe_fd(-1, 0);
 
 	set_pname("versionsuffix");
 

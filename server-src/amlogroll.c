@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.1.2.1.4.1.2.3 2003/10/27 17:55:39 martinea Exp $
+ * $Id: amlogroll.c,v 1.1.2.1.4.1.2.3.2.1 2005/09/20 21:31:52 jrjackson Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -47,20 +47,11 @@ char **argv;
     char *logfname;
     char *conf_logdir;
     FILE *logfile;
-    int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char my_cwd[STR_SIZE];
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
+    safe_fd(-1, 0);
 
     set_pname("amlogroll");
 

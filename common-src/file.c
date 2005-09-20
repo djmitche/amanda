@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.14.4.6.4.2.2.5 2003/01/01 23:28:52 martinea Exp $
+ * $Id: file.c,v 1.14.4.6.4.2.2.5.2.1 2005/09/20 21:31:52 jrjackson Exp $
  *
  * file and directory bashing routines
  */
@@ -241,6 +241,61 @@ safe_cd()
     } else {
 	(void) chdir("/");			/* assume this works */
     }
+}
+
+/*
+ *=====================================================================
+ * Close all file descriptors except stdin, stdout and stderr.  Make
+ * sure they are open.
+ *
+ * void safe_fd (fd_start, fd_count)
+ *
+ * entry:	fd_start - start of fd-s to leave alone (or -1)
+ *		fd_count - count of fd-s to leave alone
+ * exit:	none
+ *
+ * On exit, all three standard file descriptors will be open and pointing
+ * someplace (either what we were handed or /dev/null) and all other
+ * file descriptors (up to FD_SETSIZE) will be closed.
+ *=====================================================================
+ */
+
+void
+safe_fd(fd_start, fd_count)
+    int			fd_start;
+    int			fd_count;
+{
+    int			fd;
+
+    for(fd = 0; fd < FD_SETSIZE; fd++) {
+	if (fd < 3) {
+	    /*
+	     * Open three file descriptors.  If stdin, stdout and stderr
+	     * are normal, i.e. open, we will open descriptor numbers
+	     * 3 or higher which the rest of this loop will turn right
+	     * around and close.  If one of the standard descriptors
+	     * is not open it will end up pointing to /dev/null and the
+	     * rest of the loop will leave it alone.
+	     *
+	     * This avoids, for instance, someone running us with stderr
+	     * closed so that when we open some other file, messages
+	     * sent to stderr do not accidentally get written to the
+	     * wrong file.
+	     */
+	    (void) open("/dev/null", O_RDWR);
+	} else {
+	    /*
+	     * Make sure nobody spoofs us with a lot of extra open files
+	     * that would cause an open we do to get a very high file
+	     * descriptor, which in turn might be used as an index into
+	     * an array (e.g. an fd_set).
+	     */
+	    if (fd < fd_start || fd >= fd_start + fd_count) {
+		close(fd);
+	    }
+	}
+    }
+
 }
 
 /*
@@ -611,15 +666,7 @@ int main(argc, argv)
 	char *file;
 	char *line;
 
-	for(fd = 3; fd < FD_SETSIZE; fd++) {
-		/*
-		 * Make sure nobody spoofs us with a lot of extra open files
-		 * that would cause an open we do to get a very high file
-		 * descriptor, which in turn might be used as an index into
-		 * an array (e.g. an fd_set).
-		 */
-		close(fd);
-	}
+	safe_fd(-1, 0);
 
 	set_pname("file test");
 

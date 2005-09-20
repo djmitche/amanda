@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.75.2.14.2.7.2.17.2.3 2005/03/31 13:08:05 martinea Exp $
+/* $Id: dumper.c,v 1.75.2.14.2.7.2.17.2.4 2005/09/20 21:31:52 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -179,19 +179,10 @@ char **main_argv;
     unsigned long malloc_hist_2, malloc_size_2;
     char *conffile;
     char *q = NULL;
-    int fd;
     char *tmp_filename = NULL, *pc;
     int a;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
+    safe_fd(-1, 0);
 
     set_pname("dumper");
 
@@ -1226,9 +1217,7 @@ int mesgfd, datafd, indexfd, outfd;
 		fprintf(stderr, "err dup2 out: %s\n", strerror(errno));
 	    if (dup2(tmpfd, 0) == -1)
 		fprintf(stderr, "err dup2 in: %s\n", strerror(errno));
-	    for(tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd) {
-		close(tmpfd);
-	    }
+	    safe_fd(-1, 0);
 	    /* now spawn gzip -1 to take care of the rest */
 	    execlp(COMPRESS_PATH, COMPRESS_PATH,
 		   (srvcompress == srvcomp_best ? COMPRESS_BEST_OPT
@@ -1241,8 +1230,6 @@ int mesgfd, datafd, indexfd, outfd;
 
     indexpid = -1;
     if (indexfd != -1) {
-	int tmpfd;
-
 	indexfile_real = getindexfname(hostname, diskname, datestamp, level),
 	indexfile_tmp = stralloc2(indexfile_real, ".tmp");
 
@@ -1277,9 +1264,7 @@ int mesgfd, datafd, indexfd, outfd;
 		error("err open %s: %s", indexfile_tmp, strerror(errno));
 	    if (dup2(indexfd,1) == -1)
 		error("err dup2 out: %s", strerror(errno));
-	    for(tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd) {
-		close(tmpfd);
-	    }
+	    safe_fd(-1, 0);
 	    execlp(COMPRESS_PATH, COMPRESS_PATH, COMPRESS_BEST_OPT, (char *)0);
 	    error("error: couldn't exec %s.", COMPRESS_PATH);
 	}

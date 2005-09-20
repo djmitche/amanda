@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.8.4.2.2.2.2.4.2.1 2005/09/20 19:06:38 jrjackson Exp $
+ * $Id: getconf.c,v 1.8.4.2.2.2.2.4.2.2 2005/09/20 21:31:52 jrjackson Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -310,7 +310,6 @@ int argc;
 char **argv;
 {
     char *result;
-    int fd;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char *pgm;
@@ -319,15 +318,7 @@ char **argv;
     int i;
     char number[NUM_STR_SIZE];
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
+    safe_fd(-1, 0);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

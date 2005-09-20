@@ -1,5 +1,51 @@
 2005-09-20  John R. Jackson <jrj@purdue.edu>
 
+	* common-src/file.c: Create safe_fd() to do common file descriptor
+	  safety operations at the start of every program.  In addition
+	  to closing everything from three on up that used to be done
+	  with explicit code, make sure stdin, stdout and stderr are
+	  open per a potential (but unlikely) security report from Ben
+	  Schwarz <bschwarz@EECS.berkeley.EDU>.
+	* common-src/amanda.h: Ditto.
+	* client-src/amandad.c: Ditto.
+	* client-src/calcsize.c: Ditto.
+	* client-src/getfsent.c: Ditto.
+	* client-src/killpgrp.c: Ditto.
+	* client-src/rundump.c: Ditto.
+	* client-src/runtar.c: Ditto.
+	* client-src/selfcheck.c: Ditto.
+	* client-src/sendbackup.c: Ditto.
+	* client-src/sendsize.c: Ditto.
+	* client-src/versionsuffix.c: Ditto.
+	* common-src/amflock.c: Ditto.
+	* common-src/genversion.c: Ditto.
+	* common-src/statfs.c: Ditto.
+	* common-src/token.c: Ditto.
+	* recover-src/amrecover.c: Ditto.
+	* restore-src/amidxtaped.c: Ditto.
+	* restore-src/amrestore.c: Ditto.
+	* server-src/amadmin.c: Ditto.
+	* server-src/amcheck.c: Ditto.
+	* server-src/amcleanupdisk.c: Ditto.
+	* server-src/amflush.c: Ditto.
+	* server-src/amindexd.c: Ditto.
+	* server-src/amlabel.c: Ditto.
+	* server-src/amlogroll.c: Ditto.
+	* server-src/amtape.c: Ditto.
+	* server-src/amtrmidx.c: Ditto.
+	* server-src/amtrmlog.c: Ditto.
+	* server-src/conffile.c: Ditto.
+	* server-src/diskfile.c: Ditto.
+	* server-src/driver.c: Ditto.
+	* server-src/dumper.c: Ditto.
+	* server-src/getconf.c: Ditto.
+	* server-src/infofile.c: Ditto.
+	* server-src/planner.c: Ditto.
+	* server-src/reporter.c: Ditto.
+	* server-src/taper.c: Ditto.
+
+2005-09-20  John R. Jackson <jrj@purdue.edu>
+
 	* client-src/calcsize.c: Fix format string.
 	* server-src/diskfile.c: Fix compiler warnings.
 	* server-src/planner.c: Fix compiler warnings.

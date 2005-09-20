@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.6 2005/03/29 16:35:11 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.7 2005/09/20 21:31:52 jrjackson Exp $
  *
  * nightly Amanda Report generator
  */
@@ -257,7 +257,7 @@ char **argv;
     char *conf_infofile;
     char *logfname, *psfname, *outfname, *subj_str = NULL;
     tapetype_t *tp;
-    int fd, opt;
+    int opt;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char *mail_cmd = NULL, *printer_cmd = NULL;
@@ -267,15 +267,7 @@ char **argv;
     char *errstr = NULL;
     int cn;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
+    safe_fd(-1, 0);
 
     set_pname("amreport");
 

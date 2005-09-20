@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amandad.c,v 1.32.2.4.4.1.2.6.2.1 2004/02/13 14:01:07 martinea Exp $
+ * $Id: amandad.c,v 1.32.2.4.4.1.2.6.2.2 2005/09/20 21:31:52 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -84,7 +84,6 @@ int argc;
 char **argv;
 {
     int n;
-    int fd;
     char *errstr = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
@@ -112,16 +111,7 @@ char **argv;
     struct service_s *servp;
     fd_set insock;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
-
+    safe_fd(-1, 0);
     safe_cd();
 
     /*

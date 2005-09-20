@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.21.4.1.4.2.2.5.2.1 2004/02/12 18:28:37 martinea Exp $
+ * $Id: amtrmidx.c,v 1.21.4.1.4.2.2.5.2.2 2005/09/20 21:31:52 jrjackson Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -63,21 +63,11 @@ char **argv;
     char *conf_diskfile;
     char *conf_tapelist;
     char *conf_indexdir;
-    int fd;
     find_result_t *output_find;
     time_t tmp_time;
     int amtrmidx_debug = 0;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
-
+    safe_fd(-1, 0);
     safe_cd();
 
     set_pname("amtrmidx");

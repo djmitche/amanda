@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.1.2.3.4.1.2.2 2003/01/01 23:28:53 martinea Exp $
+ * $Id: amtrmlog.c,v 1.1.2.3.4.1.2.2.2.1 2005/09/20 21:31:52 jrjackson Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -48,7 +48,6 @@ char **argv;
 {
     disklist_t *diskl;
     int no_keep;			/* files per system to keep */
-    int fd;
     char **output_find_log;
     DIR *dir;
     struct dirent *adir;
@@ -66,16 +65,7 @@ char **argv;
     char *conf_logdir;
     int amtrmidx_debug = 0;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
-
+    safe_fd(-1, 0);
     safe_cd();
 
     set_pname("amtrmlog");

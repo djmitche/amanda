@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.66.2.7.4.5.2.12.2.5 2005/09/20 19:06:37 jrjackson Exp $
+ * $Id: amanda.h,v 1.66.2.7.4.5.2.12.2.6 2005/09/20 21:31:52 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -543,6 +543,7 @@ extern void  *sbuf_man        P((void *bufs, void *ptr));
 extern uid_t  client_uid;
 extern gid_t  client_gid;
 extern void   safe_cd	      P((void));
+extern void   safe_fd	      P((int fd_start, int fd_count));
 extern void   save_core	      P((void));
 extern char **safe_env        P((void));
 extern char  *validate_regexp P((char *regex));
