@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.24.2.3.6.1.2.3 2005/02/09 17:56:52 martinea Exp $
+ * $Id: calcsize.c,v 1.24.2.3.6.1.2.4 2005/09/20 19:38:44 jrjackson Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -171,7 +171,7 @@ char **argv;
     /* need at least program, amname, and directory name */
 
     if(argc < 3) {
-	error("Usage: %s [DUMP|GNUTAR%s] name dir [-X exclude-file] [-I include-file] [level date]*",
+	error("Usage: %s [DUMP|GNUTAR] name dir [-X exclude-file] [-I include-file] [level date]*",
 	      get_pname());
 	return 1;
     }

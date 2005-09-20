@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.18 2005/09/12 13:33:56 martinea Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.19 2005/09/20 19:38:44 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1164,13 +1164,13 @@ static void get_estimates P((void))
 	if(est(dp)->level[0] != -1 && est(dp)->est_size[0] < 0) {
 	    if(est(dp)->est_size[0] == -1) {
 		log_add(L_WARNING,
-			"disk %s:%s, estimate of level %d failed: %d.",
+			"disk %s:%s, estimate of level %d failed: %lu.",
 			dp->host->hostname, dp->name,
 			est(dp)->level[0], est(dp)->est_size[0]);
 	    }
 	    else {
 		log_add(L_WARNING,
-			"disk %s:%s, estimate of level %d timed out: %d.",
+			"disk %s:%s, estimate of level %d timed out: %lu.",
 			dp->host->hostname, dp->name,
 			est(dp)->level[0], est(dp)->est_size[0]);
 	    }
@@ -1180,13 +1180,13 @@ static void get_estimates P((void))
 	if(est(dp)->level[1] != -1 && est(dp)->est_size[1] < 0) {
 	    if(est(dp)->est_size[1] == -1) {
 		log_add(L_WARNING,
-			"disk %s:%s, estimate of level %d failed: %d.",
+			"disk %s:%s, estimate of level %d failed: %lu.",
 			dp->host->hostname, dp->name,
 			est(dp)->level[1], est(dp)->est_size[1]);
 	    }
 	    else {
 		log_add(L_WARNING,
-			"disk %s:%s, estimate of level %d timed out: %d.",
+			"disk %s:%s, estimate of level %d timed out: %lu.",
 			dp->host->hostname, dp->name,
 			est(dp)->level[1], est(dp)->est_size[1]);
 	    }
@@ -1196,13 +1196,13 @@ static void get_estimates P((void))
 	if(est(dp)->level[2] != -1 && est(dp)->est_size[2] < 0) {
 	    if(est(dp)->est_size[2] == -1) {
 		log_add(L_WARNING,
-			"disk %s:%s, estimate of level %d failed: %d.",
+			"disk %s:%s, estimate of level %d failed: %lu.",
 			dp->host->hostname, dp->name,
 			est(dp)->level[2], est(dp)->est_size[2]);
 	    }
 	    else {
 		log_add(L_WARNING,
-			"disk %s:%s, estimate of level %d timed out: %d.",
+			"disk %s:%s, estimate of level %d timed out: %lu.",
 			dp->host->hostname, dp->name,
 			est(dp)->level[2], est(dp)->est_size[2]);
 	    }
@@ -1763,21 +1763,21 @@ pkt_t *pkt;
 
 		    if(est(dp)->level[2] != -1 && est(dp)->est_size[2] < 0) {
 			log_add(L_WARNING,
-				"disk %s:%s, estimate of level %d failed: %d.",
+				"disk %s:%s, estimate of level %d failed: %lu.",
 				dp->host->hostname, dp->name,
 				est(dp)->level[2], est(dp)->est_size[2]);
 			est(dp)->level[2] = -1;
 		    }
 		    if(est(dp)->level[1] != -1 && est(dp)->est_size[1] < 0) {
 			log_add(L_WARNING,
-				"disk %s:%s, estimate of level %d failed: %d.",
+				"disk %s:%s, estimate of level %d failed: %lu.",
 				dp->host->hostname, dp->name,
 				est(dp)->level[1], est(dp)->est_size[1]);
 			est(dp)->level[1] = -1;
 		    }
 		    if(est(dp)->level[0] != -1 && est(dp)->est_size[0] < 0) {
 			log_add(L_WARNING,
-				"disk %s:%s, estimate of level %d failed: %d.",
+				"disk %s:%s, estimate of level %d failed: %lu.",
 				dp->host->hostname, dp->name,
 				est(dp)->level[0], est(dp)->est_size[0]);
 			est(dp)->level[0] = -1;
