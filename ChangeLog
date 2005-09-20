@@ -1,3 +1,8 @@
+2005-09-15  John R. Jackson <jrj@purdue.edu>
+
+	* client-src/sendbackup-dump.c: Ignore a new message from Solaris
+	  vxdump.
+
 2005-09-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amverify.sh.in: Don't check for IOI, it's buggy.
