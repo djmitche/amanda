@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.34 2003/01/04 17:45:48 martinea Exp $
+ * $Id: debug.c,v 1.35 2005/09/20 19:06:54 jrjackson Exp $
  *
  * debug log subroutines
  */
@@ -107,30 +107,25 @@ get_debug_name(t, n)
     return result;
 }
 
-void debug_open()
+static char *dbgdir = NULL;
+static time_t curtime;
+
+static void debug_setup_1()
 {
-    time_t curtime;
-    int saved_debug;
-    char *dbgdir = NULL;
-    char *e = NULL;
-    char *s = NULL;
-    char *dbfilename = NULL;
-    DIR *d;
-    struct dirent *entry;
+    struct passwd *pwent;
     char *pname;
     size_t pname_len;
+    char *e = NULL;
+    char *s = NULL;
+    DIR *d;
+    struct dirent *entry;
     int do_rename;
     char *test_name = NULL;
     size_t test_name_len;
-    int fd = -1;
-    int i;
     size_t d_name_len;
-    int fd_close[MIN_DB_FD+1];
-    struct passwd *pwent;
     struct stat sbuf;
-
-    pname = get_pname();
-    pname_len = strlen(pname);
+    char *dbfilename = NULL;
+    int i;
 
     if(client_uid == (uid_t) -1 && (pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
 	client_uid = pwent->pw_uid;
@@ -138,9 +133,13 @@ void debug_open()
 	endpwent();
     }
 
+    pname = get_pname();
+    pname_len = strlen(pname);
+
     /*
      * Create the debug directory if it does not yet exist.
      */
+    amfree(dbgdir);
     dbgdir = stralloc2(AMANDA_DBGDIR, "/");
     if(mkpdir(dbgdir, 02700, client_uid, client_gid) == -1) {
         error("create debug directory \"%s\": %s",
@@ -211,25 +210,22 @@ void debug_open()
     amfree(s);
     amfree(test_name);
     closedir(d);
+}
 
-    /*
-     * Create the new file.
-     */
-    for(i = 0;
-	(dbfilename = get_debug_name(curtime, i)) != NULL
-	&& (s = newvstralloc(s, dbgdir, dbfilename, NULL)) != NULL
-	&& (fd = open(s, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600)) < 0;
-	i++, free(dbfilename)) {}
-    if(dbfilename == NULL) {
-	error("cannot create %s debug file", get_pname());
-    }
-    amfree(dbfilename);
+static void debug_setup_2(s, fd, notation)
+    char *s;
+    int fd;
+    char *notation;
+{
+    int saved_debug;
+    int i;
+    int fd_close[MIN_DB_FD+1];
+
     amfree(db_filename);
     db_filename = s;
     s = NULL;
     (void) chown(db_filename, client_uid, client_gid);
     amfree(dbgdir);
-
     /*
      * Move the file descriptor up high so it stays out of the way
      * of other processing, e.g. sendbackup.
@@ -244,15 +240,87 @@ void debug_open()
     }
     db_file = fdopen(db_fd, "a");
 
+    if (notation) {
+	/*
+	 * Make the first debug log file entry.
+	 */
+	saved_debug = debug; debug = 1;
+	debug_printf("%s: debug %d pid %ld ruid %ld euid %ld: %s at %s",
+		     get_pname(), saved_debug, (long)getpid(),
+		     (long)getuid(), (long)geteuid(),
+		     notation,
+		     ctime(&curtime));
+	debug = saved_debug;
+    }
+}
+
+void debug_open()
+{
+    char *dbfilename = NULL;
+    int fd = -1;
+    int i;
+    char *s = NULL;
+
     /*
-     * Make the first debug log file entry.
+     * Do initial setup.
      */
-    saved_debug = debug; debug = 1;
-    debug_printf("%s: debug %d pid %ld ruid %ld euid %ld: start at %s",
-		 pname, saved_debug, (long)getpid(),
-		 (long)getuid(), (long)geteuid(),
-		 ctime(&curtime));
-    debug = saved_debug;
+    debug_setup_1();
+
+    /*
+     * Create the new file.
+     */
+    for(i = 0;
+	(dbfilename = get_debug_name(curtime, i)) != NULL
+	&& (s = newvstralloc(s, dbgdir, dbfilename, NULL)) != NULL
+	&& (fd = open(s, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600)) < 0;
+	i++, free(dbfilename)) {}
+    if(dbfilename == NULL) {
+	error("cannot create %s debug file", get_pname());
+    }
+    amfree(dbfilename);
+
+    /*
+     * Finish setup.
+     *
+     * Note: we release control of the string 's' points to.
+     */
+    debug_setup_2(s, fd, "start");
+}
+
+void debug_reopen(dbfilename, notation)
+    char *dbfilename;
+    char *notation;
+{
+    char *s = NULL;
+    int fd = -1;
+
+    if (dbfilename == NULL) {
+	return;
+    }
+
+    /*
+     * Do initial setup.
+     */
+    debug_setup_1();
+
+    /*
+     * Reopen the file.
+     */
+    if (*dbfilename == '/') {
+	s = stralloc(dbfilename);
+    } else {
+	s = newvstralloc(s, dbgdir, dbfilename, NULL);
+    }
+    if ((fd = open(s, O_RDWR|O_APPEND, 0600)) < 0) {
+	error("cannot reopen %s debug file %s", get_pname(), dbfilename);
+    }
+
+    /*
+     * Finish setup.
+     *
+     * Note: we release control of the string 's' points to.
+     */
+    debug_setup_2(s, fd, notation);
 }
 
 void debug_close()

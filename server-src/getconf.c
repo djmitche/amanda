@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.14 2002/11/05 01:58:52 martinea Exp $
+ * $Id: getconf.c,v 1.15 2005/09/20 19:06:54 jrjackson Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -360,12 +360,6 @@ char **argv;
 
     safe_cd();
 
-    conffile = stralloc2(config_dir, CONFFILE_NAME);
-    if(read_conffile(conffile)) {
-	error("errors processing config file \"%s\"", conffile);
-    }
-    amfree(conffile);
-
     /*
      * Fill in the build values that need runtime help.
      */
@@ -424,6 +418,10 @@ char **argv;
 	} else {
 	    result = stralloc(dbname);
 	}
+	/*
+	 * Note that we deliberately do *not* call dbclose to prevent
+	 * the end line from being added to the file.
+	 */
 
 #undef p
 #define	p	"dbclose."
@@ -432,8 +430,6 @@ char **argv;
 	char *t;
 	char *pname;
 	char *dbname;
-	int old_fd2;
-	int new_fd2;
 
 	t = stralloc(parmname + sizeof(p) - 1);
 	if((dbname = strchr(t, ':')) == NULL) {
@@ -446,38 +442,18 @@ char **argv;
 	    pname++;
 	}
 	fflush(stderr);
-	if((old_fd2 = dup(2)) < 0) {
-	    error("cannot dup2 fd2");
-	}
-	close(2);
-	if((new_fd2 = open(dbname, O_RDWR|O_APPEND, 0600)) != 2) {
-	    int save_errno = errno;
-	    FILE *f;
-
-	    if((f = fdopen(old_fd2, "a")) == NULL) {
-		/* give up */
-		return 3;
-	    }
-	    fprintf(f, "%s: cannot open %s: ", get_pname(), dbname);
-	    if(new_fd2 < 0) {
-		fputs(strerror(save_errno), f);
-	    } else {
-		fprintf(f, "got %d instead of 2", new_fd2);
-	    }
-	    fputc('\n', f);
-	    fclose(f);
-	}
-	/*
-	 * Because we have not called dbopen(), dbclose() will write the
-	 * end line to stderr, which we just redirected to the file on
-	 * the command line.
-	 */
 	set_pname(pname);
+	dbreopen(dbname, NULL);
 	dbclose();
 	result = stralloc(dbname);
 	amfree(t);
 
     } else {
+	conffile = stralloc2(config_dir, CONFFILE_NAME);
+	if(read_conffile(conffile)) {
+	    error("errors processing config file \"%s\"", conffile);
+	}
+	amfree(conffile);
 	result = getconf_byname(parmname);
     }
     if(result == NULL) {
