@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.94 2004/03/17 13:05:07 martinea Exp $
+/* $Id: taper.c,v 1.95 2005/09/20 21:32:26 jrjackson Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -171,22 +171,13 @@ char **main_argv;
 {
     int p2c[2], c2p[2];		/* parent-to-child, child-to-parent pipes */
     char *conffile;
-    int fd;
     unsigned int size;
     int i;
     int j;
     int page_size;
     char *first_buffer;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
+    safe_fd(-1, 0);
 
     set_pname("taper");
 

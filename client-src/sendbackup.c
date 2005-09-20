@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.71 2003/01/04 17:45:45 martinea Exp $
+ * $Id: sendbackup.c,v 1.72 2005/09/20 21:32:25 jrjackson Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -140,25 +140,10 @@ char **argv;
     int ch;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
-    int fd;
 
     /* initialize */
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 *
-	 * Skip over the file descriptors that are passed to us from
-	 * amandad.
-	 */
-	if (fd == DATA_FD_OFFSET)
-	    fd += DATA_FD_COUNT;
-	close(fd);
-    }
-
+    safe_fd(DATA_FD_OFFSET, DATA_FD_COUNT);
     safe_cd();
 
     set_pname("sendbackup");

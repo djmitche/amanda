@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.20 2004/08/03 18:05:59 martinea Exp $
+/* $Id: chunker.c,v 1.21 2005/09/20 21:32:26 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -118,15 +118,7 @@ main(main_argc, main_argv)
     am_feature_t *their_features = NULL;
     int a;
 
-    for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(outfd);
-    }
+    safe_fd(-1, 0);
 
     set_pname("chunker");
 

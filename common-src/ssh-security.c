@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.2 2005/05/05 17:39:00 martinea Exp $
+ * $Id: ssh-security.c,v 1.3 2005/09/20 21:32:25 jrjackson Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -496,7 +496,7 @@ static int
 runssh(rc)
     struct ssh_conn *rc;
 {
-    int rpipe[2], wpipe[2], tmpfd;
+    int rpipe[2], wpipe[2];
     char *amandad_path;
 
     if (pipe(rpipe) < 0 || pipe(wpipe) < 0) {
@@ -524,8 +524,7 @@ runssh(rc)
 	return (0);
     }
 
-    for (tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd)
-	close(tmpfd);
+    safe_fd(-1, 0);
 
     amandad_path = vstralloc(libexecdir, "/", "amandad", versionsuffix(),
 	NULL);

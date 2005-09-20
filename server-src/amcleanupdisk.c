@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.14 2002/11/05 01:58:52 martinea Exp $
+ * $Id: amcleanupdisk.c,v 1.15 2005/09/20 21:32:26 jrjackson Exp $
  */
 #include "amanda.h"
 
@@ -50,22 +50,12 @@ char **main_argv;
 {
     struct passwd *pw;
     char *dumpuser;
-    int fd;
     disklist_t diskq;
     char *conffile;
     char *conf_diskfile;
     char *conf_infofile;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
-
+    safe_fd(-1, 0);
     safe_cd();
 
     set_pname("amcleanupdisk");

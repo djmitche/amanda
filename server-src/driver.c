@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.150 2005/09/07 17:00:41 martinea Exp $
+ * $Id: driver.c,v 1.151 2005/09/20 21:32:26 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -133,7 +133,7 @@ main(main_argc, main_argv)
 {
     disklist_t origq;
     disk_t *diskp;
-    int fd, dsk;
+    int dsk;
     dumper_t *dumper;
     char *newdir = NULL;
     generic_fs_stats_t fs;
@@ -151,15 +151,7 @@ main(main_argc, main_argv)
     char *conf_tapetype;
     tapetype_t *tape;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
+    safe_fd(-1, 0);
 
     setvbuf(stdout, (char *)NULL, _IOLBF, 0);
     setvbuf(stderr, (char *)NULL, _IOLBF, 0);

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.160 2004/08/31 13:38:51 martinea Exp $
+/* $Id: dumper.c,v 1.161 2005/09/20 21:32:26 jrjackson Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -161,17 +161,7 @@ main(main_argc, main_argv)
     char *q = NULL;
     int a;
 
-    chdir("/tmp/amanda");
-
-    for (outfd = 3; outfd < FD_SETSIZE; outfd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(outfd);
-    }
+    safe_fd(-1, 0);
 
     set_pname("dumper");
 
@@ -1240,7 +1230,7 @@ runcompress(outfd, pid, comptype)
     pid_t *pid;
     comp_t comptype;
 {
-    int outpipe[2], tmpfd, rval;
+    int outpipe[2], rval;
 
     assert(outfd >= 0);
     assert(pid != NULL);
@@ -1269,8 +1259,7 @@ runcompress(outfd, pid, comptype)
 	    error("err dup2 in: %s", strerror(errno));
 	if (dup2(outfd, 1) == -1)
 	    error("err dup2 out: %s", strerror(errno));
-	for (tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd)
-	    close(tmpfd);
+	safe_fd(-1, 0);
 	execlp(COMPRESS_PATH, COMPRESS_PATH, (comptype == COMP_BEST ?
 	    COMPRESS_BEST_OPT : COMPRESS_FAST_OPT), NULL);
 	error("error: couldn't exec %s: %s", COMPRESS_PATH, strerror(errno));

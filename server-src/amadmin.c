@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.100 2005/07/11 12:00:30 martinea Exp $
+ * $Id: amadmin.c,v 1.101 2005/09/20 21:32:26 jrjackson Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -129,23 +129,14 @@ int main(argc, argv)
      int argc;
      char **argv;
 {
-    int fd, i;
+    int i;
     char *conf_diskfile;
     char *conf_infofile;
     char *conffile;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
-
+    safe_fd(-1, 0);
     safe_cd();
 
     set_pname("amadmin");

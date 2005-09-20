@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.75 2004/04/05 17:22:24 martinea Exp $
+ * $Id: amindexd.c,v 1.76 2005/09/20 21:32:26 jrjackson Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -818,21 +818,11 @@ char **argv;
     char *arg;
     char *cmd;
     int len;
-    int fd;
     int user_validated = 0;
     char *errstr = NULL;
     char *pgm = "amindexd";			/* in case argv[0] is not set */
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
-
+    safe_fd(-1, 0);
     safe_cd();
 
     /*

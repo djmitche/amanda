@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.13 2005/05/05 17:38:59 martinea Exp $
+ * $Id: rsh-security.c,v 1.14 2005/09/20 21:32:25 jrjackson Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -496,7 +496,7 @@ static int
 runrsh(rc)
     struct rsh_conn *rc;
 {
-    int rpipe[2], wpipe[2], tmpfd;
+    int rpipe[2], wpipe[2];
     char *amandad_path;
 
     if (pipe(rpipe) < 0 || pipe(wpipe) < 0) {
@@ -524,8 +524,7 @@ runrsh(rc)
 	return (0);
     }
 
-    for (tmpfd = 3; tmpfd <= FD_SETSIZE; ++tmpfd)
-	close(tmpfd);
+    safe_fd(-1, 0);
 
     amandad_path = vstralloc(libexecdir, "/", "amandad", versionsuffix(),
 	NULL);

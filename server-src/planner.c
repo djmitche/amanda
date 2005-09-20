@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.166 2005/09/20 19:39:10 jrjackson Exp $
+ * $Id: planner.c,v 1.167 2005/09/20 21:32:26 jrjackson Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -158,22 +158,14 @@ char **argv;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     long initial_size;
-    int fd, i;
+    int i;
     char *conffile;
     char *conf_diskfile;
     char *conf_tapelist;
     char *conf_infofile;
     times_t section_start;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
+    safe_fd(-1, 0);
 
     setvbuf(stderr, (char *)NULL, _IOLBF, 0);
 

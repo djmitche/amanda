@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.111 2005/09/20 19:06:54 jrjackson Exp $
+ * $Id: amanda.h,v 1.112 2005/09/20 21:32:25 jrjackson Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -535,6 +535,7 @@ extern void amtable_free      P((void **table, int *current));
 
 extern uid_t  client_uid;
 extern gid_t  client_gid;
+extern void   safe_fd         P((int fd_start, int fd_count));
 extern void   safe_cd         P((void));
 extern void   save_core       P((void));
 extern char **safe_env        P((void));

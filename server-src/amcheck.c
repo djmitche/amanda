@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.113 2005/04/06 12:32:20 martinea Exp $
+ * $Id: amcheck.c,v 1.114 2005/09/20 21:32:26 jrjackson Exp $
  *
  * checks for common problems in server and clients
  */
@@ -96,7 +96,6 @@ char **argv;
     amwait_t retstat;
     pid_t pid;
     extern int optind;
-    int fd;
     char *mailto = NULL;
     extern char *optarg;
     int mailout;
@@ -108,19 +107,10 @@ char **argv;
     struct passwd *pw;
     uid_t uid_me;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
-	/*
-	 * Make sure nobody spoofs us with a lot of extra open files
-	 * that would cause an open we do to get a very high file
-	 * descriptor, which in turn might be used as an index into
-	 * an array (e.g. an fd_set).
-	 */
-	close(fd);
-    }
+    safe_fd(-1, 0);
+    safe_cd();
 
     signal(SIGPIPE, SIG_IGN);
-
-    safe_cd();
 
     set_pname("amcheck");
     dbopen();

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.56 2004/02/13 14:00:35 martinea Exp $
+ * $Id: amandad.c,v 1.57 2005/09/20 21:32:25 jrjackson Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -173,15 +173,7 @@ main(argc, argv)
     int no_exit = 0;
     char *pgm = "amandad";		/* in case argv[0] is not set */
 
-    /*
-     * Make sure nobody spoofs us with a lot of extra open files
-     * that would cause an open we do to get a very high file
-     * descriptor, which in turn might be used as an index into
-     * an array (e.g. an fd_set).
-     */
-    for (i = 3; i < FD_SETSIZE; i++)
-	close(i);
-
+    safe_fd(-1, 0);
     safe_cd();
 
     /*
