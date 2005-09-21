@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.39 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: amlabel.c,v 1.40 2005/09/21 12:22:34 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -64,6 +64,7 @@ int main(argc, argv)
     char *conf_tapelist_old;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    int fd;
     int have_changer;
     int force, tape_ok;
     tape_t *tp;

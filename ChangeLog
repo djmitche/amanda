@@ -1,3 +1,7 @@
+2005-09-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amlabel.c: 'int fd' is needed.
+
 2005-09-20  John R. Jackson <jrj@purdue.edu>
 
 	* server-src/reporter.c: Fix minor typo noticed by Scott R. Burns
