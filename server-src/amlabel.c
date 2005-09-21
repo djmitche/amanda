@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.18.2.15.4.3.2.4.2.2 2005/09/21 12:22:44 martinea Exp $
+ * $Id: amlabel.c,v 1.18.2.15.4.3.2.4.2.3 2005/09/21 14:31:37 jrjackson Exp $
  *
  * write an Amanda label on a tape
  */
@@ -63,7 +63,9 @@ int main(argc, argv)
     char *conf_tapelist_old;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+#ifdef HAVE_LINUX_ZFTAPE_H
     int fd;
+#endif /* HAVE_LINUX_ZFTAPE_H */
     int have_changer;
     int force, tape_ok;
     tape_t *tp;
