@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.16 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: getconf.c,v 1.17 2005/09/21 19:04:37 jrjackson Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -55,6 +55,7 @@ static struct build_info {
     { "DEFAULT_CONFIG",			DEFAULT_CONFIG },
     { "DEFAULT_TAPE_SERVER",		DEFAULT_TAPE_SERVER },
     { "DEFAULT_TAPE_DEVICE",		DEFAULT_TAPE_SERVER },
+    { "CLIENT_LOGIN",			CLIENT_LOGIN },
 
     { "BUILT_DATE",
 #if defined(BUILT_DATE)
