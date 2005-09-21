@@ -1,3 +1,7 @@
+2005-09-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/amlabel.c: 'int fd' is needed.
+
 2005-09-20  John R. Jackson <jrj@purdue.edu>
 
 	* server-src/reporter.c: Fix minor typo noticed by Scott R. Burns
@@ -74,7 +78,7 @@
 
 2005-09-15  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
-	* server-src/amverify.sh.in: Don't check for IOI, it's buggy.
+	* server-src/amverify.sh.in: Don't check for EOI, it's buggy.
 
 2005-09-12  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
