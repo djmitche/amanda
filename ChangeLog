@@ -1,3 +1,8 @@
+2005-09-21  John R. Jackson <jrj@purdue.edu>
+
+	* server-src/amlabel.c: 'int fd' is only needed if HAVE_LINUX_ZFTAPE_H
+	  is defined.
+
 2005-09-21  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/amlabel.c: 'int fd' is needed.
