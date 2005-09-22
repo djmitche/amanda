@@ -93,6 +93,9 @@
 # NO_SERVER_MODE	--without-server
 #			Default: false
 #			if true, disables building server stuff.
+#			Note: setting NO_SERVER_MODE=true implies
+#			--without-restore, i.e. NO_RESTORE_MODE=true,
+#			and it is an error to try to force a mismatch
 # NO_SERVER_MODE=true
 
 
