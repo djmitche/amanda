@@ -1,3 +1,10 @@
+2005-09-22  John R. Jackson <jrj@purdue.edu>
+
+	* configure.in: If --without-server is specified, either on the
+	  command line or via config.site, make sure --without-restore
+	  is also in effect.  Avoids compilation errors if mismatched.
+	* example/config.site: Document above.
+
 2005-09-21  John R. Jackson <jrj@purdue.edu>
 
 	* server-src/getconf.c: Allow CLIENT_LOGIN to be retrieved via
