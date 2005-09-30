@@ -1,3 +1,7 @@
+2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/bsd-security.c: Fix small bug.
+
 2005-09-22  John R. Jackson <jrj@purdue.edu>
 
 	* configure.in: If --without-server is specified, either on the

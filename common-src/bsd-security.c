@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.45 2005/09/20 16:30:35 martinea Exp $
+ * $Id: bsd-security.c,v 1.46 2005/09/30 17:59:07 martinea Exp $
  *
  * "BSD" security module
  */
@@ -522,7 +522,7 @@ bsd_close(cookie)
 	bh->prev->next = bh->next;
     }
     else {
-	bh_first = bh->prev;
+	bh_first = bh->next;
     }
     amfree(bh);
 }
