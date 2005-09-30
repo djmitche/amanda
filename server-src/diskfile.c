@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.27.4.6.4.3.2.15.2.7 2005/09/20 21:31:52 jrjackson Exp $
+ * $Id: diskfile.c,v 1.27.4.6.4.3.2.15.2.8 2005/09/30 19:13:36 martinea Exp $
  *
  * read disklist file
  */
@@ -990,7 +990,6 @@ char *argv[];
   char *conffile;
   char *conf_diskfile;
   int result;
-  int fd;
   unsigned long malloc_hist_1, malloc_size_1;
   unsigned long malloc_hist_2, malloc_size_2;
 
