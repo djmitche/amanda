@@ -1,5 +1,9 @@
 2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* common-src/sl.c (insert_sort_sl). Typo.
+
+2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* config/config.guess: Update from automake 1.9.5.
 	* config/config.sub: Update from automake 1.9.5.
 	* config/depcomp: Update from automake 1.9.5.
