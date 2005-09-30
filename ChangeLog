@@ -1,3 +1,14 @@
+2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* config/config.guess: Update from automake 1.9.5.
+	* config/config.sub: Update from automake 1.9.5.
+	* config/depcomp: Update from automake 1.9.5.
+	* config/install-sh: Update from automake 1.9.5.
+	* config/missing: Update from automake 1.9.5.
+	* config/mkinstalldirs: Update from automake 1.9.5.
+	* config/ltmain.sh: Update from libtool-1.5.16.
+	* config/libtool.m4i: Update from libtool-1.5.16.
+
 2005-09-22  John R. Jackson <jrj@purdue.edu>
 
 	* configure.in: If --without-server is specified, either on the
