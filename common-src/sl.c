@@ -25,7 +25,7 @@
  *                         University of Maryland at College Park
  */
 /*
- * $Id: sl.c,v 1.4 2004/04/23 11:44:46 martinea Exp $
+ * $Id: sl.c,v 1.5 2005/09/30 19:01:43 martinea Exp $
  *
  * A doubly linked list of string (char *)
  */
@@ -107,7 +107,7 @@ char *name;
 	sl = new_sl();
     }
 
-    for(b=sl->first; b != NULL < 0; b=b->next) {
+    for(b=sl->first; b != NULL; b=b->next) {
 	int i = strcmp(b->name, name);
 	if(i==0) return(sl); /* already there, no need to insert */
 	if(i>0) break;
