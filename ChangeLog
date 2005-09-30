@@ -1,5 +1,9 @@
 2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* client-src/runtar.c: 'e' and 'bdf' are only needed if GNUTAR.
+
+2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* common-src/sl.c (insert_sort_sl). Typo.
 
 2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
