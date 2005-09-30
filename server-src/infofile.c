@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.54 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: infofile.c,v 1.55 2005/09/30 19:13:27 martinea Exp $
  *
  * manage current info file
  */
@@ -862,7 +862,6 @@ int argc;
 char *argv[];
 {
   int i;
-  int fd;
   unsigned long malloc_hist_1, malloc_size_1;
   unsigned long malloc_hist_2, malloc_size_2;
 

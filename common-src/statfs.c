@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: statfs.c,v 1.12 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: statfs.c,v 1.13 2005/09/30 19:13:27 martinea Exp $
  *
  * a generic statfs-like routine
  */
@@ -161,7 +161,6 @@ int argc;
 char **argv;
 {
     generic_fs_stats_t statbuf;
-    int fd;
 
     safe_fd(-1, 0);
 

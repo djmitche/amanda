@@ -1,5 +1,11 @@
 2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* server-src/conffile.c, server-src/diskfile.c, server-src/infofile.c,
+	  client-src/getfsent.c, common-src/statfs.c, common-src/token.c
+          (main): Remove fd declaration.
+
+2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* client-src/runtar.c: 'e' and 'bdf' are only needed if GNUTAR.
 
 2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>

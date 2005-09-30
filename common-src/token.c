@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.c,v 1.27 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: token.c,v 1.28 2005/09/30 19:13:27 martinea Exp $
  *
  * token bashing routines
  */
@@ -408,7 +408,6 @@ int main()
 	int r;
 	char *sr;
 	int i;
-	int fd;
 
 	safe_fd(-1, 0);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.32 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: getfsent.c,v 1.33 2005/09/30 19:13:26 martinea Exp $
  *
  * generic version of code to read fstab
  */
@@ -614,7 +614,6 @@ int main(argc, argv)
     char **argv;
 {
     generic_fsent_t fsent;
-    int fd;
     char *s;
     char *name = NULL;
     unsigned long malloc_hist_1, malloc_size_1;

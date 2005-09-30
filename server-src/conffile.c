@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.112 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: conffile.c,v 1.113 2005/09/30 19:13:27 martinea Exp $
  *
  * read configuration file
  */
@@ -3188,7 +3188,6 @@ main(argc, argv)
   char *diskfile;
   disklist_t lst;
   int result;
-  int fd;
   unsigned long malloc_hist_1, malloc_size_1;
   unsigned long malloc_hist_2, malloc_size_2;
 
