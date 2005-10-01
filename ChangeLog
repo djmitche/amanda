@@ -1,3 +1,8 @@
+2005-10-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/reporter.c: Don't trunk hostname/diskname in
+	  'FAILURE AND STRANGE DUMP SUMMARY' section.
+
 2005-09-30  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/conffile.c, server-src/diskfile.c, server-src/infofile.c,

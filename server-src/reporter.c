@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.8 2005/09/20 21:47:36 jrjackson Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.9 2005/10/01 23:47:42 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -96,6 +96,16 @@ typedef struct taper_s {
 taper_t *stats_by_tape = NULL;
 taper_t *current_tape = NULL;
 
+typedef struct strange_s {
+    char *hostname;
+    char *diskname;
+    int  level;
+    char *str;
+    struct strange_s *next;
+} strange_t;
+
+strange_t *first_strange=NULL, *last_strange=NULL;
+
 float total_time, startup_time, planner_time;
 
 /* count files to tape */
@@ -152,12 +162,15 @@ void output_tapeinfo P((void));
 void output_lines P((line_t *lp, FILE *f));
 void output_stats P((void));
 void output_summary P((void));
+void output_strange P((void));
 void sort_disks P((void));
 int sort_by_time P((disk_t *a, disk_t *b));
 int sort_by_name P((disk_t *a, disk_t *b));
 void bogus_line P((void));
 char *nicedate P((int datestamp));
 static char *prefix P((char *host, char *disk, int level));
+static char *prefixstrange P((char *host, char *disk, int level, int len_host, int len_disk));
+static void addtostrange P((char *host, char *disk, int level, char *str));
 repdata_t *find_repdata P((disk_t *dp, char *datestamp, int level));
 
 
@@ -579,9 +592,10 @@ char **argv;
 
     output_tapeinfo();
 
-    if(errsum) {
+    if(first_strange || errsum) {
 	fprintf(mailf,"\nFAILURE AND STRANGE DUMP SUMMARY:\n");
-	output_lines(errsum, mailf);
+	if(first_strange) output_strange();
+	if(errsum) output_lines(errsum, mailf);
     }
     fputs("\n\n", mailf);
 
@@ -900,6 +914,24 @@ void output_tapeinfo()
 }
 
 /* ----- */
+void output_strange()
+{
+    int len_host=0, len_disk=0;
+    strange_t *strange;
+    char *str = NULL;
+
+    for(strange=first_strange; strange != NULL; strange = strange->next) {
+	if(strlen(strange->hostname) > len_host)
+	    len_host = strlen(strange->hostname);
+	if(strlen(strange->diskname) > len_disk)
+	    len_disk = strlen(strange->diskname);
+    }
+    for(strange=first_strange; strange != NULL; strange = strange->next) {
+	str = vstralloc("  ", prefixstrange(strange->hostname, strange->diskname, strange->level, len_host, len_disk),
+			"  ", strange->str, NULL);
+	fprintf(mailf, "%s\n", str);
+    }
+}
 
 void output_lines(lp, f)
 line_t *lp;
@@ -1727,13 +1759,7 @@ repdata_t *handle_success()
 
     dp = lookup_disk(hostname, diskname);
     if(dp == NULL) {
-	char *str = NULL;
-
-	str = vstralloc("  ", prefix(hostname, diskname, level),
-			" ", "ERROR [not in disklist]",
-			NULL);
-	addline(&errsum, str);
-	amfree(str);
+	addtostrange(hostname, diskname, level, "ERROR [not in disklist]");
 	amfree(hostname);
 	amfree(diskname);
 	amfree(datestamp);
@@ -1844,11 +1870,9 @@ void handle_strange()
     }
     addline(&errdet,"\\--------");
 
-    str = vstralloc("  ", prefix(repdata->disk->host->hostname, 
-				 repdata->disk->name, repdata->level),
-		    " ", "STRANGE", " ", strangestr,
-		    NULL);
-    addline(&errsum, str);
+    str = vstralloc("STRANGE", " ", strangestr, NULL);
+    addtostrange(repdata->disk->host->hostname, repdata->disk->name, repdata->level,
+		 str);
     amfree(str);
     amfree(strangestr);
 }
@@ -1928,11 +1952,7 @@ void handle_failed()
 
     dp = lookup_disk(hostname, diskname);
     if(dp == NULL) {
-	str = vstralloc("  ", prefix(hostname, diskname, level),
-			" ", "ERROR [not in disklist]",
-			NULL);
-	addline(&errsum, str);
-	amfree(str);
+	addtostrange(hostname, diskname, level, "ERROR [not in disklist]");
     } else {
 	repdata = find_repdata(dp, datestamp, level);
 
@@ -1945,11 +1965,8 @@ void handle_failed()
     }
     amfree(datestamp);
 
-    str = vstralloc("  ", prefix(hostname, diskname, level),
-		    " ", "FAILED",
-		    " ", errstr,
-		    NULL);
-    addline(&errsum, str);
+    str = vstralloc("FAILED", " ", errstr, NULL);
+    addtostrange(hostname, diskname, level, str);
     amfree(str);
 
     if(curprog == P_DUMPER) {
@@ -1972,15 +1989,10 @@ void handle_failed()
 void generate_missing()
 {
     disk_t *dp;
-    char *str = NULL;
 
     for(dp = diskq->head; dp != NULL; dp = dp->next) {
 	if(dp->todo && data(dp) == NULL) {
-	    str = vstralloc("  ", prefix(dp->host->hostname, dp->name, -987),
-			    " ", "RESULTS MISSING",
-			    NULL);
-	    addline(&errsum, str);
-	    amfree(str);
+	    addtostrange(dp->host->hostname, dp->name, -987, "RESULTS MISSING");
 	}
     }
 }
@@ -1991,28 +2003,84 @@ prefix (host, disk, level)
     char *disk;
     int level;
 {
-    char h[10+1];
-    int l;
     char number[NUM_STR_SIZE];
     static char *str = NULL;
 
     ap_snprintf(number, sizeof(number), "%d", level);
-    if(host) {
-	strncpy(h, host, sizeof(h)-1);
-    } else {
-	strncpy(h, "(host?)", sizeof(h)-1);
-    }
-    h[sizeof(h)-1] = '\0';
-    for(l = strlen(h); l < sizeof(h)-1; l++) {
-	h[l] = ' ';
-    }
     str = newvstralloc(str,
-		       h,
+		       " ", host ? host : "(host?)",
 		       " ", disk ? disk : "(disk?)",
 		       level != -987 ? " lev " : "",
 		       level != -987 ? number : "",
 		       NULL);
     return str;
+}
+
+static char *
+prefixstrange (host, disk, level, len_host, len_disk)
+    char *host;
+    char *disk;
+    int level;
+{
+    char *h, *d;
+    int l;
+    char number[NUM_STR_SIZE];
+    static char *str = NULL;
+
+    ap_snprintf(number, sizeof(number), "%d", level);
+    h=malloc(len_host+1);
+    if(host) {
+	strncpy(h, host, len_host);
+    } else {
+	strncpy(h, "(host?)", len_host);
+    }
+    h[len_host] = '\0';
+    for(l = strlen(h); l < len_host; l++) {
+	h[l] = ' ';
+    }
+    d=malloc(len_disk+1);
+    if(disk) {
+	strncpy(d, disk, len_disk);
+    } else {
+	strncpy(d, "(disk?)", len_disk);
+    }
+    d[len_disk] = '\0';
+    for(l = strlen(d); l < len_disk; l++) {
+	d[l] = ' ';
+    }
+    str = newvstralloc(str,
+		       h,
+		       "  ", d,
+		       level != -987 ? "  lev " : "",
+		       level != -987 ? number : "",
+		       NULL);
+    amfree(h);
+    amfree(d);
+    return str;
+}
+
+static void
+addtostrange (host, disk, level, str)
+    char *host;
+    char *disk;
+    int  level;
+    char *str;
+{
+    strange_t *strange;
+
+    strange = malloc(sizeof(strange_t));
+    strange->hostname = stralloc(host);
+    strange->diskname = stralloc(disk);
+    strange->level    = level;
+    strange->str      = stralloc(str);
+    strange->next = NULL;
+    if(first_strange == NULL) {
+	first_strange = strange;
+    }
+    else {
+        last_strange->next = strange;
+    }
+    last_strange = strange;
 }
 
 void copy_template_file(lbl_templ)
