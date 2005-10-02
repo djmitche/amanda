@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.58 2005/10/02 18:02:20 martinea Exp $
+ * $Id: amandad.c,v 1.59 2005/10/02 23:40:59 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1271,7 +1271,6 @@ service_delete(as)
 
     assert(as->pid > 0);
     kill(as->pid, SIGTERM);
-    /*sleep(1);*/
     waitpid(as->pid, NULL, WNOHANG);
 
     TAILQ_REMOVE(&serviceq.tailq, as, tq);
@@ -1291,11 +1290,14 @@ writebuf(as, bufp, size)
     const void *bufp;
     size_t size;
 {
-    switch (fork()) {
+    int pid;
+
+    switch (pid=fork()) {
     case -1:
 	return -1;
 
     default:
+	waitpid(pid, NULL, WNOHANG);
 	return 0;			/* this is the parent */
 
     case 0:
