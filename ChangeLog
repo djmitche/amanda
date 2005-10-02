@@ -1,5 +1,13 @@
 2005-10-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* common-src/rsh-security.c: rshprintf should call dbprint.
+	* common-src/ssh-security.c: rshprintf should call dbprint, add many
+	  rshprintf.
+	* common-src/event.c: Add eventprintf, use it. Add debug_prefix_time
+	  to the log. 
+
+2005-10-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* common-src/stream.c: len is a socklen_t.
 	* server-src/amindexd.c: Add socklen as a socklen_t.
 	* restore-src/amidxtaped.c: Add socklen as a socklen_t.

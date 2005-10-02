@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.14 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: rsh-security.c,v 1.15 2005/10/02 15:31:07 martinea Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -46,7 +46,7 @@
 /*#define	RSH_DEBUG*/
 
 #ifdef RSH_DEBUG
-#define	rshprintf(x)	printf x
+#define	rshprintf(x)	dbprintf(x)
 #else
 #define	rshprintf(x)
 #endif

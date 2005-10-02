@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.19 2003/03/29 23:48:54 kovert Exp $
+ * $Id: event.c,v 1.20 2005/10/02 15:31:07 martinea Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -32,6 +32,12 @@
  */
 
 /*#define	EVENT_DEBUG*/
+
+#ifdef EVENT_DEBUG
+#define eventprintf(x)    dbprintf(x)
+#else
+#define eventprintf(x)
+#endif
 
 #include "amanda.h"
 #include "event.h"
@@ -138,10 +144,8 @@ event_register(data, type, fn, arg)
     eventq_add(eventq, handle);
     eventq.qlength++;
 
-#ifdef EVENT_DEBUG
-    dbprintf(("event: register: %X data=%lu, type=%s\n", (int)handle,
-	handle->data, event_type2str(handle->type)));
-#endif
+    eventprintf(("%s: event: register: %X data=%lu, type=%s\n", debug_prefix_time(NULL), (int)handle,
+		 handle->data, event_type2str(handle->type)));
     return (handle);
 }
 
@@ -157,10 +161,8 @@ event_release(handle)
 
     assert(handle != NULL);
 
-#ifdef EVENT_DEBUG
-    dbprintf(("event: release (mark): %X data=%lu, type=%s\n",
+    eventprintf(("%s: event: release (mark): %X data=%lu, type=%s\n", debug_prefix_time(NULL),
 	(int)handle, handle->data, event_type2str(handle->type)));
-#endif
     assert(handle->type != EV_DEAD);
 
     /*
@@ -198,18 +200,14 @@ event_wakeup(id)
     event_handle_t *eh;
     int nwaken = 0;
 
-#ifdef EVENT_DEBUG
-	dbprintf(("event: wakeup: enter (%lu)\n", id));
-#endif
+    eventprintf(("%s: event: wakeup: enter (%lu)\n", debug_prefix_time(NULL), id));
 
     assert(id >= 0);
 
     for (eh = eventq_first(eventq); eh != NULL; eh = eventq_next(eh)) {
 
 	if (eh->type == EV_WAIT && eh->data == id) {
-#ifdef EVENT_DEBUG
-	    dbprintf(("event: wakeup: %X id=%lu\n", (int)eh, id));
-#endif
+	    eventprintf(("%s: event: wakeup: %X id=%lu\n", debug_prefix_time(NULL), (int)eh, id));
 	    fire(eh);
 	    nwaken++;
 	}
@@ -237,10 +235,8 @@ event_loop(dontblock)
     event_handle_t *eh, *nexteh;
     struct sigtabent *se;
 
-#ifdef EVENT_DEBUG
-	dbprintf(("event: loop: enter: dontblock=%d, qlength=%d\n",
-	    dontblock, eventq.qlength));
-#endif
+    eventprintf(("%s: event: loop: enter: dontblock=%d, qlength=%d\n", debug_prefix_time(NULL),
+		 dontblock, eventq.qlength));
 
     /*
      * If we have no events, we have nothing to do
@@ -263,10 +259,10 @@ event_loop(dontblock)
 
     do {
 #ifdef EVENT_DEBUG
-	dbprintf(("event: loop: dontblock=%d, qlength=%d\n", dontblock,
+	eventprintf(("%s: event: loop: dontblock=%d, qlength=%d\n", debug_prefix_time(NULL), dontblock,
 	    eventq.qlength));
 	for (eh = eventq_first(eventq); eh != NULL; eh = eventq_next(eh)) {
-	    dbprintf(("%X: %s data=%lu fn=0x%x arg=0x%x\n", (int)eh,
+	    eventprintf(("%s: %X: %s data=%lu fn=0x%x arg=0x%x\n", debug_prefix_time(NULL), (int)eh,
 		event_type2str(eh->type), eh->data, (int)eh->fn, (int)eh->arg));
 	}
 #endif
@@ -390,14 +386,10 @@ event_loop(dontblock)
 	/*
 	 * Let 'er rip
 	 */
-#ifdef EVENT_DEBUG
-	dbprintf(("event: select: dontblock=%d, maxfd=%d, timeout=%ld\n",
+	eventprintf(("%s: event: select: dontblock=%d, maxfd=%d, timeout=%ld\n", debug_prefix_time(NULL),
 	    dontblock, maxfd, tvptr != NULL ? timeout.tv_sec : -1));
-#endif
 	rc = select(maxfd + 1, &readfds, &writefds, &errfds, tvptr);
-#ifdef EVENT_DEBUG
-	dbprintf(("event: select returns %d\n", rc));
-#endif
+	eventprintf(("%s: event: select returns %d\n", debug_prefix_time(NULL), rc));
 
 	/*
 	 * Select errors can mean many things.  Interrupted events should
