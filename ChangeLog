@@ -1,3 +1,13 @@
+2005-10-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/stream.c: len is a socklen_t.
+	* server-src/amindexd.c: Add socklen as a socklen_t.
+	* restore-src/amidxtaped.c: Add socklen as a socklen_t.
+	* tape-src/tapetype.c: Change printf format.
+	* server-src/amlabel.c: Add a variable isa_zftape. init fd to -1.
+	* server-src/dumper.c: Init outfd to -1.
+	* common-src/file.c (areads_getbuf): First argument is const.
+
 2005-10-01  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/reporter.c: Don't trunk hostname/diskname in

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.44 2005/09/20 21:32:26 jrjackson Exp $
+/* $Id: amidxtaped.c,v 1.45 2005/10/02 13:48:04 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -194,6 +194,7 @@ char **argv;
     char **amrestore_args;
     char *buf = NULL;
     int i;
+    socklen_t socklen;
     char *amrestore_path;
     pid_t pid;
     int isafile;
@@ -284,8 +285,8 @@ char **argv;
 		  debug_prefix_time(NULL)));
     }
 
-    i = sizeof (addr);
-    if (getpeername(0, (struct sockaddr *)&addr, &i) == -1)
+    socklen = sizeof (addr);
+    if (getpeername(0, (struct sockaddr *)&addr, &socklen) == -1)
 	error("getpeername: %s", strerror(errno));
     if (addr.sin_family != AF_INET || ntohs(addr.sin_port) == 20) {
 	error("connection rejected from %s family %d port %d",

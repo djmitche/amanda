@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.31 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: file.c,v 1.32 2005/10/02 13:48:04 martinea Exp $
  *
  * file and directory bashing routines
  */
@@ -481,7 +481,7 @@ debug_agets(s, l, file)
  * Find/create a buffer for a particular file descriptor for use with
  * areads().
  *
- * void areads_getbuf (char *file, int line, int fd)
+ * void areads_getbuf (const char *file, int line, int fd)
  *
  * entry:	file, line = caller source location
  *		fd = file descriptor to look up
@@ -499,7 +499,7 @@ static ssize_t areads_bufsize = BUFSIZ;		/* for the test program */
 
 static void
 areads_getbuf(s, l, fd)
-    char *s;
+    const char *s;
     int l;
     int fd;
 {

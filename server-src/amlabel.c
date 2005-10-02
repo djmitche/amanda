@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.41 2005/09/21 14:31:56 jrjackson Exp $
+ * $Id: amlabel.c,v 1.42 2005/10/02 13:48:04 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -65,7 +65,8 @@ int main(argc, argv)
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
 #ifdef HAVE_LINUX_ZFTAPE_H
-    int fd;
+    int fd = -1;
+    int isa_zftape;
 #endif /* HAVE_LINUX_ZFTAPE_H */
     int have_changer;
     int force, tape_ok;
@@ -183,7 +184,8 @@ int main(argc, argv)
     }
 
 #ifdef HAVE_LINUX_ZFTAPE_H
-    if (is_zftape(tapename) == 1){
+    isa_zftape = is_zftape(tapename);
+    if (isa_zftape) {
 	if((fd = tape_open(tapename, O_WRONLY)) == -1) {
 	    errstr = newstralloc2(errstr, "amlabel: ",
 				  (errno == EACCES) ? "tape is write-protected"
@@ -196,7 +198,7 @@ int main(argc, argv)
     printf("rewinding"); fflush(stdout);
 
 #ifdef HAVE_LINUX_ZFTAPE_H
-    if (is_zftape(tapename) == 1){
+    if (isa_zftape) {
 	if(tapefd_rewind(fd) == -1) {
 	    putchar('\n');
 	    error(strerror(errno));
@@ -239,7 +241,7 @@ int main(argc, argv)
     printf("rewinding"); fflush(stdout);
 
 #ifdef HAVE_LINUX_ZFTAPE_H
-    if (is_zftape(tapename) == 1){
+    if (isa_zftape) {
 	if(tapefd_rewind(fd) == -1) {
 	    putchar('\n');
 	    error(strerror(errno));
@@ -256,7 +258,7 @@ int main(argc, argv)
 	printf(", writing label %s", label); fflush(stdout);
 
 #ifdef HAVE_LINUX_ZFTAPE_H
-	if (is_zftape(tapename) == 1){
+	if (isa_zftape) {
 	    errstr = tapefd_wrlabel(fd, "X", label, tt_blocksize_kb * 1024);
 	    if(errstr != NULL) {
 		putchar('\n');
@@ -272,13 +274,13 @@ int main(argc, argv)
 	}
 
 #ifdef HAVE_LINUX_ZFTAPE_H
-	if (is_zftape(tapename) == 1){
+	if (isa_zftape) {
 	    tapefd_weof(fd, 1);
 	}
 #endif /* HAVE_LINUX_ZFTAPE_H */
 
 #ifdef HAVE_LINUX_ZFTAPE_H
-	if (is_zftape(tapename) == 1){
+	if (isa_zftape) {
 	    errstr = tapefd_wrendmark(fd, "X", tt_blocksize_kb * 1024);
 	    if(errstr != NULL) {
 		putchar('\n');
@@ -294,7 +296,7 @@ int main(argc, argv)
 	}
 
 #ifdef HAVE_LINUX_ZFTAPE_H
-	if (is_zftape(tapename) == 1){
+	if (isa_zftape) {
 	    tapefd_weof(fd, 1);
 
 	    printf(",\nrewinding"); fflush(stdout); 

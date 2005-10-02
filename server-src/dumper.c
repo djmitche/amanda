@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.161 2005/09/20 21:32:26 jrjackson Exp $
+/* $Id: dumper.c,v 1.162 2005/10/02 13:48:04 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -154,7 +154,8 @@ main(main_argc, main_argv)
     static struct databuf db;
     struct cmdargs cmdargs;
     cmd_t cmd;
-    int outfd, taper_port, rc;
+    int outfd = -1;
+    int taper_port, rc;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char *conffile;
