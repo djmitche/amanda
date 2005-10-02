@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.46 2005/09/30 17:59:07 martinea Exp $
+ * $Id: bsd-security.c,v 1.47 2005/10/02 18:02:20 martinea Exp $
  *
  * "BSD" security module
  */
@@ -38,6 +38,14 @@
 #include "security.h"
 #include "stream.h"
 #include "version.h"
+
+/*#define       BSD_DEBUG*/
+
+#ifdef BSD_DEBUG
+#define bsdprintf(x)    dbprintf(x)
+#else
+#define bsdprintf(x)
+#endif
 
 #ifndef SO_RCVBUF
 #undef DUMPER_SOCKET_BUFFERING
@@ -53,8 +61,8 @@
 
 #if defined(TEST)						/* { */
 #define SHOW_SECURITY_DETAIL
-#undef dbprintf
-#define dbprintf(p)	printf p
+#undef bsdprintf
+#define bsdprintf(p)	printf p
 #endif								/* } */
 
 /*
@@ -72,13 +80,9 @@ struct bsd_handle {
      * handle, so we differentiate packets for them with a "handle" header
      * in each packet.
      *
-     * The proto_handle_offset field is for backware compatibility with
-     * older clients who send a handle made up of two parts, an offset
-     * and a hex address.
      */
     int event_id; /* unique event_id */
-    int proto_handle_offset;
-    int proto_handle;
+    char *proto_handle;
 
     /*
      * sequence number.
@@ -216,8 +220,7 @@ static struct {
     dgram_t dgram;		/* datagram to read/write from */
     struct sockaddr_in peer;	/* who sent it to us */
     pkt_t pkt;			/* parsed form of dgram */
-    int handle_offset;		/* handle offset from recvd packet */
-    int handle;			/* handle from recvd packet */
+    char *handle;		/* handle from recvd packet */
     int sequence;		/* seq no of packet */
     event_handle_t *ev_read;	/* read event handle from dgram */
     int refcnt;			/* number of handles blocked for reading */
@@ -266,7 +269,7 @@ static void (*accept_fn) P((security_handle_t *, pkt_t *));
  */
 static char *check_user P((struct bsd_handle *, const char *));
 static int inithandle P((struct bsd_handle *, struct hostent *,
-			 int, int, int, int));
+			 int, char *, int));
 static const char *pkthdr2str P((const struct bsd_handle *, const pkt_t *));
 static int str2pkthdr P((void));
 static void netfd_read_callback P((void *));
@@ -291,8 +294,8 @@ void show_stat_info(a, b)
     char *group;
 
     if (stat(name, &sbuf) != 0) {
-	dbprintf(("%s: cannot stat %s: %s\n",
-		  debug_prefix_time(NULL), name, strerror(errno)));
+	bsdprintf(("%s: cannot stat %s: %s\n",
+		   debug_prefix_time(NULL), name, strerror(errno)));
 	amfree(name);
 	return;
     }
@@ -308,9 +311,9 @@ void show_stat_info(a, b)
     } else {
 	group = stralloc(grptr->gr_name);
     }
-    dbprintf(("%s: processing file: %s\n", debug_prefix(NULL), name));
-    dbprintf(("%s:                  owner=%s group=%s mode=%03o\n",
-	      debug_prefix(NULL), owner, group, (int) (sbuf.st_mode & 0777)));
+    bsdprintf(("%s: processing file: %s\n", debug_prefix(NULL), name));
+    bsdprintf(("%s:                  owner=%s group=%s mode=%03o\n",
+	       debug_prefix(NULL), owner, group, (int) (sbuf.st_mode & 0777)));
     amfree(name);
     amfree(owner);
     amfree(group);
@@ -334,6 +337,7 @@ bsd_connect(hostname, conf_fn, fn, arg)
     struct timeval sequence_time;
     amanda_timezone dontcare;
     int sequence;
+    char *handle;
 
     assert(hostname != NULL);
 
@@ -375,7 +379,9 @@ bsd_connect(hostname, conf_fn, fn, arg)
 	port = se->s_port;
     amanda_gettimeofday(&sequence_time, &dontcare);
     sequence = (int)sequence_time.tv_sec ^ (int)sequence_time.tv_usec;
-    if (inithandle(bh, he, port, 0, newhandle++, sequence) < 0)
+    handle=malloc(15);
+    snprintf(handle,14,"000-%08x", newhandle++);
+    if (inithandle(bh, he, port, handle, sequence) < 0)
 	(*fn)(arg, &bh->sech, S_ERROR);
     else
 	(*fn)(arg, &bh->sech, S_OK);
@@ -413,10 +419,12 @@ bsd_accept(in, out, fn)
  * Given a hostname and a port, setup a bsd_handle
  */
 static int
-inithandle(bh, he, port, handle_offset, handle, sequence)
+inithandle(bh, he, port, handle, sequence)
     struct bsd_handle *bh;
     struct hostent *he;
-    int port, handle_offset, handle, sequence;
+    int port;
+    char *handle;
+    int sequence;
 {
     int i;
 
@@ -492,14 +500,16 @@ inithandle(bh, he, port, handle_offset, handle, sequence)
 
     bh->sequence = sequence;
     bh->event_id = newevent++;
-    bh->proto_handle_offset = handle_offset;
     bh->proto_handle = handle;
     bh->fn = NULL;
     bh->arg = NULL;
     bh->ev_read = NULL;
     bh->ev_timeout = NULL;
 
-    return (0);
+    bsdprintf(("%s: adding handle '%s'\n",
+	       debug_prefix_time(NULL), bh->proto_handle));
+
+    return(0);
 }
 
 /*
@@ -510,6 +520,9 @@ bsd_close(cookie)
     void *cookie;
 {
     struct bsd_handle *bh = cookie;
+
+    bsdprintf(("%s: close handle '%s'\n",
+	       debug_prefix_time(NULL), bh->proto_handle));
 
     bsd_recvpkt_cancel(bh);
     if(bh->next) {
@@ -524,6 +537,7 @@ bsd_close(cookie)
     else {
 	bh_first = bh->next;
     }
+
     amfree(bh);
 }
 
@@ -674,8 +688,7 @@ netfd_read_callback(cookie)
      * If there are events waiting on this handle, we're done
      */
     bh = bh_first;
-    while(bh != NULL && (bh->proto_handle != netfd.handle ||
-			 bh->proto_handle_offset != netfd.handle_offset ||
+    while(bh != NULL && (strcmp(bh->proto_handle, netfd.handle) != 0 ||
 			 bh->sequence != netfd.sequence ||
 			 bh->peer.sin_addr.s_addr != netfd.peer.sin_addr.s_addr ||
 			 bh->peer.sin_port != netfd.peer.sin_port)) {
@@ -700,7 +713,6 @@ netfd_read_callback(cookie)
     a = inithandle(bh,
 		   he,
 		   netfd.peer.sin_port,
-		   netfd.handle_offset,
 		   netfd.handle,
 		   netfd.sequence);
     if (a < 0) {
@@ -716,6 +728,9 @@ netfd_read_callback(cookie)
 	else {
 	    bh_first = bh->prev;
 	}
+
+	bsdprintf(("%s: closeX handle '%s'\n",
+		  debug_prefix_time(NULL), bh->proto_handle));
 
 	amfree(bh);
 	return;
@@ -743,14 +758,16 @@ recvpkt_callback(cookie)
     void *arg;
 
     assert(bh != NULL);
-    assert(bh->proto_handle == netfd.handle);
+    bsdprintf(("%s: receive handle '%s' netfd '%s'\n",
+	       debug_prefix_time(NULL), bh->proto_handle,netfd.handle));
+
+    if(strcmp(bh->proto_handle,netfd.handle) != 0) assert(1);
 
     /* if it didn't come from the same host/port, forget it */
     if (memcmp(&bh->peer.sin_addr, &netfd.peer.sin_addr,
 	sizeof(netfd.peer.sin_addr)) != 0 ||
 	bh->peer.sin_port != netfd.peer.sin_port) {
-	netfd.handle_offset = -1;
-	netfd.handle = -1;
+	netfd.handle = NULL;
 	return;
     }
 
@@ -992,13 +1009,13 @@ check_user_ruserok(host, pwd, remoteuser)
 	{
 	char *dir = stralloc(pwd->pw_dir);
 
-	dbprintf(("%s: calling ruserok(%s, %d, %s, %s)\n",
-		  debug_prefix_time(NULL),
-	          host, myuid == 0, remoteuser, pwd->pw_name));
+	bsdprintf(("%s: calling ruserok(%s, %d, %s, %s)\n",
+		   debug_prefix_time(NULL),
+	           host, myuid == 0, remoteuser, pwd->pw_name));
 	if (myuid == 0) {
-	    dbprintf(("%s: because you are running as root, ",
-		      debug_prefix(NULL)));
-	    dbprintf(("/etc/hosts.equiv will not be used\n"));
+	    bsdprintf(("%s: because you are running as root, ",
+		       debug_prefix(NULL)));
+	    bsdprintf(("/etc/hosts.equiv will not be used\n"));
 	} else {
 	    show_stat_info("/etc/hosts.equiv", NULL);
 	}
@@ -1132,7 +1149,7 @@ check_user_amandahosts(host, pwd, remoteuser)
     found = 0;
     while ((line = agets(fp)) != NULL) {
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
-	dbprintf(("%s: processing line: <%s>\n", debug_prefix(NULL), line));
+	bsdprintf(("%s: processing line: <%s>\n", debug_prefix(NULL), line));
 #endif								/* } */
 	/* get the host out of the file */
 	if ((filehost = strtok(line, " \t")) == NULL) {
@@ -1148,11 +1165,11 @@ check_user_amandahosts(host, pwd, remoteuser)
 	hostmatch = (strcasecmp(filehost, host) == 0);
 	usermatch = (strcasecmp(fileuser, remoteuser) == 0);
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
-	dbprintf(("%s: comparing \"%s\" with\n", debug_prefix(NULL), filehost));
-	dbprintf(("%s:           \"%s\" (%s)\n", host,
+	bsdprintf(("%s: comparing \"%s\" with\n", debug_prefix(NULL), filehost));
+	bsdprintf(("%s:           \"%s\" (%s)\n", host,
 		  debug_prefix(NULL), hostmatch ? "match" : "no match"));
-	dbprintf(("%s:       and \"%s\" with\n", fileuser, debug_prefix(NULL)));
-	dbprintf(("%s:           \"%s\" (%s)\n", remoteuser,
+	bsdprintf(("%s:       and \"%s\" with\n", fileuser, debug_prefix(NULL)));
+	bsdprintf(("%s:           \"%s\" (%s)\n", remoteuser,
 		  debug_prefix(NULL), usermatch ? "match" : "no match"));
 #endif								/* } */
 	/* compare */
@@ -1414,32 +1431,16 @@ pkthdr2str(bh, pkt)
     const pkt_t *pkt;
 {
     static char retbuf[256];
-    char h_offset[8], h[16];
-    int ch;
-    int i;
 
     assert(bh != NULL);
     assert(pkt != NULL);
 
-    /*
-     * All of the upper case hex nonsense is just to provide backward
-     * compatibility with 2.4.
-     */
-    snprintf(h_offset, sizeof(h_offset), "%03x", bh->proto_handle_offset);
-    for(i = 0; (ch = h_offset[i]) != '\0'; i++) {
-	if(ch >= 'a' && ch <= 'z') {
-	    h_offset[i] = ch - 'a' + 'A';
-	}
-    }
-    snprintf(h, sizeof(h), "%08x", bh->proto_handle);
-    for(i = 0; (ch = h[i]) != '\0'; i++) {
-	if(ch >= 'a' && ch <= 'z') {
-	    h[i] = ch - 'a' + 'A';
-	}
-    }
-    snprintf(retbuf, sizeof(retbuf), "Amanda %d.%d %s HANDLE %s-%s SEQ %d\n",
+    snprintf(retbuf, sizeof(retbuf), "Amanda %d.%d %s HANDLE %s SEQ %d\n",
 	VERSION_MAJOR, VERSION_MINOR, pkt_type2str(pkt->type),
-	h_offset, h, bh->sequence);
+	bh->proto_handle, bh->sequence);
+
+    bsdprintf(("%s: pkthdr2str handle '%s'\n",
+	       debug_prefix_time(NULL), bh->proto_handle));
 
     /* check for truncation.  If only we had asprintf()... */
     assert(retbuf[strlen(retbuf) - 1] == '\n');
@@ -1457,8 +1458,6 @@ str2pkthdr()
     char *str;
     const char *tok;
     pkt_t *pkt;
-    int ch;
-    char *p;
 
     pkt = &netfd.pkt;
 
@@ -1489,36 +1488,7 @@ str2pkthdr()
     /* parse the handle */
     if ((tok = strtok(NULL, " ")) == NULL)
 	goto parse_error;
-    netfd.handle_offset = (int)strtol(tok, NULL, 16);
-    if ((p = strchr(tok, '-')) == NULL) {
-	/*
-	 * For a while, 2.5 (pre beta) systems only sent around a simple
-	 * decimal encoded integer as the handle, so deal with them as well.
-	 */
-	netfd.handle_offset = 0;
-	netfd.handle = atoi(tok);
-    } else {
-	/*
-	 * strtol() fails if the value is "negative", which is common
-	 * for the handle value (it is usually a memory address), so
-	 * we have to do this ourself.  The handle_offset value does
-	 * not suffer from this problem because it is smaller.
-	 */
-	p++;
-	netfd.handle = 0;
-	while((ch = *p++) != '\0') {
-	    netfd.handle <<= 4;
-	    if(ch >= '0' && ch <= '9') {
-		netfd.handle |= (ch - '0');
-	    } else if(ch >= 'a' && ch <= 'f') {
-		netfd.handle |= (ch - 'a' + 10);
-	    } else if(ch >= 'A' && ch <= 'F') {
-		netfd.handle |= (ch - 'A' + 10);
-	    } else {
-		goto parse_error;
-	    }
-	}
-    }
+    netfd.handle = stralloc(tok);
 
     /* Read in "SEQ" */
     if ((tok = strtok(NULL, " ")) == NULL || strcmp(tok, "SEQ") != 0)   

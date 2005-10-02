@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.57 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: amandad.c,v 1.58 2005/10/02 18:02:20 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1271,7 +1271,7 @@ service_delete(as)
 
     assert(as->pid > 0);
     kill(as->pid, SIGTERM);
-    sleep(1);
+    /*sleep(1);*/
     waitpid(as->pid, NULL, WNOHANG);
 
     TAILQ_REMOVE(&serviceq.tailq, as, tq);

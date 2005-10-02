@@ -1,5 +1,11 @@
 2005-10-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* client-src/amandad.c (service_delete): Remove call to sleep.
+	* common-src/bsd-security.c: Add bsdprintf. Add more debug.
+	  The handle is used as a string, instead of 2 int.
+
+2005-10-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* common-src/rsh-security.c: rshprintf should call dbprint.
 	* common-src/ssh-security.c: rshprintf should call dbprint, add many
 	  rshprintf.
