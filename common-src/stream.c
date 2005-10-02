@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.10.2.6.4.4.2.4 2002/11/12 19:19:03 martinea Exp $
+ * $Id: stream.c,v 1.10.2.6.4.4.2.4.2.1 2005/10/02 13:48:42 martinea Exp $
  *
  * functions for managing stream sockets
  */
@@ -150,7 +150,8 @@ stream_client_internal(hostname, port, sendsize, recvsize, localport, priv)
     char *hostname;
     int port, sendsize, recvsize, *localport, priv;
 {
-    int client_socket, len;
+    int client_socket;
+    socklen_t len;
 #ifdef SO_KEEPALIVE
     int on = 1;
     int r;
@@ -335,7 +336,7 @@ stream_client(hostname, port, sendsize, recvsize, localport)
 
 /* don't care about these values */
 static struct sockaddr_in addr;
-static int addrlen;
+static socklen_t addrlen;
 
 int stream_accept(server_socket, timeout, sendsize, recvsize)
 int server_socket, timeout, sendsize, recvsize;

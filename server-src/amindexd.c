@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.39.2.11.4.4.2.13.2.2 2005/09/20 21:31:52 jrjackson Exp $
+ * $Id: amindexd.c,v 1.39.2.11.4.4.2.13.2.3 2005/10/02 13:48:42 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -798,7 +798,7 @@ char **argv;
     char *s, *fp;
     int ch;
     char *cmd_undo, cmd_undo_ch;
-    int i;
+    socklen_t socklen;
     struct sockaddr_in his_addr;
     struct hostent *his_name;
     char *arg;
@@ -903,8 +903,8 @@ char **argv;
 	       (char *)his_name->h_addr_list[0], his_name->h_length);
     } else {
 	/* who are we talking to? */
-	i = sizeof (his_addr);
-	if (getpeername(0, (struct sockaddr *)&his_addr, &i) == -1)
+	socklen = sizeof (his_addr);
+	if (getpeername(0, (struct sockaddr *)&his_addr, &socklen) == -1)
 	    error("getpeername: %s", strerror(errno));
     }
     if (his_addr.sin_family != AF_INET || ntohs(his_addr.sin_port) == 20)
