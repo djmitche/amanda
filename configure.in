@@ -1929,6 +1929,7 @@ if test x"$ac_cv_header_sys_mtio_h" = x"yes" &&
 	AC_CACHE_CHECK([for Linux like scsi support (sg)],
 	amanda_cv_linux_sg_scsi,
 	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/types.h>
 #include <scsi/sg.h>
 #include <sys/mtio.h>
 ]], [[

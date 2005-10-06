@@ -1,3 +1,11 @@
+2005-10-06  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by John R. Franks 
+
+	* common-src/amflock.c (main): Don't call safe_fd, it's not needed
+	  during configure.
+	* configure.in: '#include <sys/types.h>' in the check
+	  'for Linux like scsi support (sg)'
+
 2005-10-02  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* client-src/amandad.c (writebuf): Call waitpid in the parent.
