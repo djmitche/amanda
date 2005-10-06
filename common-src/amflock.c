@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflock.c,v 1.17.4.6.6.1.2.1 2005/09/20 21:31:52 jrjackson Exp $
+ * $Id: amflock.c,v 1.17.4.6.6.1.2.2 2005/10/06 17:26:36 martinea Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -413,8 +413,6 @@ main()
     char *filen = "/tmp/conftest.lock";
     char *resn = "test";
     int fd;
-
-    safe_fd(-1, 0);
 
     unlink(filen);
     if ((lockfd = open(filen, O_RDONLY|O_CREAT|O_EXCL, 0600)) == -1) {
