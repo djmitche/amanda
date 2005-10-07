@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.47.2.14.4.8.2.17.2.2 2005/09/20 21:31:52 jrjackson Exp $
+/* $Id: taper.c,v 1.47.2.14.4.8.2.17.2.3 2005/10/07 14:34:23 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -796,7 +796,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 		q = squote(errstr);
 		putresult(TRYAGAIN, "%s %s\n", handle, q);
 		amfree(q);
-		log_add(L_INFO, "retrying %s:%s.%d on new tape: %s",
+		log_add(L_INFO, "retrying %s:%s.%d on new tape due to: %s",
 		        hostname, diskname, level, errstr);
 		closing = 1;
 		syncpipe_put('X');	/* X == buffer snafu, bail */
@@ -936,7 +936,7 @@ void read_file(fd, handle, hostname, diskname, datestamp, level, port_flag)
 	    q = squote(errstr);
 	    if(tok == 'T') {
 		putresult(TRYAGAIN, "%s %s\n", handle, q);
-		log_add(L_INFO, "retrying %s:%s.%d on new tape: %s",
+		log_add(L_INFO, "retrying %s:%s.%d on new tape due to: %s",
 		        hostname, diskname, level, errstr);
 	    } else {
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
