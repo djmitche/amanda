@@ -24,7 +24,8 @@
 2005-10-10  Ian Turner <ian@zmanda.com>
 
 	* server-src/amtape.h: Apply tape-spanning patch by John Stange
-	  <building@cs.umd.edu> as ported to 2.5.0 by Ian Turner.
+	  <building@cs.umd.edu> as ported to 2.5.0 by Ian Turner, with
+	  contributions by Christopher Pascoe <c.pascoe@itee.uq.edu.au>.
 	* configure.in: Ditto
 	* amplot/Makefile.am: Ditto
 	* changer-src/Makefile.am: Ditto
