@@ -1,5 +1,6 @@
+#include "diskfile.h"
 
-#define DEFAULT_SORT_ORDER      "hkdlb"
+#define DEFAULT_SORT_ORDER      "hkdlpb"
 
 typedef struct find_result_s {
     struct find_result_s *next;
@@ -14,6 +15,8 @@ typedef struct find_result_s {
     char *label;
     int  filenum;
     char *status;
+    char *partnum;
+    void *user_ptr;
 } find_result_t;
 
 find_result_t *find_dump P((int dyna_disklist, disklist_t* diskqp));
@@ -22,4 +25,4 @@ void sort_find_result P((char *sort_order, find_result_t **output_find));
 void print_find_result P((find_result_t *output_find));
 void free_find_result P((find_result_t **output_find));
 find_result_t *dump_exist P((find_result_t *output_find, char *hostname, char *diskname, int datestamp, int level));
-
+find_result_t *dumps_match P((find_result_t *output_find, char *hostname, char *diskname, char *datestamp, char *level, int ok));

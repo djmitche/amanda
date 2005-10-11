@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.14 2004/08/11 19:16:14 martinea Exp $
+ * $Id: amfeatures.c,v 1.15 2005/10/11 01:17:00 vectro Exp $
  *
  * Feature test related code.
  */
@@ -108,6 +108,9 @@ am_init_feature_set()
 	am_add_feature(f, fe_amidxtaped_header);
 	am_add_feature(f, fe_amidxtaped_nargs);
 	am_add_feature(f, fe_amidxtaped_config);
+
+        am_add_feature(f, fe_recover_splits);
+        am_add_feature(f, fe_amidxtaped_exchange_features);
 
 	am_add_feature(f, fe_partial_estimate);
 	am_add_feature(f, fe_calcsize_estimate);

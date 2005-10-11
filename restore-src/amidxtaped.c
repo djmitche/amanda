@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.45 2005/10/02 13:48:04 martinea Exp $
+/* $Id: amidxtaped.c,v 1.46 2005/10/11 01:17:00 vectro Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -35,22 +35,32 @@
 #include "amanda.h"
 #include "version.h"
 #include "clock.h"
+#include "restore.h"
 
 #include "changer.h"
 #include "tapeio.h"
 #include "conffile.h"
 #include "logfile.h"
+#include "amfeatures.h"
+#include "stream.h"
+
+#define TIMEOUT 30
 
 static char *pgm = "amidxtaped";	/* in case argv[0] is not set */
 
-char *conf_logdir = NULL;
-char *conf_logfile = NULL;
-int get_lock = 0;
-char *found_device = NULL;
+extern char *rst_conf_logdir;
+extern char *rst_conf_logfile;
+extern char *config_dir;
+
+static int get_lock = 0;
+
+static am_feature_t *our_features = NULL;
+static am_feature_t *their_features = NULL;
 
 static char *get_client_line P((void));
 static int check_security P((struct sockaddr_in *, char *, unsigned long,
     char **));
+static void check_security_buffer P((char*));
 
 /* get a line from client - line terminated by \r\n */
 static char *
@@ -78,7 +88,7 @@ get_client_line()
 	    amfree(line);
 	    amfree(part);
 	    if(get_lock) {
-		unlink(conf_logfile);
+		unlink(rst_conf_logfile);
 	    }
 	    dbclose();
 	    exit(1);
@@ -106,94 +116,65 @@ get_client_line()
     return line;
 }
 
-int found = 0;
-char *searchlabel = NULL;
-int nslots, backwards;
-
-int scan_init(rc, ns, bk)
-int rc, ns, bk;
-{
-    if(rc) {
-	if(get_lock) {
-	    unlink(conf_logfile);
-	}
-        error("could not get changer info: %s", changer_resultstr);
-    }
-    nslots = ns;
-    backwards = bk;
-
-    return 0;
-}
-
-
-int taperscan_slot(rc, slotstr, device)
-int rc;
-char *slotstr;
-char *device;
-{
-    char *errstr;
-    char *datestamp = NULL, *label = NULL;
-
-    if(rc == 2) {
-	dbprintf(("%s: fatal slot %s: %s\n", debug_prefix_time(NULL),
-		  slotstr, changer_resultstr));
-        return 1;
-    }
-    else if(rc == 1) {
-	dbprintf(("%s: slot %s: %s\n", debug_prefix_time(NULL),
-		  slotstr, changer_resultstr));
-        return 0;
-    }
-    else {
-        if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL) {
-	    dbprintf(("%s: slot %s: %s\n", debug_prefix_time(NULL),
-		      slotstr, errstr));
-        } else {
-            /* got an amanda tape */
-	    dbprintf(("%s: slot %s: date %-8s label %s",
-		      debug_prefix_time(NULL), slotstr, datestamp, label));
-            if(strcmp(label, FAKE_LABEL) == 0 ||
-               strcmp(label, searchlabel) == 0) {
-                /* it's the one we are looking for, stop here */
-		found_device = newstralloc(found_device,device);
-		dbprintf((" (exact label match)\n"));
-                found = 1;
-                return 1;
-            }
-            else {
-		dbprintf((" (no match)\n"));
-            }
-        }
-    }
-    return 0;
-}
-
-
 int lock_logfile()
 {
-    conf_logdir = getconf_str(CNF_LOGDIR);
-    if (*conf_logdir == '/') {
-        conf_logdir = stralloc(conf_logdir);
+    rst_conf_logdir = getconf_str(CNF_LOGDIR);
+    if (*rst_conf_logdir == '/') {
+	rst_conf_logdir = stralloc(rst_conf_logdir);
     } else {
-        conf_logdir = stralloc2(config_dir, conf_logdir);
+	rst_conf_logdir = stralloc2(config_dir, rst_conf_logdir);
     }
-    conf_logfile = vstralloc(conf_logdir, "/log", NULL);
-    if (access(conf_logfile, F_OK) == 0) {
-        error("%s exists: amdump or amflush is already running, or you must run amcleanup", conf_logfile);
+    rst_conf_logfile = vstralloc(rst_conf_logdir, "/log", NULL);
+    if (access(rst_conf_logfile, F_OK) == 0) {
+	error("%s exists: amdump or amflush is already running, or you must run amcleanup", rst_conf_logfile);
     }
     log_add(L_INFO, "amidxtaped");
     return 1;
 }
 
+void check_security_buffer(buffer)
+     char *buffer;
+{
+    int i;
+    struct sockaddr_in addr;
+    char *s, *fp, ch;
+    char *errstr = NULL;
+    
+     i = sizeof (addr);
+     if (getpeername(0, (struct sockaddr *)&addr, &i) == -1)
+	 error("getpeername: %s", strerror(errno));
+     if (addr.sin_family != AF_INET || ntohs(addr.sin_port) == 20) {
+       error("connection rejected from %s family %d port %d",
+             inet_ntoa(addr.sin_addr), addr.sin_family, htons(addr.sin_port));
+     }
+     
+     /* do the security thing */
+     s = buffer;
+     ch = *s++;
+
+     skip_whitespace(s, ch);
+     if (ch == '\0') {
+	     error("cannot parse SECURITY line");
+     }
+     fp = s-1;
+     skip_non_whitespace(s, ch);
+     s[-1] = '\0';
+     if (strcmp(fp, "SECURITY") != 0) {
+	 error("cannot parse SECURITY line");
+     }
+     skip_whitespace(s, ch);
+     if (!check_security(&addr, s-1, 0, &errstr)) {
+	 error("security check failed: %s", errstr);
+     }
+}
 
 int main(argc, argv)
 int argc;
 char **argv;
 {
-    int amrestore_nargs;
-    char **amrestore_args;
     char *buf = NULL;
     int i;
+    int fd, data_sock = -1, data_port = -1;
     socklen_t socklen;
     char *amrestore_path;
     pid_t pid;
@@ -204,20 +185,24 @@ char **argv;
     int ch;
     char *errstr = NULL;
     struct sockaddr_in addr;
-    amwait_t status;
+    match_list_t *match_list;
+    tapelist_t *tapes = NULL;
+    char *their_feature_string = NULL;
+    rst_flags_t *rst_flags;
+    int use_changer = 0;
 
-    int re_header = 0;
     int re_end = 0;
-    char *re_label = NULL;
-    char *re_fsf = NULL;
-    char *re_device = NULL;
-    char *re_host = NULL;
-    char *re_disk = NULL;
-    char *re_datestamp = NULL;
     char *re_config = NULL;
+    char *conf_tapetype;
+    tapetype_t *tape;
 
     safe_fd(-1, 0);
     safe_cd();
+
+    rst_flags = new_rst_flags();
+    rst_flags->mask_splits = 1; /* for older clients */
+    our_features = am_init_feature_set();
+    their_features = am_set_default_feature_set();
 
     /*
      * When called via inetd, it is not uncommon to forget to put the
@@ -296,54 +281,50 @@ char **argv;
     /* do the security thing */
     amfree(buf);
     buf = stralloc(get_client_line());
-    s = buf;
-    ch = *s++;
-
-    skip_whitespace(s, ch);
-    if (ch == '\0')
-    {
-	error("cannot parse SECURITY line");
-    }
-    fp = s-1;
-    skip_non_whitespace(s, ch);
-    s[-1] = '\0';
-    if (strcmp(fp, "SECURITY") != 0)
-    {
-	error("cannot parse SECURITY line");
-    }
-    skip_whitespace(s, ch);
-    if (!check_security(&addr, s-1, 0, &errstr)) {
-	error("security check failed: %s", errstr);
-    }
+    check_security_buffer(buf);
 
     /* get the number of arguments */
-    amrestore_nargs = 0;
-    do {
+    match_list = alloc(sizeof(match_list_t));
+    match_list->next = NULL;
+    match_list->hostname = "";
+    match_list->datestamp = "";
+    match_list->level = "";
+    match_list->diskname = "";
+
+   do {
 	amfree(buf);
 	buf = stralloc(get_client_line());
 	if(strncmp(buf, "LABEL=", 6) == 0) {
-	    re_label = stralloc(buf+6);
+	    tapes = unmarshal_tapelist_str(buf+6);
 	}
 	else if(strncmp(buf, "FSF=", 4) == 0) {
-	    int fsf = atoi(buf+4);
-	    if(fsf > 0) {
-		re_fsf = stralloc(buf+4);
-	    }
+	    rst_flags->fsf = atoi(buf + 4);
 	}
 	else if(strncmp(buf, "HEADER", 6) == 0) {
-	    re_header = 1;
+	    rst_flags->headers = 1;
+	}
+	else if(strncmp(buf, "FEATURES=", 9) == 0) {
+	    char *our_feature_string = NULL;
+	    their_feature_string = stralloc(buf+9);
+	    am_release_feature_set(their_features);
+	    their_features = am_string_to_feature(their_feature_string);
+	    amfree(their_feature_string);
+	    our_feature_string = am_feature_to_string(our_features);
+	    printf("%s", our_feature_string);
+	    fflush(stdout);
+	    amfree(our_feature_string);
 	}
 	else if(strncmp(buf, "DEVICE=", 7) == 0) {
-	    re_device = stralloc(buf+7);
+	    rst_flags->alt_tapedev= stralloc(buf+7);
 	}
 	else if(strncmp(buf, "HOST=", 5) == 0) {
-	    re_host = stralloc(buf+5);
+	    match_list->hostname = stralloc(buf+5);
 	}
 	else if(strncmp(buf, "DISK=", 5) == 0) {
-	    re_disk = stralloc(buf+5);
+	    match_list->diskname = stralloc(buf+5);
 	}
 	else if(strncmp(buf, "DATESTAMP=", 10) == 0) {
-	    re_datestamp = stralloc(buf+10);
+	    match_list->datestamp = stralloc(buf+10);
 	}
 	else if(strncmp(buf, "END", 3) == 0) {
 	    re_end = 1;
@@ -352,12 +333,20 @@ char **argv;
 	    re_config = stralloc(buf+7);
 	}
 	else if(buf[0] != '\0' && buf[0] >= '0' && buf[0] <= '9') {
-	    amrestore_nargs = atoi(buf);
+/* XXX does nothing?     amrestore_nargs = atoi(buf); */
 	    re_end = 1;
 	}
 	else {
 	}
     } while (re_end == 0);
+
+    if(!tapes && rst_flags->alt_tapedev){
+	dbprintf(("%s: Looks like we're restoring from a holding file...\n", debug_prefix_time(NULL)));
+        tapes = unmarshal_tapelist_str(rst_flags->alt_tapedev);
+	tapes->isafile = 1;
+	amfree(rst_flags->alt_tapedev);
+	rst_flags->alt_tapedev = NULL;
+    }
 
     if(re_config) {
 	char *conffile;
@@ -366,204 +355,104 @@ char **argv;
 	if (read_conffile(conffile)) {
 	    dbprintf(("%s: config '%s' not found\n",
 		      debug_prefix_time(NULL), re_config));
-	    amfree(re_fsf);
-	    amfree(re_label);
 	    amfree(re_config);
+	    re_config = NULL;
 	}
     }
-    else {
-	amfree(re_fsf);
-	amfree(re_label);
-    }
 
-    if(re_device && re_config &&
-       strcmp(re_device, getconf_str(CNF_TAPEDEV)) == 0) {
+    /* If we'll be stepping on the tape server's devices, lock them. */
+    if(re_config) {
 	get_lock = lock_logfile();
     }
 
-    if(re_label && re_config &&
-       strcmp(re_device, getconf_str(CNF_AMRECOVER_CHANGER)) == 0) {
+    /* Init the tape changer */
+    if(tapes && use_changer && changer_init() == 0){
+	dbprintf(("%s: No changer available\n", debug_prefix_time(NULL)));
+    }
 
-	if(changer_init() == 0) {
-	    dbprintf(("%s: No changer available\n",
-		       debug_prefix_time(NULL)));
+    /* Read the default block size from the tape type */
+    if(re_config && (conf_tapetype = getconf_str(CNF_TAPETYPE)) != NULL) {
+	tape = lookup_tapetype(conf_tapetype);
+	rst_flags->blocksize = tape->blocksize * 1024;
+    }
+
+
+    if(rst_flags->fsf && re_config && 
+       getconf_int(CNF_AMRECOVER_DO_FSF) == 0) {
+	rst_flags->fsf = 0;
+    }
+
+    if(re_config && getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
+	rst_flags->check_labels = 0;
+    }
+
+    /* We need certain options, if restoring from more than one tape */
+    if(tapes && tapes->next){
+	dbprintf(("%s: Restoring from multiple tapes, blithely ignoring CNF_AMRECOVER_CHECK_LABEL and CNF_AMRECOVER_CHANGER\n", get_pname()));
+	rst_flags->check_labels = 1;
+	use_changer = 1;
+    }
+
+    /* establish a distinct data connection for dumpfile data */
+    if(am_has_feature(their_features, fe_recover_splits)){
+	int data_fd;
+	char buffer[32768];
+	
+	dbprintf(("%s: Client understands split dumpfiles\n", get_pname()));
+	
+	if((data_sock = stream_server(&data_port, STREAM_BUFSIZE, -1)) < 0){
+	    error("%s: could not create data socket: %s", get_pname(),
+		  strerror(errno));
 	}
-	else {
-	    searchlabel = stralloc(re_label);
-	    changer_find(scan_init, taperscan_slot, searchlabel);
-	    if(found == 0) {
-		dbprintf(("%s: Can't find label \"%s\"\n",
-			  debug_prefix_time(NULL), searchlabel));
-		if(get_lock) {
-		    unlink(conf_logfile);
-		}
-		dbclose();
-		exit(1);
-	    }
-	    else {
-		     re_device=stralloc(found_device);
-		dbprintf(("%s: label \"%s\" found\n",
-			  debug_prefix_time(NULL), searchlabel));
-	    }
+	dbprintf(("%s: Local port %d set aside for data\n", get_pname(),
+		  data_port));
+	
+	printf("%d", data_port); /* tell client where to connect */
+	fflush(stdout);
+	
+	if((data_fd = stream_accept(data_sock, TIMEOUT, -1, -1)) < 0){
+	    error("stream_accept failed for client data connection: %s\n",
+		  strerror(errno));
 	}
-    }
-
-    if(re_fsf && re_config && getconf_int(CNF_AMRECOVER_DO_FSF) == 0) {
-	amfree(re_fsf);
-    }
-    if(re_label && re_config && getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
-	amfree(re_label);
-    }
-
-    dbprintf(("%s: amrestore_nargs=%d\n",
-	      debug_prefix_time(NULL),
-	      amrestore_nargs));
-
-    amrestore_args = (char **)alloc((amrestore_nargs+12)*sizeof(char *));
-    i = 0;
-    amrestore_args[i++] = "amrestore";
-    if(re_header || re_device || re_host || re_disk || re_datestamp ||
-       re_label || re_fsf) {
-
-	amrestore_args[i++] = "-p";
-	if(re_header) amrestore_args[i++] = "-h";
-	if(re_label) {
-	    amrestore_args[i++] = "-l";
-	    amrestore_args[i++] = re_label;
-	}
-	if(re_fsf) {
-	    amrestore_args[i++] = "-f";
-	    amrestore_args[i++] = re_fsf;
-	}
-	if(re_device) amrestore_args[i++] = re_device;
-	if(re_host) amrestore_args[i++] = re_host;
-	if(re_disk) amrestore_args[i++] = re_disk;
-	if(re_datestamp) amrestore_args[i++] = re_datestamp;
-    }
-    else { /* fe_amidxtaped_nargs */
-	while (i <= amrestore_nargs) {
-	    amrestore_args[i++] = stralloc(get_client_line());
-	}
-    }
-    amrestore_args[i] = NULL;
-
-    amrestore_path = vstralloc(sbindir, "/", "amrestore", NULL);
-
-    /* so got all the arguments, now ready to execv */
-    dbprintf(("%s: ready to execv amrestore with:\n", debug_prefix_time(NULL)));
-    dbprintf(("path = %s\n", amrestore_path));
-    for (i = 0; amrestore_args[i] != NULL; i++)
-    {
-	dbprintf(("argv[%d] = \"%s\"\n", i, amrestore_args[i]));
-    }
-
-    if ((pid = fork()) == 0)
-    {
-	/* child */
-	(void)execv(amrestore_path, amrestore_args);
-
-	/* only get here if exec failed */
-	dbprintf(("%s: child couldn't exec %s: %s\n",
-		  debug_prefix_time(NULL), amrestore_path, strerror(errno)));
-	return 1;
-	/*NOT REACHED*/
-    }
-
-    /* this is the parent */
-    if (pid == -1)
-    {
-	dbprintf(("%s: error forking amrestore child: %s\n",
-		  debug_prefix_time(NULL), strerror(errno)));
-	if(get_lock) {
-	    unlink(conf_logfile);
-	}
-	dbclose();
-	return 1;
-    }
-
-    /* wait for the child to do the restore */
-    if (waitpid(pid, &status, 0) == -1)
-    {
-	dbprintf(("%s: error waiting for amrestore child: %s\n",
-		  debug_prefix_time(NULL), strerror(errno)));
-	if(get_lock) {
-	    unlink(conf_logfile);
-	}
-	dbclose();
-	return 1;
-    }
-    /* amrestore often sees the pipe reader (ie restore) quit in the middle
-       of the file because it has extracted all of the files needed. This
-       results in an exit status of 2. This unfortunately is the exit
-       status returned by many errors. Only when the exit status is 1 is it
-       guaranteed that an error existed. In all cases we should rewind the
-       tape if we can so that a retry starts from the correct place */
-    if (WIFEXITED(status) != 0)
-    {
-
-	dbprintf(("%s: amrestore terminated normally with status: %d\n",
-		  debug_prefix_time(NULL), WEXITSTATUS(status)));
-    }
-    else
-    {
-	dbprintf(("%s: amrestore terminated abnormally.\n",
-		  debug_prefix_time(NULL)));
-    }
-
-    /* rewind tape */
-    if(re_device) {
-	tapename = re_device;
+	read(data_fd, buffer, sizeof(buffer));
+	
+	check_security_buffer(buffer);
+	rst_flags->pipe_to_fd = data_fd;
     }
     else {
-	/* the first non-option argument is the tape device */
-	for (i = 1; i <= amrestore_nargs; i++)
-	    if (amrestore_args[i][0] != '-')
-		break;
-	if (i > amrestore_nargs)
-	{
-	    dbprintf(("%s: Couldn't find tape in arguments\n",
-		      debug_prefix_time(NULL)));
-	    if(get_lock) {
-		unlink(conf_logfile);
-	    }
-	    dbclose();
-	    return 1;
-	}
-
-	tapename = stralloc(amrestore_args[i]);
+	rst_flags->pipe_to_fd = fileno(stdout);
     }
-    if (tape_stat(tapename, &stat_tape) != 0)
-      error("could not stat %s: %s", tapename, strerror(errno));
-    isafile = S_ISREG((stat_tape.st_mode));
-    if (!isafile) {
-	char *errstr = NULL;
-
-	dbprintf(("%s: rewinding tape: ", debug_prefix_time(NULL)));
-	errstr = tape_rewind(tapename);
-
-	if (errstr != NULL) {
-	    dbprintf(("%s: %s\n", debug_prefix_time(NULL), errstr));
-	    amfree(errstr);
-	} else {
-	    dbprintf(("%s: done\n", debug_prefix_time(NULL)));
-	}
+    dbprintf(("%s: Sending output to file descriptor %d\n",
+	      get_pname(), rst_flags->pipe_to_fd));
+    
+    am_release_feature_set(their_features);
+    
+    /* make sure our restore flags aren't crazy */
+    if(check_rst_flags(rst_flags) == -1){
+	if(rst_flags->pipe_to_fd != -1) aclose(rst_flags->pipe_to_fd);
+	if(get_lock) unlink(rst_conf_logfile);
+	exit(1);
     }
-
-    if(get_lock) {
-	unlink(conf_logfile);
-    }
-
-    amfree(tapename);
+    
+    /* actual restoration */
+    search_tapes(stdout, use_changer, tapes, match_list, rst_flags);
+    dbprintf(("%s: Restoration finished\n", debug_prefix_time(NULL)));
+    
+    /* cleanup */
+    if(rst_flags->pipe_to_fd != -1) aclose(rst_flags->pipe_to_fd);
+    if(get_lock) unlink(rst_conf_logfile);
+    free_tapelist(tapes);
+    
     dbclose();
     return 0;
 }
 
 static int
 check_security(addr, str, cksum, errstr)
-struct sockaddr_in *addr;
-char *str;
-unsigned long cksum;
-char **errstr;
+     struct sockaddr_in *addr;
+     char *str;
+     unsigned long cksum;
+     char **errstr;
 {
     char *remotehost = NULL, *remoteuser = NULL;
     char *bad_bsd = NULL;

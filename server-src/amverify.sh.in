@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.33 2005/09/15 13:26:24 martinea Exp $
+#	$Id: amverify.sh.in,v 1.34 2005/10/11 01:17:00 vectro Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -119,8 +119,8 @@ doonefile() {
 		echo "** No header" > $TEMP/errors
 	else
 		set X $HEADER
-		shift
-		shift 9
+		# XXX meh, while[] is dangerous, what about a bad header?
+		while [ X"$1" != X"program" ]; do shift; done
 		if [ X"$1" = X"program" -a X"$2" != X"" ]; then
 			if [ X"$TAR" != X"" \
 			     -a \( X"`basename $2`" = X"`basename $TAR`" \
@@ -158,7 +158,13 @@ doonefile() {
 			echo "** Cannot find dump type" > $TEMP/errors
 		fi
 	fi
-	if [ X"$CMD" != X"" ]; then
+	echo $CMD > $TEMP/onefile.cmd
+	if [ X"`echo $HEADER | grep '^AMANDA: SPLIT_FILE'`" != X"" ]; then
+	    result=500
+	    set X $HEADER
+	    shift 7
+	    echo $1 | cut -f7 -d' ' > $TEMP/onefile.partnum
+	elif [ X"$CMD" != X"" ]; then
 		if [ -x $CMD ]; then
 			$CMD $ARGS > /dev/null 2> $TEMP/errors
 			result=$?
@@ -346,6 +352,7 @@ report ""
 
 # ----------------------------------------------------------------------------
 
+SPLIT_DUMPS= # this will keep track of split dumps that we'll tally later
 while [ $SLOT -lt $SLOTS ]; do
 	SLOT=`expr $SLOT + 1`
 	#
@@ -432,6 +439,13 @@ while [ $SLOT -lt $SLOTS ]; do
 		# amrestore:   0: restoring sundae._mnt_sol1_usr.19961127.1
 		if [ X"$FILE" != X"" -a X"$RESULT" = X"0" ]; then
 			report "Checked $FILE"
+		elif [ X"$FILE" != X"" -a X"$RESULT" = X"500" ]; then
+			report "Skipped `cat $TEMP/onefile.cmd` check on partial dump $FILE"
+			dump="`echo $FILE | cut -d'.' -f'1,2,3,4'`"
+			cat $TEMP/onefile.partnum >> $TEMP/$dump.parts
+			if [ X"`echo $SPLIT_DUMPS | grep $dump`" = X"" ]; then
+			    SPLIT_DUMPS="$dump $SPLIT_DUMPS"
+			fi
 		elif [ X"$FILE" != X"" -a X"$RESULT" = X"999" ]; then
 			report "Skipped $FILE (`cat $TEMP/errors`)"
 		elif [ -n "$EOF" ]; then
@@ -463,12 +477,52 @@ while [ $SLOT -lt $SLOTS ]; do
 	      $TEMP/amtape.out \
 	      $TEMP/amrestore.out \
 	      $TEMP/errors \
+	      $TEMP/onefile.cmd \
+	      $TEMP/onefile.partnum \
 	      $TEMP/onefile.errors
 done
 
 [ -s $DEFECTS ] \
 	&& $Echoe "Errors found: " \
 	&& cat $DEFECTS
+
+# Work out whether any split dumps we saw had all their parts
+for dump in $SPLIT_DUMPS;do
+    report ""
+    numparts=0
+    max=0
+    max_known=0
+    missing=0
+    # figure out 
+    for part in `cat $TEMP/$dump.parts`;do
+	cur="`echo $part | cut -d/ -f1`"
+	max="`echo $part | cut -d/ -f2`"
+	if [ $max != "UNKNOWN" ]; then
+	    numparts=$max
+	    max_known=1
+	    break;
+	fi
+	if [ $cur -gt $numparts ]; then
+	    numparts=$cur
+	fi
+    done
+    report "Split dump $dump should have $numparts total pieces"
+    if [ $max_known != 1 ]; then
+	report "NOTE: Header field for total pieces was UNKNOWN, $numparts is best guess"
+    fi
+    part=1
+    while [ $part -lt $numparts ];do
+	part=`expr $part + 1`
+	if [ X"`grep \"^$part/\" $TEMP/$dump.parts`" = X"" ];then
+	    report "Spanning chunk part $part is missing!"
+	    missing=`expr $missing + 1`
+	fi
+    done
+    if [ $missing = 0 ];then
+	report "All parts found"	
+    fi
+    rm -f $TEMP/$dump.parts
+done
 
 sendreport
 

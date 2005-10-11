@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.101 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: amadmin.c,v 1.102 2005/10/11 01:17:00 vectro Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -999,7 +999,7 @@ char **argv;
 
     if(argc < 3) {
 	fprintf(stderr,
-		"%s: expecting \"find [--sort <hkdlb>] [hostname [<disk>]]*\"\n",
+		"%s: expecting \"find [--sort <hkdlpb>] [hostname [<disk>]]*\"\n",
 		get_pname());
 	usage();
     }

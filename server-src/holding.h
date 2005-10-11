@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.h,v 1.21 2003/06/03 20:14:29 martinea Exp $
+ * $Id: holding.h,v 1.22 2005/10/11 01:17:01 vectro Exp $
  *
  */
 
@@ -50,7 +50,7 @@ filetype_t get_amanda_names P((char *fname,
 			       char **diskname,
 			       int *level));
 void get_dumpfile P((char *fname, dumpfile_t *file));
-long size_holding_files P((char *holding_file));
+long size_holding_files P((char *holding_file, int strip_headers));
 int unlink_holding_files P((char *holding_file));
 int rename_tmp_holding P((char *holding_file, int complete));
 void cleanup_holdingdisk P((char *diskdir, int verbose));

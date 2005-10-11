@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.71 2005/09/12 13:39:49 martinea Exp $
+ * $Id: driverio.c,v 1.72 2005/10/11 01:17:01 vectro Exp $
  *
  * I/O-related functions for driver program
  */
@@ -260,6 +260,9 @@ char *datestamp;
 {
     char *cmdline = NULL;
     char number[NUM_STR_SIZE];
+    char splitsize[NUM_STR_SIZE];
+    char fallback_splitsize[NUM_STR_SIZE];
+    char *diskbuffer = NULL;
     disk_t *dp;
     char *features;
 
@@ -270,6 +273,7 @@ char *datestamp;
     case FILE_WRITE:
 	dp = (disk_t *) ptr;
 	snprintf(number, sizeof(number), "%d", level);
+	snprintf(splitsize, sizeof(splitsize), "%ld", dp->tape_splitsize);
 	features = am_feature_to_string(dp->host->features);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
@@ -279,12 +283,27 @@ char *datestamp;
 			    " ", dp->name,
 			    " ", number,
 			    " ", datestamp,
+			    " ", splitsize,
 			    "\n", NULL);
 	amfree(features);
 	break;
     case PORT_WRITE:
 	dp = (disk_t *) ptr;
 	snprintf(number, sizeof(number), "%d", level);
+
+	/*
+          If we haven't been given a place to buffer split dumps to disk,
+          make the argument something besides and empty string so's taper
+          won't get confused
+	*/
+	if(!dp->split_diskbuffer || dp->split_diskbuffer[0] == '\0'){
+	    diskbuffer = newstralloc(diskbuffer, "NULL");
+	} else {
+	    diskbuffer = newstralloc(diskbuffer, dp->split_diskbuffer);
+	}
+	snprintf(splitsize, sizeof(splitsize), "%ld", dp->tape_splitsize);
+	snprintf(fallback_splitsize, sizeof(fallback_splitsize),
+		    "%ld", dp->fallback_splitsize);
 	features = am_feature_to_string(dp->host->features);
 	cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
@@ -293,6 +312,9 @@ char *datestamp;
 			    " ", dp->name,
 			    " ", number,
 			    " ", datestamp,
+			    " ", splitsize,
+			    " ", diskbuffer,
+			    " ", fallback_splitsize,
 			    "\n", NULL);
 	amfree(features);
 	break;

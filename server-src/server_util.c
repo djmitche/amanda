@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.11 2002/04/13 19:24:51 jrjackson Exp $
+ * $Id: server_util.c,v 1.12 2005/10/11 01:17:01 vectro Exp $
  *
  */
 
@@ -39,7 +39,8 @@ const char *cmdstr[] = {
     "FAILED", "TRY-AGAIN", "NO-ROOM", "RQ-MORE-DISK",	/* dumper results */
     "ABORT-FINISHED", "BAD-COMMAND",			/* dumper results */
     "START-TAPER", "FILE-WRITE", "PORT-WRITE",		/* taper cmds */
-    "PORT", "TAPE-ERROR", "TAPER-OK",			/* taper results */
+    "PORT", "TAPE-ERROR", "TAPER-OK", "SPLIT-NEEDNEXT", /* taper results */
+    "SPLIT-CONTINUE",
     NULL
 };
 

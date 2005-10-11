@@ -53,7 +53,7 @@ TEST_PROGS = getfsent
 
 EXTRA_PROGRAMS =	$(TEST_PROGS)
 
-CLEANFILES = *.test.c
+CLEANFILES = *.test.c patch-system
 
 EXTRA_SCRIPTS =		amhpfixdevs		amsinixfixdevs
 

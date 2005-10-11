@@ -7,6 +7,7 @@
 
 INCLUDES =		-I$(top_srcdir)/common-src \
 			-I../common-src \
+			-I../restore-src \
 			-I$(top_srcdir)/tape-src
 
 lib_LTLIBRARIES = 	libamserver.la
@@ -62,7 +63,7 @@ TEST_PROGS = diskfile conffile infofile
 
 EXTRA_PROGRAMS =	$(TEST_PROGS)
 
-CLEANFILES = *.test.c
+CLEANFILES = *.test.c $(sbin_SCRIPTS)
 
 amindexd_SOURCES =	amindexd.c					\
 			disk_history.c			disk_history.h	\

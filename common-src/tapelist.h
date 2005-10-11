@@ -1,6 +1,6 @@
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
- * Copyright (c) 1991-1999 University of Maryland at College Park
+ * Copyright (c) 1991-1998 University of Maryland at College Park
  * All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,35 +24,37 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.h,v 1.8 2005/10/11 01:17:01 vectro Exp $
+ * $Id: tapelist.h,v 1.1 2005/10/11 01:17:00 vectro Exp $
  *
  */
-#ifndef SERVER_UTIL_H
-#define	SERVER_UTIL_H
 
-#include "util.h"
+#ifndef TAPELIST_H
+#define TAPELIST_H
 
-#define MAX_ARGS 32
+#include "amanda.h"
 
-typedef enum {
-    BOGUS, QUIT, QUITTING, DONE, PARTIAL,
-    FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
-    FAILED, TRYAGAIN, NO_ROOM, RQ_MORE_DISK,		/* dumper results */
-    ABORT_FINISHED, BAD_COMMAND,			/* dumper results */
-    START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
-    PORT, TAPE_ERROR, TAPER_OK,	SPLIT_NEEDNEXT,         /* taper results */
-    SPLIT_CONTINUE,
-    LAST_TOK
-} cmd_t;
-extern const char *cmdstr[];
+/* XXX This looks like a lot of other things, apart from the string
+ * marshalling and unmarshalling.  Things like the EXTRACT_LIST in amrecover's
+ * innards are functionally similar, so there's probably a lot of opportunity
+ * to pare down extraneous code here by mushing things like that in.  Rainy
+ * day project, perhaps.
+ */
 
-struct cmdargs {
-    int argc;
-    char *argv[MAX_ARGS + 1];
-};
+typedef struct tapelist_s {
+    struct tapelist_s *next;
+    char *label;
+    int isafile; /* set to 1 and make *label the path to the file */
+    int *files;
+    int numfiles;
+} tapelist_t;
 
-cmd_t getcmd P((struct cmdargs *cmdargs));
-void putresult P((cmd_t result, const char *, ...))
-     __attribute__ ((format (printf, 2, 3)));
+extern int num_entries P((tapelist_t *tapelist));
+extern tapelist_t *append_to_tapelist P((tapelist_t *tapelist, char *label,
+					int file, int isafile));
+extern char *marshal_tapelist P((tapelist_t *tapelist, int escape));
+extern tapelist_t *unmarshal_tapelist_str P((char *tapelist_str));
+extern char *escape_label P((char *label));
+extern char *unescape_label P((char *label));
+extern void free_tapelist P((tapelist_t *tapelist));
 
-#endif	/* SERVER_UTIL_H */
+#endif /* !TAPELIST_H */

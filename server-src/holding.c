@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.47 2004/10/21 13:12:23 martinea Exp $
+ * $Id: holding.c,v 1.48 2005/10/11 01:17:01 vectro Exp $
  *
  * Functions to access holding disk
  */
@@ -434,8 +434,9 @@ dumpfile_t *file;
 }
 
 
-long size_holding_files(holding_file)
+long size_holding_files(holding_file, strip_headers)
 char *holding_file;
+int strip_headers;
 {
     int fd;
     int buflen;
@@ -460,6 +461,7 @@ char *holding_file;
 	    finfo.st_size = 0;
 	}
 	size += (finfo.st_size+1023)/1024;
+	if(strip_headers) size -= DISK_BLOCK_BYTES/1024;
 	filename = newstralloc(filename, file.cont_filename);
     }
     amfree(filename);

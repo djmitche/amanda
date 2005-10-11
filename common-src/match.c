@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.20 2004/12/21 14:20:14 martinea Exp $
+ * $Id: match.c,v 1.21 2005/10/11 01:17:00 vectro Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -560,6 +560,68 @@ char *dateexp, *datestamp;
 	}
 	else {
 	    return (strncmp(datestamp, mydateexp, strlen(mydateexp)) == 0);
+	}
+    }
+}
+
+
+int match_level(levelexp, level)
+char *levelexp, *level;
+{
+    char *dash;
+    size_t len, len_suffix;
+    int len_prefix;
+    char lowend[100], highend[100];
+    char mylevelexp[100];
+    int match_exact;
+
+    if(strlen(levelexp) >= 100 || strlen(levelexp) < 1) {
+	error("Illegal level expression %s",levelexp);
+    }
+   
+    if(levelexp[0] == '^') {
+	strncpy(mylevelexp, levelexp+1, strlen(levelexp)-1); 
+	mylevelexp[strlen(levelexp)-1] = '\0';
+    }
+    else {
+	strncpy(mylevelexp, levelexp, strlen(levelexp));
+	mylevelexp[strlen(levelexp)] = '\0';
+    }
+
+    if(mylevelexp[strlen(mylevelexp)] == '$') {
+	match_exact = 1;
+	mylevelexp[strlen(mylevelexp)] = '\0';
+    }
+    else
+	match_exact = 0;
+
+    if((dash = strchr(mylevelexp,'-'))) {
+	if(match_exact == 1) {
+	    error("Illegal level expression %s",levelexp);
+	}
+	len = dash - mylevelexp;
+	len_suffix = strlen(dash) - 1;
+	len_prefix = len - len_suffix;
+
+	if(len_prefix < 0) {
+	    error("Illegal level expression %s",levelexp);
+	}
+
+	dash++;
+	strncpy(lowend, mylevelexp, len);
+	lowend[len] = '\0';
+	strncpy(highend, mylevelexp, len_prefix);
+	strncpy(&(highend[len_prefix]), dash, len_suffix);
+	highend[len] = '\0';
+	return ((strncmp(level, lowend, strlen(lowend)) >= 0) &&
+		(strncmp(level, highend , strlen(highend))  <= 0));
+    }
+    else {
+	if(match_exact == 1) {
+	    return (strcmp(level, mylevelexp) == 0);
+	}
+	else {
+	    return (strncmp(level, mylevelexp, strlen(mylevelexp)) == 0);
 	}
     }
 }

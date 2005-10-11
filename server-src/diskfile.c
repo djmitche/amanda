@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.66 2005/09/30 19:13:27 martinea Exp $
+ * $Id: diskfile.c,v 1.67 2005/10/11 01:17:01 vectro Exp $
  *
  * read disklist file
  */
@@ -165,6 +165,9 @@ char *diskname;
 
     disk = alloc(sizeof(disk_t));
     disk->line = 0;
+    disk->tape_splitsize = 0;
+    disk->split_diskbuffer = NULL;
+    disk->fallback_splitsize = 0;
     disk->name = stralloc(diskname);
     disk->device = stralloc(diskname);
     disk->spindle = -1;
@@ -254,6 +257,12 @@ disk_t *disk;
     else disk->next->prev = disk->prev;
 
     disk->prev = disk->next = NULL;
+}
+
+void free_disklist(disklist_t* dl) {
+  while (dl->head != NULL) {
+    free(dequeue_disk(dl));
+  }
 }
 
 static char *upcase(st)
@@ -438,6 +447,9 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     disk->frequency	= dtype->frequency;
     disk->security_driver = dtype->security_driver;
     disk->maxdumps	= dtype->maxdumps;
+    disk->tape_splitsize	= dtype->tape_splitsize;
+    disk->split_diskbuffer	= dtype->split_diskbuffer;
+    disk->fallback_splitsize	= dtype->fallback_splitsize;
     disk->maxpromoteday	= dtype->maxpromoteday;
     disk->bumppercent	= dtype->bumppercent;
     disk->bumpsize	= dtype->bumpsize;

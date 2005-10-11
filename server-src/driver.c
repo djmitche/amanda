@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.151 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: driver.c,v 1.152 2005/10/11 01:17:01 vectro Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -60,6 +60,7 @@ static char *chunker_program;
 static int  inparallel;
 static int nodump = 0;
 static unsigned long tape_length, tape_left = 0;
+static int current_tape = 1;
 static int conf_taperalgo;
 static time_t sleep_time;
 static int idle_reason;
@@ -98,7 +99,7 @@ static void short_dump_state P((void));
 static void startaflush P((void));
 static void start_degraded_mode P((disklist_t *queuep));
 static void start_some_dumps P((disklist_t *rq));
-static void continue_dumps();
+static void continue_port_dumps();
 static void update_failed_dump_to_tape P((disk_t *));
 #if 0
 static void dump_state P((const char *str));
@@ -464,7 +465,8 @@ startaflush()
     disk_t *dp = NULL;
     disk_t *fit = NULL;
     char *datestamp;
-
+    int conf_runtapes = 0;
+    unsigned int extra_tapes = 0;
     if(!degraded_mode && !taper_busy && !empty(tapeq)) {
 	
 	datestamp = sched(tapeq.head)->datestamp;
@@ -475,7 +477,10 @@ startaflush()
 	case ALGO_FIRSTFIT:
 		fit = tapeq.head;
 		while (fit != NULL) {
-		    if(sched(fit)->act_size <= tape_left &&
+		    conf_runtapes = getconf_int(CNF_RUNTAPES);
+		    extra_tapes = (fit->tape_splitsize > 0) ? 
+						conf_runtapes - current_tape : 0;
+		    if(sched(fit)->act_size <= (tape_left + tape_length*extra_tapes) &&
 		       strcmp(sched(fit)->datestamp, datestamp) <= 0) {
 			dp = fit;
 			fit = NULL;
@@ -500,7 +505,10 @@ startaflush()
 	case ALGO_LARGESTFIT:
 		fit = tapeq.head;
 		while (fit != NULL) {
-		    if(sched(fit)->act_size <= tape_left &&
+		    conf_runtapes = getconf_int(CNF_RUNTAPES);
+		    extra_tapes = (fit->tape_splitsize > 0) ? 
+						conf_runtapes - current_tape : 0;
+		    if(sched(fit)->act_size <= (tape_left + tape_length*extra_tapes) &&
 		       (!dp || sched(fit)->act_size > sched(dp)->act_size) &&
 		       strcmp(sched(fit)->datestamp, datestamp) <= 0) {
 			dp = fit;
@@ -877,7 +885,7 @@ start_degraded_mode(queuep)
 }
 
 
-static void continue_dumps()
+static void continue_port_dumps()
 {
     disk_t *dp, *ndp;
     assignedhd_t **h;
@@ -956,6 +964,10 @@ handle_taper_result(cookie)
     cmd_t cmd;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
+    int conf_runtapes = 0;
+    int avail_tapes = 0;
+
+    conf_runtapes = getconf_int(CNF_RUNTAPES);
 
     assert(cookie == NULL);
 
@@ -998,7 +1010,7 @@ handle_taper_result(cookie)
 	    startaflush();
 
 	    /* continue with those dumps waiting for diskspace */
-	    continue_dumps();
+	    continue_port_dumps();
 	    break;
 
 	case TRYAGAIN:  /* TRY-AGAIN <handle> <err mess> */
@@ -1012,15 +1024,22 @@ handle_taper_result(cookie)
 		   walltime_str(curclock()), dp->host->hostname, dp->name);
 	    fflush(stdout);
 
-	    /* re-insert into taper queue */
+	    /* See how many tapes we have left, but we alwyays
+	       retry once (why?) */
+	    current_tape++;
+	    if(dp->tape_splitsize > 0)
+		avail_tapes = conf_runtapes - current_tape;
+	    else
+		avail_tapes = 0;
 
-	    if(sched(dp)->attempted) {
+	    if(sched(dp)->attempted > avail_tapes) {
 		log_add(L_FAIL, "%s %s %s %d [too many taper retries]",
 	    	    dp->host->hostname, dp->name, sched(dp)->datestamp,
 		    sched(dp)->level);
 		printf("driver: taper failed %s %s %s, too many taper retry\n", result_argv[2], dp->host->hostname, dp->name);
 	    }
 	    else {
+		/* Re-insert into taper queue. */
 		sched(dp)->attempted++;
 		headqueue_disk(&tapeq, dp);
 	    }
@@ -1032,8 +1051,32 @@ handle_taper_result(cookie)
 	    taper_busy = 0;
 	    taper_disk = NULL;
 	    startaflush();
-	    continue_dumps();
+	    continue_port_dumps();
 	    break;
+
+     case SPLIT_CONTINUE:  /* SPLIT_CONTINUE <handle> <new_label> */
+       if (result_argc != 3) {
+           error("error [taper SPLIT_CONTINUE result_argc != 3: %d]",
+		 result_argc);
+       }
+
+       break;
+     case SPLIT_NEEDNEXT:  /* SPLIT-NEEDNEXT <handle> <kb written> */
+       if (result_argc != 3) {
+           error("error [taper SPLIT_NEEDNEXT result_argc != 3: %d]",
+		 result_argc);
+       }
+
+       /* Update our tape counter and reset tape_left */
+       current_tape++;
+       tape_left = tape_length;
+
+       /* Reduce the size of the dump by amount written and reduce tape_left by
+          the amount left over */
+       dp = serial2disk(result_argv[2]);
+       sched(dp)->act_size -= atoi(result_argv[3]);
+       if (sched(dp)->act_size < tape_left) tape_left -= sched(dp)->act_size;
+       else tape_length = 0;
 
 	case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
 	    dp = serial2disk(result_argv[2]);
@@ -1065,7 +1108,7 @@ handle_taper_result(cookie)
 		taper_ev_read = NULL;
 	    }
 	    if(cmd != TAPE_ERROR) aclose(taper);
-	    continue_dumps();
+	    continue_port_dumps();
 	    break;
 	default:
 	    error("driver received unexpected token (%s) from taper",
@@ -1139,7 +1182,7 @@ dumper_result(dp)
 	dummy += h[i]->used;
     }
 
-    size = size_holding_files(sched(dp)->destname);
+    size = size_holding_files(sched(dp)->destname, 0);
     h[activehd]->used = size - dummy;
     holdalloc(h[activehd]->disk)->allocated_dumpers--;
     adjust_diskspace(dp, DONE);
@@ -1169,7 +1212,7 @@ dumper_result(dp)
     chunker->down = 1;
     
     dp = NULL;
-    continue_dumps();
+    continue_port_dumps();
     /*
      * Wakeup any dumpers that are sleeping because of network
      * or disk constraints.
@@ -1404,9 +1447,9 @@ handle_chunker_result(cookie)
 				    h[activehd-1] );
 		if( !h ) {
 		    /* No diskspace available. The reason for this will be
-		     * determined in continue_dumps(). */
+		     * determined in continue_port_dumps(). */
 		    enqueue_disk( &roomq, dp );
-		    continue_dumps();
+		    continue_port_dumps();
 		} else {
 		    /* OK, allocate space for disk and have chunker continue */
 		    sched(dp)->activehd = assign_holdingdisk( h, dp );
@@ -1613,7 +1656,7 @@ read_flush()
 	sp->degr_level = -1;
 	sp->est_kps = 10;
 	sp->attempted = 0;
-	sp->act_size = size_holding_files(destname);
+	sp->act_size = size_holding_files(destname, 0);
 	sp->holdp = build_diskspace(destname);
 	if(sp->holdp == NULL) continue;
 	sp->dumper = NULL;
@@ -2401,6 +2444,8 @@ dump_to_tape(dp)
      * "no space on device", etc., since taper closed the port first.
      */
 
+    continue_port_dump:
+
     cmd = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
     switch(cmd) {
@@ -2430,6 +2475,8 @@ dump_to_tape(dp)
 	break;
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <err mess> */
+	tape_left = tape_length;
+	current_tape++;
 	if(dumper_tryagain == 0) {
 	    sched(dp)->attempted++;
 	    if(sched(dp)->attempted > failed)
@@ -2441,10 +2488,21 @@ dump_to_tape(dp)
     failed_dumper:
 	update_failed_dump_to_tape(dp);
 	free_serial(result_argv[2]);
-	tape_left = tape_length;
 	break;
 
+    case SPLIT_CONTINUE:  /* SPLIT_CONTINUE <handle> <new_label> */
+        if (result_argc != 3) {
+            error("error [taper SPLIT_CONTINUE result_argc != 3: %d]", result_argc);
+        }
+        fprintf(stderr, "driver: Got SPLIT_CONTINUE %s %s\n", result_argv[2], result_argv[3]);
+ 
+        goto continue_port_dump;
+        break;
+    case SPLIT_NEEDNEXT:
+        fprintf(stderr, "driver: Got SPLIT_NEEDNEXT %s %s\n", result_argv[2], result_argv[3]);
 
+        goto continue_port_dump;
+        break;
     case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
     case BOGUS:
     default:

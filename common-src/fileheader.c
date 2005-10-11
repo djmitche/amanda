@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.26 2004/03/09 19:37:05 martinea Exp $
+ * $Id: fileheader.c,v 1.27 2005/10/11 01:17:00 vectro Exp $
  */
 
 #include "amanda.h"
@@ -93,6 +93,7 @@ parse_file_header(buffer, file, buflen)
 
     case F_DUMPFILE:
     case F_CONT_DUMPFILE:
+    case F_SPLIT_DUMPFILE:
 	tok = strtok(NULL, " ");
 	if (tok == NULL)
 	    goto weird_header;
@@ -107,6 +108,26 @@ parse_file_header(buffer, file, buflen)
 	if (tok == NULL)
 	    goto weird_header;
 	strncpy(file->disk, tok, sizeof(file->disk) - 1);
+	
+	if(file->type == F_SPLIT_DUMPFILE){
+	    tok = strtok(NULL, " ");
+	    if (tok == NULL || strcmp(tok, "part") != 0)
+		goto weird_header;
+
+	    tok = strtok(NULL, " ");
+	    if (tok == NULL || sscanf(tok, "%d", &file->partnum) != 1)
+		goto weird_header;
+
+	    tok = strtok(NULL, " ");
+	    if (tok == NULL)
+		goto weird_header;
+	    if(strcmp(tok, "UNKNOWN") == 0){
+		file->totalparts = -1;
+	    } else if(sscanf(tok, "%d", &file->totalparts) != 1){
+		goto weird_header;
+	    }
+	}
+	
 
 	tok = strtok(NULL, " ");
 	if (tok == NULL || strcmp(tok, "lev") != 0)
@@ -238,6 +259,8 @@ build_header(buffer, file, buflen)
 
     memset(buffer,'\0',buflen);
 
+    char split_data[128] = "";
+
     switch (file->type) {
     case F_TAPESTART:
 	snprintf(buffer, buflen,
@@ -245,12 +268,24 @@ build_header(buffer, file, buflen)
 	    file->datestamp, file->name);
 	break;
 
+    case F_SPLIT_DUMPFILE:
+	if(file->totalparts > 0) {
+	    snprintf(split_data, sizeof(split_data),
+		     "part %d/%d ", file->partnum, file->totalparts);
+	} else {
+	    snprintf(split_data, sizeof(split_data),
+		     "part %d/%d ", file->partnum, file->totalparts);
+	}
+    /* FALLTHROUGH */
+	
     case F_CONT_DUMPFILE:
     case F_DUMPFILE :
 	n = snprintf(buffer, buflen,
-	    "AMANDA: %s %s %s %s lev %d comp %s program %s\n",
-	    filetype2str(file->type), file->datestamp, file->name, file->disk,
-	    file->dumplevel, file->comp_suffix, file->program);
+		     "AMANDA: %s %s %s %s%s lev %d comp %s program %s\n",
+		     filetype2str(file->type),
+		     file->datestamp, file->name, file->disk,
+		     split_data,
+		     file->dumplevel, file->comp_suffix, file->program);
 	buffer += n;
 	buflen -= n;
 
@@ -298,6 +333,7 @@ print_header(outf, file)
     FILE *outf;
     const dumpfile_t *file;
 {
+    char number[NUM_STR_SIZE*2];
     switch(file->type) {
     case F_UNKNOWN:
 	fprintf(outf, "UNKNOWN file\n");
@@ -319,6 +355,19 @@ print_header(outf, file)
 	else
 	    fprintf(outf, "\n");
 	break;
+    case F_SPLIT_DUMPFILE:
+        if(file->totalparts > 0){
+            snprintf(number, sizeof(number), "%d", file->totalparts);
+        }   
+        else snprintf(number, sizeof(number), "UNKNOWN");
+        fprintf(outf, "split dumpfile: date %s host %s disk %s part %d/%s lev %d comp %s",
+                      file->datestamp, file->name, file->disk, file->partnum,
+                      number, file->dumplevel, file->comp_suffix);
+        if(*file->program)
+            fprintf(outf, " program %s\n",file->program);
+        else
+            fprintf(outf, "\n");
+        break;
     case F_TAPEEND:
 	fprintf(outf, "end of tape: date %s\n", file->datestamp);
 	break;
@@ -348,6 +397,7 @@ static const struct {
     { F_TAPEEND,  "TAPEEND" },
     { F_DUMPFILE, "FILE" },
     { F_CONT_DUMPFILE, "CONT_FILE" },
+    { F_SPLIT_DUMPFILE, "SPLIT_FILE" }
 };
 #define	NFILETYPES	(sizeof(filetypetab) / sizeof(filetypetab[0]))
 

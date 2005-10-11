@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.25 2003/02/28 19:23:35 martinea Exp $
+ * $Id: changer.c,v 1.26 2005/10/11 01:17:00 vectro Exp $
  *
  * interface routines for tape changers
  */
@@ -146,8 +146,8 @@ char *inslotstr, **outslotstr, **devicename;
     int rc;
 
     rc = run_changer_command("-slot", inslotstr, outslotstr, &rest);
-    if(rc) return rc;
 
+    if(rc) return rc;
     if(*rest == '\0') return report_bad_resultstr();
 
     *devicename = newstralloc(*devicename, rest);
@@ -315,7 +315,7 @@ static int changer_command(cmd, arg)
     char num1[NUM_STR_SIZE];
     char num2[NUM_STR_SIZE];
     char *cmdstr;
-    pid_t pid, changer_pid;
+    pid_t pid, changer_pid = 0;
 
     if (*tapechanger != '/') {
 	tapechanger = vstralloc(libexecdir, "/", tapechanger, versionsuffix(),

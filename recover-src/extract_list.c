@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.83 2003/03/04 21:13:15 martinea Exp $
+ * $Id: extract_list.c,v 1.84 2005/10/11 01:17:00 vectro Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -35,6 +35,7 @@
 #include "fileheader.h"
 #include "dgram.h"
 #include "stream.h"
+#include "tapelist.h"
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
 #endif
@@ -70,8 +71,11 @@ extern char *localhost;
 /* global pid storage for interrupt handler */
 pid_t extract_restore_child_pid = -1;
 
+int got_sigpipe;
 
 static EXTRACT_LIST *extract_list = NULL;
+static int tape_control_sock = -1;
+static int tape_data_sock = -1;
 
 #ifdef SAMBA_CLIENT
 unsigned short samba_extract_method = SAMBA_TAR;
@@ -80,8 +84,21 @@ unsigned short samba_extract_method = SAMBA_TAR;
 #define READ_TIMEOUT	240*60
 
 static int okay_to_continue P((int, int,  int));
+void writer_intermediary P((int ctl_fd, int data_fd, EXTRACT_LIST *elist));
 
-ssize_t read_buffer(datafd, buffer, buflen)
+void handle_sigpipe(sig)
+int sig;
+/*
+ * Signal handler for the SIGPIPE signal.  Just sets a flag and returns.
+ * The act of catching the signal causes the pipe write() to fail with
+ * EINTR.
+ */
+{
+    got_sigpipe++;
+}
+
+
+ssize_t read_buffer(datafd, buffer, buflen, timeout_s)
 int datafd;
 char *buffer;
 size_t buflen;
@@ -109,8 +126,8 @@ size_t buflen;
     FD_SET(datafd, &readset);
 
     do {
-
-	timeout.tv_sec = READ_TIMEOUT;
+	size = 0; /* XXX fixes blocks on data smaller than buffer, but does it break things? */
+	timeout.tv_sec = timeout_s;
 	timeout.tv_usec = 0;
 	memcpy(&selectset, &readset, sizeof(fd_set));
 
@@ -118,14 +135,14 @@ size_t buflen;
 
 	/* check for errors or timeout */
 
-	if(nfound == 0)  {
+	if(nfound == 0 && timeout_s == READ_TIMEOUT)  {
 	    size=-2;
-	    fprintf(stderr,"timeout waiting for amrestore\n");
+	    fprintf(stderr,"timeout waiting for restore\n");
 	    fprintf(stderr,"increase READ_TIMEOUT in recover-src/extract_list.c if your tape is slow\n");
 	}
 	if(nfound == -1) {
 	    size=-3;
-	    fprintf(stderr,"nfound == -1\n");
+	    fprintf(stderr,"select returned -1\n");
 	}
 
 	/* read any data */
@@ -138,9 +155,12 @@ size_t buflen;
 	    case 0:
 		spaceleft -= size;
 		dataptr += size;
+		if(buflen-spaceleft > 0) return (ssize_t)(buflen-spaceleft);
+		else return(-4); /* XXX, dirty, dirty hack */
+		/* XXX pointless after what I did to this poor function?
 		fprintf(stderr,
 			"EOF, check amidxtaped.<timestamp>.debug file on %s.\n",
-			tape_server_name);
+			tape_server_name); */
 		break;
 	    default:
 		spaceleft -= size;
@@ -570,7 +590,7 @@ char *regex;
 			continue;
 		    }
 
-		    if(am_has_feature(their_features, fe_amindexd_fileno_in_ORLD)) {
+		    if(am_has_feature(indexsrv_features, fe_amindexd_fileno_in_ORLD)) {
 			skip_whitespace(s, ch);
 			if(ch == '\0' || sscanf(s - 1, "%d", &lditem.fileno) != 1) {
 			    err = "bad reply: cannot parse fileno field";
@@ -845,7 +865,7 @@ char *regex;
 		    tape_undo_ch = *tape_undo;
 		    *tape_undo = '\0';
 
-		    if(am_has_feature(their_features, fe_amindexd_fileno_in_ORLD)) {
+		    if(am_has_feature(indexsrv_features, fe_amindexd_fileno_in_ORLD)) {
 			skip_whitespace(s, ch);
 			if(ch == '\0' || sscanf(s - 1, "%d", &fileno) != 1) {
 			    err = "bad reply: cannot parse fileno field";
@@ -1104,13 +1124,14 @@ char *label;
 int fsf;
 {
     struct servent *sp;
-    int my_port;
-    int tape_server_socket;
+    int my_port, my_data_port;
     char *disk_regex = NULL;
     char *host_regex = NULL;
     char *service_name = NULL;
     char *line = NULL;
     char *clean_datestamp, *ch, *ch1;
+    char *our_feature_string = NULL;
+    char *tt = NULL;
 
     service_name = stralloc2("amidxtape", SERVICE_SUFFIX);
 
@@ -1124,19 +1145,19 @@ int fsf;
     amfree(service_name);
     seteuid(0);					/* it either works ... */
     setegid(0);
-    tape_server_socket = stream_client_privileged(tape_server_name,
+    tape_control_sock = stream_client_privileged(tape_server_name,
 						  ntohs(sp->s_port),
 						  -1,
 						  STREAM_BUFSIZE,
 						  &my_port,
 						  0);
-    if (tape_server_socket < 0)
+    if (tape_control_sock < 0)
     {
 	printf("cannot connect to %s: %s\n", tape_server_name, strerror(errno));
 	return -1;
     }
     if (my_port >= IPPORT_RESERVED) {
-	aclose(tape_server_socket);
+	aclose(tape_control_sock);
 	printf("did not get a reserved port: %d\n", my_port);
 	return -1;
     }
@@ -1145,7 +1166,7 @@ int fsf;
 
     /* do the security thing */
     line = get_security();
-    send_to_tape_server(tape_server_socket, line);
+    send_to_tape_server(tape_control_sock, line);
     memset(line, '\0', strlen(line));
     amfree(line);
 
@@ -1206,45 +1227,53 @@ int fsf;
     }
     *ch = '\0';
 
-    if(am_has_feature(their_features, fe_amidxtaped_header) &&
-       am_has_feature(their_features, fe_amidxtaped_device) &&
-       am_has_feature(their_features, fe_amidxtaped_host) &&
-       am_has_feature(their_features, fe_amidxtaped_disk) &&
-       am_has_feature(their_features, fe_amidxtaped_datestamp)) {
+    /* push our feature list off to the tape server */
+    /* XXX assumes that index server and tape server are equivalent, ew */
+    if(am_has_feature(indexsrv_features, fe_amidxtaped_exchange_features)){
+	char buffer[32768] = "\0";
+	our_feature_string = am_feature_to_string(our_features);
+	tt = newstralloc2(tt, "FEATURES=", our_feature_string);
+	send_to_tape_server(tape_control_sock, tt);
+	read(tape_control_sock, buffer, sizeof(buffer));
+	tapesrv_features = am_string_to_feature(stralloc(buffer));
+	amfree(our_feature_string);
+    }
 
-	char *tt = NULL;
 
-	if(am_has_feature(their_features, fe_amidxtaped_config)) {
+    if(am_has_feature(indexsrv_features, fe_amidxtaped_header) &&
+       am_has_feature(indexsrv_features, fe_amidxtaped_device) &&
+       am_has_feature(indexsrv_features, fe_amidxtaped_host) &&
+       am_has_feature(indexsrv_features, fe_amidxtaped_disk) &&
+       am_has_feature(indexsrv_features, fe_amidxtaped_datestamp)) {
+
+	if(am_has_feature(indexsrv_features, fe_amidxtaped_config)) {
 	    tt = newstralloc2(tt, "CONFIG=", config);
-	    send_to_tape_server(tape_server_socket, tt);
+	    send_to_tape_server(tape_control_sock, tt);
 	}
-	if(am_has_feature(their_features, fe_amidxtaped_label) &&
+	if(am_has_feature(indexsrv_features, fe_amidxtaped_label) &&
 	   label && label[0] != '/') {
 	    tt = newstralloc2(tt,"LABEL=",label);
-	    send_to_tape_server(tape_server_socket, tt);
+	    send_to_tape_server(tape_control_sock, tt);
 	}
-	if(am_has_feature(their_features, fe_amidxtaped_fsf)) {
+	if(am_has_feature(indexsrv_features, fe_amidxtaped_fsf)) {
 	    char v_fsf[100];
 	    snprintf(v_fsf, 99, "%d", fsf);
 	    tt = newstralloc2(tt, "FSF=",v_fsf);
-	    send_to_tape_server(tape_server_socket, tt);
+	    send_to_tape_server(tape_control_sock, tt);
 	}
-	send_to_tape_server(tape_server_socket, "HEADER");
+	send_to_tape_server(tape_control_sock, "HEADER");
 	tt = newstralloc2(tt, "DEVICE=", dump_device_name);
-	send_to_tape_server(tape_server_socket, tt);
+	send_to_tape_server(tape_control_sock, tt);
 	tt = newstralloc2(tt, "HOST=", host_regex);
-	send_to_tape_server(tape_server_socket, tt);
+	send_to_tape_server(tape_control_sock, tt);
 	tt = newstralloc2(tt, "DISK=", disk_regex);
-	send_to_tape_server(tape_server_socket, tt);
+	send_to_tape_server(tape_control_sock, tt);
 	tt = newstralloc2(tt, "DATESTAMP=", clean_datestamp);
-	send_to_tape_server(tape_server_socket, tt);
-	send_to_tape_server(tape_server_socket, "END");
+	send_to_tape_server(tape_control_sock, tt);
+	send_to_tape_server(tape_control_sock, "END");
 	amfree(tt);
     }
-    else if(1 /* am_has_feature(their_features, fe_amidxtaped_nargs) */) {
-	/* 2.4.3 doesn't set fe_amidxtaped_nargs but support it */
-	/* must be supported without test until 2005 */
-
+    else if(am_has_feature(indexsrv_features, fe_amidxtaped_nargs)) {
 	/* send to the tape server what tape file we want */
 	/* 6 args:
 	 *   "-h"
@@ -1254,23 +1283,56 @@ int fsf;
 	 *   "diskname"
 	 *   "datestamp"
 	 */
-	send_to_tape_server(tape_server_socket, "6");
-	send_to_tape_server(tape_server_socket, "-h");
-	send_to_tape_server(tape_server_socket, "-p");
-	send_to_tape_server(tape_server_socket, dump_device_name);
-	send_to_tape_server(tape_server_socket, host_regex);
-	send_to_tape_server(tape_server_socket, disk_regex);
-	send_to_tape_server(tape_server_socket, clean_datestamp);
+	send_to_tape_server(tape_control_sock, "6");
+	send_to_tape_server(tape_control_sock, "-h");
+	send_to_tape_server(tape_control_sock, "-p");
+	send_to_tape_server(tape_control_sock, dump_device_name);
+	send_to_tape_server(tape_control_sock, host_regex);
+	send_to_tape_server(tape_control_sock, disk_regex);
+	send_to_tape_server(tape_control_sock, clean_datestamp);
 
 	dbprintf(("Started amidxtaped with arguments \"6 -h -p %s %s %s %s\"\n",
 		  dump_device_name, host_regex, disk_regex, clean_datestamp));
+    }
+
+    /*
+     * split-restoring amidxtaped versions will expect to set up a data
+     * connection for dumpfile data, distinct from the socket we're already
+     * using for control data
+     */
+
+    if(am_has_feature(tapesrv_features, fe_recover_splits)){
+	char buffer[32768];
+	int data_port = -1;
+
+	read(tape_control_sock, buffer, sizeof(buffer));
+	/* XXX should sanity-check this string */
+	data_port = atoi(buffer);
+	tape_data_sock = stream_client_privileged(server_name,
+						  data_port,
+						  -1,
+						  STREAM_BUFSIZE,
+						  &my_data_port,
+						  0);
+	if(tape_data_sock == -1){
+	    error("Unable to make data connection to server: %s\n",
+		      strerror(errno));
+	}
+
+	amfree(our_feature_string);
+    
+	line = get_security();
+
+	send_to_tape_server(tape_data_sock, line);
+	memset(line, '\0', strlen(line));
+	amfree(line);
     }
 
     amfree(disk_regex);
     amfree(host_regex);
     amfree(clean_datestamp);
 
-    return tape_server_socket;
+    return tape_control_sock;
 }
 
 
@@ -1284,9 +1346,10 @@ int tapedev;
  */
 {
     ssize_t bytes_read;
-    bytes_read=read_buffer(tapedev,buffer,buflen);
+
+    bytes_read = read_buffer(tapedev,buffer,buflen,READ_TIMEOUT);
     if(bytes_read < 0) {
-	error("error reading tape: %s", strerror(errno));
+	error("error reading header (%s), check amidxtaped.*.debug on server", strerror(errno));
     }
     else if((size_t)bytes_read < buflen) {
 	fprintf(stderr, "%s: short block %d byte%s\n",
@@ -1302,7 +1365,6 @@ int tapedev;
 
 enum dumptypes {IS_UNKNOWN, IS_DUMP, IS_GNUTAR, IS_TAR, IS_SAMBA, IS_SAMBA_TAR};
 
-/* exec restore to do the actual restoration */
 static void extract_files_child(in_fd, elist)
     int in_fd;
     EXTRACT_LIST *elist;
@@ -1330,7 +1392,7 @@ static void extract_files_child(in_fd, elist)
     /* make in_fd be our stdin */
     if (dup2(in_fd, STDIN_FILENO) == -1)
     {
-	perror("extract_list - extract files client");
+	error("dup2 failed in extract_files_child: %s", strerror(errno));
 	exit(1);
     }
 
@@ -1562,6 +1624,126 @@ static void extract_files_child(in_fd, elist)
     /*NOT REACHED */
 }
 
+/*
+ * Interpose something between the process writing out the dump (writing it to
+ * some extraction program, really) and the socket from which we're reading, so
+ * that we can do things like prompt for human interaction for multiple tapes.
+ */
+void writer_intermediary(ctl_fd, data_fd, elist)
+    int ctl_fd, data_fd;
+    EXTRACT_LIST *elist;
+{
+    int child_pipe[2];
+    pid_t pid;
+    char buffer[DISK_BLOCK_BYTES];
+    size_t buflen = DISK_BLOCK_BYTES;
+    int l, s;
+    ssize_t bytes_read = 0, ctl_bytes = 0;
+    amwait_t extractor_status;
+
+    /*
+     * If there's no distinct data channel (such as if we're talking to an
+     * older server), don't bother doing anything complicated.  Just run the
+     * extraction.
+     */
+    if(data_fd == -1){
+	extract_files_child(ctl_fd, elist);
+	/* NEVER REACHED */
+	exit(1);
+    }
+    else{
+	if(pipe(child_pipe) == -1){
+	    error("extract_list - error setting up pipe to extractor: %s\n",
+		    strerror(errno));
+	    exit(1);
+	}
+    }
+
+
+    /* okay, ready to extract. fork a child to do the actual work */
+    if ((pid = fork()) == 0){
+	/* this is the child process */
+	/* never gets out of this clause */
+	aclose(child_pipe[1]);
+        extract_files_child(child_pipe[0], elist);
+	/*NOT REACHED*/
+    }
+
+    /* this is the parent */
+    if (pid == -1)
+    {
+	error("writer_intermediary - error forking child");
+	exit(1);
+    }
+
+    signal(SIGPIPE, handle_sigpipe);
+    aclose(child_pipe[0]);
+
+    do {
+	memset(buffer, '\0', sizeof(buffer));
+
+	/* check for a control command (such as "load tape") */
+	ctl_bytes = read_buffer(ctl_fd, buffer, buflen, 0);
+
+        if(ctl_bytes == -1){
+	    error("writer control fd read error: %s", strerror(errno));
+	}
+	/* Feed any control messages we may have gotten to the user */
+	if(ctl_bytes > 0){
+	    char *input = NULL;
+	    printf("%s", buffer);
+	    fflush(stdout);
+
+	    /* if prompted for a tape, relay said prompt to the user */
+	    if(match_glob("Insert tape labeled *", buffer)){
+		input = agets(stdin);
+		send_to_tape_server(tape_control_sock, "");
+	        amfree(input);
+	    }
+	}
+
+	/* clean up the buffer */
+	memset(buffer, '\0', sizeof(buffer));
+
+	/* now read some dump data */
+	bytes_read = read_buffer(data_fd, buffer, buflen, 1);
+        if(bytes_read == -1){
+	    error("writer data fd read error: %s", strerror(errno));
+	}
+
+	/*
+	 * spit what we got from the server to the child process handling
+	 * actual dumpfile extraction
+	 */
+        for(l = 0; l < bytes_read; l += s) {
+            if((s = write(child_pipe[1], buffer + l, bytes_read - l)) < 0) {
+                if(got_sigpipe) {
+                    fprintf(stderr,
+                            "%s: pipe data writer has quit: %s\n",
+                            get_pname(), strerror(errno));
+                } else {
+                    error("Write error to extract child: %s\n",
+			    strerror(errno));
+                }
+                exit(2);
+            }
+        }
+
+    } while(bytes_read >= 0);
+
+    aclose(child_pipe[1]);
+
+    waitpid(pid, &extractor_status, 0);
+    if(WEXITSTATUS(extractor_status) != 0){
+	int ret = WEXITSTATUS(extractor_status);
+        if(ret == 255) ret = -1;
+	error("Extractor child exited with status %d\n", ret);
+    }
+
+    exit(0);
+}
+
+/* exec restore to do the actual restoration */
 
 /* does the actual extraction of files */
 /* The original design had the dump image being returned exactly as it
@@ -1585,9 +1767,9 @@ void extract_files P((void))
     amwait_t child_stat;
     char buf[STR_SIZE];
     char *l;
-    int tape_server_socket;
     int first;
     int otc;
+    tapelist_t *tlist = NULL;
 
     if (!is_extract_list_nonempty())
     {
@@ -1631,7 +1813,11 @@ void extract_files P((void))
 	    }
 	    else
 		printf("                               ");
-	    printf(" %s\n", elist->tape);
+	    tlist = unmarshal_tapelist_str(elist->tape); 
+	    for( ; tlist != NULL; tlist = tlist->next)
+		printf(" %s", tlist->label);
+	    printf("\n");
+	    amfree(tlist);
 	}
     first=1;
     for (elist = first_tape_list(); elist != NULL; elist = next_tape_list(elist))
@@ -1644,7 +1830,11 @@ void extract_files P((void))
 	    }
 	    else
 		printf("                               ");
-	    printf(" %s\n", elist->tape);
+	    tlist = unmarshal_tapelist_str(elist->tape); 
+	    for( ; tlist != NULL; tlist = tlist->next)
+		printf(" %s", tlist->label);
+	    printf("\n");
+	    amfree(tlist);
 	}
     printf("\n");
     getcwd(buf, sizeof(buf));
@@ -1661,12 +1851,19 @@ void extract_files P((void))
     {
 	if(elist->tape[0]=='/') {
 	    dump_device_name = newstralloc(dump_device_name, elist->tape);
-	    printf("Extracting from file %s\n",dump_device_name);
+	    printf("Extracting from file ");
+	    tlist = unmarshal_tapelist_str(dump_device_name); 
+	    for( ; tlist != NULL; tlist = tlist->next)
+		printf(" %s", tlist->label);
+	    printf("\n");
+	    amfree(tlist);
 	}
 	else {
 	    printf("Extracting files using tape drive %s on host %s.\n",
 		   tape_device_name, tape_server_name);
-	    printf("Load tape %s now\n", elist->tape);
+	    tlist = unmarshal_tapelist_str(elist->tape); 
+	    printf("Load tape %s now\n", tlist->label);
+	    amfree(tlist);
 	    otc = okay_to_continue(1,1,0);
 	    if (otc == 0)
 	        return;
@@ -1679,7 +1876,7 @@ void extract_files P((void))
 	dump_datestamp = newstralloc(dump_datestamp, elist->date);
 
 	/* connect to the tape handler daemon on the tape drive server */
-	if ((tape_server_socket = extract_files_setup(elist->tape, elist->fileno)) == -1)
+	if ((tape_control_sock = extract_files_setup(elist->tape, elist->fileno)) == -1)
 	{
 	    fprintf(stderr, "amrecover - can't talk to tape server\n");
 	    return;
@@ -1690,7 +1887,11 @@ void extract_files P((void))
 	{
 	    /* this is the child process */
 	    /* never gets out of this clause */
-	    extract_files_child(tape_server_socket, elist);
+	    writer_intermediary(tape_control_sock, tape_data_sock, elist);
+/*	    if(tape_data_sock != -1)
+		extract_files_child(tape_data_sock, elist);
+	    else extract_files_child(tape_control_sock, elist);	
+	    */
 	    /*NOT REACHED*/
 	}
 	/* this is the parent */
@@ -1703,14 +1904,16 @@ void extract_files P((void))
 	/* store the child pid globally so that it can be killed on intr */
 	extract_restore_child_pid = pid;
 
-	aclose(tape_server_socket);
-
 	/* wait for the child process to finish */
 	if ((pid = waitpid(-1, &child_stat, 0)) == (pid_t)-1)
 	{
 	    perror("extract_list - error waiting for child");
 	    exit(1);
 	}
+
+	if(tape_data_sock != -1) aclose(tape_data_sock);
+	aclose(tape_control_sock);
+
 	if (pid == extract_restore_child_pid)
 	{
 	    extract_restore_child_pid = -1;

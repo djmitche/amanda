@@ -34,7 +34,7 @@
 
 
 #--------------------------------------------------------
-sub pr($$$$$$) { 
+sub pr($$$$$$$) { 
 # you can update these proc if you want another formating
 # format: filenumber  host:part  date  level  size
 # If you use tabular option, modifie the format at the end of the code
@@ -44,9 +44,10 @@ sub pr($$$$$$) {
 	$dt=$_[3];
 	$lvl=$_[4];
 	$sz=$_[5];
+	$ch=$_[6];
     write($OF);
   } else {
-    print $OF "$_[0]  $_[1]:$_[2]  $_[3]  $_[4]  $_[5]\n";
+    print $OF "$_[0]  $_[1]:$_[2]  $_[3]  $_[4]  $_[5]  $_[6]\n";
   }
 }
 #--------------------------------------------------------
@@ -145,23 +146,24 @@ while ( <$IF> ) {
   }
   if ( /^SUCCESS dumper (\S+) (\S+)/ ) {
     $host = $1;
-    $part = $2;
+    $disk = $2;
     $line =~ /orig-kb (\d+)/;
-    $osize{$host}{$part} = $1;
-    $tot_or_size += $osize{$host}{$part};
-    $fail{$host}{$part} = 0;
+    $osize{$host}{$disk} = $1;
+    $tot_or_size += $osize{$host}{$disk};
+    $fail{$host}{$disk} = 0;
     next;
   }
   if ( /^START amflush/ ) {
     $flash_mode = 1;
     next;
   }
-  if ( ! /^([A-Z]+) taper (\S+) (\S+) (\S+) (\S+)/) { next;}
+  if ( ! /^([A-Z]+) taper (\S+) (\S+) (\S+) (\S+) (\S+)/) { next;}
   # $_ = $1;
   $host = $2;
-  $part = $3;
+  $disk = $3;
   $date = $4;
-  $level = $5;
+  $chunk = $5;
+  $level = $6;
   switch: {
     /START taper/ && do {
       $tocfilename=&tfn($level) if ($#subs >= 0);
@@ -183,23 +185,34 @@ while ( <$IF> ) {
 
 
       $filenumber=0;
-      &pr("#","Server","/partition","date", "level","size[Kb]");
-      &pr("$filenumber","$level","","$part","-","-");
+      &pr("#","Server","/partition","date", "level","size[Kb]","part");
+      &pr("$filenumber","$chunk","","$disk","-","-","-");
       last switch; };
-    /SUCCESS taper/ && do {
-      $line =~ / kb (\d+) /;
-      if ( $fail{$host}{$part} ) {
-        &pr("$filenumber","${host}","${part}","${date}","${level}","FAIL");
+    /^(?:SUCCESS|CHUNK) taper/ && do {
+      if(/SUCCESS/){
+	$level = $chunk;
+	$chunk = "-";
+      }
+      $mysize = 0;
+      if(/ kb (\d+) /){
+	$mysize = $1;
+      }
+      if ( $fail{$host}{$disk} ) {
+        &pr("$filenumber","${host}","${disk}","${date}","${level}","FAIL","${chunk}");
       } else {
   	if (defined($flash_mode)) {
-          &pr("$filenumber","${host}","${part}","${date}","${level}","$1");
+          &pr("$filenumber","${host}","${disk}","${date}","${level}","$mysize","${chunk}");
 	} else {
-  	  if (defined($osize{$host}{$part})) {
-            &pr("$filenumber","${host}","${part}","${date}","${level}","$osize{$host}{$part}");
+  	  if (defined($osize{$host}{$disk}) && !/^CHUNK/) {
+            &pr("$filenumber","${host}","${disk}","${date}","${level}","$osize{$host}{$disk}","${chunk}");
 	  } else {
+	    $note = "";
+	    if(!/^CHUNK/){
 		# this case should never happend: 
-            &pr("$filenumber","${host}","${part}","${date}","${level}","*$1");
 	    $strange=1;
+	      $note = "*";
+	    }
+            &pr("$filenumber","${host}","${disk}","${date}","${level}","$note$mysize","${chunk}");
 	  }
 	}
       }
@@ -212,14 +225,14 @@ while ( <$IF> ) {
       $size = $1;
       $line =~ / fm (\d+) /;
       print "\n\n" if ($vwspace);
-      &pr("$1","total","on_tape","-","-","$size");
+      &pr("$1","total","on_tape","-","-","$size","-");
       if (defined($flash_mode)) {
-	&pr("$1","total","origin","-","not","available");
+	&pr("$1","total","origin","-","not","available","-");
       } else {
-	&pr("$1","total","origin","-","-","$tot_or_size");
+	&pr("$1","total","origin","-","-","$tot_or_size","-");
       }
       if (defined($strange)) {
-  	&pr("*","size","on_tape","-","-","-");
+  	&pr("*","size","on_tape","-","-","-","-");
       }
       last switch; };
     /FAIL taper/ && do { next; };
@@ -236,6 +249,6 @@ $fnbr,$hstprt,$dt,$lvl,$sz
 .
 
 format STDOUT =
-@>>  @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< @<<<<<<<< @>> @>>>>>>>>
-$fnbr,$hstprt,$dt,$lvl,$sz
+@>>  @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< @<<<<<<<< @>> @>>>>>>>> @>>>
+$fnbr,$hstprt,$dt,$lvl,$sz,$ch
 .

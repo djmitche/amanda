@@ -1,3 +1,60 @@
+2005-10-10  Ian Turner <ian@zmanda.com>
+
+	* server-src/amtape.h: Apply tape-spanning patch by John Stange
+	  <building@cs.umd.edu> as ported to 2.5.0 by Ian Turner.
+	* configure.in: Ditto
+	* amplot/Makefile.am: Ditto
+	* changer-src/Makefile.am: Ditto
+	* client-src/Makefile.am: Ditto
+	* common-src/Makefile.am: Ditto
+	* common-src/amanda.h: Ditto
+	* common-src/amfeatures.c: Ditto
+	* common-src/amfeatures.h: Ditto
+	* common-src/fileheader.c: Ditto
+	* common-src/fileheader.h: Ditto
+	* common-src/match.c: Ditto
+	* common-src/tapelist.c: Ditto
+	* common-src/tapelist.h: Ditto
+	* example/amanda.conf.in: Ditto
+	* man/Makefile.am: Ditto
+	* recover-src/amrecover.c: Ditto
+	* recover-src/amrecover.h: Ditto
+	* recover-src/display_commands.c: Ditto
+	* recover-src/extract_list.c: Ditto
+	* restore-src/Makefile.am: Ditto
+	* restore-src/amfetchdump.c: Ditto
+	* restore-src/amfetchdump.h: Ditto
+	* restore-src/amidxtaped.c: Ditto
+	* restore-src/amrestore.c: Ditto
+	* restore-src/restore.c: Ditto
+	* restore-src/restore.h: Ditto
+	* server-src/Makefile.am: Ditto
+	* server-src/amadmin.c: Ditto
+	* server-src/amindexd.c: Ditto
+	* server-src/amoverview.pl.in: Ditto
+	* server-src/amtoc.pl.in: Ditto
+	* server-src/amverify.sh.in: Ditto
+	* server-src/changer.c: Ditto
+	* server-src/conffile.c: Ditto
+	* server-src/conffile.h: Ditto
+	* server-src/disk_history.c: Ditto
+	* server-src/disk_history.h: Ditto
+	* server-src/diskfile.c: Ditto
+	* server-src/diskfile.h: Ditto
+	* server-src/driver.c: Ditto
+	* server-src/driverio.c: Ditto
+	* server-src/find.c: Ditto
+	* server-src/find.h: Ditto
+	* server-src/holding.c: Ditto
+	* server-src/holding.h: Ditto
+	* server-src/logfile.c: Ditto
+	* server-src/logfile.h: Ditto
+	* server-src/planner.c: Ditto
+	* server-src/reporter.c: Ditto
+	* server-src/server_util.c: Ditto
+	* server-src/server_util.h: Ditto
+	* server-src/taper.c: Ditto
+
 2005-10-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/taper.c: Change message: on new tape due to

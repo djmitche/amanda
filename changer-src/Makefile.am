@@ -21,6 +21,8 @@ libexec_SCRIPTS =	chg-manual	chg-multi	chg-mtx		\
 			chg-null	chg-mcutil	chg-disk	\
 			chg-iomega
 
+CLEANFILES = $(libexec_SCRIPTS)
+
 ###
 # Because libamanda includes routines (e.g. regex) provided by some system
 # libraries, and because of the way libtool sets up the command line, we

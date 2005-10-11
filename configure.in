@@ -2576,6 +2576,7 @@ AC_REPLACE_FUNCS(memmove)
 ICE_CHECK_DECL(memmove,string.h strings.h)
 ICE_CHECK_DECL(memset,string.h strings.h)
 AC_CHECK_FUNCS(mkdir)
+ICE_CHECK_DECL(mkstemp,stdlib.h)
 ICE_CHECK_DECL(mktemp,stdlib.h)
 AC_REPLACE_FUNCS(mktime)
 ICE_CHECK_DECL(mktime,time.h sys/time.h)
@@ -2692,6 +2693,8 @@ AC_REPLACE_FUNCS(strcasecmp)
 ICE_CHECK_DECL(strcasecmp,string.h strings.h)
 
 AC_CHECK_FUNCS(fnmatch)
+
+AC_SYS_LARGEFILE
 
 if test "$ac_cv_func_fnmatch" != yes -a "$USE_QUICK_AND_DIRTY_ESTIMATES" != yes ; then
     AC_MSG_WARN([--with-qde and no fnmatch -- gnutar exclude files will not work])

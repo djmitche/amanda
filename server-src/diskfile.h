@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.30 2004/08/03 11:27:05 martinea Exp $
+ * $Id: diskfile.h,v 1.31 2005/10/11 01:17:01 vectro Exp $
  *
  * interface for disklist file reading code
  */
@@ -66,6 +66,9 @@ typedef struct disk_s {
     int exclude_optional;		/* exclude list are optional */
     int include_optional;		/* include list are optional */
     long priority;			/* priority of disk */
+    long tape_splitsize;		/* size of dumpfile chunks on tape */
+    char *split_diskbuffer;		/* place where we can buffer PORT-WRITE dumps other than RAM */
+    long fallback_splitsize;		/* size for in-RAM PORT-WRITE buffers */
     long dumpcycle;			/* days between fulls */
     long frequency;			/* XXX - not used */
     char *security_driver;		/* type of authentication (per disk) */
@@ -120,5 +123,6 @@ void dump_queue P((char *str, disklist_t q, int npr, FILE *f));
 char *optionstr P((disk_t *dp, am_feature_t *their_features, FILE *fdout));
 
 void match_disklist P((disklist_t *origqp, int sargc, char **sargv));
+void free_disklist P((disklist_t *dl));
 
 #endif /* ! DISKFILE_H */

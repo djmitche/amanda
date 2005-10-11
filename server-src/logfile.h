@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.h,v 1.10 2002/03/23 19:58:09 martinea Exp $
+ * $Id: logfile.h,v 1.11 2005/10/11 01:17:01 vectro Exp $
  *
  * interface to logfile module
  */
@@ -47,6 +47,7 @@ typedef enum logtype_e {
     L_START, L_FINISH,				     /* start/end of run */
     L_DISK,							 /* disk */
     L_SUCCESS, L_PARTIAL, L_FAIL, L_STRANGE,	    /* the end of a dump */
+    L_CHUNK, L_CHUNKSUCCESS,                            /* ... continued */
     L_STATS,						   /* statistics */
     L_MARKER,					  /* marker for reporter */
     L_CONT			 /* continuation line, used when reading */
@@ -69,6 +70,8 @@ extern char *program_str[];
 void logerror P((char *));
 void log_add P((logtype_t typ, char * format, ...))
     __attribute__ ((format (printf, 2, 3)));
+char* log_genstring P((logtype_t typ, char *pname, char * format, ...));
+//    __attribute__ ((format (printf, 3, 4)));
 void log_start_multiline P((void));
 void log_end_multiline P((void));
 void log_rename P((char *datestamp));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.27 2003/01/01 23:28:20 martinea Exp $
+ * $Id: logfile.c,v 1.28 2005/10/11 01:17:01 vectro Exp $
  *
  * common log file writing routine
  */
@@ -43,6 +43,7 @@ char *logtype_str[] = {
     "START", "FINISH",				   /* start/end of a run */
     "DISK",							 /* disk */
     "SUCCESS", "PARTIAL", "FAIL", "STRANGE",	    /* the end of a dump */
+    "CHUNK", "CHUNKSUCCESS"                             /* ... continued */
     "STATS",						   /* statistics */
     "MARKER",					  /* marker for reporter */
     "CONT"				   /* continuation line; special */
@@ -79,6 +80,30 @@ void logerror(msg)
 char *msg;
 {
     log_add(L_FATAL, "%s", msg);
+}
+
+
+printf_arglist_function2(char *log_genstring, logtype_t, typ, char *, pname, char *, format)
+{
+    va_list argp;
+    char *leader = NULL;
+    char linebuf[STR_SIZE];
+
+
+    /* format error message */
+
+    if((int)typ <= (int)L_BOGUS || (int)typ > (int)L_MARKER) typ = L_BOGUS;
+
+    if(multiline > 0) {
+	leader = stralloc("  ");		/* continuation line */
+    } else {
+	leader = vstralloc(logtype_str[(int)typ], " ", pname, " ", NULL);
+    }
+
+    arglist_start(argp, format);
+    vsnprintf(linebuf, sizeof(linebuf)-1, format, argp);
+						/* -1 to allow for '\n' */
+    return(vstralloc(leader, linebuf, "\n", NULL));
 }
 
 printf_arglist_function1(void log_add, logtype_t, typ, char *, format)

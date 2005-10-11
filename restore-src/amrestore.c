@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.51 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: amrestore.c,v 1.52 2005/10/11 01:17:00 vectro Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -42,34 +42,25 @@
 #include "util.h"
 #include "tapeio.h"
 #include "fileheader.h"
+#include "restore.h"
 
 #define CREAT_MODE	0640
 
-char *buffer;
+extern int bytes_read;
 
-int compflag, rawflag, pipeflag, headerflag;
-int got_sigpipe, file_number;
-pid_t compress_pid = -1;
-char *compress_type = COMPRESS_FAST_OPT;
-int tapedev;
-int bytes_read;
-long blocksize = -1;
-long filefsf = -1;
+static int got_sigpipe, file_number;
+static pid_t compress_pid = -1;
+static int tapedev;
+static long filefsf = -1;
 
 /* local functions */
 
-void errexit P((void));
-void handle_sigpipe P((int sig));
-int disk_match P((dumpfile_t *file, char *datestamp, 
-		  char *hostname, char *diskname));
-char *make_filename P((dumpfile_t *file));
-void read_file_header P((dumpfile_t *file, int isafile));
-static int get_block P((int isafile));
-void restore P((dumpfile_t *file, char *filename, int isafile));
-void usage P((void));
+static void errexit P((void));
+static void handle_sigpipe P((int sig));
+static void usage P((void));
 int main P((int argc, char **argv));
 
-void errexit()
+static void errexit()
 /*
  * Do exit(2) after an error, rather than exit(1).
  */
@@ -78,7 +69,7 @@ void errexit()
 }
 
 
-void handle_sigpipe(sig)
+static void handle_sigpipe(sig)
 int sig;
 /*
  * Signal handler for the SIGPIPE signal.  Just sets a flag and returns.
@@ -89,364 +80,13 @@ int sig;
     got_sigpipe++;
 }
 
-int disk_match(file, datestamp, hostname, diskname)
-dumpfile_t *file;
-char *datestamp, *hostname, *diskname;
-
-/*
- * Returns 1 if the current dump file matches the hostname and diskname
- * regular expressions given on the command line, 0 otherwise.  As a 
- * special case, empty regexs are considered equivalent to ".*": they 
- * match everything.
- */
-{
-    if(file->type != F_DUMPFILE) return 0;
-
-    if((*hostname == '\0' || match_host(hostname, file->name)) &&
-       (*diskname == '\0' || match_disk(diskname, file->disk)) &&
-       (*datestamp== '\0' || match_datestamp(datestamp, file->datestamp)))
-	return 1;
-    else
-	return 0;
-}
-
-
-char *make_filename(file)
-dumpfile_t *file;
-{
-    char number[NUM_STR_SIZE];
-    char *sfn;
-    char *fn;
-
-    snprintf(number, sizeof(number), "%d", file->dumplevel);
-    sfn = sanitise_filename(file->disk);
-    fn = vstralloc(file->name,
-		   ".",
-		   sfn, 
-		   ".",
-		   file->datestamp,
-		   ".",
-		   number,
-		   NULL);
-    amfree(sfn);
-    return fn;
-}
-
-
-static int get_block(isafile)
-int isafile;
-{
-    static int test_blocksize = 1;
-    int buflen;
-
-    /*
-     * If this is the first call, set the blocksize if it was not on
-     * the command line.  Allocate the I/O buffer in any case.
-     *
-     * For files, the blocksize is always DISK_BLOCK_BYTES.  For tapes,
-     * we allocate a large buffer and set the size to the length of the
-     * first (successful) record.
-     */
-    buflen = blocksize;
-    if(test_blocksize) {
-	if(blocksize < 0) {
-	    if(isafile) {
-		blocksize = buflen = DISK_BLOCK_BYTES;
-	    } else {
-		buflen = MAX_TAPE_BLOCK_BYTES;
-	    }
-	}
-	buffer = newalloc(buffer, buflen);
-    }
-    if(isafile) {
-	bytes_read = fullread(tapedev, buffer, buflen);
-    } else {
-	bytes_read = tapefd_read(tapedev, buffer, buflen);
-	if(blocksize < 0 && bytes_read > 0 && bytes_read < buflen) {
-	    char *new_buffer;
-
-	    blocksize = bytes_read;
-	    new_buffer = alloc(blocksize);
-	    memcpy(new_buffer, buffer, bytes_read);
-	    amfree(buffer);
-	    buffer = new_buffer;
-	}
-    }
-    if(blocksize > 0) {
-	test_blocksize = 0;
-    }
-    return bytes_read;
-}
-
-void read_file_header(file, isafile)
-dumpfile_t *file;
-int isafile;
-/*
- * Reads the first block of a tape file.
- */
-{
-    bytes_read = get_block(isafile);
-    if(bytes_read < 0) {
-	error("error reading file header: %s", strerror(errno));
-    } else if(bytes_read < blocksize) {
-	if(bytes_read == 0) {
-	    fprintf(stderr, "%s: missing file header block\n", get_pname());
-	} else {
-	    fprintf(stderr, "%s: short file header block: %d byte%s\n",
-		    get_pname(), bytes_read, (bytes_read == 1) ? "" : "s");
-	}
-	file->type = F_UNKNOWN;
-    } else {
-	parse_file_header(buffer, file, bytes_read);
-    }
-    return;
-}
-
-
-void restore(file, filename, isafile)
-dumpfile_t *file;
-char *filename;
-int isafile;
-/*
- * Restore the current file from tape.  Depending on the settings of
- * the command line flags, the file might need to be compressed or
- * uncompressed.  If so, a pipe through compress or uncompress is set
- * up.  The final output usually goes to a file named host.disk.date.lev,
- * but with the -p flag the output goes to stdout (and presumably is
- * piped to restore).
- */
-{
-    int rc = 0, dest, out, outpipe[2];
-    int wc;
-    int file_is_compressed;
-
-    /* adjust compression flag */
-
-    file_is_compressed = file->compressed;
-    if(!compflag && file_is_compressed && !known_compress_type(file)) {
-	fprintf(stderr, 
-		"%s: unknown compression suffix %s, can't uncompress\n",
-		get_pname(), file->comp_suffix);
-	compflag = 1;
-    }
-
-    /* set up final destination file */
-
-    if(pipeflag)
-	dest = 1;		/* standard output */
-    else {
-	char *filename_ext = NULL;
-
-	if(compflag) {
-	    filename_ext = file_is_compressed ? file->comp_suffix
-					      : COMPRESS_SUFFIX;
-	} else if(rawflag) {
-	    filename_ext = ".RAW";
-	} else {
-	    filename_ext = "";
-	}
-	filename_ext = stralloc2(filename, filename_ext);
-
-	if((dest = creat(filename, CREAT_MODE)) < 0)
-	    error("could not create output file: %s", strerror(errno));
-	amfree(filename_ext);
-    }
-
-    out = dest;
-
-    /*
-     * If -r or -h, write the header before compress or uncompress pipe.
-     * Only write DISK_BLOCK_BYTES, regardless of how much was read.
-     * This makes the output look like a holding disk image, and also
-     * makes it easier to remove the header (e.g. in amrecover) since
-     * it has a fixed size.
-     */
-    if(rawflag || headerflag) {
-	int w;
-	char *cont_filename;
-
-	if(compflag && !file_is_compressed) {
-	    file->compressed = 1;
-	    snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
-		     " %s %s |", UNCOMPRESS_PATH,
-#ifdef UNCOMPRESS_OPT
-		     UNCOMPRESS_OPT
-#else
-		     ""
-#endif
-		     );
-	    strncpy(file->comp_suffix,
-		    COMPRESS_SUFFIX,
-		    sizeof(file->comp_suffix)-1);
-	    file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
-	}
-
-	/* remove CONT_FILENAME from header */
-	cont_filename = stralloc(file->cont_filename);
-	memset(file->cont_filename,'\0',sizeof(file->cont_filename));
-	file->blocksize = DISK_BLOCK_BYTES;
-	build_header(buffer, file, bytes_read);
-
-	w = fullwrite(out, buffer, DISK_BLOCK_BYTES);
-	if (w != DISK_BLOCK_BYTES) {
-	    if(w < 0) {
-		error("write error: %s", strerror(errno));
-	    } else {
-		error("write error: %d instead of %d", w, DISK_BLOCK_BYTES);
-	    }
-	}
-	/* add CONT_FILENAME to header */
-	strncpy(file->cont_filename, cont_filename, sizeof(file->cont_filename));
-    }
-
-    /* if -c and file not compressed, insert compress pipe */
-
-    if(compflag && !file_is_compressed) {
-	if(pipe(outpipe) < 0) error("error [pipe: %s]", strerror(errno));
-	out = outpipe[1];
-	switch(compress_pid = fork()) {
-	case -1: error("could not fork for %s: %s",
-		       COMPRESS_PATH, strerror(errno));
-	default:
-	    aclose(outpipe[0]);
-	    aclose(dest);
-	    break;
-	case 0:
-	    aclose(outpipe[1]);
-	    if(outpipe[0] != 0) {
-		if(dup2(outpipe[0], 0) == -1)
-		    error("error [dup2 pipe: %s]", strerror(errno));
-		aclose(outpipe[0]);
-	    }
-	    if(dest != 1) {
-		if(dup2(dest, 1) == -1)
-		    error("error [dup2 dest: %s]", strerror(errno));
-		aclose(dest);
-	    }
-	    if (*compress_type == '\0') {
-		compress_type = NULL;
-	    }
-	    execlp(COMPRESS_PATH, COMPRESS_PATH, compress_type, (char *)0);
-	    error("could not exec %s: %s", COMPRESS_PATH, strerror(errno));
-	}
-    }
-
-    /* if not -r or -c, and file is compressed, insert uncompress pipe */
-
-    else if(!rawflag && !compflag && file_is_compressed) {
-	/* 
-	 * XXX for now we know that for the two compression types we
-	 * understand, .Z and optionally .gz, UNCOMPRESS_PATH will take
-	 * care of both.  Later, we may need to reference a table of
-	 * possible uncompress programs.
-	 */
-	if(pipe(outpipe) < 0) error("error [pipe: %s]", strerror(errno));
-	out = outpipe[1];
-	switch(compress_pid = fork()) {
-	case -1: 
-	    error("could not fork for %s: %s",
-		  UNCOMPRESS_PATH, strerror(errno));
-	default:
-	    aclose(outpipe[0]);
-	    aclose(dest);
-	    break;
-	case 0:
-	    aclose(outpipe[1]);
-	    if(outpipe[0] != 0) {
-		if(dup2(outpipe[0], 0) < 0)
-		    error("dup2 pipe: %s", strerror(errno));
-		aclose(outpipe[0]);
-	    }
-	    if(dest != 1) {
-		if(dup2(dest, 1) < 0)
-		    error("dup2 dest: %s", strerror(errno));
-		aclose(dest);
-	    }
-	    (void) execlp(UNCOMPRESS_PATH, UNCOMPRESS_PATH,
-#ifdef UNCOMPRESS_OPT
-			  UNCOMPRESS_OPT,
-#endif
-			  (char *)0);
-	    error("could not exec %s: %s", UNCOMPRESS_PATH, strerror(errno));
-	}
-    }
-
-
-    /* copy the rest of the file from tape to the output */
-    got_sigpipe = 0;
-    wc = 0;
-    do {
-	bytes_read = get_block(isafile);
-	if(bytes_read < 0) {
-	    error("read error: %s", strerror(errno));
-	}
-	if(bytes_read == 0 && isafile) {
-	    /*
-	     * See if we need to switch to the next file.
-	     */
-	    if(file->cont_filename[0] == '\0') {
-		break;				/* no more files */
-	    }
-	    close(tapedev);
-	    if((tapedev = open(file->cont_filename, O_RDONLY)) == -1) {
-		char *cont_filename = strrchr(file->cont_filename,'/');
-		if(cont_filename) {
-		    cont_filename++;
-		    if((tapedev = open(cont_filename,O_RDONLY)) == -1) {
-			error("can't open %s: %s", file->cont_filename,
-			      strerror(errno));
-		    }
-		    else {
-			fprintf(stderr, "cannot open %s: %s\n",
-				file->cont_filename, strerror(errno));
-			fprintf(stderr, "using %s\n",
-				cont_filename);
-		   }
-		}
-		else {
-		    error("can't open %s: %s", file->cont_filename,
-			  strerror(errno));
-		}
-	    }
-	    read_file_header(file, isafile);
-	    if(file->type != F_DUMPFILE && file->type != F_CONT_DUMPFILE) {
-		fprintf(stderr, "unexpected header type: ");
-		print_header(stderr, file);
-		exit(2);
-	    }
-	    continue;
-	}
-	if(fullwrite(out, buffer, bytes_read) < 0) {
-	    if(got_sigpipe) {
-		fprintf(stderr, "Error %d (%s) offset %d+%d, wrote %d\n",
-			        errno, strerror(errno), wc, bytes_read, rc);
-		fprintf(stderr, "%s: pipe reader has quit in middle of file.\n",
-			        get_pname());
-	    } else {
-		perror("amrestore: write error");
-	    }
-	    exit(2);
-	}
-	wc += bytes_read;
-    } while (bytes_read > 0);
-    if(pipeflag) {
-	if(out != dest) {
-	    aclose(out);
-	}
-    } else {
-	aclose(out);
-    }
-}
-
-
-void usage()
+static void usage()
 /*
  * Print usage message and terminate.
  */
 {
     error("Usage: amrestore [-b blocksize] [-r|-c] [-p] [-h] [-f fileno] [-l label] tape-device|holdingfile [hostname [diskname [datestamp [hostname [diskname [datestamp ... ]]]]]]");
 }
-
 
 int main(argc, argv)
 int argc;
@@ -477,6 +117,7 @@ char **argv;
     char *e;
     char *err;
     char *label = NULL;
+    rst_flags_t *rst_flags;
     int count_error;
 
     safe_fd(-1, 0);
@@ -488,27 +129,33 @@ char **argv;
     onerror(errexit);
     signal(SIGPIPE, handle_sigpipe);
 
+    rst_flags = new_rst_flags();
+    rst_flags->inline_assemble = 0;
+
     /* handle options */
-    while( (opt = getopt(argc, argv, "b:cCd:rpkhf:l:")) != -1) {
+    while( (opt = getopt(argc, argv, "b:cCd:rphf:l:")) != -1) {
 	switch(opt) {
 	case 'b':
-	    blocksize = strtol(optarg, &e, 10);
+	    rst_flags->blocksize = strtol(optarg, &e, 10);
 	    if(*e == 'k' || *e == 'K') {
-		blocksize *= 1024;
+		rst_flags->blocksize *= 1024;
 	    } else if(*e == 'm' || *e == 'M') {
-		blocksize *= 1024 * 1024;
+		rst_flags->blocksize *= 1024 * 1024;
 	    } else if(*e != '\0') {
-		error("invalid blocksize value \"%s\"", optarg);
+		error("invalid rst_flags->blocksize value \"%s\"", optarg);
 	    }
-	    if(blocksize < DISK_BLOCK_BYTES) {
+	    if(rst_flags->blocksize < DISK_BLOCK_BYTES) {
 		error("minimum block size is %dk", DISK_BLOCK_BYTES / 1024);
 	    }
 	    break;
-	case 'c': compflag = 1; break;
-	case 'C': compflag = 1; compress_type = COMPRESS_BEST_OPT; break;
-	case 'r': rawflag = 1; break;
-	case 'p': pipeflag = 1; break;
-	case 'h': headerflag = 1; break;
+	case 'c': rst_flags->compress = 1; break;
+	case 'C':
+	    rst_flags->compress = 1;
+	    rst_flags->comp_type = COMPRESS_BEST_OPT;
+	    break;
+	case 'r': rst_flags->raw = 1; break;
+	case 'p': rst_flags->pipe_to_fd = fileno(stdout); break;
+	case 'h': rst_flags->headers = 1; break;
 	case 'f':
 	    filefsf = strtol(optarg, &e, 10);
 	    if(*e != '\0') {
@@ -523,7 +170,7 @@ char **argv;
 	}
     }
 
-    if(compflag && rawflag) {
+    if(rst_flags->compress && rst_flags->raw) {
 	fprintf(stderr, 
 		"Cannot specify both -r (raw) and -c (compressed) output.\n");
 	usage();
@@ -607,7 +254,7 @@ char **argv;
 		error("Could not rewind device '%s': %s", tapename, err);
 	    }
 	    tapedev = tape_open(tapename, 0);
-	    read_file_header(&file, isafile);
+	    read_file_header(&file, tapedev, isafile, rst_flags);
 	    if(file.type != F_TAPESTART) {
 		fprintf(stderr,"Not an amanda tape\n");
 		exit (1);
@@ -648,7 +295,7 @@ char **argv;
 	error("could not open %s: %s", tapename, strerror(errno));
     }
 
-    read_file_header(&file, isafile);
+    read_file_header(&file, tapedev, isafile, rst_flags);
 
     if(file.type != F_TAPESTART && !isafile && filefsf == -1) {
 	fprintf(stderr, "%s: WARNING: not at start of tape, file numbers will be offset\n",
@@ -659,11 +306,11 @@ char **argv;
     while(count_error < 10) {
 	if(file.type == F_TAPEEND) break;
 	found_match = 0;
-	if(file.type == F_DUMPFILE) {
+	if(file.type == F_DUMPFILE || file.type == F_SPLIT_DUMPFILE) {
 	    amfree(filename);
 	    filename = make_filename(&file);
 	    for(me = match_list; me; me = me->next) {
-		if(disk_match(&file,me->datestamp,me->hostname,me->diskname) != 0) {
+		if(disk_match(&file,me->datestamp,me->hostname,me->diskname,"") != 0) {
 		    found_match = 1;
 		    break;
 		}
@@ -672,19 +319,19 @@ char **argv;
 			    get_pname(),
 			    file_number,
 			    found_match ? "restoring" : "skipping");
-	    if(file.type != F_DUMPFILE) {
+	    if(file.type != F_DUMPFILE  && file.type != F_SPLIT_DUMPFILE) {
 		print_header(stderr, &file);
 	    } else {
 		fprintf(stderr, "%s\n", filename);
 	    }
 	}
 	if(found_match) {
-	    restore(&file, filename, isafile);
+	    restore(&file, filename, tapedev, isafile, rst_flags);
 	    if(compress_pid > 0) {
 		waitpid(compress_pid, &compress_status, 0);
 		compress_pid = -1;
 	    }
-	    if(pipeflag) {
+	    if(rst_flags->pipe_to_fd != -1) {
 		file_number++;			/* for the last message */
 		break;
 	    }
@@ -722,7 +369,7 @@ char **argv;
 	    count_error=0;
 	}
 	file_number++;
-	read_file_header(&file, isafile);
+	read_file_header(&file, tapedev, isafile, rst_flags);
     }
     if(isafile) {
 	close(tapedev);

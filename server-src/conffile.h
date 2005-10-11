@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.55 2005/03/29 16:34:53 martinea Exp $
+ * $Id: conffile.h,v 1.56 2005/10/11 01:17:01 vectro Exp $
  *
  * interface for config file reading code
  */
@@ -170,6 +170,9 @@ typedef struct dumptype_s {
     int estimate;
     comp_t compress;
     float comprate[2]; /* first is full, second is incremental */
+    long tape_splitsize;
+    char *split_diskbuffer;
+    long fallback_splitsize;
     /* flag options */
     unsigned int record:1;
     unsigned int skip_incr:1;
@@ -211,6 +214,9 @@ typedef struct dumptype_s {
     int s_kencrypt;
     int s_ignore;
     int s_index;
+    int s_tape_splitsize;
+    int s_split_diskbuffer;
+    int s_fallback_splitsize;
 } dumptype_t;
 
 /* A network interface */

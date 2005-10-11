@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.50 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: amrecover.c,v 1.51 2005/10/11 01:17:00 vectro Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -83,7 +83,8 @@ char *tape_server_name = NULL;
 int tape_server_socket;
 char *tape_device_name = NULL;
 am_feature_t *our_features = NULL;
-am_feature_t *their_features = NULL;
+am_feature_t *indexsrv_features = NULL;
+am_feature_t *tapesrv_features = NULL;
 
 
 #ifndef HAVE_LIBREADLINE
@@ -565,7 +566,7 @@ char **argv;
     memset(line, '\0', strlen(line));
     amfree(line);
 
-    /* try to get the features form the server */
+    /* try to get the features from the server */
     {
 	char *our_feature_string = NULL;
 	char *their_feature_string = NULL;
@@ -575,10 +576,10 @@ char **argv;
 	line = stralloc2("FEATURES ", our_feature_string);
 	if(exchange(line) == 0) {
 	    their_feature_string = stralloc(server_line+13);
-	    their_features = am_string_to_feature(their_feature_string);
+	    indexsrv_features = am_string_to_feature(their_feature_string);
 	}
 	else {
-	    their_features = am_set_default_feature_set();
+	    indexsrv_features = am_set_default_feature_set();
         }
 	amfree(our_feature_string);
 	amfree(their_feature_string);

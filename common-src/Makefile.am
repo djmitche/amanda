@@ -21,7 +21,7 @@ libamanda_la_SOURCES = \
 	regcomp.c	regerror.c	regexec.c	regfree.c	\
 	rsh-security.c	\
 	security.c	sl.c		ssh-security.c	statfs.c	\
-	stream.c	\
+	stream.c	tapelist.c	\
 	token.c		\
 	util.c		\
 	versuff.c	version.c
@@ -38,6 +38,7 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 			queue.h		\
 			sl.h		security.h	statfs.h	\
 			stream.h	\
+			tapelist.h	\
 			token.h		\
 			util.h		\
 			version.h	\
@@ -81,7 +82,7 @@ TEST_PROGS = statfs token file bsdsecurity amfeatures
 
 CLEANFILES = regex.h regcomp.ih engine.ih regerror.ih *.test.c
 
-DISTCLEANFILES = version.c
+DISTCLEANFILES = version.c genversion.h genversion amanda-int.h
 
 regex.h: $(REGEXHSRC) $(REGsrcdir)/mkh
 	sh $(REGsrcdir)/mkh -o -i _REGEX_H_ $(REGEXHSRC) >$@

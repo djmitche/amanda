@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.94 2005/10/01 23:47:30 martinea Exp $
+ * $Id: reporter.c,v 1.95 2005/10/11 01:17:01 vectro Exp $
  *
  * nightly Amanda Report generator
  */
@@ -78,19 +78,19 @@ typedef struct repdata_s {
 #define data(dp) ((repdata_t *)(dp)->up)
 
 static struct cumulative_stats {
-    int dumpdisks, tapedisks;
+    int dumpdisks, tapedisks, tapechunks;
     double taper_time, dumper_time;
     double outsize, origsize, tapesize;
     double coutsize, corigsize;			/* compressed dump only */
 } stats[3];
 
-static int dumpdisks[10], tapedisks[10];	/* by-level breakdown of disk count */
+static int dumpdisks[10], tapedisks[10], tapechunks[10];	/* by-level breakdown of disk count */
 
 typedef struct taper_s {
     char *label;
     double taper_time;
     double coutsize, corigsize;
-    int tapedisks;
+  int tapedisks, tapechunks;
     struct taper_s *next;
 } taper_t;
 
@@ -155,7 +155,8 @@ static void handle_summary P((void));
 static void handle_stats P((void));
 static void handle_error P((void));
 static void handle_disk P((void));
-static repdata_t *handle_success P((void));
+static repdata_t *handle_success P((logtype_t logtype));
+static repdata_t *handle_chunk P((void));
 static void handle_partial P((void));
 static void handle_strange P((void));
 static void handle_failed P((void));
@@ -494,7 +495,9 @@ main(argc, argv)
 
 	case L_DISK:    handle_disk(); break;
 
-	case L_SUCCESS: handle_success(); break;
+	case L_SUCCESS: handle_success(curlog); break;
+	case L_CHUNKSUCCESS: handle_success(curlog); break;
+	case L_CHUNK:   handle_chunk(); break;
 	case L_PARTIAL: handle_partial(); break;
 	case L_STRANGE: handle_strange(); break;
 	case L_FAIL:    handle_failed(); break;
@@ -719,6 +722,7 @@ output_stats()
 
     stats[2].dumpdisks   = stats[0].dumpdisks   + stats[1].dumpdisks;
     stats[2].tapedisks   = stats[0].tapedisks   + stats[1].tapedisks;
+    stats[2].tapechunks  = stats[0].tapechunks  + stats[1].tapechunks;
     stats[2].outsize     = stats[0].outsize     + stats[1].outsize;
     stats[2].origsize    = stats[0].origsize    + stats[1].origsize;
     stats[2].tapesize    = stats[0].tapesize    + stats[1].tapesize;
@@ -804,11 +808,11 @@ output_stats()
 	    mb(stats[1].tapesize));
 
     fprintf(mailf, "Tape Used (%%)             ");
-    divzero(mailf, pct(stats[2].tapesize+marksize*stats[2].tapedisks),tapesize);
+    divzero(mailf, pct(stats[2].tapesize+marksize*(stats[2].tapedisks+stats[2].tapechunks)),tapesize);
     fputs("      ", mailf);
-    divzero(mailf, pct(stats[0].tapesize+marksize*stats[0].tapedisks),tapesize);
+    divzero(mailf, pct(stats[0].tapesize+marksize*(stats[0].tapedisks+stats[0].tapechunks)),tapesize);
     fputs("      ", mailf);
-    divzero(mailf, pct(stats[1].tapesize+marksize*stats[1].tapedisks),tapesize);
+    divzero(mailf, pct(stats[1].tapesize+marksize*(stats[1].tapedisks+stats[1].tapechunks)),tapesize);
 
     if(stats[1].tapedisks > 0) fputs("   (level:#disks ...)", mailf);
     putc('\n', mailf);
@@ -828,6 +832,24 @@ output_stats()
     }
     putc('\n', mailf);
 
+    if(stats[1].tapechunks > 0) fputs("   (level:#chunks ...)", mailf);
+    putc('\n', mailf);
+
+    fprintf(mailf,
+	    "Chunks Taped               %4d       %4d       %4d",
+	    stats[2].tapechunks, stats[0].tapechunks, stats[1].tapechunks);
+
+    if(stats[1].tapechunks > 0) {
+	first = 1;
+	for(lv = 1; lv < 10; lv++) if(tapechunks[lv]) {
+	    fputs(first?"   (":" ", mailf);
+	    first = 0;
+	    fprintf(mailf, "%d:%d", lv, tapechunks[lv]);
+	}
+	putc(')', mailf);
+    }
+    putc('\n', mailf);
+
     fprintf(mailf, "Avg Tp Write Rate (k/s) ");
     divzero_wide(mailf, stats[2].tapesize,stats[2].taper_time);
     fputs("    ", mailf);
@@ -839,7 +861,7 @@ output_stats()
     if(stats_by_tape) {
 	int label_length = strlen(stats_by_tape->label) + 5;
 	fprintf(mailf,"\nUSAGE BY TAPE:\n");
-	fprintf(mailf,"  %-*s  Time      Size      %%    Nb\n",
+	fprintf(mailf,"  %-*s  Time      Size      %%    Nb    Nc\n",
 		label_length, "Label");
 	for(current_tape = stats_by_tape; current_tape != NULL;
 	    current_tape = current_tape->next) {
@@ -847,9 +869,10 @@ output_stats()
 	    fprintf(mailf, " %2d:%02d", hrmn(current_tape->taper_time));
 	    fprintf(mailf, " %8.0f%s  ", du(current_tape->coutsize), displayunit);
 	    divzero(mailf, pct(current_tape->coutsize + 
-			       marksize * current_tape->tapedisks),
+			       marksize * (current_tape->tapedisks+current_tape->tapechunks)),
 			   tapesize);
-	    fprintf(mailf, "  %4d\n", current_tape->tapedisks);
+	    fprintf(mailf, "  %4d", current_tape->tapedisks);
+	    fprintf(mailf, "  %4d\n", current_tape->tapechunks);
 	}
     }
 
@@ -1081,7 +1104,8 @@ CalcMaxWidth()
 		repdata->taper.result == L_BOGUS)
 		continue;
 	    CheckIntMax(&ColumnData[Level], repdata->level);
-	    if(repdata->dumper.result == L_SUCCESS) {
+            if(repdata->dumper.result == L_SUCCESS || 
+                   repdata->dumper.result == L_CHUNKSUCCESS) {
 		CheckFloatMax(&ColumnData[OrigKB], du(repdata->dumper.origsize));
 		CheckFloatMax(&ColumnData[OutKB], du(repdata->dumper.outsize));
 		if(dp->compress == COMP_NONE)
@@ -1107,7 +1131,8 @@ CalcMaxWidth()
 		CheckStringMax(cd, "FAILED");
 		continue;
 	    }
-	    if(repdata->taper.result == L_SUCCESS)
+	    if(repdata->taper.result == L_SUCCESS ||
+	       repdata->taper.result == L_CHUNKSUCCESS)
 		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer), 
 		  "%3d:%02d", mnsc(repdata->taper.sec));
 	    else
@@ -1116,7 +1141,8 @@ CalcMaxWidth()
 	    CheckStringMax(cd, TimeRateBuffer);
 
 	    cd= &ColumnData[TapeRate];
-	    if(repdata->taper.result == L_SUCCESS)
+	    if(repdata->taper.result == L_SUCCESS ||
+		    repdata->taper.result == L_CHUNKSUCCESS)
 		CheckFloatMax(cd, repdata->taper.kps);
 	    else
 		CheckStringMax(cd, "N/A ");
@@ -1258,7 +1284,8 @@ output_summary()
 		continue;
 	    }
 
-	    if(repdata->dumper.result == L_SUCCESS)
+	    if(repdata->dumper.result == L_SUCCESS ||
+	       repdata->dumper.result == L_CHUNKSUCCESS)
 		origsize = repdata->dumper.origsize;
 	    else if(repdata->taper.result == L_SUCCESS ||
 		    repdata->taper.result == L_PARTIAL)
@@ -1267,10 +1294,12 @@ output_summary()
 		origsize = repdata->chunker.origsize;
 
 	    if(repdata->taper.result == L_SUCCESS ||
-	       repdata->taper.result == L_PARTIAL)
+	       repdata->taper.result == L_PARTIAL ||
+	       repdata->taper.result == L_CHUNKSUCCESS)
 		outsize  = repdata->taper.outsize;
 	    else if(repdata->chunker.result == L_SUCCESS ||
-		    repdata->chunker.result == L_PARTIAL)
+		    repdata->chunker.result == L_PARTIAL ||
+		    repdata->chunker.result == L_CHUNKSUCCESS)
 		outsize  = repdata->chunker.outsize;
 	    else
 		outsize  = repdata->dumper.outsize;
@@ -1301,7 +1330,8 @@ output_summary()
 
 	    cd= &ColumnData[DumpTime];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(repdata->dumper.result == L_SUCCESS)
+	    if(repdata->dumper.result == L_SUCCESS ||
+	       repdata->dumper.result == L_CHUNKSUCCESS)
 		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "%3d:%02d", mnsc(repdata->dumper.sec));
 	    else
@@ -1311,7 +1341,8 @@ output_summary()
 
 	    cd= &ColumnData[DumpRate];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(repdata->dumper.result == L_SUCCESS)
+	    if(repdata->dumper.result == L_SUCCESS ||
+		    repdata->dumper.result == L_CHUNKSUCCESS)
 		fprintf(mailf, cd->Format, cd->Width, cd->Precision, repdata->dumper.kps);
 	    else
 		fprintf(mailf, "%*s", cd->Width, "N/A ");
@@ -1325,7 +1356,9 @@ output_summary()
 		continue;
 	    }
 
-	    if(repdata->taper.result == L_SUCCESS || repdata->taper.result == L_PARTIAL)
+	    if(repdata->taper.result == L_SUCCESS || 
+	       repdata->taper.result == L_PARTIAL ||
+	       repdata->taper.result == L_CHUNKSUCCESS)
 		snprintf(TimeRateBuffer, sizeof(TimeRateBuffer),
 		  "%3d:%02d", mnsc(repdata->taper.sec));
 	    else
@@ -1335,7 +1368,9 @@ output_summary()
 
 	    cd= &ColumnData[TapeRate];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
-	    if(repdata->taper.result == L_SUCCESS || repdata->taper.result == L_PARTIAL)
+	    if(repdata->taper.result == L_SUCCESS || 
+	       repdata->taper.result == L_PARTIAL ||
+	       repdata->taper.result == L_CHUNKSUCCESS)
 		fprintf(mailf, cd->Format, cd->Width, cd->Precision, repdata->taper.kps);
 	    else
 		fprintf(mailf, "%*s", cd->Width, "N/A ");
@@ -1459,6 +1494,7 @@ handle_start()
 	current_tape->coutsize = 0.0;
 	current_tape->corigsize = 0.0;
 	current_tape->tapedisks = 0;
+	current_tape->tapechunks = 0;
 	current_tape->next = NULL;
 	tapefcount = 0;
 
@@ -1708,8 +1744,148 @@ handle_disk()
     dp->todo = 1;
 }
 
+/* XXX Just a placeholder, in case we decide to do something with L_CHUNK
+ * log entries.  Right now they're just the equivalent of L_SUCCESS, but only
+ * for a split chunk of the overall dumpfile.
+ */
 static repdata_t *
-handle_success()
+handle_chunk()
+{
+    disk_t *dp;
+    float sec, kps, kbytes;
+    timedata_t *sp;
+    int i;
+    char *s, *fp;
+    int ch;
+    char *hostname = NULL;
+    char *diskname = NULL;
+    repdata_t *repdata;
+    int level, chunk;
+    char *datestamp;
+    
+    if(curprog != P_TAPER) {
+ 	bogus_line();
+ 	return NULL;
+    }
+    
+    s = curstr;
+    ch = *s++;
+    
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+ 	bogus_line();
+ 	return NULL;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    hostname = stralloc(fp);
+    s[-1] = ch;
+    
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+ 	bogus_line();
+ 	amfree(hostname);
+ 	return NULL;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    diskname = stralloc(fp);
+    s[-1] = ch;
+    
+    skip_whitespace(s, ch);
+    if(ch == '\0') {
+ 	bogus_line();
+ 	amfree(hostname);
+ 	amfree(diskname);
+ 	return NULL;
+    }
+    fp = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    datestamp = stralloc(fp);
+    s[-1] = ch;
+    
+    level = atoi(datestamp);
+    if(level < 100)  {
+ 	datestamp = newstralloc(datestamp, run_datestamp);
+    }
+    else {
+ 	skip_whitespace(s, ch);
+ 	if(ch == '\0' || sscanf(s - 1, "%d", &chunk) != 1) {
+ 	    bogus_line();
+ 	    amfree(hostname);
+ 	    amfree(diskname);
+ 	    amfree(datestamp);
+ 	    return NULL;
+ 	}
+ 	skip_integer(s, ch);
+	
+ 	skip_whitespace(s, ch);
+ 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+ 	    bogus_line();
+ 	    amfree(hostname);
+ 	    amfree(diskname);
+ 	    amfree(datestamp);
+ 	    return NULL;
+ 	}
+ 	skip_integer(s, ch);
+    }
+    
+    skip_whitespace(s, ch);
+    
+    if(sscanf(s - 1,"[sec %f kb %f kps %f", &sec, &kbytes, &kps) != 3)  {
+ 	bogus_line();
+ 	amfree(hostname);
+ 	amfree(diskname);
+ 	amfree(datestamp);
+ 	return NULL;
+    }
+    
+    
+    dp = lookup_disk(hostname, diskname);
+    if(dp == NULL) {
+ 	char *str = NULL;
+	
+ 	str = vstralloc("  ", prefix(hostname, diskname, level),
+ 			" ", "ERROR [not in disklist]",
+ 			NULL);
+ 	addline(&errsum, str);
+ 	amfree(str);
+ 	amfree(hostname);
+ 	amfree(diskname);
+ 	amfree(datestamp);
+ 	return NULL;
+    }
+    
+    repdata = find_repdata(dp, datestamp, level);
+    
+    sp = &(repdata->taper);
+    
+    i = level > 0;
+    
+    amfree(hostname);
+    amfree(diskname);
+    amfree(datestamp);
+    
+    if(current_tape == NULL) {
+ 	error("current_tape == NULL");
+    }
+    if (sp->filenum == 0) {
+ 	sp->filenum = ++tapefcount;
+ 	sp->tapelabel = current_tape->label;
+    }
+    tapechunks[level] +=1;
+    stats[i].tapechunks +=1;
+    current_tape->taper_time += sec;
+    current_tape->coutsize += kbytes;
+    current_tape->tapechunks += 1;
+    return repdata;
+}
+
+static repdata_t *
+handle_success(logtype_t logtype)
 {
     disk_t *dp;
     float sec, kps, kbytes, origkb;
@@ -1879,8 +2055,10 @@ handle_success()
 		stats[i].coutsize += kbytes;
 	    }
 	}
-	current_tape->taper_time += sec;
-	current_tape->coutsize += kbytes;
+	if (logtype == L_SUCCESS || logtype== L_PARTIAL) {
+	    current_tape->taper_time += sec;
+	    current_tape->coutsize += kbytes;
+	}
 	current_tape->corigsize += origkb;
 	current_tape->tapedisks += 1;
     }
@@ -1914,7 +2092,7 @@ handle_partial()
     repdata_t *repdata;
     timedata_t *sp;
 
-    repdata = handle_success();
+    handle_success(L_PARTIAL);
 
     if(curprog == P_TAPER)
 	sp = &(repdata->taper);
@@ -1932,7 +2110,7 @@ handle_strange()
     char *strangestr = NULL;
     repdata_t *repdata;
 
-    repdata = handle_success();
+    repdata = handle_success(L_SUCCESS);
 
     addline(&errdet,"");
     str = vstralloc("/-- ", prefix(repdata->disk->host->hostname, 
@@ -2293,7 +2471,7 @@ void do_postscript_output()
 	      mb(current_tape->coutsize));
 	fprintf(postscript, "(Tape Used (%%)       ");
 	divzero(postscript, pct(current_tape->coutsize + 
-				marksize * current_tape->tapedisks),
+				marksize * (current_tape->tapedisks + current_tape->tapechunks)),
 				tapesize);
 	fprintf(postscript," %%) DrawStat\n");
 	fprintf(postscript, "(Compression Ratio:  ");

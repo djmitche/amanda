@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.77 2005/10/02 13:48:04 martinea Exp $
+ * $Id: amindexd.c,v 1.78 2005/10/11 01:17:00 vectro Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -78,6 +78,7 @@ char *disk_name;				/* disk we are restoring */
 char *target_date = NULL;
 disklist_t disk_list;				/* all disks in cur config */
 find_result_t *output_find = NULL;
+int split_support_warn = 0;
 
 static int amindexd_debug = 0;
 
@@ -92,6 +93,13 @@ static int check_security P((struct sockaddr_in *addr, char *str,
 static REMOVE_ITEM *remove_files P((REMOVE_ITEM *));
 static char *uncompress_file P((char *, char **));
 static int process_ls_dump P((char *, DUMP_ITEM *, int, char **));
+
+ /* XXX this is a hack to make sure the printf-ish output buffer
+    for lreply and friends is big enough for long label strings.
+    Should go away if someone institutes a more fundamental fix 
+    for that problem. */
+ static int str_buffer_size = STR_SIZE;
+
 static void reply P((int, char *, ...))
     __attribute__ ((format (printf, 2, 3)));
 static void lreply P((int, char *, ...))
@@ -261,7 +269,7 @@ char **emsg;
 printf_arglist_function1(static void reply, int, n, char *, fmt)
 {
     va_list args;
-    char buf[STR_SIZE];
+    char buf[str_buffer_size];
 
     arglist_start(args, fmt);
     snprintf(buf, sizeof(buf), "%03d ", n);
@@ -289,7 +297,7 @@ printf_arglist_function1(static void reply, int, n, char *, fmt)
 printf_arglist_function1(static void lreply, int, n, char *, fmt)
 {
     va_list args;
-    char buf[STR_SIZE];
+    char buf[str_buffer_size];
 
     arglist_start(args, fmt);
     snprintf(buf, sizeof(buf), "%03d-", n);
@@ -318,7 +326,7 @@ printf_arglist_function1(static void lreply, int, n, char *, fmt)
 printf_arglist_function1(static void fast_lreply, int, n, char *, fmt)
 {
     va_list args;
-    char buf[STR_SIZE];
+    char buf[str_buffer_size];
 
     arglist_start(args, fmt);
     snprintf(buf, sizeof(buf), "%03d-", n);
@@ -467,7 +475,7 @@ char *config;
     amfree(conf_tapelist);
 
     output_find = find_dump(1, &disk_list);
-    sort_find_result("DLKHB", &output_find);
+    sort_find_result("DLKHpB", &output_find);
 
     conf_indexdir = getconf_str(CNF_INDEXDIR);
     if(*conf_indexdir == '/') {
@@ -492,6 +500,7 @@ static int build_disk_table()
     long last_datestamp;
     int last_filenum;
     int last_level;
+    int last_partnum;
     find_result_t *find_output;
 
     if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
@@ -503,12 +512,21 @@ static int build_disk_table()
     last_datestamp = -1;
     last_filenum = -1;
     last_level = -1;
+    last_partnum = -1;
+    split_support_warn = 0;
     for(find_output = output_find;
 	find_output != NULL; 
 	find_output = find_output->next) {
 	if(strcasecmp(dump_hostname, find_output->hostname) == 0 &&
 	   strcmp(disk_name    , find_output->diskname) == 0 &&
 	   strcmp("OK"         , find_output->status)   == 0) {
+	    int partnum = -1;
+	    if(strcmp("--", find_output->partnum)){
+		partnum = atoi(find_output->partnum);
+		if(!am_has_feature(their_features, fe_recover_splits)){
+		    split_support_warn = 1;
+		}
+	    }
 	    /*
 	     * The sort order puts holding disk entries first.  We want to
 	     * use them if at all possible, so ignore any other entries
@@ -516,21 +534,23 @@ static int build_disk_table()
 	     * (as indicated by a filenum of zero).
 	     */
 	    if(find_output->datestamp == last_datestamp &&
-	       find_output->level == last_level && last_filenum == 0) {
+	       find_output->level == last_level && 
+	       partnum == last_partnum && last_filenum == 0) {
 		continue;
 	    }
 	    last_datestamp = find_output->datestamp;
 	    last_filenum = find_output->filenum;
 	    last_level = find_output->level;
+	    last_partnum = partnum;
 	    snprintf(date, sizeof(date), "%04d-%02d-%02d",
 			find_output->datestamp/10000,
 			(find_output->datestamp/100) %100,
 			find_output->datestamp %100);
 	    add_dump(date, find_output->level, find_output->label, 
-		     find_output->filenum);
-	    dbprintf(("%s: - %s %d %s %d\n",
+		     find_output->filenum, partnum);
+	    dbprintf(("%s: - %s %d %s %d %d\n",
 		     debug_prefix_time(NULL), date, find_output->level, 
-		     find_output->label, find_output->filenum));
+		     find_output->label, find_output->filenum, partnum));
 	}
     }
     return 0;
@@ -549,9 +569,22 @@ static int disk_history_list()
     lreply(200, " Dump history for config \"%s\" host \"%s\" disk \"%s\"",
 	  config_name, dump_hostname, disk_name);
 
-    for (item=first_dump(); item!=NULL; item=next_dump(item))
-	lreply(201, " %s %d %s %d", item->date, item->level, item->tape,
+    for (item=first_dump(); item!=NULL; item=next_dump(item)){
+        char *tapelist_str = marshal_tapelist(item->tapes, 1);
+
+	if(am_has_feature(their_features, fe_recover_splits)){
+	    str_buffer_size = strlen(item->date) + NUM_STR_SIZE +
+	                      strlen(tapelist_str) + 9;
+	    lreply(201, " %s %d %s", item->date, item->level, tapelist_str);
+	}
+	else{
+	    str_buffer_size = strlen(item->date) + NUM_STR_SIZE +
+	                      strlen(tapelist_str) + NUM_STR_SIZE + 9;
+	    lreply(201, " %s %d %s %d", item->date, item->level, tapelist_str,
 	       item->file);
+	}
+	str_buffer_size = STR_SIZE;
+    }
 
     reply(200, "Dump history for config \"%s\" host \"%s\" disk \"%s\"",
 	  config_name, dump_hostname, disk_name);
@@ -710,17 +743,25 @@ int  recursive;
 	lreply(200, " Opaque recursive list of %s", dir);
 	for (dir_item = get_dir_list(); dir_item != NULL; 
 	     dir_item = dir_item->next) {
+	    char *tapelist_str = marshal_tapelist(dir_item->dump->tapes, 1);
+
 	    if(am_has_feature(their_features, fe_amindexd_fileno_in_ORLD)){
-		fast_lreply(201, " %s %d %-16s %d %s",
+		str_buffer_size = strlen(dir_item->dump->date) + NUM_STR_SIZE +
+		              strlen(tapelist_str) + strlen(dir_item->path) +
+			      NUM_STR_SIZE + 9;
+		fast_lreply(201, " %s %d %s %d %s",
 			    dir_item->dump->date, dir_item->dump->level,
-			    dir_item->dump->tape, dir_item->dump->file,
+			    tapelist_str, dir_item->dump->file,
 			    dir_item->path);
 	    }
 	    else {
-		fast_lreply(201, " %s %d %-16s %s",
+		str_buffer_size = strlen(dir_item->dump->date) + NUM_STR_SIZE +
+		              strlen(tapelist_str) + strlen(dir_item->path) + 9;
+		fast_lreply(201, " %s %d %s %s",
 			    dir_item->dump->date, dir_item->dump->level,
-			    dir_item->dump->tape, dir_item->path);
+			    tapelist_str, dir_item->path);
 	    }
+	    str_buffer_size = STR_SIZE;
 	}
 	reply(200, " Opaque recursive list of %s", dir);
     }
@@ -729,17 +770,25 @@ int  recursive;
 	lreply(200, " Opaque list of %s", dir);
 	for (dir_item = get_dir_list(); dir_item != NULL; 
 	     dir_item = dir_item->next) {
+	    char *tapelist_str = marshal_tapelist(dir_item->dump->tapes, 1);
+
 	    if(am_has_feature(their_features, fe_amindexd_fileno_in_OLSD)){
-		lreply(201, " %s %d %-16s %d %s",
+		str_buffer_size = strlen(dir_item->dump->date) + NUM_STR_SIZE +
+		              strlen(tapelist_str) + strlen(dir_item->path) +
+			      NUM_STR_SIZE + 9;
+		lreply(201, " %s %d %s %d %s",
 			    dir_item->dump->date, dir_item->dump->level,
-			    dir_item->dump->tape, dir_item->dump->file,
+			    tapelist_str, dir_item->dump->file,
 			    dir_item->path);
 	    }
 	    else {
-		lreply(201, " %s %d %-16s %s",
+		str_buffer_size = strlen(dir_item->dump->date) + NUM_STR_SIZE +
+		              strlen(tapelist_str) + strlen(dir_item->path) + 9;
+		lreply(201, " %s %d %s %s",
 			    dir_item->dump->date, dir_item->dump->level,
-			    dir_item->dump->tape, dir_item->path);
+			    tapelist_str, dir_item->path);
 	    }
+	    str_buffer_size = STR_SIZE;
 	}
 	reply(200, " Opaque list of %s", dir);
     }
@@ -1062,6 +1111,10 @@ char **argv;
 	    if (is_disk_valid(arg) != -1) {
 		disk_name = newstralloc(disk_name, arg);
 		if (build_disk_table() != -1) {
+		    if(split_support_warn)
+			/* XXX is there a non-asinine way to do this? */
+			reply(200, "Disk set to %s.\nWARNING- your client does not support split dumps, this may or may not work.\nYou should upgrade, if possible.", disk_name);
+		    else
 		    reply(200, "Disk set to %s.", disk_name);
 		}
 	    }

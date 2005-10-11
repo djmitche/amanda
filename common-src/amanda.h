@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.112 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: amanda.h,v 1.113 2005/10/11 01:17:00 vectro Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -550,6 +550,7 @@ extern char  *tar_to_regex    P((char *glob));
 extern int    match_host      P((char *glob, char *host));
 extern int    match_disk      P((char *glob, char *disk));
 extern int    match_datestamp P((char *dateexp, char *datestamp));
+extern int    match_level     P((char *levelexp, char *level));
 extern time_t unctime         P((char *timestr));
 extern ssize_t  areads_dataready  P((int fd));
 extern void     areads_relbuf     P((int fd));
@@ -707,7 +708,7 @@ extern void     areads_relbuf     P((int fd));
  *	      if NULL on exit, the field was too small for the input
  */
 
-#define	STR_SIZE	1024		/* a generic string buffer size */
+#define	STR_SIZE	4096		/* a generic string buffer size */
 #define	NUM_STR_SIZE	32		/* a generic number buffer size */
 
 #define	skip_whitespace(ptr,c) do {					\
@@ -961,6 +962,10 @@ extern void *memset P((void *s, int c, size_t n));
 
 #ifndef HAVE_MKTEMP_DECL
 extern char *mktemp P((char *template));
+#endif
+
+#ifndef HAVE_MKSTEMP_DECL
+extern int mkstemp P((char *template));
 #endif
 
 #ifndef HAVE_MKTIME_DECL

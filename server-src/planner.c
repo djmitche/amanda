@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.167 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: planner.c,v 1.168 2005/10/11 01:17:01 vectro Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -2083,9 +2083,14 @@ static void delay_dumps P((void))
     */
 
     for(dp = schedq.head; dp != NULL; dp = ndp) {
+	int avail_tapes = 1;
+	if (dp->tape_splitsize > 0)
+	    avail_tapes = conf_runtapes;
+
 	ndp = dp->next; /* remove_disk zaps this */
 
-	if (est(dp)->dump_size == -1 || est(dp)->dump_size <= tape->length) {
+	if (est(dp)->dump_size == -1 ||
+	    est(dp)->dump_size <= tape->length * avail_tapes) {
 	    continue;
 	}
 
@@ -2118,7 +2123,7 @@ static void delay_dumps P((void))
 	    delete = 1;
 	    message = "skipping incremental";
 	}
-	delay_one_dump(dp, delete, "dump larger than tape,", est_kb,
+	delay_one_dump(dp, delete, "dump larger than available tape space,", est_kb,
 		       message, NULL);
     }
 
@@ -2252,15 +2257,17 @@ static void delay_dumps P((void))
     */
 
     for(bi = biq.tail; bi != NULL; bi = nbi) {
+	int avail_tapes = 1;
 	nbi = bi->prev;
 	dp = bi->dp;
+	if(dp->tape_splitsize > 0) avail_tapes = conf_runtapes;
 
 	if(bi->deleted)
 	    new_total = total_size + tt_blocksize_kb + bi->size + tape_mark;
 	else
 	    new_total = total_size - est(dp)->dump_size + bi->size;
 
-	if(new_total <= tape_length && bi->size < tape->length) {
+	if(new_total <= tape_length && bi->size < tape->length * avail_tapes) {
 	    /* reinstate it */
 	    total_size = new_total;
 	    if(bi->deleted) {

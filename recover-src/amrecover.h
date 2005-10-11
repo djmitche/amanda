@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.h,v 1.15 2002/10/27 21:13:13 martinea Exp $
+ * $Id: amrecover.h,v 1.16 2005/10/11 01:17:00 vectro Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -56,7 +56,8 @@ extern int quit_prog;			/* set when time to exit parser */
 extern char *tape_server_name;
 extern char *tape_device_name;
 extern am_feature_t *our_features;
-extern am_feature_t *their_features;
+extern am_feature_t *indexsrv_features;
+extern am_feature_t *tapesrv_features;
 extern pid_t extract_restore_child_pid;
 
 extern int converse P((char *cmd));

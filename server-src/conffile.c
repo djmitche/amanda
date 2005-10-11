@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.113 2005/09/30 19:13:27 martinea Exp $
+ * $Id: conffile.c,v 1.114 2005/10/11 01:17:00 vectro Exp $
  *
  * read configuration file
  */
@@ -86,7 +86,8 @@ typedef enum {
     OPTIONS, PRIORITY, FREQUENCY, INDEX, MAXPROMOTEDAY,
     STARTTIME, COMPRESS, AUTH, STRATEGY, ESTIMATE,
     SKIP_INCR, SKIP_FULL, RECORD, HOLDING,
-    EXCLUDE, INCLUDE, KENCRYPT, IGNORE, COMPRATE,
+    EXCLUDE, INCLUDE, KENCRYPT, IGNORE, COMPRATE, TAPE_SPLITSIZE,
+    SPLIT_DISKBUFFER, FALLBACK_SPLITSIZE, 
 
     /* tape type */
     /*COMMENT,*/ BLOCKSIZE, FILE_PAD, LBL_TEMPL, FILEMARK, LENGTH, SPEED,
@@ -749,8 +750,8 @@ static void init_defaults()
     conf_autoflush.i	= 0;
     conf_reserve.i	= 100;
     conf_maxdumpsize.i	= -1;
-    conf_amrecover_do_fsf.i = 0;
-    conf_amrecover_check_label.i = 0;
+    conf_amrecover_do_fsf.i = 1;
+    conf_amrecover_check_label.i = 1;
     conf_taperalgo.i = 0;
 
     /* defaults for internal variables */
@@ -1348,6 +1349,9 @@ keytab_t dumptype_keytable[] = {
     { "SKIP-INCR", SKIP_INCR },
     { "STARTTIME", STARTTIME },
     { "STRATEGY", STRATEGY },
+    { "TAPE_SPLITSIZE", TAPE_SPLITSIZE },
+    { "SPLIT_DISKBUFFER", SPLIT_DISKBUFFER },
+    { "FALLBACK_SPLITSIZE", FALLBACK_SPLITSIZE },
     { "ESTIMATE", ESTIMATE },
     { NULL, IDENT }
 };
@@ -1523,7 +1527,21 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
 	case IDENT:
 	    copy_dumptype();
 	    break;
-
+	case TAPE_SPLITSIZE:
+	    get_simple((val_t *)&dpcur.tape_splitsize,  &dpcur.s_tape_splitsize,  INT);
+	    if(dpcur.tape_splitsize < 0) {
+	      parserror("tape_splitsize must be >= 0");
+	    }
+	    break;
+	case SPLIT_DISKBUFFER:
+	    get_simple((val_t *)&dpcur.split_diskbuffer, &dpcur.s_split_diskbuffer, STRING);
+	    break;
+	case FALLBACK_SPLITSIZE:
+	    get_simple((val_t *)&dpcur.fallback_splitsize,  &dpcur.s_fallback_splitsize,  INT);
+	    if(dpcur.fallback_splitsize < 0) {
+	      parserror("fallback_splitsize must be >= 0");
+	    }
+	    break;
 	case RBRACE:
 	    done = 1;
 	    break;
@@ -1598,6 +1616,9 @@ static void init_dumptype_defaults()
     dpcur.kencrypt = 0;
     dpcur.ignore = 0;
     dpcur.index = 0;
+    dpcur.tape_splitsize = 0;
+    dpcur.split_diskbuffer = NULL;
+    dpcur.fallback_splitsize = 10 * 1024;
 
     dpcur.s_comment = 0;
     dpcur.s_program = 0;
@@ -1628,6 +1649,9 @@ static void init_dumptype_defaults()
     dpcur.s_kencrypt = 0;
     dpcur.s_ignore = 0;
     dpcur.s_index = 0;
+    dpcur.s_tape_splitsize = 0;
+    dpcur.s_split_diskbuffer = NULL;
+    dpcur.s_fallback_splitsize = 0;
 }
 
 static void save_dumptype()
@@ -1709,6 +1733,9 @@ static void copy_dumptype()
     dtcopy(kencrypt, s_kencrypt);
     dtcopy(ignore, s_ignore);
     dtcopy(index, s_index);
+    dtcopy(tape_splitsize, s_tape_splitsize);
+    dtcopy(split_diskbuffer, s_split_diskbuffer);
+    dtcopy(fallback_splitsize, s_fallback_splitsize);
 }
 
 keytab_t tapetype_keytable[] = {

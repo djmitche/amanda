@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.h,v 1.13 2002/02/11 01:32:10 jrjackson Exp $
+ * $Id: fileheader.h,v 1.14 2005/10/11 01:17:00 vectro Exp $
  *
  */
 
@@ -38,7 +38,7 @@
 typedef char string_t[STRMAX];
 typedef enum {
     F_UNKNOWN, F_WEIRD, F_TAPESTART, F_TAPEEND, 
-    F_DUMPFILE, F_CONT_DUMPFILE
+    F_DUMPFILE, F_CONT_DUMPFILE, F_SPLIT_DUMPFILE
 } filetype_t;
 
 typedef struct file_s {
@@ -54,6 +54,8 @@ typedef struct file_s {
     string_t uncompress_cmd;
     string_t cont_filename;
     int is_partial;
+    int partnum;
+    int totalparts; /* -1 == UNKNOWN */
     long blocksize;
 } dumpfile_t;
 

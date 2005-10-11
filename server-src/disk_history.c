@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: disk_history.c,v 1.9 2002/03/24 19:25:51 jrjackson Exp $
+/* $Id: disk_history.c,v 1.10 2005/10/11 01:17:01 vectro Exp $
  *
  * functions for obtaining backup history
  */
@@ -48,13 +48,15 @@ void clear_list P((void))
 }
 
 /* add item, maintain list ordered by oldest date last */
-void add_dump(date, level, tape, file)
+void add_dump(date, level, tape, file, partnum)
 char *date;
 int level;
 char *tape;
 int file;
+int partnum;
 {
     DUMP_ITEM *new, *item, *before;
+    int isafile = 0;
 
     new = (DUMP_ITEM *)alloc(sizeof(DUMP_ITEM));
     strncpy(new->date, date, sizeof(new->date)-1);
@@ -63,14 +65,36 @@ int file;
     strncpy(new->tape, tape, sizeof(new->tape)-1);
     new->tape[sizeof(new->tape)-1] = '\0';
     new->file = file;
+    if(partnum == -1) new->is_split = 0;
+    else new->is_split = 1;
+    new->tapes = NULL;
+
+   if(new->tape[0] == '/') isafile = 1; /* XXX kludgey, like this whole thing */
 
     if (disk_hist == NULL)
     {
 	disk_hist = new;
+	new->tapes = append_to_tapelist(new->tapes, tape, file, isafile);
 	new->next = NULL;
 	return;
     }
 
+    /* see if we already have part of this dump somewhere */
+    if(new->is_split){
+	for(item = disk_hist; item; item = item->next){
+	    if (!strcmp(item->date, new->date) &&
+		    item->level == new->level && item->is_split){
+		item->tapes = append_to_tapelist(item->tapes, tape, file, isafile);
+		return;
+	    }
+	}
+    }
+
+    new->tapes = append_to_tapelist(new->tapes, tape, file, isafile);
+
+    /* prepend this item to the history list, if it's newer */
+    /* XXX this should probably handle them being on the same date with
+       datestamp_uax or something */
     if (strcmp(disk_hist->date, new->date) <= 0)
     {
 	new->next = disk_hist;
@@ -78,6 +102,7 @@ int file;
 	return;
     }
 
+    /* append this item to the history list, if it's older */
     before = disk_hist;
     item = disk_hist->next;
     while ((item != NULL) && (strcmp(item->date, new->date) > 0))

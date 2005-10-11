@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: display_commands.c,v 1.16 2002/10/27 21:13:13 martinea Exp $
+ * $Id: display_commands.c,v 1.17 2005/10/11 01:17:00 vectro Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -226,7 +226,7 @@ void suck_dir_list_from_server P((void))
 	tape_undo_ch = *tape_undo;
 	*tape_undo = '\0';
 
-	if(am_has_feature(their_features, fe_amindexd_fileno_in_OLSD)) {
+	if(am_has_feature(indexsrv_features, fe_amindexd_fileno_in_OLSD)) {
 	    skip_whitespace(s, ch);
 	    if(ch == '\0' || sscanf(s - 1, "%d", &fileno) != 1) {
 		err = "bad reply: cannot parse fileno field";
