@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.98 2005/10/11 11:10:14 martinea Exp $
+/* $Id: taper.c,v 1.99 2005/10/11 16:39:49 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1243,6 +1243,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
  			/* write the "real" filename if the holding-file
  			   is a partial one */
   			parse_file_header(bp->buffer, &file, rc);
+  			parse_file_header(bp->buffer, &first_file, rc);
   			cont_filename = stralloc(file.cont_filename);
   			file.cont_filename[0] = '\0';
  			if(splitsize > 0){

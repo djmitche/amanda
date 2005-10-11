@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.96 2005/10/11 14:49:54 martinea Exp $
+ * $Id: reporter.c,v 1.97 2005/10/11 16:39:49 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -2092,7 +2092,7 @@ handle_partial()
     repdata_t *repdata;
     timedata_t *sp;
 
-    handle_success(L_PARTIAL);
+    repdata = handle_success(L_PARTIAL);
 
     if(curprog == P_TAPER)
 	sp = &(repdata->taper);

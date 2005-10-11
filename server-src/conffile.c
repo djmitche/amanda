@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.114 2005/10/11 01:17:00 vectro Exp $
+ * $Id: conffile.c,v 1.115 2005/10/11 16:39:49 martinea Exp $
  *
  * read configuration file
  */
@@ -1650,7 +1650,7 @@ static void init_dumptype_defaults()
     dpcur.s_ignore = 0;
     dpcur.s_index = 0;
     dpcur.s_tape_splitsize = 0;
-    dpcur.s_split_diskbuffer = NULL;
+    dpcur.s_split_diskbuffer = 0;
     dpcur.s_fallback_splitsize = 0;
 }
 
