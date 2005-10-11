@@ -1,3 +1,7 @@
+2005-10-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/taper.c (tape_writer_side): detach_buffers on normal exit.
+
 2005-10-10  Ian Turner <ian@zmanda.com>
 
 	* server-src/amtape.h: Apply tape-spanning patch by John Stange
