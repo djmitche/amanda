@@ -30,6 +30,8 @@ librestore_la_LIBADD	=	../common-src/libamanda.$(LIB_EXTENSION) \
                    ../tape-src/libamtape.$(LIB_EXTENSION) \
                   ../server-src/libamserver.$(LIB_EXTENSION)
 
+noinst_HEADERS = restore.h
+
 install-exec-hook:
 	@list="$(sbin_PROGRAMS)"; \
 	for p in $$list; do \

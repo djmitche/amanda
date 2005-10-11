@@ -1,5 +1,11 @@
 2005-10-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* restore-src/Makefile (noinst_HEADERS): Add restore.h.
+	* restore-src/restore.c (search_tapes): Add the fourth argument to
+	  read_file_header.
+
+2005-10-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/conffile.c: dpcur.s_split_diskbuffer must be initialize
 	  to 0.
 	* server-src/reporter.c (handle_partial): Set repdata to the result

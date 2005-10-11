@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.1 2005/10/11 01:17:00 vectro Exp $
+ * $Id: restore.c,v 1.2 2005/10/11 17:37:15 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1349,7 +1349,7 @@ rst_flags_t *flags;
 		}
 		else filenum = fsf_by;
 
-		read_file_header(&file, tapefd, isafile);
+		read_file_header(&file, tapefd, isafile, flags);
 	    }
 	}
 
