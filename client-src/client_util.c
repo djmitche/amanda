@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.1.2.27 2003/07/02 17:03:32 martinea Exp $
+ * $Id: client_util.c,v 1.1.2.27.2.1 2005/10/11 14:50:00 martinea Exp $
  *
  */
 
@@ -75,6 +75,7 @@ int n;
 
 static char *build_name(disk, exin, verbose)
 char *disk, *exin;
+int verbose;
 {
     int n=0, fd=-1;
     char *filename = NULL;
@@ -153,6 +154,7 @@ char *disk, *exin;
 static int add_exclude(file_exclude, aexc, verbose)
 FILE *file_exclude;
 char *aexc;
+int verbose;
 {
     int l;
 
@@ -169,6 +171,7 @@ static int add_include(disk, device, file_include, ainc, verbose)
 char *disk, *device;
 FILE *file_include;
 char *ainc;
+int verbose;
 {
     int l;
     int nb_exp=0;

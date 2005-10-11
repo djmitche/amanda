@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.9 2005/10/01 23:47:42 martinea Exp $
+ * $Id: reporter.c,v 1.44.2.17.4.6.2.16.2.10 2005/10/11 14:50:00 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -2021,6 +2021,7 @@ prefixstrange (host, disk, level, len_host, len_disk)
     char *host;
     char *disk;
     int level;
+    int len_host, len_disk;
 {
     char *h, *d;
     int l;

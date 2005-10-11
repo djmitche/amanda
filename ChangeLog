@@ -1,5 +1,10 @@
 2005-10-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* client-src/client_util.c, server-src/amcheck.c,
+	  server-src/reporter.c: Add missing type for arguments.
+
+2005-10-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/taper.c (tape_writer_side): detach_buffers on normal exit.
 
 2005-10-07  Jean-Louis Martineau <martineau@iro.umontreal.ca>

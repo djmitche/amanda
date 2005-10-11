@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.11 2005/09/20 21:31:52 jrjackson Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.12 2005/10/11 14:50:00 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -650,6 +650,7 @@ uid_t dumpuid;
 
 int start_server_check(fd, do_localchk, do_tapechk)
     int fd;
+    int do_localchk, do_tapechk;
 {
     char *errstr, *tapename;
     generic_fs_stats_t fs;
