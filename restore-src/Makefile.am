@@ -18,7 +18,8 @@ libexec_PROGRAMS = 	amidxtaped
 # routines, and second to pick up any references in the other libraries.
 ###
 
-LDADD = librestore.$(LIB_EXTENSION)
+LDADD = librestore.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
 
 amidxtaped_SOURCES = 	amidxtaped.c
 

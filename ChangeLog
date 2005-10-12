@@ -1,3 +1,12 @@
+2005-10-11  Ian Turner <ian@zmanda.com>
+
+	* restore-src/amfetchdump.c: Remove unused variable debug.
+        * restore-src/amidxtaped.c: Remove lock_logfile(), which is also 
+	  in restore.c.
+	* restore-src/Makefile.am: Include libamanda twice, to fix build 
+	  on some machines.
+          Thanks to Jean-Louis Martineau for these fixes.
+
 2005-10-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* restore-src/Makefile (noinst_HEADERS): Add restore.h.

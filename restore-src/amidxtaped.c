@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.46 2005/10/11 01:17:00 vectro Exp $
+/* $Id: amidxtaped.c,v 1.47 2005/10/12 21:30:09 vectro Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -114,22 +114,6 @@ get_client_line()
     }
     dbprintf(("%s: > %s\n", debug_prefix_time(NULL), line));
     return line;
-}
-
-int lock_logfile()
-{
-    rst_conf_logdir = getconf_str(CNF_LOGDIR);
-    if (*rst_conf_logdir == '/') {
-	rst_conf_logdir = stralloc(rst_conf_logdir);
-    } else {
-	rst_conf_logdir = stralloc2(config_dir, rst_conf_logdir);
-    }
-    rst_conf_logfile = vstralloc(rst_conf_logdir, "/log", NULL);
-    if (access(rst_conf_logfile, F_OK) == 0) {
-	error("%s exists: amdump or amflush is already running, or you must run amcleanup", rst_conf_logfile);
-    }
-    log_add(L_INFO, "amidxtaped");
-    return 1;
 }
 
 void check_security_buffer(buffer)

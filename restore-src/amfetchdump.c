@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.1 2005/10/11 01:17:00 vectro Exp $
+ * $Id: amfetchdump.c,v 1.2 2005/10/12 21:30:09 vectro Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -45,7 +45,6 @@
 extern int bytes_read;
 
 static int got_sigpipe;
-int debug = 0;
 extern char *rst_conf_logdir;
 extern char *rst_conf_logfile;
 extern char *config_dir;
