@@ -25,7 +25,7 @@ SERVER_MAN_PAGES = amadmin.8 \
 		   amstatus.8 \
 		   amtape.8 \
 		   amtapetype.8 \
-		   amfetchdump.8 \
+#		   amfetchdump.8 \
 		   amtoc.8 \
 		   amverify.8 \
 		   amverifyrun.8
