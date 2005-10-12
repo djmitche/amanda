@@ -1,3 +1,9 @@
+2005-10-12  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* restore-src/amidxtaped.c (check_security_buffer): i is a socklen_t.
+	* restore-src/amidxtaped.c (main): Remove i, fd, amrestore_path, pid,
+	  isafile, stat_tape, tapename, s, fp, ch and errstr variable.
+
 2005-10-11  Ian Turner <ian@zmanda.com>
 
 	* restore-src/amfetchdump.c: Remove unused variable debug.

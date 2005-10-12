@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.47 2005/10/12 21:30:09 vectro Exp $
+/* $Id: amidxtaped.c,v 1.48 2005/10/12 23:51:36 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -119,7 +119,7 @@ get_client_line()
 void check_security_buffer(buffer)
      char *buffer;
 {
-    int i;
+    socklen_t i;
     struct sockaddr_in addr;
     char *s, *fp, ch;
     char *errstr = NULL;
@@ -157,17 +157,8 @@ int argc;
 char **argv;
 {
     char *buf = NULL;
-    int i;
-    int fd, data_sock = -1, data_port = -1;
+    int data_sock = -1, data_port = -1;
     socklen_t socklen;
-    char *amrestore_path;
-    pid_t pid;
-    int isafile;
-    struct stat stat_tape;
-    char *tapename = NULL;
-    char *s, *fp;
-    int ch;
-    char *errstr = NULL;
     struct sockaddr_in addr;
     match_list_t *match_list;
     tapelist_t *tapes = NULL;
