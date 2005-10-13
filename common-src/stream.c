@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.28 2005/10/02 13:48:04 martinea Exp $
+ * $Id: stream.c,v 1.29 2005/10/13 21:23:27 martinea Exp $
  *
  * functions for managing stream sockets
  */
@@ -82,17 +82,19 @@ int sendsize, recvsize;
      * If a port range was specified, we try to get a port in that
      * range first.  Next, we try to get a reserved port.  If that
      * fails, we just go for any port.
+     * 
+     * In all cases, not to use port that's assigned to other services. 
      *
      * It is up to the caller to make sure we have the proper permissions
      * to get the desired port, and to make sure we return a port that
      * is within the range it requires.
      */
 #ifdef TCPPORTRANGE
-    if (bind_portrange(server_socket, &server, TCPPORTRANGE) == 0)
+    if (bind_portrange(server_socket, &server, TCPPORTRANGE, "tcp") == 0)
 	goto out;
 #endif
 
-    if (bind_portrange(server_socket, &server, 512, IPPORT_RESERVED - 1) == 0)
+    if (bind_portrange(server_socket, &server, 512, IPPORT_RESERVED - 1, "tcp") == 0)
 	goto out;
 
     server.sin_port = INADDR_ANY;
@@ -230,7 +232,7 @@ stream_client_internal(hostname,
     if (priv) {
 	int b;
 
-	b = bind_portrange(client_socket, &claddr, 512, IPPORT_RESERVED - 1);
+	b = bind_portrange(client_socket, &claddr, 512, IPPORT_RESERVED - 1, "tcp");
 	if (b == 0) {
 	    goto out;				/* got what we wanted */
 	}
@@ -245,7 +247,7 @@ stream_client_internal(hostname,
     }
 
 #ifdef TCPPORTRANGE
-    if (bind_portrange(client_socket, &claddr, TCPPORTRANGE) == 0)
+    if (bind_portrange(client_socket, &claddr, TCPPORTRANGE, "tcp") == 0)
 	goto out;
 #endif
 

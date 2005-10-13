@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.47 2005/10/02 18:02:20 martinea Exp $
+ * $Id: bsd-security.c,v 1.48 2005/10/13 21:23:27 martinea Exp $
  *
  * "BSD" security module
  */
@@ -1524,10 +1524,11 @@ parse_error:
  * drag in util.o just for the test program.
  */
 int
-bind_portrange(s, addrp, first_port, last_port)
+bind_portrange(s, addrp, first_port, last_port, proto)
     int s;
     struct sockaddr_in *addrp;
     int first_port, last_port;
+    char *proto;
 {
     return 0;
 }

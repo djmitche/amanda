@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.27 2004/04/14 13:23:59 martinea Exp $
+ * $Id: dgram.c,v 1.28 2005/10/13 21:23:27 martinea Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -80,17 +80,19 @@ int *portp;
      * If a port range was specified, we try to get a port in that
      * range first.  Next, we try to get a reserved port.  If that
      * fails, we just go for any port.
+     * 
+     * In all cases, not to use port that's assigned to other services. 
      *
      * It is up to the caller to make sure we have the proper permissions
      * to get the desired port, and to make sure we return a port that
      * is within the range it requires.
      */
 #ifdef UDPPORTRANGE
-    if (bind_portrange(s, &name, UDPPORTRANGE) == 0)
+    if (bind_portrange(s, &name, UDPPORTRANGE, "udp") == 0)
 	goto out;
 #endif
 
-    if (bind_portrange(s, &name, 512, IPPORT_RESERVED - 1) == 0)
+    if (bind_portrange(s, &name, 512, IPPORT_RESERVED - 1, "udp") == 0)
 	goto out;
 
     name.sin_port = INADDR_ANY;

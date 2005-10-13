@@ -1,3 +1,12 @@
+2005-10-13  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* common-src/util.c (bind_portrange): New argument proto.
+	  Check for reserved port.
+	* common-src/util.h (bind_portrange): New prototype.
+	* common-src/bsd-security.c (bind_portrange): New prototype.
+	* common-src/dgram.c: Add "udp" as argument to bind_portrange.
+	* common-src/stream.c: Add "tcp" as argument to bind_portrange.
+
 2005-10-12  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* restore-src/amidxtaped.c (check_security_buffer): i is a socklen_t.

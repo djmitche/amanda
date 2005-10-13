@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.11 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: util.c,v 1.12 2005/10/13 21:23:27 martinea Exp $
  */
 
 #include "amanda.h"
@@ -91,14 +91,16 @@ fullwrite(fd, vbuf, buflen)
  * on success.
  */
 int
-bind_portrange(s, addrp, first_port, last_port)
+bind_portrange(s, addrp, first_port, last_port, proto)
     int s;
     struct sockaddr_in *addrp;
     int first_port, last_port;
+    char *proto;
 {
     int port, cnt;
     const int num_ports = last_port - first_port + 1;
     int save_errno;
+    struct servent *servPort;
 
     assert(first_port > 0 && first_port <= last_port && last_port < 65536);
 
@@ -107,12 +109,15 @@ bind_portrange(s, addrp, first_port, last_port)
      * time to avoid always picking the same reserved port twice.
      */
     port = ((getpid() + time(0)) % num_ports) + first_port;
-
     /*
-     * Scan through the range, trying all available ports.  Wrap around
+     * Scan through the range, trying all available ports that are either 
+     * not taken in /etc/services or registered for *amanda*.  Wrap around
      * if we don't happen to start at the beginning.
      */
     for (cnt = 0; cnt < num_ports; cnt++) {
+      servPort = getservbyport(htons(port), proto);
+      if((servPort == NULL) || strstr(servPort->s_name, "amanda")){
+	dbprintf(("%s: bind_portrange2: trying port=%d\t", debug_prefix_time(NULL), port));
 	addrp->sin_port = htons(port);
 	if (bind(s, (struct sockaddr *)addrp, sizeof(*addrp)) >= 0)
 	    return 0;
@@ -123,6 +128,7 @@ bind_portrange(s, addrp, first_port, last_port)
 	    break;
 	if (++port > last_port)
 	    port = first_port;
+    }
     }
     if (cnt == num_ports) {
 	dbprintf(("%s: bind_portrange: all ports between %d and %d busy\n",
