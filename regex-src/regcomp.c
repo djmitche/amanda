@@ -192,8 +192,8 @@ register struct parse *p;
 int stop;			/* character this ERE should end at */
 {
 	register char c;
-	register sopno prevback;
-	register sopno prevfwd;
+	register sopno prevback = 0;
+	register sopno prevfwd = 0;
 	register sopno conc;
 	register int first = 1;		/* is this the first alternative? */
 
@@ -1169,9 +1169,10 @@ register char *cp;
 	cs->multis[cs->smultis - 1] = '\0';
 }
 
+#if 0
 /*
- - mcsub - subtract a collating element from a cset
- == static void mcsub(register cset *cs, register char *cp);
+ * - mcsub - subtract a collating element from a cset
+ * == static void mcsub(register cset *cs, register char *cp);
  */
 static void
 mcsub(cs, cp)
@@ -1197,8 +1198,8 @@ register char *cp;
 }
 
 /*
- - mcin - is a collating element in a cset?
- == static int mcin(register cset *cs, register char *cp);
+ * - mcin - is a collating element in a cset?
+ * == static int mcin(register cset *cs, register char *cp);
  */
 static int
 mcin(cs, cp)
@@ -1209,8 +1210,8 @@ register char *cp;
 }
 
 /*
- - mcfind - find a collating element in a cset
- == static char *mcfind(register cset *cs, register char *cp);
+ * - mcfind - find a collating element in a cset
+ * == static char *mcfind(register cset *cs, register char *cp);
  */
 static char *
 mcfind(cs, cp)
@@ -1226,6 +1227,7 @@ register char *cp;
 			return(p);
 	return(NULL);
 }
+#endif /* 0 */
 
 /*
  - mcinvert - invert the list of collating elements in a cset
@@ -1496,7 +1498,7 @@ register struct re_guts *g;
 {
 	register sop *scan;
 	sop *start;
-	register sop *newstart;
+	register sop *newstart = NULL;
 	register sopno newlen;
 	register sop s;
 	register char *cp;

@@ -1,4 +1,18 @@
 2005-10-14  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by John R. Franks <jrfranks@zmanda.com>
+
+	* regex-src/cclass.h: Fixed to add missing braces and reformat long
+	  strings to fix in 80 columns.
+	* regex-src/cname.h: Fixed by adding braces and tidying up code a bit.
+	* regex-src/regcomp.c (p_ere): Initialized prevback and prevfwd to 0.
+	  ifdef out unused mcsub, mcin and mcfind functions.
+	  (findmust) Initialized newstart to NULL.
+	* regex-src/regerror.c: Adds missing braces.
+	* regex-src/regexec.c (nope): Use only in assert, so it is not only
+	  defined if NDEBUG is not defined.
+
+2005-10-14  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by John R. Franks <jrfranks@zmanda.com>
 
 	* common-src/krb4-security.c (krb4_security_dummy): Rename from dummy,
 	  it is not static int.
