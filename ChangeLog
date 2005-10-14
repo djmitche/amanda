@@ -1,4 +1,8 @@
 2005-10-14  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* regex-src/regcomp.c (findmust): Initialized start to NULL.
+
+2005-10-14  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by John R. Franks <jrfranks@zmanda.com>
 
 	* regex-src/cclass.h: Fixed to add missing braces and reformat long

@@ -1497,7 +1497,7 @@ struct parse *p;
 register struct re_guts *g;
 {
 	register sop *scan;
-	sop *start;
+	sop *start =NULL;
 	register sop *newstart = NULL;
 	register sopno newlen;
 	register sop s;
