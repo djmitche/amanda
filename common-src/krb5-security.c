@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.10 2003/08/29 01:32:14 kovert Exp $
+ * $Id: krb5-security.c,v 1.11 2005/10/14 14:57:50 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -2230,5 +2230,5 @@ common_exit:
 }
 
 #else
-static int dummy () {}
+void krb5_security_dummy (void) {}
 #endif	/* KRB5_SECURITY */

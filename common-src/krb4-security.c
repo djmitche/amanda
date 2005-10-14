@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb4-security.c,v 1.7 2003/04/26 02:02:15 kovert Exp $
+ * $Id: krb4-security.c,v 1.8 2005/10/14 14:57:50 martinea Exp $
  *
  * krb4-security.c - helper functions for kerberos v4 security.
  */
@@ -1731,5 +1731,5 @@ CREDENTIALS *credp;
 #endif
 
 #else
-static int dummy () {}
+void krb4_security_dummy (void) {}
 #endif /* KRB4_SECURITY */

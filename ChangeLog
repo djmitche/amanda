@@ -1,3 +1,10 @@
+2005-10-14  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* common-src/krb4-security.c (krb4_security_dummy): Rename from dummy,
+	  it is not static int.
+	* common-src/krb5-security.c (krb5_security_dummy): Rename from dummy,
+	  it is not static int.
+
 2005-10-13  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* common-src/util.c (bind_portrange): New argument proto.
