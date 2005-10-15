@@ -1,3 +1,7 @@
+2005-10-15  Paddy Sreenivasan <paddy@zmanda.com>
+
+        * server-src/taper.c: Shared memory need not be removed in normal paths.          Done as part of atexit. 
+
 2005-10-15  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by John R. Franks <jrfranks@zmanda.com>
 
