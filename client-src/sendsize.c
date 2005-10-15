@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.146 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: sendsize.c,v 1.147 2005/10/15 13:03:25 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1143,16 +1143,19 @@ long getsize_dump(disk, amdevice, level, options)
 	dbprintf(("%s: no size line match in %s%s output for \"%s\"\n",
 		  debug_prefix(NULL), cmd, name, disk));
 	dbprintf(("%s: .....\n", debug_prefix(NULL)));
+	dbprintf(("%s: Run %s%s manually to check for errors\n",
+		    debug_prefix(NULL), cmd, name));
     } else if(size == 0 && level == 0) {
 	dbprintf(("%s: possible %s%s problem -- is \"%s\" really empty?\n",
 		  debug_prefix(NULL), cmd, name, disk));
 	dbprintf(("%s: .....\n", debug_prefix(NULL)));
-    }
-    dbprintf(("%s: estimate size for %s level %d: %ld KB\n",
+    } else {
+	    dbprintf(("%s: estimate size for %s level %d: %ld KB\n",
 	      debug_prefix(NULL),
 	      disk,
 	      level,
 	      size));
+    }
 
     if (killctl[1] != -1) {
 	dbprintf(("%s: asking killpgrp to terminate\n",

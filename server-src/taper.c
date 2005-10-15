@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.99 2005/10/11 16:39:49 martinea Exp $
+/* $Id: taper.c,v 1.100 2005/10/15 13:03:25 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -130,6 +130,11 @@ void tape_writer_side P((int rdpipe, int wrpipe));
 char *attach_buffers P((unsigned int size));
 void detach_buffers P((char *bufp));
 void destroy_buffers P((void));
+#define REMOVE_SHARED_MEMORY() \
+    detach_buffers(buffers); \
+    if (strcmp(procname, "reader") == 0) { \
+	destroy_buffers(); \
+    }
 
 /* synchronization pipe routines */
 void syncpipe_init P((int rd, int wr));
@@ -148,6 +153,13 @@ int write_filemark P((void));
 
 /* support crap */
 int seek_holdfile P((int fd, buffer_t *bp, long kbytes));
+
+/* signal handling */
+static void install_signal_handlers P((void));
+static void signal_handler P((int));
+
+/* exit routine */
+static void cleanup P((void));
 
 /*
  * ========================================================================
@@ -246,6 +258,9 @@ char **main_argv;
     }
 
     safe_cd();
+
+    install_signal_handlers();
+    atexit(cleanup);
 
     /* print prompts and debug messages if running interactive */
 
@@ -2025,6 +2040,70 @@ buffer_t *bp;
 }
 
 
+static void 
+cleanup(void)
+{
+    REMOVE_SHARED_MEMORY(); 
+}
+
+
+/*
+ * Cleanup shared memory segments 
+ */
+void 
+signal_handler(int signum)
+{
+    log_add(L_INFO, "Received signal %d", signum);
+
+    REMOVE_SHARED_MEMORY(); 
+    exit(1);
+}
+
+
+/*
+ * Installing signal handlers for signal whose default action is 
+ * process termination so that we can clean up shared memory
+ * segments
+ */
+void
+install_signal_handlers(void) 
+{
+    struct sigaction act;
+
+    act.sa_handler = signal_handler;
+    act.sa_flags = 0;
+    sigemptyset(&act.sa_mask);
+
+    if (sigaction(SIGINT, &act, NULL) != 0) {
+	error("taper: couldn't install SIGINT handler [%s]", strerror(errno));
+    }
+
+    if (sigaction(SIGPIPE, &act, NULL) != 0) {
+	error("taper: couldn't install SIGPIPE handler [%s]", strerror(errno));
+    }
+
+    if (sigaction(SIGHUP, &act, NULL) != 0) {
+	error("taper: couldn't install SIGHUP handler [%s]", strerror(errno));
+    }
+   
+    if (sigaction(SIGTERM, &act, NULL) != 0) {
+	error("taper: couldn't install SIGTERM handler [%s]", strerror(errno));
+    }
+
+    if (sigaction(SIGUSR1, &act, NULL) != 0) {
+	error("taper: couldn't install SIGUSR1 handler [%s]", strerror(errno));
+    }
+
+    if (sigaction(SIGUSR2, &act, NULL) != 0) {
+	error("taper: couldn't install SIGUSR2 handler [%s]", strerror(errno));
+    }
+
+    if (sigaction(SIGALRM, &act, NULL) != 0) {
+	error("taper: couldn't install SIGALRM handler [%s]", strerror(errno));
+    }
+}
+
+
 /*
  * ========================================================================
  * SHARED-MEMORY BUFFER SUBSYSTEM
@@ -2062,7 +2141,8 @@ char *attach_buffers(size)
 void detach_buffers(bufp)
     char *bufp;
 {
-    if(shmdt((SHM_ARG_TYPE *)bufp) == -1) {
+    if ((bufp != NULL) &&
+        (shmdt((SHM_ARG_TYPE *)bufp) == -1)) {
 	error("shmdt: %s", strerror(errno));
     }
 }
@@ -2121,11 +2201,13 @@ char *attach_buffers(size)
 void detach_buffers(bufp)
 char *bufp;
 {
-    if(munmap((void *)bufp, saved_size) == -1) {
+    if ((bufp != NULL) && 
+	(munmap((void *)bufp, saved_size) == -1)) {
 	error("detach_buffers: munmap: %s", strerror(errno));
     }
 
-    aclose(shmfd);
+    if (shmfd != -1)
+	aclose(shmfd);
 }
 
 void destroy_buffers()

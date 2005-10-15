@@ -1,3 +1,10 @@
+2005-10-15  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by Paddy Sreenivasan <paddy@zmanda.com>
+
+	* client-src/sendsize.c: Log message changes.
+	* server-src/taper.c: And an atexit function to detach shared memory.
+	  Trap some signal and detach shared memory.
+
 2005-10-14  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* regex-src/regcomp.c (findmust): Initialized start to NULL.
