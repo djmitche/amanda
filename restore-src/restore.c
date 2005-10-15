@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.2 2005/10/11 17:37:15 martinea Exp $
+ * $Id: restore.c,v 1.3 2005/10/15 13:20:47 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1103,7 +1103,7 @@ rst_flags_t *flags;
     /* if given a log file, print an inventory of stuff found */
     if(flags->inventory_log){
 	if(!strcmp(flags->inventory_log, "-")) logstream = stdout;
-	else if((logstream = fopen(flags->inventory_log, "w+")) < 0){
+	else if((logstream = fopen(flags->inventory_log, "w+")) == NULL){
 	    error("Couldn't open log file %s for writing: %s\n",
 		  flags->inventory_log, strerror(errno));
 	}
@@ -1174,7 +1174,11 @@ rst_flags_t *flags;
 	 */
 	if(desired_tape && desired_tape->isafile){
 	    isafile = 1;
-	    tapefd = open(desired_tape->label, 0); /* XXX stat, errcheck */
+	    if ((tapefd = open(desired_tape->label, 0)) == -1){
+		fprintf(stderr, "could not open %s: %s\n",
+		      desired_tape->label, strerror(errno));
+	        continue;
+	    }
 	    fprintf(stderr, "Reading %s to fd %d\n", desired_tape->label, tapefd);
 
 	    read_file_header(&file, tapefd, 1, flags);

@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.32 2005/10/02 13:48:04 martinea Exp $
+ * $Id: file.c,v 1.33 2005/10/15 13:20:47 martinea Exp $
  *
  * file and directory bashing routines
  */
@@ -272,19 +272,21 @@ safe_fd(fd_start, fd_count)
     for(fd = 0; fd < FD_SETSIZE; fd++) {
 	if (fd < 3) {
 	    /*
-	     * Open three file descriptors.  If stdin, stdout and stderr
-	     * are normal, i.e. open, we will open descriptor numbers
-	     * 3 or higher which the rest of this loop will turn right
-	     * around and close.  If one of the standard descriptors
-	     * is not open it will end up pointing to /dev/null and the
-	     * rest of the loop will leave it alone.
+	     * Open three file descriptors.  If one of the standard
+	     * descriptors is not open it will be pointed to /dev/null...
 	     *
 	     * This avoids, for instance, someone running us with stderr
 	     * closed so that when we open some other file, messages
 	     * sent to stderr do not accidentally get written to the
 	     * wrong file.
 	     */
-	    (void) open("/dev/null", O_RDWR);
+	    if (fcntl(fd, F_GETFD) == -1) {
+		if (open("/dev/null", O_RDWR) == -1) {
+		   fprintf(stderr, "/dev/null is inaccessable: %s\n",
+		           strerror(errno));
+		   exit(1);
+		}
+	    }
 	} else {
 	    /*
 	     * Make sure nobody spoofs us with a lot of extra open files

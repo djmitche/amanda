@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.73 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: selfcheck.c,v 1.74 2005/10/15 13:20:47 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -503,7 +503,11 @@ char *optstr;
 		goto common_exit;
 	    }
 
-	    nullfd = open("/dev/null", O_RDWR);
+	    if ((nullfd = open("/dev/null", O_RDWR)) == -1) {
+	        err = stralloc2("Cannot access /dev/null : ", strerror(errno));
+		goto common_exit;
+	    }
+
 	    if (pwtext_len > 0) {
 		pw_fd_env = "PASSWD_FD";
 	    } else {

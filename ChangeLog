@@ -1,4 +1,35 @@
 2005-10-15  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by John R. Franks <jrfranks@zmanda.com>
+
+	* changer-src/scsi-aix.c: calls to open/openx guages success by
+	  checking for a file descriptor greater than 0.  0 is also a valid
+	  descriptor so the check should be >= 0.
+	  Calls to SCSI_OpenDevice does not check for error return.
+	  Calls to SCSI_OpenDevice does not check for error return.
+	  Calls to SCSI_OpenDevice does not check for error return.
+	  Call to opendir() does not check for error.
+	* changer-src/scsi-hpux_new.c: Ditto.
+	* changer-src/scsi-irix.c: Ditto.
+	* changer-src/scsi-linux.c: Ditto.
+	* changer-src/scsi-solaris.c: Ditto.
+	* client-src/selfcheck.c: Call to open() does not check for error.
+	* client-src/sendbackup.c: Call to freopen() does not check for error.
+	* client-src/sendsize.c: Call to open() does not check for error.
+	* common-src/bsd-security.c: Call to open() does not check for error.
+	* common-src/file.c: Call to open() does not check for error.
+	* restore-src/amrestore.c: Calls to tape_open() do not always check
+	  return code.  open() is called with open flags set to 0
+	  (Call always fails with an EINVAL)
+	* restore-src/restore.c: fopen() return error check  is "fopen() < 0".
+	  fopen returns a pointer and the proper check should be
+	  "fopen() == NULL".
+	  Call to open() does not check for error.
+	* tape-src/tapeio.c: tape_open() is called here and other places with a
+	  variable number of arguments, and yet is not defined as a varargs
+	  function...
+	* tape-src/tapeio.h: Prototype for tape_open.
+
+2005-10-15  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by Paddy Sreenivasan <paddy@zmanda.com>
 
 	* client-src/sendsize.c: Log message changes.

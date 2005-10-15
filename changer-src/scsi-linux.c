@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.26 2003/06/05 20:44:14 martinea Exp $
+ * $Id: scsi-linux.c,v 1.27 2005/10/15 13:20:47 martinea Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -82,7 +82,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-linux.c,v 1.26 2003/06/05 20:44:14 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-linux.c,v 1.27 2005/10/15 13:20:47 martinea Exp $";
    DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -175,7 +175,7 @@ int SCSI_OpenDevice(int ip)
         }
       
       DebugPrint(DEBUG_INFO, SECTION_SCSI,"Try to open %s\n", buffer);
-      if ((DeviceFD = open(buffer, openmode)) > 0)
+      if ((DeviceFD = open(buffer, openmode)) >= 0)
         {
           pDev[ip].avail = 1;
           pDev[ip].devopen = 1;
@@ -260,7 +260,7 @@ int SCSI_OpenDevice(int ip)
         } else {
           openmode = O_RDONLY;
         }
-      if ((DeviceFD = open(pDev[ip].dev, openmode)) > 0)
+      if ((DeviceFD = open(pDev[ip].dev, openmode)) >= 0)
         {
           pDev[ip].devopen = 1;
           pDev[ip].fd = DeviceFD;
@@ -309,9 +309,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
     }
 
   if (pDev[DeviceFD].devopen == 0)
-    {
-      SCSI_OpenDevice(DeviceFD);
-    }
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
   
   if (SCSI_OFF + CDB_Length + DataBufferLength > 4096) 
     {
@@ -400,7 +399,7 @@ int SCSI_OpenDevice(int ip)
   if (pDev[ip].inqdone == 0)
     {
       pDev[ip].inqdone = 1;
-      if ((DeviceFD = open(pDev[ip].dev, O_RDWR)) > 0)
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR)) >= 0)
         {
           pDev[ip].avail = 1;
           pDev[ip].fd = DeviceFD;
@@ -431,7 +430,7 @@ int SCSI_OpenDevice(int ip)
         }
       return(1); 
     } else {
-      if ((DeviceFD = open(pDev[ip].dev, O_RDWR)) > 0)
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR)) >= 0)
         {
           pDev[ip].fd = DeviceFD;
           pDev[ip].devopen = 1;
@@ -463,7 +462,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
 
   if (pDev[DeviceFD].devopen == 0)
     {
-      SCSI_OpenDevice(DeviceFD);
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
     }
 
   memset(pRequestSense, 0, RequestSenseLength);
@@ -520,7 +520,8 @@ int Tape_Ioctl( int DeviceFD, int command)
 
   if (pDev[DeviceFD].devopen == 0)
     {
-      SCSI_OpenDevice(DeviceFD);
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
     }
 
   switch (command)
@@ -552,7 +553,8 @@ int Tape_Status( int DeviceFD)
 
   if (pDev[DeviceFD].devopen == 0)
     {
-      SCSI_OpenDevice(DeviceFD);
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
     }
 
   if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
@@ -605,7 +607,11 @@ int ScanBus(int print)
   extern int errno;
   int count = 0;
 
-  dir = opendir("/dev/");
+  if ((dir = opendir("/dev/")) == NULL)
+    {
+      dbprintf(("/dev/ error: %s", strerror(errno)));
+      return 0;
+    }
 
   while ((dirent = readdir(dir)) != NULL)
     {

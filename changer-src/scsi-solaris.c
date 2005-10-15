@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.24 2003/01/26 19:20:45 martinea Exp $
+ * $Id: scsi-solaris.c,v 1.25 2005/10/15 13:20:47 martinea Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -60,7 +60,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-solaris.c,v 1.24 2003/01/26 19:20:45 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-solaris.c,v 1.25 2005/10/15 13:20:47 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -74,7 +74,7 @@ int SCSI_OpenDevice(int ip)
   if (pDev[ip].inqdone == 0)
     {
       pDev[ip].inqdone = 1;
-      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NONBLOCK)) > 0)
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NONBLOCK)) >= 0)
         {
           pDev[ip].avail = 1;
           pDev[ip].fd = DeviceFD;
@@ -122,7 +122,7 @@ int SCSI_OpenDevice(int ip)
           return(0);
         }
     } else {
-      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NDELAY)) > 0)
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NDELAY)) >= 0)
         {
           pDev[ip].fd = DeviceFD;
           pDev[ip].devopen = 1;
@@ -217,7 +217,11 @@ int SCSI_ExecuteCommand(int DeviceFD,
   while (retries > 0)
   {
     if (pDev[DeviceFD].devopen == 0)
-      SCSI_OpenDevice(DeviceFD);
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+        {
+	  sleep(1);
+	  continue;
+        }
 
     if ((ret = ioctl(pDev[DeviceFD].fd, USCSICMD, &Command)) >= 0)
     {
@@ -255,9 +259,8 @@ int Tape_Ioctl( int DeviceFD, int command)
   int ret = 0;
 
   if (pDev[DeviceFD].devopen == 0)
-    {
-      SCSI_OpenDevice(DeviceFD);
-    }
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
 
   switch (command)
     {
@@ -287,9 +290,8 @@ int Tape_Status( int DeviceFD)
   int ret = -1;
 
   if (pDev[DeviceFD].devopen == 0)
-    {
-      SCSI_OpenDevice(DeviceFD);
-    }
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
   
   if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
     {

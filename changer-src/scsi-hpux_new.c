@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-hpux_new.c,v 1.17 2003/06/05 20:44:14 martinea Exp $
+ * $Id: scsi-hpux_new.c,v 1.18 2005/10/15 13:20:47 martinea Exp $
  *
  * Interface to execute SCSI commands on an HP-UX Workstation
  *
@@ -60,7 +60,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-    static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.17 2003/06/05 20:44:14 martinea Exp $";
+    static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.18 2005/10/15 13:20:47 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -74,7 +74,7 @@ int SCSI_OpenDevice(int ip)
   if (pDev[ip].inqdone == 0)
     {
       pDev[ip].inqdone = 1;
-      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NDELAY)) > 0)
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NDELAY)) >= 0)
         {
           pDev[ip].avail = 1;
           pDev[ip].fd = DeviceFD;
@@ -120,7 +120,7 @@ int SCSI_OpenDevice(int ip)
           return(1);
         }
     } else {
-      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NDELAY)) > 0)
+      if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NDELAY)) >= 0)
         {
           pDev[ip].fd = DeviceFD;
           pDev[ip].devopen = 1;
@@ -185,7 +185,16 @@ int SCSI_ExecuteCommand(int DeviceFD,
   while (--Retries > 0) {
 
     if (pDev[DeviceFD].devopen == 0)
-      SCSI_OpenDevice(DeviceFD);
+      {
+        if (SCSI_OpenDevice(DeviceFD) == 0)
+          {
+            dbprintf(("SCSI_ExecuteCommand could not open %s: %s\n",
+                      pDev[DeviceFD].dev,
+	              strerror(errno)));
+            sleep(1); /* Give device a little time befor retry */
+            continue;
+          }
+      }
 
     DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
     Result = ioctl(pDev[DeviceFD].fd, SIOC_IO, &sctl_io);
@@ -224,9 +233,8 @@ int Tape_Ioctl( int DeviceFD, int command)
   int ret = 0;
 
   if (pDev[DeviceFD].devopen == 0)
-    {
-      SCSI_OpenDevice(DeviceFD);
-    }
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
 
   switch (command)
     {
@@ -258,7 +266,8 @@ int Tape_Status( int DeviceFD)
   int ret = 0;
 
   if (pDev[DeviceFD].devopen == 0)
-    SCSI_OpenDevice(DeviceFD);
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
 
   if (ioctl(pDev[DeviceFD].fd, MTIOCGET, &mtget) != 0)
   {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-aix.c,v 1.21 2003/01/26 19:20:44 martinea Exp $
+ * $Id: scsi-aix.c,v 1.22 2005/10/15 13:20:47 martinea Exp $
  *
  * Interface to execute SCSI commands on an AIX System
  *
@@ -64,7 +64,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-aix.c,v 1.21 2003/01/26 19:20:44 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-aix.c,v 1.22 2005/10/15 13:20:47 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -89,7 +89,7 @@ int SCSI_OpenDevice(int ip)
         } else {
           DeviceFD = openx(pDev[ip].dev, O_RDWR, 0, SC_DIAGNOSTIC);
         }
-      if (DeviceFD > 0)
+      if (DeviceFD >= 0)
 	{
 	  pDev[ip].avail = 1;
           pDev[ip].fd = DeviceFD;
@@ -137,7 +137,7 @@ int SCSI_OpenDevice(int ip)
          return(0);
        }
     } else {
-      if ((DeviceFD = openx(pDev[ip].dev, O_RDWR, 0, SC_DIAGNOSTIC)) > 0)
+      if ((DeviceFD = openx(pDev[ip].dev, O_RDWR, 0, SC_DIAGNOSTIC)) >= 0)
         {
           pDev[ip].fd = DeviceFD;
           pDev[ip].devopen = 1;
@@ -249,7 +249,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
       DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
       
       if (pDev[DeviceFD].devopen == 0)
-        SCSI_OpenDevice(DeviceFD);
+        if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(SCSI_ERROR);
       Result = ioctl(pDev[DeviceFD].fd, STIOCMD, &ds);
       SCSI_CloseDevice(DeviceFD);
       
@@ -270,7 +271,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
               ds.data_length = RequestSenseLength;
               
               if (pDev[DeviceFD].devopen == 0)
-                SCSI_OpenDevice(DeviceFD);
+                if (SCSI_OpenDevice(DeviceFD) == 0)
+                  return(SCSI_ERROR);
               Result = ioctl(pDev[DeviceFD].fd, STIOCMD, &ds);
               SCSI_CloseDevice(DeviceFD);
               return(SCSI_OK);
@@ -291,7 +293,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
               ds.data_length = RequestSenseLength;
 
               if (pDev[DeviceFD].devopen == 0)
-                SCSI_OpenDevice(DeviceFD);
+                if (SCSI_OpenDevice(DeviceFD) == 0)
+                  return(SCSI_ERROR);
               Result = ioctl(pDev[DeviceFD].fd, STIOCMD, &ds);
               SCSI_CloseDevice(DeviceFD);
               return(SCSI_CHECK);

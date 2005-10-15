@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.147 2005/10/15 13:03:25 martinea Exp $
+ * $Id: sendsize.c,v 1.148 2005/10/15 13:20:47 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -694,7 +694,11 @@ disk_estimates_t *est;
 
     fflush(stderr); fflush(stdout);
 
-    nullfd = open("/dev/null", O_RDWR);
+    if ((nullfd = open("/dev/null", O_RDWR)) == -1) {
+	dbprintf(("Cannot access /dev/null : %s\n", strerror(errno)));
+	goto common_exit;
+    }
+
     calcpid = pipespawnv(cmd, STDERR_PIPE, &nullfd, &nullfd, &pipefd, my_argv);
     amfree(cmd);
 
@@ -724,6 +728,7 @@ disk_estimates_t *est;
 	      est->amname,
 	      walltime_str(timessub(curclock(), start_time))));
 
+common_exit:
     for(i = 0; i < my_argc; i++) {
 	amfree(my_argv[i]);
     }
@@ -906,7 +911,15 @@ long getsize_dump(disk, amdevice, level, options)
     cmd = vstralloc(libexecdir, "/rundump", versionsuffix(), NULL);
     rundump_cmd = stralloc(cmd);
 
-    stdoutfd = nullfd = open("/dev/null", O_RDWR);
+    if ((stdoutfd = nullfd = open("/dev/null", O_RDWR)) == -1) {
+	dbprintf(("getsize_dump could not open /dev/null: %s\n",
+	          strerror(errno)));
+	amfree(cmd);
+	amfree(rundump_cmd);
+	amfree(fstype);
+	amfree(device);
+	return(-1);
+    }
     pipefd[0] = pipefd[1] = killctl[0] = killctl[1] = -1;
     pipe(pipefd);
 
@@ -1289,7 +1302,19 @@ long getsize_smbtar(disk, amdevice, level, optionns)
 	amfree(error_pn);
 	error("cannot make share name of %s", share);
     }
-    nullfd = open("/dev/null", O_RDWR);
+    if ((nullfd = open("/dev/null", O_RDWR)) == -1) {
+	memset(user_and_password, '\0', lpass);
+	amfree(user_and_password);
+	if(domain) {
+	    memset(domain, '\0', strlen(domain));
+	    amfree(domain);
+	}
+	set_pname(error_pn);
+	amfree(error_pn);
+	amfree(sharename);
+	error("could not open /dev/null: %s\n",
+	      strerror(errno));
+    }
 
 #if SAMBA_VERSION >= 2
     if (level == 0)

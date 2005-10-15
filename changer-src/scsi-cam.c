@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.13 2004/04/29 20:46:56 martinea Exp $
+ * $Id: scsi-cam.c,v 1.14 2005/10/15 13:20:47 martinea Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
@@ -75,7 +75,7 @@ extern FILE *debug_file;
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-cam.c,v 1.13 2004/04/29 20:46:56 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-cam.c,v 1.14 2005/10/15 13:20:47 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -283,7 +283,11 @@ int SCSI_ExecuteCommand(int DeviceFD,
 
   if (pDev[DeviceFD].devopen == 0)
     {
-      SCSI_OpenDevice(DeviceFD);
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+        {
+	   cam_freeccb(ccb);
+	   return(SCSI_ERROR);
+	}
     }
   
   ret = cam_send_ccb(pDev[DeviceFD].curdev, ccb);
@@ -322,9 +326,8 @@ int Tape_Ioctl( int DeviceFD, int command)
   int ret = 0;
 
   if (pDev[DeviceFD].devopen == 0)
-    {
-      SCSI_OpenDevice(DeviceFD);
-    }
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
 
   switch (command)
     {
@@ -354,9 +357,8 @@ int Tape_Status( int DeviceFD)
   int ret = 0;
   
   if (pDev[DeviceFD].devopen == 0)
-    {
-      SCSI_OpenDevice(DeviceFD);
-    }
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
 
   if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
   {

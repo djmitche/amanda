@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-bsd.c,v 1.16 2003/06/05 20:44:14 martinea Exp $
+ * $Id: scsi-bsd.c,v 1.17 2005/10/15 13:20:47 martinea Exp $
  *
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
  *
@@ -61,7 +61,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-bsd.c,v 1.16 2003/06/05 20:44:14 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-bsd.c,v 1.17 2005/10/15 13:20:47 martinea Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -75,7 +75,6 @@ void SCSI_OS_Version()
  * Return:
  * 0  -> device not opened
  * 1  -> sucess , device open
- * -1 -> fatal error
  */
 int SCSI_OpenDevice(int ip)
 {
@@ -93,7 +92,7 @@ int SCSI_OpenDevice(int ip)
     pDev[ip].SCSI = 0;                                                        /* This will only be set if the inquiry works */
     pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
     
-    if (( pDev[ip].fd = open(pDev[ip].dev, O_RDWR)) > 0)                      /* We need the device in read/write mode */
+    if (( pDev[ip].fd = open(pDev[ip].dev, O_RDWR)) >= 0)                      /* We need the device in read/write mode */
       {
         pDev[ip].devopen = 1;                                                 /* The device is open for use */
         pDev[ip].avail = 1;                                                   /* And it is available, it could be opened */
@@ -137,7 +136,7 @@ int SCSI_OpenDevice(int ip)
       }  /* open() */
     return(0);                                                                /* Open failed .... */
   } else { /* pDev[ip].inqdone */                                             /* OK this is the way we go if the device */
-    if (( pDev[ip].fd = open(pDev[ip].dev, O_RDWR)) > 0)                      /* was opened successfull before */
+    if (( pDev[ip].fd = open(pDev[ip].dev, O_RDWR)) >= 0)                      /* was opened successfull before */
       {
         pDev[ip].devopen = 1;
         return(1);
@@ -217,9 +216,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
   while (--retries > 0) {
     
     if (pDev[DeviceFD].devopen == 0)
-      {
-        SCSI_OpenDevice(DeviceFD);
-      }
+        if (SCSI_OpenDevice(DeviceFD) == 0)
+            return(SCSI_ERROR);
     Result = ioctl(pDev[DeviceFD].fd, SCIOCCOMMAND, &ds);
     SCSI_CloseDevice(DeviceFD);
    
@@ -258,9 +256,8 @@ int Tape_Ioctl( int DeviceFD, int command)
   int ret = 0;
 
   if (pDev[DeviceFD].devopen == 0)
-    {
-      SCSI_OpenDevice(DeviceFD);
-    }
+      if (SCSI_OpenDevice(DeviceFD) == 0)
+          return(-1);
 
   switch (command)
     {

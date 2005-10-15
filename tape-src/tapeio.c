@@ -26,12 +26,13 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.49 2003/11/28 12:34:48 martinea Exp $
+ * $Id: tapeio.c,v 1.50 2005/10/15 13:20:47 martinea Exp $
  *
  * implements generic tape I/O functions
  */
 
 #include "amanda.h"
+#include <stdarg.h>
 #include <errno.h>
 
 #include "tapeio.h"
@@ -49,7 +50,7 @@
 static struct virtualtape {
     char *prefix;
     int (*xxx_tape_access) P((char *, int));
-    int (*xxx_tape_open) ();
+    int (*xxx_tape_open) (char *, int, int);
     int (*xxx_tape_stat) P((char *, struct stat *));
     int (*xxx_tapefd_close) P((int));
     int (*xxx_tapefd_fsf) P((int, int));
@@ -528,14 +529,17 @@ tape_stat(filename, buf)
 }
 
 int
-tape_open(filename, mode, mask)
-    char *filename;
-    int mode;
-    int mask;
+tape_open(char *filename, int mode, ...)
 {
     char *tname;
     int vslot;
     int fd;
+    int mask;
+    va_list ap;
+
+    va_start(ap, mode);
+    mask = va_arg(ap, int);
+    va_end(ap);
 
     vslot = name2slot(filename, &tname);
     if((fd = vtable[vslot].xxx_tape_open(tname, mode, mask)) >= 0) {

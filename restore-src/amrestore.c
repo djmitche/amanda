@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.52 2005/10/11 01:17:00 vectro Exp $
+ * $Id: amrestore.c,v 1.53 2005/10/15 13:20:47 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -253,7 +253,9 @@ char **argv;
 	    if((err = tape_rewind(tapename)) != NULL) {
 		error("Could not rewind device '%s': %s", tapename, err);
 	    }
-	    tapedev = tape_open(tapename, 0);
+	    if ((tapedev = tape_open(tapename, 0)) == -1) {;
+		error("Could not open device '%s': %s", tapename, err);
+	    }
 	    read_file_header(&file, tapedev, isafile, rst_flags);
 	    if(file.type != F_TAPESTART) {
 		fprintf(stderr,"Not an amanda tape\n");
@@ -287,7 +289,7 @@ char **argv;
     }
 
     if(isafile) {
-	tapedev = open(tapename, 0);
+	tapedev = open(tapename, O_RDWR);
     } else {
 	tapedev = tape_open(tapename, 0);
     }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.18 2003/03/07 20:55:03 martinea Exp $
+ * $Id: tapeio.h,v 1.19 2005/10/15 13:20:47 martinea Exp $
  *
  * interface for tapeio.c
  */
@@ -66,7 +66,7 @@ struct am_mt_status {
 
 #define	FAKE_LABEL	"[fake-label]"
 
-int tape_open ();
+int tape_open (char *, int, ...);
 
 int tapefd_rewind P((int tapefd));
 int tapefd_unload P((int tapefd));

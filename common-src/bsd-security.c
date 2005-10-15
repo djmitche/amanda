@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.48 2005/10/13 21:23:27 martinea Exp $
+ * $Id: bsd-security.c,v 1.49 2005/10/15 13:20:47 martinea Exp $
  *
  * "BSD" security module
  */
@@ -1026,15 +1026,19 @@ check_user_ruserok(host, pwd, remoteuser)
 
 	saved_stderr = dup(2);
 	close(2);
-	(void) open("/dev/null", 2);
-
-	ok = ruserok(host, myuid == 0, remoteuser, CLIENT_LOGIN);
-	if (ok < 0) {
+	if (open("/dev/null", O_RDWR) == -1) {
+            dbprintf(("Could not open /dev/null: %s\n",
+	              strerror(errno)));
 	    ec = 1;
 	} else {
-	    ec = 0;
+	    ok = ruserok(host, myuid == 0, remoteuser, CLIENT_LOGIN);
+	    if (ok < 0) {
+	        ec = 1;
+	    } else {
+	        ec = 0;
+	    }
 	}
-	dup2(saved_stderr,2);
+	(void)dup2(saved_stderr,2);
 	close(saved_stderr);
 	exit(ec);
     }
