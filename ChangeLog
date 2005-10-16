@@ -1,4 +1,9 @@
-2005-10-16  Paddy Sreenivasan <paddy@zmanda.com>
+2005-10-16  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/taper.c (signal_handler): Don't REMOVE_SHARED_MEMORY, it
+	  is done by exit.
+
+2005-10-16  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/driverio.c (serial2disk): Print str if error.
 

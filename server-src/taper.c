@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.101 2005/10/15 16:07:26 paddy_s Exp $
+/* $Id: taper.c,v 1.102 2005/10/16 23:38:13 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -2052,7 +2052,6 @@ signal_handler(int signum)
 {
     log_add(L_INFO, "Received signal %d", signum);
 
-    REMOVE_SHARED_MEMORY(); 
     exit(1);
 }
 
