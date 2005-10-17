@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.102 2005/10/16 23:38:13 martinea Exp $
+/* $Id: taper.c,v 1.103 2005/10/17 12:26:05 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -2070,12 +2070,10 @@ install_signal_handlers(void)
     act.sa_flags = 0;
     sigemptyset(&act.sa_mask);
 
+    signal(SIGPIPE, SIG_IGN);
+
     if (sigaction(SIGINT, &act, NULL) != 0) {
 	error("taper: couldn't install SIGINT handler [%s]", strerror(errno));
-    }
-
-    if (sigaction(SIGPIPE, &act, NULL) != 0) {
-	error("taper: couldn't install SIGPIPE handler [%s]", strerror(errno));
     }
 
     if (sigaction(SIGHUP, &act, NULL) != 0) {

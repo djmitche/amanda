@@ -1,3 +1,8 @@
+2005-10-17  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/taper.c: Set SIGPIPE to SIG_IGN, the code already
+	  handle it correctly.
+
 2005-10-16  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/taper.c (signal_handler): Don't REMOVE_SHARED_MEMORY, it
