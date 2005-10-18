@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.3 2005/10/15 13:20:47 martinea Exp $
+ * $Id: restore.c,v 1.4 2005/10/18 01:39:14 vectro Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1348,7 +1348,7 @@ rst_flags_t *flags;
 	        }
 
 		if(tapefd_fsf(tapefd, fsf_by) < 0) {
-		    error("Could not fsf device %s: %s", cur_tapedev,
+		    error("Could not fsf device %s by %d: %s", cur_tapedev, fsf_by,
 							   strerror(errno));
 		}
 		else filenum = fsf_by;
@@ -1421,7 +1421,7 @@ rst_flags_t *flags;
 		    int fsf_by = desired_tape->files[tapefile_idx] - filenum;
 		    if(fsf_by > 0){
 			if(tapefd_fsf(tapefd, fsf_by) < 0) {
-			    error("Could not fsf device %s: %s", cur_tapedev,
+			    error("Could not fsf device %s by %d: %s", cur_tapedev, fsf_by,
 				  strerror(errno));
 			}
 			else filenum = desired_tape->files[tapefile_idx];
@@ -1429,7 +1429,7 @@ rst_flags_t *flags;
 		} else if (!found_match && flags->fsf) {
 		    /* ... or fsf by 1, whatever */
 		    if(tapefd_fsf(tapefd, 1) < 0) {
-			error("could not fsf %s: %s",
+			error("could not fsf device %s: %s",
 			      cur_tapedev, strerror(errno));
 		    } else {
 			filenum ++;

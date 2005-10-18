@@ -1,3 +1,11 @@
+2005-10-17  Ian Turner <ian@zmanda.com>
+
+        * Changelog: Fix line breaks.
+        * restore-src/restore.c: Give more useful FSF error messages.
+        * recover-src/extract_list.c: Do better error checking on passed port number.
+        * common-src/tapelist.c: Do proper memory management of strings. Otherwise really 
+          bad stuff happens.
+
 2005-10-17  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/taper.c: Set SIGPIPE to SIG_IGN, the code already
@@ -14,7 +22,8 @@
 
 2005-10-15  Paddy Sreenivasan <paddy@zmanda.com>
 
-        * server-src/taper.c: Shared memory need not be removed in normal paths.          Done as part of atexit. 
+        * server-src/taper.c: Shared memory need not be removed in normal paths.
+          Done as part of atexit. 
 
 2005-10-15  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by John R. Franks <jrfranks@zmanda.com>

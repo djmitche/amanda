@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.84 2005/10/11 01:17:00 vectro Exp $
+ * $Id: extract_list.c,v 1.85 2005/10/18 01:39:14 vectro Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1304,10 +1304,21 @@ int fsf;
     if(am_has_feature(tapesrv_features, fe_recover_splits)){
 	char buffer[32768];
 	int data_port = -1;
+        char * endptr;
 
-	read(tape_control_sock, buffer, sizeof(buffer));
-	/* XXX should sanity-check this string */
-	data_port = atoi(buffer);
+	if (read(tape_control_sock, buffer, sizeof(buffer)) <= 0) {
+	    error("Could not read from control socket: %s\n", 
+                  strerror(errno));
+        }
+
+	buffer[32767] = '\0';
+	data_port = strtol(buffer, &endptr, 10);
+
+	if (buffer == endptr) {
+	    error("Got invalid port number from control socket: %s\n",
+                  buffer);
+        }	
+
 	tape_data_sock = stream_client_privileged(server_name,
 						  data_port,
 						  -1,

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapelist.c,v 1.1 2005/10/11 01:17:00 vectro Exp $
+ * $Id: tapelist.c,v 1.2 2005/10/18 01:39:14 vectro Exp $
  *
  * Support code for amidxtaped and amindexd.
  */
@@ -213,17 +213,19 @@ tapelist_t *unmarshal_tapelist_str (tapelist_str)
 char *tapelist_str;
 {
     char *temp_label, *temp_filenum;
-    int l_idx, n_idx;
+    int l_idx, n_idx, input_length;
     tapelist_t *tapelist = NULL;
 
     if(!tapelist_str) return(NULL);
 
-    temp_label = alloc(strlen(tapelist_str));
-    temp_filenum = alloc(strlen(tapelist_str));
+    input_length = strlen(tapelist_str);
+
+    temp_label = alloc(input_length);
+    temp_filenum = alloc(input_length);
 
     do{
 	/* first, read the label part */
-	memset(temp_label, '\0', strlen(tapelist_str));
+	memset(temp_label, '\0', input_length);
         l_idx = 0;
 	while(*tapelist_str != ':' && *tapelist_str != '\0'){
 	    if(*tapelist_str == '\\') *tapelist_str++; /* skip escapes */
@@ -238,7 +240,7 @@ char *tapelist_str;
 	/* now read the list of file numbers */
 	while(*tapelist_str != ';' && *tapelist_str != '\0'){
 	    int filenum = -1;
-	    memset(temp_filenum, '\0', strlen(tapelist_str));
+	    memset(temp_filenum, '\0', input_length);
 	    n_idx = 0;
 	    while(*tapelist_str != ';' && *tapelist_str != ',' &&
 		    *tapelist_str != '\0'){
