@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.168 2005/10/11 01:17:01 vectro Exp $
+ * $Id: planner.c,v 1.169 2005/10/19 12:49:58 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -49,7 +49,7 @@
 #define RUNS_REDZONE		    5	/* should be in conf file? */
 
 #define PROMOTE_THRESHOLD	 0.05	/* if <5% unbalanced, don't promote */
-#define DEFAULT_DUMPRATE	 30.0	/* K/s */
+#define DEFAULT_DUMPRATE	 1024.0	/* K/s */
 
 /* configuration file stuff */
 

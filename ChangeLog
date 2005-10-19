@@ -1,10 +1,15 @@
+2005-10-17  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/planner.c: Increase DEFAULT_DUMPRATE to 1024 K/s.
+
 2005-10-17  Ian Turner <ian@zmanda.com>
 
         * Changelog: Fix line breaks.
         * restore-src/restore.c: Give more useful FSF error messages.
-        * recover-src/extract_list.c: Do better error checking on passed port number.
-        * common-src/tapelist.c: Do proper memory management of strings. Otherwise really 
-          bad stuff happens.
+        * recover-src/extract_list.c: Do better error checking on passed port
+	  number.
+        * common-src/tapelist.c: Do proper memory management of strings.
+	  Otherwise really bad stuff happens.
 
 2005-10-17  Jean-Louis Martineau <martineau@zmanda.com>
 
