@@ -1,4 +1,9 @@
 2005-10-17  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by John R. Franks <jrfranks@zmanda.com>
+
+	* server-src/taper.c (create_split_buffer): Should not use sizeof().
+
+2005-10-17  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/taper.c (read_file): Move the putresult(DONE) to the
 	  right place, some cleanup.

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.104 2005/10/19 17:28:51 martinea Exp $
+/* $Id: taper.c,v 1.105 2005/10/19 22:53:21 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -459,7 +459,7 @@ char *id_string;
 	    goto fallback;
 	}
 	nulls = alloc(1024); /* lame */
-	memset(nulls, 0, sizeof(1024));
+	memset(nulls, 0, 1024);
 	for(c = 0; c < splitsize ; c++) {
 	    if(write(splitbuffer_fd, nulls, 1024) < 1024){
 		buff_err = newvstralloc(buff_err, "write to ", splitbuffer_path,
