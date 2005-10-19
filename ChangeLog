@@ -1,5 +1,10 @@
 2005-10-17  Jean-Louis Martineau <martineau@zmanda.com>
 
+	* server-src/taper.c (read_file): Move the putresult(DONE) to the
+	  right place, some cleanup.
+
+2005-10-17  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* server-src/planner.c: Increase DEFAULT_DUMPRATE to 1024 K/s.
 
 2005-10-17  Ian Turner <ian@zmanda.com>

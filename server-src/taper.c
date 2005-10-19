@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.103 2005/10/17 12:26:05 martinea Exp $
+/* $Id: taper.c,v 1.104 2005/10/19 17:28:51 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1472,28 +1472,22 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 					      " ", str ? str : "(null)",
 					      "]",
 					      NULL);
+			putresult(DONE, "%s %s %d %s\n", handle, label,
+				  filenum, q);
 			log_add(L_CHUNKSUCCESS, "%s %s %s %d %s",
 				hostname, diskname, datestamp, level, errstr);
-			if(save_holdfile){
-			    amfree(save_holdfile);
-			    save_holdfile = NULL;
-			}
-			if(holdfile_path_thischunk){
-			    amfree(holdfile_path_thischunk);
-			    holdfile_path_thischunk = NULL;
-			}
+			amfree(save_holdfile);
+			amfree(holdfile_path_thischunk);
 		    }
  		}
-		
+
  		if(!nexting){
  		    num_splits = 0;
  		    expected_splits = 0;
  		    amfree(holdfile_name);
- 		    holdfile_name = NULL;
  		    num_holdfiles = 0;
  		    cur_span_chunkstart = 0;
  		    curdump_rt = times_zero;
- 		    putresult(DONE, "%s %s %d %s\n", handle, label, filenum, q);
  		}
 		
  		amfree(q);
