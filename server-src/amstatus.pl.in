@@ -758,14 +758,13 @@ foreach $host (sort @hosts) {
 	foreach $partition (sort @$host) {
 	   foreach $datestamp (sort @datestamp) {
 			$hostpart=&make_hostpart($host,$partition,$datestamp);
-print "hostpart: $hostpart\n";
 			next if(!defined $estimate{$hostpart} && !defined $flush{$hostpart});
 			$nb_partition++;
 			if( !defined $size{$hostpart} && defined $holding_file{$hostpart}) {
 				$size{$hostpart} = &dump_size($holding_file{$hostpart}) / (1024 * $unitdivisor);
 			}
 			$in_flush=0;
-			if($estimate_done != 1) {
+			if($estimate_done != 1 && !defined $flush{$hostpart}) {
 				if(defined $estimate{$hostpart}) {
 					if($estimate{$hostpart} != 1) {
 						if( defined $opt_gestimate) {

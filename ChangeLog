@@ -1,3 +1,10 @@
+2005-10-20  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/amstatus.pl.in: a FLUSH command can't be in an estimate
+	  phase.
+	* server-src/driver.c: Start autoflush while waiting for estimate.
+	* server-src/planner.c: Write FLUSH line before estimate.
+
 2005-10-17  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by John R. Franks <jrfranks@zmanda.com>
 

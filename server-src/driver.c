@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.152 2005/10/11 01:17:01 vectro Exp $
+ * $Id: driver.c,v 1.153 2005/10/20 12:06:48 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -67,8 +67,10 @@ static int idle_reason;
 static char *datestamp;
 static char *timestamp;
 static am_host_t *flushhost = NULL;
+static int need_degraded=0;
 
 static event_handle_t *dumpers_ev_time = NULL;
+static event_handle_t *schedule_ev_read = NULL;
 
 static void allocate_bandwidth P((interface_t *ip, int kps));
 static int assign_holdingdisk P((assignedhd_t **holdp, disk_t *diskp));
@@ -94,7 +96,7 @@ static void interface_state P((char *time_str));
 static int num_busy_dumpers P((void));
 static int queue_length P((disklist_t q));
 static disklist_t read_flush P((void));
-static disklist_t read_schedule P((disklist_t *waitqp));
+static void read_schedule P((void *cookie));
 static void short_dump_state P((void));
 static void startaflush P((void));
 static void start_degraded_mode P((disklist_t *queuep));
@@ -307,10 +309,10 @@ main(main_argc, main_argv)
      * in parallel with the planner.
      */
 
+    runq.head = NULL;
+    runq.tail = NULL;
     waitq = origq;
     tapeq = read_flush();
-    if(!nodump) runq = read_schedule(&waitq);
-    else runq.head = NULL;
 
     roomq.head = roomq.tail = NULL;
 
@@ -330,15 +332,16 @@ main(main_argc, main_argv)
 
     if(cmd != TAPER_OK) {
 	/* no tape, go into degraded mode: dump to holding disk */
-	start_degraded_mode(&runq);
+	need_degraded=1;
     }
     tape_left = tape_length;
     taper_busy = 0;
     taper_disk = NULL;
     taper_ev_read = NULL;
-    startaflush();
+    if(!need_degraded) startaflush();
 
-    start_some_dumps(&runq);
+    if(!nodump)
+	schedule_ev_read = event_register(0, EV_READFD, read_schedule, NULL);
 
     short_dump_state();
     event_loop(0);
@@ -1671,9 +1674,9 @@ read_flush()
     return tq;
 }
 
-static disklist_t
-read_schedule(waitqp)
-    disklist_t *waitqp;
+static void
+read_schedule(cookie)
+    void *cookie;
 {
     sched_t *sp;
     disk_t *dp;
@@ -1690,6 +1693,8 @@ read_schedule(waitqp)
     long flush_size = 0;
 
     rq.head = rq.tail = NULL;
+
+    event_release(schedule_ev_read);
 
     /* read schedule from stdin */
 
@@ -1870,16 +1875,16 @@ read_schedule(waitqp)
 	if(dp->host->features == NULL) {
 	    dp->host->features = am_string_to_feature(features);
 	}
-	remove_disk(waitqp, dp);
-	enqueue_disk(&rq, dp);
+	remove_disk(&waitq, dp);
+	enqueue_disk(&runq, dp);
 	flush_size += sp->act_size;
     }
     printf("driver: flush size %ld\n", flush_size);
     amfree(inpline);
     if(line == 0)
 	log_add(L_WARNING, "WARNING: got empty schedule from planner");
-
-    return rq;
+    if(need_degraded==1) start_degraded_mode(&runq);
+    start_some_dumps(&runq);
 }
 
 static int

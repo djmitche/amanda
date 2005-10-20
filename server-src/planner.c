@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.169 2005/10/19 12:49:58 martinea Exp $
+ * $Id: planner.c,v 1.170 2005/10/20 12:06:48 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -337,7 +337,48 @@ char **argv;
 		    walltime_str(timessub(curclock(), section_start)));
 
     /*
-     * 3. Calculate Preliminary Dump Levels
+     * 3. Send autoflush dumps left on the holding disks
+     *
+     * This should give us something to do while we generate the new
+     * dump schedule.
+     */
+
+    fprintf(stderr,"\nSENDING FLUSHES...\n");
+
+    if(conf_autoflush) {
+	dumpfile_t file;
+	sl_t *holding_list;
+	sle_t *holding_file;
+	holding_list = get_flush(NULL, NULL, 0, 0);
+	for(holding_file=holding_list->first; holding_file != NULL;
+				       holding_file = holding_file->next) {
+	    get_dumpfile(holding_file->name, &file);
+	    
+	    log_add(L_DISK, "%s %s", file.name, file.disk);
+	    fprintf(stderr,
+		    "FLUSH %s %s %s %d %s\n",
+		    file.name,
+		    file.disk,
+		    file.datestamp,
+		    file.dumplevel,
+		    holding_file->name);
+	    fprintf(stdout,
+		    "FLUSH %s %s %s %d %s\n",
+		    file.name,
+		    file.disk,
+		    file.datestamp,
+		    file.dumplevel,
+		    holding_file->name);
+	}
+	free_sl(holding_list);
+	holding_list = NULL;
+    }
+    fprintf(stderr, "ENDFLUSH\n");
+    fprintf(stdout, "ENDFLUSH\n");
+    fflush(stdout);
+
+    /*
+     * 4. Calculate Preliminary Dump Levels
      *
      * Before we can get estimates from the remote slave hosts, we make a
      * first attempt at guessing what dump levels we will be dumping at
@@ -362,7 +403,7 @@ char **argv;
 
 
     /*
-     * 4. Get Dump Size Estimates from Remote Client Hosts
+     * 5. Get Dump Size Estimates from Remote Client Hosts
      *
      * Each host is queried (in parallel) for dump size information on all
      * of its disks, and the results gathered as they come in.
@@ -396,7 +437,7 @@ char **argv;
 
 
     /*
-     * 5. Analyze Dump Estimates
+     * 6. Analyze Dump Estimates
      *
      * Each disk's estimates are looked at to determine what level it
      * should dump at, and to calculate the expected size and time taking
@@ -434,7 +475,7 @@ char **argv;
 
 
     /*
-     * 6. Delay Dumps if Schedule Too Big
+     * 7. Delay Dumps if Schedule Too Big
      *
      * If the generated schedule is too big to fit on the tape, we need to
      * delay some full dumps to make room.  Incrementals will be done
@@ -459,7 +500,7 @@ char **argv;
 
 
     /*
-     * 7. Promote Dumps if Schedule Too Small
+     * 8. Promote Dumps if Schedule Too Small
      *
      * Amanda attempts to balance the full dumps over the length of the
      * dump cycle.  If this night's full dumps are too small relative to
@@ -494,45 +535,13 @@ char **argv;
 
 
     /*
-     * 8. Output Schedule
+     * 9. Output Schedule
      *
      * The schedule goes to stdout, presumably to driver.  A copy is written
      * on stderr for the debug file.
      */
 
     fprintf(stderr,"\nGENERATING SCHEDULE:\n--------\n");
-
-    if(conf_autoflush) {
-	dumpfile_t file;
-	sl_t *holding_list;
-	sle_t *holding_file;
-	holding_list = get_flush(NULL, NULL, 0, 0);
-	for(holding_file=holding_list->first; holding_file != NULL;
-				       holding_file = holding_file->next) {
-	    get_dumpfile(holding_file->name, &file);
-	    
-	    log_add(L_DISK, "%s %s", file.name, file.disk);
-	    fprintf(stderr,
-		    "FLUSH %s %s %s %d %s\n",
-		    file.name,
-		    file.disk,
-		    file.datestamp,
-		    file.dumplevel,
-		    holding_file->name);
-	    fprintf(stdout,
-		    "FLUSH %s %s %s %d %s\n",
-		    file.name,
-		    file.disk,
-		    file.datestamp,
-		    file.dumplevel,
-		    holding_file->name);
-	}
-	free_sl(holding_list);
-	holding_list = NULL;
-    }
-    fprintf(stderr, "ENDFLUSH\n");
-    fprintf(stdout, "ENDFLUSH\n");
-    fflush(stdout);
 
     while(!empty(schedq)) output_scheduleline(dequeue_disk(&schedq));
     fprintf(stderr, "--------\n");
