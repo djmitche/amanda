@@ -1,4 +1,4 @@
-2005-10-20  Ian Turner <ian@zmanda.com>
+p/2005-10-20  Ian Turner <ian@zmanda.com>
 
 	* configure.in: Check for xsltproc.
 	* man/Makefile.am: Properly build, clean, and distribute generated
@@ -52,6 +52,7 @@
 	* man/xml-source/amverify.8.xml: Add from xml-docs
 	* man/xml-source/amverifyrun.8.xml: Add from xml-docs
 	* man/xslt/expand-sambadoc.xsl: Add from xml-docs
+	* man/xslt/global.entities: Add from xml-docs
 	* man/xslt/man.xsl: Add from xml-docs
 	* man/xslt/settings.xsl: Add from xml-docs
 
