@@ -1,4 +1,8 @@
-p/2005-10-20  Ian Turner <ian@zmanda.com>
+2005-10-20  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/server_util.c (getcmd): Print DEBUG to stderr.
+
+2005-10-20  Ian Turner <ian@zmanda.com>
 
 	* configure.in: Check for xsltproc.
 	* man/Makefile.am: Properly build, clean, and distribute generated

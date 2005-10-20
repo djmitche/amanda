@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.12 2005/10/11 01:17:01 vectro Exp $
+ * $Id: server_util.c,v 1.13 2005/10/20 23:18:15 martinea Exp $
  *
  */
 
@@ -69,9 +69,9 @@ struct cmdargs *cmdargs;
 #if DEBUG
     {
 	int i;
-	printf("argc = %d\n", cmdargs->argc);
-	for (i = 0; i < cmdargs->argc; i++)
-	    printf("argv[%d] = \"%s\"\n", i, cmdargs->argv[i]);
+	fprintf(stderr,"argc = %d\n", cmdargs->argc);
+	for (i = 0; i < cmdargs->argc+1; i++)
+	    fprintf(stderr,"argv[%d] = \"%s\"\n", i, cmdargs->argv[i]);
     }
 #endif
 
