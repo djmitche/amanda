@@ -1,3 +1,60 @@
+2005-10-20  Ian Turner <ian@zmanda.com>
+
+	* configure.in: Check for xsltproc.
+	* man/Makefile.am: Properly build, clean, and distribute generated
+	  manpages from XML source.
+	* man/amadmin.8: Remove from CVS
+	* man/amanda.8: Remove from CVS
+	* man/amanda.conf.5: Remove from CVS
+	* man/amcheck.8: Remove from CVS
+	* man/amcheckdb.8: Remove from CVS
+	* man/amcleanup.8: Remove from CVS
+	* man/amdd.8: Remove from CVS
+	* man/amdump.8: Remove from CVS
+	* man/amflush.8: Remove from CVS
+	* man/amgetconf.8: Remove from CVS
+	* man/amlabel.8: Remove from CVS
+	* man/ammt.8: Remove from CVS
+	* man/amoverview.8: Remove from CVS
+	* man/amplot.8: Remove from CVS
+	* man/amrecover.8: Remove from CVS
+	* man/amreport.8: Remove from CVS
+	* man/amrestore.8: Remove from CVS
+	* man/amrmtape.8: Remove from CVS
+	* man/amstatus.8: Remove from CVS
+	* man/amtape.8: Remove from CVS
+	* man/amtapetype.8: Remove from CVS
+	* man/amtoc.8: Remove from CVS
+	* man/amverify.8: Remove from CVS
+	* man/amverifyrun.8: Remove from CVS
+	* man/xml-source/amadmin.8.xml: Add from xml-docs
+	* man/xml-source/amanda.8.xml: Add from xml-docs
+	* man/xml-source/amanda.conf.5.xml: Add from xml-docs
+	* man/xml-source/amcheck.8.xml: Add from xml-docs
+	* man/xml-source/amcheckdb.8.xml: Add from xml-docs
+	* man/xml-source/amcleanup.8.xml: Add from xml-docs
+	* man/xml-source/amdd.8.xml: Add from xml-docs
+	* man/xml-source/amdump.8.xml: Add from xml-docs
+	* man/xml-source/amflush.8.xml: Add from xml-docs
+	* man/xml-source/amgetconf.8.xml: Add from xml-docs
+	* man/xml-source/amlabel.8.xml: Add from xml-docs
+	* man/xml-source/ammt.8.xml: Add from xml-docs
+	* man/xml-source/amoverview.8.xml: Add from xml-docs
+	* man/xml-source/amplot.8.xml: Add from xml-docs
+	* man/xml-source/amrecover.8.xml: Add from xml-docs
+	* man/xml-source/amreport.8.xml: Add from xml-docs
+	* man/xml-source/amrestore.8.xml: Add from xml-docs
+	* man/xml-source/amrmtape.8.xml: Add from xml-docs
+	* man/xml-source/amstatus.8.xml: Add from xml-docs
+	* man/xml-source/amtape.8.xml: Add from xml-docs
+	* man/xml-source/amtapetype.8.xml: Add from xml-docs
+	* man/xml-source/amtoc.8.xml: Add from xml-docs
+	* man/xml-source/amverify.8.xml: Add from xml-docs
+	* man/xml-source/amverifyrun.8.xml: Add from xml-docs
+	* man/xslt/expand-sambadoc.xsl: Add from xml-docs
+	* man/xslt/man.xsl: Add from xml-docs
+	* man/xslt/settings.xsl: Add from xml-docs
+
 2005-10-20  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/amstatus.pl.in: a FLUSH command can't be in an estimate
@@ -21,11 +78,11 @@
 
 2005-10-17  Ian Turner <ian@zmanda.com>
 
-        * Changelog: Fix line breaks.
-        * restore-src/restore.c: Give more useful FSF error messages.
-        * recover-src/extract_list.c: Do better error checking on passed port
+	* Changelog: Fix line breaks.
+	* restore-src/restore.c: Give more useful FSF error messages.
+	* recover-src/extract_list.c: Do better error checking on passed port
 	  number.
-        * common-src/tapelist.c: Do proper memory management of strings.
+	* common-src/tapelist.c: Do proper memory management of strings.
 	  Otherwise really bad stuff happens.
 
 2005-10-17  Jean-Louis Martineau <martineau@zmanda.com>
@@ -126,13 +183,13 @@
 	  isafile, stat_tape, tapename, s, fp, ch and errstr variable.
 
 2005-10-11  Ian Turner <ian@zmanda.com>
-
+	Patch by  Jean-Louis Martineau <martineau@zmanda.com>
+	
 	* restore-src/amfetchdump.c: Remove unused variable debug.
         * restore-src/amidxtaped.c: Remove lock_logfile(), which is also 
 	  in restore.c.
 	* restore-src/Makefile.am: Include libamanda twice, to fix build 
 	  on some machines.
-          Thanks to Jean-Louis Martineau for these fixes.
 
 2005-10-11  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 

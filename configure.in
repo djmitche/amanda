@@ -2925,6 +2925,13 @@ AC_SUBST(LTLIBOBJS)
 LTALLOCA=`echo "$ALLOCA" | sed 's/\.'"${ac_objext}"'/\.lo/g'`
 AC_SUBST(LTALLOCA)
 
+## This stuff is needed for the documentation.
+DOC_BUILD_DATE=`date '+%d-%m-%Y'`
+AC_SUBST(DOC_BUILD_DATE)
+
+AC_PATH_PROG(XSLTPROC, xsltproc)
+AM_CONDITIONAL(HAVE_XSLTPROC, test x$XSLTPROC != x)
+
 AC_CONFIG_FILES([\
 	amplot/amcat.awk		amplot/amplot.sh		\
 	amplot/Makefile							\
