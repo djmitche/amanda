@@ -1,3 +1,8 @@
+Change in release 2.4.5p1
+
+* New [--days <num>] argument to 'amadmin <conf> tape'.
+* New amoverview -last -num0 -togo0 options.
+
 Change in release 2.4.5
 
 * new displayunit global option to select the unit use to display number
