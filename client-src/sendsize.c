@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.148 2005/10/15 13:20:47 martinea Exp $
+ * $Id: sendsize.c,v 1.149 2005/10/24 16:45:53 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1746,6 +1746,7 @@ time_t dumpsince;
     argvchild[i++] = amdevice;
     newoptstr = vstralloc(options->str,"estimate-direct;", NULL);
     argvchild[i++] = newoptstr;
+    argvchild[i] = NULL;
 
     dbprintf(("%s: running %s", debug_prefix_time(NULL), cmd));
     for(j = 1; j < i; j++) {
