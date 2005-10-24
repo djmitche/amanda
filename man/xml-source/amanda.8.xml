@@ -124,6 +124,13 @@
 </cmdsynopsis>
 
 <cmdsynopsis>
+    <command>amfetchdump</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+    <arg choice='plain'><replaceable>config</replaceable></arg>
+    <arg choice='opt'><arg choice='plain'><replaceable>hostname</replaceable></arg><arg choice='opt'><arg choice='plain'><replaceable>diskname</replaceable></arg><arg choice='opt'><arg choice='plain'><replaceable>date</replaceable></arg><arg choice='opt'>level</arg></arg></arg></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
     <command>amrmtape</command>
     <arg choice='opt'><replaceable>options</replaceable></arg>
     <arg choice='plain'><replaceable>config</replaceable></arg>
@@ -250,6 +257,16 @@ to actually recover the files.</para>
 <emphasis remap='B'>Amrestore</emphasis>
 is suitable for everything from interactive restores of single files
 to a full restore of all partitions on a failed disk.</para>
+  </listitem>
+  </varlistentry>
+  <varlistentry>
+  <term><emphasis remap='B'>amfetchdump</emphasis></term>
+  <listitem>
+<para>Performs &A; tape restoration, similar to <emphasis
+  remap='B'>amrestore</emphasis>. Additional capabilities include
+  "hands-off" searching of multiple tapes, automatic
+  retrieval of specific dump files based on dump logs, and assembly of
+  tape-spanning split dump files.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
@@ -1008,6 +1025,7 @@ Leading ^ is removed. Trailing $ forces an exact match.</para>
 <citerefentry><refentrytitle>amcleanup</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amdd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amdump</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>amfetchdump</refentrytitle><manvolnum>8</manvolnum></citerefentry>
 <citerefentry><refentrytitle>amflush</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amgetconf</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amlabel</refentrytitle><manvolnum>8</manvolnum></citerefentry>,

@@ -50,31 +50,30 @@ man page for more details about &A;.</para>
 </refsect1>
 
 <refsect1><title>OPTIONS</title>
-<note>The listed defaults map to the values you ran the configure-script with.</note>
+<note>The Default values are those set at compile-time.</note>
 <variablelist remap='TP'>
   <varlistentry>
   <term><emphasis remap='B'>[ -C ] config</emphasis></term>
   <listitem>
-<para>&A; configuration
-(default: daily).</para>
+<para>&A; configuration.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
   <term><option>-s index-server</option></term>
   <listitem>
-<para>Host that runs the index daemon (default: oops).</para>
+<para>Host that runs the index daemon.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
   <term><option>-t tape-server</option></term>
   <listitem>
-<para>Host that runs the tape server daemon (default: 192.168.0.10).</para>
+<para>Host that runs the tape server daemon.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
   <term><option>-d tape-device</option></term>
   <listitem>
-<para>Tape device to use on the tape server host (default: /dev/nst0).</para>
+<para>Tape device to use on the tape server host.</para>
   </listitem>
   </varlistentry>
 </variablelist>
@@ -153,7 +152,9 @@ files from the following days would be used:</para>
 <!-- .RE -->
 <variablelist remap='TP'>
   <varlistentry>
-  <term><emphasis remap='B'>setdisk diskname mountpoint</emphasis></term>
+  <term><emphasis remap='B'>setdisk <arg
+  choice='plain'><replaceable>diskname</replaceable></arg> <arg
+  choice='opt'><replaceable>mountpoint</replaceable></arg></emphasis></term>
   <listitem>
 <para>Specifies which disk to consider
 (default: the disk holding the working directory where
@@ -187,7 +188,7 @@ mount point instead of full pathnames.</para>
 <para>Specifies the host to use as the tape server, and which of its tape
 devices to use.
 If the server is omitted, but the colon is not, the
-server name reverts to 192.168.0.10, the configure-time
+server name reverts to the configure-time
 default.
 If the tape device is omitted, it remains unchanged.
 To use the default tape device selected by the tape server, the word

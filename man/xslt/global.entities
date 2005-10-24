@@ -1,6 +1,7 @@
 <!-- Global Entities File -->
 
 <!ENTITY org.amcore_str 'AMANDA Core Team'>
+<!ENTITY org.zmanda_str 'Zmanda Inc.'>
 
 <!-- Author entities -->
 
@@ -33,6 +34,15 @@
 <!ENTITY maintainer.sgw 'Stefan G. Weichinger, &email.sgw;, maintainer of the
 &A;-documentation'>
 
+<!ENTITY email.itt '<email>ian@zmanda.org</email>'>
+<!ENTITY person.itt '
+<firstname>Ian</firstname><surname>Turner</surname>
+<affiliation>
+        <orgname>&org.zmanda_str;</orgname>
+        <address>&email.itt;</address>
+</affiliation>'>
+<!ENTITY author.itt '<author>&person.itt;</author>'>
+
 <!ENTITY email.jb '<email>jon@jgcomp.com</email>'>
 <!ENTITY person.jb '
 <firstname>Jon</firstname><surname>LaBadie</surname>
@@ -50,6 +60,14 @@
         <address>&email.jrj;</address>
 </affiliation>'>
 <!ENTITY author.jrj '<author>&person.jrj;</author>'>
+
+<!ENTITY email.jstange '<email>building@nap.edu</email>'>
+<!ENTITY person.jstange '
+<firstname>John</firstname><surname>Stange</surname>
+<affiliation>
+        <orgname>National Academies Press</orgname>
+</affiliation>'>
+<!ENTITY author.jstange '<author>&person.jstange;</author>'>
 
 <!ENTITY email.mz '<email>M.Zucchi@CIS.UniSA.Edu.Au</email>'>
 <!ENTITY person.mz '

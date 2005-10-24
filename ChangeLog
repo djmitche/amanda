@@ -1,3 +1,12 @@
+2005-10-25  Ian Turner <ian@zmanda.com>
+	
+	* man/Makefile.am: include amfetchdump.8.
+	* man/xml-source/amadmin.8.xml: Add spanning-patch documentation.
+	* man/xml-source/amanda.8.xml: ditto
+	* man/xml-source/amrecover.8.xml: ditto
+	* man/xml-source/amfetchdump.8.xml: ditto (new file)
+	* man/xslt/global.entities: Add myself, Zmanda Inc.
+	
 2005-10-24  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* client-src/sendsize.c (getsize_wrapper): Add a NULL at the end of

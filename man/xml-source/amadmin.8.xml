@@ -148,7 +148,7 @@ value, &A; will request new tapes until the count is satisfied again.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
-  <term><emphasis remap='B'>find</emphasis> [ <option>--sort</option> <replaceable>hkdlb</replaceable> ]<emphasis remap='B'></emphasis> [ <emphasis remap='I'>hostname</emphasis> [ <emphasis remap='I'>disks</emphasis> ]* ]*</term>
+  <term><emphasis remap='B'>find</emphasis> [ <option>--sort</option> <replaceable>hkdlpb</replaceable> ]<emphasis remap='B'></emphasis> [ <emphasis remap='I'>hostname</emphasis> [ <emphasis remap='I'>disks</emphasis> ]* ]*</term>
   <listitem>
 <para>Display all backups currently on tape or in the holding disk.
 The tape label or holding disk filename,
@@ -160,10 +160,11 @@ and status are displayed.</para>
 <emphasis remap='B'>k</emphasis>	disk name
 <emphasis remap='B'>d</emphasis>	dump date
 <emphasis remap='B'>l</emphasis>	backup level
+<emphasis remap='B'>p</emphasis>        dump part
 <emphasis remap='B'>b</emphasis>	tape label</para>
 
 <para>An uppercase letter reverses the sort order for that key.
-The default sort order is <emphasis remap='B'>hkdlb</emphasis>.</para>
+The default sort order is <emphasis remap='B'>hkdlpb</emphasis>.</para>
 </listitem>
 </varlistentry>
 
@@ -305,17 +306,17 @@ some type of error.</para>
 
 <programlisting>
 $ amadmin daily find machine-c /var
-date        host      disk lv tape or file                    file status
-2000-11-09  machine-c /var  0 000110                             9 OK
-2000-11-08  machine-c /var  2 000109                             2 OK
-2000-11-07  machine-c /var  2 /amanda/20001107/machine-c._var.2  0 OK
-2000-11-06  machine-c /var  2 000107                             2 OK
-2000-11-05  machine-c /var  2 000106                             3 OK
-2000-11-04  machine-c /var  2 000105                             2 OK
-2000-11-03  machine-c /var  2 000104                             2 OK
-2000-11-02  machine-c /var  2 000103                             2 OK
-2000-11-01  machine-c /var  1 000102                             5 OK
-2000-10-31  machine-c /var  1 000101                             3 OK
+date        host      disk lv tape or file                 file part  status
+2000\-11\-09  machine\-c /var  0 000110                       9   --  OK
+2000\-11\-08  machine\-c /var  2 000109                       2   --  OK
+2000\-11\-07  machine\-c /var  2 /amanda/20001107/machine-c._var.2  0 OK
+2000\-11\-06  machine\-c /var  2 000107                       2   --  OK
+2000\-11\-05  machine\-c /var  2 000106                       3   --  OK
+2000\-11\-04  machine\-c /var  2 000105                       2   --  OK
+2000\-11\-03  machine\-c /var  2 000104                       2   --  OK
+2000\-11\-02  machine\-c /var  2 000103                       2   --  OK
+2000\-11\-01  machine\-c /var  1 000102                       5   --  OK
+2000\-10\-31  machine\-c /var  1 000101                       3   --  OK
 </programlisting>
 
 <para>Forget about the
@@ -399,7 +400,7 @@ TOTAL      241  12412187   7316312   731631  (estimated 8 runs per dumpcycle)
 <para><citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amcheck</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amdump</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
-<citerefentry><refentrytitle>amrestore</refentrytitle><manvolnum>8</manvolnum></citerefentry></para>
+<citerefentry><refentrytitle>amrestore</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>amfetchdump</refentrytitle><manvolnum>8</manvolnum></citerefentry></para>
 </refsect1>
 </refentry>
-
