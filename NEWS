@@ -1,9 +1,129 @@
-Changes in release 2.5.0
+Changes in release 2.5.0b1
 
-* New SECURITY API (see docs/SECURITY.API for details)
-* New DUMPER API (see docs/DUMPER.API for details)
-* New [host [disk]*]* arguments to amdump, amcheck, amadmin and amflush
-* New [-D datastamp]* arguments to amflush
+* New tape spanning features.
+* New SECURITY API (see docs/SECURITY.API for details).
+* New DUMPER API (see docs/DUMPER.API for details) (Not yet functionnal).
+
+Change in release 2.4.5p1
+
+* New [--days <num>] argument to 'amadmin <conf> tape'.
+* New amoverview -last -num0 -togo0 options.
+
+Change in release 2.4.5
+
+* new displayunit global option to select the unit use to display number
+  k=kilo, m=mega, g=giga, t=tera.
+* new amoverview -skipmissed option.
+
+Change in release 2.4.5b1
+
+* holding disk disk use timestamped directory.
+* autoflush flush today's dump.
+* new bumppercent global option, this should improve bumping criteria,
+  the bumpsize is set to a fixed value which can be adequate for small
+  and large disk.
+* bumpsize, bumppercent, bumpdays and bumpmult can be in a dumptype.
+* calcsize support include and exclude like gnutar.
+* new 'estimate' dumptype option to select estimate type:
+    CLIENT: estimate by the dumping program.
+    CALCSIZE: estimate by the calcsize program, a lot faster but less acurate.
+    SERVER: estimate based on statistic from previous run, take second but
+            can be wrong on the estimate size.
+
+Changes in release 2.4.4p3
+
+* new chg-iomega changer script.
+* amanda will not use a tape if it's label is not in the tapelist file
+  (eg. after an amrmtape).
+
+Changes in release 2.4.4p2
+
+* new initial_poll_delay config in chg-zd-mtx
+* 'amadmin find' list disk removed from the disklist.
+* amrecover can recover a disk removed from the disklist file.
+* amanda works with samba3.
+* new chg-disk changer script to use with the file: driver.
+* Kerberos 4 support integrated and functional again.
+
+Changes in release 2.4.4p1
+
+* amverify do not advance to next tape at the end.
+* new amflush -b and -s options, change -f behavior.
+* new chg-mcutil changer.
+* amrecover_changer works with chg-multi.
+* default driveslot for chg-zd-mtx is now 0.
+* amplot generate color postscript by default.
+* amplot -b flag to generate b/w postscript.
+* rait: works with file:
+* print a postscript label for each tape used.
+
+Changes in release 2.4.4
+
+* New -a option to amcheck to always send an email.
+
+Changes in release 2.4.4b1
+
+* maxpromoteday: New option for a dumptype.
+* New amtapetype program (replace tapetype)
+* Client compile on CYGWIN
+* amrestore -f <fileno> : amrestore can do fsf before reading the tape
+* amrestore -l <label>  : amrestore can check the label before restoring.
+* New config options:
+  amrecover_do_fsf: Amrecover will use the -f flag of amrestore to position the
+                    tape.
+  amrecover_check_label: amrecover will pass the -l flag to amrestore.
+  amrecover_changer: amrecover will use your changer.
+  maxdumpsize: The maximum size of the dumps during a run,
+               default to tapesize * runtapes
+  taperalgo: select your algo for the taper, try 'largestfit', it can improve
+             tape usage.
+* amrecover allow to retry a skip a tape.
+* New --days option to 'amadmin <config> balance' command.
+* New --date option to amstatus
+* amreport print an usage by tape.
+* Newer promote algorithm that try to reduce the number of full on a
+  single host in a run.
+* New changer: chg-juke, chg-null and chg-rait
+
+Changes in release 2.4.3
+
+* Few small bug fixed
+* New runtapes argument to amverify.
+* New amverifyrun program.
+* 2.4.3 client works with older server.
+
+Changes in release 2.4.3b4
+
+* new noop packet type. It allow the server to know the client features.
+* exclude list with relative path is working again.
+* amstatus is working again.
+
+Changes in release 2.4.3b3
+
+* --with-maxtapeblocksize configure options
+* blocksize tapetype option
+* file-pad tapetype option
+* Multiple exclude in dumptype
+* Option include in dumptype
+* New disklist syntax:
+*   hostname diskname [ diskdevice ] dumptype [ spindle [ interface ] ]
+* chg-zd-mtx: Major cleanup and general overhaul.
+* amrecover: new listdisk command.
+
+Changes in release 2.4.3b2
+
+* amrestore try to find the next chunk in the current directory.
+* amrecover: You can change the tape device between each tape.
+* amstatus work with amflush.
+
+Changes in release 2.4.3b1
+
+* tapeio.
+* New [host [disk]*]* arguments to amdump, amcheck, amadmin and amflush.
+* New [-D datastamp]* arguments to amflush.
+* amrecover: cd accept shell wildcard, new command cdx accept regex.
+* new autoflush option.
+* new dumperstr option to specify the priority order of each dumper.
 
 Changes in release 2.4.2
 
