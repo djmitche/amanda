@@ -1,3 +1,9 @@
+2005-10-24  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* Amanda 2.5.0b1 released.
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.0b1).
+	* NEWS: Update for 2.5.0b1.
+
 2005-10-25  Ian Turner <ian@zmanda.com>
 	
 	* man/Makefile.am: include amfetchdump.8.
