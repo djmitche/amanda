@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.153 2005/10/20 12:06:48 martinea Exp $
+ * $Id: driver.c,v 1.154 2005/10/27 21:26:01 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -62,6 +62,7 @@ static int nodump = 0;
 static unsigned long tape_length, tape_left = 0;
 static int current_tape = 1;
 static int conf_taperalgo;
+static int conf_runtapes;
 static time_t sleep_time;
 static int idle_reason;
 static char *datestamp;
@@ -215,6 +216,7 @@ main(main_argc, main_argv)
 
     conf_taperalgo = getconf_int(CNF_TAPERALGO);
     conf_tapetype = getconf_str(CNF_TAPETYPE);
+    conf_runtapes = getconf_int(CNF_RUNTAPES);
     tape = lookup_tapetype(conf_tapetype);
     tape_length = tape->length;
     printf("driver: tape size %ld\n", tape_length);
@@ -222,8 +224,10 @@ main(main_argc, main_argv)
     /* taper takes a while to get going, so start it up right away */
 
     init_driverio();
-    startup_tape_process(taper_program);
-    taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
+    if(conf_runtapes > 0) {
+	startup_tape_process(taper_program);
+	taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
+    }
 
     /* start initializing: read in databases */
 
@@ -328,12 +332,18 @@ main(main_argc, main_argv)
 
     /* ok, planner is done, now lets see if the tape is ready */
 
-    cmd = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
+    if(conf_runtapes > 0) {
+	cmd = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
 
-    if(cmd != TAPER_OK) {
-	/* no tape, go into degraded mode: dump to holding disk */
+	if(cmd != TAPER_OK) {
+	    /* no tape, go into degraded mode: dump to holding disk */
+	    need_degraded=1;
+	}
+    }
+    else {
 	need_degraded=1;
     }
+
     tape_left = tape_length;
     taper_busy = 0;
     taper_disk = NULL;
@@ -348,7 +358,7 @@ main(main_argc, main_argv)
 
     /* handle any remaining dumps by dumping directly to tape, if possible */
 
-    while(!empty(runq)) {
+    while(!empty(runq) && taper > 0) {
 	diskp = dequeue_disk(&runq);
 	if(!degraded_mode) {
 	    int rc = dump_to_tape(diskp);
@@ -468,7 +478,6 @@ startaflush()
     disk_t *dp = NULL;
     disk_t *fit = NULL;
     char *datestamp;
-    int conf_runtapes = 0;
     unsigned int extra_tapes = 0;
     if(!degraded_mode && !taper_busy && !empty(tapeq)) {
 	
@@ -480,7 +489,6 @@ startaflush()
 	case ALGO_FIRSTFIT:
 		fit = tapeq.head;
 		while (fit != NULL) {
-		    conf_runtapes = getconf_int(CNF_RUNTAPES);
 		    extra_tapes = (fit->tape_splitsize > 0) ? 
 						conf_runtapes - current_tape : 0;
 		    if(sched(fit)->act_size <= (tape_left + tape_length*extra_tapes) &&
@@ -508,7 +516,6 @@ startaflush()
 	case ALGO_LARGESTFIT:
 		fit = tapeq.head;
 		while (fit != NULL) {
-		    conf_runtapes = getconf_int(CNF_RUNTAPES);
 		    extra_tapes = (fit->tape_splitsize > 0) ? 
 						conf_runtapes - current_tape : 0;
 		    if(sched(fit)->act_size <= (tape_left + tape_length*extra_tapes) &&
@@ -967,10 +974,7 @@ handle_taper_result(cookie)
     cmd_t cmd;
     int result_argc;
     char *result_argv[MAX_ARGS+1];
-    int conf_runtapes = 0;
     int avail_tapes = 0;
-
-    conf_runtapes = getconf_int(CNF_RUNTAPES);
 
     assert(cookie == NULL);
 

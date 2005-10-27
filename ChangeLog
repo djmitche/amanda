@@ -1,3 +1,11 @@
+2005-10-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* server-src/conffile.c: Allow runtapes==0.
+	* server-src/driver.c: Use a global conf_runtapes. Don't start a
+	  taper if runtapes==0.
+	* server-src/reporter.c: Don't print The next tapes if runtapes==0.
+
+
 2005-10-24  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* Amanda 2.5.0b1 released.

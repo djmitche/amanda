@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.115 2005/10/11 16:39:49 martinea Exp $
+ * $Id: conffile.c,v 1.116 2005/10/27 21:26:01 martinea Exp $
  *
  * read configuration file
  */
@@ -1025,7 +1025,7 @@ static int read_confline()
 		    }
 		    break;
     case RUNTAPES:  get_simple(&conf_runtapes,  &seen_runtapes,  INT);
-		    if(conf_runtapes.i < 1) {
+		    if(conf_runtapes.i < 0) {
 			parserror("runtapes must be positive");
 		    }
 		    break;
