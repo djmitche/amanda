@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.12 2005/10/13 21:23:27 martinea Exp $
+ * $Id: util.c,v 1.13 2005/10/29 22:29:17 martinea Exp $
  */
 
 #include "amanda.h"
@@ -115,20 +115,21 @@ bind_portrange(s, addrp, first_port, last_port, proto)
      * if we don't happen to start at the beginning.
      */
     for (cnt = 0; cnt < num_ports; cnt++) {
-      servPort = getservbyport(htons(port), proto);
-      if((servPort == NULL) || strstr(servPort->s_name, "amanda")){
-	dbprintf(("%s: bind_portrange2: trying port=%d\t", debug_prefix_time(NULL), port));
-	addrp->sin_port = htons(port);
-	if (bind(s, (struct sockaddr *)addrp, sizeof(*addrp)) >= 0)
-	    return 0;
-	/*
-	 * If the error was something other then port in use, stop.
-	 */
-	if (errno != EADDRINUSE)
-	    break;
+	servPort = getservbyport(htons(port), proto);
+	if((servPort == NULL) || strstr(servPort->s_name, "amanda")){
+	    dbprintf(("%s: bind_portrange2: trying port=%d\t",
+		      debug_prefix_time(NULL), port));
+	    addrp->sin_port = htons(port);
+	    if (bind(s, (struct sockaddr *)addrp, sizeof(*addrp)) >= 0)
+		return 0;
+	    /*
+	     * If the error was something other then port in use, stop.
+	     */
+	    if (errno != EADDRINUSE)
+		break;
+	}
 	if (++port > last_port)
 	    port = first_port;
-    }
     }
     if (cnt == num_ports) {
 	dbprintf(("%s: bind_portrange: all ports between %d and %d busy\n",
