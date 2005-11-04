@@ -1,3 +1,18 @@
+2005-11-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* man/Makefile.am: Set man5_MANS and man8_MANS,
+	  install-data-hook use them.
+
+2005-11-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Olivier Cherrier
+
+	* man/Makefile.am (install-data-hook): Set protection correclty
+	  for man5 and man8.
+
+2005-10-29  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
+	* common-src/util.c (bind_portrange): Increase port in all case.
+
 2005-10-27  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
 	* server-src/conffile.c: Allow runtapes==0.
