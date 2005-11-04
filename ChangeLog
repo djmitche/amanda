@@ -1,5 +1,16 @@
 2005-11-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
 
+	* man/Makefile.am: Set man5_MANS and man8_MANS,
+	  install-data-hook use them.
+
+2005-11-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+	Patch by Olivier Cherrier
+
+	* man/Makefile.am (install-data-hook): Set protection correclty
+	  for man5 and man8.
+
+2005-11-03  Jean-Louis Martineau <martineau@iro.umontreal.ca>
+
 	* server-src/dumper.c (do_dump): Set rc to the value returned
 	  by update_dataptr.
 
