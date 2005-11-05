@@ -62,6 +62,7 @@ ALL_MAN_PAGES = $(AMPLOT_MAN8_PAGES) \
 	   $(RECOVER_MAN8_PAGES) \
 	   $(RESTORE_MAN8_PAGES)
 
+man_MANS = $(man5_MANS) $(man8_MANS)
 
 # Very important to have the / here.
 MANPAGEDIR = xml-source/
