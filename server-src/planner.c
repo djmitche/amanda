@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.20 2005/09/20 21:31:52 jrjackson Exp $
+ * $Id: planner.c,v 1.76.2.15.2.13.2.32.2.21 2005/11/10 18:14:36 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -767,6 +767,18 @@ setup_estimate(dp)
 	    log_add(L_WARNING, "Skipping full dump of %s:%s tomorrow.",
 		    dp->host->hostname, dp->name);
 	}
+    }
+
+    if(dp->strategy == DS_INCRONLY && ep->last_level == -1 && !ISSET(info.command, FORCE_FULL)) {
+	/* don't enqueue the disk */
+	askfor(ep, 0, -1, &info);
+	askfor(ep, 1, -1, &info);
+	askfor(ep, 2, -1, &info);
+	log_add(L_FAIL, "%s %s 19000101 1 [Skipping incronly because no full dump were done]",
+		dp->host->hostname, dp->name);
+	fprintf(stderr,"%s:%s lev 1 skipped due to strategy incronly and no full dump were done\n",
+		dp->host->hostname, dp->name);
+	return;
     }
 
     /* handle "skip-incr" type archives */
