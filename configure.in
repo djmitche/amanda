@@ -471,8 +471,8 @@ AC_ARG_WITH(tape-device,
 	    dnl bytes are returned upon reading to the next tape mark,
 	    dnl instead of returning an error.  Look for devices that have
 	    dnl a 'b' in their name.
-	    tape_dev=/dev/null
-	    nr_tape_dev=/dev/null
+	    tape_dev=null:
+	    nr_tape_dev=null:
 	    if test -d /dev/rmt; then
 
 		dnl See if we can find two devices, one being the norewind

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.15 2005/10/02 15:31:07 martinea Exp $
+ * $Id: rsh-security.c,v 1.16 2005/11/19 00:51:20 paddy_s Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -555,7 +555,7 @@ rsh_sendpkt(cookie, pkt)
 
     len = strlen(pkt->body) + 2;
     buf[0] = (unsigned char)pkt->type;
-    strcpy(&buf[1], pkt->body);
+    strcpy((char *)&buf[1], pkt->body);
 
     rshprintf(("rsh: sendpkt: %s (%d) pkt_t (len %d) contains:\n\n\"%s\"\n\n",
 	pkt_type2str(pkt->type), pkt->type, strlen(pkt->body), pkt->body));

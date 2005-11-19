@@ -258,7 +258,7 @@ option.</para>
   <term><emphasis remap='B'>tapedev</emphasis> string</term>
   <listitem>
 <para>Default:
-<filename>/dev/nst0</filename>.
+<filename>null:</filename>.
 The path name of the non-rewinding tape device.
 Non-rewinding tape device names often have an 'n' in the name,
 e.g.
@@ -292,7 +292,7 @@ option set to
   <term><emphasis remap='B'>rawtapedev</emphasis> string</term>
   <listitem>
 <para>Default:
-<filename>/dev/null</filename>.
+<filename>null:</filename>.
 The path name of the raw tape device.
 This is only used if &A; is compiled for Linux machines with floppy tapes
 and is needed for QIC volume table operations.</para>

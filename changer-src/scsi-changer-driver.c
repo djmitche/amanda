@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.44 2003/01/26 19:20:44 martinea Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.45 2005/11/19 00:51:20 paddy_s Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -3793,8 +3793,8 @@ int GetElementStatus(int DeviceFD)
 	      
               if (ElementStatusPage->pvoltag == 1)
                 {
-                  strncpy(pMTE[x].VolTag, 
-                          MediumTransportElementDescriptor->pvoltag,
+                  strncpy((char *)pMTE[x].VolTag, 
+                          (char *)MediumTransportElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pMTE[x].VolTag, TAG_SIZE+1);
                 }
@@ -3879,7 +3879,7 @@ int GetElementStatus(int DeviceFD)
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pSTE[x].VolTag, 
-                          StorageElementDescriptor->pvoltag,
+                          (char *)StorageElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
                 }
@@ -3966,7 +3966,7 @@ int GetElementStatus(int DeviceFD)
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pIEE[x].VolTag, 
-                          ImportExportElementDescriptor->pvoltag,
+                          (char *)ImportExportElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pIEE[x].VolTag, TAG_SIZE+1);
                 }
@@ -4051,7 +4051,7 @@ int GetElementStatus(int DeviceFD)
               if (ElementStatusPage->pvoltag == 1)
                 {
                   strncpy(pDTE[x].VolTag, 
-                          DataTransferElementDescriptor->pvoltag,
+                          (char *)DataTransferElementDescriptor->pvoltag,
                           TAG_SIZE);
                   TerminateString(pDTE[x].VolTag, TAG_SIZE+1);
                 }
@@ -4146,7 +4146,7 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pMTE[x].VolTag, 
-                              MediumTransportElementDescriptor->pvoltag,
+                              (char *)MediumTransportElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pMTE[x].VolTag, TAG_SIZE+1);
                     }
@@ -4200,7 +4200,7 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pSTE[x].VolTag, 
-                              StorageElementDescriptor->pvoltag,
+                              (char *)StorageElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
                     }
@@ -4255,7 +4255,7 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pIEE[x].VolTag, 
-                              ImportExportElementDescriptor->pvoltag,
+                              (char *)ImportExportElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pIEE[x].VolTag, TAG_SIZE+1);
                     }
@@ -4310,7 +4310,7 @@ int GetElementStatus(int DeviceFD)
                   if (ElementStatusPage->pvoltag == 1)
                     {
                       strncpy(pSTE[x].VolTag, 
-                              DataTransferElementDescriptor->pvoltag,
+                              (char *)DataTransferElementDescriptor->pvoltag,
                               TAG_SIZE);
                       TerminateString(pSTE[x].VolTag, TAG_SIZE+1);
                     }

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.4 2005/10/02 15:31:07 martinea Exp $
+ * $Id: ssh-security.c,v 1.5 2005/11/19 00:51:20 paddy_s Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -557,7 +557,7 @@ ssh_sendpkt(cookie, pkt)
 
     len = strlen(pkt->body) + 2;
     buf[0] = (unsigned char)pkt->type;
-    strcpy(&buf[1], pkt->body);
+    strcpy((char *)&buf[1], pkt->body);
 
     sshprintf(("%s: ssh: sendpkt: %s (%d) pkt_t (len %d) contains:\n\n\"%s\"\n\n", debug_prefix_time(NULL),
 	pkt_type2str(pkt->type), pkt->type, strlen(pkt->body), pkt->body));
