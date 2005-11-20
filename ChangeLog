@@ -1,9 +1,16 @@
+2005-11-20  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by Jon H. LaBadie
+
+	* changer-src/chg-disk.sh.in: Check permission on file access.
+
 2005-11-17  Paddy Sreenivasan <paddy@zmanda.com>
+
         * man/entities/global.entities: New file. Added man page entities.
         * man/entities/xinclude.dtd: New file.
         * man/xslt/man.xsl: Correct include path for settings.xsl.
 
 2005-11-15  John R. Franks <jrfranks@zmanda.com>
+
 	* changer-src/scsi-changer-driver.c: Fix IA-64 compile warnings.
 	* common-src/rsh-security.c: Fix IA-64 compile warnings.
 	* common-src/ssh-security.c: Fix IA-64 compile warnings.
