@@ -77,15 +77,40 @@ MYNAME=$0
 TAPE=`amgetconf$SUF tapedev`
 SLOTDIR=`echo $TAPE | sed 's/^file://'`
 
+isinteger() {
+	    # should be exactly one arg
+	[ $# = 1 ]  || return 1
+	    # if arg is null, no expr needed
+	[ "${1}" = '' ] && return 1
+	    # expr will return 0 on match
+	expr "$1" : '[0-9][0-9]*$' > /dev/null 2>&1
+}
+
+# need rwx access to directory of changer file
 CHANGERFILE=`amgetconf$SUF changerfile`
+CFDir=`dirname ${CHANGERFILE}`
+[ -d ${CFDir} -a -r ${CFDir} -a -w ${CFDir} -a -x ${CFDir} ] ||
+	{ echo "$MYNAME: need 'rwx' access to '$CFDir'" ; exit 2 ; }
+
+# check or create changer metadata files
 ACCESSFILE=$CHANGERFILE-access
+[ -f $ACCESSFILE -a -r $ACCESSFILE -a -w $ACCESSFILE ] ||
+	echo 0 > $ACCESSFILE ||
+	{ echo "$MYNAME: could not access or create '$ACCESSFILE'" ; exit 2 ; }
 CLEANFILE=$CHANGERFILE-clean
+[ -f $CLEANFILE -a -r $CLEANFILE -a -w $CLEANFILE ] ||
+	echo 0 > $CLEANFILE ||
+	{ echo "$MYNAME: could not access or create '$CLEANFILE'" ; exit 2 ; }
 SLOTFILE=$CHANGERFILE-slot
-[ ! -f $ACCESSFILE ] && echo 0 > $ACCESSFILE
-[ ! -f $CLEANFILE ] && echo 0 > $CLEANFILE
-[ ! -f $SLOTFILE ] && echo 0 > $SLOTFILE
+[ -f $SLOTFILE -a -r $SLOTFILE -a -w $SLOTFILE ] ||
+	echo 0 > $SLOTFILE ||
+	{ echo "$MYNAME: could not access or create '$SLOTFILE'" ; exit 2 ; }
+
+# read and check metadata
 ACCESSCOUNT=`cat $ACCESSFILE`
+isinteger $ACCESSCOUNT || { ACCESSCOUNT=0 ; echo 0 > $ACCESSFILE ; }
 CLEANCOUNT=`cat $CLEANFILE`
+isinteger $CLEANCOUNT || { CLEANCOUNT=0 ; echo 0 > $CLEANFILE ; }
 
 FIRSTSLOT=1
 LASTSLOT=`amgetconf$SUF tapecycle`
@@ -94,6 +119,8 @@ CLEANSLOT=$LASTSLOT
 
 load() {
   WHICHSLOT=$1;
+  # unload should have been called, but just in case ...
+  [ -h $SLOTDIR/data ] && unload
   ln -s $SLOTDIR/slot$WHICHSLOT $SLOTDIR/data
   echo $WHICHSLOT > $SLOTFILE
 }
@@ -110,10 +137,8 @@ readstatus() {
 loadslot() {
   WHICHSLOT=$1
 
-  case $WHICHSLOT in
-    [0-9]*) TYPE="digit";;
-    *) TYPE="string";;
-  esac
+  TYPE=string	# default if not numeric
+  isinteger $WHICHSLOT && TYPE=digit
 
   readstatus
   NEWSLOT=0
@@ -154,10 +179,10 @@ loadslot() {
     exit 0
   fi
   if [ $NEWSLOT = $CLEANSLOT ]; then
-    expr $CLEANCOUNT + 1 > $CLEANFILE
+    expr ${CLEANCOUNT:=0} + 1 > $CLEANFILE
     echo 0 > $ACCESSFILE
   else
-    expr $ACCESSCOUNT + 1 > $ACCESSFILE
+    expr ${ACCESSCOUNT:=0} + 1 > $ACCESSFILE
     if [ $ACCESSCOUNT -gt $LASTSLOT ]; then
       $MYNAME -slot clean >/dev/null
     fi
