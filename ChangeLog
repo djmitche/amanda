@@ -1,4 +1,9 @@
 2005-11-29  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* config/libtool.m4i: libtool 1.5.20
+	* config/ltmain.sh: libtool 1.5.20
+
+2005-11-29  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by Franz Fischer
 
 	* common-src/fileheader.c (build_header): Declation before instruction.
