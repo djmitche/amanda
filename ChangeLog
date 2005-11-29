@@ -1,3 +1,8 @@
+2005-11-29  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* config/libtool.m4i: libtool 1.5.20
+	* config/ltmain.sh: libtool 1.5.20
+
 2005-11-20  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by Jon H. LaBadie
 
