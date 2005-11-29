@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.2 2005/10/12 21:30:09 vectro Exp $
+ * $Id: amfetchdump.c,v 1.3 2005/11/29 22:19:08 martinea Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -226,7 +226,9 @@ match_list_t *match_list;
 		}
 		newtape->next = NULL;
 		numtapes++;
+#if 0
 //		free_find_result(rstfile);
+#endif
 	    } /* if(!havetape) */
 
 	} /* for(curmatch = matches ... */

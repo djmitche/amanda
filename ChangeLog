@@ -1,3 +1,14 @@
+2005-11-29  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by Franz Fischer
+
+	* common-src/fileheader.c (build_header): Declation before instruction.
+	* restore-src/amfetchdump.c: Don't use C++ style comment.
+	* restore-src/restore.c: Don't use C++ style comment.
+	* server-src/amindexd.c (reply, lreply, fast_lreply): buf must be
+	   dynamicaly allocated.
+	* server-src/logfile.h: Don't use C++ style comment.
+	* server-src/taper.c (free_split_buffer): Test splitbuf against NULL.
+
 2005-11-20  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by Jon H. LaBadie
 

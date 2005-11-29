@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.78 2005/10/11 01:17:00 vectro Exp $
+ * $Id: amindexd.c,v 1.79 2005/11/29 22:19:08 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -269,7 +269,9 @@ char **emsg;
 printf_arglist_function1(static void reply, int, n, char *, fmt)
 {
     va_list args;
-    char buf[str_buffer_size];
+    char *buf;
+
+    buf = alloc(str_buffer_size);
 
     arglist_start(args, fmt);
     snprintf(buf, sizeof(buf), "%03d ", n);
@@ -291,13 +293,16 @@ printf_arglist_function1(static void reply, int, n, char *, fmt)
 	exit(1);
     }
     dbprintf(("%s: < %s\n", debug_prefix_time(NULL), buf));
+    amfree(buf);
 }
 
 /* send one line of a multi-line response */
 printf_arglist_function1(static void lreply, int, n, char *, fmt)
 {
     va_list args;
-    char buf[str_buffer_size];
+    char *buf;
+
+    buf = alloc(str_buffer_size);
 
     arglist_start(args, fmt);
     snprintf(buf, sizeof(buf), "%03d-", n);
@@ -320,13 +325,16 @@ printf_arglist_function1(static void lreply, int, n, char *, fmt)
     }
 
     dbprintf(("%s: < %s\n", debug_prefix_time(NULL), buf));
+    amfree(buf);
 }
 
 /* send one line of a multi-line response */
 printf_arglist_function1(static void fast_lreply, int, n, char *, fmt)
 {
     va_list args;
-    char buf[str_buffer_size];
+    char *buf;
+
+    buf = alloc(str_buffer_size);
 
     arglist_start(args, fmt);
     snprintf(buf, sizeof(buf), "%03d-", n);
@@ -340,6 +348,7 @@ printf_arglist_function1(static void fast_lreply, int, n, char *, fmt)
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
+    amfree(buf);
 }
 
 /* see if hostname is valid */

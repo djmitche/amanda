@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.27 2005/10/11 01:17:00 vectro Exp $
+ * $Id: fileheader.c,v 1.28 2005/11/29 22:19:08 martinea Exp $
  */
 
 #include "amanda.h"
@@ -256,10 +256,9 @@ build_header(buffer, file, buflen)
     size_t buflen;
 {
     int n;
+    char split_data[128] = "";
 
     memset(buffer,'\0',buflen);
-
-    char split_data[128] = "";
 
     switch (file->type) {
     case F_TAPESTART:

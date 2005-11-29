@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.4 2005/10/18 01:39:14 vectro Exp $
+ * $Id: restore.c,v 1.5 2005/11/29 22:19:08 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -796,7 +796,9 @@ rst_flags_t *flags;
 	}
 	amfree(buffer);
 	/* add CONT_FILENAME to header */
+#if 0
 //	strncpy(file->cont_filename, cont_filename, sizeof(file->cont_filename));
+#endif
 	memcpy(file, &tmp_hdr, sizeof(dumpfile_t));
     }
 
@@ -808,7 +810,9 @@ rst_flags_t *flags;
 	if(pipe(outpipe) < 0) error("error [pipe: %s]", strerror(errno));
 
 	out = outpipe[1];
+#if 0
 //	if(is_continuation && myout != NULL) myout->outfd = outpipe[1];
+#endif
 	switch(myout->compress_pid = fork()) {
 	case -1: error("could not fork for %s: %s",
 		       COMPRESS_PATH, strerror(errno));
@@ -854,7 +858,9 @@ rst_flags_t *flags;
 	if(pipe(outpipe) < 0) error("error [pipe: %s]", strerror(errno));
 
 	out = outpipe[1];
+#if 0
 //	if(is_continuation && myout != NULL) myout->outfd = outpipe[1];
+#endif
 	switch(myout->compress_pid = fork()) {
 	case -1: 
 	    error("could not fork for %s: %s",
@@ -876,7 +882,9 @@ rst_flags_t *flags;
 		    error("dup2 dest: %s", strerror(errno));
 		aclose(dest);
 	    }
+#if 0
 //	    fcntl(tapefd, F_SETFD, FD_CLOEXEC);
+#endif
 	    aclose(tapefd);
 	    (void) execlp(UNCOMPRESS_PATH, UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
