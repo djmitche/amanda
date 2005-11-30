@@ -1,3 +1,9 @@
+2005-11-30  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by Franz Fischer
+
+	* common-src/event.h: Fix compiler warning.
+	* server-src/conffile.h: Fix compiler warning.
+
 2005-11-29  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* config/libtool.m4i: libtool 1.5.20

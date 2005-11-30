@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.h,v 1.5 1999/04/16 05:12:57 kashmir Exp $
+ * $Id: event.h,v 1.6 2005/11/30 22:35:11 martinea Exp $
  */
 #ifndef EVENT_H
 #define EVENT_H
@@ -59,7 +59,7 @@ typedef enum {
     EV_SIG,			/* signal has fired */
     EV_TIME,			/* n seconds have elapsed */
     EV_WAIT,			/* event_wakeup() was called with this id */
-    EV_DEAD,			/* internal use only */
+    EV_DEAD			/* internal use only */
 } event_type_t;
 
 /*

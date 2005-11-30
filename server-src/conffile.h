@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.56 2005/10/11 01:17:01 vectro Exp $
+ * $Id: conffile.h,v 1.57 2005/11/30 22:35:11 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -131,7 +131,7 @@ typedef enum {
     COMP_FAST,		/* Fast compression on client */
     COMP_BEST,		/* Best compression on client */
     COMP_SERV_FAST,	/* Fast compression on server */
-    COMP_SERV_BEST,	/* Best compression on server */
+    COMP_SERV_BEST	/* Best compression on server */
 } comp_t;
 
 #define ALGO_FIRST	0
