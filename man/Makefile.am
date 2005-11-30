@@ -70,9 +70,11 @@ MANPAGEDIR = xml-source/
 MAN_XML = $(ALL_MAN_PAGES:%=$(MANPAGEDIR)%.xml)
 
 EXTRA_XML = xslt/expand-sambadoc.xsl \
-            xslt/global.entities \
             xslt/man.xsl \
-            xslt/settings.xsl
+            xslt/settings.xsl \
+	    entities/global.entities \
+	    entities/xinclude.dtd
+	    
 
 EXTRA_DIST = $(ALL_MAN_PAGES) $(MAN_XML) $(EXTRA_XML)
 
