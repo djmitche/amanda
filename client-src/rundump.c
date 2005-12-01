@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.26 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: rundump.c,v 1.27 2005/12/01 00:19:28 martinea Exp $
  *
  * runs DUMP program as root
  */
@@ -34,6 +34,7 @@
 int main P((int argc, char **argv));
 
 #if defined(VDUMP) || defined(XFSDUMP)
+#  undef USE_RUNDUMP
 #  define USE_RUNDUMP
 #endif
 

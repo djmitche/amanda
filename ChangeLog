@@ -1,4 +1,8 @@
 2005-11-30  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* client-src/rundump.c: undef USE_RUNDUMP before define.
+
+2005-11-30  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by Franz Fischer
 
 	* client-src/amqde.c: Fix compiler warning.
