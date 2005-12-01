@@ -1305,6 +1305,8 @@ case "$target" in
 			;;
   *-pc-linux-*)
 			;;
+  x86_64-*-linux-*)
+			;;
   alpha*-*-linux-*)
 			;;
   sparc*-*-linux-*)
