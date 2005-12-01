@@ -1,5 +1,11 @@
 2005-11-30  Jean-Louis Martineau <martineau@zmanda.com>
 
+        * common-src/rsh-security.c (rsh_sendpkt): buf is a char array.
+        * common-src/ssh-security.c (rsh_sendpkt): buf is a char array.
+	* config/acinclude.m4i (AX_CREATE_STDINT_H): Newer macro.
+
+2005-11-30  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* client-src/rundump.c: undef USE_RUNDUMP before define.
 
 2005-11-30  Jean-Louis Martineau <martineau@zmanda.com>
