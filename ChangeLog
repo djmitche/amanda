@@ -1,3 +1,7 @@
+2005-12-01  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* configure.in: Amanda support x86_64-unknown-linux-gnu.
+
 2005-11-29  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* config/libtool.m4i: libtool 1.5.20
