@@ -1,6 +1,11 @@
 2005-11-30  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by Franz Fischer
 
+	* client-src/amqde.c: Fix compiler warning.
+
+2005-11-30  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by Franz Fischer
+
 	* common-src/event.h: Fix compiler warning.
 	* server-src/conffile.h: Fix compiler warning.
 

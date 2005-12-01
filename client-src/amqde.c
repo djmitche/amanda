@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amqde.c,v 1.3 2004/03/09 19:37:04 martinea Exp $
+ * $Id: amqde.c,v 1.4 2005/12/01 00:00:00 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -73,7 +73,7 @@ main(argc, argv)
 	time_t since = 0;
 	DIR *d;
 	struct dirent *de;
-#ifdef HAVE_UNSIGNED_LONG_LONG
+#if defined(HAVE_UNSIGNED_LONG_LONG) && !defined(__alpha)
 	unsigned long long total = 0;
 #else
 	unsigned long total = 0;
@@ -192,7 +192,7 @@ forcleanup:
 	 * uses long long.
 	 */
 
-#ifdef HAVE_UNSIGNED_LONG_LONG
+#if defined(HAVE_UNSIGNED_LONG_LONG) && !defined(__alpha)
 	fprintf(stderr, "amqde estimate: %llu kb\n", total/1024);
 #else
 	fprintf(stderr, "amqde estimate: %lu kb\n", total/1024);
