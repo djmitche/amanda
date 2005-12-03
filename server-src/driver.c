@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.155 2005/12/03 13:27:43 martinea Exp $
+ * $Id: driver.c,v 1.156 2005/12/03 13:31:28 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -760,7 +760,7 @@ start_some_dumps(rq)
 	    dumpers_ev_time = event_register(sleep_time, EV_TIME,
 		handle_dumpers_time, &runq);
 	    return;
-	} else if (diskp != NULL && cur_idle == NOT_IDLE) {
+	} else if (diskp != NULL) {
 	    sched(diskp)->act_size = 0;
 	    allocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
 	    sched(diskp)->activehd = assign_holdingdisk(holdp, diskp);

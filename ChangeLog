@@ -1,5 +1,10 @@
 2005-12-03  Jean-Louis Martineau <martineau@zmanda.com>
 
+	* server-src/driver.c (start_some_dumps): Don't test for
+	  cur_idle == NOT_IDLE.
+
+2005-12-03  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* server-src/driverio.c (check_unfree_serial): New fonction to check
 	  unfreed serial number.
 	* server-src/driverio.c (free_serial_dp): Set stable[s].dp to NULL.
