@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.31 2004/08/03 18:05:59 martinea Exp $
+ * $Id: driverio.h,v 1.32 2005/12/03 13:27:43 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -127,6 +127,7 @@ int chunker_cmd P((chunker_t *chunker, cmd_t cmd, disk_t *dp));
 disk_t *serial2disk P((char *str));
 void free_serial P((char *str));
 void free_serial_dp P((disk_t *dp));
+void check_unfree_serial P(());
 char *disk2serial P((disk_t *dp));
 void update_info_dumper P((disk_t *dp, long origsize, long dumpsize, long dumptime));
 void update_info_taper P((disk_t *dp, char *label, int filenum, int level));

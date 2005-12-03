@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.154 2005/10/27 21:26:01 martinea Exp $
+ * $Id: driver.c,v 1.155 2005/12/03 13:27:43 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -452,6 +452,7 @@ main(main_argc, main_argv)
     }
     amfree(newdir);
 
+    check_unfree_serial();
     printf("driver: FINISHED time %s\n", walltime_str(curclock()));
     fflush(stdout);
     log_add(L_FINISH,"date %s time %s", datestamp, walltime_str(curclock()));

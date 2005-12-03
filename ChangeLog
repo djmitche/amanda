@@ -1,3 +1,11 @@
+2005-12-03  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/driverio.c (check_unfree_serial): New fonction to check
+	  unfreed serial number.
+	* server-src/driverio.c (free_serial_dp): Set stable[s].dp to NULL.
+	* server-src/driverio.h (check_unfree_serial): Prototype.
+	* server-src/driver.c (main): Call check_unfree_serial.
+
 2005-12-02  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by Franz Fischer
 

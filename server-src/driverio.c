@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.73 2005/10/16 23:35:47 martinea Exp $
+ * $Id: driverio.c,v 1.74 2005/12/03 13:27:43 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -571,6 +571,7 @@ disk_t *dp;
     for(s = 0; s < MAX_SERIAL; s++) {
 	if(stable[s].dp == dp) {
 	    stable[s].gen = 0;
+	    stable[s].dp = NULL;
 	    return;
 	}
     }
@@ -579,6 +580,19 @@ disk_t *dp;
 	   walltime_str(curclock()));
 }
 
+
+void check_unfree_serial()
+{
+    int s;
+
+    /* find used serial number */
+    for(s = 0; s < MAX_SERIAL; s++) {
+	if(stable[s].gen != 0 || stable[s].dp != NULL) {
+	    printf("driver: error time %s bug: serial in use: %02d-%05ld\n",
+		   walltime_str(curclock()), s, stable[s].gen);
+	}
+    }
+}
 
 char *disk2serial(dp)
 disk_t *dp;
