@@ -865,6 +865,7 @@ typedef unsigned long long uint64_t;
 
 #elif defined __alpha || (defined __mips && defined _ABIN32)
 #if !defined _NO_LONGLONG
+#define _HAVE_UINT64_T
 typedef long int64_t;
 typedef unsigned long uint64_t;
 #endif

@@ -1,4 +1,9 @@
 2005-12-02  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by Franz Fischer
+
+	* config/acinclude.m4i: Fix for __alpha.
+
+2005-12-02  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* common-src/util.c: Debug must end with '\n'.
 
