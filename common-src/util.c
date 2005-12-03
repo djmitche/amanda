@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.14 2005/12/03 00:53:15 martinea Exp $
+ * $Id: util.c,v 1.15 2005/12/03 00:57:31 martinea Exp $
  */
 
 #include "amanda.h"
@@ -117,7 +117,7 @@ bind_portrange(s, addrp, first_port, last_port, proto)
     for (cnt = 0; cnt < num_ports; cnt++) {
 	servPort = getservbyport(htons(port), proto);
 	if((servPort == NULL) || strstr(servPort->s_name, "amanda")){
-	    dbprintf(("%s: bind_portrange2: trying port=%d/n",
+	    dbprintf(("%s: bind_portrange2: trying port=%d\n",
 		      debug_prefix_time(NULL), port));
 	    addrp->sin_port = htons(port);
 	    if (bind(s, (struct sockaddr *)addrp, sizeof(*addrp)) >= 0)
