@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.28 2005/10/11 01:17:01 vectro Exp $
+ * $Id: logfile.c,v 1.29 2005/12/04 22:56:55 martinea Exp $
  *
  * common log file writing routine
  */
@@ -43,7 +43,7 @@ char *logtype_str[] = {
     "START", "FINISH",				   /* start/end of a run */
     "DISK",							 /* disk */
     "SUCCESS", "PARTIAL", "FAIL", "STRANGE",	    /* the end of a dump */
-    "CHUNK", "CHUNKSUCCESS"                             /* ... continued */
+    "CHUNK", "CHUNKSUCCESS",                            /* ... continued */
     "STATS",						   /* statistics */
     "MARKER",					  /* marker for reporter */
     "CONT"				   /* continuation line; special */

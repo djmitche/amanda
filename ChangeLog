@@ -1,3 +1,7 @@
+2005-12-04  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/logfile.c (logtype_str): Add important ','.
+
 2005-12-03  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/planner.c (setup_estimate): Fix wrong order for argument.
