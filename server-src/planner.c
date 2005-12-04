@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.171 2005/11/10 18:14:30 martinea Exp $
+ * $Id: planner.c,v 1.172 2005/12/04 00:42:40 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -740,7 +740,7 @@ setup_estimate(dp)
 	    fprintf(stderr, "%s: SKIPPED %s %s 0 [skip-full]\n",
 		    get_pname(), dp->host->hostname, dp->name);
 	    log_add(L_SUCCESS, "%s %s %s 0 [skipped: skip-full]",
-		    dp->host->hostname, datestamp, dp->name);
+		    dp->host->hostname, dp->name, datestamp);
 	    return;
 	}
 
@@ -781,7 +781,7 @@ setup_estimate(dp)
 		get_pname(), dp->host->hostname, dp->name);
 
 	log_add(L_SUCCESS, "%s %s %s 1 [skipped: skip-incr]",
-	        dp->host->hostname, datestamp, dp->name);
+	        dp->host->hostname, dp->name, datestamp);
 	return;
     }
 

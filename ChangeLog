@@ -1,5 +1,9 @@
 2005-12-03  Jean-Louis Martineau <martineau@zmanda.com>
 
+	* server-src/planner.c (setup_estimate): Fix wrong order for argument.
+
+2005-12-03  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* server-src/driver.c (start_some_dumps): Don't test for
 	  cur_idle == NOT_IDLE.
 
