@@ -1,3 +1,9 @@
+2005-12-05  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/holding.c (scan_holdingdisk): Static function.
+	* server-src/taper.c (signal_handler, install_signal_handlers): Ditto.
+	* server-src/reporter.c (output_strange,do_postscript_output): Ditto.
+
 2005-12-04  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/logfile.c (logtype_str): Add important ','.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.98 2005/10/27 21:26:01 martinea Exp $
+ * $Id: reporter.c,v 1.99 2005/12/05 13:33:32 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -961,7 +961,7 @@ output_tapeinfo()
 }
 
 /* ----- */
-void output_strange()
+static void output_strange()
 {
     int len_host=0, len_disk=0;
     strange_t *strange;
@@ -2441,7 +2441,7 @@ find_repdata(dp, datestamp, level)
 }
 
 
-void do_postscript_output()
+static void do_postscript_output()
 {
     tapetype_t *tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
     disk_t *dp;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.48 2005/10/11 01:17:01 vectro Exp $
+ * $Id: holding.c,v 1.49 2005/12/05 13:33:32 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -126,7 +126,7 @@ char *fname;
 }
 
 
-sl_t *scan_holdingdisk(holding_list, diskdir, verbose)
+static sl_t *scan_holdingdisk(holding_list, diskdir, verbose)
 sl_t *holding_list;
 char *diskdir;
 int verbose;

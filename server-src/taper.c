@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.106 2005/11/29 22:19:08 martinea Exp $
+/* $Id: taper.c,v 1.107 2005/12/05 13:33:33 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -2041,7 +2041,7 @@ cleanup(void)
 /*
  * Cleanup shared memory segments 
  */
-void 
+static void 
 signal_handler(int signum)
 {
     log_add(L_INFO, "Received signal %d", signum);
@@ -2055,7 +2055,7 @@ signal_handler(int signum)
  * process termination so that we can clean up shared memory
  * segments
  */
-void
+static void
 install_signal_handlers(void) 
 {
     struct sigaction act;
