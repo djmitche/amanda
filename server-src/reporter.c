@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.99 2005/12/05 13:33:32 martinea Exp $
+ * $Id: reporter.c,v 1.100 2005/12/05 18:11:20 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -107,7 +107,7 @@ typedef struct strange_s {
 
 static strange_t *first_strange=NULL, *last_strange=NULL;
 
-static float total_time, startup_time;
+static float total_time, startup_time, planner_time;
 
 /* count files to tape */
 static int tapefcount = 0;
@@ -732,7 +732,7 @@ output_stats()
     stats[2].dumper_time = stats[0].dumper_time + stats[1].dumper_time;
 
     if(!got_finish)	/* no driver finish line, estimate total run time */
-	total_time = stats[2].taper_time + startup_time;
+	total_time = stats[2].taper_time + planner_time;
 
     idle_time = (total_time - startup_time) - stats[2].taper_time;
     if(idle_time < 0) idle_time = 0.0;
@@ -744,7 +744,7 @@ output_stats()
 	    "                        --------   --------   --------\n");
 
     fprintf(mailf,
-	    "Estimate Time (hrs:min)   %2d:%02d\n", hrmn(startup_time));
+	    "Estimate Time (hrs:min)   %2d:%02d\n", hrmn(planner_time));
 
     fprintf(mailf,
 	    "Run Time (hrs:min)        %2d:%02d\n", hrmn(total_time));
@@ -1549,8 +1549,9 @@ handle_finish()
 {
     char *s;
     int ch;
+    float a_time;
 
-    if(curprog == P_DRIVER || curprog == P_AMFLUSH) {
+    if(curprog == P_DRIVER || curprog == P_AMFLUSH || curprog == P_PLANNER) {
 	s = curstr;
 	ch = *s++;
 
@@ -1574,6 +1575,8 @@ handle_finish()
 	skip_whitespace(s, ch);
 #define sc "time"
 	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	    /* older planner doesn't write time */
+	    if(curprog == P_PLANNER) return;
 	    bogus_line();
 	    return;
 	}
@@ -1586,12 +1589,17 @@ handle_finish()
 	    bogus_line();
 	    return;
 	}
-	if(sscanf(s - 1, "%f", &total_time) != 1) {
+	if(sscanf(s - 1, "%f", &a_time) != 1) {
 	    bogus_line();
 	    return;
 	}
-
-	got_finish = 1;
+	if(curprog == P_PLANNER) {
+	    planner_time = a_time;
+	}
+	else {
+	    total_time = a_time;
+	    got_finish = 1;
+	}
     }
 }
 
@@ -1624,6 +1632,7 @@ handle_stats()
 	    bogus_line();
 	    return;
 	}
+	planner_time = startup_time;
     }
 }
 

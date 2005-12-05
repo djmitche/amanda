@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.172 2005/12/04 00:42:40 martinea Exp $
+ * $Id: planner.c,v 1.173 2005/12/05 18:11:17 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -547,7 +547,7 @@ char **argv;
     fprintf(stderr, "--------\n");
 
     close_infofile();
-    log_add(L_FINISH, "date %s", datestamp);
+    log_add(L_FINISH, "date %s time %s", datestamp, walltime_str(curclock()));
 
     amfree(datestamp);
     amfree(config_dir);
