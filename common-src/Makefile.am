@@ -129,6 +129,7 @@ bsdsecurity_LDADD = $(libamanda_a_LIBADD) \
 		    file.$(OBJEXT) \
 		    packet.$(OBJEXT) \
 		    security.$(OBJEXT) \
+		    ssh-security.$(OBJEXT) \
 		    versuff.$(OBJEXT)
 
 amfeatures_SOURCES = amfeatures.test.c
