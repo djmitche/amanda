@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.79 2005/11/29 22:19:08 martinea Exp $
+ * $Id: amindexd.c,v 1.80 2005/12/06 00:39:25 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -274,8 +274,8 @@ printf_arglist_function1(static void reply, int, n, char *, fmt)
     buf = alloc(str_buffer_size);
 
     arglist_start(args, fmt);
-    snprintf(buf, sizeof(buf), "%03d ", n);
-    vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
+    snprintf(buf, str_buffer_size, "%03d ", n);
+    vsnprintf(buf+4, str_buffer_size-4, fmt, args);
     arglist_end(args);
 
     if (printf("%s\r\n", buf) < 0)
@@ -305,8 +305,8 @@ printf_arglist_function1(static void lreply, int, n, char *, fmt)
     buf = alloc(str_buffer_size);
 
     arglist_start(args, fmt);
-    snprintf(buf, sizeof(buf), "%03d-", n);
-    vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
+    snprintf(buf, str_buffer_size, "%03d-", n);
+    vsnprintf(buf+4, str_buffer_size-4, fmt, args);
     arglist_end(args);
 
     if (printf("%s\r\n", buf) < 0)
@@ -337,8 +337,8 @@ printf_arglist_function1(static void fast_lreply, int, n, char *, fmt)
     buf = alloc(str_buffer_size);
 
     arglist_start(args, fmt);
-    snprintf(buf, sizeof(buf), "%03d-", n);
-    vsnprintf(buf+4, sizeof(buf)-4, fmt, args);
+    snprintf(buf, str_buffer_size, "%03d-", n);
+    vsnprintf(buf+4, str_buffer_size-4, fmt, args);
     arglist_end(args);
 
     if (printf("%s\r\n", buf) < 0)

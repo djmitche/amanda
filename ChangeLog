@@ -1,5 +1,10 @@
 2005-12-05  Jean-Louis Martineau <martineau@zmanda.com>
 
+	* server-src/amindexd.c (reply, lreply, fast_lreply): Must use
+	  str_buffer_sizebuf instead of sizeof(bug).
+
+2005-12-05  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* server-src/planner.c: Print the time in the FINISH line.
 	* server-src/reporter.c: The estimate time is based on the planner
 	  FINISH line.
