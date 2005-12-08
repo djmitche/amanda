@@ -626,21 +626,6 @@ AC_ARG_WITH(gnutar,
     ]
 )
 
-AC_ARG_WITH(qde,
-    [   --with-qde                use quick-and-dirty estimates for gnutar ],
-    USE_QUICK_AND_DIRTY_ESTIMATES=$withval,
-    : ${USE_QUICK_AND_DIRTY_ESTIMATES=no}
-)
-case "$USE_QUICK_AND_DIRTY_ESTIMATES" in
-n | no) : USE_QUICK_AND_DIRTY_ESTIMATES=no;;
-y |  ye | yes) : USE_QUICK_AND_DIRTY_ESTIMATES=yes
-	AC_DEFINE(USE_QUICK_AND_DIRTY_ESTIMATES,1,[ Define if you want to use amqde instead of gnutar for estimates ])
-  ;;
-*) AC_MSG_ERROR([*** You must not supply an argument to --with-qde option.])
-  ;;
-esac
-
-
 AC_ARG_WITH(smbclient,
     [  --with-smbclient[=PROG]   use PROG as Samba's smbclient executable [default: looks for one]],
     [
@@ -1750,26 +1735,6 @@ AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 
-dnl We don't have an acconfig.h template since we moved all define templates
-dnl into the third argument of AC_DEFINE.  However, AC_CHECK_TYPE calls
-dnl AC_DEFINE without such an argument, so autoheader complains about no
-dnl template being available.  This is an ugly work-around.
-
-pushdef([AC_DEFINE_SAVED],defn([AC_DEFINE]))
-pushdef([AC_DEFINE],[AC_DEFINE_SAVED([$1],[$2],[Define to $2 if $1 is not defined])])
-
-AC_CHECK_TYPE(ssize_t, int)
-
-dnl there is a push to avoid depending on long longs, so in general it's
-dnl better to convert numbers to kilobytes for consistancies sake.  This
-dnl is primarily checked for for client-src/amqde.c
-AC_CHECK_TYPES(unsigned long long)
-
-popdef([AC_DEFINE])
-popdef([AC_DEFINE_SAVED])
-
-dnl End ugly AC_CHECK_TYPE work-around.
-
 AC_TYPE_UID_T
 AC_TYPE_SIGNAL
 AC_STRUCT_TM
@@ -2697,10 +2662,6 @@ ICE_CHECK_DECL(strcasecmp,string.h strings.h)
 AC_CHECK_FUNCS(fnmatch)
 
 AC_SYS_LARGEFILE
-
-if test "$ac_cv_func_fnmatch" != yes -a "$USE_QUICK_AND_DIRTY_ESTIMATES" != yes ; then
-    AC_MSG_WARN([--with-qde and no fnmatch -- gnutar exclude files will not work])
-fi
 
 dnl disk device prefixes
 AC_MSG_CHECKING(disk device prefixes)

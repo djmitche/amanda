@@ -1,3 +1,10 @@
+2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* client-src/Makefile.am: Remove amqde.
+	* client-src/sendsize.c: Remove code to call amqde.
+	* client-src/amqde.c: Remove file.
+	* configure.in: Remove '--with-qde' option.
+
 2005-12-05  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/amindexd.c (reply, lreply, fast_lreply): Must use
