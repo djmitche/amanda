@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.116 2005/10/27 21:26:01 martinea Exp $
+ * $Id: conffile.c,v 1.117 2005/12/08 19:31:27 martinea Exp $
  *
  * read configuration file
  */
@@ -57,7 +57,7 @@
 
 typedef enum {
     UNKNOWN, ANY, COMMA, LBRACE, RBRACE, NL, END,
-    IDENT, INT, LONG, BOOL, REAL, STRING, TIME,
+    IDENT, INT, LONG, AM64, BOOL, REAL, STRING, TIME,
 
     /* config parameters */
     INCLUDEFILE,
@@ -129,6 +129,7 @@ keytab_t *keytable;
 typedef union {
     int i;
     long l;
+    am64_t am64;
     double r;
     char *s;
 } val_t;
@@ -318,7 +319,9 @@ static void get_taperalgo P((val_t *c_taperalgo, int *s_taperalgo));
 
 static void get_simple P((val_t *var, int *seen, tok_t type));
 static int get_time P((void));
-static long get_number P((void));
+static int get_int P((void));
+static long get_long P((void));
+static am64_t get_am64_t P((void));
 static int get_bool P((void));
 static void ckseen P((int *seen));
 static void parserror P((char *format, ...))
@@ -554,6 +557,20 @@ confparm_t parm;
 
     default:
 	error("error [unknown getconf_int parm: %d]", parm);
+	/* NOTREACHED */
+    }
+    return r;
+}
+
+am64_t getconf_am64(parm)
+confparm_t parm;
+{
+    am64_t r = 0;
+
+    switch(parm) {
+
+    default:
+	error("error [unknown getconf_am64 parm: %d]", parm);
 	/* NOTREACHED */
     }
     return r;
@@ -1179,7 +1196,7 @@ static int read_confline()
 	{
 	    int i;
 
-	    i = get_number();
+	    i = get_int();
 	    i = (i / DISK_BLOCK_KB) * DISK_BLOCK_KB;
 
 	    if(!seen_disksize) {
@@ -2474,10 +2491,13 @@ tok_t type;
 	malloc_mark(var->s);
 	break;
     case INT:
-	var->i = get_number();
+	var->i = get_int();
 	break;
     case LONG:
-	var->l = get_number();
+	var->l = get_long();
+	break;
+    case AM64:
+	var->am64 = get_am64_t();
 	break;
     case BOOL:
 	var->i = get_bool();
@@ -2555,9 +2575,9 @@ keytab_t numb_keytable[] = {
     { NULL, IDENT }
 };
 
-static long get_number()
+static int get_int()
 {
-    long val;
+    int val;
     keytab_t *save_kt;
 
     save_kt = keytable;
@@ -2566,11 +2586,13 @@ static long get_number()
     get_conftoken(ANY);
 
     switch(tok) {
-    case INT:
-	val = (long) tokenval.i;
+    case AM64:
+	if(abs(tokenval.am64) > INT_MAX)
+	    parserror("value too large");
+	val = (int) tokenval.am64;
 	break;
     case INFINITY:
-	val = (long) BIGINT;
+	val = (int) BIGINT;
 	break;
     default:
 	parserror("an integer expected");
@@ -2586,12 +2608,128 @@ static long get_number()
     case MULT1K:
 	break;
     case MULT7:
+	if(abs(val) > INT_MAX/7)
+	    parserror("value too large");
 	val *= 7;
 	break;
     case MULT1M:
+	if(abs(val) > INT_MAX/1024)
+	    parserror("value too large");
 	val *= 1024;
 	break;
     case MULT1G:
+	if(abs(val) > INT_MAX/(1024*1024))
+	    parserror("value too large");
+	val *= 1024*1024;
+	break;
+    default:	/* it was not a multiplier */
+	unget_conftoken();
+    }
+
+    keytable = save_kt;
+
+    return val;
+}
+
+static long get_long()
+{
+    long val;
+    keytab_t *save_kt;
+
+    save_kt = keytable;
+    keytable = numb_keytable;
+
+    get_conftoken(ANY);
+
+    switch(tok) {
+    case AM64:
+	if(tokenval.am64 > LONG_MAX || tokenval.am64 < LONG_MIN)
+	    parserror("value too large");
+	val = (long) tokenval.am64;
+	break;
+    case INFINITY:
+	val = (long) LONG_MAX;
+	break;
+    default:
+	parserror("a long expected");
+	val = 0;
+    }
+
+    /* get multiplier, if any */
+    get_conftoken(ANY);
+
+    switch(tok) {
+    case NL:			/* multiply by one */
+    case MULT1:
+    case MULT1K:
+	break;
+    case MULT7:
+	if(val > LONG_MAX/7 || val < LONG_MIN/7)
+	    parserror("value too large");
+	val *= 7;
+	break;
+    case MULT1M:
+	if(val > LONG_MAX/1024 || val < LONG_MIN/7)
+	    parserror("value too large");
+	val *= 1024;
+	break;
+    case MULT1G:
+	if(val > LONG_MAX/(1024*1024) || val < LONG_MIN/(1024*1024))
+	    parserror("value too large");
+	val *= 1024*1024;
+	break;
+    default:	/* it was not a multiplier */
+	unget_conftoken();
+    }
+
+    keytable = save_kt;
+
+    return val;
+}
+
+static am64_t get_am64_t()
+{
+    am64_t val;
+    keytab_t *save_kt;
+
+    save_kt = keytable;
+    keytable = numb_keytable;
+
+    get_conftoken(ANY);
+
+    switch(tok) {
+    case AM64:
+	val = tokenval.am64;
+	break;
+    case INFINITY:
+	val = AM64_MAX;
+	break;
+    default:
+	parserror("a am64 expected %d", tok);
+	val = 0;
+    }
+
+    /* get multiplier, if any */
+    get_conftoken(ANY);
+
+    switch(tok) {
+    case NL:			/* multiply by one */
+    case MULT1:
+    case MULT1K:
+	break;
+    case MULT7:
+	if(val > AM64_MAX/7 || val < AM64_MIN/7)
+	    parserror("value too large");
+	val *= 7;
+	break;
+    case MULT1M:
+	if(val > AM64_MAX/1024 || val < AM64_MIN/1024)
+	    parserror("value too large");
+	val *= 1024;
+	break;
+    case MULT1G:
+	if(val > AM64_MAX/(1024*1024) || val < AM64_MIN/(1024*1024))
+	    parserror("value too large");
 	val *= 1024*1024;
 	break;
     default:	/* it was not a multiplier */
@@ -2699,7 +2837,8 @@ static void unget_conftoken()
 static void get_conftoken(exp)
 tok_t exp;
 {
-    int ch, i, d;
+    int ch, d;
+    am64_t am64;
     char *buf;
     int token_overflow;
 
@@ -2710,6 +2849,7 @@ tok_t exp;
 	/* If it looked like a key word before then look it
 	** up again in the current keyword table. */
 	switch(tok) {
+	case LONG:    case AM64:
 	case INT:     case REAL:    case STRING:
 	case LBRACE:  case RBRACE:  case COMMA:
 	case NL:      case END:     case UNKNOWN:
@@ -2761,34 +2901,42 @@ tok_t exp;
 	    negative_number: /* look for goto negative_number below */
 		sign = -1;
 	    }
-	    tokenval.i = 0;
+	    tokenval.am64 = 0;
 	    do {
-		tokenval.i = tokenval.i * 10 + (ch - '0');
+		tokenval.am64 = tokenval.am64 * 10 + (ch - '0');
 		ch = getc(conf);
 	    } while(isdigit(ch));
 	    if(ch != '.') {
-		if(exp != REAL) {
+		if(exp == INT) {
 		    tok = INT;
 		    tokenval.i *= sign;
+		}
+		else if(exp == LONG) {
+		    tok = LONG;
+		    tokenval.l *= sign;
+		}
+		else if(exp != REAL) {
+		    tok = AM64;
+		    tokenval.am64 *= sign;
 		} else {
 		    /* automatically convert to real when expected */
-		    i = tokenval.i;
-		    tokenval.r = sign * (double) i;
+		    am64 = tokenval.am64;
+		    tokenval.r = sign * (double) am64;
 		    tok = REAL;
 		}
 	    }
 	    else {
 		/* got a real number, not an int */
-		i = tokenval.i;
-		tokenval.r = sign * (double) i;
-		i=0; d=1;
+		am64 = tokenval.am64;
+		tokenval.r = sign * (double) am64;
+		am64=0; d=1;
 		ch = getc(conf);
 		while(isdigit(ch)) {
-		    i = i * 10 + (ch - '0');
+		    am64 = am64 * 10 + (ch - '0');
 		    d = d * 10;
 		    ch = getc(conf);
 		}
-		tokenval.r += sign * ((double)i)/d;
+		tokenval.r += sign * ((double)am64)/d;
 		tok = REAL;
 	    }
 	    ungetc(ch,conf);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.57 2005/11/30 22:35:11 martinea Exp $
+ * $Id: conffile.h,v 1.58 2005/12/08 19:31:27 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -287,6 +287,7 @@ extern int num_holdingdisks;
 int read_conffile P((char *filename));
 int getconf_seen P((confparm_t parameter));
 int getconf_int P((confparm_t parameter));
+am64_t getconf_am64 P((confparm_t parameter));
 double getconf_real P((confparm_t parameter));
 char *getconf_str P((confparm_t parameter));
 char *getconf_byname P((char *confname));

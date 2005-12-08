@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.113 2005/10/11 01:17:00 vectro Exp $
+ * $Id: amanda.h,v 1.114 2005/12/08 19:31:26 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -142,6 +142,10 @@
 
 #ifdef HAVE_SYS_IOCTL_H
 #  include <sys/ioctl.h>
+#endif
+
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
@@ -1207,6 +1211,79 @@ extern ssize_t writev P((int fd, const struct iovec *iov, int iovcnt));
 #define S_ISDIR(mode)   (((mode) & (_S_IFMT)) == (_S_IFDIR))
 #else
 error: Don t know how to define S_ISDIR
+#endif
+#endif
+
+#if SIZEOF_LONG == 8
+   typedef long am64_t;
+#  ifdef LONG_MAX
+#    define AM64_MAX LONG_MAX
+#  else
+#    define AM64_MAX 9223372036854775807L
+#  endif
+#  ifdef LONG_MIN
+#    define AM64_MIN LONG_MIN
+#  else
+#    define AM64_MIN -9223372036854775807L -1L
+#  endif
+#  define AM64_FMT "%ld"
+#else
+#if SIZEOF_LONG_LONG == 8
+   typedef long long am64_t;
+#  ifdef LONG_LONG_MAX
+#    define AM64_MAX LONG_LONG_MAX
+#  else
+#    define AM64_MAX 9223372036854775807LL
+#  endif
+#  ifdef LONG_LONG_MIN
+#    define AM64_MIN LONG_LONG_MIN
+#  else
+#    define AM64_MIN -9223372036854775807LL -1LL
+#  endif
+#  define AM64_FMT "%AMANDA_AM64_FMT"
+#else
+#if SIZEOF_INTMAX_T == 8
+   typedef intmax_t am64_t;
+#  ifdef INTMAX_MAX
+#    define AM64_MAX INTMAX_MAX
+#  else
+#    define AM64_MAX 9223372036854775807LL
+#  endif
+#  ifdef INTMAX_MIN
+#    define AM64_MIN INTMAX_MIN
+#  else
+#    define AM64_MIN -9223372036854775807LL -1LL
+#  endif
+#  define AM64_FMT "%AMANDA_AM64_FMT"
+#else
+#if SIZEOF_OFF_T == 8
+   typedef off_t am64_t;
+#  ifdef OFF_MAX
+#    define AM64_MAX OFF_MAX
+#  else
+#    define AM64_MAX 9223372036854775807LL
+#  endif
+#  ifdef OFF_MIN
+#    define AM64_MIN OFF_MIN
+#  else
+#    define AM64_MIN -9223372036854775807LL -1LL
+#  endif
+#  define AM64_FMT "%AMANDA_AM64_FMT"
+#else  /* no 64 bits tyupe found, use long. */
+   typedef long am64_t;
+#  ifdef LONG_MAX
+#    define AM64_MAX LONG_MAX
+#  else
+#    define AM64_MAX 2147483647
+#  endif
+#  ifdef LONG_MIN
+#    define AM64_MIN LONG_MIN
+#  else
+#    define AM64_MIN -2147483647 -1
+#  endif
+#  define AM64_FMT "%ld"
+#endif
+#endif
 #endif
 #endif
 

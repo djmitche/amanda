@@ -1,5 +1,14 @@
 2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
 
+	* configure.in: Check for sizeof of many type. Check printf format of
+	  a 64-bit integers.
+	* common-src/amanda.h: Typedef am64_t to a 64 bits signed type,i
+	  set AM64_FMT to the printf format of a am64_t variable.
+	* server-src/conffile.c: New AM64 type.
+	* server-src/conffile.h(getconf_am64): Prototype.
+
+2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* client-src/Makefile.am: Remove amqde.
 	* client-src/sendsize.c: Remove code to call amqde.
 	* client-src/amqde.c: Remove file.
