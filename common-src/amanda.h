@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.115 2005/12/08 23:29:22 martinea Exp $
+ * $Id: amanda.h,v 1.116 2005/12/08 23:41:22 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1285,6 +1285,12 @@ error: Don t know how to define S_ISDIR
 #endif
 #endif
 #endif
+#endif
+
+#if SIZEOF_OFF_T > SIZEOF_LONG
+#  define        OFF_T_FMT       "%lld"
+#else
+#  define        OFF_T_FMT       "%ld"
 #endif
 
 #endif	/* !AMANDA_H */

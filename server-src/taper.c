@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.107 2005/12/05 13:33:33 martinea Exp $
+/* $Id: taper.c,v 1.108 2005/12/08 23:41:22 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1076,12 +1076,12 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 	   whole thing. "Seek" forward to where we want to be. */
 	if(label) putresult(SPLIT_CONTINUE, "%s %s\n", handle, label);
         if(mode == MODE_FILE_WRITE && cur_span_chunkstart > 0){
-	    fprintf(stderr, "taper: r: seeking %s to %lld kb\n",
+	    fprintf(stderr, "taper: r: seeking %s to " OFF_T_FMT " kb\n",
 	                    holdfile_path_thischunk, holdfile_offset_thischunk);
 	    fflush(stderr);
 
 	    if(holdfile_offset_thischunk > maxseek){
-	      snprintf(seekerrstr, sizeof(seekerrstr), "Can't seek by %lld kb (compiled for %d-bit file offsets), recompile with large file support or set holdingdisk chunksize to <%ld Mb", holdfile_offset_thischunk, (int)(sizeof(off_t) * 8), (long)(maxseek/1024));
+	      snprintf(seekerrstr, sizeof(seekerrstr), "Can't seek by " OFF_T_FMT " kb (compiled for %d-bit file offsets), recompile with large file support or set holdingdisk chunksize to <%ld Mb", holdfile_offset_thischunk, (int)(sizeof(off_t) * 8), (long)(maxseek/1024));
 	      log_add(L_ERROR, "%s", seekerrstr);
 	      fprintf(stderr, "taper: r: FATAL: %s\n", seekerrstr);
 	      fflush(stderr);
@@ -1089,7 +1089,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 	      return -1;
 	    }
 	    if(lseek(fd, holdfile_offset_thischunk*1024, SEEK_SET) == (off_t)-1){
-	      fprintf(stderr, "taper: r: FATAL: seek_holdfile lseek error while seeking into %s by %lldkb: %s\n", holdfile_path_thischunk, holdfile_offset_thischunk, strerror(errno));
+	      fprintf(stderr, "taper: r: FATAL: seek_holdfile lseek error while seeking into %s by " OFF_T_FMT "kb: %s\n", holdfile_path_thischunk, holdfile_offset_thischunk, strerror(errno));
 	      fflush(stderr);
 	      syncpipe_put('X');
 	      return -1;

@@ -1,5 +1,10 @@
 2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
 
+	* common-src/amanda.h: Set OFF_T_FMT to printf formta of a off_t.
+	* server-src/taper.c: Use OFF_T_FMT.
+
+2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* configure.in: Set LL_FMT correctly.
 	* server-src/conffile.c: Use LL_FMT.
 
