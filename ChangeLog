@@ -1,5 +1,11 @@
 2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
 
+	* server-src/conffile.c: Maxdumpsize is a AM64.
+	* server-src/planner.c: conf_maxdumpsize, total_size, tape_length and
+	  tape_mark are am64_t.
+
+2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* configure.in: Check for sizeof of many type. Check printf format of
 	  a 64-bit integers.
 	* common-src/amanda.h: Typedef am64_t to a 64 bits signed type,i

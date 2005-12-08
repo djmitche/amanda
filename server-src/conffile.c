@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.117 2005/12/08 19:31:27 martinea Exp $
+ * $Id: conffile.c,v 1.118 2005/12/08 19:34:17 martinea Exp $
  *
  * read configuration file
  */
@@ -424,7 +424,7 @@ struct byname {
     { "DISPLAYUNIT", CNF_DISPLAYUNIT, STRING },
     { "AUTOFLUSH", CNF_AUTOFLUSH, BOOL },
     { "RESERVE", CNF_RESERVE, INT },
-    { "MAXDUMPSIZE", CNF_MAXDUMPSIZE, INT },
+    { "MAXDUMPSIZE", CNF_MAXDUMPSIZE, AM64 },
     { "KRB5KEYTAB", CNF_KRB5KEYTAB, STRING },
     { "KRB5PRINCIPAL", CNF_KRB5PRINCIPAL, STRING },
     { NULL }
@@ -550,7 +550,6 @@ confparm_t parm;
     case CNF_TAPEBUFS: r = conf_tapebufs.i; break;
     case CNF_AUTOFLUSH: r = conf_autoflush.i; break;
     case CNF_RESERVE: r = conf_reserve.i; break;
-    case CNF_MAXDUMPSIZE: r = conf_maxdumpsize.i; break;
     case CNF_AMRECOVER_DO_FSF: r = conf_amrecover_do_fsf.i; break;
     case CNF_AMRECOVER_CHECK_LABEL: r = conf_amrecover_check_label.i; break;
     case CNF_TAPERALGO: r = conf_taperalgo.i; break;
@@ -568,6 +567,7 @@ confparm_t parm;
     am64_t r = 0;
 
     switch(parm) {
+    case CNF_MAXDUMPSIZE: r = conf_maxdumpsize.am64; break;
 
     default:
 	error("error [unknown getconf_am64 parm: %d]", parm);
@@ -766,7 +766,7 @@ static void init_defaults()
     conf_tapebufs.i     = 20;
     conf_autoflush.i	= 0;
     conf_reserve.i	= 100;
-    conf_maxdumpsize.i	= -1;
+    conf_maxdumpsize.am64	= -1;
     conf_amrecover_do_fsf.i = 1;
     conf_amrecover_check_label.i = 1;
     conf_taperalgo.i = 0;
@@ -1119,7 +1119,7 @@ static int read_confline()
 			parserror("reserve must be between 0 and 100");
 		    }
 		    break;
-    case MAXDUMPSIZE:get_simple(&conf_maxdumpsize,&seen_maxdumpsize,INT); break;
+    case MAXDUMPSIZE:get_simple(&conf_maxdumpsize,&seen_maxdumpsize,AM64); break;
     case COLUMNSPEC:get_simple(&conf_columnspec,&seen_columnspec,STRING); break;
 
     case AMRECOVER_DO_FSF: get_simple(&conf_amrecover_do_fsf,&seen_amrecover_do_fsf, BOOL); break;
@@ -3197,7 +3197,7 @@ dump_configuration(filename)
     printf("conf_tapebufs = %d\n", getconf_int(CNF_TAPEBUFS));
     printf("conf_autoflush  = %d\n", getconf_int(CNF_AUTOFLUSH));
     printf("conf_reserve  = %d\n", getconf_int(CNF_RESERVE));
-    printf("conf_maxdumpsize  = %d\n", getconf_int(CNF_MAXDUMPSIZE));
+    printf("conf_maxdumpsize  = " AM64_FMT "\n", getconf_am64(CNF_MAXDUMPSIZE));
     printf("conf_amrecover_do_fsf  = %d\n", getconf_int(CNF_AMRECOVER_DO_FSF));
     printf("conf_amrecover_check_label  = %d\n", getconf_int(CNF_AMRECOVER_CHECK_LABEL));
     printf("conf_amrecover_changer = \"%s\"\n", getconf_str(CNF_AMRECOVER_CHANGER));

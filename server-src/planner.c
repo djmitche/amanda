@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.173 2005/12/05 18:11:17 martinea Exp $
+ * $Id: planner.c,v 1.174 2005/12/08 19:34:17 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -54,7 +54,7 @@
 /* configuration file stuff */
 
 char *conf_tapetype;
-int conf_maxdumpsize;
+am64_t conf_maxdumpsize;
 int conf_runtapes;
 int conf_dumpcycle;
 int conf_runspercycle;
@@ -97,9 +97,9 @@ typedef struct est_s {
 
 /* pestq = partial estimate */
 disklist_t startq, waitq, pestq, estq, failq, schedq;
-long total_size;
+am64_t total_size;
 double total_lev0, balanced_size, balance_threshold;
-unsigned long tape_length, tape_mark;
+am64_t tape_length, tape_mark;
 
 tapetype_t *tape;
 long tt_blocksize;
@@ -285,7 +285,7 @@ char **argv;
     amfree(conf_infofile);
 
     conf_tapetype = getconf_str(CNF_TAPETYPE);
-    conf_maxdumpsize = getconf_int(CNF_MAXDUMPSIZE);
+    conf_maxdumpsize = getconf_am64(CNF_MAXDUMPSIZE);
     conf_runtapes = getconf_int(CNF_RUNTAPES);
     conf_dumpcycle = getconf_int(CNF_DUMPCYCLE);
     conf_runspercycle = getconf_int(CNF_RUNSPERCYCLE);
@@ -465,7 +465,7 @@ char **argv;
     {
 	disk_t *dp;
 
-	fprintf(stderr, "INITIAL SCHEDULE (size %ld):\n", total_size);
+	fprintf(stderr, "INITIAL SCHEDULE (size " AM64_FMT "):\n", total_size);
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	    fprintf(stderr, "  %s %s pri %d lev %d size %ld\n",
 		    dp->host->hostname, dp->name, est(dp)->dump_priority,
@@ -487,7 +487,7 @@ char **argv;
      */
 
     fprintf(stderr,
-      "\nDELAYING DUMPS IF NEEDED, total_size %ld, tape length %lu mark %lu\n",
+      "\nDELAYING DUMPS IF NEEDED, total_size " AM64_FMT ", tape length " AM64_FMT " mark " AM64_FMT "\n",
 	    total_size, tape_length, tape_mark);
 
     initial_size = total_size;
@@ -1922,7 +1922,7 @@ disk_t *dp;
 	balanced_size += lev0size / runs_per_cycle;
     }
 
-    fprintf(stderr,"total size %ld total_lev0 %1.0f balanced-lev0size %1.0f\n",
+    fprintf(stderr,"total size " AM64_FMT " total_lev0 %1.0f balanced-lev0size %1.0f\n",
 	    total_size, total_lev0, balanced_size);
 }
 
@@ -2083,7 +2083,7 @@ static void delay_dumps P((void))
 {
     disk_t *dp, *ndp, *preserve;
     bi_t *bi, *nbi;
-    long new_total;	/* New total_size */
+    am64_t new_total;	/* New total_size */
     char est_kb[20];     /* Text formatted dump size */
     int nb_forced_level_0;
     info_t info;
@@ -2343,7 +2343,7 @@ static void delay_dumps P((void))
 	amfree(bi);
     }
 
-    fprintf(stderr, "  delay: Total size now %ld.\n", total_size);
+    fprintf(stderr, "  delay: Total size now " AM64_FMT ".\n", total_size);
 
     return;
 }
@@ -2509,7 +2509,7 @@ static int promote_highest_priority_incremental P((void))
 	est(dp)->next_level0 = 0;
 
 	fprintf(stderr,
-	      "   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
+	      "   promote: moving %s:%s up, total_lev0 %1.0f, total_size " AM64_FMT "\n",
 		dp->host->hostname, dp->name,
 		total_lev0, total_size);
 
@@ -2595,7 +2595,7 @@ static int promote_hills P((void))
 	    est(dp)->dump_size = new_size;
 
 	    fprintf(stderr,
-		    "   promote: moving %s:%s up, total_lev0 %1.0f, total_size %ld\n",
+		    "   promote: moving %s:%s up, total_lev0 %1.0f, total_size " AM64_FMT "\n",
 		    dp->host->hostname, dp->name,
 		    total_lev0, total_size);
 
