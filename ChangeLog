@@ -1,5 +1,10 @@
 2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
 
+	* configure.in: Set LL_FMT correctly.
+	* server-src/conffile.c: Use LL_FMT.
+
+2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* server-src/conffile.c: Maxdumpsize is a AM64.
 	* server-src/planner.c: conf_maxdumpsize, total_size, tape_length and
 	  tape_mark are am64_t.

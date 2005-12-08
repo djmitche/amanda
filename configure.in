@@ -1700,14 +1700,14 @@ main() {
 } 
 ],
 	[AC_MSG_RESULT(ll)
-	AMANDA_AM64_FMT='#define AMANDA_AM64_FMT "ll"'],
+	LL_FMT="%lld"],
 	[AC_MSG_RESULT(l)
-	AMANDA_AM64_FMT='#define AMANDA_AM64_FMT "l"'],
+	LL_FMT="%ld"],
 	[AC_MSG_RESULT(assuming target platform uses ll)
-	AMANDA_AM64_FMT='#define AMANDA_AM64_FMT "ll"'])
-AC_DEFINE_UNQUOTED(AMANDA_AM64_FMT,"$AMANDA_AM64_FMT",
+	LL_FMT="%lld"])
+AC_DEFINE_UNQUOTED(LL_FMT,"$LL_FMT",
   [Format for a long long printf. ])
-AC_SUBST(AMANDA_AM64_FMT)
+AC_SUBST(LL_FMT)
 
 dnl Empty GZIP so that make dist works.
 GZIP=
