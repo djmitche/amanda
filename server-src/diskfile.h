@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.31 2005/10/11 01:17:01 vectro Exp $
+ * $Id: diskfile.h,v 1.32 2005/12/09 03:22:52 paddy_s Exp $
  *
  * interface for disklist file reading code
  */
@@ -59,6 +59,10 @@ typedef struct disk_s {
     char *device;			/* device name for disk, eg "sd0g" */
     char *dtype_name;			/* name of dump type   XXX shouldn't need this */
     char *program;			/* dump program, eg DUMP, GNUTAR */
+    char *srvcompprog;                  /* custom compression server filter */
+    char *clntcompprog;                 /* custom compression client filter */
+    char *srv_encrypt;                  /* custom encryption server filter */
+    char *clnt_encrypt;                 /* custom encryption client filter */
     sl_t *exclude_file;			/* file exclude spec */
     sl_t *exclude_list;			/* exclude list */
     sl_t *include_file;			/* file include spec */
@@ -82,6 +86,9 @@ typedef struct disk_s {
     int strategy;			/* what dump strategy to use */
     int estimate;			/* what estimate strategy to use */
     int compress;			/* type of compression to use */
+    int encrypt;			/* type of encryption to use */
+    char *srv_decrypt_opt;  	        /* server-side decryption option parameter to use */
+    char *clnt_decrypt_opt;             /* client-side decryption option parameter to use */
     float comprate[2];			/* default compression rates */
     /* flag options */
     unsigned int record:1;		/* record dump in /etc/dumpdates ? */

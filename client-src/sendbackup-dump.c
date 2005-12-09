@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.86 2005/09/20 18:14:33 jrjackson Exp $
+ * $Id: sendbackup-dump.c,v 1.87 2005/12/09 03:22:52 paddy_s Exp $
  *
  * send backup data using BSD dump
  */
@@ -111,27 +111,48 @@ static regex_t re_table[] = {
   AM_STRANGE_RE(NULL)
 };
 
+/*
+ *  doing similar to $ dump | compression | encryption
+ */
+
 static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, indexf)
     char *host;
     char *disk, *amdevice;
     int level, dataf, mesgf, indexf;
     char *dumpdate;
 {
-    int dumpin, dumpout;
+    int dumpin, dumpout, compout;
     char *dumpkeys = NULL;
     char *device = NULL;
     char *fstype = NULL;
     char *cmd = NULL;
     char *indexcmd = NULL;
     char level_str[NUM_STR_SIZE];
+    char *compopt  = NULL;
+    char *encryptopt = skip_argument;
+
 
     snprintf(level_str, sizeof(level_str), "%d", level);
 
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    get_pname(), host, disk, level);
 
+      /*  apply client-side encryption here */
+      if ( options->encrypt == ENCRYPT_CUST ) {
+       encpid = pipespawn(options->clnt_encrypt, STDIN_PIPE,
+                       &compout, &dataf, &mesgf,
+                       options->clnt_encrypt, encryptopt, NULL);
+       dbprintf(("%s: pid %ld: %s\n",
+                 debug_prefix_time("-gnutar"), (long)encpid, options->clnt_encrypt));
+     } else {
+        compout = dataf;
+        encpid = -1;
+     }
+      /*  now do the client-side compression */
+
+
     if(options->compress == COMPR_FAST || options->compress == COMPR_BEST) {
-	char *compopt = skip_argument;
+	compopt = skip_argument;
 
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
 	if(options->compress == COMPR_BEST) {
@@ -141,7 +162,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	}
 #endif
 	comppid = pipespawn(COMPRESS_PATH, STDIN_PIPE,
-			    &dumpout, &dataf, &mesgf,
+			    &dumpout, &compout, &mesgf,
 			    COMPRESS_PATH, compopt, NULL);
 	dbprintf(("%s: pid %ld: %s",
 		  debug_prefix_time("-dump"), (long)comppid, COMPRESS_PATH));
@@ -149,8 +170,19 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	    dbprintf((" %s", compopt));
 	}
 	dbprintf(("\n"));
+     } else if (options->compress == COMPR_CUST) {
+        compopt = skip_argument;
+	comppid = pipespawn(options->clntcompprog, STDIN_PIPE,
+			    &dumpout, &compout, &mesgf,
+			    options->clntcompprog, compopt, NULL);
+	dbprintf(("%s: pid %ld: %s",
+		  debug_prefix_time("-gnutar-cust"), (long)comppid, options->clntcompprog));
+	if(compopt != skip_argument) {
+	    dbprintf((" %s", compopt));
+	}
+	dbprintf(("\n"));
     } else {
-	dumpout = dataf;
+	dumpout = compout;
 	comppid = -1;
     }
 
@@ -365,6 +397,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 
     aclose(dumpin);
     aclose(dumpout);
+    aclose(compout);
     aclose(dataf);
     aclose(mesgf);
     if (options->createindex)

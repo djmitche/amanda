@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.58 2005/12/08 19:31:27 martinea Exp $
+ * $Id: conffile.h,v 1.59 2005/12/09 03:22:52 paddy_s Exp $
  *
  * interface for config file reading code
  */
@@ -130,9 +130,18 @@ typedef enum {
     COMP_NONE,		/* No compression */
     COMP_FAST,		/* Fast compression on client */
     COMP_BEST,		/* Best compression on client */
+    COMP_CUST,		/* Custom compression on client */
     COMP_SERV_FAST,	/* Fast compression on server */
-    COMP_SERV_BEST	/* Best compression on server */
+    COMP_SERV_BEST,	/* Best compression on server */
+    COMP_SERV_CUST	/* Custom compression on server */
 } comp_t;
+
+/* Encryption types */
+typedef enum {
+    ENCRYPT_NONE,		/* No encryption */
+    ENCRYPT_CUST,		/* Custom encryption on client */
+    ENCRYPT_SERV_CUST,	        /* Custom encryption on server */
+} encrypt_t;
 
 #define ALGO_FIRST	0
 #define ALGO_FIRSTFIT	1
@@ -148,6 +157,10 @@ typedef struct dumptype_s {
 
     char *comment;
     char *program;
+    char *srvcompprog;
+    char *clntcompprog;
+    char *srv_encrypt;
+    char *clnt_encrypt;
     sl_t *exclude_file;
     sl_t *exclude_list;
     sl_t *include_file;
@@ -169,6 +182,9 @@ typedef struct dumptype_s {
     int strategy;
     int estimate;
     comp_t compress;
+    encrypt_t encrypt;
+    char *srv_decrypt_opt;
+    char *clnt_decrypt_opt;
     float comprate[2]; /* first is full, second is incremental */
     long tape_splitsize;
     char *split_diskbuffer;
@@ -185,6 +201,10 @@ typedef struct dumptype_s {
     /* seen flags */
     int s_comment;
     int s_program;
+    int s_srvcompprog;
+    int s_clntcompprog;
+    int s_srv_encrypt;
+    int s_clnt_encrypt;
     int s_exclude_file;
     int s_exclude_list;
     int s_include_file;
@@ -206,6 +226,9 @@ typedef struct dumptype_s {
     int s_strategy;
     int s_estimate;
     int s_compress;
+    int s_encrypt;
+    int s_srv_decrypt_opt;
+    int s_clnt_decrypt_opt;
     int s_comprate;
     int s_record;
     int s_skip_incr;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.53 2005/10/15 13:20:47 martinea Exp $
+ * $Id: amrestore.c,v 1.54 2005/12/09 03:22:52 paddy_s Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -49,7 +49,7 @@
 extern int bytes_read;
 
 static int got_sigpipe, file_number;
-static pid_t compress_pid = -1;
+static pid_t comp_enc_pid = -1;
 static int tapedev;
 static long filefsf = -1;
 
@@ -329,9 +329,9 @@ char **argv;
 	}
 	if(found_match) {
 	    restore(&file, filename, tapedev, isafile, rst_flags);
-	    if(compress_pid > 0) {
-		waitpid(compress_pid, &compress_status, 0);
-		compress_pid = -1;
+	    if(comp_enc_pid > 0) {
+		waitpid(comp_enc_pid, &compress_status, 0);
+		comp_enc_pid = -1;
 	    }
 	    if(rst_flags->pipe_to_fd != -1) {
 		file_number++;			/* for the last message */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.5 2005/11/29 22:19:08 martinea Exp $
+ * $Id: restore.c,v 1.6 2005/12/09 03:22:52 paddy_s Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -59,7 +59,7 @@ typedef struct open_output_s {
     struct open_output_s *next;
     dumpfile_t *file;
     int lastpartnum;
-    pid_t compress_pid;
+    pid_t comp_enc_pid;
     int outfd;
 } open_output_t;
 
@@ -435,8 +435,8 @@ dumpfile_t *only_file;
 	    continue;
 	}
 	if(!reassemble) aclose(cur_out->outfd);
-	if(cur_out->compress_pid > 0){
-	    waitpid(cur_out->compress_pid, &compress_status, 0);
+	if(cur_out->comp_enc_pid > 0){
+	    waitpid(cur_out->comp_enc_pid, &compress_status, 0);
 	}
 	amfree(cur_out->file);
 	prev = cur_out;
@@ -623,7 +623,7 @@ rst_flags_t *flags;
  * piped to restore).
  */
 {
-    int rc = 0, dest = -1, out, outpipe[2];
+    int rc = 0, dest = -1, out, outpipe[2], outpipe2[2];
     int wc;
     int l, s;
     int file_is_compressed;
@@ -635,6 +635,7 @@ rst_flags_t *flags;
     dumplist_t *tempdump = NULL, *fileentry = NULL;
     struct sigaction act, oact;
     char *buffer = NULL;
+    int need_compress=0, need_uncompress=0, need_decrypt=0;
 
     if(flags->blocksize) blocksize = flags->blocksize;
     else if(blocksize == -1) blocksize = DISK_BLOCK_BYTES;
@@ -801,31 +802,90 @@ rst_flags_t *flags;
 #endif
 	memcpy(file, &tmp_hdr, sizeof(dumpfile_t));
     }
+ 
+    /* find out if compression or uncompression is needed here */
+    if(flags->compress && !file_is_compressed && !is_continuation && !flags->leave_comp &&
+       (flags->inline_assemble || file->type != F_SPLIT_DUMPFILE))
+       need_compress=1;
+       
+    if(!flags->raw && !flags->compress && file_is_compressed && !is_continuation && 
+	  !flags->leave_comp && (flags->inline_assemble || file->type != F_SPLIT_DUMPFILE))
+       need_uncompress=1;   
+
+   
+    /* up to two sets of pipes for decryption and compression/uncompression  */
+    if(pipe(outpipe) < 0) 
+      error("error [pipe1: %s]", strerror(errno));
+    if( need_compress || need_uncompress)
+      if(pipe(outpipe2) < 0) 
+	error("error [pipe2: %s]", strerror(errno));
+    out = outpipe[1];
+
+    /* decrypt first if it's encrypted and no -r */
+    if(!flags->raw && file->encrypted) {
+      need_decrypt=1;
+      switch(myout->comp_enc_pid = fork()) {
+      case -1:
+	error("could not fork for decrypt: %s", strerror(errno));
+      default:
+ 	aclose(outpipe[0]); 
+	if (!need_compress && !need_uncompress) 
+	  if(dest != 1) aclose(dest);
+	break;
+      case 0:
+	aclose(outpipe[1]);
+	if(outpipe[0] != 0) {
+	  if(dup2(outpipe[0], 0) == -1)
+	    error("error [dup2 pipe %d: %s]", outpipe[0], strerror(errno));
+	  aclose(outpipe[0]);
+	}
+ 	if (!need_compress && !need_uncompress) { /* output goes to dest       */
+	  if(dest != 1) {	                 /*  if no compress/uncompress */
+	    if(dup2(dest, 1) == -1)
+	      error("error [dup2 dest %d: %s]", dest, strerror(errno));
+	    aclose(dest);
+	  }
+	}  else { /* output goes to outpipe2[1] if compress/uncompress */
+	  if (dup2(outpipe2[1], 1) < 0) 
+	    error("error [dup2 outpipe2[1] %d: %s]", dest, strerror(errno));
+	  aclose(outpipe2[1]);
+	}
+	aclose(tapefd);
+	if (*file->srv_encrypt) {
+	  (void) execlp(file->srv_encrypt, file->srv_encrypt,
+			file->srv_decrypt_opt, NULL);
+	  error("could not exec %s: %s", file->srv_encrypt, strerror(errno));
+	}  else if (*file->clnt_encrypt) {
+	  (void) execlp(file->clnt_encrypt, file->clnt_encrypt,
+			file->clnt_decrypt_opt, NULL);
+	  error("could not exec %s: %s", file->clnt_encrypt, strerror(errno));
+	}
+      }
+    } else { 			/* no need to decrypt, compression              */
+      outpipe2[0] = outpipe[0];	/* or uncompression to use outpipe[0] as input */
+    }
 
     /*
      * Insert a compress pipe
      */
-    if(flags->compress && !file_is_compressed && !is_continuation && !flags->leave_comp &&
-	           (flags->inline_assemble || file->type != F_SPLIT_DUMPFILE)) {
-	if(pipe(outpipe) < 0) error("error [pipe: %s]", strerror(errno));
-
-	out = outpipe[1];
+    if(need_compress) {
 #if 0
 //	if(is_continuation && myout != NULL) myout->outfd = outpipe[1];
 #endif
-	switch(myout->compress_pid = fork()) {
+
+	switch(myout->comp_enc_pid = fork()) {
 	case -1: error("could not fork for %s: %s",
 		       COMPRESS_PATH, strerror(errno));
 	default:
-	    aclose(outpipe[0]);
+	    aclose(outpipe2[0]);
 	    if(dest != 1) aclose(dest); /* stdout is special */
 	    break;
 	case 0:
-	    aclose(outpipe[1]);
-	    if(outpipe[0] != 0) {
-		if(dup2(outpipe[0], 0) == -1)
+	    aclose(outpipe2[1]);
+	    if(outpipe2[0] != 0) {
+		if(dup2(outpipe2[0], 0) == -1)
 		    error("error [dup2 pipe %d: %s]", outpipe[0], strerror(errno));
-		aclose(outpipe[0]);
+		aclose(outpipe2[0]);
 	    }
 	    if(dest != 1) {
 		if(dup2(dest, 1) == -1)
@@ -835,8 +895,9 @@ rst_flags_t *flags;
 	    if (*flags->comp_type == '\0') {
 		flags->comp_type = NULL;
 	    }
+	    aclose(outpipe2[0]); aclose(outpipe2[1]); aclose(outpipe[0]); aclose(outpipe[1]);
 	    aclose(tapefd);
-	    execlp(COMPRESS_PATH, COMPRESS_PATH, flags->comp_type, (char *)0);
+	    (void) execlp(COMPRESS_PATH, COMPRESS_PATH, flags->comp_type, (char *)0);
 	    error("could not exec %s: %s", COMPRESS_PATH, strerror(errno));
 	}
     }
@@ -846,46 +907,48 @@ rst_flags_t *flags;
      * options are sane, insert uncompress pipe
      */
 
-    else if(!flags->raw && !flags->compress && file_is_compressed &&
-	                !is_continuation && !flags->leave_comp &&
-			(flags->inline_assemble || file->type != F_SPLIT_DUMPFILE)) {
+    else if(need_uncompress) {
 	/* 
 	 * XXX for now we know that for the two compression types we
 	 * understand, .Z and optionally .gz, UNCOMPRESS_PATH will take
 	 * care of both.  Later, we may need to reference a table of
 	 * possible uncompress programs.
-	 */
-	if(pipe(outpipe) < 0) error("error [pipe: %s]", strerror(errno));
-
-	out = outpipe[1];
+	 */ 
 #if 0
 //	if(is_continuation && myout != NULL) myout->outfd = outpipe[1];
 #endif
-	switch(myout->compress_pid = fork()) {
+	switch(myout->comp_enc_pid = fork()) {
 	case -1: 
 	    error("could not fork for %s: %s",
 		  UNCOMPRESS_PATH, strerror(errno));
 	default:
-	    aclose(outpipe[0]);
- /* XXX check pipe_to_fd instead? */
+	   aclose(outpipe2[0]);
 	    if(dest != 1) aclose(dest); /* pipes're special */
 	    break;
 	case 0:
-	    aclose(outpipe[1]);
-	    if(outpipe[0] != 0) {
-		if(dup2(outpipe[0], 0) < 0)
-		    error("dup2 pipe: %s", strerror(errno));
-		aclose(outpipe[0]);
+	    aclose(outpipe2[1]);
+	    if(outpipe2[0] != 0) {
+		if(dup2(outpipe2[0], 0) < 0)
+		    error("dup2 pipe(uncompress): %s", strerror(errno));
+		aclose(outpipe2[0]);
 	    }
 	    if(dest != 1) { /* XXX check pipe_to_fd instead? */
 		if(dup2(dest, 1) < 0)
 		    error("dup2 dest: %s", strerror(errno));
 		aclose(dest);
 	    }
+	    aclose(outpipe2[0]); aclose(outpipe2[1]); aclose(outpipe[0]); aclose(outpipe[1]);
 #if 0
 //	    fcntl(tapefd, F_SETFD, FD_CLOEXEC);
 #endif
 	    aclose(tapefd);
+	    if (*file->srvcompprog) {
+	      (void) execlp(file->srvcompprog, file->srvcompprog, "-d", NULL);
+	      error("could not exec %s: %s", file->srvcompprog, strerror(errno));
+	    } else if (*file->clntcompprog) {
+	      (void) execlp(file->clntcompprog, file->clntcompprog, "-d", NULL);
+	      error("could not exec %s: %s", file->clntcompprog, strerror(errno));
+	    } else {
 	    (void) execlp(UNCOMPRESS_PATH, UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 			  UNCOMPRESS_OPT,
@@ -893,7 +956,8 @@ rst_flags_t *flags;
 			  (char *)0);
 	    error("could not exec %s: %s", UNCOMPRESS_PATH, strerror(errno));
 	}
-    }
+	}
+    } 
 
 
     /* copy the rest of the file from tape to the output */
@@ -1040,7 +1104,7 @@ rst_flags_t *flags;
         memcpy(oldout->file, file, sizeof(dumpfile_t));
         if(flags->inline_assemble) oldout->outfd = out; 
 	else oldout->outfd = -1;
-        oldout->compress_pid = -1;
+        oldout->comp_enc_pid = -1;
         oldout->lastpartnum = file->partnum;
         oldout->next = open_outputs;
         open_outputs = oldout;

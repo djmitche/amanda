@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.73 2005/10/15 13:20:47 martinea Exp $
+ * $Id: sendbackup.c,v 1.74 2005/12/09 03:22:52 paddy_s Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -80,6 +80,8 @@ option_t *options;
 {
     static char *optstr = NULL;
     char *compress_opt = "";
+    char *encrypt_opt ="";
+    char *decrypt_opt ="";
     char *record_opt = "";
     char *index_opt = "";
     char *auth_opt = "";
@@ -96,6 +98,22 @@ option_t *options;
 	compress_opt = "srvcomp-best;";
     else if(options->compress == COMPR_SERVER_FAST)
 	compress_opt = "srvcomp-fast;";
+    else if(options->compress == COMPR_SERVER_CUST)
+	compress_opt = vstralloc("srvcomp-cust=", options->srvcompprog, ";", NULL);
+    else if(options->compress == COMPR_CUST)
+	compress_opt = vstralloc("comp-cust=", options->clntcompprog, ";", NULL);
+    
+    if(options->encrypt == ENCRYPT_CUST) {
+      encrypt_opt = vstralloc("encrypt-cust=", options->clnt_encrypt, ";", NULL);
+      if (options->clnt_decrypt_opt)
+	decrypt_opt = vstralloc("client_decrypt_option=", options->clnt_decrypt_opt, ";", NULL);
+    }
+    else if(options->encrypt == ENCRYPT_SERV_CUST) {
+      encrypt_opt = vstralloc("encrypt-serv-cust=", options->srv_encrypt, ";", NULL);
+      if(options->srv_decrypt_opt)
+	decrypt_opt = vstralloc("server_decrypt_option=", options->srv_decrypt_opt, ";", NULL);
+    }
+
     if(options->no_record) record_opt = "no-record;";
     if(options->auth) auth_opt = vstralloc("auth=", options->auth, ";", NULL);
     if(options->createindex) index_opt = "index;";
@@ -116,6 +134,8 @@ option_t *options;
     }
     optstr = newvstralloc(optstr,
 			  compress_opt,
+			  encrypt_opt,
+			  decrypt_opt,
 			  record_opt,
 			  index_opt,
 			  auth_opt,
@@ -408,6 +428,7 @@ int pid;
 {
     if(pid == dumppid) return program->backup_name;
     if(pid == comppid) return "compress";
+    if(pid == encpid) return "encrypt";
     if(pid == indexpid) return "index";
     return "unknown";
 }

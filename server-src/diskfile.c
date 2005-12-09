@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.67 2005/10/11 01:17:01 vectro Exp $
+ * $Id: diskfile.c,v 1.68 2005/12/09 03:22:52 paddy_s Exp $
  *
  * read disklist file
  */
@@ -173,6 +173,7 @@ char *diskname;
     disk->spindle = -1;
     disk->up = NULL;
     disk->compress = COMP_NONE;
+    disk->encrypt  = ENCRYPT_NONE;
     disk->start_t = 0;
     disk->todo = 1;
 
@@ -459,6 +460,13 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     disk->strategy	= dtype->strategy;
     disk->estimate	= dtype->estimate;
     disk->compress	= dtype->compress;
+    disk->srvcompprog	= dtype->srvcompprog;
+    disk->clntcompprog	= dtype->clntcompprog;
+    disk->encrypt       = dtype->encrypt;
+    disk->srv_decrypt_opt   = dtype->srv_decrypt_opt;
+    disk->clnt_decrypt_opt  = dtype->clnt_decrypt_opt;
+    disk->srv_encrypt   = dtype->srv_encrypt;
+    disk->clnt_encrypt  = dtype->clnt_encrypt;
     disk->comprate[0]	= dtype->comprate[0];
     disk->comprate[1]	= dtype->comprate[1];
     disk->record	= dtype->record;
@@ -604,6 +612,8 @@ FILE *fdout;
     char *auth_opt = NULL;
     char *kencrypt_opt = "";
     char *compress_opt = "";
+    char *encrypt_opt = "";
+    char *decrypt_opt ="";
     char *record_opt = "";
     char *index_opt = "";
     char *exclude_file = NULL;
@@ -670,6 +680,9 @@ FILE *fdout;
 		    dp->host->hostname, dp->name);
 	}
 	break;
+    case COMP_CUST:
+        compress_opt = vstralloc("comp-cust=", dp->clntcompprog, ";", NULL);
+	break;
     case COMP_SERV_FAST:
 	if(am_has_feature(their_features, fe_options_srvcomp_fast)) {
 	    compress_opt = "srvcomp-fast;";
@@ -680,8 +693,24 @@ FILE *fdout;
             compress_opt = "srvcomp-best;";
 	}
 	break;
+    case COMP_SERV_CUST:
+        compress_opt = vstralloc("srvcomp-cust=", dp->srvcompprog, ";", NULL);
+	break;
     }
 
+    switch(dp->encrypt) {
+    case ENCRYPT_CUST:
+	 encrypt_opt = vstralloc("encrypt-cust=", dp->clnt_encrypt, ";", NULL);
+	 if(dp->clnt_decrypt_opt)
+	   decrypt_opt = vstralloc("client_decrypt_option=", dp->clnt_decrypt_opt, ";", NULL);
+	 break;
+    case ENCRYPT_SERV_CUST:
+	 encrypt_opt = vstralloc("encrypt-serv-cust=", dp->srv_encrypt, ";", NULL);
+	 if(dp->srv_decrypt_opt) 
+	   decrypt_opt = vstralloc("server_decrypt_option=", dp->srv_decrypt_opt, ";", NULL);
+	 break;
+    }
+    
     if(!dp->record) {
 	if(am_has_feature(their_features, fe_options_no_record)) {
 	    record_opt = "no-record;";
@@ -840,6 +869,8 @@ FILE *fdout;
 		       auth_opt,
 		       kencrypt_opt,
 		       compress_opt,
+		       encrypt_opt,
+		       decrypt_opt,
 		       record_opt,
 		       index_opt,
 		       exclude_file,

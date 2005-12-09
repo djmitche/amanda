@@ -24,11 +24,15 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.4 2005/10/13 21:23:27 martinea Exp $
+ * $Id: util.h,v 1.5 2005/12/09 03:22:52 paddy_s Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
 
+
+#define BSTRNCMP(a,b)  strncmp(a, b, strlen(b)) 
+                                                  
+						  
 ssize_t fullread P((int, void *, size_t));
 ssize_t fullwrite P((int, const void *, size_t));
 

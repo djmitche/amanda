@@ -1069,13 +1069,16 @@ dump image usually compresses, the speed and load on the client or server, netwo
 holding disk capacity, availability of tape hardware compression, etc.</para>
 
 <para>For either type of compression, &A; also allows the selection
-of two styles of compression.
+of three styles of compression.
 <emphasis remap='B'>Best</emphasis>
 is the best compression available, often at the expense of CPU overhead.
 <emphasis remap='B'>Fast</emphasis>
 is often not as good a compression as
 <emphasis remap='B'>best</emphasis>,
-but usually less CPU overhead.</para>
+but usually less CPU overhead. Or to specify <emphasis remap='B'>Custom</emphasis>
+to use your own compression method</para>
+
+
 
 <para>So the <emphasis remap='B'>compress</emphasis> options line may be one of:</para>
 
@@ -1083,8 +1086,14 @@ but usually less CPU overhead.</para>
 <listitem><para>compress none</para></listitem>
 <listitem><para>compress [client] fast</para></listitem>
 <listitem><para>compress [client] best</para></listitem>
+<listitem><para>compress client custom</para>
+<para>Specify client_custom_compress "PROG"</para>
+<para>PROG must not contain white space and it must accept -d for uncompress.</para></listitem>
 <listitem><para>compress server fast</para></listitem>
 <listitem><para>compress server best</para></listitem>
+<listitem><para>compress server custom</para>
+<para>Specify server_custom_compress "PROG"</para>
+<para>PROG must not contain white space and it must accept -d for uncompress.</para></listitem>
 </itemizedlist>
 
 <para>Note that some tape devices do compression and this option has nothing
@@ -1097,9 +1106,45 @@ or <emphasis remap='B'>mt</emphasis> option), &A; (software) compression should 
   <listitem>
 <para>Default: <emphasis remap='I'>10 days</emphasis>.
 The number of days in the backup cycle. Each disk using this set of options will get a full 
-backup at least this often. Setting this to zero tries to do a full backup each run.</para>
+backup at least this of
+ten. Setting this to zero tries to do a full backup each run.</para>
   </listitem>
   </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>encryption[client|server]</emphasis></term>
+  <listitem>
+<para>Default: <emphasis remap='I'>none</emphasis>.
+To encrypt backup images, it can do so either on the backup client host before it crosses the network or on the tape
+server host as it goes from the network into the holding disk or to tape.</para>
+
+<para>So the <emphasis remap='B'>encrypt</emphasis> options line may be one
+	    of:</para>
+
+<itemizedlist>
+<listitem><para>encrypt none</para></listitem>
+<listitem><para>encrypt client</para>
+<para>Specify client_encrypt "PROG"</para>
+<para>PROG must not contain white space.</para>
+<para>Specify client_decrypt_option "decryption-parameter" Default: "-d"</para>
+<para>decryption-parameter must not contain white space.</para>
+</listitem>
+<listitem><para>encrypt server</para>
+<para>Specify server_encrypt "PROG"</para>
+<para>PROG must not contain white space.</para>
+<para>Specify server_decrypt_option "decryption-parameter" Default: "-d"</para>
+<para>decryption-parameter must not contain white space.</para>
+</listitem>
+</itemizedlist>
+</listitem>
+<para>Note that current logic assumes compression then encryption during
+backup(thus decrypt then uncompress during restore). So specifying
+client-encryption and server-compression is not supported.
+<emphasis remap='I'>amcrypt</emphasis> which is a wrapper of
+	    <emphasis remap='I'>aespipe</emphasis> is provided as a reference
+		encryption program.</para>
+</varlistentry>
+
 
   <varlistentry>
   <term><emphasis remap='B'>estimate</emphasis> <emphasis remap='I'>client|calcsize|server</emphasis></term>
@@ -1666,6 +1711,8 @@ At the moment, this is of little use.</para>
 <refsect1><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>amcrypt</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>aespipe</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
 </para>
 </refsect1>
 </refentry>

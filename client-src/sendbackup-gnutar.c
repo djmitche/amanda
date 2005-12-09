@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.91 2005/07/11 12:05:59 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.92 2005/12/09 03:22:52 paddy_s Exp $
  *
  * send backup data using GNU tar
  */
@@ -126,14 +126,16 @@ time_t cur_dumptime;
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
 static char *incrname = NULL;
 #endif
-
+/*
+ *  doing similar to $ gtar | compression | encryption 
+ */
 static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, indexf)
     char *host;
     char *disk, *amdevice;
     int level, dataf, mesgf, indexf;
     char *dumpdate;
 {
-    int dumpin, dumpout;
+    int dumpin, dumpout, compout;
     char *cmd = NULL;
     char *indexcmd = NULL;
     char *dirname = NULL;
@@ -143,15 +145,28 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
     amandates_t *amdates;
     time_t prev_dumptime;
     char *error_pn = NULL;
+    char *compopt  = NULL;
+    char *encryptopt = skip_argument;
 
     error_pn = stralloc2(get_pname(), "-smbclient");
 
+
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
 	    get_pname(), host, disk, level);
-
+     /*  apply client-side encryption here */
+     if ( options->encrypt == ENCRYPT_CUST ) {
+      encpid = pipespawn(options->clnt_encrypt, STDIN_PIPE,
+			&compout, &dataf, &mesgf, 
+			options->clnt_encrypt, encryptopt, NULL);
+      dbprintf(("%s: pid %ld: %s\n",
+		  debug_prefix_time("-gnutar"), (long)encpid, options->clnt_encrypt));
+    } else {
+       compout = dataf;
+       encpid = -1;
+    } 
+     /*  now do the client-side compression */
     if(options->compress == COMPR_FAST || options->compress == COMPR_BEST) {
-	char *compopt = skip_argument;
-
+          compopt = skip_argument;
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
 	if(options->compress == COMPR_BEST) {
 	    compopt = COMPRESS_BEST_OPT;
@@ -160,7 +175,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	}
 #endif
 	comppid = pipespawn(COMPRESS_PATH, STDIN_PIPE,
-			    &dumpout, &dataf, &mesgf,
+			    &dumpout, &compout, &mesgf,
 			    COMPRESS_PATH, compopt, NULL);
 	dbprintf(("%s: pid %ld: %s",
 		  debug_prefix_time("-gnutar"), (long)comppid, COMPRESS_PATH));
@@ -168,8 +183,19 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	    dbprintf((" %s", compopt));
 	}
 	dbprintf(("\n"));
+     } else if (options->compress == COMPR_CUST) {
+        compopt = skip_argument;
+	comppid = pipespawn(options->clntcompprog, STDIN_PIPE,
+			    &dumpout, &compout, &mesgf,
+			    options->clntcompprog, compopt, NULL);
+	dbprintf(("%s: pid %ld: %s",
+		  debug_prefix_time("-gnutar-cust"), (long)comppid, options->clntcompprog));
+	if(compopt != skip_argument) {
+	    dbprintf((" %s", compopt));
+	}
+	dbprintf(("\n"));
     } else {
-	dumpout = dataf;
+	dumpout = compout;
 	comppid = -1;
     }
 
@@ -449,7 +475,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	amfree(taropt);
 	tarpid = dumppid;
     } else
-#endif									/* } */
+#endif			/*end of samba */
     {
 
 	int nb_exclude = 0;
@@ -535,6 +561,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 
     aclose(dumpin);
     aclose(dumpout);
+    aclose(compout);
     aclose(dataf);
     aclose(mesgf);
     if (options->createindex)

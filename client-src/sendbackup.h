@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.h,v 1.17 2002/03/31 21:02:00 jrjackson Exp $
+ * $Id: sendbackup.h,v 1.18 2005/12/09 03:22:52 paddy_s Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
@@ -68,7 +68,7 @@ typedef struct regex_s {
 #define AM_SIZE_RE(re,s)	{(re), __LINE__, (s), DMP_SIZE}
 #define AM_ERROR_RE(re)		{(re), __LINE__, 0, DMP_ERROR}
 
-extern int  comppid, dumppid, tarpid;
+extern int  comppid, dumppid, encpid, tarpid;
 extern int indexpid;
 extern option_t *options;
 

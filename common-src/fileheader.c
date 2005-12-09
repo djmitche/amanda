@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.28 2005/11/29 22:19:08 martinea Exp $
+ * $Id: fileheader.c,v 1.29 2005/12/09 03:22:52 paddy_s Exp $
  */
 
 #include "amanda.h"
@@ -151,7 +151,18 @@ parse_file_header(buffer, file, buflen)
 	if (strcmp(file->comp_suffix, "C") == 0)
 	    strncpy(file->comp_suffix, ".Z", sizeof(file->comp_suffix) - 1);
 
-	tok = strtok(NULL, " \n");
+	tok = strtok(NULL, " ");
+	/* "encryption" is optional */
+	if (BSTRNCMP(tok, "crypt") == 0)
+	  {
+	    tok = strtok(NULL, " \n");
+	    if (tok == NULL)
+	      goto weird_header;
+	    strncpy(file->encrypt_suffix, tok, sizeof(file->encrypt_suffix) - 1);
+	    file->encrypted = BSTRNCMP(file->encrypt_suffix, "N");
+	    tok = strtok(NULL, " \n");
+	  }
+
 	/* "program" is optional */
 	if (tok == NULL || strcmp(tok, "program") != 0)
 	    return;
@@ -163,8 +174,67 @@ parse_file_header(buffer, file, buflen)
 
 	if (file->program[0] == '\0')
 	    strncpy(file->program, "RESTORE", sizeof(file->program) - 1);
-
-	break;
+    
+	if ((tok = strtok(NULL, " \n")) == NULL) 
+	     return;
+       /* "srvcompprog" is optional */
+      if (BSTRNCMP(tok, "server_custom_compress") == 0)
+	{
+              tok = strtok(NULL, " \n");
+              if (tok == NULL)
+                  goto weird_header;
+              strncpy(file->srvcompprog, tok, sizeof(file->srvcompprog) - 1);
+	      if ((tok = strtok(NULL, " \n")) == NULL) 
+		   return;	/* reach the end of the buf */
+	}
+       /* "clntcompprog" is optional */
+      if (BSTRNCMP(tok, "client_custom_compress") == 0)
+	{
+              tok = strtok(NULL, " \n");
+              if (tok == NULL)
+                  goto weird_header;
+              strncpy(file->clntcompprog, tok, sizeof(file->clntcompprog) - 1);
+	      if ((tok = strtok(NULL, " \n")) == NULL) 
+		   return;
+	}
+      /* "srv_encrypt" is optional */
+      if (BSTRNCMP(tok, "server_encrypt") == 0)
+	{
+              tok = strtok(NULL, " \n");
+              if (tok == NULL)
+                  goto weird_header;
+              strncpy(file->srv_encrypt, tok, sizeof(file->srv_encrypt) - 1);
+	      if ((tok = strtok(NULL, " \n")) == NULL) 
+		   return;
+	}
+       /* "clnt_encrypt" is optional */
+      if (BSTRNCMP(tok, "client_encrypt") == 0)
+	{
+              tok = strtok(NULL, " \n");
+              if (tok == NULL)
+                  goto weird_header;
+              strncpy(file->clnt_encrypt, tok, sizeof(file->clnt_encrypt) - 1);
+	      if ((tok = strtok(NULL, " \n")) == NULL) 
+		   return;
+	}
+      /* "srv_decrypt_opt" is optional */
+      if (BSTRNCMP(tok, "server_decrypt_option") == 0)
+	{
+              tok = strtok(NULL, " \n");
+              if (tok == NULL)
+                  goto weird_header;
+              strncpy(file->srv_decrypt_opt, tok, sizeof(file->srv_decrypt_opt) - 1);
+	}
+      /* "clnt_decrypt_opt" is optional */
+      if (BSTRNCMP(tok, "client_decrypt_option") == 0)
+	{
+              tok = strtok(NULL, " \n");
+              if (tok == NULL)
+                  goto weird_header;
+              strncpy(file->clnt_decrypt_opt, tok, sizeof(file->clnt_decrypt_opt) - 1);
+	}
+      break;
+      
 
     case F_TAPEEND:
 	tok = strtok(NULL, " \n");
@@ -205,34 +275,50 @@ parse_file_header(buffer, file, buflen)
 
 #define SC "\tdd if=<tape> bs="
 	if (strncmp(line, SC, sizeof(SC) - 1) == 0) {
-	    char *cmd1, *cmd2;
+	    char *cmd1=NULL, *cmd2=NULL, *cmd3=NULL;
 
 	    /* skip over dd command */
 	    if ((cmd1 = strchr(line, '|')) == NULL) {
 
-		strncpy(file->recover_cmd, "BUG",
-			sizeof(file->recover_cmd) - 1);
-		continue;
+	        strncpy(file->recover_cmd, "BUG",
+		        sizeof(file->recover_cmd) - 1);
+	        continue;
 	    }
-	    cmd1++;
+	    *cmd1++ = '\0';
 
 	    /* block out first pipeline command */
-	    if ((cmd2 = strchr(cmd1, '|')) != NULL)
-		*cmd2++ = '\0';
-
-	    /*
-	     * If there's a second cmd then the first is the uncompress cmd.
-	     * Otherwise, the first cmd is the recover cmd, and there
-	     * is no uncompress cmd.
+	    if ((cmd2 = strchr(cmd1, '|')) != NULL) {
+	      *cmd2++ = '\0';
+	      if ((cmd3 = strchr(cmd2, '|')) != NULL)
+		*cmd3++ = '\0';
+	    }
+	   
+	    /* three cmds: decrypt    | uncompress | recover
+	     * two   cmds: uncompress | recover
+	     * XXX note that if there are two cmds, the first one 
+	     * XXX could be either uncompress or decrypt. Since no
+	     * XXX code actually call uncompress_cmd/decrypt_cmd, it's ok
+	     * XXX for header information.
+	     * one   cmds: recover
 	     */
-	    if (cmd2 == NULL) {
+
+	    if (cmd3 == NULL) {
+	      if (cmd2 == NULL) {
 		strncpy(file->recover_cmd, cmd1,
 			sizeof(file->recover_cmd) - 1);
-	    } else {
+	      } else {
 		snprintf(file->uncompress_cmd,
 			 sizeof(file->uncompress_cmd), "%s|", cmd1);
 		strncpy(file->recover_cmd, cmd2,
 			sizeof(file->recover_cmd) - 1);
+	      }
+	    } else {    /* cmd3 presents:  decrypt | uncompress | recover */
+	      snprintf(file->decrypt_cmd,
+		       sizeof(file->decrypt_cmd), "%s|", cmd1);
+	      snprintf(file->uncompress_cmd,
+		       sizeof(file->uncompress_cmd), "%s|", cmd2);
+	      strncpy(file->recover_cmd, cmd3,
+		      sizeof(file->recover_cmd) - 1);
 	    }
 	    continue;
 	}
@@ -279,12 +365,55 @@ build_header(buffer, file, buflen)
 	
     case F_CONT_DUMPFILE:
     case F_DUMPFILE :
-	n = snprintf(buffer, buflen,
-		     "AMANDA: %s %s %s %s%s lev %d comp %s program %s\n",
-		     filetype2str(file->type),
-		     file->datestamp, file->name, file->disk,
-		     split_data,
-		     file->dumplevel, file->comp_suffix, file->program);
+        n = snprintf(buffer, buflen,
+			 "AMANDA: %s %s %s %s%s lev %d comp %s crypt %s program %s",
+			 filetype2str(file->type),
+			 file->datestamp, file->name, file->disk,
+			 split_data,
+			 file->dumplevel, file->comp_suffix, file->encrypt_suffix, file->program);
+	if ( n ) {
+	  buffer += n;
+	  buflen -= n;
+	  n = 0;
+	}
+
+	if (*file->srvcompprog) {
+	    n = snprintf(buffer, buflen, " server_custom_compress %s", file->srvcompprog);
+	} else if (*file->clntcompprog) {
+	    n = snprintf(buffer, buflen, " client_custom_compress %s", file->clntcompprog);
+	} 
+
+	if ( n ) {
+	  buffer += n;
+	  buflen -= n;
+	  n = 0;
+	}
+
+	if (*file->srv_encrypt) {
+	    n = snprintf(buffer, buflen, " server_encrypt %s", file->srv_encrypt);
+	} else if (*file->clnt_encrypt) {
+	    n = snprintf(buffer, buflen, " client_encrypt %s", file->clnt_encrypt);
+	} 
+
+	if ( n ) {
+	  buffer += n;
+	  buflen -= n;
+	  n = 0;
+	}
+	
+	if (*file->srv_decrypt_opt) {
+	    n = snprintf(buffer, buflen, " server_decrypt_option %s", file->srv_decrypt_opt);
+	} else if (*file->clnt_decrypt_opt) {
+	    n = snprintf(buffer, buflen, " client_decrypt_option %s", file->clnt_decrypt_opt);
+	} 
+
+	if ( n ) {
+	  buffer += n;
+	  buflen -= n;
+	  n = 0;
+	}
+
+	n = snprintf(buffer, buflen, "\n");
 	buffer += n;
 	buflen -= n;
 
@@ -307,8 +436,8 @@ build_header(buffer, file, buflen)
 
 	/* \014 == ^L */
 	n = snprintf(buffer, buflen,
-	    "\tdd if=<tape> bs=%ldk skip=1 |%s %s\n\014\n",
-	    file->blocksize / 1024, file->uncompress_cmd, file->recover_cmd);
+	    "\tdd if=<tape> bs=%ldk skip=1 |%s %s %s\n\014\n",
+	    file->blocksize / 1024, file->decrypt_cmd, file->uncompress_cmd, file->recover_cmd);
 	buffer += n;
 	buflen -= n;
 	break;
@@ -346,11 +475,23 @@ print_header(outf, file)
 	break;
     case F_DUMPFILE:
     case F_CONT_DUMPFILE:
-	fprintf(outf, "%s: date %s host %s disk %s lev %d comp %s",
+	fprintf(outf, "%s: date %s host %s disk %s lev %d comp %s crypt %s",
 	    filetype2str(file->type), file->datestamp, file->name,
-	    file->disk, file->dumplevel, file->comp_suffix);
+	    file->disk, file->dumplevel, file->comp_suffix, file->encrypt_suffix);
 	if(*file->program)
-	    fprintf(outf, " program %s\n",file->program);
+	    fprintf(outf, " program %s",file->program);
+	if (*file->srvcompprog)
+	    fprintf(outf, " server_custom_compress %s", file->srvcompprog);
+	if (*file->clntcompprog)
+	    fprintf(outf, " client_custom_compress %s", file->clntcompprog);
+	if (*file->srv_encrypt)
+	    fprintf(outf, " server_encrypt %s", file->srv_encrypt);
+	if (*file->clnt_encrypt)
+	    fprintf(outf, " client_encrypt %s", file->clnt_encrypt);
+	if (*file->srv_decrypt_opt)
+	    fprintf(outf, " server_decrypt_option %s", file->srv_decrypt_opt);
+	if (*file->clnt_decrypt_opt)
+	    fprintf(outf, " client_decrypt_option %s", file->clnt_decrypt_opt);
 	else
 	    fprintf(outf, "\n");
 	break;
@@ -359,11 +500,23 @@ print_header(outf, file)
             snprintf(number, sizeof(number), "%d", file->totalparts);
         }   
         else snprintf(number, sizeof(number), "UNKNOWN");
-        fprintf(outf, "split dumpfile: date %s host %s disk %s part %d/%s lev %d comp %s",
+        fprintf(outf, "split dumpfile: date %s host %s disk %s part %d/%s lev %d comp %s crypt %s",
                       file->datestamp, file->name, file->disk, file->partnum,
-                      number, file->dumplevel, file->comp_suffix);
+                      number, file->dumplevel, file->comp_suffix, file->encrypt_suffix);
         if(*file->program)
-            fprintf(outf, " program %s\n",file->program);
+            fprintf(outf, " program %s",file->program);
+	if (*file->srvcompprog)
+	    fprintf(outf, " server_custom_compress %s", file->srvcompprog);
+	if (*file->clntcompprog)
+	    fprintf(outf, " client_custom_compress %s", file->clntcompprog);
+	if (*file->srv_encrypt)
+	    fprintf(outf, " server_encrypt %s", file->srv_encrypt);
+	if (*file->clnt_encrypt)
+	    fprintf(outf, " client_encrypt %s", file->clnt_encrypt);
+	if (*file->srv_decrypt_opt)
+	    fprintf(outf, " server_decrypt_option %s", file->srv_decrypt_opt);
+	if (*file->clnt_decrypt_opt)
+	    fprintf(outf, " client_decrypt_option %s", file->clnt_decrypt_opt);
         else
             fprintf(outf, "\n");
         break;
@@ -383,6 +536,8 @@ known_compress_type(file)
     if(strcmp(file->comp_suffix, ".gz") == 0)
 	return 1;
 #endif
+    if(strcmp(file->comp_suffix, "cust") == 0)
+	return 1;
     return 0;
 }
 

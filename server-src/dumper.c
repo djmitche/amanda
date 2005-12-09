@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.162 2005/10/02 13:48:04 martinea Exp $
+/* $Id: dumper.c,v 1.163 2005/12/09 03:22:52 paddy_s Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -64,6 +64,7 @@ struct databuf {
     char *dataout;
     char *datalimit;
     pid_t compresspid;		/* valid if fd is pipe to compress */
+    pid_t encryptpid;		/* valid if fd is pipe to encrypt */
 };
 
 static char *handle = NULL;
@@ -73,6 +74,14 @@ static long dumpbytes;
 static long dumpsize, headersize, origsize;
 
 static comp_t srvcompress = COMP_NONE;
+char *srvcompprog = NULL;
+char *clntcompprog = NULL;
+
+static encrypt_t srvencrypt = ENCRYPT_NONE;
+char *srv_encrypt = NULL;
+char *clnt_encrypt = NULL;
+char *srv_decrypt_opt = NULL;
+char *clnt_decrypt_opt = NULL;
 
 static FILE *errf = NULL;
 static char *hostname = NULL;
@@ -121,6 +130,7 @@ static void parse_info_line P((char *));
 static void log_msgout P((logtype_t));
 
 static int runcompress P((int, pid_t *, comp_t));
+static int runencrypt P((int, pid_t *,  encrypt_t));
 
 static void sendbackup_response P((void *, pkt_t *, security_handle_t *));
 static int startup_dump P((const char *, const char *, const char *, int,
@@ -136,13 +146,77 @@ static void timeout_callback P((void *));
 static void
 check_options(options)
     char *options;
-{
-    if (strstr(options, "srvcomp-best;") != NULL)
+{	
+  char *compmode = NULL;
+  char *compend  = NULL;
+  char *encryptmode = NULL;
+  char *encryptend = NULL;
+  char *decryptmode = NULL;
+  char *decryptend = NULL;
+
+    /* parse the compression option */
+  if (strstr(options, "srvcomp-best;") != NULL) 
       srvcompress = COMP_BEST;
     else if (strstr(options, "srvcomp-fast;") != NULL)
       srvcompress = COMP_FAST;
-    else
+    else if ((compmode = strstr(options, "srvcomp-cust=")) != NULL) {
+	compend = strchr(compmode, ';');
+	if (compend ) {
+	    srvcompress = COMP_SERV_CUST;
+	    *compend = '\0';
+	    srvcompprog = stralloc(compmode + strlen("srvcomp-cust="));
+	    *compend = ';';
+	}
+    } else if ((compmode = strstr(options, "comp-cust=")) != NULL) {
+	compend = strchr(compmode, ';');
+	if (compend) {
+	    srvcompress = COMP_CUST;
+	    *compend = '\0';
+	    clntcompprog = stralloc(compmode + strlen("comp-cust="));
+	    *compend = ';';
+	}
+    }
+    else {
       srvcompress = COMP_NONE;
+    }
+    
+
+    /* now parse the encryption option */
+    if ((encryptmode = strstr(options, "encrypt-serv-cust=")) != NULL) {
+      encryptend = strchr(encryptmode, ';');
+      if (encryptend) {
+	    srvencrypt = ENCRYPT_SERV_CUST;
+	    *encryptend = '\0';
+	    srv_encrypt = stralloc(encryptmode + strlen("encrypt-serv-cust="));
+	    *encryptend = ';';
+      }
+    } else if ((encryptmode = strstr(options, "encrypt-cust=")) != NULL) {
+      encryptend = strchr(encryptmode, ';');
+      if (encryptend) {
+	    srvencrypt = ENCRYPT_CUST;
+	    *encryptend = '\0';
+	    clnt_encrypt = stralloc(encryptmode + strlen("encrypt-cust="));
+	    *encryptend = ';';
+      }
+    } else {
+      srvencrypt = ENCRYPT_NONE;
+    }
+    /* get the decryption option parameter */
+    if ((decryptmode = strstr(options, "server_decrypt_option=")) != NULL) {
+      decryptend = strchr(decryptmode, ';');
+      if (decryptend) {
+	*decryptend = '\0';
+	srv_decrypt_opt = stralloc(decryptmode + strlen("server_decrypt_option="));
+	*decryptend = ';';
+      }
+    } else if ((decryptmode = strstr(options, "client_decrypt_option=")) != NULL) {
+      decryptend = strchr(decryptmode, ';');
+      if (decryptend) {
+	*decryptend = '\0';
+	clnt_decrypt_opt = stralloc(decryptmode + strlen("client_decrypt_option="));
+	*decryptend = ';';
+      }
+    }
 }
 
 
@@ -373,6 +447,12 @@ main(main_argc, main_argv)
     amfree(device);
     amfree(dumpdate);
     amfree(progname);
+    amfree(srvcompprog);
+    amfree(clntcompprog);
+    amfree(srv_encrypt);
+    amfree(clnt_encrypt);
+    amfree(srv_decrypt_opt);
+    amfree(clnt_decrypt_opt);
     amfree(options);
     amfree(config_dir);
     amfree(config_name);
@@ -398,6 +478,7 @@ databuf_init(db, fd)
     db->fd = fd;
     db->datain = db->dataout = db->datalimit = NULL;
     db->compresspid = -1;
+    db->encryptpid = -1;
 }
 
 
@@ -511,6 +592,12 @@ parse_info_line(str)
 	{ "BACKUP", file.program, sizeof(file.program) },
 	{ "RECOVER_CMD", file.recover_cmd, sizeof(file.recover_cmd) },
 	{ "COMPRESS_SUFFIX", file.comp_suffix, sizeof(file.comp_suffix) },
+	{ "SERVER_CUSTOM_COMPRESS", file.srvcompprog, sizeof(file.srvcompprog) },
+	{ "CLIENT_CUSTOM_COMPRESS", file.clntcompprog, sizeof(file.clntcompprog) },
+	{ "SERVER_ENCRYPT", file.srv_encrypt, sizeof(file.srv_encrypt) },
+	{ "CLIENT_ENCRYPT", file.clnt_encrypt, sizeof(file.clnt_encrypt) },
+	{ "SERVER_DECRYPT_OPTION", file.srv_decrypt_opt, sizeof(file.srv_decrypt_opt) },
+	{ "CLIENT_DECRYPT_OPTION", file.clnt_decrypt_opt, sizeof(file.clnt_decrypt_opt) }
     };
     char *name, *value;
     int i;
@@ -751,10 +838,24 @@ finish_tapeheader(file)
 #ifndef UNCOMPRESS_OPT
 #define	UNCOMPRESS_OPT	""
 #endif
-	snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
-	    " %s %s |", UNCOMPRESS_PATH, UNCOMPRESS_OPT);
-	strncpy(file->comp_suffix, COMPRESS_SUFFIX,sizeof(file->comp_suffix)-1);
-	file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
+	if (srvcompress == COMP_SERV_CUST) {
+	    snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
+		     " %s %s |", srvcompprog, "-d");
+	    strcpy(file->comp_suffix, "cust");
+	    strncpy(file->srvcompprog, srvcompprog, sizeof(file->srvcompprog));
+	    file->srvcompprog[sizeof(file->srvcompprog)-1] = '\0';
+	} else if ( srvcompress == COMP_CUST ) {
+	    snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
+		     " %s %s |", clntcompprog, "-d");
+	    strcpy(file->comp_suffix, "cust");
+	    strncpy(file->clntcompprog, clntcompprog, sizeof(file->clntcompprog));
+	    file->clntcompprog[sizeof(file->clntcompprog)-1] = '\0';
+	} else {
+	    snprintf(file->uncompress_cmd, sizeof(file->uncompress_cmd),
+		" %s %s |", UNCOMPRESS_PATH, UNCOMPRESS_OPT);
+	    strncpy(file->comp_suffix, COMPRESS_SUFFIX,sizeof(file->comp_suffix)-1);
+	    file->comp_suffix[sizeof(file->comp_suffix)-1] = '\0';
+	}
     } else {
 	if (file->comp_suffix[0] == '\0') {
 	    file->compressed = 0;
@@ -763,6 +864,35 @@ finish_tapeheader(file)
 	} else {
 	    file->compressed = 1;
 	}
+    }
+    /* take care of the encryption header here */
+    if (srvencrypt != ENCRYPT_NONE) {
+      file->encrypted= 1;
+      if (srvencrypt == ENCRYPT_SERV_CUST) {
+	snprintf(file->decrypt_cmd, sizeof(file->decrypt_cmd),
+		 " %s %s |", srv_encrypt, srv_decrypt_opt); 
+	strcpy(file->encrypt_suffix, "enc");
+	strncpy(file->srv_encrypt, srv_encrypt, sizeof(file->srv_encrypt));
+	file->srv_encrypt[sizeof(file->srv_encrypt)-1] = '\0';
+	strncpy(file->srv_decrypt_opt, srv_decrypt_opt, sizeof(file->srv_decrypt_opt));
+	file->srv_decrypt_opt[sizeof(file->srv_decrypt_opt)-1] = '\0';
+      } else if ( srvencrypt == ENCRYPT_CUST ) {
+	snprintf(file->decrypt_cmd, sizeof(file->decrypt_cmd),
+		 " %s %s |", clnt_encrypt, clnt_decrypt_opt);
+	strcpy(file->encrypt_suffix, "enc");
+	strncpy(file->clnt_encrypt, clnt_encrypt, sizeof(file->clnt_encrypt));
+	file->clnt_encrypt[sizeof(file->clnt_encrypt)-1] = '\0';
+	strncpy(file->clnt_decrypt_opt, clnt_decrypt_opt, sizeof(file->clnt_decrypt_opt));
+	file->clnt_decrypt_opt[sizeof(file->clnt_decrypt_opt)-1] = '\0';
+      }
+    } else {
+      if (file->encrypt_suffix[0] == '\0') {
+	file->encrypted = 0;
+	assert(sizeof(file->encrypt_suffix) >= 2);
+	strcpy(file->encrypt_suffix, "N");
+      } else {
+	file->encrypted= 1;
+      }
     }
 }
 
@@ -1033,11 +1163,18 @@ read_mesgfd(cookie, buf, size)
 	dumpsize += DISK_BLOCK_KB;
 	headersize += DISK_BLOCK_KB;
 
+	if (srvencrypt == ENCRYPT_SERV_CUST) {
+	    if (runencrypt(db->fd, &db->encryptpid, srvencrypt) < 0) {
+		dump_result = 2;
+		stop_dump();
+		return;
+	    }
+	}
 	/*
 	 * Now, setup the compress for the data output, and start
 	 * reading the datafd.
 	 */
-	if (srvcompress != COMP_NONE) {
+	if ((srvcompress != COMP_NONE) && (srvcompress != COMP_CUST)) {
 	    if (runcompress(db->fd, &db->compresspid, srvcompress) < 0) {
 		dump_result = 2;
 		stop_dump();
@@ -1261,13 +1398,70 @@ runcompress(outfd, pid, comptype)
 	if (dup2(outfd, 1) == -1)
 	    error("err dup2 out: %s", strerror(errno));
 	safe_fd(-1, 0);
-	execlp(COMPRESS_PATH, COMPRESS_PATH, (comptype == COMP_BEST ?
-	    COMPRESS_BEST_OPT : COMPRESS_FAST_OPT), NULL);
-	error("error: couldn't exec %s: %s", COMPRESS_PATH, strerror(errno));
+	if (comptype != COMP_SERV_CUST) {
+	    execlp(COMPRESS_PATH, COMPRESS_PATH, (  comptype == COMP_BEST ?
+		COMPRESS_BEST_OPT : COMPRESS_FAST_OPT), NULL);
+	    error("error: couldn't exec %s: %s", COMPRESS_PATH, strerror(errno));
+	} else if (*srvcompprog) {
+	    execlp(srvcompprog, srvcompprog, (char *)0);
+	    error("error: couldn't exec server custom filter%s.\n", srvcompprog);
+	}
     }
     /* NOTREACHED */
     return (-1);
 }
+
+/*
+ * Runs encrypt with the first arg as its stdout.  Returns
+ * 0 on success or negative if error, and it's pid via the second
+ * argument.  The outfd arg is dup2'd to the pipe to the encrypt
+ * process.
+ */
+static int
+runencrypt(outfd, pid, encrypttype)
+    int outfd;
+    pid_t *pid;
+    encrypt_t encrypttype;
+{
+    int outpipe[2], rval;
+
+    assert(outfd >= 0);
+    assert(pid != NULL);
+
+    /* outpipe[0] is pipe's stdin, outpipe[1] is stdout. */
+    if (pipe(outpipe) < 0) {
+	errstr = newstralloc2(errstr, "pipe: ", strerror(errno));
+	return (-1);
+    }
+
+    switch (*pid = fork()) {
+    case -1:
+	errstr = newstralloc2(errstr, "couldn't fork: ", strerror(errno));
+	aclose(outpipe[0]);
+	aclose(outpipe[1]);
+	return (-1);
+    default:
+	rval = dup2(outpipe[1], outfd);
+	if (rval < 0)
+	    errstr = newstralloc2(errstr, "couldn't dup2: ", strerror(errno));
+	aclose(outpipe[1]);
+	aclose(outpipe[0]);
+	return (rval);
+    case 0:
+	if (dup2(outpipe[0], 0) < 0)
+	    error("err dup2 in: %s", strerror(errno));
+	if (dup2(outfd, 1) < 0 )
+	    error("err dup2 out: %s", strerror(errno));
+	safe_fd(-1, 0);
+	if ((encrypttype == ENCRYPT_SERV_CUST) && *srv_encrypt) {
+	    execlp(srv_encrypt, srv_encrypt, (char *)0);
+	    error("error: couldn't exec server encryption%s.\n", srv_encrypt);
+	}
+    }
+    /* NOTREACHED */
+    return (-1);
+}
+
 
 /* -------------------- */
 

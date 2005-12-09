@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.h,v 1.14 2005/10/11 01:17:00 vectro Exp $
+ * $Id: fileheader.h,v 1.15 2005/12/09 03:22:52 paddy_s Exp $
  *
  */
 
@@ -32,6 +32,7 @@
 #define FILEHEADER_H
 
 #include "amanda.h"
+#include "util.h"		/* for bstrncmp() */
 
 #define STRMAX		256
 
@@ -46,12 +47,22 @@ typedef struct file_s {
     string_t datestamp;
     int dumplevel;
     int compressed;
+    int encrypted;
     string_t comp_suffix;
+    string_t encrypt_suffix;
     string_t name;	/* hostname or label */
     string_t disk;
     string_t program;
+    string_t srvcompprog;
+    string_t clntcompprog;
+    string_t srv_encrypt;
+    string_t clnt_encrypt;
     string_t recover_cmd;
     string_t uncompress_cmd;
+    string_t encrypt_cmd;
+    string_t decrypt_cmd;
+    string_t srv_decrypt_opt;
+    string_t clnt_decrypt_opt;
     string_t cont_filename;
     int is_partial;
     int partnum;

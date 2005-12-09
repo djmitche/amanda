@@ -111,6 +111,30 @@
 	* common-src/event.h: Fix compiler warning.
 	* server-src/conffile.h: Fix compiler warning.
 
+2005-11-30  Kevin Till	<ktill@zmanda.com>
+	
+	* client-src/client_util.c add server-side, client-side encryption
+	  as well as custom compression. Custom compression patch is
+	  orginally created by Matthieu Lochegnies.
+	* client-src/client_util.h Ditto
+	* client-src/selfcheck.c Ditto
+	* client-src/sendbackup-dump.c Ditto
+	* client-src/sendbackup-gnutar.c Ditto
+	* client-src/sendbackup.c Ditto
+	* client-src/sendbackup.h Ditto
+	* common-src/fileheader.c Ditto
+	* common-src/fileheader.h Ditto
+	* common-src/util.h Ditto
+	* example/amanda.conf.in Ditto
+	* man/xml-source/amanda.conf.5.xml Ditto
+	* restore-src/amrestore.c Ditto
+	* restore-src/restore.c Ditto
+	* server-src/conffile.c Ditto
+	* server-src/conffile.h Ditto
+	* server-src/diskfile.c Ditto
+	* server-src/diskfile.h Ditto
+	* server-src/dumper.c Ditto
+	
 2005-11-29  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* config/libtool.m4i: libtool 1.5.20

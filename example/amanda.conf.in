@@ -341,11 +341,19 @@ define tapetype MIMSY-MEGATAPE {
 #		  "client best" - compress on the client using the best (and
 #				  probably slowest) algorithm.
 #		  "client fast" - compress on the client using fast algorithm.
+#	          "client custom" - compress using your custom client compression program.
+#				    use client_custom_compress "PROG" to specify
+#				    the custom compression program.
+#				    PROG must not contain white space.
 #		  "server best" - compress on the tape host using the best (and
 #				  probably slowest) algorithm.
 #		  "server fast" - compress on the tape host using a fast
 #				  algorithm.  This may be useful when a fast
 #				  tape host is backing up slow clients.
+#	          "server custom" - compress using your server custom compression program.
+#				    use server_custom_compress "PROG" to specify
+#				    the custom compression program.
+#				    PROG must not contain white space.
 #		  Default: [compress client fast]
 #   dumpcycle	- set the number of days in the dump cycle, ie, set how often a
 #		  full dump should be performed.  Default: from DUMPCYCLE above
@@ -360,6 +368,19 @@ define tapetype MIMSY-MEGATAPE {
 #				it takes only a few seconds but the result is not 
 #				accurate if your disk usage changes from day to day.
 #		  Default: [client]
+#   encryption  - specify encryption of the backed up data. Valid values are:
+#		  "none"   - don't encrypt the dump output.
+#		  "client" - encrypt on the client using the program specified by 
+#                            client_encrypt "PROG".
+#			     Use client_decrypt_option to specify the decrypt- 
+#                            parameter, default is "-d".
+#                            PROG and decrypt-parameter must not contain white space.     
+#		  "server" - encrypt on the server using the program specified by 
+#                            server_encrypt "PROG".
+#                            Use server_decrypt_option to specify the decrypt- 
+#                            parameter, default is "-d".
+#                            PROG and decrypt-parameter must not contain white space.
+#                 Default: [none]
 #   exclude	- specify files and directories to be excluded from the dump.
 #		  Useful with gnutar only; silently ignored by dump and samba.
 #		  Valid values are:
@@ -600,6 +621,16 @@ define dumptype comp-test {
     comment "test dump with compression, no /etc/dumpdates recording"
     compress client fast
 }
+
+#define dumptype encrypt-fast {
+#    global
+#    program "GNUTAR"
+#    comment "test dump with fast client compression and server encryption"
+#    compress client fast
+#    encrypt server
+#    server_encrypt "/usr/local/bin/amcrypt"
+#    server_decrypt_option "-d"
+#}
 
 # network interfaces
 #

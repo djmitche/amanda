@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.h,v 1.11 2002/04/22 01:54:06 martinea Exp $
+ * $Id: client_util.h,v 1.12 2005/12/09 03:22:52 paddy_s Exp $
  *
  */
 
@@ -34,10 +34,18 @@
 #include "amanda.h"
 #include "amfeatures.h"
 #include "sl.h"
+#include "util.h"		/* for bstrncmp() */
 
 typedef struct option_s {
     char *str;
     int compress;
+    int encrypt;
+    char *srvcompprog;
+    char *clntcompprog;
+    char *srv_encrypt;
+    char *clnt_encrypt;
+    char *srv_decrypt_opt;
+    char *clnt_decrypt_opt;
     int no_record;
     int createindex;
     char *auth;
@@ -61,6 +69,12 @@ typedef struct g_option_s {
 #define COMPR_BEST 2
 #define COMPR_SERVER_FAST 3
 #define COMPR_SERVER_BEST 4
+#define COMPR_SERVER_CUST 5	/* server-side custom compression */
+#define COMPR_CUST 6            /* client-side custom compression */
+
+#define ENCRYPT_NONE         0	/* no encryption  */
+#define ENCRYPT_CUST         1	/* client-side custom encryption */
+#define ENCRYPT_SERV_CUST    2	/* server-side custom encryption */
 
 char *build_exclude P((char *disk, char *device, option_t *options, int verbose));
 char *build_include P((char *disk, char *device, option_t *options, int verbose));

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.118 2005/12/08 19:34:17 martinea Exp $
+ * $Id: conffile.c,v 1.119 2005/12/09 03:22:52 paddy_s Exp $
  *
  * read configuration file
  */
@@ -84,10 +84,11 @@ typedef enum {
     /* dump type */
     /*COMMENT,*/ PROGRAM, DUMPCYCLE, RUNSPERCYCLE, MAXCYCLE, MAXDUMPS,
     OPTIONS, PRIORITY, FREQUENCY, INDEX, MAXPROMOTEDAY,
-    STARTTIME, COMPRESS, AUTH, STRATEGY, ESTIMATE,
+    STARTTIME, COMPRESS, ENCRYPT, AUTH, STRATEGY, ESTIMATE,
     SKIP_INCR, SKIP_FULL, RECORD, HOLDING,
     EXCLUDE, INCLUDE, KENCRYPT, IGNORE, COMPRATE, TAPE_SPLITSIZE,
-    SPLIT_DISKBUFFER, FALLBACK_SPLITSIZE, 
+    SPLIT_DISKBUFFER, FALLBACK_SPLITSIZE, SRVCOMPPROG, CLNTCOMPPROG,
+    SRV_ENCRYPT, CLNT_ENCRYPT, SRV_DECRYPT_OPT, CLNT_DECRYPT_OPT,
 
     /* tape type */
     /*COMMENT,*/ BLOCKSIZE, FILE_PAD, LBL_TEMPL, FILEMARK, LENGTH, SPEED,
@@ -98,8 +99,8 @@ typedef enum {
     /* dump options (obsolete) */
     EXCLUDE_FILE, EXCLUDE_LIST,
 
-    /* compress, estimate */
-    NONE, FAST, BEST, SERVER, CLIENT, CALCSIZE,
+    /* compress, estimate, encryption */
+    NONE, FAST, BEST, SERVER, CLIENT, CALCSIZE, CUSTOM,
 
     /* priority */
     LOW, MEDIUM, HIGH,
@@ -144,6 +145,7 @@ ColumnInfo ColumnData[] = {
     { "OrigKB",     1, 7,  0,  0, "%*.*f",  "ORIG-KB" },
     { "OutKB",      0, 7,  0,  0, "%*.*f",  "OUT-KB" },
     { "Compress",   0, 6,  1,  0, "%*.*f",  "COMP%" },
+    { "Encrypt",    0, 7,  1,  0, "%*.*f",  "CRYPT%" },
     { "DumpTime",   0, 7,  7,  0, "%*.*s",  "MMM:SS" },
     { "DumpRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
     { "TapeTime",   1, 6,  6,  0, "%*.*s",  "MMM:SS" },
@@ -310,6 +312,7 @@ static void copy_interface P((void));
 static void get_dumpopts P((void));
 static void get_comprate P((void));
 static void get_compress P((void));
+static void get_encrypt P((void));
 static void get_priority P((void));
 static void get_strategy P((void));
 static void get_estimate P((void));
@@ -874,6 +877,11 @@ static void init_defaults()
     save_dumptype();
 
     init_dumptype_defaults();
+    dpcur.name = "COMPRESS-CUST"; dpcur.seen = -1;
+    dpcur.compress = COMP_CUST; dpcur.s_compress = -1;
+    save_dumptype();
+
+    init_dumptype_defaults();
     dpcur.name = "SRVCOMPRESS"; dpcur.seen = -1;
     dpcur.compress = COMP_SERV_FAST; dpcur.s_compress = -1;
     save_dumptype();
@@ -1347,6 +1355,9 @@ keytab_t dumptype_keytable[] = {
     { "COMMENT", COMMENT },
     { "COMPRATE", COMPRATE },
     { "COMPRESS", COMPRESS },
+    { "ENCRYPT", ENCRYPT },
+    { "SERVER_DECRYPT_OPTION", SRV_DECRYPT_OPT },
+    { "CLIENT_DECRYPT_OPTION", CLNT_DECRYPT_OPT },
     { "DUMPCYCLE", DUMPCYCLE },
     { "EXCLUDE", EXCLUDE },
     { "FREQUENCY", FREQUENCY },	/* XXX - historical */
@@ -1370,6 +1381,10 @@ keytab_t dumptype_keytable[] = {
     { "SPLIT_DISKBUFFER", SPLIT_DISKBUFFER },
     { "FALLBACK_SPLITSIZE", FALLBACK_SPLITSIZE },
     { "ESTIMATE", ESTIMATE },
+    { "SERVER_CUSTOM_COMPRESS", SRVCOMPPROG },
+    { "CLIENT_CUSTOM_COMPRESS", CLNTCOMPPROG },
+    { "SERVER_ENCRYPT", SRV_ENCRYPT },
+    { "CLIENT_ENCRYPT", CLNT_ENCRYPT },
     { NULL, IDENT }
 };
 
@@ -1440,6 +1455,15 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
 	    break;
 	case COMPRESS:
 	    get_compress();
+	    break;
+	case ENCRYPT:
+	    get_encrypt();
+	    break;
+	case SRV_DECRYPT_OPT:
+	    get_simple((val_t *)&dpcur.srv_decrypt_opt, &dpcur.s_srv_decrypt_opt, STRING);
+	    break;
+	case CLNT_DECRYPT_OPT:
+	    get_simple((val_t *)&dpcur.clnt_decrypt_opt, &dpcur.s_clnt_decrypt_opt, STRING);
 	    break;
 	case DUMPCYCLE:
 	    get_simple((val_t *)&dpcur.dumpcycle, &dpcur.s_dumpcycle, INT);
@@ -1559,6 +1583,18 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
 	      parserror("fallback_splitsize must be >= 0");
 	    }
 	    break;
+	case SRVCOMPPROG:
+	    get_simple((val_t *)&dpcur.srvcompprog, &dpcur.s_srvcompprog, STRING);
+	    break;
+        case CLNTCOMPPROG:
+	    get_simple((val_t *)&dpcur.clntcompprog, &dpcur.s_clntcompprog, STRING);
+	    break;
+	case SRV_ENCRYPT:
+	    get_simple((val_t *)&dpcur.srv_encrypt, &dpcur.s_srv_encrypt, STRING);
+	    break;
+        case CLNT_ENCRYPT:
+	    get_simple((val_t *)&dpcur.clnt_encrypt, &dpcur.s_clnt_encrypt, STRING);
+	    break;
 	case RBRACE:
 	    done = 1;
 	    break;
@@ -1605,6 +1641,10 @@ static void init_dumptype_defaults()
 {
     dpcur.comment = stralloc("");
     dpcur.program = stralloc("DUMP");
+    dpcur.srvcompprog = stralloc("");
+    dpcur.clntcompprog = stralloc("");
+    dpcur.srv_encrypt = stralloc("");
+    dpcur.clnt_encrypt = stralloc("");
     dpcur.exclude_file = NULL;
     dpcur.exclude_list = NULL;
     dpcur.include_file = NULL;
@@ -1627,6 +1667,9 @@ static void init_dumptype_defaults()
     dpcur.strategy = DS_STANDARD;
     dpcur.estimate = ES_CLIENT;
     dpcur.compress = COMP_FAST;
+    dpcur.encrypt = ENCRYPT_NONE;
+    dpcur.srv_decrypt_opt = stralloc("-d");
+    dpcur.clnt_decrypt_opt = stralloc("-d");
     dpcur.comprate[0] = dpcur.comprate[1] = 0.50;
     dpcur.skip_incr = dpcur.skip_full = 0;
     dpcur.no_hold = 0;
@@ -1639,6 +1682,11 @@ static void init_dumptype_defaults()
 
     dpcur.s_comment = 0;
     dpcur.s_program = 0;
+    dpcur.s_srvcompprog = 0;
+    dpcur.s_clntcompprog = 0;
+    dpcur.s_clnt_encrypt= 0;
+    dpcur.s_srv_encrypt= 0;
+
     dpcur.s_exclude_file = 0;
     dpcur.s_exclude_list = 0;
     dpcur.s_include_file = 0;
@@ -1659,6 +1707,9 @@ static void init_dumptype_defaults()
     dpcur.s_strategy = 0;
     dpcur.s_estimate = 0;
     dpcur.s_compress = 0;
+    dpcur.s_encrypt = 0;
+    dpcur.s_srv_decrypt_opt = 0;
+    dpcur.s_clnt_decrypt_opt = 0;
     dpcur.s_comprate = 0;
     dpcur.s_skip_incr = 0;
     dpcur.s_skip_full = 0;
@@ -1710,6 +1761,31 @@ static void copy_dumptype()
 	dpcur.program = newstralloc(dpcur.program, dt->program);
 	dpcur.s_program = dt->s_program;
     }
+    if(dt->s_srvcompprog) {
+	dpcur.srvcompprog = newstralloc(dpcur.srvcompprog, dt->srvcompprog);
+	dpcur.s_srvcompprog = dt->s_srvcompprog;
+    }
+    if(dt->s_clntcompprog) {
+	dpcur.clntcompprog = newstralloc(dpcur.clntcompprog, dt->clntcompprog);
+	dpcur.s_clntcompprog = dt->s_clntcompprog;
+    }
+    if(dt->s_srv_encrypt) {
+	dpcur.srv_encrypt = newstralloc(dpcur.srv_encrypt, dt->srv_encrypt);
+	dpcur.s_srv_encrypt = dt->s_srv_encrypt;
+    }
+    if(dt->s_clnt_encrypt) {
+	dpcur.clnt_encrypt = newstralloc(dpcur.clnt_encrypt, dt->clnt_encrypt);
+	dpcur.s_clnt_encrypt = dt->s_clnt_encrypt;
+    }
+    if(dt->s_srv_decrypt_opt) {
+	dpcur.srv_decrypt_opt = newstralloc(dpcur.srv_decrypt_opt, dt->srv_decrypt_opt);
+	dpcur.s_srv_decrypt_opt = dt->s_srv_decrypt_opt;
+    }
+    if(dt->s_clnt_decrypt_opt) {
+	dpcur.clnt_decrypt_opt = newstralloc(dpcur.clnt_decrypt_opt, dt->clnt_decrypt_opt);
+	dpcur.s_clnt_decrypt_opt = dt->s_clnt_decrypt_opt;
+    }
+
     if(dt->s_exclude_file) {
 	dpcur.exclude_file = duplicate_sl(dt->exclude_file);
 	dpcur.s_exclude_file = dt->s_exclude_file;
@@ -1742,6 +1818,7 @@ static void copy_dumptype()
     dtcopy(strategy, s_strategy);
     dtcopy(estimate, s_estimate);
     dtcopy(compress, s_compress);
+    dtcopy(encrypt, s_encrypt);
     dtcopy(comprate[0], s_comprate);
     dtcopy(comprate[1], s_comprate);
     dtcopy(skip_incr, s_skip_incr);
@@ -2046,6 +2123,7 @@ static void copy_interface()
 
 keytab_t dumpopts_keytable[] = {
     { "COMPRESS", COMPRESS },
+    { "ENCRYPT", ENCRYPT },
     { "INDEX", INDEX },
     { "EXCLUDE-FILE", EXCLUDE_FILE },
     { "EXCLUDE-LIST", EXCLUDE_LIST },
@@ -2068,6 +2146,7 @@ static void get_dumpopts() /* XXX - for historical compatability */
 	get_conftoken(ANY);
 	switch(tok) {
 	case COMPRESS:   ckseen(&dpcur.s_compress);  dpcur.compress = COMP_FAST; break;
+	case ENCRYPT:   ckseen(&dpcur.s_encrypt);  dpcur.encrypt = ENCRYPT_NONE; break;
 	case EXCLUDE_FILE:
 	    ckseen(&dpcur.s_exclude_file);
 	    get_conftoken(STRING);
@@ -2130,13 +2209,14 @@ keytab_t compress_keytable[] = {
     { "FAST", FAST },
     { "NONE", NONE },
     { "SERVER", SERVER },
+    { "CUSTOM", CUSTOM },
     { NULL, IDENT }
 };
 
 static void get_compress()
 {
     keytab_t *save_kt;
-    int serv, clie, none, fast, best;
+    int serv, clie, none, fast, best, custom;
     int done;
     int comp;
 
@@ -2145,7 +2225,7 @@ static void get_compress()
 
     ckseen(&dpcur.s_compress);
 
-    serv = clie = none = fast = best = 0;
+    serv = clie = none = fast = best = custom  = 0;
 
     done = 0;
     do {
@@ -2156,6 +2236,7 @@ static void get_compress()
 	case BEST:   best = 1; break;
 	case CLIENT: clie = 1; break;
 	case SERVER: serv = 1; break;
+	case CUSTOM: custom=1; break;
 	case NL:     done = 1; break;
 	default:
 	    done = 1;
@@ -2164,30 +2245,69 @@ static void get_compress()
     } while(!done);
 
     if(serv + clie == 0) clie = 1;	/* default to client */
-    if(none + fast + best == 0) fast = 1; /* default to fast */
+    if(none + fast + best + custom  == 0) fast = 1; /* default to fast */
 
     comp = -1;
 
     if(!serv && clie) {
-	if(none && !fast && !best) comp = COMP_NONE;
-	if(!none && fast && !best) comp = COMP_FAST;
-	if(!none && !fast && best) comp = COMP_BEST;
+	if(none && !fast && !best && !custom) comp = COMP_NONE;
+	if(!none && fast && !best && !custom) comp = COMP_FAST;
+	if(!none && !fast && best && !custom) comp = COMP_BEST;
+	if(!none && !fast && !best && custom) comp = COMP_CUST;
     }
 
     if(serv && !clie) {
-	if(none && !fast && !best) comp = COMP_NONE;
-	if(!none && fast && !best) comp = COMP_SERV_FAST;
-	if(!none && !fast && best) comp = COMP_SERV_BEST;
+	if(none && !fast && !best && !custom) comp = COMP_NONE;
+	if(!none && fast && !best && !custom) comp = COMP_SERV_FAST;
+	if(!none && !fast && best && !custom) comp = COMP_SERV_BEST;
+	if(!none && !fast && !best && custom) comp = COMP_SERV_CUST;
     }
 
     if(comp == -1) {
-	parserror("NONE, CLIENT FAST, CLIENT BEST, SERVER FAST or SERVER BEST expected");
+	parserror("NONE, CLIENT FAST, CLIENT BEST, CLIENT CUSTOM, SERVER FAST, SERVER BEST or SERVER CUSTOM expected");
 	comp = COMP_NONE;
     }
 
     dpcur.compress = comp;
 
     keytable = save_kt;
+}
+
+keytab_t encrypt_keytable[] = {
+    { "NONE", NONE },
+    { "CLIENT", CLIENT },
+    { "SERVER", SERVER },
+    { NULL, IDENT }
+};
+
+static void get_encrypt()
+{
+   keytab_t *save_kt;
+   int encrypt;
+
+   save_kt = keytable;
+   keytable = encrypt_keytable;
+
+   ckseen(&dpcur.s_encrypt);
+
+   get_conftoken(ANY);
+   switch(tok) {
+   case NONE:  
+     encrypt = ENCRYPT_NONE; 
+     break;
+   case CLIENT:  
+     encrypt = ENCRYPT_CUST;
+     break;
+   case SERVER: 
+     encrypt = ENCRYPT_SERV_CUST;
+     break;
+   default:
+     parserror("NONE, CLIENT or SERVER expected");
+     encrypt = ENCRYPT_NONE;
+   }
+
+   dpcur.encrypt = encrypt;
+   keytable = save_kt;	
 }
 
 keytab_t taperalgo_keytable[] = {
@@ -3234,6 +3354,12 @@ dump_configuration(filename)
 	printf("\nDUMPTYPE %s:\n", dp->name);
 	printf("	COMMENT \"%s\"\n", dp->comment);
 	printf("	PROGRAM \"%s\"\n", dp->program);
+	printf("	SERVER_CUSTOM_COMPRESS \"%s\"\n", dp->srvcompprog);
+	printf("	CLIENT_CUSTOM_COMPRESS \"%s\"\n", dp->clntcompprog);
+	printf("	SERVER_ENCRYPT \"%s\"\n", dp->srv_encrypt);
+	printf("	CLIENT_ENCRYPT \"%s\"\n", dp->clnt_encrypt);
+	printf("	SERVER_DECRYPT_OPTION \"%s\"\n", dp->srv_decrypt_opt);
+	printf("	CLIENT_DECRYPT_OPTION \"%s\"\n", dp->clnt_decrypt_opt);
 	printf("	PRIORITY %ld\n", (long)dp->priority);
 	printf("	DUMPCYCLE %ld\n", (long)dp->dumpcycle);
 	st = dp->start_t;
@@ -3326,11 +3452,29 @@ dump_configuration(filename)
 	case COMP_BEST:
 	    printf("COMPRESS-BEST ");
 	    break;
+	case COMP_CUST:
+	    printf("COMPRESS-CUST ");
+	    break;
 	case COMP_SERV_FAST:
 	    printf("SRVCOMP-FAST ");
 	    break;
 	case COMP_SERV_BEST:
 	    printf("SRVCOMP-BEST ");
+	    break;
+	case COMP_SERV_CUST:
+	    printf("SRVCOMP-CUST ");
+	    break;
+	}
+
+	switch(dp->encrypt) {
+	case ENCRYPT_NONE:
+	    printf("ENCRYPT-NONE ");
+	    break;
+	case ENCRYPT_CUST:
+	    printf("ENCRYPT-CUST ");
+	    break;
+	case ENCRYPT_SERV_CUST:
+	    printf("ENCRYPT-SERV-CUST ");
 	    break;
 	}
 
