@@ -1671,12 +1671,6 @@ AC_SUBST(AMPLOT_CAT_GZIP)
 AC_SUBST(AMPLOT_CAT_COMPRESS)
 AC_SUBST(AMPLOT_CAT_PACK)
 
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(long long)
-AC_CHECK_SIZEOF(intmax_t)
-AC_CHECK_SIZEOF(off_t)
-
 # Determine the printf format characters to use when printing
 # values of type long long. This will normally be "ll", but where
 # the compiler treats "long long" as a alias for "long" and printf
@@ -1761,6 +1755,12 @@ CFLAGS="$amanda_cv_LFS_CFLAGS $CFLAGS"
 CPPFLAGS="$amanda_cv_LFS_CFLAGS $CPPFLAGS"
 LDFLAGS="$amanda_cv_LFS_LDFLAGS $LDFLAGS"
 LIBS="$amanda_cv_LFS_LIBS $LIBS"
+
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(intmax_t)
+AC_CHECK_SIZEOF(off_t)
 
 AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
