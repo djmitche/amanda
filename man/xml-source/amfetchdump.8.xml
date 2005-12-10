@@ -89,7 +89,7 @@ in the current directory named:</para>
 <listitem><para>Pipe exactly one complete dump file to <emphasis
 remap='I'>stdout</emphasis>, instead of writing the file to disk. This
 will restore only the first matching dumpfile (where
-"first" is determined by the dump log search
+&quot;first&quot; is determined by the dump log search
 facility).</para></listitem>
   </varlistentry>
   <varlistentry>
@@ -127,7 +127,7 @@ are loaded.</para></listitem>
   </varlistentry>
   <varlistentry>
     <term><option>-i</option> <replaceable>filename</replaceable></term>
-<listitem><para>Generate an inventory of all dumps "seen" on the
+<listitem><para>Generate an inventory of all dumps &quot;seen&quot; on the
 tapes we search, for later use as a log.</para></listitem>
   </varlistentry>
   <varlistentry>
