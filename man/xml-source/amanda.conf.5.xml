@@ -1087,12 +1087,12 @@ to use your own compression method</para>
 <listitem><para>compress [client] fast</para></listitem>
 <listitem><para>compress [client] best</para></listitem>
 <listitem><para>compress client custom</para>
-<para>Specify client_custom_compress "PROG"</para>
+<para>Specify client_custom_compress &quot;PROG&quot;</para>
 <para>PROG must not contain white space and it must accept -d for uncompress.</para></listitem>
 <listitem><para>compress server fast</para></listitem>
 <listitem><para>compress server best</para></listitem>
 <listitem><para>compress server custom</para>
-<para>Specify server_custom_compress "PROG"</para>
+<para>Specify server_custom_compress &quot;PROG&quot;</para>
 <para>PROG must not contain white space and it must accept -d for uncompress.</para></listitem>
 </itemizedlist>
 
@@ -1124,15 +1124,15 @@ server host as it goes from the network into the holding disk or to tape.</para>
 <itemizedlist>
 <listitem><para>encrypt none</para></listitem>
 <listitem><para>encrypt client</para>
-<para>Specify client_encrypt "PROG"</para>
+<para>Specify client_encrypt &quot;PROG&quot;</para>
 <para>PROG must not contain white space.</para>
-<para>Specify client_decrypt_option "decryption-parameter" Default: "-d"</para>
+<para>Specify client_decrypt_option &quot;decryption-parameter&quot; Default: &quot;-d&quot;</para>
 <para>decryption-parameter must not contain white space.</para>
 </listitem>
 <listitem><para>encrypt server</para>
-<para>Specify server_encrypt "PROG"</para>
+<para>Specify server_encrypt &quot;PROG&quot;</para>
 <para>PROG must not contain white space.</para>
-<para>Specify server_decrypt_option "decryption-parameter" Default: "-d"</para>
+<para>Specify server_decrypt_option &quot;decryption-parameter&quot; Default: &quot;-d&quot;</para>
 <para>decryption-parameter must not contain white space.</para>
 </listitem>
 </itemizedlist>
