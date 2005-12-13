@@ -1,5 +1,10 @@
 2005-12-13  Jean-Louis Martineau <martineau@zmanda.com>
 
+	* server-src/reporter.c (handle_success): On a taper line, the outsize
+	  should only count dump to tape, not flush.
+
+2005-12-13  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* server-src/amstatus.pl.in: Parse chunker DONE line to set output size.
 
 2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
