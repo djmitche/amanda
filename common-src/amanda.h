@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.116 2005/12/08 23:41:22 martinea Exp $
+ * $Id: amanda.h,v 1.117 2005/12/13 22:57:41 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1214,6 +1214,12 @@ error: Don t know how to define S_ISDIR
 #endif
 #endif
 
+#if SIZEOF_OFF_T > SIZEOF_LONG
+#  define        OFF_T_FMT       LL_FMT
+#else
+#  define        OFF_T_FMT       "%ld"
+#endif
+
 #if SIZEOF_LONG == 8
    typedef long am64_t;
 #  ifdef LONG_MAX
@@ -1268,7 +1274,7 @@ error: Don t know how to define S_ISDIR
 #  else
 #    define AM64_MIN -9223372036854775807LL -1LL
 #  endif
-#  define AM64_FMT LL_FMT
+#  define AM64_FMT OFF_T_FMT
 #else  /* no 64 bits tyupe found, use long. */
    typedef long am64_t;
 #  ifdef LONG_MAX
@@ -1285,12 +1291,6 @@ error: Don t know how to define S_ISDIR
 #endif
 #endif
 #endif
-#endif
-
-#if SIZEOF_OFF_T > SIZEOF_LONG
-#  define        OFF_T_FMT       "%lld"
-#else
-#  define        OFF_T_FMT       "%ld"
 #endif
 
 #endif	/* !AMANDA_H */

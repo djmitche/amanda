@@ -502,6 +502,18 @@ while(<AMDUMP>) {
 		$error{$hostpart}="";
 		$dumpers_active--;
 	}
+	elsif(/driver: result time (\S+) from (chunker\d+): DONE (\d+-\d+) (\d+) \[.*\]/) {
+		$current_time=$1;
+		$serial=$3;
+		$outputsize=$4 / $unitdivisor;
+		$hostpart=$serial{$serial};
+		$size{$hostpart}=$outputsize;
+		$dump_finished{$hostpart}=1;
+		$busy_time{$2}+=($1-$dump_time{$hostpart});
+		$running_dumper{$2} = "0";
+		$dump_time{$hostpart}=$1;
+		$error{$hostpart}="";
+	}
 	elsif(/driver: result time (\S+) from (dumper\d+): ABORT-FINISHED (\d+-\d+)/) {
 		$current_time=$1;
 		$serial=$3;

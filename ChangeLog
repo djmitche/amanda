@@ -1,11 +1,15 @@
+2005-12-13  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/amstatus.pl.in: Parse chunker DONE line to set output size.
+
 2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
 
-	* configure.in: Move the size detectection after  detection of largei
+	* configure.in: Move the size detectection after detection of large
 	  file support. That change the size of off_t.
 
 2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
 
-	* common-src/amanda.h: Set OFF_T_FMT to printf formta of a off_t.
+	* common-src/amanda.h: Set OFF_T_FMT to printf format of a off_t.
 	* server-src/taper.c: Use OFF_T_FMT.
 
 2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
