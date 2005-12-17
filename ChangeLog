@@ -1,3 +1,11 @@
+2005-12-17  Jean-Louis Martineau <martineau@zmanda.com>
+	With Kevin Till <ktill@zmanda.com>
+
+	* common-src/fileheader.c (parse_file_header): Fix parsing of first
+	  line.
+	* common-src/fileheader.c (build_header): Print crypt after programi
+	   and only if it is needed.
+
 2005-12-13  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/reporter.c (handle_success): On a taper line, the outsize
