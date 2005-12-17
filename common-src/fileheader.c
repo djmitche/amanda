@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.29 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: fileheader.c,v 1.30 2005/12/17 23:28:39 martinea Exp $
  */
 
 #include "amanda.h"
@@ -47,8 +47,8 @@ parse_file_header(buffer, file, buflen)
     dumpfile_t *file;
     size_t buflen;
 {
-    char *buf, *line, *tok;
-
+    char *buf, *line, *tok, *line1=NULL;
+    int lsize;
     /* put the buffer into a writable chunk of memory and nul-term it */
     buf = alloc(buflen + 1);
     memcpy(buf, buffer, buflen);
@@ -56,12 +56,20 @@ parse_file_header(buffer, file, buflen)
 
     fh_init(file); 
 
-    tok = strtok(buf, " ");
+    for(line=buf,lsize=0; *line != '\n' && lsize < buflen; line++) {lsize++;};
+    *line = '\0';
+    line1 = alloc(lsize+1);
+    strncpy(line1,buf,lsize);
+    line1[lsize] = '\0';
+    *line = '\n';
+
+    tok = strtok(line1, " ");
     if (tok == NULL)
 	goto weird_header;
     if (strcmp(tok, "NETDUMP:") != 0 && strcmp(tok, "AMANDA:") != 0) {
 	amfree(buf);
 	file->type = F_UNKNOWN;
+	amfree(line1);
 	return;
     }
 
@@ -85,7 +93,7 @@ parse_file_header(buffer, file, buflen)
 	if (tok == NULL || strcmp(tok, "TAPE") != 0)
 	    goto weird_header;
 
-	tok = strtok(NULL, " \n");
+	tok = strtok(NULL, " ");
 	if (tok == NULL)
 	    goto weird_header;
 	strncpy(file->name, tok, sizeof(file->name) - 1);
@@ -141,7 +149,7 @@ parse_file_header(buffer, file, buflen)
 	if (tok == NULL || strcmp(tok, "comp") != 0)
 	    goto weird_header;
 
-	tok = strtok(NULL, " \n");
+	tok = strtok(NULL, " ");
 	if (tok == NULL)
 	    goto weird_header;
 	strncpy(file->comp_suffix, tok, sizeof(file->comp_suffix) - 1);
@@ -150,94 +158,100 @@ parse_file_header(buffer, file, buflen)
 	/* compatibility with pre-2.2 amanda */
 	if (strcmp(file->comp_suffix, "C") == 0)
 	    strncpy(file->comp_suffix, ".Z", sizeof(file->comp_suffix) - 1);
-
+	       
 	tok = strtok(NULL, " ");
+        /* "program" is optional */
+        if (tok == NULL || strcmp(tok, "program") != 0)
+            return;
+
+        tok = strtok(NULL, " ");
+        if (tok == NULL)
+            goto weird_header;
+        strncpy(file->program, tok, sizeof(file->program) - 1);
+        if (file->program[0] == '\0')
+            strncpy(file->program, "RESTORE", sizeof(file->program) - 1);
+
+	if ((tok = strtok(NULL, " ")) == NULL)
+             break;          /* reach the end of the buf */
+
 	/* "encryption" is optional */
-	if (BSTRNCMP(tok, "crypt") == 0)
-	  {
-	    tok = strtok(NULL, " \n");
+	if (BSTRNCMP(tok, "crypt") == 0) {
+	    tok = strtok(NULL, " ");
 	    if (tok == NULL)
-	      goto weird_header;
-	    strncpy(file->encrypt_suffix, tok, sizeof(file->encrypt_suffix) - 1);
+		goto weird_header;
+	    strncpy(file->encrypt_suffix, tok,
+		    sizeof(file->encrypt_suffix) - 1);
 	    file->encrypted = BSTRNCMP(file->encrypt_suffix, "N");
-	    tok = strtok(NULL, " \n");
-	  }
+	    if ((tok = strtok(NULL, " ")) == NULL)
+		break;
+	}
 
-	/* "program" is optional */
-	if (tok == NULL || strcmp(tok, "program") != 0)
-	    return;
+	/* "srvcompprog" is optional */
+	if (BSTRNCMP(tok, "server_custom_compress") == 0) {
+	    tok = strtok(NULL, " ");
+	    if (tok == NULL)
+		goto weird_header;
+	    strncpy(file->srvcompprog, tok, sizeof(file->srvcompprog) - 1);
+	    if ((tok = strtok(NULL, " ")) == NULL)
+		break;      
+	}
 
-	tok = strtok(NULL, " \n");
-	if (tok == NULL)
-	    goto weird_header;
-	strncpy(file->program, tok, sizeof(file->program) - 1);
+	/* "clntcompprog" is optional */
+	if (BSTRNCMP(tok, "client_custom_compress") == 0) {
+	    tok = strtok(NULL, " ");
+	    if (tok == NULL)
+		goto weird_header;
+	    strncpy(file->clntcompprog, tok, sizeof(file->clntcompprog) - 1);
+	    if ((tok = strtok(NULL, " ")) == NULL)
+		break;
+	}
 
-	if (file->program[0] == '\0')
-	    strncpy(file->program, "RESTORE", sizeof(file->program) - 1);
-    
-	if ((tok = strtok(NULL, " \n")) == NULL) 
-	     return;
-       /* "srvcompprog" is optional */
-      if (BSTRNCMP(tok, "server_custom_compress") == 0)
-	{
-              tok = strtok(NULL, " \n");
-              if (tok == NULL)
-                  goto weird_header;
-              strncpy(file->srvcompprog, tok, sizeof(file->srvcompprog) - 1);
-	      if ((tok = strtok(NULL, " \n")) == NULL) 
-		   return;	/* reach the end of the buf */
+	/* "srv_encrypt" is optional */
+	if (BSTRNCMP(tok, "server_encrypt") == 0) {
+	    tok = strtok(NULL, " ");
+	    if (tok == NULL)
+		goto weird_header;
+	    strncpy(file->srv_encrypt, tok, sizeof(file->srv_encrypt) - 1);
+	    if ((tok = strtok(NULL, " ")) == NULL) 
+		break;
 	}
-       /* "clntcompprog" is optional */
-      if (BSTRNCMP(tok, "client_custom_compress") == 0)
-	{
-              tok = strtok(NULL, " \n");
-              if (tok == NULL)
-                  goto weird_header;
-              strncpy(file->clntcompprog, tok, sizeof(file->clntcompprog) - 1);
-	      if ((tok = strtok(NULL, " \n")) == NULL) 
-		   return;
+
+	/* "clnt_encrypt" is optional */
+	if (BSTRNCMP(tok, "client_encrypt") == 0) {
+	    tok = strtok(NULL, " ");
+	    if (tok == NULL)
+		goto weird_header;
+	    strncpy(file->clnt_encrypt, tok, sizeof(file->clnt_encrypt) - 1);
+	    if ((tok = strtok(NULL, " ")) == NULL) 
+		break;
 	}
-      /* "srv_encrypt" is optional */
-      if (BSTRNCMP(tok, "server_encrypt") == 0)
-	{
-              tok = strtok(NULL, " \n");
-              if (tok == NULL)
-                  goto weird_header;
-              strncpy(file->srv_encrypt, tok, sizeof(file->srv_encrypt) - 1);
-	      if ((tok = strtok(NULL, " \n")) == NULL) 
-		   return;
+
+	/* "srv_decrypt_opt" is optional */
+	if (BSTRNCMP(tok, "server_decrypt_option") == 0) {
+	    tok = strtok(NULL, " ");
+	    if (tok == NULL)
+		goto weird_header;
+	    strncpy(file->srv_decrypt_opt, tok,
+		    sizeof(file->srv_decrypt_opt) - 1);
+	    if ((tok = strtok(NULL, " ")) == NULL) 
+		break;
 	}
-       /* "clnt_encrypt" is optional */
-      if (BSTRNCMP(tok, "client_encrypt") == 0)
-	{
-              tok = strtok(NULL, " \n");
-              if (tok == NULL)
-                  goto weird_header;
-              strncpy(file->clnt_encrypt, tok, sizeof(file->clnt_encrypt) - 1);
-	      if ((tok = strtok(NULL, " \n")) == NULL) 
-		   return;
-	}
-      /* "srv_decrypt_opt" is optional */
-      if (BSTRNCMP(tok, "server_decrypt_option") == 0)
-	{
-              tok = strtok(NULL, " \n");
-              if (tok == NULL)
-                  goto weird_header;
-              strncpy(file->srv_decrypt_opt, tok, sizeof(file->srv_decrypt_opt) - 1);
-	}
-      /* "clnt_decrypt_opt" is optional */
-      if (BSTRNCMP(tok, "client_decrypt_option") == 0)
-	{
-              tok = strtok(NULL, " \n");
-              if (tok == NULL)
-                  goto weird_header;
-              strncpy(file->clnt_decrypt_opt, tok, sizeof(file->clnt_decrypt_opt) - 1);
+
+	/* "clnt_decrypt_opt" is optional */
+	if (BSTRNCMP(tok, "client_decrypt_option") == 0) {
+	    tok = strtok(NULL, " ");
+	    if (tok == NULL)
+		goto weird_header;
+	    strncpy(file->clnt_decrypt_opt, tok,
+		    sizeof(file->clnt_decrypt_opt) - 1);
+	    if ((tok = strtok(NULL, " ")) == NULL) 
+		break;
 	}
       break;
       
 
     case F_TAPEEND:
-	tok = strtok(NULL, " \n");
+	tok = strtok(NULL, " ");
 	/* DATE is optional */
 	if (tok == NULL || strcmp(tok, "DATE") != 0)
 	    return;
@@ -248,9 +262,9 @@ parse_file_header(buffer, file, buflen)
 	goto weird_header;
     }
 
+    line = strtok(buf, "\n"); /* this is the first line */
     /* iterate through the rest of the lines */
     while ((line = strtok(NULL, "\n")) != NULL) {
-
 #define SC "CONT_FILENAME="
 	if (strncmp(line, SC, sizeof(SC) - 1) == 0) {
 	    line += sizeof(SC) - 1;
@@ -326,6 +340,7 @@ parse_file_header(buffer, file, buflen)
 	/* XXX complain about weird lines? */
     }
     amfree(buf);
+    amfree(line1);
     return;
 
 weird_header:
@@ -333,6 +348,7 @@ weird_header:
 	(int) buflen, buffer);
     file->type = F_WEIRD;
     amfree(buf);
+    amfree(line1);
 }
 
 void
@@ -366,11 +382,20 @@ build_header(buffer, file, buflen)
     case F_CONT_DUMPFILE:
     case F_DUMPFILE :
         n = snprintf(buffer, buflen,
-			 "AMANDA: %s %s %s %s%s lev %d comp %s crypt %s program %s",
+		     "AMANDA: %s %s %s %s%s lev %d comp %s program %s",
 			 filetype2str(file->type),
 			 file->datestamp, file->name, file->disk,
 			 split_data,
-			 file->dumplevel, file->comp_suffix, file->encrypt_suffix, file->program);
+		         file->dumplevel, file->comp_suffix, file->program); 
+	if ( n ) {
+	  buffer += n;
+	  buflen -= n;
+	  n = 0;
+	}
+     
+	if (strcmp(file->encrypt_suffix, "enc") == 0) {  /* only output crypt if it's enabled */
+	  n = snprintf(buffer, buflen, " crypt %s", file->encrypt_suffix);
+	}
 	if ( n ) {
 	  buffer += n;
 	  buflen -= n;
@@ -475,11 +500,13 @@ print_header(outf, file)
 	break;
     case F_DUMPFILE:
     case F_CONT_DUMPFILE:
-	fprintf(outf, "%s: date %s host %s disk %s lev %d comp %s crypt %s",
+	fprintf(outf, "%s: date %s host %s disk %s lev %d comp %s",
 	    filetype2str(file->type), file->datestamp, file->name,
-	    file->disk, file->dumplevel, file->comp_suffix, file->encrypt_suffix);
-	if(*file->program)
+	    file->disk, file->dumplevel, file->comp_suffix);
+	if (*file->program)
 	    fprintf(outf, " program %s",file->program);
+	if (strcmp(file->encrypt_suffix, "enc") == 0)
+	    fprintf(outf, " crypt %s", file->encrypt_suffix);
 	if (*file->srvcompprog)
 	    fprintf(outf, " server_custom_compress %s", file->srvcompprog);
 	if (*file->clntcompprog)
@@ -492,19 +519,20 @@ print_header(outf, file)
 	    fprintf(outf, " server_decrypt_option %s", file->srv_decrypt_opt);
 	if (*file->clnt_decrypt_opt)
 	    fprintf(outf, " client_decrypt_option %s", file->clnt_decrypt_opt);
-	else
-	    fprintf(outf, "\n");
+	fprintf(outf, "\n");
 	break;
     case F_SPLIT_DUMPFILE:
         if(file->totalparts > 0){
             snprintf(number, sizeof(number), "%d", file->totalparts);
         }   
         else snprintf(number, sizeof(number), "UNKNOWN");
-        fprintf(outf, "split dumpfile: date %s host %s disk %s part %d/%s lev %d comp %s crypt %s",
+        fprintf(outf, "split dumpfile: date %s host %s disk %s part %d/%s lev %d comp %s",
                       file->datestamp, file->name, file->disk, file->partnum,
-                      number, file->dumplevel, file->comp_suffix, file->encrypt_suffix);
-        if(*file->program)
+                      number, file->dumplevel, file->comp_suffix);
+        if (*file->program)
             fprintf(outf, " program %s",file->program);
+	if (strcmp(file->encrypt_suffix, "enc") == 0)
+	    fprintf(outf, " crypt %s", file->encrypt_suffix);
 	if (*file->srvcompprog)
 	    fprintf(outf, " server_custom_compress %s", file->srvcompprog);
 	if (*file->clntcompprog)
@@ -517,8 +545,7 @@ print_header(outf, file)
 	    fprintf(outf, " server_decrypt_option %s", file->srv_decrypt_opt);
 	if (*file->clnt_decrypt_opt)
 	    fprintf(outf, " client_decrypt_option %s", file->clnt_decrypt_opt);
-        else
-            fprintf(outf, "\n");
+        fprintf(outf, "\n");
         break;
     case F_TAPEEND:
 	fprintf(outf, "end of tape: date %s\n", file->datestamp);
