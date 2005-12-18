@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.6 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: restore.c,v 1.7 2005/12/18 00:42:10 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -40,7 +40,6 @@
 #include <signal.h>
 
 int file_number;
-int bytes_read;
 
 /* stuff we're stuck having global */
 static long blocksize = -1;
@@ -165,8 +164,13 @@ static void append_file_to_fd(filename, fd)
 char *filename;
 int fd;
 {
-    int bytes_read, l, s, wc = 0, rc = 0;
-    char *buffer = alloc(blocksize);
+    ssize_t bytes_read;
+    int l, s, wc = 0, rc = 0;
+    char *buffer;
+
+    if(blocksize == -1)
+	blocksize = DISK_BLOCK_BYTES;
+    buffer = alloc(blocksize);
 
     if((tapefd = open(filename, O_RDONLY)) == -1) {
 	error("can't open %s: %s", filename, strerror(errno));
@@ -194,6 +198,7 @@ int fd;
 	wc += bytes_read;
     } while (bytes_read > 0);
 
+    amfree(buffer);
     aclose(tapefd);
 }
 
@@ -497,32 +502,14 @@ dumpfile_t *file;
 XXX Making this thing a lib functiong broke a lot of assumptions everywhere,
 but I think I've found them all.  Maybe.  Damn globals all over the place.
 */
-static int get_block(tapefd, buffer, isafile)
+static ssize_t get_block(tapefd, buffer, isafile)
 int tapefd, isafile;
 char *buffer;
 {
-    if(!buffer) buffer = alloc(blocksize);
+    if(isafile)
+	return (fullread(tapefd, buffer, blocksize));
 
-    if(blocksize < 0) blocksize = DISK_BLOCK_BYTES;
-
-    if(isafile) {
-	bytes_read = fullread(tapefd, buffer, blocksize);
-    } else {
-	bytes_read = tapefd_read(tapefd, buffer, blocksize);
-	if(blocksize < 0 && bytes_read > 0 && bytes_read < blocksize) {
-	  /* XXX can't easily do this resize now that buffer isn't a global
-
-	    char *new_buffer;
-
-	    blocksize = bytes_read;
-	    new_buffer = alloc(blocksize);
-	    memcpy(new_buffer, buffer, bytes_read);
-	    amfree(buffer);
-	    buffer = new_buffer;
-	    */
-	}
-    }
-    return bytes_read;
+    return(tapefd_read(tapefd, buffer, blocksize));
 }
 
 int disk_match(file, datestamp, hostname, diskname, level)
@@ -550,7 +537,7 @@ char *datestamp, *hostname, *diskname, *level;
 }
 
 
-void read_file_header(file, tapefd, isafile, flags)
+ssize_t read_file_header(file, tapefd, isafile, flags)
 dumpfile_t *file;
 int isafile;
 int tapefd;
@@ -559,15 +546,13 @@ rst_flags_t *flags;
  * Reads the first block of a tape file.
  */
 {
-    char *buffer = NULL;
+    ssize_t bytes_read;
+    char *buffer;
   
     if(flags->blocksize > 0)
 	blocksize = flags->blocksize;
     else if(blocksize == -1)
 	blocksize = DISK_BLOCK_BYTES;
-
-    buffer = alloc(blocksize);
-
     buffer = alloc(blocksize);
 
     bytes_read = get_block(tapefd, buffer, isafile);
@@ -585,7 +570,7 @@ rst_flags_t *flags;
 	parse_file_header(buffer, file, bytes_read);
     }
     amfree(buffer);
-    return;
+    return bytes_read;
 }
 
 
@@ -593,22 +578,26 @@ void drain_file(tapefd, flags)
 int tapefd;
 rst_flags_t *flags;
 {
-    char *buffer = NULL;
+    ssize_t bytes_read;
+    char *buffer;
 
-    if(flags->blocksize) blocksize = flags->blocksize;
-    else if(blocksize == -1) blocksize = DISK_BLOCK_BYTES;
-
+    if(flags->blocksize)
+	blocksize = flags->blocksize;
+    else if(blocksize == -1)
+	blocksize = DISK_BLOCK_BYTES;
     buffer = alloc(blocksize);
+
     do {
        bytes_read = get_block(tapefd, buffer, 0);
        if(bytes_read < 0) {
            error("read error: %s", strerror(errno));
        }
     } while (bytes_read > 0);
+
     amfree(buffer);
 }
 
-void restore(file, filename, tapefd, isafile, flags)
+ssize_t restore(file, filename, tapefd, isafile, flags)
 dumpfile_t *file;
 char *filename;
 int tapefd;
@@ -634,11 +623,18 @@ rst_flags_t *flags;
     open_output_t *myout = NULL, *oldout = NULL;
     dumplist_t *tempdump = NULL, *fileentry = NULL;
     struct sigaction act, oact;
-    char *buffer = NULL;
+    char *buffer;
     int need_compress=0, need_uncompress=0, need_decrypt=0;
+    int i, stage = 0;
+    ssize_t bytes_read;
+    struct pipeline {
+        int	pipe[2];
+    } pipes[3];
 
-    if(flags->blocksize) blocksize = flags->blocksize;
-    else if(blocksize == -1) blocksize = DISK_BLOCK_BYTES;
+    if(flags->blocksize)
+	blocksize = flags->blocksize;
+    else if(blocksize == -1)
+	blocksize = DISK_BLOCK_BYTES;
 
     /* set our sigpipe handler, saving the old one */
     act.sa_handler = handle_sigpipe;
@@ -710,11 +706,12 @@ rst_flags_t *flags;
 
     /* set up final destination file */
 
-    if(is_continuation && myout != NULL) out = myout->outfd;
-    else{
-      if(flags->pipe_to_fd != -1)
+    if(is_continuation && myout != NULL) {
+      out = myout->outfd;
+    } else {
+      if(flags->pipe_to_fd != -1) {
   	  dest = flags->pipe_to_fd;	/* standard output */
-      else {
+      } else {
   	  char *filename_ext = NULL;
   
   	  if(flags->compress) {
@@ -785,8 +782,8 @@ rst_flags_t *flags;
 	    file->type = F_DUMPFILE;
 	}
 
-	buffer = alloc(bytes_read);
-	build_header(buffer, file, bytes_read);
+	buffer = alloc(DISK_BLOCK_BYTES);
+	build_header(buffer, file, DISK_BLOCK_BYTES);
 
 	if((w = fullwrite(out, buffer, DISK_BLOCK_BYTES)) != DISK_BLOCK_BYTES) {
 	    if(w < 0) {
@@ -804,53 +801,57 @@ rst_flags_t *flags;
     }
  
     /* find out if compression or uncompression is needed here */
-    if(flags->compress && !file_is_compressed && !is_continuation && !flags->leave_comp &&
-       (flags->inline_assemble || file->type != F_SPLIT_DUMPFILE))
+    if(flags->compress && !file_is_compressed && !is_continuation
+	  && !flags->leave_comp
+	  && (flags->inline_assemble || file->type != F_SPLIT_DUMPFILE))
        need_compress=1;
        
-    if(!flags->raw && !flags->compress && file_is_compressed && !is_continuation && 
-	  !flags->leave_comp && (flags->inline_assemble || file->type != F_SPLIT_DUMPFILE))
+    if(!flags->raw && !flags->compress && file_is_compressed
+	  && !is_continuation && !flags->leave_comp && (flags->inline_assemble
+	  || file->type != F_SPLIT_DUMPFILE))
        need_uncompress=1;   
 
+    if(!flags->raw && file->encrypted)
+       need_decrypt=1;
    
-    /* up to two sets of pipes for decryption and compression/uncompression  */
-    if(pipe(outpipe) < 0) 
-      error("error [pipe1: %s]", strerror(errno));
-    if( need_compress || need_uncompress)
-      if(pipe(outpipe2) < 0) 
-	error("error [pipe2: %s]", strerror(errno));
-    out = outpipe[1];
+    /* Setup pipes for decryption / compression / uncompression  */
+    stage = 0;
+    if (need_decrypt) {
+      if (pipe(&pipes[stage].pipe[0]) < 0) 
+        error("error [pipe[%d]: %s]", stage, strerror(errno));
+      stage++;
+    }
+
+    if (need_compress || need_uncompress) {
+      if (pipe(&pipes[stage].pipe[0]) < 0) 
+        error("error [pipe[%d]: %s]", stage, strerror(errno));
+      stage++;
+    }
+    pipes[stage].pipe[0] = -1; 
+    pipes[stage].pipe[1] = out; 
+
+    stage = 0;
 
     /* decrypt first if it's encrypted and no -r */
-    if(!flags->raw && file->encrypted) {
-      need_decrypt=1;
+    if(need_decrypt) {
       switch(myout->comp_enc_pid = fork()) {
       case -1:
 	error("could not fork for decrypt: %s", strerror(errno));
       default:
- 	aclose(outpipe[0]); 
-	if (!need_compress && !need_uncompress) 
-	  if(dest != 1) aclose(dest);
+	aclose(pipes[stage].pipe[0]);
+	aclose(pipes[stage+1].pipe[1]);
+        stage++;
 	break;
       case 0:
-	aclose(outpipe[1]);
-	if(outpipe[0] != 0) {
-	  if(dup2(outpipe[0], 0) == -1)
-	    error("error [dup2 pipe %d: %s]", outpipe[0], strerror(errno));
-	  aclose(outpipe[0]);
-	}
- 	if (!need_compress && !need_uncompress) { /* output goes to dest       */
-	  if(dest != 1) {	                 /*  if no compress/uncompress */
-	    if(dup2(dest, 1) == -1)
-	      error("error [dup2 dest %d: %s]", dest, strerror(errno));
-	    aclose(dest);
-	  }
-	}  else { /* output goes to outpipe2[1] if compress/uncompress */
-	  if (dup2(outpipe2[1], 1) < 0) 
-	    error("error [dup2 outpipe2[1] %d: %s]", dest, strerror(errno));
-	  aclose(outpipe2[1]);
-	}
-	aclose(tapefd);
+	if(dup2(pipes[stage].pipe[0], 0) == -1)
+	    error("error decrypt stdin [dup2 %d %d: %s]", stage,
+	        pipes[stage].pipe[0], strerror(errno));
+
+	if(dup2(pipes[stage+1].pipe[1], 1) == -1)
+	    error("error decrypt stdout [dup2 %d %d: %s]", stage + 1,
+	        pipes[stage+1].pipe[1], strerror(errno));
+
+	safe_fd(-1, 0);
 	if (*file->srv_encrypt) {
 	  (void) execlp(file->srv_encrypt, file->srv_encrypt,
 			file->srv_decrypt_opt, NULL);
@@ -861,87 +862,68 @@ rst_flags_t *flags;
 	  error("could not exec %s: %s", file->clnt_encrypt, strerror(errno));
 	}
       }
-    } else { 			/* no need to decrypt, compression              */
-      outpipe2[0] = outpipe[0];	/* or uncompression to use outpipe[0] as input */
     }
 
-    /*
-     * Insert a compress pipe
-     */
-    if(need_compress) {
-#if 0
-//	if(is_continuation && myout != NULL) myout->outfd = outpipe[1];
-#endif
-
+    if (need_compress) {
+        /*
+         * Insert a compress pipe
+         */
 	switch(myout->comp_enc_pid = fork()) {
 	case -1: error("could not fork for %s: %s",
 		       COMPRESS_PATH, strerror(errno));
 	default:
-	    aclose(outpipe2[0]);
-	    if(dest != 1) aclose(dest); /* stdout is special */
+	    aclose(pipes[stage].pipe[0]);
+	    aclose(pipes[stage+1].pipe[1]);
+            stage++;
 	    break;
 	case 0:
-	    aclose(outpipe2[1]);
-	    if(outpipe2[0] != 0) {
-		if(dup2(outpipe2[0], 0) == -1)
-		    error("error [dup2 pipe %d: %s]", outpipe[0], strerror(errno));
-		aclose(outpipe2[0]);
-	    }
-	    if(dest != 1) {
-		if(dup2(dest, 1) == -1)
-		    error("error [dup2 dest %d: %s]", dest, strerror(errno));
-		aclose(dest);
-	    }
+	    if(dup2(pipes[stage].pipe[0], 0) == -1)
+		error("error compress stdin [dup2 %d %d: %s]", stage,
+		  pipes[stage].pipe[0], strerror(errno));
+
+	    if(dup2(pipes[stage+1].pipe[1], 1) == -1)
+		error("error compress stdout [dup2 %d %d: %s]", stage + 1,
+		  pipes[stage+1].pipe[1], strerror(errno));
+
 	    if (*flags->comp_type == '\0') {
 		flags->comp_type = NULL;
 	    }
-	    aclose(outpipe2[0]); aclose(outpipe2[1]); aclose(outpipe[0]); aclose(outpipe[1]);
-	    aclose(tapefd);
+
+	    safe_fd(-1, 0);
 	    (void) execlp(COMPRESS_PATH, COMPRESS_PATH, flags->comp_type, (char *)0);
 	    error("could not exec %s: %s", COMPRESS_PATH, strerror(errno));
 	}
-    }
+    } else if(need_uncompress) {
+        /*
+         * If not -r, -c, -l, and file is compressed, and split reassembly 
+         * options are sane, insert uncompress pipe
+         */
 
-    /*
-     * If not -r, -c, -l, and file is compressed, and split reassembly 
-     * options are sane, insert uncompress pipe
-     */
-
-    else if(need_uncompress) {
 	/* 
 	 * XXX for now we know that for the two compression types we
 	 * understand, .Z and optionally .gz, UNCOMPRESS_PATH will take
 	 * care of both.  Later, we may need to reference a table of
 	 * possible uncompress programs.
 	 */ 
-#if 0
-//	if(is_continuation && myout != NULL) myout->outfd = outpipe[1];
-#endif
 	switch(myout->comp_enc_pid = fork()) {
 	case -1: 
 	    error("could not fork for %s: %s",
 		  UNCOMPRESS_PATH, strerror(errno));
 	default:
-	   aclose(outpipe2[0]);
-	    if(dest != 1) aclose(dest); /* pipes're special */
+	    aclose(pipes[stage].pipe[0]);
+	    aclose(pipes[stage+1].pipe[1]);
+            stage++;
 	    break;
 	case 0:
-	    aclose(outpipe2[1]);
-	    if(outpipe2[0] != 0) {
-		if(dup2(outpipe2[0], 0) < 0)
-		    error("dup2 pipe(uncompress): %s", strerror(errno));
-		aclose(outpipe2[0]);
-	    }
-	    if(dest != 1) { /* XXX check pipe_to_fd instead? */
-		if(dup2(dest, 1) < 0)
-		    error("dup2 dest: %s", strerror(errno));
-		aclose(dest);
-	    }
-	    aclose(outpipe2[0]); aclose(outpipe2[1]); aclose(outpipe[0]); aclose(outpipe[1]);
-#if 0
-//	    fcntl(tapefd, F_SETFD, FD_CLOEXEC);
-#endif
-	    aclose(tapefd);
+	    if(dup2(pipes[stage].pipe[0], 0) == -1)
+		error("error uncompress stdin [dup2 %d %d: %s]", stage,
+		  pipes[stage].pipe[0], strerror(errno));
+
+	    if(dup2(pipes[stage+1].pipe[1], 1) == -1)
+		error("error uncompress stdout [dup2 %d %d: %s]", stage + 1,
+		  pipes[stage+1].pipe[1], strerror(errno));
+
+	    safe_fd(-1, 0);
 	    if (*file->srvcompprog) {
 	      (void) execlp(file->srvcompprog, file->srvcompprog, "-d", NULL);
 	      error("could not exec %s: %s", file->srvcompprog, strerror(errno));
@@ -949,26 +931,31 @@ rst_flags_t *flags;
 	      (void) execlp(file->clntcompprog, file->clntcompprog, "-d", NULL);
 	      error("could not exec %s: %s", file->clntcompprog, strerror(errno));
 	    } else {
-	    (void) execlp(UNCOMPRESS_PATH, UNCOMPRESS_PATH,
+	      (void) execlp(UNCOMPRESS_PATH, UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 			  UNCOMPRESS_OPT,
 #endif
 			  (char *)0);
-	    error("could not exec %s: %s", UNCOMPRESS_PATH, strerror(errno));
+	      error("could not exec %s: %s", UNCOMPRESS_PATH, strerror(errno));
+	    }
 	}
-	}
-    } 
-
+    }
 
     /* copy the rest of the file from tape to the output */
     got_sigpipe = 0;
     wc = 0;
+    if(flags->blocksize > 0)
+	blocksize = flags->blocksize;
+    else if(blocksize == -1)
+	blocksize = DISK_BLOCK_BYTES;
+    buffer = alloc(blocksize);
+
     do {
-	buffer = alloc(blocksize);
 	bytes_read = get_block(tapefd, buffer, isafile);
 	if(bytes_read < 0) {
 	    error("read error: %s", strerror(errno));
 	}
+
 	if(bytes_read == 0 && isafile) {
 	    /*
 	     * See if we need to switch to the next file in a holding restore
@@ -997,7 +984,7 @@ rst_flags_t *flags;
 			  strerror(errno));
 		}
 	    }
-	    read_file_header(file, tapefd, isafile, flags);
+	    bytes_read = read_file_header(file, tapefd, isafile, flags);
 	    if(file->type != F_DUMPFILE && file->type != F_CONT_DUMPFILE
 		    && file->type != F_SPLIT_DUMPFILE) {
 		fprintf(stderr, "unexpected header type: ");
@@ -1006,8 +993,9 @@ rst_flags_t *flags;
 	    }
 	    continue;
 	}
+
 	for(l = 0; l < bytes_read; l += s) {
-	    if((s = write(out, buffer + l, bytes_read - l)) < 0) {
+	    if((s = write(pipes[0].pipe[1], buffer+l, bytes_read-l)) < 0) {
 		if(got_sigpipe) {
 		    fprintf(stderr,"Error %d (%s) offset %d+%d, wrote %d\n",
 				   errno, strerror(errno), wc, bytes_read, rc);
@@ -1021,8 +1009,10 @@ rst_flags_t *flags;
 	    }
 	}
 	wc += bytes_read;
-	amfree(buffer);
     } while (bytes_read > 0);
+    aclose(pipes[0].pipe[1]);
+
+    amfree(buffer);
 
     if(!flags->inline_assemble){
        if(out != dest) aclose(out);
@@ -1080,7 +1070,7 @@ rst_flags_t *flags;
 			error("error resetting SIGPIPE handler: %s",
 				strerror(errno));
 		    }
-		    return;
+                    return (bytes_read);
 		}
 	    }
 	}
@@ -1119,6 +1109,7 @@ rst_flags_t *flags;
     if(sigaction(SIGPIPE, &oact, &act) != 0){
 	error("error resetting SIGPIPE handler: %s", strerror(errno));
     }
+    return (bytes_read);
 }
 
 
@@ -1149,6 +1140,7 @@ rst_flags_t *flags;
     tapelist_t *desired_tape = NULL;
     struct sigaction act, oact;
     int newtape = 1;
+    ssize_t bytes_read;
 
     struct seentapes{
 	struct seentapes *next;
@@ -1253,7 +1245,7 @@ rst_flags_t *flags;
 	    }
 	    fprintf(stderr, "Reading %s to fd %d\n", desired_tape->label, tapefd);
 
-	    read_file_header(&file, tapefd, 1, flags);
+	    bytes_read = read_file_header(&file, tapefd, 1, flags);
 	    label = stralloc(desired_tape->label);
 	}
 	/*
@@ -1275,7 +1267,7 @@ rst_flags_t *flags;
 		continue;
 	    }
 	
-            read_file_header(&file, tapefd, 0, flags);
+            bytes_read = read_file_header(&file, tapefd, 0, flags);
 
             if(file.type != F_TAPESTART) {
 	        fprintf(stderr, "Not an amanda tape\n");
@@ -1425,7 +1417,7 @@ rst_flags_t *flags;
 		}
 		else filenum = fsf_by;
 
-		read_file_header(&file, tapefd, isafile, flags);
+		bytes_read = read_file_header(&file, tapefd, isafile, flags);
 	    }
 	}
 
@@ -1471,7 +1463,7 @@ rst_flags_t *flags;
 	    if(found_match){
 		fprintf(stderr, "%s: %3d: restoring ", get_pname(), filenum);
 		print_header(stderr, &file);
-		restore(&file, filename, tapefd, isafile, flags);
+		bytes_read = restore(&file, filename, tapefd, isafile, flags);
 		filenum ++;
 	    }
 
@@ -1513,8 +1505,9 @@ rst_flags_t *flags;
 	    memcpy(&prev_rst_file, &file, sizeof(dumpfile_t));
 
 	      
-	    if(!isafile) read_file_header(&file, tapefd, isafile, flags);
-	    else break;
+	    if(isafile)
+                break;
+            bytes_read = read_file_header(&file, tapefd, isafile, flags);
 
 	    /* only restore a single dump, if piping to stdout */
 	    if(!headers_equal(&prev_rst_file, &file, 1) &&

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.h,v 1.1 2005/10/11 01:17:00 vectro Exp $
+ * $Id: restore.h,v 1.2 2005/12/18 00:42:10 martinea Exp $
  *
  * 
  */
@@ -69,9 +69,9 @@ typedef struct rst_flags_s {
 char *make_filename P((dumpfile_t *file));
 int disk_match P((dumpfile_t *file, char *datestamp,
 		    char *hostname, char *diskname, char *level));
-void read_file_header P((dumpfile_t *file, int tapefd, int isafile,
+ssize_t read_file_header P((dumpfile_t *file, int tapefd, int isafile,
 			 rst_flags_t *flags));
-void restore P((dumpfile_t *file, char *filename, int tapefd, int isafile,
+ssize_t restore P((dumpfile_t *file, char *filename, int tapefd, int isafile,
 			rst_flags_t *flags));
 void flush_open_outputs P((int reassemble, dumpfile_t *only_file));
 void search_tapes P((FILE *prompt_out, int use_changer, tapelist_t *tapelist,

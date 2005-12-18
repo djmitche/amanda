@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.54 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: amrestore.c,v 1.55 2005/12/18 00:42:10 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -45,8 +45,6 @@
 #include "restore.h"
 
 #define CREAT_MODE	0640
-
-extern int bytes_read;
 
 static int got_sigpipe, file_number;
 static pid_t comp_enc_pid = -1;
@@ -119,6 +117,7 @@ char **argv;
     char *label = NULL;
     rst_flags_t *rst_flags;
     int count_error;
+    size_t read_result;
 
     safe_fd(-1, 0);
 
@@ -256,7 +255,7 @@ char **argv;
 	    if ((tapedev = tape_open(tapename, 0)) == -1) {;
 		error("Could not open device '%s': %s", tapename, err);
 	    }
-	    read_file_header(&file, tapedev, isafile, rst_flags);
+	    read_result = read_file_header(&file, tapedev, isafile, rst_flags);
 	    if(file.type != F_TAPESTART) {
 		fprintf(stderr,"Not an amanda tape\n");
 		exit (1);
@@ -297,7 +296,7 @@ char **argv;
 	error("could not open %s: %s", tapename, strerror(errno));
     }
 
-    read_file_header(&file, tapedev, isafile, rst_flags);
+    read_result = read_file_header(&file, tapedev, isafile, rst_flags);
 
     if(file.type != F_TAPESTART && !isafile && filefsf == -1) {
 	fprintf(stderr, "%s: WARNING: not at start of tape, file numbers will be offset\n",
@@ -328,7 +327,8 @@ char **argv;
 	    }
 	}
 	if(found_match) {
-	    restore(&file, filename, tapedev, isafile, rst_flags);
+	    read_result = restore(&file, filename,
+		tapedev, isafile, rst_flags);
 	    if(comp_enc_pid > 0) {
 		waitpid(comp_enc_pid, &compress_status, 0);
 		comp_enc_pid = -1;
@@ -346,7 +346,7 @@ char **argv;
 	 * not a holding disk file, so we can call the tape functions
 	 * without checking.
 	 */
-	if(bytes_read == 0) {
+	if(read_result == 0) {
 	    /*
 	     * If the last read got EOF, how to get to the next
 	     * file depends on how the tape device driver is acting.
@@ -371,7 +371,7 @@ char **argv;
 	    count_error=0;
 	}
 	file_number++;
-	read_file_header(&file, tapedev, isafile, rst_flags);
+	read_result = read_file_header(&file, tapedev, isafile, rst_flags);
     }
     if(isafile) {
 	close(tapedev);
@@ -379,7 +379,7 @@ char **argv;
 	/*
 	 * See the notes above about advancing to the next file.
 	 */
-	if(bytes_read == 0) {
+	if(read_result == 0) {
 	    tapefd_close(tapedev);
 	    if((tapedev = tape_open(tapename, 0)) < 0) {
 		error("could not open %s: %s", tapename, strerror(errno));
@@ -392,9 +392,9 @@ char **argv;
 	tapefd_close(tapedev);
     }
 
-    if((bytes_read <= 0 || file.type == F_TAPEEND) && !isafile) {
+    if((read_result <= 0 || file.type == F_TAPEEND) && !isafile) {
 	fprintf(stderr, "%s: %3d: reached ", get_pname(), file_number);
-	if(bytes_read <= 0) {
+	if(read_result <= 0) {
 	    fprintf(stderr, "end of information\n");
 	} else {
 	    print_header(stderr,&file);

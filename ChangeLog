@@ -1,3 +1,12 @@
+2005-12-17  John R. Franks <jrfranks@zmanda.com>
+
+	* restore-src/restore.h (read_file_header, restore): Return a ssize_t
+	  instead of using a global variable bytes_read.
+	* restore-src/restore.c: Use local variable instead of global
+	  bytes_read. Many memory management fixe. Fixe pipe handling,
+	* restore-src/amrestore.c: Use new read_file_header and restore.
+	* restore-src/amfetchdump.c: Use new read_file_header and restore.
+
 2005-12-17  Jean-Louis Martineau <martineau@zmanda.com>
 	With Kevin Till <ktill@zmanda.com>
 
