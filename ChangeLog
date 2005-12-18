@@ -1,3 +1,8 @@
+2005-12-18  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by Paul Bijnens
+
+	* server-src/amcheck.c: Tapelist file is regular file.
+
 2005-12-17  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* restore-src/restore.c (get_block): Return a ssize_t.
