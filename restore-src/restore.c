@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.7 2005/12/18 00:42:10 martinea Exp $
+ * $Id: restore.c,v 1.8 2005/12/18 01:08:42 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -71,7 +71,7 @@ typedef struct dumplist_s {
 static open_output_t *open_outputs = NULL;
 static dumplist_t *alldumps_list = NULL;
 
-static int get_block P((int tapefd, char *buffer, int isafile));
+static ssize_t get_block P((int tapefd, char *buffer, int isafile));
 static void append_file_to_fd P((char *filename, int fd));
 static int headers_equal P((dumpfile_t *file1, dumpfile_t *file2, int ignore_partnums));
 static int already_have_dump P((dumpfile_t *file));
@@ -184,8 +184,8 @@ int fd;
 	for(l = 0; l < bytes_read; l += s) {
 	    if((s = write(fd, buffer + l, bytes_read - l)) < 0) {
 		if(got_sigpipe) {
-		    fprintf(stderr,"Error %d (%s) offset %d+%d, wrote %d\n",
-				   errno, strerror(errno), wc, bytes_read, rc);
+		    fprintf(stderr,"Error %d (%s) offset %d+%ld, wrote %d\n",
+				   errno, strerror(errno), wc, (long)bytes_read, rc);
 		    fprintf(stderr,  
 			    "%s: pipe reader has quit in middle of file.\n",
 			    get_pname());
@@ -562,8 +562,8 @@ rst_flags_t *flags;
 	if(bytes_read == 0) {
 	    fprintf(stderr, "%s: missing file header block\n", get_pname());
 	} else {
-	    fprintf(stderr, "%s: short file header block: %d byte%s\n",
-		    get_pname(), bytes_read, (bytes_read == 1) ? "" : "s");
+	    fprintf(stderr, "%s: short file header block: %ld byte%s\n",
+		    get_pname(), (long)bytes_read, (bytes_read == 1) ? "" : "s");
 	}
 	file->type = F_UNKNOWN;
     } else {
@@ -612,7 +612,7 @@ rst_flags_t *flags;
  * piped to restore).
  */
 {
-    int rc = 0, dest = -1, out, outpipe[2], outpipe2[2];
+    int rc = 0, dest = -1, out;
     int wc;
     int l, s;
     int file_is_compressed;
@@ -625,7 +625,7 @@ rst_flags_t *flags;
     struct sigaction act, oact;
     char *buffer;
     int need_compress=0, need_uncompress=0, need_decrypt=0;
-    int i, stage = 0;
+    int stage = 0;
     ssize_t bytes_read;
     struct pipeline {
         int	pipe[2];
@@ -997,8 +997,8 @@ rst_flags_t *flags;
 	for(l = 0; l < bytes_read; l += s) {
 	    if((s = write(pipes[0].pipe[1], buffer+l, bytes_read-l)) < 0) {
 		if(got_sigpipe) {
-		    fprintf(stderr,"Error %d (%s) offset %d+%d, wrote %d\n",
-				   errno, strerror(errno), wc, bytes_read, rc);
+		    fprintf(stderr,"Error %d (%s) offset %d+%ld, wrote %d\n",
+				   errno, strerror(errno), wc, (long)bytes_read, rc);
 		    fprintf(stderr,  
 			    "%s: pipe reader has quit in middle of file.\n",
 			    get_pname());

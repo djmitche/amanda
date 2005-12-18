@@ -1,3 +1,10 @@
+2005-12-17  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* restore-src/restore.c (get_block): Return a ssize_t.
+	* restore-src/restore.c: convert ssize_t to long for printing.
+	* restore-src/restore.c (restore>): Remove unused variable, outpipe,
+	   outpipe2, i.
+
 2005-12-17  John R. Franks <jrfranks@zmanda.com>
 
 	* restore-src/restore.h (read_file_header, restore): Return a ssize_t
