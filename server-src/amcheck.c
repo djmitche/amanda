@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.12 2005/10/11 14:50:00 martinea Exp $
+ * $Id: amcheck.c,v 1.50.2.19.2.7.2.20.2.13 2005/12/18 21:10:46 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -812,6 +812,10 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	else if(stat(tapefile, &statbuf) == -1) {
 	    fprintf(outf, "ERROR: tapefile %s: %s, you must create an empty file.\n",
 		    tapefile, strerror(errno));
+	    tapebad = 1;
+	}
+	else if(!S_ISREG(statbuf.st_mode)) {
+	    fprintf(outf, "ERROR: tapefile %s: should be a regular file.\n", tapefile);
 	    tapebad = 1;
 	}
 	else if(access(tapefile, F_OK) != 0) {
