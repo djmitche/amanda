@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.30 2005/12/17 23:28:39 martinea Exp $
+ * $Id: fileheader.c,v 1.31 2005/12/20 19:27:19 martinea Exp $
  */
 
 #include "amanda.h"
@@ -122,7 +122,7 @@ parse_file_header(buffer, file, buflen)
 	    if (tok == NULL || strcmp(tok, "part") != 0)
 		goto weird_header;
 
-	    tok = strtok(NULL, " ");
+	    tok = strtok(NULL, "/");
 	    if (tok == NULL || sscanf(tok, "%d", &file->partnum) != 1)
 		goto weird_header;
 
@@ -372,10 +372,10 @@ build_header(buffer, file, buflen)
     case F_SPLIT_DUMPFILE:
 	if(file->totalparts > 0) {
 	    snprintf(split_data, sizeof(split_data),
-		     "part %d/%d ", file->partnum, file->totalparts);
+		     " part %d/%d ", file->partnum, file->totalparts);
 	} else {
 	    snprintf(split_data, sizeof(split_data),
-		     "part %d/%d ", file->partnum, file->totalparts);
+		     " part %d/%d ", file->partnum, file->totalparts);
 	}
     /* FALLTHROUGH */
 	
