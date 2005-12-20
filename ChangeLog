@@ -1,3 +1,7 @@
+2005-12-20  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/reporter.c: Fix report of output size.
+
 2005-12-18  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by Paul Bijnens
 

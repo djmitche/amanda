@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.101 2005/12/13 23:07:56 martinea Exp $
+ * $Id: reporter.c,v 1.102 2005/12/20 19:25:03 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -2058,7 +2058,7 @@ handle_success(logtype_t logtype)
 	stats[i].tapedisks +=1;
 	stats[i].tapesize += kbytes;
 	sp->outsize = kbytes;
-	if(repdata->dumper.outsize != 0.0) { /* dump to tape */
+	if(repdata->chunker.outsize == 0.0 && repdata->dumper.outsize != 0.0) { /* dump to tape */
 	    stats[i].outsize += kbytes;
 	    if(dp->compress != COMP_NONE) {
 		stats[i].coutsize += kbytes;
