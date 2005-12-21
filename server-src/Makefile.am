@@ -78,7 +78,8 @@ amgetconf_SOURCES =	getconf.c
 noinst_HEADERS = 	amindex.h	changer.h			\
 			conffile.h	diskfile.h	driverio.h	\
 			holding.h	infofile.h	logfile.h	\
-			tapefile.h	find.h		server_util.h
+			tapefile.h	find.h		server_util.h	\
+			taperscan.h
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS) $(sbin_SCRIPTS)"; \

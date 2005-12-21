@@ -1,4 +1,9 @@
+2005-12-20  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* server-src/Makefile.am (noinst_HEADERS): Add taperscan.h.
+
 2005-12-20  John Franks <jrfranks@zmanda.com>
+
 	* restore-src/restore.c: Remove unused variables.
 				 Fix uninitialize reference to bytes_read.
 	* server-src/amcheck.c:	 Remove unused variables.
