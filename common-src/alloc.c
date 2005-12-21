@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.34 2004/08/31 12:45:52 martinea Exp $
+ * $Id: alloc.c,v 1.35 2005/12/21 19:07:49 paddy_s Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * errordump() is called, relieving the caller from checking the return
@@ -233,6 +233,25 @@ debug_stralloc(s, l, str)
     return (addr);
 }
 
+/* vstrextend -- Extends the existing string by appending the other 
+ * arguments. */
+arglist_function(char *vstrextend,
+		  char **,
+                 oldstr)
+{
+	char *keep = *oldstr;
+	va_list ap;
+
+	arglist_start(ap, oldstr);
+
+	if (*oldstr == NULL)
+		*oldstr = "";
+	*oldstr = internal_vstralloc(*oldstr, ap);
+        amfree(keep);
+
+	arglist_end(ap);
+        return *oldstr;
+}
 
 /*
  * internal_vstralloc - copies up to MAX_STR_ARGS strings into newly

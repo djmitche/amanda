@@ -112,10 +112,16 @@ rawtapedev "@DEFAULT_RAW_TAPE_DEVICE@"	# the raw device to be used (ftape only)
 changerfile "@CONFIG_DIR@/@DEFAULT_CONFIG@/changer.conf"
 changerdev "@DEFAULT_CHANGER_DEVICE@"
 
+# If you want Amanda to automatically label any non-Amanda tapes it
+# encounters, uncomment the line below. Note that this will ERASE any
+# non-Amanda tapes you may have, and may also ERASE any near-failing tapes.
+# Use with caution.
+## label_new_tapes "@DEFAULT_CONFIG@-%%%"
+
 maxdumpsize -1		# Maximum number of bytes the planner will schedule
 			# for a run (default: runtapes * tape_length).
 tapetype HP-DAT		# what kind of tape it is (see tapetypes below)
-labelstr "^@DEFAULT_CONFIG@[0-9][0-9]*$"	# label constraint regex: all tapes must match
+labelstr "^@DEFAULT_CONFIG@-[0-9][0-9]*$"	# label constraint regex: all tapes must match
 
 amrecover_do_fsf yes		# amrecover will call amrestore with the
 				# -f flag for faster positioning of the tape.

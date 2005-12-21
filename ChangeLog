@@ -1,3 +1,18 @@
+2005-12-20  John Franks <jrfranks@zmanda.com>
+	* restore-src/restore.c: Remove unused variables.
+				 Fix uninitialize reference to bytes_read.
+	* server-src/amcheck.c:	 Remove unused variables.
+				 Include taperscan.h for missing prototype.
+	* server-src/amtape.c:	 Remove unused variables.
+				 Include taperscan.h for missing prototype.
+	* server-src/taper.c:	 Remove unused variables.
+				 Minor indenting changes.
+	* server-src/taperscan.c:Remove unused variables.
+				 Fix typo which assigns NULL rather than
+				  checks for NULL.
+				 Commented out reference to auto_pos which
+				  is assigned but never used...
+
 2005-12-20  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* common-src/fileheader.c (parse_file_header): Parse '/' in part.
@@ -6,6 +21,13 @@
 2005-12-20  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/reporter.c: Fix report of output size.
+
+2005-12-19  Ian Turner <ian@zmanda.com>
+	* server-src/taperscan.c: Check that automatic tape labels satisfy
+	the labelstr.
+
+2005-12-19  Ian Turner <ian@zmanda.com>
+	* server-src/fileheader.c: Fix broken split-dump file headers.
 
 2005-12-18  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by Paul Bijnens
@@ -36,6 +58,41 @@
 	* common-src/fileheader.c (build_header): Print crypt after programi
 	   and only if it is needed.
 
+2005-12-14  Ian Turner <ian@zmanda.com>
+
+	* common-src/alloc.c: Add new function vstrextend, which extends an
+	  existing string.
+	* common-src/amanda.h: Define vstrextend.
+	* example/amanda.conf.in: Document new option
+	  label_new_tapes. Change default labelstr.
+	* man/xml-source/amcheck.8.xml: Emphasize the destructiveness of
+	  amcheck -w.
+	* restore-src/restore.c: Use the new changer_find interface.
+	* server-src/Makefile.am: Add new file taperscan.c
+	* server-src/amcheck.c: Use the taper-scan algorithm in taperscan.c,
+	  instead of the previous separate amcheck implementation.
+	* server-src/amtape.c: Use the taper-scan algorithm in taperscan.c,
+	  instead of the previous separate amtape implementation. Also, use
+	  the new changer_find interface for other kinds of tape finding.
+	* server-src/changer.c: Eliminate changer_scan. Change the API to
+	  changer_find, so that callers can pass a user-data object, instead
+	  of using globals.
+	* server-src/changer.h: Declare and document new changer_find
+	  interface.
+	* server-src/conffile.c: Add new config option label_new_tapes.
+	* server-src/conffile.h: ditto.
+	* server-src/taper.c: Use the taper-scan algorithm in taperscan.c,
+	  instead of the previous separate taper implementation. Also,
+	  combine tape-label-reading for ZFTAPE and non-ZFTAPE drives (the
+	  difference only matters on writing).
+	* server-src/taperscan.c: Refactor the taper-scan algorithm from
+	  taper, amtape, and amcheck. Implement label_new_tapes feature.
+	* server-src/taperscan.h: Declare and document new taperscan
+	  interface.
+	* tape-src/tapeio.c: Notice the difference between a non-Amanda tape
+	  and some other tape-reading problem.
+	* tape-src/tapeio.h: New declarations.
+
 2005-12-13  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* server-src/reporter.c (handle_success): On a taper line, the outsize
@@ -45,9 +102,16 @@
 
 	* server-src/amstatus.pl.in: Parse chunker DONE line to set output size.
 
+2005-12-09  John Franks <jrfranks@zmanda.com>
+
+	* client-src/Makefile.am: Do not include tape library if
+	  configuring with --without-server option.
+	* recover-src/Makefile.am: Do not include tape library if
+	  configuring with --without-server option.
+
 2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>
 
-	* configure.in: Move the size detectection after detection of large
+	* configure.in: Move the size detection after detection of large
 	  file support. That change the size of off_t.
 
 2005-12-08  Jean-Louis Martineau <martineau@zmanda.com>

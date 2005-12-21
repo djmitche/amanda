@@ -20,9 +20,11 @@ endif
 
 LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
 	@LEXLIB@ \
-	../client-src/libamclient.$(LIB_EXTENSION) \
-	../tape-src/libamtape.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION) \
+	../client-src/libamclient.$(LIB_EXTENSION)
+if WANT_SERVER
+LDADD += ../tape-src/libamtape.$(LIB_EXTENSION)
+endif
+LDADD += ../common-src/libamanda.$(LIB_EXTENSION) \
 	$(READLINE_LIBS)
 
 amrecover_SOURCES =	amrecover.c					\

@@ -86,14 +86,14 @@ man page for more details about &A;.</para>
   <varlistentry>
   <term><option>-w</option></term>
   <listitem>
-<para>Enables a destructive check for write-protection on the
+<para>Enables a DESTRUCTIVE check for write-protection on the
 tape (which would otherwise cause the subsequent
 <emphasis remap='B'>amdump</emphasis>
 to fail).
 If the tape
 is writable, this check causes all data after the tape label to be
-erased (actually depends on the device driver: there is no portable
-non-destructive way to check for write-protection).
+erased. If the label_new_tapes option is enabled, this check may ERASE
+any non-Amanda tape in the drive or changer.
 The check implies
 <option>-t</option>
 and is only made if the tape is otherwise correct.</para>

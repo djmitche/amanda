@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.31 2005/12/20 19:27:19 martinea Exp $
+ * $Id: fileheader.c,v 1.32 2005/12/21 19:07:49 paddy_s Exp $
  */
 
 #include "amanda.h"
@@ -382,7 +382,7 @@ build_header(buffer, file, buflen)
     case F_CONT_DUMPFILE:
     case F_DUMPFILE :
         n = snprintf(buffer, buflen,
-		     "AMANDA: %s %s %s %s%s lev %d comp %s program %s",
+                     "AMANDA: %s %s %s %s %s lev %d comp %s program %s",
 			 filetype2str(file->type),
 			 file->datestamp, file->name, file->disk,
 			 split_data,

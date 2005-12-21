@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.26 2005/10/11 01:17:00 vectro Exp $
+ * $Id: changer.c,v 1.27 2005/12/21 19:07:50 paddy_s Exp $
  *
  * interface routines for tape changers
  */
@@ -203,49 +203,25 @@ char **curslotstr;
 
 /* ---------------------------- */
 
-void changer_scan(user_init, user_slot)
-int (*user_init) P((int rc, int nslots, int backwards));
-int (*user_slot) P((int rc, char *slotstr, char *device));
-{
-    char *slotstr, *device = NULL, *curslotstr = NULL;
-    int nslots, checked, backwards, rc, done;
-
-    rc = changer_info(&nslots, &curslotstr, &backwards);
-    done = user_init(rc, nslots, backwards);
-    amfree(curslotstr);
-
-    slotstr = "current";
-    checked = 0;
-
-    while(!done && checked < nslots) {
-	rc = changer_loadslot(slotstr, &curslotstr, &device);
-	if(rc > 0)
-	    done = user_slot(rc, curslotstr, device);
-	else if(!done)
-	    done = user_slot(0,  curslotstr, device);
-	amfree(curslotstr);
-	amfree(device);
-
-	checked += 1;
-	slotstr = "next";
-    }
-}
-
 /* This function first uses searchlabel and changer_search, if
    the library is able to find a tape itself. If it is not, or if 
-   the tape could not be found, then the normal scan is done like 
-   in changer_scan.
+   the tape could not be found, then the normal scan is done.
+ 
+   See interface documentation in changer.h.
 */
-void changer_find(user_init, user_slot, searchlabel)
-int (*user_init) P((int rc, int nslots, int backwards));
-int (*user_slot) P((int rc, char *slotstr, char *device));
-char *searchlabel;
+void changer_find(user_data, user_init, user_slot, searchlabel)
+     void *user_data;
+     int (*user_init) P((void *user_data, int rc, int nslots, int backwards,
+                         int searchable));
+     int (*user_slot) P((void *user_data, int rc, char *slotstr,
+                         char *device));
+     char *searchlabel;
 {
     char *slotstr, *device = NULL, *curslotstr = NULL;
     int nslots, checked, backwards, rc, done, searchable;
 
     rc = changer_query(&nslots, &curslotstr, &backwards, &searchable);
-    done = user_init(rc, nslots, backwards);
+    done = user_init(user_data, rc, nslots, backwards, searchable);
     amfree(curslotstr);
    
     if (searchlabel != NULL)
@@ -260,7 +236,7 @@ char *searchlabel;
     if ((searchlabel!=NULL) && searchable && !done){
       rc=changer_search(searchlabel,&curslotstr,&device);
       if(rc == 0)
-        done = user_slot(rc,curslotstr,device);
+        done = user_slot(user_data, rc,curslotstr,device);
     }
  
     slotstr = "current";
@@ -269,9 +245,9 @@ char *searchlabel;
     while(!done && checked < nslots) {
 	rc = changer_loadslot(slotstr, &curslotstr, &device);
 	if(rc > 0)
-	    done = user_slot(rc, curslotstr, device);
+	    done = user_slot(user_data, rc, curslotstr, device);
 	else if(!done)
-	    done = user_slot(0,  curslotstr, device);
+	    done = user_slot(user_data, 0,  curslotstr, device);
 	amfree(curslotstr);
 	amfree(device);
 
@@ -282,22 +258,23 @@ char *searchlabel;
 
 /* ---------------------------- */
 
-void changer_current(user_init, user_slot)
-int (*user_init) P((int rc, int nslots, int backwards));
-int (*user_slot) P((int rc, char *slotstr, char *device));
+void changer_current(user_data, user_init, user_slot)
+     void *user_data;
+int (*user_init) P((void *ud, int rc, int nslots, int backwards, int searchable));
+int (*user_slot) P((void *ud, int rc, char *slotstr, char *device));
 {
     char *device = NULL, *curslotstr = NULL;
-    int nslots, backwards, rc, done;
+    int nslots, backwards, rc, done, searchable;
 
-    rc = changer_info(&nslots, &curslotstr, &backwards);
-    done = user_init(rc, nslots, backwards);
+    rc = changer_query(&nslots, &curslotstr, &backwards, &searchable);
+    done = user_init(user_data, rc, nslots, backwards, searchable);
     amfree(curslotstr);
 
     rc = changer_loadslot("current", &curslotstr, &device);
     if(rc > 0) {
-	done = user_slot(rc, curslotstr, device);
+	done = user_slot(user_data, rc, curslotstr, device);
     } else if(!done) {
-	done = user_slot(0,  curslotstr, device);
+	done = user_slot(user_data, 0,  curslotstr, device);
     }
     amfree(curslotstr);
     amfree(device);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.8 2005/12/18 01:08:42 martinea Exp $
+ * $Id: restore.c,v 1.9 2005/12/21 19:07:50 paddy_s Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -205,8 +205,9 @@ int fd;
 /*
  * Tape changer support routines, stolen brazenly from amtape
  */
-int scan_init(rc, ns, bk)
-int rc, ns, bk;
+int scan_init(ud, rc, ns, bk, s)
+     void * ud;
+     int rc, ns, bk, s;
 {
     if(rc)
         error("could not get changer info: %s", changer_resultstr);
@@ -216,7 +217,8 @@ int rc, ns, bk;
 
     return 0;
 }
-int loadlabel_slot(rc, slotstr, device)
+int loadlabel_slot(ud, rc, slotstr, device)
+     void *ud;
 int rc;
 char *slotstr;
 char *device;
@@ -1140,7 +1142,7 @@ rst_flags_t *flags;
     tapelist_t *desired_tape = NULL;
     struct sigaction act, oact;
     int newtape = 1;
-    ssize_t bytes_read;
+    ssize_t bytes_read = 0;
 
     struct seentapes{
 	struct seentapes *next;
@@ -1278,7 +1280,10 @@ rst_flags_t *flags;
 
 	    label = stralloc(file.name);
 	}
-	else if(newtape) wrongtape = 1; /* nothing loaded */
+	else if(newtape) {
+	    wrongtape = 1; /* nothing loaded */
+	    bytes_read = -1;
+	}
 
 	/*
 	 * Skip this tape if we did it already.  Note that this would let
@@ -1326,7 +1331,7 @@ rst_flags_t *flags;
 		    fprintf(stderr,"Looking for tape %s...\n", desired_tape->label);
 		    if(backwards){
 			searchlabel = desired_tape->label; 
-			changer_find(scan_init, loadlabel_slot, desired_tape->label);
+			changer_find(NULL, scan_init, loadlabel_slot, desired_tape->label);
 		    }
 		    else{
 			changer_loadslot("next", &curslot, &cur_tapedev);

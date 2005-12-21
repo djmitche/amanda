@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.h,v 1.11 2003/03/07 21:38:20 martinea Exp $
+ * $Id: changer.h,v 1.12 2005/12/21 19:07:50 paddy_s Exp $
  *
  * interface routines for tape changers
  */
@@ -43,10 +43,55 @@ int changer_query P((int *nslotsp, char **curslotstr, int *backwards,
 		     int *searchable));
 int changer_search P((char *searchlabel, char **outslotstr, char **devicename));
 int changer_loadslot P((char *inslotstr, char **outslotstr, char **devicename));
-void changer_current P((int (*user_init)(int rc, int nslots, int backwards),
-		     int (*user_slot)(int rc, char *slotstr, char *device)));
-void changer_scan P((int (*user_init)(int rc, int nslots, int backwards),
-		     int (*user_slot)(int rc, char *slotstr, char *device)));
-void changer_find P((int (*user_init)(int rc, int nslots, int backwards),
-		     int (*user_slot)(int rc, char *slotstr, char *device),
+void changer_current P((void *user_data,
+                        int (*user_init)(void *user_data,
+                                         int rc, int nslots, int backwards,
+                                         int searchable),
+		     int (*user_slot)(void *user_data,
+                                      int rc, char *slotstr, char *device)));
+
+
+/* USAGE: changer_find(user_data, init_fxn, slot_fxn, searchlabel)
+ *
+ * Searches the changer. If searchlabel is not NULL, and the changer has
+ * barcode support, then changer_find will load that tape
+ * first. Otherwise, changer_find will search through the tape drive
+ * one by one until user_slot() returns nonzero.
+ *
+ * Parameters: user_data: A pointer which is not interpreted by
+ *                        changer_find, but passed back to the
+ *                        callback functions user_data and user_slot.
+ *                        You can use this structure instead of
+ *                        globals.
+ *             user_init: This function is called right away. Its
+ *                        arguments are:
+ *                        user_data: (as above)
+ *                        rc:     The results of the changer -info
+ *                                command.
+ *                        nslots: The number of slots in the changer.
+ *                        backwards: Whether this changer can go
+ *                                backwards or not. Some changers
+ *                                can only search in one direction,
+ *                                and then the operator must reload
+ *                                the tapes.
+ *                        searchable: Whether this changer has a
+ *                                barcode reader or similar device.
+ *             user_slot: This function is called for every slot.
+ *                        Searching stops when it returns
+ *                        nonzero. Arguments are:
+ *                        user_data: (as above)
+ *                        rc:     The results of the changer -slot
+ *                                command.
+ *                        slotstr: The slot which was loaded
+ *                        device: The tape device to use to read this slot.
+ */
+
+
+
+void changer_find P((void *user_data,
+                     int (*user_init)(void *user_data, int rc,
+                                      int nslots, int backwards,
+                                      int searchable),
+		     int (*user_slot)(void *user_data, int rc,
+                                      char *slotstr, char *device),
                      char *searchlabel));

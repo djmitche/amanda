@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.59 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: conffile.h,v 1.60 2005/12/21 19:07:50 paddy_s Exp $
  *
  * interface for config file reading code
  */
@@ -84,7 +84,8 @@ typedef enum conf_e {
     CNF_TAPERALGO,
     CNF_DISPLAYUNIT,
     CNF_KRB5KEYTAB,
-    CNF_KRB5PRINCIPAL
+    CNF_KRB5PRINCIPAL,
+    CNF_LABEL_NEW_TAPES
 } confparm_t;
 
 typedef struct tapetype_s {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.116 2005/12/18 21:10:41 martinea Exp $
+ * $Id: amcheck.c,v 1.117 2005/12/21 19:07:50 paddy_s Exp $
  *
  * checks for common problems in server and clients
  */
@@ -43,6 +43,7 @@
 #include "version.h"
 #include "amindex.h"
 #include "token.h"
+#include "taperscan.h"
 #include "server_util.h"
 #include "pipespawn.h"
 #include "amfeatures.h"
@@ -62,9 +63,6 @@ void usage P((void));
 int start_client_checks P((int fd));
 int start_server_check P((int fd, int do_localchk, int do_tapechk));
 int main P((int argc, char **argv));
-int scan_init P((int rc, int ns, int bk));
-int taperscan_slot P((int rc, char *slotstr, char *device));
-char *taper_scan P((void));
 int test_server_pgm P((FILE *outf, char *dir, char *pgm,
 		       int suid, uid_t dumpuid));
 
@@ -465,127 +463,6 @@ char *searchlabel, *labelstr;
 tape_t *tp;
 FILE *errf;
 
-int scan_init(rc, ns, bk)
-int rc, ns, bk;
-{
-    if(rc)
-	error("could not get changer info: %s", changer_resultstr);
-
-    nslots = ns;
-    backwards = bk;
-
-    return 0;
-}
-
-int taperscan_slot(rc, slotstr, device)
-int rc;
-char *slotstr;
-char *device;
-{
-    char *errstr;
-
-    if(rc == 2) {
-	fprintf(errf, "%s: fatal slot %s: %s\n",
-		get_pname(), slotstr, changer_resultstr);
-	return 1;
-    }
-    else if(rc == 1) {
-	fprintf(errf, "%s: slot %s: %s\n",
-		get_pname(), slotstr, changer_resultstr);
-	return 0;
-    }
-    else {
-	if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL) {
-	    fprintf(errf, "%s: slot %s: %s\n", get_pname(), slotstr, errstr);
-	} else {
-	    /* got an amanda tape */
-	    fprintf(errf, "%s: slot %s: date %-8s label %s",
-		    get_pname(), slotstr, datestamp, label);
-	    if(searchlabel != NULL
-	       && (strcmp(label, FAKE_LABEL) == 0
-		   || strcmp(label, searchlabel) == 0)) {
-		/* it's the one we are looking for, stop here */
-		fprintf(errf, " (exact label match)\n");
-		found_device = newstralloc(found_device, device);
-		found = 1;
-		return 1;
-	    }
-	    else if(!match(labelstr, label))
-		fprintf(errf, " (no match)\n");
-	    else {
-		/* not an exact label match, but a labelstr match */
-		/* check against tape list */
-		tp = lookup_tapelabel(label);
-		if(tp == NULL)
-		    fprintf(errf, " (Not in tapelist)\n");
-		else if(!reusable_tape(tp))
-		    fprintf(errf, " (active tape)\n");
-		else if(got_match == 0 && tp->datestamp == 0) {
-		    got_match = 1;
-		    first_match = newstralloc(first_match, slotstr);
-		    first_match_label = newstralloc(first_match_label, label);
-		    fprintf(errf, " (new tape)\n");
-		    found = 3;
-		    found_device = newstralloc(found_device, device);
-		    return 1;
-		}
-		else if(got_match)
-		    fprintf(errf, " (labelstr match)\n");
-		else {
-		    got_match = 1;
-		    first_match = newstralloc(first_match, slotstr);
-		    first_match_label = newstralloc(first_match_label, label);
-		    fprintf(errf, " (first labelstr match)\n");
-		    if(!backwards || !searchlabel) {
-			found = 2;
-			found_device = newstralloc(found_device, device);
-			return 1;
-		    }
-		}
-	    }
-	}
-    }
-    return 0;
-}
-
-char *taper_scan()
-{
-    char *outslot = NULL;
-
-    if((tp = lookup_last_reusable_tape(0)) == NULL)
-	searchlabel = NULL;
-    else
-	searchlabel = tp->label;
-
-    found = 0;
-    got_match = 0;
-
-    changer_find(scan_init, taperscan_slot, searchlabel);
-
-    if(found == 2 || found == 3)
-	searchlabel = first_match_label;
-    else if(!found && got_match) {
-	searchlabel = first_match_label;
-	amfree(found_device);
-	if(changer_loadslot(first_match, &outslot, &found_device) == 0) {
-	    found = 1;
-	}
-    } else if(!found) {
-	if(searchlabel) {
-	    changer_resultstr = newvstralloc(changer_resultstr,
-					     "label ", searchlabel,
-					     " or new tape not found in rack",
-					     NULL);
-	} else {
-	    changer_resultstr = newstralloc(changer_resultstr,
-					    "new tape not found in rack");
-	}
-    }
-    amfree(outslot);
-
-    return found ? found_device : NULL;
-}
-
 int test_server_pgm(outf, dir, pgm, suid, dumpuid)
 FILE *outf;
 char *dir;
@@ -625,7 +502,6 @@ int start_server_check(fd, do_localchk, do_tapechk)
 {
     char *errstr, *tapename;
     generic_fs_stats_t fs;
-    tape_t *tp;
     FILE *outf;
     holdingdisk_t *hdp;
     int pid;
@@ -925,6 +801,8 @@ int start_server_check(fd, do_localchk, do_tapechk)
 
     if (testtape) {
 	/* check that the tape is a valid amanda tape */
+        char *error_msg;
+        int tape_status;
 
 	tapedays = getconf_int(CNF_TAPECYCLE);
 	labelstr = getconf_str(CNF_LABELSTR);
@@ -935,56 +813,42 @@ int start_server_check(fd, do_localchk, do_tapechk)
 		    "WARNING: if a tape changer is not available, runtapes must be set to 1\n");
 	}
 
-	if(changer_init() && (tapename = taper_scan()) == NULL) {
-	    fprintf(outf, "ERROR: %s\n", changer_resultstr);
-	    tapebad = 1;
-	} else if(tape_access(tapename,F_OK|R_OK|W_OK) == -1) {
-	    fprintf(outf, "ERROR: %s: %s\n", tapename, strerror(errno));
-	    tapebad = 1;
-	} else if((errstr = tape_rdlabel(tapename, &datestamp, &label)) != NULL) {
-	    fprintf(outf, "ERROR: %s: %s\n", tapename, errstr);
-	    tapebad = 1;
-	} else if(strcmp(label, FAKE_LABEL) != 0) {
-	    if(!match(labelstr, label)) {
-		fprintf(outf, "ERROR: label %s doesn't match labelstr \"%s\"\n",
-			label, labelstr);
-		tapebad = 1;
-	    }
-	    else {
-		tp = lookup_tapelabel(label);
-		if(tp == NULL) {
-		    fprintf(outf, "ERROR: label %s match labelstr but it not listed in the tapelist file.\n", label);
-		    tapebad = 1;
-		}
-		else if(tp != NULL && !reusable_tape(tp)) {
-		    fprintf(outf, "ERROR: cannot overwrite active tape %s\n",
-			    label);
-		    tapebad = 1;
-		}
-	    }
-
-	}
-
-	if(tapebad) {
+        tape_status = taper_scan(NULL, &label, &datestamp, &error_msg,
+                                 &tapename);
+        fprintf(outf, "%s\n", error_msg);
+        amfree(error_msg);
+        if (tape_status < 0) {
 	    tape_t *exptape = lookup_last_reusable_tape(0);
 	    fprintf(outf, "       (expecting ");
 	    if(exptape != NULL) fprintf(outf, "tape %s or ", exptape->label);
 	    fprintf(outf, "a new tape)\n");
-	}
-
-	if(!tapebad && overwrite) {
-	    if((errstr = tape_writable(tapename)) != NULL) {
-		fprintf(outf,
-			"ERROR: tape %s label ok, but is not writable\n",
-			label);
-		tapebad = 1;
-	    }
-	    else fprintf(outf, "Tape %s is writable\n", label);
-	}
-	else fprintf(outf, "NOTE: skipping tape-writable test\n");
-
-	if(!tapebad)
-	    fprintf(outf, "Tape %s label ok\n", label);
+	} else {
+            if (overwrite) {
+                if((errstr = tape_writable(tapename)) != NULL) {
+                    if (tape_status == 3) {
+                        fprintf(outf, "ERROR: Could not label brand new tape.\n");
+                    } else {
+                        fprintf(outf,
+                                "ERROR: tape %s label ok, but is not writable\n",
+                                label);
+                    }
+                    tapebad = 1;
+                } else {
+                    if (tape_status != 3) {
+                        fprintf(outf, "Tape %s is writable\n", label);
+                    }
+                }
+            } else {
+                fprintf(outf, "NOTE: skipping tape-writable test\n");
+                if (tape_status == 3) {
+                    fprintf(outf,
+                            "Found a brand new tape, will label it %s.\n", 
+                            label);
+                } else {
+                    fprintf(outf, "Tape %s label ok\n", label);
+                }                    
+            }
+        }
     } else if (do_tapechk) {
 	fprintf(outf, "WARNING: skipping tape test because amdump or amflush seem to be running\n");
 	fprintf(outf, "WARNING: if they are not, you must run amcleanup\n");

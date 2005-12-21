@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.108 2005/12/08 23:41:22 martinea Exp $
+/* $Id: taper.c,v 1.109 2005/12/21 19:07:50 paddy_s Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -44,6 +44,7 @@
 #include "amfeatures.h"
 #include "fileheader.h"
 #include "server_util.h"
+#include "taperscan.c"
 
 #ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
@@ -2313,84 +2314,22 @@ const char *str;
  */
 
 /* local functions */
-int scan_init P((int rc, int ns, int bk));
-int taperscan_slot P((int rc, char *slotstr, char *device));
-char *taper_scan P((void));
 int label_tape P((void));
 
 int label_tape()
-{
+{  
     char *conf_tapelist_old = NULL;
-    char *olddatestamp = NULL;
     char *result;
-    tape_t *tp;
     static int first_call = 1;
+    char *timestamp;
+    char *error_msg;
 
-    if(have_changer) {
-	amfree(tapedev);
-	if ((tapedev = taper_scan()) == NULL) {
-	    errstr = newstralloc(errstr, changer_resultstr);
-	    return 0;
-	}
+    if (taper_scan(NULL, &label, &timestamp, &error_msg, &tapedev) < 0) {
+        fprintf(stderr, "%s\n", error_msg);
+        amfree(error_msg);
+        amfree(timestamp);
     }
-
-#ifdef HAVE_LINUX_ZFTAPE_H
-    if (is_zftape(tapedev) == 1){
-	if((tape_fd = tape_open(tapedev, O_RDONLY)) == -1) {
-	    errstr = newstralloc2(errstr, "taper: ",
-				  (errno == EACCES) ? "tape is write-protected"
-				  : strerror(errno));
-	    return 0;
-	}
-	if((result = tapefd_rdlabel(tape_fd, &olddatestamp, &label)) != NULL) {
-	    amfree(olddatestamp);
-	    errstr = newstralloc(errstr, result);
-	    return 0;
-	}
-	if(tapefd_rewind(tape_fd) == -1) { 
-	    return 0;
-	} 
-	tapefd_close(tape_fd);
-	tape_fd = -1;
-    }
-    else
-#endif /* !HAVE_LINUX_ZFTAPE_H */
-    if((result = tape_rdlabel(tapedev, &olddatestamp, &label)) != NULL) {
-	amfree(olddatestamp);
-	errstr = newstralloc(errstr, result);
-	return 0;
-    }
-
-    fprintf(stderr, "taper: read label `%s' date `%s'\n", label, olddatestamp);
-    fflush(stderr);
-    amfree(olddatestamp);
-
-    /* check against tape list */
-    if (strcmp(label, FAKE_LABEL) != 0) {
-	tp = lookup_tapelabel(label);
-	if(tp == NULL) {
-	    errstr = newvstralloc(errstr,
-				  "label ", label,
-		" match labelstr but it not listed in the tapelist file",
-				  NULL);
-	    return 0;
-	}
-	else if(tp != NULL && !reusable_tape(tp)) {
-	    errstr = newvstralloc(errstr,
-			          "cannot overwrite active tape ", label,
-			          NULL);
-	    return 0;
-	}
-
-	if(!match(labelstr, label)) {
-	    errstr = newvstralloc(errstr,
-			          "label ", label,
-			          " doesn\'t match labelstr \"", labelstr, "\"",
-			          NULL);
-	    return 0;
-	}
-    }
-
+    
     if((tape_fd = tape_open(tapedev, O_WRONLY)) == -1) {
 	if(errno == EACCES) {
 	    errstr = newstralloc(errstr,
@@ -2416,7 +2355,7 @@ int label_tape()
     fflush(stderr);
 
 #ifdef HAVE_LIBVTBLC
-    /* store time for the first volume entry */ 
+    /* store time for the first volume entry */
     time(&raw_time);
     tape_timep = localtime(&raw_time);
     strftime(start_datestr, 20, "%T %D", tape_timep);
@@ -2424,9 +2363,6 @@ int label_tape()
     fflush(stderr);
 #endif /* HAVE_LIBVTBLC */
 
-    /* write tape list */
-
-    /* XXX add cur_tape number to tape list structure */
     if (strcmp(label, FAKE_LABEL) != 0) {
 
 	if(cur_tape == 0) {
@@ -2675,167 +2611,3 @@ int write_filemark()
 }
 
 
-/*
- * ========================================================================
- * TAPE CHANGER SCAN
- *
- */
-int nslots, backwards, found, got_match, tapedays;
-char *first_match_label = NULL, *first_match = NULL, *found_device = NULL;
-char *searchlabel, *labelstr;
-tape_t *tp;
-
-int scan_init(rc, ns, bk)
-int rc, ns, bk;
-{
-    if(rc) {
-	fprintf(stderr, "%s: could not get changer info: %s\n",
-		get_pname(), changer_resultstr);
-	return rc;
-    }
-
-    nslots = ns;
-    backwards = bk;
-
-    return 0;
-}
-
-int taperscan_slot(rc, slotstr, device)
-     int rc;
-     char *slotstr;
-     char *device;
-{
-    char *t_errstr;
-    char *scan_datestamp = NULL;
-
-    if(rc == 2) {
-	fprintf(stderr, "%s: fatal slot %s: %s\n",
-		get_pname(), slotstr, changer_resultstr);
-	fflush(stderr);
-	return 1;
-    }
-    else if(rc == 1) {
-	fprintf(stderr, "%s: slot %s: %s\n", get_pname(),
-		slotstr, changer_resultstr);
-	fflush(stderr);
-	return 0;
-    }
-    else {
-	if((t_errstr = tape_rdlabel(device, &scan_datestamp, &label)) != NULL) {
-	    amfree(scan_datestamp);
-	    fprintf(stderr, "%s: slot %s: %s\n",
-		    get_pname(), slotstr, t_errstr);
-	    fflush(stderr);
-	}
-	else {
-	    /* got an amanda tape */
-	    fprintf(stderr, "%s: slot %s: date %-8s label %s",
-		    get_pname(), slotstr, scan_datestamp, label);
-	    fflush(stderr);
-	    amfree(scan_datestamp);
-	    if(searchlabel != NULL
-	       && (strcmp(label, FAKE_LABEL) == 0
-		   || strcmp(label, searchlabel) == 0)) {
-		/* it's the one we are looking for, stop here */
-		fprintf(stderr, " (exact label match)\n");
-		fflush(stderr);
-		found_device = newstralloc(found_device, device);
-		found = 1;
-		return 1;
-	    }
-	    else if(!match(labelstr, label)) {
-		fprintf(stderr, " (no match)\n");
-		fflush(stderr);
-	    }
-	    else {
-		/* not an exact label match, but a labelstr match */
-		/* check against tape list */
-		tp = lookup_tapelabel(label);
-		if(tp == NULL) {
-		    fprintf(stderr, "(not in tapelist)\n");
-		    fflush(stderr);
-		}
-		else if(!reusable_tape(tp)) {
-		    fprintf(stderr, " (active tape)\n");
-		    fflush(stderr);
-		}
-		else if(got_match == 0 && tp->datestamp == 0) {
-		    got_match = 1;
-		    first_match = newstralloc(first_match, slotstr);
-		    first_match_label = newstralloc(first_match_label, label);
-		    fprintf(stderr, " (new tape)\n");
-		    fflush(stderr);
-		    found = 3;
-		    found_device = newstralloc(found_device, device);
-		    return 1;
-		}
-		else if(got_match) {
-		    fprintf(stderr, " (labelstr match)\n");
-		    fflush(stderr);
-		}
-		else {
-		    got_match = 1;
-		    first_match = newstralloc(first_match, slotstr);
-		    first_match_label = newstralloc(first_match_label, label);
-		    fprintf(stderr, " (first labelstr match)\n");
-		    fflush(stderr);
-		    if(!backwards || !searchlabel) {
-			found = 2;
-			found_device = newstralloc(found_device, device);
-			return 1;
-		    }
-		}
-	    }
-	}
-    }
-    return 0;
-}
-
-char *taper_scan()
-{
-    char *outslot = NULL;
-
-    if((tp = lookup_last_reusable_tape(0)) == NULL)
-	searchlabel = NULL;
-    else
-	searchlabel = tp->label;
-
-    found = 0;
-    got_match = 0;
-
-    if (searchlabel != NULL)
-      changer_find(scan_init, taperscan_slot, searchlabel);
-    else
-      changer_scan(scan_init, taperscan_slot);
-
-    if(found == 2 || found == 3)
-	searchlabel = first_match_label;
-    else if(!found && got_match) {
-	searchlabel = first_match_label;
-	amfree(found_device);
-	if(changer_loadslot(first_match, &outslot, &found_device) == 0) {
-	    found = 1;
-	}
-	amfree(outslot);
-    }
-    else if(!found) {
-	if(searchlabel) {
-	    changer_resultstr = newvstralloc(changer_resultstr,
-					     "label ", searchlabel,
-					     " or new tape not found in rack",
-					     NULL);
-	} else {
-	    changer_resultstr = newstralloc(changer_resultstr,
-					    "new tape not found in rack");
-	}
-    }
-
-    if(found) {
-	outslot = found_device;
-	found_device = NULL;		/* forget about our copy */
-    } else {
-	outslot = NULL;
-	amfree(found_device);
-    }
-    return outslot;
-}

@@ -2968,7 +2968,8 @@ AC_CONFIG_FILES([\
 	server-src/amoverview.pl	server-src/amrmtape.sh		\
 	server-src/amtoc.pl		server-src/amverify.sh		\
 	server-src/Makefile		server-src/amstatus.pl		\
-	server-src/amverifyrun.sh					\
+	server-src/amverifyrun.sh	server-src/amcrypt.sh		\
+	server-src/amaespipe.sh                                         \
 									\
 	tape-src/Makefile						\
 									\

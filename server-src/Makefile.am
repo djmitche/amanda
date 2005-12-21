@@ -24,12 +24,14 @@ libexec_PROGRAMS =	amindexd	amlogroll	amtrmidx	\
 
 sbin_SCRIPTS =		amcheckdb	amcleanup	amdump		\
 			amoverview	amrmtape	amtoc		\
-			amverify	amverifyrun	amstatus
+			amverify	amverifyrun	amstatus	\
+			amcrypt		amaespipe
 
 libamserver_la_SOURCES=	amindex.c	changer.c			\
 			conffile.c	diskfile.c	driverio.c	\
 			holding.c	infofile.c	logfile.c	\
-			tapefile.c	find.c		server_util.c
+			tapefile.c	find.c		server_util.c   \
+                        taperscan.c
 
 libamserver_la_LDFLAGS= -release $(VERSION)
 

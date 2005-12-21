@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.119 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: conffile.c,v 1.120 2005/12/21 19:07:50 paddy_s Exp $
  *
  * read configuration file
  */
@@ -71,6 +71,7 @@ typedef enum {
     PRINTER, AUTOFLUSH, RESERVE, MAXDUMPSIZE,
     COLUMNSPEC, 
     AMRECOVER_DO_FSF, AMRECOVER_CHECK_LABEL, AMRECOVER_CHANGER,
+    LABEL_NEW_TAPES,
 
     TAPERALGO, FIRST, FIRSTFIT, LARGEST, LARGESTFIT, SMALLEST, LAST,
     DISPLAYUNIT,
@@ -214,6 +215,7 @@ static val_t conf_taperalgo;
 static val_t conf_displayunit;
 static val_t conf_krb5keytab;
 static val_t conf_krb5principal;
+static val_t conf_label_new_tapes;
 
 /* reals */
 static val_t conf_bumpmult;
@@ -274,6 +276,7 @@ static int seen_taperalgo;
 static int seen_displayunit;
 static int seen_krb5keytab;
 static int seen_krb5principal;
+static int seen_label_new_tapes;
 
 static int allow_overwrites;
 static int token_pushed;
@@ -430,6 +433,7 @@ struct byname {
     { "MAXDUMPSIZE", CNF_MAXDUMPSIZE, AM64 },
     { "KRB5KEYTAB", CNF_KRB5KEYTAB, STRING },
     { "KRB5PRINCIPAL", CNF_KRB5PRINCIPAL, STRING },
+    { "LABEL_NEW_TAPES", CNF_LABEL_NEW_TAPES, STRING },
     { NULL }
 };
 
@@ -524,6 +528,7 @@ confparm_t parm;
     case CNF_DISPLAYUNIT: return seen_displayunit;
     case CNF_KRB5KEYTAB: return seen_krb5keytab;
     case CNF_KRB5PRINCIPAL: return seen_krb5principal;
+    case CNF_LABEL_NEW_TAPES: return seen_label_new_tapes;
     default: return 0;
     }
 }
@@ -626,6 +631,7 @@ confparm_t parm;
     case CNF_DISPLAYUNIT: r = conf_displayunit.s; break;
     case CNF_KRB5PRINCIPAL: r = conf_krb5principal.s; break;
     case CNF_KRB5KEYTAB: r = conf_krb5keytab.s; break;
+    case CNF_LABEL_NEW_TAPES: r = conf_label_new_tapes.s; break;
 
     default:
 	error("error [unknown getconf_str parm: %d]", parm);
@@ -746,6 +752,7 @@ static void init_defaults()
     conf_amrecover_changer.s = stralloc("");
     conf_printer.s = stralloc("");
     conf_displayunit.s = stralloc("k");
+    conf_label_new_tapes.s = stralloc("");
 
     conf_krb5keytab.s = stralloc("/.amanda-v5-keytab");
     conf_krb5principal.s = stralloc("service/amanda");
@@ -823,6 +830,8 @@ static void init_defaults()
     seen_displayunit = 0;
     seen_krb5keytab = 0;
     seen_krb5principal = 0;
+    seen_label_new_tapes = 0;
+
     line_num = got_parserror = 0;
     allow_overwrites = 0;
     token_pushed = 0;
@@ -1009,6 +1018,7 @@ keytab_t main_keytable[] = {
     { "DISPLAYUNIT", DISPLAYUNIT },
     { "KRB5KEYTAB", KRB5KEYTAB },
     { "KRB5PRINCIPAL", KRB5PRINCIPAL },
+    { "LABEL_NEW_TAPES", LABEL_NEW_TAPES },
     { NULL, IDENT }
 };
 
@@ -1229,6 +1239,9 @@ static int read_confline()
 	else if(tok == INTERFACE) get_interface();
 	else parserror("DUMPTYPE, INTERFACE or TAPETYPE expected");
 	break;
+    case LABEL_NEW_TAPES:
+        get_simple(&conf_label_new_tapes, &seen_label_new_tapes, STRING);
+        break;
 
     case NL:	/* empty line */
 	break;
@@ -3331,6 +3344,7 @@ dump_configuration(filename)
     printf("num_holdingdisks = %d\n", num_holdingdisks);
     printf("conf_krb5keytab = \"%s\"\n", getconf_str(CNF_KRB5KEYTAB));
     printf("conf_krb5principal = \"%s\"\n", getconf_str(CNF_KRB5PRINCIPAL));
+    printf("conf_label_new_tapes  = \"%s\"\n", getconf_str(CNF_LABEL_NEW_TAPES));
     for(hp = holdingdisks; hp != NULL; hp = hp->next) {
 	printf("\nHOLDINGDISK %s:\n", hp->name);
 	printf("	COMMENT \"%s\"\n", hp->comment);

@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.50 2005/10/15 13:20:47 martinea Exp $
+ * $Id: tapeio.c,v 1.51 2005/12/21 19:07:51 paddy_s Exp $
  *
  * implements generic tape I/O functions
  */
@@ -816,6 +816,10 @@ tape_fsf(devname, count)
     return r;
 }
 
+/* Reads the tape label, like you expect. If failure, returns an error
+   string. If the tape might not be an Amanda tape, the returned
+   string will start with NOT_AMANDA_TAPE_MSG. */
+
 char *
 tapefd_rdlabel(fd, datestamp, label)
     int fd;
@@ -837,23 +841,24 @@ tapefd_rdlabel(fd, datestamp, label)
 	*datestamp = stralloc("X");
 	*label = stralloc(FAKE_LABEL);
     } else if(tapefd_rewind(fd) == -1) {
-	r = errstr = newstralloc2(errstr, "rewinding tape: ", strerror(errno));
+	r = stralloc2("rewinding tape: ", strerror(errno));
     } else if((rc = tapefd_read(fd, buffer, buflen)) == -1) {
-	r = errstr = newstralloc2(errstr, "reading label: ", strerror(errno));
+	r =  stralloc2( NOT_AMANDA_TAPE_MSG " reading label: ",
+                        strerror(errno));
     } else {
-
 	/* make sure buffer is null-terminated */
 	buffer[rc] = '\0';
 
 	parse_file_header(buffer, &file, rc);
 	if(file.type != F_TAPESTART) {
-	    r = errstr = newstralloc(errstr, "not an amanda tape");
+	    r = stralloc(NOT_AMANDA_TAPE_MSG);
 	} else {
 	    *datestamp = stralloc(file.datestamp);
 	    *label = stralloc(file.name);
 	}
     }
     amfree(buffer);
+    errstr = newvstralloc(errstr, r, NULL);
     return r;
 }
 
@@ -867,18 +872,18 @@ tape_rdlabel(devname, datestamp, label)
     char *r = NULL;
 
     if((fd = tape_open(devname, O_RDONLY)) < 0) {
-	r = errstr = newvstralloc(errstr,
-				  "tape_rdlabel: tape open: ",
-				  devname,
-				  ": ",
-				  strerror(errno),
-				  NULL);
-    } else if(tapefd_rdlabel(fd, datestamp, label) != NULL) {
-	r = errstr;
-    }
+	r = vstralloc("tape_rdlabel: tape open: ",
+                      devname,
+                      ": ",
+                      strerror(errno),
+                      NULL);
+    } else
+        r = tapefd_rdlabel(fd, datestamp, label);
+
     if(fd >= 0) {
-	tapefd_close(fd);
+        tapefd_close(fd);
     }
+    errstr = newvstralloc(errstr, r, NULL);
     return r;
 }
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.117 2005/12/13 22:57:41 martinea Exp $
+ * $Id: amanda.h,v 1.118 2005/12/21 19:07:49 paddy_s Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -512,6 +512,10 @@ extern char  *debug_newvstralloc    P((char *oldstr, const char *newstr, ...));
 
 #define	stralloc2(s1,s2)      vstralloc((s1),(s2),NULL)
 #define	newstralloc2(p,s1,s2) newvstralloc((p),(s1),(s2),NULL)
+
+/* Usage: vstrextend(foo, "bar, "baz", NULL). Extends the existing 
+ * string, or allocates a brand new one. */
+extern char *vstrextend P((char **oldstr, ...));
 
 extern char  *debug_agets   P((const char *c, int l, FILE *file));
 extern char  *debug_areads  P((const char *c, int l, int fd));
