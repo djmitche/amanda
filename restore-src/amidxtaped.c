@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.48 2005/10/12 23:51:36 martinea Exp $
+/* $Id: amidxtaped.c,v 1.49 2005/12/22 15:10:52 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -62,6 +62,10 @@ static int check_security P((struct sockaddr_in *, char *, unsigned long,
     char **));
 static void check_security_buffer P((char*));
 
+/* exit routine */
+static int parent_pid = -1;
+static void cleanup P((void));
+
 /* get a line from client - line terminated by \r\n */
 static char *
 get_client_line()
@@ -87,9 +91,6 @@ get_client_line()
 	    }
 	    amfree(line);
 	    amfree(part);
-	    if(get_lock) {
-		unlink(rst_conf_logfile);
-	    }
 	    dbclose();
 	    exit(1);
 	    /* NOTREACHED */
@@ -337,6 +338,8 @@ char **argv;
 
     /* If we'll be stepping on the tape server's devices, lock them. */
     if(re_config) {
+	parent_pid = getpid();
+	atexit(cleanup);
 	get_lock = lock_logfile();
     }
 
@@ -405,7 +408,6 @@ char **argv;
     /* make sure our restore flags aren't crazy */
     if(check_rst_flags(rst_flags) == -1){
 	if(rst_flags->pipe_to_fd != -1) aclose(rst_flags->pipe_to_fd);
-	if(get_lock) unlink(rst_conf_logfile);
 	exit(1);
     }
     
@@ -415,11 +417,18 @@ char **argv;
     
     /* cleanup */
     if(rst_flags->pipe_to_fd != -1) aclose(rst_flags->pipe_to_fd);
-    if(get_lock) unlink(rst_conf_logfile);
     free_tapelist(tapes);
     
     dbclose();
     return 0;
+}
+
+static void
+cleanup(void)
+{
+    if(parent_pid == getpid()) {
+	if(get_lock) unlink(rst_conf_logfile);
+    }
 }
 
 static int
