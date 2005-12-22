@@ -1,5 +1,9 @@
 2005-12-22  Jean-Louis Martineau <martineau@zmanda.com>
 
+	* restore-src/restore.c (restore): Remova an aclose.
+
+2005-12-22  Jean-Louis Martineau <martineau@zmanda.com>
+
 	* restore-src/amidxtaped.c (cleanup): Function registered with atexit
 	  to remove the log file.
 
