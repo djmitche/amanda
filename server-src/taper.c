@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.109 2005/12/21 19:07:50 paddy_s Exp $
+/* $Id: taper.c,v 1.110 2005/12/25 02:22:33 paddy_s Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -139,10 +139,10 @@ void destroy_buffers P((void));
 
 /* synchronization pipe routines */
 void syncpipe_init P((int rd, int wr));
-char syncpipe_get P((void));
+char syncpipe_get P((int *intp));
 int  syncpipe_getint P((void));
 char *syncpipe_getstr P((void));
-void syncpipe_put P((int ch));
+void syncpipe_put P((int ch, int intval));
 void syncpipe_putint P((int i));
 void syncpipe_putstr P((const char *str));
 
@@ -558,6 +558,7 @@ int rdpipe, wrpipe;
     int tape_started;
     int a;
     long fallback_splitsize = 0;
+    int tmpint;
 
     procname = "reader";
     syncpipe_init(rdpipe, wrpipe);
@@ -577,12 +578,12 @@ int rdpipe, wrpipe;
     taper_datestamp = newstralloc(taper_datestamp, cmdargs.argv[2]);
 
     tape_started = 0;
-    syncpipe_put('S');
+    syncpipe_put('S', 0);
     syncpipe_putstr(taper_datestamp);
 
     /* get result of start command */
 
-    tok = syncpipe_get();
+    tok = syncpipe_get(&tmpint);
     switch(tok) {
     case 'S':
 	putresult(TAPER_OK, "\n");
@@ -597,7 +598,7 @@ int rdpipe, wrpipe;
 	amfree(q);
 	log_add(L_ERROR,"no-tape [%s]", result);
 	amfree(result);
-	syncpipe_put('e');			/* ACK error */
+	syncpipe_put('e', 0);			/* ACK error */
 	break;
     default:
 	error("expected 'S' or 'E' for START-TAPER, got '%c'", tok);
@@ -820,7 +821,7 @@ int rdpipe, wrpipe;
 	    fprintf(stderr,"taper: DONE [idle wait: %s secs]\n",
 		    walltime_str(total_wait));
 	    fflush(stderr);
-	    syncpipe_put('Q');	/* tell writer we're exiting gracefully */
+	    syncpipe_put('Q', 0);	/* tell writer we're exiting gracefully */
 	    aclose(wrpipe);
 
 	    if((wpid = wait(NULL)) != writerpid) {
@@ -1086,13 +1087,13 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 	      log_add(L_ERROR, "%s", seekerrstr);
 	      fprintf(stderr, "taper: r: FATAL: %s\n", seekerrstr);
 	      fflush(stderr);
-	      syncpipe_put('X');
+	      syncpipe_put('X', 0);
 	      return -1;
 	    }
 	    if(lseek(fd, holdfile_offset_thischunk*1024, SEEK_SET) == (off_t)-1){
 	      fprintf(stderr, "taper: r: FATAL: seek_holdfile lseek error while seeking into %s by " OFF_T_FMT "kb: %s\n", holdfile_path_thischunk, holdfile_offset_thischunk, strerror(errno));
 	      fflush(stderr);
-	      syncpipe_put('X');
+	      syncpipe_put('X', 0);
 	      return -1;
 	    }
         }
@@ -1109,7 +1110,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
     /* tell writer to open tape */
 
     opening = 1;
-    syncpipe_put('O');
+    syncpipe_put('O', 0);
     syncpipe_putstr(datestamp);
     syncpipe_putstr(hostname);
     syncpipe_putstr(diskname);
@@ -1120,7 +1121,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
     /* read file in loop */
     
     while(1) {
-	tok = syncpipe_get();
+	tok = syncpipe_get(&bufnum);
 	switch(tok) {
 	    
 	case 'O':
@@ -1130,15 +1131,13 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 	    break;
 	    
 	case 'R':
-	    bufnum = syncpipe_getint();
-	    
 	    if(bufdebug) {
 		fprintf(stderr, "taper: r: got R%d\n", bufnum);
 		fflush(stderr);
 	    }
 	    
 	    if(need_closing) {
-		syncpipe_put('C');
+		syncpipe_put('C', 0);
 		closing = 1;
 		need_closing = 0;
 		break;
@@ -1178,11 +1177,9 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 		log_add(L_INFO, "retrying %s:%s.%d on new tape due to: %s",
 		        hostname, diskname, level, errstr);
 		closing = 1;
-		syncpipe_put('X');	/* X == buffer snafu, bail */
+		syncpipe_put('X', 0);	/* X == buffer snafu, bail */
 		do {
-		    tok = syncpipe_get();
-		    if(tok == 'R')
-			bufnum = syncpipe_getint();
+		    tok = syncpipe_get(&bufnum);
 		} while(tok != 'x');
 		aclose(fd);
 		return -1;
@@ -1230,7 +1227,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
  		err = errno;
  		closing = 1;
  		strclosing = newvstralloc(strclosing,"Can't read data: ",NULL);
- 		syncpipe_put('C');
+ 		syncpipe_put('C', 0);
  	    }
   
  	    if(!closing) {
@@ -1290,8 +1287,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 			fprintf(stderr,"taper: r: put W%d\n",(int)(bp-buftable));
 			fflush(stderr);
 		    }
-		    syncpipe_put('W');
-		    syncpipe_putint(bp-buftable);
+		    syncpipe_put('W', bp-buftable);
 		    bp = nextbuf(bp);
 		}
 
@@ -1311,7 +1307,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 		    need_closing = 1;
 		} /* end '(kbytesread >= splitsize && splitsize > 0)' */
 		if(need_closing && rc <= 0) {
-		    syncpipe_put('C');
+		    syncpipe_put('C', 0);
 		    need_closing = 0;
 		    closing = 1;
 		}
@@ -1321,7 +1317,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 
 	case 'T':
 	case 'E':
-	    syncpipe_put('e');	/* ACK error */
+	    syncpipe_put('e', 0);	/* ACK error */
 
 	    str = syncpipe_getstr();
 	    errstr = newvstralloc(errstr, "[", str ? str : "(null)", "]", NULL);
@@ -1533,8 +1529,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 		fflush(stderr);
 
 		/* pass label string on to tape writer */
-		syncpipe_put('L');
-		syncpipe_putint(filenum);
+		syncpipe_put('L', filenum);
 		syncpipe_putstr(vol_label);		
 
 		/* 
@@ -1548,8 +1543,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 			vol_date);
 
 		/* pass date string on to tape writer */		
-		syncpipe_put('D');
-		syncpipe_putint(filenum);
+		syncpipe_put('D', filenum);
 		syncpipe_putstr(vol_date);
 
 #endif /* HAVE_LIBVTBLC */
@@ -1561,7 +1555,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 		nexting = 0;
 		closing = 0;
 		filesize = 0;
-		syncpipe_put('O');
+		syncpipe_put('O', 0);
 		syncpipe_putstr(datestamp);
 		syncpipe_putstr(hostname);
 		syncpipe_putstr(diskname);
@@ -1683,6 +1677,7 @@ int getp, putp;
     char *diskname;
     char *datestamp;
     int level;
+    int tmpint;
 
 #ifdef HAVE_LIBVTBLC
     char *vol_label;
@@ -1697,7 +1692,7 @@ int getp, putp;
 
     while(1) {
 	startclock();
-	tok = syncpipe_get();
+	tok = syncpipe_get(&tmpint);
 	idlewait = timesadd(idlewait, stopclock());
 	if(tok != 'S' && tok != 'Q' && !tape_started) {
 	    error("writer: token '%c' before start", tok);
@@ -1714,17 +1709,17 @@ int getp, putp;
 		    tapefd_close(tape_fd);
 		    tape_fd = -1;
 		}
-		syncpipe_put('E');
+		syncpipe_put('E', 0);
 		syncpipe_putstr(errstr);
 		/* wait for reader to acknowledge error */
 		do {
-		    tok = syncpipe_get();
+		    tok = syncpipe_get(&tmpint);
 		    if(tok != 'e') {
 			error("writer: got '%c' unexpectedly after error", tok);
 		    }
 		} while(tok != 'e');
 	    } else {
-		syncpipe_put('S');
+		syncpipe_put('S', 0);
 		tape_started = 1;
 	    }
 	    amfree(str);
@@ -1748,7 +1743,7 @@ int getp, putp;
 
 #ifdef HAVE_LIBVTBLC
 	case 'L':		/* read vtbl label */
-	    vtbl_no = syncpipe_getint();
+	    vtbl_no = tmpint;
 	    vol_label = syncpipe_getstr();
 	    fprintf(stderr, "taper: read label string \"%s\" from pipe\n", 
 		    vol_label);
@@ -1756,7 +1751,7 @@ int getp, putp;
 	    break;
 
 	case 'D':		/* read vtbl date */
-	    vtbl_no = syncpipe_getint();
+	    vtbl_no = tmpint;
 	    vol_date = syncpipe_getstr();
 	    fprintf(stderr, "taper: read date string \"%s\" from pipe\n", 
 		    vol_date);
@@ -1797,6 +1792,7 @@ void write_file()
     char tok;
     char number[NUM_STR_SIZE];
     char *rdwait_str, *wrwait_str, *fmwait_str;
+    int tmpint;
 
     rdwait = wrwait = times_zero;
     total_writes = 0;
@@ -1813,13 +1809,13 @@ void write_file()
     /*
      * Tell the reader that the tape is open, and give it all the buffers.
      */
-    syncpipe_put('O');
+    syncpipe_put('O', 0);
     for(i = 0; i < conf_tapebufs; i++) {
 	if(bufdebug) {
 	    fprintf(stderr, "taper: w: put R%d\n", i);
 	    fflush(stderr);
 	}
-	syncpipe_put('R'); syncpipe_putint(i);
+	syncpipe_put('R', i);
     }
 
     /*
@@ -1850,9 +1846,8 @@ void write_file()
 	if(interactive) fputs("[WS]", stderr);
 	startclock();
 	while(full_buffers < conf_tapebufs - THRESHOLD) {
-	    tok = syncpipe_get();
+	    tok = syncpipe_get(&bufnum);
 	    if(tok != 'W') break;
-	    bufnum = syncpipe_getint();
 	    if(bufdebug) {
 		fprintf(stderr,"taper: w: got W%d\n",bufnum);
 		fflush(stderr);
@@ -1894,9 +1889,8 @@ void write_file()
 	 */
 
 	while(tok == 'W' && bp->status == FULL) {
-	    tok = syncpipe_get();
+	    tok = syncpipe_get(&bufnum);
 	    if(tok == 'W') {
-		bufnum = syncpipe_getint();
 		if(bufdebug) {
 		    fprintf(stderr,"taper: w: got W%d\n",bufnum);
 		    fflush(stderr);
@@ -1906,7 +1900,7 @@ void write_file()
 			    "taper: tape-writer: my buf %d reader buf %d\n",
 			    (int)(bp-buftable), bufnum);
 		    fflush(stderr);
-		    syncpipe_put('E');
+		    syncpipe_put('E', 0);
 		    syncpipe_putstr("writer-side buffer mismatch");
 		    goto error_ack;
 		}
@@ -1932,7 +1926,7 @@ void write_file()
 	goto reader_buffer_snafu;
 
     assert(tok == 'C');
-    syncpipe_put('C');
+    syncpipe_put('C', 0);
 
     /* tell reader the tape and file number */
 
@@ -1963,23 +1957,21 @@ void write_file()
 
  tape_error:
     /* got tape error */
-    if(next_tape(1)) syncpipe_put('T');	/* next tape in place, try again */
-    else syncpipe_put('E');		/* no more tapes, fail */
+    if(next_tape(1)) syncpipe_put('T', 0);	/* next tape in place, try again */
+    else syncpipe_put('E', 0);		/* no more tapes, fail */
     syncpipe_putstr(errstr);
 
  error_ack:
     /* wait for reader to acknowledge error */
     do {
-	tok = syncpipe_get();
+	tok = syncpipe_get(&tmpint);
 	if(tok != 'W' && tok != 'C' && tok != 'e')
 	    error("writer: got '%c' unexpectedly after error", tok);
-	if(tok == 'W')
-	    syncpipe_getint();	/* eat buffer number */
     } while(tok != 'e');
     return;
 
  reader_buffer_snafu:
-    syncpipe_put('x');
+    syncpipe_put('x', 0);
     return;
 }
 
@@ -2018,7 +2010,7 @@ buffer_t *bp;
 	    fprintf(stderr, "taper: w: put R%d\n", (int)(bp-buftable));
 	    fflush(stderr);
 	}
-	syncpipe_put('R'); syncpipe_putint(bp-buftable);
+	syncpipe_put('R', bp-buftable);
 	return 1;
     } else {
 	errstr = newvstralloc(errstr,
@@ -2225,22 +2217,26 @@ int rd, wr;
     putpipe = wr;
 }
 
-char syncpipe_get()
+char syncpipe_get(intp)
+int *intp;
 {
     int rc;
-    char buf[1];
+    char buf[sizeof(char) + sizeof(int)];
 
-    rc = read(getpipe, buf, sizeof(buf));
+    rc = fullread(getpipe, buf, sizeof(buf));
     if(rc == 0)		/* EOF */
 	error("syncpipe_get: %c: unexpected EOF", *procname);
     else if(rc < 0)
 	error("syncpipe_get: %c: %s", *procname, strerror(errno));
+    else if(rc != sizeof(buf))
+	error("syncpipe_get: %s", "short read");
 
     if(bufdebug && *buf != 'R' && *buf != 'W') {
 	fprintf(stderr,"taper: %c: getc %c\n",*procname,*buf);
 	fflush(stderr);
     }
 
+    memcpy(intp, &buf[1], sizeof(int));
     return buf[0];
 }
 
@@ -2273,17 +2269,20 @@ char *syncpipe_getstr()
 }
 
 
-void syncpipe_put(chi)
+void syncpipe_put(chi, intval)
 int chi;
+int intval;
 {
-    char ch = chi;
+    char buf[sizeof(char) + sizeof(int)];
 
-    if(bufdebug && ch != 'R' && ch != 'W') {
-	fprintf(stderr,"taper: %c: putc %c\n",*procname,ch);
+    buf[0] = (char)chi;
+    memcpy(&buf[1], &intval, sizeof(int));
+    if(bufdebug && buf[0] != 'R' && buf[0] != 'W') {
+	fprintf(stderr,"taper: %c: putc %c\n",*procname,buf[0]);
 	fflush(stderr);
     }
 
-    if (fullwrite(putpipe, &ch, sizeof(ch)) < 0)
+    if (fullwrite(putpipe, buf, sizeof(buf)) < 0)
 	error("syncpipe_put: %s", strerror(errno));
 }
 

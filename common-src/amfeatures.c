@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.15 2005/10/11 01:17:00 vectro Exp $
+ * $Id: amfeatures.c,v 1.16 2005/12/25 02:22:33 paddy_s Exp $
  *
  * Feature test related code.
  */
@@ -115,6 +115,13 @@ am_init_feature_set()
 	am_add_feature(f, fe_partial_estimate);
 	am_add_feature(f, fe_calcsize_estimate);
 	am_add_feature(f, fe_selfcheck_calcsize);
+
+	am_add_feature(f, fe_options_compress_cust);
+	am_add_feature(f, fe_options_srvcomp_cust);
+	am_add_feature(f, fe_options_encrypt_cust);
+	am_add_feature(f, fe_options_encrypt_serv_cust);
+	am_add_feature(f, fe_options_client_decrypt_option);
+	am_add_feature(f, fe_options_server_decrypt_option);
     }
     return f;
 }

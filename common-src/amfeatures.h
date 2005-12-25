@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.h,v 1.11 2005/10/11 01:17:00 vectro Exp $
+ * $Id: amfeatures.h,v 1.12 2005/12/25 02:22:33 paddy_s Exp $
  *
  * Define feature test related items.
  */
@@ -140,6 +140,13 @@ typedef enum {
 
     fe_recover_splits,
     fe_amidxtaped_exchange_features,
+
+    fe_options_compress_cust,
+    fe_options_srvcomp_cust,
+    fe_options_encrypt_cust,
+    fe_options_encrypt_serv_cust,
+    fe_options_client_decrypt_option,
+    fe_options_server_decrypt_option,
 
     /*
      * All new features must be inserted immediately *before* this entry.

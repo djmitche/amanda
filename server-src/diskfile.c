@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.68 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: diskfile.c,v 1.69 2005/12/25 02:22:33 paddy_s Exp $
  *
  * read disklist file
  */
@@ -33,6 +33,7 @@
 #include "arglist.h"
 #include "conffile.h"
 #include "diskfile.h"
+#include "util.h"
 
 static am_host_t *hostlist;
 
@@ -681,7 +682,21 @@ FILE *fdout;
 	}
 	break;
     case COMP_CUST:
-        compress_opt = vstralloc("comp-cust=", dp->clntcompprog, ";", NULL);
+        if(am_has_feature(their_features, fe_options_compress_cust)) {
+	  compress_opt = vstralloc("comp-cust=", dp->clntcompprog, ";", NULL);
+	  if (BSTRNCMP(compress_opt, "comp-cust=;") == 0){
+	    if(fdout) {
+	      fprintf(fdout,
+		      "WARNING: %s:%s client custom compression with no compression program specified\n",
+		      dp->host->hostname, dp->name);
+	    }
+	  }
+	}
+	else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: %s:%s does not support client custom compression\n",
+		    dp->host->hostname, dp->name);
+	}
 	break;
     case COMP_SERV_FAST:
 	if(am_has_feature(their_features, fe_options_srvcomp_fast)) {
@@ -694,20 +709,78 @@ FILE *fdout;
 	}
 	break;
     case COMP_SERV_CUST:
-        compress_opt = vstralloc("srvcomp-cust=", dp->srvcompprog, ";", NULL);
+        if(am_has_feature(their_features, fe_options_srvcomp_cust)) {
+	  compress_opt = vstralloc("srvcomp-cust=", dp->srvcompprog, ";", NULL);
+	  if (BSTRNCMP(compress_opt, "srvcomp-cust=;") == 0){
+	    if(fdout) {
+	      fprintf(fdout,
+		      "WARNING: %s:%s server custom compression with no compression program specified\n",
+		      dp->host->hostname, dp->name);
+	    }
+	  }
+	}
+	else if(fdout) {
+	  fprintf(fdout,
+		  "WARNING: %s:%s does not support server custom compression\n",
+		  dp->host->hostname, dp->name);
+	}
 	break;
     }
 
     switch(dp->encrypt) {
     case ENCRYPT_CUST:
+      if(am_has_feature(their_features, fe_options_encrypt_cust)) {
 	 encrypt_opt = vstralloc("encrypt-cust=", dp->clnt_encrypt, ";", NULL);
-	 if(dp->clnt_decrypt_opt)
-	   decrypt_opt = vstralloc("client_decrypt_option=", dp->clnt_decrypt_opt, ";", NULL);
+	 if (BSTRNCMP(encrypt_opt, "encrypt-cust=;") == 0) {
+	    if(fdout) {
+	      fprintf(fdout,
+		      "WARNING: %s:%s encrypt client with no encryption program specified\n",
+		      dp->host->hostname, dp->name);
+	    }
+	  }
+	 if(dp->clnt_decrypt_opt) {
+	   if(am_has_feature(their_features, fe_options_client_decrypt_option)) {
+	     decrypt_opt = vstralloc("client-decrypt-option=", dp->clnt_decrypt_opt, ";", NULL);
+	   }
+	   else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: %s:%s does not support client decrypt option\n",
+		    dp->host->hostname, dp->name);
+	   }
+	 }
+      }
+      else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: %s:%s does not support client data encryption\n",
+		    dp->host->hostname, dp->name);
+     }
 	 break;
     case ENCRYPT_SERV_CUST:
+      if(am_has_feature(their_features, fe_options_encrypt_serv_cust)) {
 	 encrypt_opt = vstralloc("encrypt-serv-cust=", dp->srv_encrypt, ";", NULL);
-	 if(dp->srv_decrypt_opt) 
-	   decrypt_opt = vstralloc("server_decrypt_option=", dp->srv_decrypt_opt, ";", NULL);
+	 if (BSTRNCMP(encrypt_opt, "encrypt-serv-cust=;") == 0){
+	    if(fdout) {
+	      fprintf(fdout,
+		      "WARNING: %s:%s encrypt server with no encryption program specified\n",
+		      dp->host->hostname, dp->name);
+	    }
+	  }
+	 if(dp->srv_decrypt_opt) {
+	   if(am_has_feature(their_features, fe_options_server_decrypt_option)) {
+	     decrypt_opt = vstralloc("server-decrypt-option=", dp->srv_decrypt_opt, ";", NULL);
+	   }
+	   else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: %s:%s does not support server decrypt option\n",
+		    dp->host->hostname, dp->name);
+	   }
+	 }
+      }
+      else if(fdout) {
+	    fprintf(fdout,
+		    "WARNING: %s:%s does not support server data encryption\n",
+		    dp->host->hostname, dp->name);
+      }
 	 break;
     }
     

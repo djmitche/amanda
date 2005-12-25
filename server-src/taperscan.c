@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.1 2005/12/21 19:07:51 paddy_s Exp $
+ * $Id: taperscan.c,v 1.2 2005/12/25 02:22:33 paddy_s Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -67,13 +67,21 @@ int scan_read_label(char *dev, char *desired_label,
     if (result != NULL) {
         if (CHECK_NOT_AMANDA_TAPE_MSG(result) &&
             getconf_seen(CNF_LABEL_NEW_TAPES)) {
-            *label = find_brand_new_tape_label();
-            *timestamp = stralloc("X");
-            vstrextend(error_message,
-                       "Found a non-amanda tape, will label it `",
-                       *label, "'.\n", NULL);
             amfree(result);
-            return 3;
+            
+            *label = find_brand_new_tape_label();
+            if (*label != NULL) {
+                *timestamp = stralloc("X");
+                vstrextend(error_message,
+                           "Found a non-amanda tape, will label it `",
+                           *label, "'.\n", NULL);
+                return 3;
+            } else {
+                vstrextend(error_message,
+                           "Found a non-amanda tape, but have no labels left.");
+                return -1;
+            }
+
         } else {
             amfree(*timestamp);
             amfree(*label);
@@ -99,6 +107,7 @@ int scan_read_label(char *dev, char *desired_label,
             vstrextend(&errstr, "label ", *label,
                        " doesn\'t match labelstr \"",
                        labelstr, "\"", NULL);
+            return -1;
 	} else {
             tape_t *tp;
             tp = lookup_tapelabel(*label);
@@ -107,12 +116,14 @@ int scan_read_label(char *dev, char *desired_label,
                 vstrextend(&errstr, "label ", *label,
                      " match labelstr but it not listed in the tapelist file.\n",
                            NULL);
+                return -1;
             } else if (tp->datestamp == 0) {
                 /* new, labeled tape. */
-                return 1;                
+                return 1;
             } else if(tp != NULL && !reusable_tape(tp)) {
                 vstrextend(&errstr, "cannot overwrite active tape ", *label,
                            "\n", NULL);
+                return -1;
             }
         }
     }
@@ -174,7 +185,8 @@ int scan_slot(void *data, int rc, char *slotstr, char *device) {
     return 1;
 }
 
-int scan_init(void *data, int rc, int nslots, int backwards, int searchable) {
+static int 
+scan_init(void *data, int rc, int nslots, int backwards, int searchable) {
     changertrack_t *ct = ((changertrack_t*)data);
     
     if (rc) {
@@ -196,7 +208,7 @@ int changer_taper_scan(char* wantlabel,
     
     changer_find(&local_data, scan_init, scan_slot, wantlabel);
     
-    if (local_data.tapedev) {
+    if (*(local_data.tapedev)) {
         /* We got it, and it's loaded. */
         return local_data.tape_status;
     } else if (local_data.first_labelstr_slot) {
@@ -243,7 +255,7 @@ char* find_brand_new_tape_label() {
     char newlabel[AUTO_LABEL_MAX_LEN];
     char tmpnum[12];
     char tmpfmt[16];
-//    char *auto_pos;
+    char *auto_pos = NULL;
     int i, format_len, label_len, auto_len;
     tape_t *tp;
 
@@ -258,7 +270,7 @@ char* find_brand_new_tape_label() {
     auto_len = -1; /* Only find the first '%' */
     while (*format != '\0') {
         if (label_len + 4 > AUTO_LABEL_MAX_LEN) {
-            fprintf(stderr, "Auto label format is too long!");
+            fprintf(stderr, "Auto label format is too long!\n");
             return NULL;
         }
 
@@ -268,7 +280,7 @@ char* find_brand_new_tape_label() {
             format += 2;
         } else if (*format == '%' && auto_len == -1) {
             /* This is the format specifier. */
-//            auto_pos = newlabel + label_len;
+            auto_pos = newlabel + label_len;
             auto_len = 0;
             while (*format == '%' && label_len < AUTO_LABEL_MAX_LEN) {
                 newlabel[label_len++] = '%';
@@ -286,6 +298,11 @@ char* find_brand_new_tape_label() {
         newlabel[label_len++] = '\0';
     }
 
+    if (auto_pos == NULL) {
+        fprintf(stderr, "Auto label template contains no '%'!\n");
+        return NULL;
+    }
+
     sprintf(tmpfmt, "%%0%dd", auto_len);
 
     for (i = 0; i < INT_MAX; i ++) {
@@ -295,7 +312,7 @@ char* find_brand_new_tape_label() {
             return NULL;
         }
 
-//        strncpy(auto_pos, tmpnum, auto_len);
+        strncpy(auto_pos, tmpnum, auto_len);
 
         tp = lookup_tapelabel(newlabel);
         if (tp == NULL) {

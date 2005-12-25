@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.163 2005/12/09 03:22:52 paddy_s Exp $
+/* $Id: dumper.c,v 1.164 2005/12/25 02:22:33 paddy_s Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -202,18 +202,18 @@ check_options(options)
       srvencrypt = ENCRYPT_NONE;
     }
     /* get the decryption option parameter */
-    if ((decryptmode = strstr(options, "server_decrypt_option=")) != NULL) {
+    if ((decryptmode = strstr(options, "server-decrypt-option=")) != NULL) {
       decryptend = strchr(decryptmode, ';');
       if (decryptend) {
 	*decryptend = '\0';
-	srv_decrypt_opt = stralloc(decryptmode + strlen("server_decrypt_option="));
+	srv_decrypt_opt = stralloc(decryptmode + strlen("server-decrypt-option="));
 	*decryptend = ';';
       }
-    } else if ((decryptmode = strstr(options, "client_decrypt_option=")) != NULL) {
+    } else if ((decryptmode = strstr(options, "client-decrypt-option=")) != NULL) {
       decryptend = strchr(decryptmode, ';');
       if (decryptend) {
 	*decryptend = '\0';
-	clnt_decrypt_opt = stralloc(decryptmode + strlen("client_decrypt_option="));
+	clnt_decrypt_opt = stralloc(decryptmode + strlen("client-decrypt-option="));
 	*decryptend = ';';
       }
     }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.74 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: sendbackup.c,v 1.75 2005/12/25 02:22:33 paddy_s Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -106,12 +106,12 @@ option_t *options;
     if(options->encrypt == ENCRYPT_CUST) {
       encrypt_opt = vstralloc("encrypt-cust=", options->clnt_encrypt, ";", NULL);
       if (options->clnt_decrypt_opt)
-	decrypt_opt = vstralloc("client_decrypt_option=", options->clnt_decrypt_opt, ";", NULL);
+	decrypt_opt = vstralloc("client-decrypt-option=", options->clnt_decrypt_opt, ";", NULL);
     }
     else if(options->encrypt == ENCRYPT_SERV_CUST) {
       encrypt_opt = vstralloc("encrypt-serv-cust=", options->srv_encrypt, ";", NULL);
       if(options->srv_decrypt_opt)
-	decrypt_opt = vstralloc("server_decrypt_option=", options->srv_decrypt_opt, ";", NULL);
+	decrypt_opt = vstralloc("server-decrypt-option=", options->srv_decrypt_opt, ";", NULL);
     }
 
     if(options->no_record) record_opt = "no-record;";

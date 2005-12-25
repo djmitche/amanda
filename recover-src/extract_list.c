@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.85 2005/10/18 01:39:14 vectro Exp $
+ * $Id: extract_list.c,v 1.86 2005/12/25 02:22:33 paddy_s Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -98,18 +98,39 @@ int sig;
 }
 
 
-ssize_t read_buffer(datafd, buffer, buflen, timeout_s)
+/*
+ * Function:  ssize_t read_buffer(datafd, buffer, buflen, timeout_s)
+ *
+ * Description:
+ *	read data from input file desciptor waiting up to timeout_s
+ *	seconds before returning data.
+ *
+ * Inputs:
+ *	datafd    - File descriptor to read from.
+ *	buffer    - Buffer to read into.
+ *	buflen    - Maximum number of bytes to read into buffer.
+ *	timeout_s - Seconds to wait before returning what was already read.
+ *
+ * Returns:
+ *      >0	  - Number of data bytes in buffer.
+ *       0	  - EOF
+ *      -1        - errno == ETIMEDOUT if no data available in specified time.
+ *                  errno == ENFILE if datafd is invalid.
+ *                  otherwise errno is set by select or read..
+ */
+
+static ssize_t
+read_buffer(datafd, buffer, buflen, timeout_s)
 int datafd;
 char *buffer;
 size_t buflen;
 {
-    int maxfd, nfound = 0;
+    int nfound = 0;
     ssize_t size = 0;
-    fd_set readset, selectset;
+    fd_set readset;
     struct timeval timeout;
     char *dataptr;
     size_t spaceleft;
-    int eof;
 
     if(datafd < 0 || datafd >= FD_SETSIZE) {
 	errno = EMFILE;					/* out of range */
@@ -119,61 +140,38 @@ size_t buflen;
     dataptr = buffer;
     spaceleft = buflen;
 
-    maxfd = datafd + 1;
-    eof = 0;
-
-    FD_ZERO(&readset);
-    FD_SET(datafd, &readset);
-
     do {
-	size = 0; /* XXX fixes blocks on data smaller than buffer, but does it break things? */
-	timeout.tv_sec = timeout_s;
-	timeout.tv_usec = 0;
-	memcpy(&selectset, &readset, sizeof(fd_set));
+        FD_ZERO(&readset);
+        FD_SET(datafd, &readset);
+        timeout.tv_sec = timeout_s;
+        timeout.tv_usec = 0;
+        nfound = select(datafd+1, &readset, NULL, NULL, &timeout);
+        if(nfound < 0 ) {
+            /* Select returned an error. */
+	    fprintf(stderr,"select error: %s\n", strerror(errno));
+            size = -1;
+        } else if (nfound == 0) {
+            /* Select timed out. */
+            if (timeout_s != 0)  {
+                /* Not polling: a real read timeout */
+                fprintf(stderr,"timeout waiting for restore\n");
+                fprintf(stderr,"increase READ_TIMEOUT in recover-src/extract_list.c if your tape is slow\n");
+            }
+            errno = ETIMEDOUT;
+            size = -1;
+        } else {
+            /* Select says data is available, so read it.  */
+            size = read(datafd, dataptr, spaceleft);
+            if (size < 0) {
+                fprintf(stderr, "read error: %s", strerror(errno));
+            } else {
+                spaceleft -= size;
+                dataptr += size;
+            }
+        }
+    } while ((size > 0) && (spaceleft > 0));
 
-	nfound = select(maxfd, (SELECT_ARG_TYPE *)(&selectset), NULL, NULL, &timeout);
-
-	/* check for errors or timeout */
-
-	if(nfound == 0 && timeout_s == READ_TIMEOUT)  {
-	    size=-2;
-	    fprintf(stderr,"timeout waiting for restore\n");
-	    fprintf(stderr,"increase READ_TIMEOUT in recover-src/extract_list.c if your tape is slow\n");
-	}
-	if(nfound == -1) {
-	    size=-3;
-	    fprintf(stderr,"select returned -1\n");
-	}
-
-	/* read any data */
-
-	if(FD_ISSET(datafd, &selectset)) {
-	    size = read(datafd, dataptr, spaceleft);
-	    switch(size) {
-	    case -1:
-		break;
-	    case 0:
-		spaceleft -= size;
-		dataptr += size;
-		if(buflen-spaceleft > 0) return (ssize_t)(buflen-spaceleft);
-		else return(-4); /* XXX, dirty, dirty hack */
-		/* XXX pointless after what I did to this poor function?
-		fprintf(stderr,
-			"EOF, check amidxtaped.<timestamp>.debug file on %s.\n",
-			tape_server_name); */
-		break;
-	    default:
-		spaceleft -= size;
-		dataptr += size;
-		break;
-	    }
-	}
-    } while (spaceleft>0 && size>0);
-
-    if(size<0) {
-	return -1;
-    }
-    return (ssize_t)(buflen-spaceleft);
+    return (((buflen-spaceleft) > 0) ? (buflen-spaceleft) : size);
 }
 
 EXTRACT_LIST *first_tape_list P((void))
@@ -1358,9 +1356,10 @@ int tapedev;
 {
     ssize_t bytes_read;
 
-    bytes_read = read_buffer(tapedev,buffer,buflen,READ_TIMEOUT);
+    bytes_read = read_buffer(tapedev, buffer, buflen, READ_TIMEOUT);
     if(bytes_read < 0) {
-	error("error reading header (%s), check amidxtaped.*.debug on server", strerror(errno));
+	error("error reading header (%s), check amidxtaped.*.debug on server",
+	      strerror(errno));
     }
     else if((size_t)bytes_read < buflen) {
 	fprintf(stderr, "%s: short block %d byte%s\n",
@@ -1695,12 +1694,13 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 
 	/* check for a control command (such as "load tape") */
 	ctl_bytes = read_buffer(ctl_fd, buffer, buflen, 0);
-
-        if(ctl_bytes == -1){
+        if((ctl_bytes == -1) && (errno != ETIMEDOUT)) {
+	    /* Report any unexpected errors */
 	    error("writer control fd read error: %s", strerror(errno));
 	}
+
 	/* Feed any control messages we may have gotten to the user */
-	if(ctl_bytes > 0){
+	if(ctl_bytes > 0) {
 	    char *input = NULL;
 	    printf("%s", buffer);
 	    fflush(stdout);
@@ -1717,8 +1717,8 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 	memset(buffer, '\0', sizeof(buffer));
 
 	/* now read some dump data */
-	bytes_read = read_buffer(data_fd, buffer, buflen, 1);
-        if(bytes_read == -1){
+	bytes_read = read_buffer(data_fd, buffer, buflen, READ_TIMEOUT);
+        if(bytes_read == -1) {
 	    error("writer data fd read error: %s", strerror(errno));
 	}
 
@@ -1739,8 +1739,7 @@ void writer_intermediary(ctl_fd, data_fd, elist)
                 exit(2);
             }
         }
-
-    } while(bytes_read >= 0);
+    } while(bytes_read > 0);
 
     aclose(child_pipe[1]);
 

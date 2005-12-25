@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.10 2005/12/22 21:43:12 martinea Exp $
+ * $Id: restore.c,v 1.11 2005/12/25 02:22:33 paddy_s Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -205,7 +205,8 @@ int fd;
 /*
  * Tape changer support routines, stolen brazenly from amtape
  */
-int scan_init(ud, rc, ns, bk, s)
+static int 
+scan_init(ud, rc, ns, bk, s)
      void * ud;
      int rc, ns, bk, s;
 {

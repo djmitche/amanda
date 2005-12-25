@@ -1,3 +1,38 @@
+2005-12-23  Ian Turner <ian@zmanda.com>
+	* server-src/taperscan.c: Don't crash if find_brand_new_tape_label
+	  returns NULL. Also, don't return NULL from
+	  find_brand_new_tape_label without a good excuse.
+	
+2005-12-23  Kevin Till <ktill@zmanda.com>
+	* client-src/client_util.c: change server_decrypt_option to
+	  server-decrypt-option
+	* client-src/sendbackup.c:  change client_decrypt_option to
+	  client-decrypt-option
+	* server-src/dumper.c:      ditto
+	* common-src/amfeatures.c:  add crypt related amfeaturs
+	* common-src/amfeatures.h:  ditto  
+	* server-src/diskfile.c:    amfeatures checking and warns on
+	  mis-configuration
+
+2005-12-23  Paddy Sreenivasan <paddy@zmanda.com>
+         * restore-src/restore.c:
+         * server-src/amtape.c:
+         * server-src/taperscan.c : Make scan_init static function
+
+2005-12-23  John Franks <jrfranks@zmanda.com>
+	* server-src/taper.c: Reduce I/O's system call overhead by 30%
+          in main read / write loop. 
+
+2005-12-23  John Franks <jrfranks@zmanda.com>
+	* recover-src/restore.c  Remove inapproriate aclose which caused
+          broken restore pipe.
+	* recover-src/extract_list.c  Fix and cleanup read_buffer()
+          mainly to fix hole that drops parital buffer of data if end
+          of file is reached or an error occured..  Touched up calling
+          functions to make sure EOF/timeouts are handled correctly.
+          Increased normal path read timeout value from on second to
+          whatever READ_TIMEOUT is set to.
+
 2005-12-22  Jean-Louis Martineau <martineau@zmanda.com>
 
 	* restore-src/restore.c (restore): Remova an aclose.

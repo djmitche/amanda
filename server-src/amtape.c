@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.38 2005/12/21 19:07:50 paddy_s Exp $
+ * $Id: amtape.c,v 1.39 2005/12/25 02:22:33 paddy_s Exp $
  *
  * tape changer interface program
  */
@@ -49,7 +49,6 @@ void show_slots P((int argc, char **argv));
 void show_current P((int argc, char **argv));
 void amtape_taper_scan P((int argc, char **argv));
 void show_device P((int argc, char **argv));
-int scan_init P((void *ud, int rc, int ns, int bk, int searchable));
 int loadlabel_slot P((void *ud, int rc, char *slotstr, char *device));
 int show_init P((void *ud, int rc, int ns, int bk, int s));
 int show_init_all P((void *ud, int rc, int ns, int bk, int s));
@@ -301,7 +300,8 @@ char *label = NULL, *first_match_label = NULL, *first_match = NULL;
 char *searchlabel, *labelstr;
 tape_t *tp;
 
-int scan_init(ud, rc, ns, bk, s)
+static int 
+scan_init(ud, rc, ns, bk, s)
      void *ud;
      int rc, ns, bk, s;
 {

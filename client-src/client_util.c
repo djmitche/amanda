@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.30 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: client_util.c,v 1.31 2005/12/25 02:22:33 paddy_s Exp $
  *
  */
 
@@ -536,11 +536,11 @@ int verbose;
 	    options->clnt_encrypt= stralloc(tok + sizeof("encrypt-cust=") -1);
 	    options->encrypt = ENCRYPT_CUST;
 	} 
-	else if(BSTRNCMP(tok, "server_decrypt_option=") == 0) {
-	  options->srv_decrypt_opt = stralloc(tok + sizeof("server_decrypt_option=") -1);
+	else if(BSTRNCMP(tok, "server-decrypt-option=") == 0) {
+	  options->srv_decrypt_opt = stralloc(tok + sizeof("server-decrypt-option=") -1);
 	}
-	else if(BSTRNCMP(tok, "client_decrypt_option=") == 0) {
-	  options->clnt_decrypt_opt = stralloc(tok + sizeof("client_decrypt_option=") -1);
+	else if(BSTRNCMP(tok, "client-decrypt-option=") == 0) {
+	  options->clnt_decrypt_opt = stralloc(tok + sizeof("client-decrypt-option=") -1);
 	}
 	else if(BSTRNCMP(tok, "no-record") == 0) {
 	    if(options->no_record != 0) {
