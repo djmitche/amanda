@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.2 2005/12/25 02:22:33 paddy_s Exp $
+ * $Id: taperscan.c,v 1.3 2005/12/31 00:02:10 paddy_s Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -299,7 +299,7 @@ char* find_brand_new_tape_label() {
     }
 
     if (auto_pos == NULL) {
-        fprintf(stderr, "Auto label template contains no '%'!\n");
+        fprintf(stderr, "Auto label template contains no '%%'!\n");
         return NULL;
     }
 

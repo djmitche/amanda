@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.16 2005/12/25 02:22:33 paddy_s Exp $
+ * $Id: amfeatures.c,v 1.17 2005/12/31 00:02:09 paddy_s Exp $
  *
  * Feature test related code.
  */
@@ -122,6 +122,10 @@ am_init_feature_set()
 	am_add_feature(f, fe_options_encrypt_serv_cust);
 	am_add_feature(f, fe_options_client_decrypt_option);
 	am_add_feature(f, fe_options_server_decrypt_option);
+
+        am_add_feature(f, fe_amindexd_marshall_in_OLSD);
+        am_add_feature(f, fe_amindexd_marshall_in_ORLD);
+        am_add_feature(f, fe_amindexd_marshall_in_DHST);
     }
     return f;
 }

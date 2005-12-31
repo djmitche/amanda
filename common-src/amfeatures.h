@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.h,v 1.12 2005/12/25 02:22:33 paddy_s Exp $
+ * $Id: amfeatures.h,v 1.13 2005/12/31 00:02:09 paddy_s Exp $
  *
  * Define feature test related items.
  */
@@ -147,6 +147,10 @@ typedef enum {
     fe_options_encrypt_serv_cust,
     fe_options_client_decrypt_option,
     fe_options_server_decrypt_option,
+
+    fe_amindexd_marshall_in_OLSD,
+    fe_amindexd_marshall_in_ORLD,
+    fe_amindexd_marshall_in_DHST,
 
     /*
      * All new features must be inserted immediately *before* this entry.

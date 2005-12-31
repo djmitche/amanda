@@ -26,7 +26,9 @@ SERVER_MAN8_PAGES = amadmin.8 \
 		    amtoc.8 \
 		    amverify.8 \
 		    amverifyrun.8 \
-		    amfetchdump.8
+		    amfetchdump.8 \
+		    amcrypt.8 \
+		    amaespipe.8
 
 if WANT_RECOVER
 RECOVER_MAN8_PAGES = amrecover.8

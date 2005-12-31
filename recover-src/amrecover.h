@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.h,v 1.16 2005/10/11 01:17:00 vectro Exp $
+ * $Id: amrecover.h,v 1.17 2005/12/31 00:02:10 paddy_s Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -34,10 +34,10 @@
 
 typedef struct DIR_ITEM
 {
-    char date[11];
+    char *date;
     int  level;
-    char tape[256];
-    char path[1024];
+    char *tape;
+    char *path;
     int  fileno;
 
     struct DIR_ITEM *next;
@@ -59,6 +59,8 @@ extern am_feature_t *our_features;
 extern am_feature_t *indexsrv_features;
 extern am_feature_t *tapesrv_features;
 extern pid_t extract_restore_child_pid;
+
+extern void free_dir_item P((DIR_ITEM *item));
 
 extern int converse P((char *cmd));
 extern int exchange P((char *cmd));

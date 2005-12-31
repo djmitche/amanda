@@ -231,6 +231,23 @@ with damaged or misplaced tapes or schedule adjustments that call for slight adj
   </varlistentry>
 
   <varlistentry>
+  <term><emphasis remap='B'>label_new_tapes</emphasis>
+        <emphasis remap='I'> string</emphasis></term>
+    <para>Default: not set.
+When set, this directive will cause &A; to automatically write an Amanda 
+tape label to any black tape she encounters. This option is DANGEROUS 
+because when set, &A; will ERASE any non-&A; tapes you may have, and may 
+also ERASE any near-failing tapes. Use with caution.</para>
+<para>When using this directive, specify the template for new tape 
+labels. The template should contain some number of contiguous '%' 
+characters, which will be replaced with a generated number. Be sure to 
+specify enough '%' characters that you do not run out of tape labels. 
+Example: 
+<markup>label_new_tapes "DailySet1-%%%"</markup>
+</para>
+</varlistentry>
+
+  <varlistentry>
   <term><emphasis remap='B'>dumpuser</emphasis> <emphasis remap='I'> string</emphasis></term>
   <listitem>
 <para>Default:

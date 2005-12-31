@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: display_commands.c,v 1.17 2005/10/11 01:17:00 vectro Exp $
+ * $Id: display_commands.c,v 1.18 2005/12/31 00:02:10 paddy_s Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -48,16 +48,21 @@ DIR_ITEM *this;
 
 void clear_dir_list P((void))
 {
-    DIR_ITEM *this;
+    free_dir_item(dir_list); /* Frees all items from dir_list to end of list */
+    dir_list = NULL;
+}
 
-    if (dir_list == NULL)
-	return;
-    do
-    {
-	this = dir_list;
-	dir_list = dir_list->next;
-	amfree(this);
-    } while (dir_list != NULL);
+void free_dir_item P((DIR_ITEM *item)) {
+    DIR_ITEM *next;
+
+    while (item != NULL) {
+	next = item->next;
+        amfree(item->date);
+        amfree(item->tape);
+        amfree(item->path);
+        amfree(item);
+	item = next;
+    }
 }
 
 /* add item to list if path not already on list */
@@ -68,43 +73,22 @@ char *tape;
 int fileno;
 char *path;
 {
-    DIR_ITEM *last;
+    DIR_ITEM *next;
 
     dbprintf(("add_dir_list_item: Adding \"%s\" \"%d\" \"%s\" \"%d\" \"%s\"\n",
 	      date, level, tape, fileno, path));
 
-    if (dir_list == NULL)
-    {
-	dir_list = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
-	dir_list->next = NULL;
-	strncpy(dir_list->date, date, sizeof(dir_list->date)-1);
-	dir_list->date[sizeof(dir_list->date)-1] = '\0';
-	dir_list->level = level;
-	strncpy(dir_list->tape, tape, sizeof(dir_list->tape)-1);
-	dir_list->tape[sizeof(dir_list->tape)-1] = '\0';
-	dir_list->fileno = fileno;
-	strncpy(dir_list->path, path, sizeof(dir_list->path)-1);
-	dir_list->path[sizeof(dir_list->path)-1] = '\0';
+    next = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
+    memset(next, 0, sizeof(DIR_ITEM));
 
-	return 0;
-    }
+    next->date = stralloc(date);
+    next->level = level;
+    next->tape = stralloc(tape);
+    next->fileno = fileno;
+    next->path = stralloc(path);
 
-    last = dir_list;
-    while (last->next != NULL)
-    {
-	last = last->next;
-    }
-
-    last->next = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
-    last->next->next = NULL;
-    strncpy(last->next->date, date, sizeof(last->next->date)-1);
-    last->next->date[sizeof(last->next->date)-1] = '\0';
-    last->next->level = level;
-    strncpy(last->next->tape, tape, sizeof(last->next->tape)-1);
-    last->next->tape[sizeof(last->next->tape)-1] = '\0';
-    last->next->fileno = fileno;
-    strncpy(last->next->path, path, sizeof(last->next->path)-1);
-    last->next->path[sizeof(last->next->path)-1] = '\0';
+    next->next = dir_list;
+    dir_list = next;
 
     return 0;
 }

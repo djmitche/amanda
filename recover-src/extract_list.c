@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.86 2005/12/25 02:22:33 paddy_s Exp $
+ * $Id: extract_list.c,v 1.87 2005/12/31 00:02:10 paddy_s Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -43,7 +43,7 @@
 
 typedef struct EXTRACT_LIST_ITEM
 {
-    char path[1024];
+    char *path;
 
     struct EXTRACT_LIST_ITEM *next;
 }
@@ -51,9 +51,9 @@ EXTRACT_LIST_ITEM;
 
 typedef struct EXTRACT_LIST
 {
-    char date[11];			/* date tape created */
+    char *date;			/* date tape created */
     int  level;				/* level of dump */
-    char tape[256];			/* tape label */
+    char *tape;			/* tape label */
     int fileno;				/* fileno on tape */
     EXTRACT_LIST_ITEM *files;		/* files to get off tape */
 
@@ -191,12 +191,14 @@ static void clear_tape_list(tape_list)
 EXTRACT_LIST *tape_list;
 {
     EXTRACT_LIST_ITEM *this, *next;
+    
 
     this = tape_list->files;
     while (this != NULL)
     {
 	next = this->next;
-	free(this);
+        amfree(this->path);
+        amfree(this);
 	this = next;
     }
     tape_list->files = NULL;
@@ -210,11 +212,16 @@ EXTRACT_LIST *tape_list;
 {
     EXTRACT_LIST *this, *prev;
 
+    if (tape_list == NULL)
+        return;
+
     /* is it first on the list? */
     if (tape_list == extract_list)
     {
-	clear_tape_list(tape_list);
 	extract_list = tape_list->next;
+	clear_tape_list(tape_list);
+        amfree(tape_list->date);
+        amfree(tape_list->tape);
 	amfree(tape_list);
 	return;
     }
@@ -226,8 +233,10 @@ EXTRACT_LIST *tape_list;
     {
 	if (this == tape_list)
 	{
-	    clear_tape_list(tape_list);
 	    prev->next = tape_list->next;
+	    clear_tape_list(tape_list);
+            amfree(tape_list->date);
+            amfree(tape_list->tape);
 	    amfree(tape_list);
 	    return;
 	}
@@ -289,8 +298,7 @@ DIR_ITEM *ditem;
 		curr=curr->next;
 	    }
 	    that = (EXTRACT_LIST_ITEM *)alloc(sizeof(EXTRACT_LIST_ITEM));
-	    strncpy(that->path, ditem_path, sizeof(that->path)-1);
-	    that->path[sizeof(that->path)-1] = '\0';
+            that->path = stralloc(ditem_path);
 	    that->next = this->files;
 	    this->files = that;		/* add at front since easiest */
 	    amfree(ditem_path);
@@ -300,15 +308,12 @@ DIR_ITEM *ditem;
 
     /* so this is the first time we have seen this tape */
     this = (EXTRACT_LIST *)alloc(sizeof(EXTRACT_LIST));
-    strncpy(this->tape, ditem->tape, sizeof(this->tape)-1);
-    this->tape[sizeof(this->tape)-1] ='\0';
+    this->tape = stralloc(ditem->tape);
     this->level = ditem->level;
     this->fileno = ditem->fileno;
-    strncpy(this->date, ditem->date, sizeof(this->date)-1);
-    this->date[sizeof(this->date)-1] = '\0';
+    this->date = stralloc(ditem->date);
     that = (EXTRACT_LIST_ITEM *)alloc(sizeof(EXTRACT_LIST_ITEM));
-    strncpy(that->path, ditem_path, sizeof(that->path)-1);
-    that->path[sizeof(that->path)-1] = '\0';
+    that->path = stralloc(ditem_path);
     that->next = NULL;
     this->files = that;
 
@@ -365,6 +370,7 @@ DIR_ITEM *ditem;
 	    {
 		/* first on list */
 		this->files = that->next;
+                amfree(that->path);
 		amfree(that);
 		/* if list empty delete it */
 		if (this->files == NULL)
@@ -379,6 +385,7 @@ DIR_ITEM *ditem;
 		if (strcmp(that->path, ditem_path) == 0)
 		{
 		    prev->next = that->next;
+                    amfree(that->path);
 		    amfree(that);
 		    amfree(ditem_path);
 		    return 0;
@@ -461,6 +468,7 @@ char *regex;
 	printf("Must select directory before adding files\n");
 	return;
     }
+    memset(&lditem, 0, sizeof(lditem)); /* Prevent use of bogus data... */
 
     dbprintf(("add_file: Looking for \"%s\"\n", regex));
 
@@ -507,6 +515,7 @@ char *regex;
 		    exit(1);
 		}
 		amfree(cmd);
+		cmd = NULL;
 		/* skip preamble */
 		if ((i = get_reply_line()) == -1) {
 		    amfree(ditem_path);
@@ -523,11 +532,9 @@ char *regex;
 		    printf("%s\n", l);
 		    return;
 		}
-		amfree(err);
 		dir_undo = NULL;
 		added=0;
-		strncpy(lditem.path, ditem_path, sizeof(lditem.path)-1);
-		lditem.path[sizeof(lditem.path)-1] = '\0';
+                lditem.path = newstralloc(lditem.path, ditem->path);
 		/* skip the last line -- duplicate of the preamble */
 		while ((i = get_reply_line()) != 0)
 		{
@@ -564,11 +571,11 @@ char *regex;
 			err = "bad reply: missing date field";
 			continue;
 		    }
-		    copy_string(s, ch, lditem.date, sizeof(lditem.date), fp);
-		    if(fp == NULL) {
-			err = "bad reply: date field too large";
-			continue;
-		    }
+                    fp = s-1;
+                    skip_non_whitespace(s, ch);
+                    s[-1] = '\0';
+                    lditem.date = newstralloc(lditem.date, fp);
+                    s[-1] = ch;
 
 		    skip_whitespace(s, ch);
 		    if(ch == '\0' || sscanf(s - 1, "%d", &lditem.level) != 1) {
@@ -582,11 +589,11 @@ char *regex;
 			err = "bad reply: missing tape field";
 			continue;
 		    }
-		    copy_string(s, ch, lditem.tape, sizeof(lditem.tape), fp);
-		    if(fp == NULL) {
-			err = "bad reply: tape field too large";
-			continue;
-		    }
+                    fp = s-1;
+                    skip_non_whitespace(s, ch);
+                    s[-1] = '\0';
+                    lditem.tape = newstralloc(lditem.tape, fp);
+                    s[-1] = ch;
 
 		    if(am_has_feature(indexsrv_features, fe_amindexd_fileno_in_ORLD)) {
 			skip_whitespace(s, ch);
@@ -627,9 +634,7 @@ char *regex;
 		if(!server_happy()) {
 		    puts(reply_line());
 		} else if(err) {
-		    if(*err) {
-			puts(err);
-		    }
+		    puts(err);
 		    puts(cmd);
 		} else if(added == 0) {
 		    printf("dir %s already added\n", ditem_path);
@@ -657,7 +662,8 @@ char *regex;
 	    }
 	}
     }
-    amfree(cmd);
+    if (cmd != NULL)
+	amfree(cmd);
     amfree(ditem_path);
     amfree(path_on_disk);
     amfree(path_on_disk_slash);
@@ -738,6 +744,7 @@ char *regex;
 	printf("Must select directory before deleting files\n");
 	return;
     }
+    memset(&lditem, 0, sizeof(lditem)); /* Prevent use of bogus data... */
 
     dbprintf(("delete_file: Looking for \"%s\"\n", path));
     /* remove "/" at the end of the path */
@@ -798,10 +805,8 @@ char *regex;
 		    return;
 		}
 		deleted=0;
-		strncpy(lditem.path, ditem->path, sizeof(lditem.path)-1);
-		lditem.path[sizeof(lditem.path)-1] = '\0';
+                lditem.path = newstralloc(lditem.path, ditem->path);
 		amfree(cmd);
-		amfree(err);
 		date_undo = tape_undo = dir_undo = NULL;
 		/* skip the last line -- duplicate of the preamble */
 		while ((i = get_reply_line()) != 0)
@@ -883,11 +888,9 @@ char *regex;
 		    dir_undo_ch = *dir_undo;
 		    *dir_undo = '\0';
 
-		    strncpy(lditem.date, date, sizeof(lditem.date)-1);
-		    lditem.date[sizeof(lditem.date)-1] = '\0';
+                    lditem.date = newstralloc(lditem.date, date);
 		    lditem.level=level;
-		    strncpy(lditem.tape, tape, sizeof(lditem.tape)-1);
-		    lditem.tape[sizeof(lditem.tape)-1] = '\0';
+                    lditem.tape = newstralloc(lditem.tape, tape);
 		    switch(delete_extract_item(&lditem)) {
 		    case -1:
 			printf("System error\n");

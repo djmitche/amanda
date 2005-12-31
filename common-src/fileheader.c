@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.32 2005/12/21 19:07:49 paddy_s Exp $
+ * $Id: fileheader.c,v 1.33 2005/12/31 00:02:09 paddy_s Exp $
  */
 
 #include "amanda.h"
@@ -129,9 +129,10 @@ parse_file_header(buffer, file, buflen)
 	    tok = strtok(NULL, " ");
 	    if (tok == NULL)
 		goto weird_header;
-	    if(strcmp(tok, "UNKNOWN") == 0){
-		file->totalparts = -1;
-	    } else if(sscanf(tok, "%d", &file->totalparts) != 1){
+	    /* If totalparts == -1, then the original dump was done in 
+ 	       streaming mode (no holding disk), thus we don't know how 
+               many parts there are. */
+            if(sscanf(tok, "%d", &file->totalparts) != 1){
 		goto weird_header;
 	    }
 	}
@@ -370,13 +371,8 @@ build_header(buffer, file, buflen)
 	break;
 
     case F_SPLIT_DUMPFILE:
-	if(file->totalparts > 0) {
-	    snprintf(split_data, sizeof(split_data),
-		     " part %d/%d ", file->partnum, file->totalparts);
-	} else {
-	    snprintf(split_data, sizeof(split_data),
-		     " part %d/%d ", file->partnum, file->totalparts);
-	}
+	snprintf(split_data, sizeof(split_data),
+		 " part %d/%d ", file->partnum, file->totalparts);
     /* FALLTHROUGH */
 	
     case F_CONT_DUMPFILE:

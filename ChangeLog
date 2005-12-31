@@ -1,3 +1,43 @@
+2005-12-30  Ian Turner <ian@zmanda.com>
+	* common-src/fileheader.c: Remove xx/UNKNOWN split-dump header 
+	  syntax, in favor of xx/-1.
+
+2005-12-29  John Franks <jrfranks@zmanda.com>
+	* Index: recover-src/display_commands.c
+	  Fix list deletion which did not update list root with NULL pointer.
+	  Make free_dir_item() a non-recursive function to prevent stack bloat.
+	  Fix list insertion code which inserts item in list initializes entry.
+	* Index: recover-src/extract_list.c
+	  Fix to initialize lditem before using it...
+	  Prevent multiple frees of cmd string.
+	  Do not free err which is only initialized with static string pointers.
+	  Fix typo which caused newstralloc() to free the wrong memory.
+	* Index: server-src/amindexd.c
+	  Fix Compiler warning of unused variable.
+	* Index: server-src/taperscan.c
+	  Fix Compiler warning of bogus format specifier.
+  
+2005-12-29  Kevin Till<ktill@zmanda.com>
+	* man/xml-source/amcrypt.8.xml: add new amcrypt man page
+	* man/xml-source/amaespipe.8.xml: add new amaespipe man page
+
+2005-12-29  Ian Turner <ian@zmanda.com>
+	* man/xml-source/amanda.conf.5.xml: Document label_new_tapes 
+	  config option.
+
+2005-12-28  Ian Turner <ian@zmanda.com>
+	* recover-src/amrecover.h: Use dynamic strings in struct DIR_ITEM.
+	* recover-src/display_commands.c: ditto
+	* recover-src/extract_list.c: ditto. Also use dynamic strings in
+	  struct EXTRACT_LIST and struct EXTRACT_LIST_ITEM.
+
+2005-12-28  Ian Turner <ian@zmanda.com>
+	* common-src/amfeatures.h: Add three new amfeatures:
+	  fe_amindexd_marshall_in_OLSD, fe_amindexd_marshall_in_ORLD,
+	  fe_amindexd_marshall_in_DHST.
+	* common-src/amfeatures.c: ditto.
+	* server-src/amindexd.c: Talk well to older clients.
+
 2005-12-23  Ian Turner <ian@zmanda.com>
 	* server-src/taperscan.c: Don't crash if find_brand_new_tape_label
 	  returns NULL. Also, don't return NULL from
