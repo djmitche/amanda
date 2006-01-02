@@ -1,5 +1,9 @@
 2006-01-02  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/amanda.h: Add a FD_COPY macro.
+	* recover-src/extract_list.c (writer_intermediary): Don't use
+	  writer_intermediary, do the select locally.
 
+2006-01-02  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c (flush_open_outputs): Call shutdown before
 	  close.
 

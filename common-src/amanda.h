@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.118 2005/12/21 19:07:49 paddy_s Exp $
+ * $Id: amanda.h,v 1.119 2006/01/02 22:46:27 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -312,6 +312,10 @@ extern int errno;
 #  define FD_CLR(n, p)    (((fd_set *) (p))->fds_bits[0] &= ~(1 << ((n) % 32)))
 #  define FD_ISSET(n, p)  (((fd_set *) (p))->fds_bits[0] & (1 << ((n) % 32)))
 #  define FD_ZERO(p)      memset((p), 0, sizeof(*(p)))
+#endif
+
+#ifndef FD_COPY
+#  define FD_COPY(p, q)   memcpy((q), (p), sizeof(fd_set))
 #endif
 
 

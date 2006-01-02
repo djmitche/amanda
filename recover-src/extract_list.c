@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.87 2005/12/31 00:02:10 paddy_s Exp $
+ * $Id: extract_list.c,v 1.88 2006/01/02 22:46:27 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1649,10 +1649,12 @@ void writer_intermediary(ctl_fd, data_fd, elist)
     int child_pipe[2];
     pid_t pid;
     char buffer[DISK_BLOCK_BYTES];
-    size_t buflen = DISK_BLOCK_BYTES;
     int l, s;
-    ssize_t bytes_read = 0, ctl_bytes = 0;
+    ssize_t bytes_read;
     amwait_t extractor_status;
+    int max_fd, nfound, ctleof, dataeof;
+    fd_set readset, selectset;
+    struct timeval timeout;
 
     /*
      * If there's no distinct data channel (such as if we're talking to an
@@ -1692,57 +1694,95 @@ void writer_intermediary(ctl_fd, data_fd, elist)
     signal(SIGPIPE, handle_sigpipe);
     aclose(child_pipe[0]);
 
-    do {
-	memset(buffer, '\0', sizeof(buffer));
+    if(data_fd > ctl_fd) max_fd = data_fd+1;
+                    else max_fd = ctl_fd+1;
+    FD_ZERO(&readset);
+    FD_SET(data_fd, &readset);
+    FD_SET(ctl_fd, &readset);
 
-	/* check for a control command (such as "load tape") */
-	ctl_bytes = read_buffer(ctl_fd, buffer, buflen, 0);
-        if((ctl_bytes == -1) && (errno != ETIMEDOUT)) {
-	    /* Report any unexpected errors */
-	    error("writer control fd read error: %s", strerror(errno));
+    ctleof = 0;
+    dataeof = 0;
+
+    do {
+	timeout.tv_sec = READ_TIMEOUT;
+	timeout.tv_usec = 0;
+	FD_COPY(&readset, &selectset);
+
+	nfound = select(max_fd, (SELECT_ARG_TYPE *)(&selectset), NULL, NULL,
+			&timeout);
+	if(nfound < 0) {
+	    fprintf(stderr,"select error: %s\n", strerror(errno));
+	}
+	else if (nfound == 0) { /* timeout */
+	    /* simulate eof on socket */
+	    ctleof=1;
+	    dataeof = 1;
+	    fprintf(stderr,"timeout waiting for restore\n");
+	    fprintf(stderr,"increase READ_TIMEOUT in recover-src/extract_list.c if your tape is slow\n");
 	}
 
-	/* Feed any control messages we may have gotten to the user */
-	if(ctl_bytes > 0) {
-	    char *input = NULL;
-	    printf("%s", buffer);
-	    fflush(stdout);
+	if(nfound > 0 && FD_ISSET(ctl_fd, &selectset)) {
+	    bytes_read = read(ctl_fd, buffer, sizeof(buffer));
+	    switch(bytes_read) {
+		case -1: {
+			   fprintf(stderr,"writer ctl fd read error: %s",
+				   strerror(errno));
+			   FD_CLR(ctl_fd, &readset); ctleof=1;
+			   break;
+			 }
+		case  0: FD_CLR(ctl_fd, &readset); ctleof=1; break;
+		default: {
+			   char *input = NULL;
+			   printf("%s", buffer);
+			   fflush(stdout);
 
-	    /* if prompted for a tape, relay said prompt to the user */
-	    if(match_glob("Insert tape labeled *", buffer)){
-		input = agets(stdin);
-		send_to_tape_server(tape_control_sock, "");
-	        amfree(input);
+			   /* if prompted for a tape, relay said prompt to the user */
+			   if(match_glob("Insert tape labeled *", buffer)){
+				input = agets(stdin);
+				send_to_tape_server(tape_control_sock, "");
+			        amfree(input);
+			   }
+			   break;
+			 }
 	    }
 	}
 
-	/* clean up the buffer */
-	memset(buffer, '\0', sizeof(buffer));
-
 	/* now read some dump data */
-	bytes_read = read_buffer(data_fd, buffer, buflen, READ_TIMEOUT);
-        if(bytes_read == -1) {
-	    error("writer data fd read error: %s", strerror(errno));
+	if(nfound > 0 && FD_ISSET(data_fd, &selectset)) {
+	    bytes_read = read(data_fd, buffer, sizeof(buffer));
+	    switch(bytes_read) {
+		case -1: {
+			   fprintf(stderr,"writer data fd read error: %s",
+				   strerror(errno));
+			   FD_CLR(data_fd, &readset); dataeof=1;
+			   break;
+			 }
+		case  0: FD_CLR(data_fd, &readset); dataeof=1; break;
+		default: {
+			   /*
+			    * spit what we got from the server to the child
+			    *  process handling
+			    * actual dumpfile extraction
+			    */
+		           for(l = 0; l < bytes_read; l += s) {
+		               if((s = write(child_pipe[1], buffer + l, bytes_read - l)) < 0) {
+		                   if(got_sigpipe) {
+		                       fprintf(stderr,
+		                          "%s: pipe data writer has quit: %s\n",
+		                          get_pname(), strerror(errno));
+		                   } else {
+		                    error("Write error to extract child: %s\n",
+					    strerror(errno));
+		                   }
+		                   exit(2);
+		               }
+			   }
+			   break;
+		         }
+	    }
 	}
 
-	/*
-	 * spit what we got from the server to the child process handling
-	 * actual dumpfile extraction
-	 */
-        for(l = 0; l < bytes_read; l += s) {
-            if((s = write(child_pipe[1], buffer + l, bytes_read - l)) < 0) {
-                if(got_sigpipe) {
-                    fprintf(stderr,
-                            "%s: pipe data writer has quit: %s\n",
-                            get_pname(), strerror(errno));
-                } else {
-                    error("Write error to extract child: %s\n",
-			    strerror(errno));
-                }
-                exit(2);
-            }
-        }
-    } while(bytes_read > 0);
+    } while(ctleof == 0 || dataeof == 0);
 
     aclose(child_pipe[1]);
 
