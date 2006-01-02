@@ -1,3 +1,8 @@
+2006-01-02  Jean-Louis Martineau <martineau@zmanda.com>
+
+	* restore-src/restore.c (flush_open_outputs): Call shutdown before
+	  close.
+
 2005-12-30  Ian Turner <ian@zmanda.com>
 	* common-src/fileheader.c: Remove xx/UNKNOWN split-dump header 
 	  syntax, in favor of xx/-1.
