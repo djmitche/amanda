@@ -7,6 +7,17 @@
 	* restore-src/restore.c (flush_open_outputs): Call shutdown before
 	  close.
 
+2005-12-30  John Franks <jrfranks@zmanda.com>
+	* recover-src/extract_list.c:
+	  Fix double clearing of buffer during normal read path.
+	* restore-src/amidxtaped.c
+	  Actually initialize changer if it is needed.  (Set use_changer
+          before checking it...)
+        * Fix control messages being sent down the data pipe when
+          restoring to client that does not support split dumps.
+        * Print error and exit if a split dump is needed during restore
+	  and client can not handle it. 
+
 2005-12-30  Ian Turner <ian@zmanda.com>
 	* common-src/fileheader.c: Remove xx/UNKNOWN split-dump header 
 	  syntax, in favor of xx/-1.

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.49 2005/12/22 15:10:52 martinea Exp $
+/* $Id: amidxtaped.c,v 1.50 2006/01/04 01:19:30 paddy_s Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -166,6 +166,7 @@ char **argv;
     char *their_feature_string = NULL;
     rst_flags_t *rst_flags;
     int use_changer = 0;
+    FILE *prompt_stream = NULL;
 
     int re_end = 0;
     char *re_config = NULL;
@@ -343,6 +344,17 @@ char **argv;
 	get_lock = lock_logfile();
     }
 
+    /* We need certain options, if restoring from more than one tape */
+    if(tapes && tapes->next) {
+        if(!am_has_feature(their_features, fe_recover_splits)) {
+            error("%s: Client must support split dumps to restore requested data.",  get_pname());
+            /* NOTREACHED */
+        }
+	dbprintf(("%s: Restoring from multiple tapes, blithely ignoring CNF_AMRECOVER_CHECK_LABEL and CNF_AMRECOVER_CHANGER\n", get_pname()));
+	rst_flags->check_labels = 1;
+	use_changer = 1;
+    }
+
     /* Init the tape changer */
     if(tapes && use_changer && changer_init() == 0){
 	dbprintf(("%s: No changer available\n", debug_prefix_time(NULL)));
@@ -354,7 +366,6 @@ char **argv;
 	rst_flags->blocksize = tape->blocksize * 1024;
     }
 
-
     if(rst_flags->fsf && re_config && 
        getconf_int(CNF_AMRECOVER_DO_FSF) == 0) {
 	rst_flags->fsf = 0;
@@ -362,13 +373,6 @@ char **argv;
 
     if(re_config && getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
 	rst_flags->check_labels = 0;
-    }
-
-    /* We need certain options, if restoring from more than one tape */
-    if(tapes && tapes->next){
-	dbprintf(("%s: Restoring from multiple tapes, blithely ignoring CNF_AMRECOVER_CHECK_LABEL and CNF_AMRECOVER_CHANGER\n", get_pname()));
-	rst_flags->check_labels = 1;
-	use_changer = 1;
     }
 
     /* establish a distinct data connection for dumpfile data */
@@ -396,14 +400,15 @@ char **argv;
 	
 	check_security_buffer(buffer);
 	rst_flags->pipe_to_fd = data_fd;
+        prompt_stream = stdout;
     }
     else {
 	rst_flags->pipe_to_fd = fileno(stdout);
+        prompt_stream = stderr;
     }
     dbprintf(("%s: Sending output to file descriptor %d\n",
 	      get_pname(), rst_flags->pipe_to_fd));
     
-    am_release_feature_set(their_features);
     
     /* make sure our restore flags aren't crazy */
     if(check_rst_flags(rst_flags) == -1){
@@ -412,13 +417,15 @@ char **argv;
     }
     
     /* actual restoration */
-    search_tapes(stdout, use_changer, tapes, match_list, rst_flags);
+    search_tapes(prompt_stream, use_changer, tapes, match_list, rst_flags);
     dbprintf(("%s: Restoration finished\n", debug_prefix_time(NULL)));
     
     /* cleanup */
     if(rst_flags->pipe_to_fd != -1) aclose(rst_flags->pipe_to_fd);
     free_tapelist(tapes);
     
+    am_release_feature_set(their_features);
+
     dbclose();
     return 0;
 }

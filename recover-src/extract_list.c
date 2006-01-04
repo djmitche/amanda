@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.88 2006/01/02 22:46:27 martinea Exp $
+ * $Id: extract_list.c,v 1.89 2006/01/04 01:19:30 paddy_s Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1941,10 +1941,6 @@ void extract_files P((void))
 	    /* this is the child process */
 	    /* never gets out of this clause */
 	    writer_intermediary(tape_control_sock, tape_data_sock, elist);
-/*	    if(tape_data_sock != -1)
-		extract_files_child(tape_data_sock, elist);
-	    else extract_files_child(tape_control_sock, elist);	
-	    */
 	    /*NOT REACHED*/
 	}
 	/* this is the parent */
