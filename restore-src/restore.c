@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.13 2006/01/02 22:55:44 martinea Exp $
+ * $Id: restore.c,v 1.14 2006/01/05 19:20:27 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -428,7 +428,10 @@ dumpfile_t *only_file;
 		aclose(cur_out->outfd);
 	    }
 	}
-	if(outfd >= 0) aclose(outfd);
+	if(outfd >= 0) {
+	    shutdown(outfd, SHUT_RDWR);
+	    aclose(outfd);
+	}
 
 	free_find_result(&sorted_files);
     }
