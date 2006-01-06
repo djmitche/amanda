@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.89 2006/01/04 01:19:30 paddy_s Exp $
+ * $Id: extract_list.c,v 1.90 2006/01/06 00:22:42 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1498,7 +1498,7 @@ static void extract_files_child(in_fd, elist)
     case IS_TAR:
     case IS_GNUTAR:
     	restore_args[j++] = stralloc("tar");
-	restore_args[j++] = stralloc("-xpGvUf");
+	restore_args[j++] = stralloc("-xpGvf");
 	restore_args[j++] = stralloc("-");	/* data on stdin */
 	break;
     case IS_SAMBA_TAR:

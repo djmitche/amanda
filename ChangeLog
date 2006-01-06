@@ -1,4 +1,7 @@
 2006-01-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* recover-src/extract-list.c: Remove 'U' argument for gtar extraction.
+
+2006-01-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c (flush_open_outputs): Another shutdown is
 	  required.
 
