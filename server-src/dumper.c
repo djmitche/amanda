@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.164 2005/12/25 02:22:33 paddy_s Exp $
+/* $Id: dumper.c,v 1.165 2006/01/12 01:57:06 paddy_s Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -507,7 +507,7 @@ static int
 databuf_flush(db)
     struct databuf *db;
 {
-    int written, w;
+    int written;
 
     /*
      * If there's no data, do nothing.
@@ -519,20 +519,16 @@ databuf_flush(db)
     /*
      * Write out the buffer
      */
-    written = w = 0;
-    while (db->dataout < db->datain) {
-	if ((w = write(db->fd, db->dataout, db->datain - db->dataout)) < 0) {
-	    break;
-	}
-	db->dataout += w;
-	written += w;
+    written = fullwrite(db->fd, db->dataout, db->datain - db->dataout);
+    if (written > 0) {
+	db->dataout += written;
+        dumpbytes += written;
     }
-    dumpbytes += written;
     if (dumpbytes >= 1024) {
 	dumpsize += (dumpbytes / 1024);
 	dumpbytes %= 1024;
     }
-    if (w < 0) {
+    if (written < 0) {
 	errstr = squotef("data write: %s", strerror(errno));
 	return -1;
     }
@@ -1073,6 +1069,15 @@ failed:
 	if (kill(db->compresspid, SIGTERM) < 0) {
 	    if (errno != ESRCH)
 		fprintf(stderr,"%s: can't kill compress command: %s\n", 
+		    get_pname(), strerror(errno));
+	}
+    }
+
+    if (db->encryptpid != -1) {
+	fprintf(stderr,"%s: kill encrypt command\n",get_pname());
+	if (kill(db->encryptpid, SIGTERM) < 0) {
+	    if (errno != ESRCH)
+		fprintf(stderr,"%s: can't kill encrypt command: %s\n", 
 		    get_pname(), strerror(errno));
 	}
     }

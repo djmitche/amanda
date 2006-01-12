@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.15 2005/12/03 00:57:31 martinea Exp $
+ * $Id: util.c,v 1.16 2006/01/12 01:57:05 paddy_s Exp $
  */
 
 #include "amanda.h"
@@ -48,7 +48,7 @@ fullread(fd, vbuf, buflen)
     while (buflen > 0) {
 	nread = read(fd, buf, buflen);
 	if (nread < 0)
-	    return (nread);
+	    return ((tot > 0) ? tot : -1);
 	if (nread == 0)
 	    break;
 	tot += nread;
@@ -76,7 +76,7 @@ fullwrite(fd, vbuf, buflen)
     while (buflen > 0) {
 	nwritten = write(fd, buf, buflen);
 	if (nwritten < 0)
-	    return (nwritten);
+	    return ((tot == 0) ? -1 : tot);
 	tot += nwritten;
 	buf += nwritten;
 	buflen -= nwritten;

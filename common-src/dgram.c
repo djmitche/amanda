@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.28 2005/10/13 21:23:27 martinea Exp $
+ * $Id: dgram.c,v 1.29 2006/01/12 01:57:05 paddy_s Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -121,6 +121,7 @@ out:
     }
     *portp = ntohs(name.sin_port);
     dgram->socket = s;
+
     dbprintf(("%s: dgram_bind: socket bound to %s.%d\n",
 	      debug_prefix_time(NULL),
 	      inet_ntoa(name.sin_addr),

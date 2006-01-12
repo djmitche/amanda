@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.14 2006/01/05 19:20:27 martinea Exp $
+ * $Id: restore.c,v 1.15 2006/01/12 01:57:06 paddy_s Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -78,6 +78,7 @@ static int already_have_dump P((dumpfile_t *file));
 
 /* local functions */
 
+#if 0
 static void handle_sigpipe(sig)
 int sig;
 /*
@@ -88,6 +89,23 @@ int sig;
 {
     got_sigpipe++;
 }
+#endif
+
+static void handle_eof_sigpipe(sig)
+int sig;
+/*
+ * This handle the case when reading program (e.g: using bzip2 to 
+ * custom uncompress) has closed the pipe prematurely.
+ */
+{
+  static int first = 0;
+
+  if ( !first ) {
+    first++;
+    fprintf(stderr, "Strange, reading program closed early, check the restored files.\n");
+  }
+}
+
 
 static void handle_sigint(sig)
 int sig;
@@ -165,7 +183,7 @@ char *filename;
 int fd;
 {
     ssize_t bytes_read;
-    int l, s, wc = 0, rc = 0;
+    int s, wc = 0, rc = 0;
     char *buffer;
 
     if(blocksize == -1)
@@ -181,19 +199,16 @@ int fd;
 	if(bytes_read < 0) {
 	    error("read error: %s", strerror(errno));
 	}
-	for(l = 0; l < bytes_read; l += s) {
-	    if((s = write(fd, buffer + l, bytes_read - l)) < 0) {
-		if(got_sigpipe) {
-		    fprintf(stderr,"Error %d (%s) offset %d+%ld, wrote %d\n",
-				   errno, strerror(errno), wc, (long)bytes_read, rc);
-		    fprintf(stderr,  
-			    "%s: pipe reader has quit in middle of file.\n",
-			    get_pname());
-		} else {
-		    perror("restore: write error");
-		}
-		exit(2);
+	if((s = fullwrite(fd, buffer, bytes_read)) < 0) {
+	    if(got_sigpipe) {
+	        fprintf(stderr,"Error %d (%s) offset %d+%d, wrote %d\n",
+				errno, strerror(errno), wc, bytes_read, rc);
+	        fprintf(stderr, "%s: pipe reader quit in middle of file.\n",
+			        get_pname());
+	    } else {
+		perror("restore: write error");
 	    }
+	    exit(2);
 	}
 	wc += bytes_read;
     } while (bytes_read > 0);
@@ -390,7 +405,7 @@ dumpfile_t *only_file;
 		continue;
 	    }
 
-	    if(cur_file->type == F_SPLIT_DUMPFILE){
+	    if(cur_file->type == F_SPLIT_DUMPFILE) {
 		/* is it a continuation of one we've been writing? */
 		if(main_file && cur_file->partnum > lastpartnum &&
 			headers_equal(cur_file, main_file, 1)){
@@ -424,12 +439,12 @@ dumpfile_t *only_file;
 		lastpartnum = cur_file->partnum;
 	    }
 	    else {
-		shutdown(cur_out->outfd, SHUT_RDWR);
+		(void)shutdown(cur_out->outfd, SHUT_RDWR);
 		aclose(cur_out->outfd);
 	    }
 	}
 	if(outfd >= 0) {
-	    shutdown(outfd, SHUT_RDWR);
+	    (void)shutdown(outfd, SHUT_RDWR);
 	    aclose(outfd);
 	}
 
@@ -448,7 +463,11 @@ dumpfile_t *only_file;
 	if(only_file && !headers_equal(cur_file, only_file, 1)){
 	    continue;
 	}
-	if(!reassemble) aclose(cur_out->outfd);
+	if(!reassemble) {
+	    (void)shutdown(cur_out->outfd, SHUT_RDWR);
+	    aclose(cur_out->outfd);
+	}
+
 	if(cur_out->comp_enc_pid > 0){
 	    waitpid(cur_out->comp_enc_pid, &compress_status, 0);
 	}
@@ -621,8 +640,7 @@ rst_flags_t *flags;
  * piped to restore).
  */
 {
-    int rc = 0, dest = -1, out;
-    int wc;
+    int dest = -1, out;
     int l, s;
     int file_is_compressed;
     int is_continuation = 0;
@@ -634,7 +652,7 @@ rst_flags_t *flags;
     struct sigaction act, oact;
     char *buffer;
     int need_compress=0, need_uncompress=0, need_decrypt=0;
-    int stage = 0;
+    int stage=0, dataeof=0;
     ssize_t bytes_read;
     struct pipeline {
         int	pipe[2];
@@ -646,7 +664,7 @@ rst_flags_t *flags;
 	blocksize = DISK_BLOCK_BYTES;
 
     /* set our sigpipe handler, saving the old one */
-    act.sa_handler = handle_sigpipe;
+    act.sa_handler = handle_eof_sigpipe;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
     if(sigaction(SIGPIPE, &act, &oact) != 0){
@@ -951,8 +969,6 @@ rst_flags_t *flags;
     }
 
     /* copy the rest of the file from tape to the output */
-    got_sigpipe = 0;
-    wc = 0;
     if(flags->blocksize > 0)
 	blocksize = flags->blocksize;
     else if(blocksize == -1)
@@ -963,6 +979,7 @@ rst_flags_t *flags;
 	bytes_read = get_block(tapefd, buffer, isafile);
 	if(bytes_read < 0) {
 	    error("read error: %s", strerror(errno));
+	    /* NOTREACHED */
 	}
 
 	if(bytes_read == 0 && isafile) {
@@ -1003,27 +1020,23 @@ rst_flags_t *flags;
 	    continue;
 	}
 
-	for(l = 0; l < bytes_read; l += s) {
-	    if((s = write(pipes[0].pipe[1], buffer+l, bytes_read-l)) < 0) {
-		if(got_sigpipe) {
-		    fprintf(stderr,"Error %d (%s) offset %d+%ld, wrote %d\n",
-				   errno, strerror(errno), wc, (long)bytes_read, rc);
-		    fprintf(stderr,  
-			    "%s: pipe reader has quit in middle of file.\n",
-			    get_pname());
-		} else {
-		    perror("restore: write error");
-		}
-		exit(2);
+	if((fullwrite(pipes[0].pipe[1], buffer, bytes_read)) < bytes_read) {
+	    if (errno == EPIPE) {    /* reading program has ended early   */
+				     /* e.g: bzip2 closes pipe when it    */
+			             /* sees trailing garbage after EOF   */
+		fprintf(stderr, "restore: reader reset pipe\n");
+		break;
 	    }
+	    perror("restore: write error");
+	    exit(2);
 	}
-	wc += bytes_read;
     } while (bytes_read > 0);
 
     amfree(buffer);
 
-    if(!flags->inline_assemble){
-       if(out != dest) aclose(out);
+    if(!flags->inline_assemble) {
+        if(out != dest)
+	    aclose(out);
     }
     if(!is_continuation){
 	if(tmp_filename && stat(tmp_filename, &statinfo) < 0){
@@ -1054,7 +1067,8 @@ rst_flags_t *flags;
 		    myout = open_outputs;
 		    while(myout != NULL){
 			if(headers_equal(file, myout->file, 0)){
-			    if(myout->outfd >= 0) aclose(myout->outfd);
+			    if(myout->outfd >= 0)
+				aclose(myout->outfd);
 			    if(prev_out){
 				prev_out->next = myout->next;
 			    }
@@ -1215,6 +1229,7 @@ rst_flags_t *flags;
         input = agets(stdin);
  	amfree(input);
 	fprintf(prompt_out, "\n");
+	fflush(prompt_out);
       }
     }
     desired_tape = tapelist;

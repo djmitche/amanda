@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.3 2005/12/31 00:02:10 paddy_s Exp $
+ * $Id: taperscan.c,v 1.4 2006/01/12 01:57:06 paddy_s Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -110,6 +110,11 @@ int scan_read_label(char *dev, char *desired_label,
             return -1;
 	} else {
             tape_t *tp;
+            if (strcmp(*timestamp, "X") == 0) {
+                /* new, labeled tape. */
+                return 1;
+            }
+
             tp = lookup_tapelabel(*label);
          
             if(tp == NULL) {
@@ -117,9 +122,6 @@ int scan_read_label(char *dev, char *desired_label,
                      " match labelstr but it not listed in the tapelist file.\n",
                            NULL);
                 return -1;
-            } else if (tp->datestamp == 0) {
-                /* new, labeled tape. */
-                return 1;
             } else if(tp != NULL && !reusable_tape(tp)) {
                 vstrextend(&errstr, "cannot overwrite active tape ", *label,
                            "\n", NULL);

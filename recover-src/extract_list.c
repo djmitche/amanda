@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.90 2006/01/06 00:22:42 martinea Exp $
+ * $Id: extract_list.c,v 1.91 2006/01/12 01:57:05 paddy_s Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -125,7 +125,6 @@ int datafd;
 char *buffer;
 size_t buflen;
 {
-    int nfound = 0;
     ssize_t size = 0;
     fd_set readset;
     struct timeval timeout;
@@ -145,12 +144,14 @@ size_t buflen;
         FD_SET(datafd, &readset);
         timeout.tv_sec = timeout_s;
         timeout.tv_usec = 0;
-        nfound = select(datafd+1, &readset, NULL, NULL, &timeout);
-        if(nfound < 0 ) {
+        size = select(datafd+1, &readset, NULL, NULL, &timeout);
+        if(size < 0 ) {
             /* Select returned an error. */
 	    fprintf(stderr,"select error: %s\n", strerror(errno));
-            size = -1;
-        } else if (nfound == 0) {
+	    break;
+        }
+
+	if (size == 0) {
             /* Select timed out. */
             if (timeout_s != 0)  {
                 /* Not polling: a real read timeout */
@@ -158,16 +159,19 @@ size_t buflen;
                 fprintf(stderr,"increase READ_TIMEOUT in recover-src/extract_list.c if your tape is slow\n");
             }
             errno = ETIMEDOUT;
-            size = -1;
+	    size = -1;
+	    break;
+        }
+
+        /* Select says data is available, so read it.  */
+        size = read(datafd, dataptr, spaceleft);
+        if (size <= 0) {
+            fprintf(stderr, "read_buffer(): read error - %s",
+		    strerror(errno));
+	    break;	
         } else {
-            /* Select says data is available, so read it.  */
-            size = read(datafd, dataptr, spaceleft);
-            if (size < 0) {
-                fprintf(stderr, "read error: %s", strerror(errno));
-            } else {
-                spaceleft -= size;
-                dataptr += size;
-            }
+            spaceleft -= size;
+            dataptr += size;
         }
     } while ((size > 0) && (spaceleft > 0));
 
@@ -1097,23 +1101,20 @@ static void send_to_tape_server(tss, cmd)
 int tss;
 char *cmd;
 {
-    size_t l, n;
     ssize_t s;
-    char *end;
+    char *end = "\r\n";
 
-    for (l = 0, n = strlen(cmd); l < n; l += s)
-	if ((s = write(tss, cmd + l, n - l)) < 0)
-	{
-	    perror("Error writing to tape server");
-	    exit(101);
-	}
-    end = "\r\n";
-    for (l = 0, n = strlen(end); l < n; l += s)
-	if ((s = write(tss, end + l, n - l)) < 0)
-	{
-	    perror("Error writing to tape server");
-	    exit(101);
-	}
+    if ((s = fullwrite(tss, cmd, strlen(cmd))) < 0)
+    {
+	perror("Error writing to tape server");
+	exit(101);
+    }
+
+    if ((s = fullwrite(tss, end, strlen(end))) < 0)
+    {
+	perror("Error writing to tape server");
+	exit(101);
+    }
 }
 
 
@@ -1158,10 +1159,12 @@ int fsf;
 	return -1;
     }
     if (my_port >= IPPORT_RESERVED) {
+	shutdown(tape_control_sock, SHUT_RDWR);
 	aclose(tape_control_sock);
 	printf("did not get a reserved port: %d\n", my_port);
 	return -1;
     }
+ 
     setegid(getgid());
     seteuid(getuid());				/* put it back */
 
@@ -1232,10 +1235,14 @@ int fsf;
     /* XXX assumes that index server and tape server are equivalent, ew */
     if(am_has_feature(indexsrv_features, fe_amidxtaped_exchange_features)){
 	char buffer[32768] = "\0";
+
 	our_feature_string = am_feature_to_string(our_features);
 	tt = newstralloc2(tt, "FEATURES=", our_feature_string);
 	send_to_tape_server(tape_control_sock, tt);
-	read(tape_control_sock, buffer, sizeof(buffer));
+	if (read(tape_control_sock, buffer, sizeof(buffer)) <= 0) {
+	    error("Could not read features from control socket\n");
+	    /* NOTREACHED */
+	}
 	tapesrv_features = am_string_to_feature(stralloc(buffer));
 	amfree(our_feature_string);
     }
@@ -1310,6 +1317,7 @@ int fsf;
 	if (read(tape_control_sock, buffer, sizeof(buffer)) <= 0) {
 	    error("Could not read from control socket: %s\n", 
                   strerror(errno));
+	    /* NOTREACHED */
         }
 
 	buffer[32767] = '\0';
@@ -1318,6 +1326,7 @@ int fsf;
 	if (buffer == endptr) {
 	    error("Got invalid port number from control socket: %s\n",
                   buffer);
+	    /* NOTREACHED */
         }	
 
 	tape_data_sock = stream_client_privileged(server_name,
@@ -1329,6 +1338,7 @@ int fsf;
 	if(tape_data_sock == -1){
 	    error("Unable to make data connection to server: %s\n",
 		      strerror(errno));
+	    /* NOTREACHED */
 	}
 
 	amfree(our_feature_string);
@@ -1363,12 +1373,14 @@ int tapedev;
     if(bytes_read < 0) {
 	error("error reading header (%s), check amidxtaped.*.debug on server",
 	      strerror(errno));
+	/* NOTREACHED */
     }
     else if((size_t)bytes_read < buflen) {
 	fprintf(stderr, "%s: short block %d byte%s\n",
 		get_pname(), (int)bytes_read, (bytes_read == 1) ? "" : "s");
 	print_header(stdout, file);
 	error("Can't read file header");
+	/* NOTREACHED */
     }
     else { /* bytes_read == buflen */
 	parse_file_header(buffer, file, bytes_read);
@@ -1406,7 +1418,7 @@ static void extract_files_child(in_fd, elist)
     if (dup2(in_fd, STDIN_FILENO) == -1)
     {
 	error("dup2 failed in extract_files_child: %s", strerror(errno));
-	exit(1);
+	/* NOTREACHED */
     }
 
     /* read the file header */
@@ -1416,6 +1428,7 @@ static void extract_files_child(in_fd, elist)
     if(buflen == 0 || file.type != F_DUMPFILE) {
 	print_header(stdout, &file);
 	error("bad header");
+	/* NOTREACHED */
     }
 
     if (file.program != NULL) {
@@ -1539,6 +1552,8 @@ static void extract_files_child(in_fd, elist)
     	case IS_GNUTAR:
     	case IS_SAMBA_TAR:
     	case IS_SAMBA:
+	    if (strcmp(fn->path, "/") == 0)
+	        restore_args[j++] = stralloc(".");
 	    restore_args[j++] = stralloc2(".", fn->path);
 	    break;
 	case IS_UNKNOWN:
@@ -1649,10 +1664,10 @@ void writer_intermediary(ctl_fd, data_fd, elist)
     int child_pipe[2];
     pid_t pid;
     char buffer[DISK_BLOCK_BYTES];
-    int l, s;
+    int s;
     ssize_t bytes_read;
     amwait_t extractor_status;
-    int max_fd, nfound, ctleof, dataeof;
+    int max_fd, nfound;
     fd_set readset, selectset;
     struct timeval timeout;
 
@@ -1663,32 +1678,28 @@ void writer_intermediary(ctl_fd, data_fd, elist)
      */
     if(data_fd == -1){
 	extract_files_child(ctl_fd, elist);
-	/* NEVER REACHED */
-	exit(1);
-    }
-    else{
-	if(pipe(child_pipe) == -1){
-	    error("extract_list - error setting up pipe to extractor: %s\n",
-		    strerror(errno));
-	    exit(1);
-	}
+	/* NOTREACHED */
     }
 
+    if(pipe(child_pipe) == -1) {
+	error("extract_list - error setting up pipe to extractor: %s\n",
+	    strerror(errno));
+	/* NOTREACHED */
+    }
 
     /* okay, ready to extract. fork a child to do the actual work */
-    if ((pid = fork()) == 0){
+    if ((pid = fork()) == 0) {
 	/* this is the child process */
 	/* never gets out of this clause */
 	aclose(child_pipe[1]);
         extract_files_child(child_pipe[0], elist);
-	/*NOT REACHED*/
+	/* NOTREACHED */
     }
 
-    /* this is the parent */
-    if (pid == -1)
-    {
+    /* This is the parent */
+    if (pid == -1) {
 	error("writer_intermediary - error forking child");
-	exit(1);
+	/* NOTREACHED */
     }
 
     signal(SIGPIPE, handle_sigpipe);
@@ -1700,9 +1711,6 @@ void writer_intermediary(ctl_fd, data_fd, elist)
     FD_SET(data_fd, &readset);
     FD_SET(ctl_fd, &readset);
 
-    ctleof = 0;
-    dataeof = 0;
-
     do {
 	timeout.tv_sec = READ_TIMEOUT;
 	timeout.tv_usec = 0;
@@ -1712,77 +1720,87 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 			&timeout);
 	if(nfound < 0) {
 	    fprintf(stderr,"select error: %s\n", strerror(errno));
-	}
-	else if (nfound == 0) { /* timeout */
-	    /* simulate eof on socket */
-	    ctleof=1;
-	    dataeof = 1;
-	    fprintf(stderr,"timeout waiting for restore\n");
-	    fprintf(stderr,"increase READ_TIMEOUT in recover-src/extract_list.c if your tape is slow\n");
+	    break;
 	}
 
-	if(nfound > 0 && FD_ISSET(ctl_fd, &selectset)) {
+	if (nfound == 0) { /* timeout */
+	    fprintf(stderr, "timeout waiting %d seconds for restore\n",
+		    READ_TIMEOUT);
+	    fprintf(stderr, "increase READ_TIMEOUT in recover-src/extract_list.c if your tape is slow\n");
+	    break;
+	}
+
+	if(FD_ISSET(ctl_fd, &selectset)) {
 	    bytes_read = read(ctl_fd, buffer, sizeof(buffer));
 	    switch(bytes_read) {
-		case -1: {
-			   fprintf(stderr,"writer ctl fd read error: %s",
-				   strerror(errno));
-			   FD_CLR(ctl_fd, &readset); ctleof=1;
-			   break;
-			 }
-		case  0: FD_CLR(ctl_fd, &readset); ctleof=1; break;
-		default: {
-			   char *input = NULL;
-			   printf("%s", buffer);
-			   fflush(stdout);
+		case -1:
+		    if ((errno != EINTR) && (errno != EAGAIN)) {
+		        fprintf(stderr,"writer ctl fd read error: %s",
+			        strerror(errno));
+		        FD_CLR(ctl_fd, &readset);
+		    }
+		    break;
 
-			   /* if prompted for a tape, relay said prompt to the user */
-			   if(match_glob("Insert tape labeled *", buffer)){
-				input = agets(stdin);
-				send_to_tape_server(tape_control_sock, "");
-			        amfree(input);
-			   }
-			   break;
-			 }
+		case  0:
+		    FD_CLR(ctl_fd, &readset);
+		    break;
+
+		default: {
+		    char *input = NULL;
+
+		    fwrite(buffer, bytes_read, 1, stdout);
+		    fflush(stdout);
+
+		    /* if prompted for a tape, relay said prompt to the user */
+		    if(match_glob("Insert tape labeled *", buffer)){
+			input = agets(stdin);
+			send_to_tape_server(tape_control_sock, "");
+			amfree(input);
+		    }
+		    break;
+		}
 	    }
 	}
 
 	/* now read some dump data */
-	if(nfound > 0 && FD_ISSET(data_fd, &selectset)) {
+	if(FD_ISSET(data_fd, &selectset)) {
 	    bytes_read = read(data_fd, buffer, sizeof(buffer));
 	    switch(bytes_read) {
-		case -1: {
-			   fprintf(stderr,"writer data fd read error: %s",
-				   strerror(errno));
-			   FD_CLR(data_fd, &readset); dataeof=1;
-			   break;
-			 }
-		case  0: FD_CLR(data_fd, &readset); dataeof=1; break;
-		default: {
-			   /*
-			    * spit what we got from the server to the child
-			    *  process handling
-			    * actual dumpfile extraction
-			    */
-		           for(l = 0; l < bytes_read; l += s) {
-		               if((s = write(child_pipe[1], buffer + l, bytes_read - l)) < 0) {
-		                   if(got_sigpipe) {
-		                       fprintf(stderr,
-		                          "%s: pipe data writer has quit: %s\n",
-		                          get_pname(), strerror(errno));
-		                   } else {
-		                    error("Write error to extract child: %s\n",
-					    strerror(errno));
-		                   }
-		                   exit(2);
-		               }
-			   }
-			   break;
-		         }
+		case -1:
+		    if ((errno != EINTR)
+		      && (errno != EAGAIN)
+		      && (errno != EWOULDBLOCK)) {
+		        fprintf(stderr,"writer data fd read error: %s",
+				        strerror(errno));
+		        FD_CLR(data_fd, &readset);
+		    }
+		    break;
+
+		case  0:
+		    FD_CLR(data_fd, &readset);
+		    break;
+
+		default:
+		    /*
+		     * spit what we got from the server to the child
+		     *  process handling actual dumpfile extraction
+		     */
+		    if((s = fullwrite(child_pipe[1], buffer, bytes_read)) < 0) {
+			if(got_sigpipe) {
+			    fprintf(stderr,
+				"%s: pipe data writer has quit: %s\n",
+				get_pname(), strerror(errno));
+			} else {
+			    error("Write error to extract child: %s\n",
+				strerror(errno));
+			    /* NOTREACHED */
+			}
+			exit(2);
+		   }
+		   break;
 	    }
 	}
-
-    } while(ctleof == 0 || dataeof == 0);
+    } while(FD_ISSET(ctl_fd, &readset) || FD_ISSET(data_fd, &readset));
 
     aclose(child_pipe[1]);
 
@@ -1791,6 +1809,7 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 	int ret = WEXITSTATUS(extractor_status);
         if(ret == 255) ret = -1;
 	error("Extractor child exited with status %d\n", ret);
+	/* NOTREACHED */
     }
 
     exit(0);
@@ -1960,8 +1979,10 @@ void extract_files P((void))
 	    exit(1);
 	}
 
-	if(tape_data_sock != -1) aclose(tape_data_sock);
-	aclose(tape_control_sock);
+	if(tape_data_sock != -1) {
+	    shutdown(tape_data_sock, SHUT_RDWR);
+	    aclose(tape_data_sock);
+	}
 
 	if (pid == extract_restore_child_pid)
 	{

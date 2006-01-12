@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.119 2006/01/02 22:46:27 martinea Exp $
+ * $Id: amanda.h,v 1.120 2006/01/12 01:57:05 paddy_s Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -234,6 +234,8 @@ struct iovec {
 #include <ctype.h>
 #include <errno.h>
 #include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
 #include <pwd.h>
 #include <signal.h>
 #include <setjmp.h>

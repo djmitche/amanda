@@ -61,26 +61,26 @@ This takes a few minutes only.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
-  <term><option>-b</option><replaceable>&thinsp; blocksize</replaceable></term>
+  <term><option>-b</option><replaceable> blocksize</replaceable></term>
   <listitem>
 <para>record block size (default: 32k)</para>
   </listitem>
   </varlistentry>
   <varlistentry>
-  <term><option>-e</option><replaceable>&thinsp; estsize</replaceable></term>
+  <term><option>-e</option><replaceable> estsize</replaceable></term>
   <listitem>
 <para>estimated tape size (default: 1g == 1024m)</para>
   </listitem>
   </varlistentry>
   <varlistentry>
-  <term><option>-f</option><replaceable>&thinsp; tapedev</replaceable></term>
+  <term><option>-f</option><replaceable> tapedev</replaceable></term>
   <listitem>
 <para>tape device name (default: $TAPE)
 The device to perform the test.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
-  <term><option>-t</option><replaceable>&thinsp; typename</replaceable></term>
+  <term><option>-t</option><replaceable> typename</replaceable></term>
   <listitem>
 <para>tapetype name (default: unknown-tapetype)</para>
 <!-- .PD -->

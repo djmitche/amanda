@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.27 2005/12/21 19:07:50 paddy_s Exp $
+ * $Id: changer.c,v 1.28 2006/01/12 01:57:06 paddy_s Exp $
  *
  * interface routines for tape changers
  */
@@ -293,6 +293,8 @@ static int changer_command(cmd, arg)
     char num2[NUM_STR_SIZE];
     char *cmdstr;
     pid_t pid, changer_pid = 0;
+    struct linger linger;
+    int	ndelay;
 
     if (*tapechanger != '/') {
 	tapechanger = vstralloc(libexecdir, "/", tapechanger, versionsuffix(),
@@ -353,6 +355,18 @@ static int changer_command(cmd, arg)
 	exitcode = 2;
 	goto done;
     }
+
+    linger.l_onoff = 1;
+    linger.l_linger = 60;
+    (void)setsockopt(fd[0], SOL_SOCKET, SO_LINGER,
+	(void *)&linger, (socklen_t)sizeof(linger));
+    (void)setsockopt(fd[1], SOL_SOCKET, SO_LINGER,
+	(void *)&linger, (socklen_t)sizeof(linger));
+    ndelay = 1;
+    (void)setsockopt(fd[0], SOL_TCP, TCP_NODELAY,
+		     &ndelay, sizeof(ndelay));
+    (void)setsockopt(fd[1], SOL_TCP, TCP_NODELAY,
+		     &ndelay, sizeof(ndelay));
 
     switch(changer_pid = fork()) {
     case -1:

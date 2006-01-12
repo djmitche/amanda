@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.51 2005/12/21 19:07:51 paddy_s Exp $
+ * $Id: tapeio.c,v 1.52 2006/01/12 01:57:06 paddy_s Exp $
  *
  * implements generic tape I/O functions
  */
@@ -843,8 +843,10 @@ tapefd_rdlabel(fd, datestamp, label)
     } else if(tapefd_rewind(fd) == -1) {
 	r = stralloc2("rewinding tape: ", strerror(errno));
     } else if((rc = tapefd_read(fd, buffer, buflen)) == -1) {
-	r =  stralloc2( NOT_AMANDA_TAPE_MSG " reading label: ",
-                        strerror(errno));
+	r = vstralloc(NOT_AMANDA_TAPE_MSG, " (",
+                      strerror(errno), ")", NULL);
+    } else if (rc == 0) {
+        r = stralloc2(NOT_AMANDA_TAPE_MSG, " (Read 0 bytes)");
     } else {
 	/* make sure buffer is null-terminated */
 	buffer[rc] = '\0';

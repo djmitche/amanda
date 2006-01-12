@@ -257,7 +257,7 @@ indexdir "@CONFIG_DIR@/@DEFAULT_CONFIG@/index"	# index directory
 
 # define tapetype EXB-8500 {
 # ...
-#     lbl-templ "/usr/local/amanda/config/lbl.exabyte.ps"
+#     lbl-templ "@CONFIG_DIR@/config/lbl.exabyte.ps"
 # }
 
 
@@ -515,7 +515,7 @@ define dumptype root-tar {
     comment "root partitions dumped with tar"
     compress none
     index
-    exclude list "/usr/local/lib/amanda/exclude.gtar"
+#   exclude list "@CONFIG_DIR@/exclude.gtar"
     priority low
 }
 
@@ -634,7 +634,7 @@ define dumptype comp-test {
 #    comment "test dump with fast client compression and server encryption"
 #    compress client fast
 #    encrypt server
-#    server_encrypt "/usr/local/bin/amcrypt"
+#    server_encrypt "@bindir@/amcrypt"
 #    server_decrypt_option "-d"
 #}
 
@@ -668,4 +668,4 @@ define interface le0 {
 # dumptypes, tapetypes and interface definitions among several
 # configurations.
 
-#includefile "/usr/local/amanda.conf.main"
+#includefile "@CONFIG_DIR@/amanda.conf.main"

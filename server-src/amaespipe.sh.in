@@ -42,7 +42,7 @@ AMANDA_HOME=~@CLIENT_LOGIN@
 GPGKEY="$AMANDA_HOME/.gnupg/am_key.gpg"
 FDNUMBER=3
 
-PATH=/usr/bin:/usr/local/bin
+PATH=/usr/bin:/usr/local/bin:/sbin:/usr/sbin
 export PATH
 
 if test x$1 = x-d ; then

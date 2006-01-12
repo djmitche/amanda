@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.117 2005/12/21 19:07:50 paddy_s Exp $
+ * $Id: amcheck.c,v 1.118 2006/01/12 01:57:06 paddy_s Exp $
  *
  * checks for common problems in server and clients
  */
@@ -508,6 +508,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
     int confbad = 0, tapebad = 0, disklow = 0, logbad = 0;
     int userbad = 0, infobad = 0, indexbad = 0, pgmbad = 0;
     int testtape = do_tapechk;
+    tapetype_t *tp = NULL;
 
     switch(pid = fork()) {
     case -1: error("could not fork server check: %s", strerror(errno));
@@ -530,13 +531,16 @@ int start_server_check(fd, do_localchk, do_tapechk)
     fprintf(outf, "Amanda Tape Server Host Check\n");
     fprintf(outf, "-----------------------------\n");
 
+    if (do_localchk || testtape) {
+        tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
+    }
+
     /*
      * Check various server side config file settings.
      */
     if(do_localchk) {
 	char *ColumnSpec;
 	char *errstr = NULL;
-	tapetype_t *tp;
 	char *lbl_templ;
 
 	ColumnSpec = getconf_str(CNF_COLUMNSPEC);
@@ -545,7 +549,6 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    amfree(errstr);
 	    confbad = 1;
 	}
-	tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
 	lbl_templ = tp->lbl_templ;
 	if(strcmp(lbl_templ, "") != 0) {
 	    if(strchr(lbl_templ, '/') == NULL) {
@@ -824,18 +827,25 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    fprintf(outf, "a new tape)\n");
 	} else {
             if (overwrite) {
-                if((errstr = tape_writable(tapename)) != NULL) {
+                char *wrlabel_status;
+                wrlabel_status = tape_wrlabel(tapename, "X", label,
+                                              tp->blocksize * 1024);
+                if (wrlabel_status != NULL) {
                     if (tape_status == 3) {
-                        fprintf(outf, "ERROR: Could not label brand new tape.\n");
+                        fprintf(outf,
+                                "ERROR: Could not label brand new tape: %s\n",
+                                wrlabel_status);
                     } else {
                         fprintf(outf,
-                                "ERROR: tape %s label ok, but is not writable\n",
-                                label);
+                                "ERROR: tape %s label ok, but is not writable (%s)\n",
+                                label, wrlabel_status);
                     }
                     tapebad = 1;
                 } else {
                     if (tape_status != 3) {
-                        fprintf(outf, "Tape %s is writable\n", label);
+                        fprintf(outf, "Tape %s is writable; rewrote label.\n", label);
+                    } else {
+                        fprintf(outf, "Wrote label %s to brand new tape.\n", label);
                     }
                 }
             } else {
@@ -1040,6 +1050,22 @@ int start_server_check(fd, do_localchk, do_tapechk)
 			}
 		    }
 		}
+
+		if ( dp->encrypt == ENCRYPT_SERV_CUST && dp->srv_encrypt ) {
+		  if(access(dp->srv_encrypt, X_OK) == -1) {
+		    fprintf(outf, "ERROR: %s is not executable, server encryption will not work\n",
+			    dp->srv_encrypt );
+		    pgmbad = 1;
+		  }
+		}
+		if ( dp->compress == COMP_SERV_CUST && dp->srvcompprog ) {
+		  if(access(dp->srvcompprog, X_OK) == -1) {
+		    fprintf(outf, "ERROR: %s is not executable, server custom compression will not work\n",
+			    dp->srvcompprog );
+		    pgmbad = 1;
+		  }
+		}
+
 		amfree(disk);
 		remove_disk(&origq, dp);
 	    }
@@ -1236,6 +1262,26 @@ void start_host(hostp)
 		else
 		    calcsize = "";
 
+		if(dp->compress == COMP_CUST &&
+		   !am_has_feature(hostp->features, fe_options_compress_cust)) {
+		  fprintf(outf,
+			  "ERROR: Client %s does not support custom compression.\n",
+			  hostp->hostname);
+		}
+		if(dp->encrypt == ENCRYPT_CUST ) {
+		  if ( !am_has_feature(hostp->features, fe_options_encrypt_cust)) {
+		    fprintf(outf,
+			    "ERROR: Client %s does not support data encryption.\n",
+			    hostp->hostname);
+		    remote_errors++;
+		  } else if ( dp->compress == COMP_SERV_FAST || 
+			      dp->compress == COMP_SERV_BEST ||
+			      dp->compress == COMP_SERV_CUST ) {
+		    fprintf(outf,
+			    "ERROR: %s: Client encryption with server compression is not supported. See amanda.conf(5) for detail.\n", hostp->hostname);
+		    remote_errors++;
+		  } 
+		}
 		if(dp->device) {
 		    l = vstralloc(calcsize,
 				  dp->program, " ",

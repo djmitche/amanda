@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.35 2005/09/20 19:06:54 jrjackson Exp $
+ * $Id: debug.c,v 1.36 2006/01/12 01:57:05 paddy_s Exp $
  *
  * debug log subroutines
  */
@@ -260,6 +260,7 @@ void debug_open()
     int fd = -1;
     int i;
     char *s = NULL;
+    mode_t mask;
 
     /*
      * Do initial setup.
@@ -267,17 +268,31 @@ void debug_open()
     debug_setup_1();
 
     /*
-     * Create the new file.
+     * Create the new file with a unique sequence number.
      */
-    for(i = 0;
-	(dbfilename = get_debug_name(curtime, i)) != NULL
-	&& (s = newvstralloc(s, dbgdir, dbfilename, NULL)) != NULL
-	&& (fd = open(s, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600)) < 0;
-	i++, free(dbfilename)) {}
-    if(dbfilename == NULL) {
-	error("cannot create %s debug file", get_pname());
+    mask = umask(0037); /* Allow the group read bit through */
+    for(i = 0; fd < 0; i++) {
+        if ((dbfilename = get_debug_name(curtime, i)) == NULL) {
+	    error("Cannot create %s debug file", get_pname());
+            /* NOTREACHED */
+        }
+
+        if ((s = newvstralloc(s, dbgdir, dbfilename, NULL)) == NULL) {
+	    error("Cannot allocate %s debug file name memory", get_pname());
+            /* NOTREACHED */
+        }
+        amfree(dbfilename);
+
+        if ((fd = open(s, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0640)) < 0) {
+            if (errno != EEXIST) {
+                error("Cannot create %s debug file: %s",
+                       get_pname(), strerror(errno));
+                /* NOTREACHED */
+            }
+            amfree(s);
+        }
     }
-    amfree(dbfilename);
+    (void)umask(mask); /* Restore mask */
 
     /*
      * Finish setup.
@@ -311,7 +326,7 @@ void debug_reopen(dbfilename, notation)
     } else {
 	s = newvstralloc(s, dbgdir, dbfilename, NULL);
     }
-    if ((fd = open(s, O_RDWR|O_APPEND, 0600)) < 0) {
+    if ((fd = open(s, O_RDWR|O_APPEND)) < 0) {
 	error("cannot reopen %s debug file %s", get_pname(), dbfilename);
     }
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.45 2005/11/19 00:51:20 paddy_s Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.46 2006/01/12 01:57:05 paddy_s Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -2573,32 +2573,15 @@ int GenericRewind(int DeviceFD)
 	  DebugPrint(DEBUG_INFO, SECTION_TAPE,"Close Device\n");
 	  SCSI_CloseDevice(DeviceFD);
 	}
-      /*
-       * Hmm retry it if it fails ?
-       */
-      cnt = 0;
-      true = 1;
-      while (true) 
-	{
-	  if ((errstr = tape_rewind(pDev[DeviceFD].dev)) == NULL)
-	    {
-	      true = 0;
-	      DebugPrint(DEBUG_INFO, SECTION_TAPE,"Rewind OK, (after %d tries)\n", cnt);
-	    } else {
-	      DebugPrint(DEBUG_INFO, SECTION_TAPE,"Rewind failed %s\n",errstr);
-	      /*
-	       * DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericRewind (-1)\n");
-	       * return(-1);
-	       */
-	      cnt++;
-	      sleep(1);
-	      if (cnt > 60)
-		{
-		  DebugPrint(DEBUG_ERROR, SECTION_TAPE,"##### STOP GenericRewind (-1), retry limit reached\n");
-		  return(-1);
-		}
-	    }
-	}
+      /* We don't retry if it fails; that is left to the vtape driver. */
+      if ((errstr = tape_rewind(pDev[DeviceFD].dev)) == NULL) {
+          true = 0;
+          DebugPrint(DEBUG_INFO, SECTION_TAPE,"Rewind OK,\n", cnt);
+      } else {
+          DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Rewind failed %s\n",errstr);
+          DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (-1)\n");
+          return(-1);
+      }
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
     }
 

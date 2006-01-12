@@ -1,9 +1,83 @@
+2006-01-09  John Franks <jrfranks@zmanda.com>
+	* common-src/amanda.h:	Include tcp.h
+	* client-src/amandad.c:	Set TCP_NODELAY and SO_LINGER on sockets.
+	* common-src/dgram.c:	No linger on datagrams
+	* common-src/stream.c:	Set TCP_NODELAY and SO_LINGER on sockets.
+	* common-src/util.c:    Fix fullwrite to return # of bytes written
+				before failure.
+	* example/amanda.conf.in: Cleanup exclude list template.
+				Use configure directlries instead of /usr/local
+	* recover-src/extract_list.c: Cleanup read loops.
+				Use real fullwrite instead of inline versions.
+				Remove extra setting of LINGER on socket.
+	* restore-src/amidxtaped.c: Set TCP_NODELAY and SO_LINGER on sockets.
+	* restore-src/restore.c:Use real fullwrite instead of inline versions.
+	* server-src/changer.c:	Set TCP_NODELAY and SO_LINGER on sockets.
+	* server-src/chunker.c:	Use real fullwrite instead of inline versions.
+	* server-src/driverio.c:Set TCP_NODELAY and SO_LINGER on sockets.
+	* server-src/dumper.c:	Use real fullwrite instead of inline versions.
+
+2006-01-09  Ian Turner <ian@zmanda.com>
+	* changer-src/scsi-changer-driver.c: If there is a problem opening
+	  the device during GenericRewind, don't retry for 201 minutes; give
+	  up after only 200 seconds.
+
+2006-01-09  Ian Turner <ian@zmanda.com>
+	* server-src/taperscan.c: When doing taper-scan algorithm, properly
+	  accept new tapes.
+
+2006-01-09  Ian Turner <ian@zmanda.com>
+	* tape-src/tapeio.c: Generate a more reasonable message when
+	reading an empty tape label on brand-new tapes.
+
+2006-01-09  Ian Turner <ian@zmanda.com>
+	* server-src/amcheck.c: Actually do what the documentation for 
+	  amcheck -w says; that is, overwrite labels on tapes.
+
+2006-01-06  Kevin Till<ktill@zmanda.com>
+	* server-src/amcheck.c: check if encrypt or compress program is 
+	  executable. Check encrypt/compress configuration.
+	* server-src/dumper.c: kill encrypt child when dump is stopped
+	* server-src/amcrypt.sh.in: check for aespipe
+	* server-src/amaespipe.sh.in: adjust PATH
+	* man/xml-source/amtapetype.8.xml: fix format problem.
+
 2006-01-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/extract-list.c: Remove 'U' argument for gtar extraction.
 
 2006-01-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c (flush_open_outputs): Another shutdown is
 	  required.
+
+2006-01-05  John Franks <jrfranks@zmanda.com>
+	* recover-src/extract_list.c: Extend linger timeouts to 60 seconds.
+          Use shutdown() on sockets.
+	  Retry reads in case of EINTR or EAGAIN.
+	* common-src/stream.c: set linger on correct socket.
+	  Extend linger timeouts to 60 seconds.
+	* restore-src/restore.c: Fix compiler warnings.
+	* Call shutdown in more cases.
+
+2006-01-05  John Franks <jrfranks@zmanda.com>
+	* client-src/amandad.c: Set SO_LINGER on sockets.
+	* common-src/dgram.c:   Set SO_LINGER on sockets.
+	* common-src/stream.c:  Set SO_LINGER on sockets.
+	* common-src/util.c:    Return any bytes already read on error or EOF.
+	* recover-src/extract_list.c: Set SO_LINGER on data socket.
+          Fix printf of unterminated string data.
+	  Check return codes on socket header reads.
+	* restore-src/amidxtaped.c: Set SO_LINGER on sockets.
+	  Check return codes on socket header reads.
+	* restore-src/restore.c:
+	  Flush newline after operator prompt.
+	* common-src/debug.c:
+	  Fix memory leak when debug file name already exists.
+	  Print error text upon hard open() error.
+	  Allow group members read only access to log files.
+
+2006-01-05  Kevin Till<ktill@zmanda.com>
+        * restore-src/restore.c: handle sigpipe. Some program (e.g. bzip2) closes reading pipe
+          early when it sees trailing garbage after EOF.
 
 2006-01-02  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/amanda.h: Add a FD_COPY macro.

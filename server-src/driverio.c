@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.74 2005/12/03 13:27:43 martinea Exp $
+ * $Id: driverio.c,v 1.75 2006/01/12 01:57:06 paddy_s Exp $
  *
  * I/O-related functions for driver program
  */
@@ -83,6 +83,8 @@ void startup_tape_process(taper_program)
 char *taper_program;
 {
     int fd[2];
+    struct linger linger;
+    int	ndelay;
 
     if(socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
 	error("taper pipe: %s", strerror(errno));
@@ -94,6 +96,18 @@ char *taper_program;
 	error("taper socketpair 1: descriptor %d out of range (0 .. %d)\n",
 	      fd[1], FD_SETSIZE-1);
     }
+
+    linger.l_onoff = 1;
+    linger.l_linger = 60;
+    (void)setsockopt(fd[0], SOL_SOCKET, SO_LINGER,
+	    (void *)&linger, (socklen_t)sizeof(linger));
+    (void)setsockopt(fd[1], SOL_SOCKET, SO_LINGER,
+	    (void *)&linger, (socklen_t)sizeof(linger));
+    ndelay = 1;
+    (void)setsockopt(fd[0], SOL_TCP, TCP_NODELAY,
+		     &ndelay, sizeof(ndelay));
+    (void)setsockopt(fd[1], SOL_TCP, TCP_NODELAY,
+		     &ndelay, sizeof(ndelay));
 
     switch(taper_pid = fork()) {
     case -1:
@@ -116,9 +130,23 @@ dumper_t *dumper;
 char *dumper_program;
 {
     int fd[2];
+    struct linger linger;
+    int	ndelay;
 
     if(socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
 	error("%s pipe: %s", dumper->name, strerror(errno));
+
+    linger.l_onoff = 1;
+    linger.l_linger = 60;
+    (void)setsockopt(fd[0], SOL_SOCKET, SO_LINGER,
+		     (void *)&linger, (socklen_t)sizeof(linger));
+    (void)setsockopt(fd[1], SOL_SOCKET, SO_LINGER,
+		     (void *)&linger, (socklen_t)sizeof(linger));
+    ndelay = 1;
+    (void)setsockopt(fd[0], SOL_TCP, TCP_NODELAY,
+		     &ndelay, sizeof(ndelay));
+    (void)setsockopt(fd[1], SOL_TCP, TCP_NODELAY,
+		     &ndelay, sizeof(ndelay));
 
     switch(dumper->pid = fork()) {
     case -1:
@@ -171,9 +199,23 @@ chunker_t *chunker;
 char *chunker_program;
 {
     int fd[2];
+    struct linger linger;
+    int	ndelay;
 
     if(socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1)
 	error("%s pipe: %s", chunker->name, strerror(errno));
+
+    linger.l_onoff = 1;
+    linger.l_linger = 60;
+    (void)setsockopt(fd[0], SOL_SOCKET, SO_LINGER,
+		     (void *)&linger, (socklen_t)sizeof(linger));
+    (void)setsockopt(fd[1], SOL_SOCKET, SO_LINGER,
+		     (void *)&linger, (socklen_t)sizeof(linger));
+    ndelay = 1;
+    (void)setsockopt(fd[0], SOL_TCP, TCP_NODELAY,
+		     &ndelay, sizeof(ndelay));
+    (void)setsockopt(fd[1], SOL_TCP, TCP_NODELAY,
+		     &ndelay, sizeof(ndelay));
 
     switch(chunker->pid = fork()) {
     case -1:

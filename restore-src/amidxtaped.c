@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.50 2006/01/04 01:19:30 paddy_s Exp $
+/* $Id: amidxtaped.c,v 1.51 2006/01/12 01:57:05 paddy_s Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -167,7 +167,7 @@ char **argv;
     rst_flags_t *rst_flags;
     int use_changer = 0;
     FILE *prompt_stream = NULL;
-
+    struct linger linger;
     int re_end = 0;
     char *re_config = NULL;
     char *conf_tapetype;
@@ -377,6 +377,7 @@ char **argv;
 
     /* establish a distinct data connection for dumpfile data */
     if(am_has_feature(their_features, fe_recover_splits)){
+	int ndelay;
 	int data_fd;
 	char buffer[32768];
 	
@@ -396,8 +397,20 @@ char **argv;
 	    error("stream_accept failed for client data connection: %s\n",
 		  strerror(errno));
 	}
-	read(data_fd, buffer, sizeof(buffer));
-	
+
+	linger.l_onoff = 1;
+	linger.l_linger = 60;
+	(void)setsockopt(data_fd, SOL_SOCKET, SO_LINGER,
+			 &linger, sizeof(linger));
+	ndelay = 1;
+        (void)setsockopt(data_fd, SOL_TCP, TCP_NODELAY,
+		     &ndelay, sizeof(ndelay));
+  
+	if (read(data_fd, buffer, sizeof(buffer)) <= 0) {
+	    error("security header read failed for client data connection\n");
+	    /* NOTREACHED */
+	}
+
 	check_security_buffer(buffer);
 	rst_flags->pipe_to_fd = data_fd;
         prompt_stream = stdout;

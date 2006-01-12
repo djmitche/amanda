@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.22 2005/10/01 23:44:38 martinea Exp $
+/* $Id: chunker.c,v 1.23 2006/01/12 01:57:06 paddy_s Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -523,7 +523,7 @@ databuf_flush(db)
 {
     struct cmdargs cmdargs;
     int rc = 1;
-    int w, written;
+    int written;
     long left_in_chunk;
     char *arg_filename = NULL;
     char *new_filename = NULL;
@@ -762,19 +762,15 @@ databuf_flush(db)
     /*
      * Write out the buffer
      */
-    written = w = 0;
-    while (db->dataout < db->datain) {
-	if ((w = write(db->fd, db->dataout, db->datain - db->dataout)) < 0) {
-	    break;
-	}
-	db->dataout += w;
-	written += w;
+    written = fullwrite(db->fd, db->dataout, db->datain - db->dataout);
+    if (written > 0) {
+	db->dataout += written;
+	dumpbytes += written;
     }
-    dumpbytes += written;
     dumpsize += (dumpbytes / 1024);
     filesize += (dumpbytes / 1024);
     dumpbytes %= 1024;
-    if (w < 0) {
+    if (written < 0) {
 	if (errno != ENOSPC) {
 	    errstr = squotef("data write: %s", strerror(errno));
 	    rc = 0;
