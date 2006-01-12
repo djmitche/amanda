@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.51 2006/01/12 01:57:05 paddy_s Exp $
+/* $Id: amidxtaped.c,v 1.52 2006/01/12 22:06:34 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -58,6 +58,7 @@ static am_feature_t *our_features = NULL;
 static am_feature_t *their_features = NULL;
 
 static char *get_client_line P((void));
+static char *get_client_line_fd P((int));
 static int check_security P((struct sockaddr_in *, char *, unsigned long,
     char **));
 static void check_security_buffer P((char*));
@@ -114,6 +115,58 @@ get_client_line()
 	strappend(line, "\n");
     }
     dbprintf(("%s: > %s\n", debug_prefix_time(NULL), line));
+    return line;
+}
+
+/* get a line from client - line terminated by \r\n */
+static char *
+get_client_line_fd(fd)
+int fd;
+{
+    static char *line = NULL;
+    static int line_size = 0;
+    char *s = line;
+    char *line1;
+    int len = 0;
+    char c;
+    int nb;
+
+    if(line == NULL) { /* first time only, allocate initial buffer */
+	line = malloc(128);
+	line_size = 128;
+	s = line;
+    }
+    while(1) {
+	nb = read(fd, &c, 1);
+	switch(nb) {
+	    case -1:
+		break;
+	    case 0:
+		break;
+	    default:
+		if(len >= line_size-1) { /* increase buffer size */
+		    line_size *= 2;
+		    line1 = malloc(line_size);
+		    strncpy(line1, line, len);
+		    s = &line1[len];
+		    amfree(line);
+		    line = line1;
+		}
+		*s = c;
+		if(c == '\n') {
+		    if(len > 0 && *(s-1) == '\r') { /* remove '\r' */
+			s--;
+			len--;
+		    }
+		    *s = '\0';
+		    return line;
+		}
+		s++;
+		len++;
+		break;
+	}
+    }
+    line[len] = '\0';
     return line;
 }
 
@@ -379,7 +432,7 @@ char **argv;
     if(am_has_feature(their_features, fe_recover_splits)){
 	int ndelay;
 	int data_fd;
-	char buffer[32768];
+	char *buf;
 	
 	dbprintf(("%s: Client understands split dumpfiles\n", get_pname()));
 	
@@ -406,12 +459,9 @@ char **argv;
         (void)setsockopt(data_fd, SOL_TCP, TCP_NODELAY,
 		     &ndelay, sizeof(ndelay));
   
-	if (read(data_fd, buffer, sizeof(buffer)) <= 0) {
-	    error("security header read failed for client data connection\n");
-	    /* NOTREACHED */
-	}
+	buf = get_client_line_fd(data_fd);
 
-	check_security_buffer(buffer);
+	check_security_buffer(buf);
 	rst_flags->pipe_to_fd = data_fd;
         prompt_stream = stdout;
     }

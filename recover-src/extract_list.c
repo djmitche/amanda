@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.91 2006/01/12 01:57:05 paddy_s Exp $
+ * $Id: extract_list.c,v 1.92 2006/01/12 22:06:34 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1104,17 +1104,13 @@ char *cmd;
     ssize_t s;
     char *end = "\r\n";
 
-    if ((s = fullwrite(tss, cmd, strlen(cmd))) < 0)
+    char *msg = stralloc2(cmd,end);
+    if ((s = fullwrite(tss, msg, strlen(msg))) < 0)
     {
 	perror("Error writing to tape server");
 	exit(101);
     }
-
-    if ((s = fullwrite(tss, end, strlen(end))) < 0)
-    {
-	perror("Error writing to tape server");
-	exit(101);
-    }
+    amfree(msg);
 }
 
 
