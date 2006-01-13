@@ -1,3 +1,9 @@
+2006-01-13  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amcheck.c (start_server_check): Remove unused variable
+	  errstr.
+	* restore-src/restore.c (restore): Remove unused variable s, l and
+	  dataeof.
+
 2006-01-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/extract_list.c (send_to_tape_server): Do only on write.
 	* restore-src/amidxtaped.c (get_client_line_fd): New function to read

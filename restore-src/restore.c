@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.15 2006/01/12 01:57:06 paddy_s Exp $
+ * $Id: restore.c,v 1.16 2006/01/13 12:12:26 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -641,7 +641,6 @@ rst_flags_t *flags;
  */
 {
     int dest = -1, out;
-    int l, s;
     int file_is_compressed;
     int is_continuation = 0;
     int check_for_aborted = 0;
@@ -652,7 +651,7 @@ rst_flags_t *flags;
     struct sigaction act, oact;
     char *buffer;
     int need_compress=0, need_uncompress=0, need_decrypt=0;
-    int stage=0, dataeof=0;
+    int stage=0;
     ssize_t bytes_read;
     struct pipeline {
         int	pipe[2];
