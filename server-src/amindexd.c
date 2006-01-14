@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.81 2005/12/31 00:02:10 paddy_s Exp $
+ * $Id: amindexd.c,v 1.82 2006/01/14 04:37:19 paddy_s Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -884,6 +884,9 @@ char **argv;
     }
 
     set_pname(pgm);
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
 #ifdef FORCE_USERID
 

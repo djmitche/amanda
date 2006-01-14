@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.110 2005/12/25 02:22:33 paddy_s Exp $
+/* $Id: taper.c,v 1.111 2006/01/14 04:37:19 paddy_s Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -234,6 +234,9 @@ char **main_argv;
     safe_fd(-1, 0);
 
     set_pname("taper");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -462,7 +465,7 @@ char *id_string;
 	nulls = alloc(1024); /* lame */
 	memset(nulls, 0, 1024);
 	for(c = 0; c < splitsize ; c++) {
-	    if(write(splitbuffer_fd, nulls, 1024) < 1024){
+	    if(fullwrite(splitbuffer_fd, nulls, 1024) < 1024){
 		buff_err = newvstralloc(buff_err, "write to ", splitbuffer_path,
 					"failed (", strerror(errno), ")", NULL);
 		free_split_buffer();
@@ -1589,26 +1592,23 @@ int buflen;
     bp->size = 0;
     spaceleft = buflen;
 
-    do {
-	cnt = read(fd, curptr, spaceleft);
-	switch(cnt) {
-	case 0:	/* eof */
-	    if(interactive) fputs("r0", stderr);
-	    return bp->size;
-	case -1:	/* error on read, punt */
-	    if(interactive) fputs("rE", stderr);
-	    return -1;
-	default:
-	    if(mode == MODE_PORT_WRITE && splitsize > 0){
-		memcpy(splitbuf_wr_ptr, curptr, (size_t)cnt);
-		splitbuf_wr_ptr += cnt;
-	    }
-	    spaceleft -= cnt;
-	    curptr += cnt;
-	    bp->size += cnt;
+    cnt = fullread(fd, curptr, spaceleft);
+    switch(cnt) {
+    case 0:	/* eof */
+	if(interactive) fputs("r0", stderr);
+	return bp->size;
+    case -1:	/* error on read, punt */
+	if(interactive) fputs("rE", stderr);
+	return -1;
+    default:
+	if(mode == MODE_PORT_WRITE && splitsize > 0){
+	    memcpy(splitbuf_wr_ptr, curptr, (size_t)cnt);
+	    splitbuf_wr_ptr += cnt;
 	}
-
-    } while(spaceleft > 0);
+	spaceleft -= cnt;
+	curptr += cnt;
+	bp->size += cnt;
+    }
 
     if(interactive) fputs("R", stderr);
     return bp->size;

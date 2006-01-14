@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.75 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: selfcheck.c,v 1.76 2006/01/14 04:37:18 paddy_s Exp $
  *
  * do self-check and send back any error messages
  */
@@ -101,6 +101,9 @@ char **argv;
     safe_cd();
 
     set_pname("selfcheck");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

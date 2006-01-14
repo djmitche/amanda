@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.h,v 1.2 2005/12/18 00:42:10 martinea Exp $
+ * $Id: restore.h,v 1.3 2006/01/14 04:37:19 paddy_s Exp $
  *
  * 
  */
@@ -69,7 +69,7 @@ typedef struct rst_flags_s {
 char *make_filename P((dumpfile_t *file));
 int disk_match P((dumpfile_t *file, char *datestamp,
 		    char *hostname, char *diskname, char *level));
-ssize_t read_file_header P((dumpfile_t *file, int tapefd, int isafile,
+void read_file_header P((dumpfile_t *file, int tapefd, int isafile,
 			 rst_flags_t *flags));
 ssize_t restore P((dumpfile_t *file, char *filename, int tapefd, int isafile,
 			rst_flags_t *flags));

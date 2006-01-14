@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.34 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: calcsize.c,v 1.35 2006/01/14 04:37:18 paddy_s Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -112,6 +112,9 @@ char **argv;
     safe_fd(-1, 0);
 
     set_pname("calcsize");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     if (argc < 2) {
 	fprintf(stderr,"Usage: %s file[s]\n",argv[0]);

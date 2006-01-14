@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.102 2005/10/11 01:17:00 vectro Exp $
+ * $Id: amadmin.c,v 1.103 2006/01/14 04:37:19 paddy_s Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -140,6 +140,9 @@ int main(argc, argv)
     safe_cd();
 
     set_pname("amadmin");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

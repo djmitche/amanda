@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.92 2006/01/12 22:06:34 martinea Exp $
+ * $Id: extract_list.c,v 1.93 2006/01/14 04:37:19 paddy_s Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -71,8 +71,6 @@ extern char *localhost;
 /* global pid storage for interrupt handler */
 pid_t extract_restore_child_pid = -1;
 
-int got_sigpipe;
-
 static EXTRACT_LIST *extract_list = NULL;
 static int tape_control_sock = -1;
 static int tape_data_sock = -1;
@@ -85,17 +83,6 @@ unsigned short samba_extract_method = SAMBA_TAR;
 
 static int okay_to_continue P((int, int,  int));
 void writer_intermediary P((int ctl_fd, int data_fd, EXTRACT_LIST *elist));
-
-void handle_sigpipe(sig)
-int sig;
-/*
- * Signal handler for the SIGPIPE signal.  Just sets a flag and returns.
- * The act of catching the signal causes the pipe write() to fail with
- * EINTR.
- */
-{
-    got_sigpipe++;
-}
 
 
 /*
@@ -130,6 +117,7 @@ size_t buflen;
     struct timeval timeout;
     char *dataptr;
     size_t spaceleft;
+    int nfound;
 
     if(datafd < 0 || datafd >= FD_SETSIZE) {
 	errno = EMFILE;					/* out of range */
@@ -144,14 +132,15 @@ size_t buflen;
         FD_SET(datafd, &readset);
         timeout.tv_sec = timeout_s;
         timeout.tv_usec = 0;
-        size = select(datafd+1, &readset, NULL, NULL, &timeout);
-        if(size < 0 ) {
+        nfound = select(datafd+1, &readset, NULL, NULL, &timeout);
+        if(nfound < 0 ) {
             /* Select returned an error. */
 	    fprintf(stderr,"select error: %s\n", strerror(errno));
+            size = -1;
 	    break;
         }
 
-	if (size == 0) {
+	if (nfound == 0) {
             /* Select timed out. */
             if (timeout_s != 0)  {
                 /* Not polling: a real read timeout */
@@ -159,24 +148,33 @@ size_t buflen;
                 fprintf(stderr,"increase READ_TIMEOUT in recover-src/extract_list.c if your tape is slow\n");
             }
             errno = ETIMEDOUT;
-	    size = -1;
+            size = -1;
 	    break;
         }
 
+	if(!FD_ISSET(datafd, &readset))
+	    continue;
+
         /* Select says data is available, so read it.  */
         size = read(datafd, dataptr, spaceleft);
-        if (size <= 0) {
-            fprintf(stderr, "read_buffer(): read error - %s",
+        if (size < 0) {
+	    if ((errno == EINTR) || (errno == EAGAIN)) {
+		continue;
+	    }
+	    if (errno != EPIPE) {
+	        fprintf(stderr, "read_buffer: read error - %s",
 		    strerror(errno));
-	    break;	
-        } else {
-            spaceleft -= size;
-            dataptr += size;
-        }
+	        break;
+	    }
+	    size = 0;
+	}
+        spaceleft -= size;
+        dataptr += size;
     } while ((size > 0) && (spaceleft > 0));
 
     return (((buflen-spaceleft) > 0) ? (buflen-spaceleft) : size);
 }
+
 
 EXTRACT_LIST *first_tape_list P((void))
 {
@@ -1101,13 +1099,11 @@ static void send_to_tape_server(tss, cmd)
 int tss;
 char *cmd;
 {
-    ssize_t s;
-    char *end = "\r\n";
+    char *msg = stralloc2(cmd, "\r\n");
 
-    char *msg = stralloc2(cmd,end);
-    if ((s = fullwrite(tss, msg, strlen(msg))) < 0)
+    if (fullwrite(tss, msg, strlen(msg)) < 0)
     {
-	perror("Error writing to tape server");
+	error("Error writing to tape server");
 	exit(101);
     }
     amfree(msg);
@@ -1155,7 +1151,6 @@ int fsf;
 	return -1;
     }
     if (my_port >= IPPORT_RESERVED) {
-	shutdown(tape_control_sock, SHUT_RDWR);
 	aclose(tape_control_sock);
 	printf("did not get a reserved port: %d\n", my_port);
 	return -1;
@@ -1354,7 +1349,7 @@ int fsf;
 }
 
 
-size_t read_file_header(buffer, file, buflen, tapedev)
+void read_file_header(buffer, file, buflen, tapedev)
 char *buffer;
 dumpfile_t *file;
 size_t buflen;
@@ -1371,17 +1366,17 @@ int tapedev;
 	      strerror(errno));
 	/* NOTREACHED */
     }
-    else if((size_t)bytes_read < buflen) {
+
+    if((size_t)bytes_read < buflen) {
 	fprintf(stderr, "%s: short block %d byte%s\n",
 		get_pname(), (int)bytes_read, (bytes_read == 1) ? "" : "s");
 	print_header(stdout, file);
 	error("Can't read file header");
 	/* NOTREACHED */
     }
-    else { /* bytes_read == buflen */
-	parse_file_header(buffer, file, bytes_read);
-    }
-    return((size_t)bytes_read);
+
+    /* bytes_read == buflen */
+    parse_file_header(buffer, file, bytes_read);
 }
 
 enum dumptypes {IS_UNKNOWN, IS_DUMP, IS_GNUTAR, IS_TAR, IS_SAMBA, IS_SAMBA_TAR};
@@ -1399,7 +1394,6 @@ static void extract_files_child(in_fd, elist)
     enum dumptypes dumptype = IS_UNKNOWN;
     char buffer[DISK_BLOCK_BYTES];
     dumpfile_t file;
-    size_t buflen;
     size_t len_program;
     char *cmd = NULL;
     int passwd_field = -1;
@@ -1419,9 +1413,9 @@ static void extract_files_child(in_fd, elist)
 
     /* read the file header */
     fh_init(&file);
-    buflen=read_file_header(buffer, &file, sizeof(buffer), STDIN_FILENO);
+    read_file_header(buffer, &file, sizeof(buffer), STDIN_FILENO);
 
-    if(buflen == 0 || file.type != F_DUMPFILE) {
+    if(file.type != F_DUMPFILE) {
 	print_header(stdout, &file);
 	error("bad header");
 	/* NOTREACHED */
@@ -1660,7 +1654,7 @@ void writer_intermediary(ctl_fd, data_fd, elist)
     int child_pipe[2];
     pid_t pid;
     char buffer[DISK_BLOCK_BYTES];
-    int s;
+    ssize_t s;
     ssize_t bytes_read;
     amwait_t extractor_status;
     int max_fd, nfound;
@@ -1698,7 +1692,6 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 	/* NOTREACHED */
     }
 
-    signal(SIGPIPE, handle_sigpipe);
     aclose(child_pipe[0]);
 
     if(data_fd > ctl_fd) max_fd = data_fd+1;
@@ -1731,8 +1724,10 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 	    switch(bytes_read) {
 		case -1:
 		    if ((errno != EINTR) && (errno != EAGAIN)) {
-		        fprintf(stderr,"writer ctl fd read error: %s",
-			        strerror(errno));
+			if (errno != EPIPE) {
+		            fprintf(stderr,"writer ctl fd read error: %s",
+			    	    strerror(errno));
+			}
 		        FD_CLR(ctl_fd, &readset);
 		    }
 		    break;
@@ -1763,11 +1758,11 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 	    bytes_read = read(data_fd, buffer, sizeof(buffer));
 	    switch(bytes_read) {
 		case -1:
-		    if ((errno != EINTR)
-		      && (errno != EAGAIN)
-		      && (errno != EWOULDBLOCK)) {
-		        fprintf(stderr,"writer data fd read error: %s",
-				        strerror(errno));
+		    if ((errno != EINTR) && (errno != EAGAIN)) {
+			if (errno != EPIPE) {
+			    fprintf(stderr,"writer data fd read error: %s",
+				            strerror(errno));
+			}
 		        FD_CLR(data_fd, &readset);
 		    }
 		    break;
@@ -1781,17 +1776,15 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 		     * spit what we got from the server to the child
 		     *  process handling actual dumpfile extraction
 		     */
-		    if((s = fullwrite(child_pipe[1], buffer, bytes_read)) < 0) {
-			if(got_sigpipe) {
-			    fprintf(stderr,
-				"%s: pipe data writer has quit: %s\n",
-				get_pname(), strerror(errno));
-			} else {
-			    error("Write error to extract child: %s\n",
-				strerror(errno));
+		    if((s = fullwrite(child_pipe[1], buffer, bytes_read)) < 0){
+			if(errno == EPIPE) {
+			    error("%s: pipe data reader has quit: %s\n",
+				    get_pname(), strerror(errno));
 			    /* NOTREACHED */
 			}
-			exit(2);
+			error("Write error to extract child: %s\n",
+				    strerror(errno));
+			/* NOTREACHED */
 		   }
 		   break;
 	    }
@@ -1976,7 +1969,6 @@ void extract_files P((void))
 	}
 
 	if(tape_data_sock != -1) {
-	    shutdown(tape_data_sock, SHUT_RDWR);
 	    aclose(tape_data_sock);
 	}
 

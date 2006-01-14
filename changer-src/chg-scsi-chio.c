@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi-chio.c,v 1.7 2003/01/26 19:20:44 martinea Exp $
+ *  $Id: chg-scsi-chio.c,v 1.8 2006/01/14 04:37:18 paddy_s Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -636,6 +636,10 @@ int main(int argc, char *argv[])
   char *scsitapedevice = NULL;
 
   set_pname("chg-scsi");
+
+  /* Don't die when child closes pipe */
+  signal(SIGPIPE, SIG_IGN);
+
   dbopen();
   parse_args(argc,argv,&com);
 

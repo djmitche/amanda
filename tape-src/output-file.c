@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.9 2003/05/29 20:13:41 martinea Exp $
+ * $Id: output-file.c,v 1.10 2006/01/14 04:37:20 paddy_s Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -816,7 +816,7 @@ file_tapefd_write(fd, buffer, count)
 	volume_info[fd].at_bof = 0;
 	volume_info[fd].at_eom = 1;
     }
-    result = write(file_fd, buffer, write_count);
+    result = fullwrite(file_fd, buffer, write_count);
     if (result >= 0) {
 	volume_info[fd].last_operation_write = 1;
 	pos = volume_info[fd].file_current;

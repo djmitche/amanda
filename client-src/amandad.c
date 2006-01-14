@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.60 2006/01/12 01:57:05 paddy_s Exp $
+ * $Id: amandad.c,v 1.61 2006/01/14 04:37:18 paddy_s Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -192,6 +192,9 @@ main(argc, argv)
 
     set_pname(pgm);
 
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
+
 #ifdef USE_DBMALLOC
     dbmalloc_info.start.size = malloc_inuse(&dbmalloc_info.start.hist);
 #endif
@@ -277,8 +280,6 @@ main(argc, argv)
 	if (strncmp(argv[i], "-tcp=", strlen("-tcp=")) == 0) {
 	    struct sockaddr_in sin;
 	    int sock, n;
-    	    struct linger linger;
-	    int	ndelay;
 
 	    argv[i] += strlen("-tcp=");
 	    sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -295,14 +296,6 @@ main(argc, argv)
 	    listen(sock, 10);
 	    n = sizeof(sin);
 	    in = out = accept(sock, (struct sockaddr *)&sin, &n);
-
-	    linger.l_onoff = 1;
-	    linger.l_linger = 60;
-	    (void)setsockopt(in, SOL_SOCKET, SO_LINGER,
-			     &linger, sizeof(linger));
-	    ndelay = 1;
-	    setsockopt(in, SOL_TCP, TCP_NODELAY,
-			     &ndelay, sizeof(ndelay));
 	}
 #endif
     }
@@ -719,8 +712,10 @@ s_repwait(as, action, pkt)
 	do_sendpkt(as->security_handle, &as->rep_pkt);
 	return (A_FINISH);
     }
-    n = read(as->repfd, as->repbuf + as->repbufsize,
-	sizeof(as->repbuf) - as->repbufsize - 1);
+    do {
+	n = read(as->repfd, as->repbuf + as->repbufsize,
+		 sizeof(as->repbuf) - as->repbufsize - 1);
+    } while ((n < 0) && ((errno == EINTR) || (errno == EAGAIN)));
     if (n < 0) {
 	const char *errstr = strerror(errno);
 	dbprintf(("%s: read error on reply pipe: %s\n",
@@ -1016,7 +1011,9 @@ process_netfd(cookie)
     struct active_service *as = dh->as;
     int n;
 
-    n = read(dh->fd, as->databuf, sizeof(as->databuf));
+    do {
+	n = read(dh->fd, as->databuf, sizeof(as->databuf));
+    } while ((n < 0) && ((errno == EINTR) || (errno == EAGAIN)));
 
     /*
      * Process has died.

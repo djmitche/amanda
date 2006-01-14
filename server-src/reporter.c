@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.102 2005/12/20 19:25:03 martinea Exp $
+ * $Id: reporter.c,v 1.103 2006/01/14 04:37:19 paddy_s Exp $
  *
  * nightly Amanda Report generator
  */
@@ -301,6 +301,9 @@ main(argc, argv)
     safe_fd(-1, 0);
 
     set_pname("amreport");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

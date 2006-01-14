@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.21 2005/10/02 13:48:05 martinea Exp $
+ * $Id: tapetype.c,v 1.22 2006/01/14 04:37:20 paddy_s Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -321,6 +321,9 @@ int main(argc, argv)
   } else {
     sProgName++;
   }
+
+  /* Don't die when child closes pipe */
+  signal(SIGPIPE, SIG_IGN);
 
   estsize = 1024 * 1024;			/* assume 1 GByte for now */
   tapedev = getenv("TAPE");

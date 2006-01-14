@@ -1,3 +1,39 @@
+2006-01-13  John Franks <jrfranks@zmanda.com>
+	* client-src/amandad.c:      Remove SO_LINGER and TCP_NDELAY.
+	                             Loop on I/O if EINTR or EAGAIN.
+	* client-src/noop.c:         Loop on I/O if EINTR or EAGAIN.
+	* client-src/sendbackup.c:   Remove SIGPIPE handler.
+	                             Loop on I/O if EINTR or EAGAIN.
+	                             Check for EPIPE on writes.
+	* common-src/bsd-security.c: Loop on I/O if EINTR or EAGAIN.
+	* common-src/stream.c:       Remove SO_LINGER and TCP_NDELAY.
+	* common-src/util.c:         Loop on I/O if EINTR or EAGAIN.
+	* recover-src/amrecover.c:   Write commanda atomically in sigint handler
+	* recover-src/extract_list.c:Remove SIGPIPE handler.
+	                             Loop on I/O if EINTR or EAGAIN.
+	                             Check for EPIPE on writes.
+	                             Remove shutdown functions.
+	* restore-src/amfetchdump.c: Remove SIGPIPE handler.
+	* restore-src/amidxtaped.c:  Remove SO_LINGER and TCP_NDELAY.
+	                             Remove SIGPIPE handler.
+	                             read_file_header does not return if it
+	                             Fix infinite loop on EOF or error and
+	                             fail if memory reallocation failure in
+	                             get_client_line_fd.
+	* restore-src/restore.c:     Remove SIGPIPE handler.
+	                             Loop on I/O if EINTR or EAGAIN.
+	                             Remove shutdown functions.
+	                             Simplify read loop.
+	* restore-src/restore.h:     Change read_file_header to return void
+	* server-src/amcheck.c:      Use fullread() to handel EINTR etc.
+				     Remove unused variable.
+	* server-src/changer.c:      Remove SO_LINGER and TCP_NDELAY.
+                                     Use fullwrite on socket.
+	* server-src/driverio.c:     Remove SO_LINGER and TCP_NDELAY.
+	* server-src/taper.c:        Use fullwrite() to write data.
+	                             Use fullread() to read data.
+	* tape-src/output-file.c;    Use fullwrite() to write data.
+
 2006-01-13  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amcheck.c (start_server_check): Remove unused variable
 	  errstr.

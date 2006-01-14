@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.156 2005/12/03 13:31:28 martinea Exp $
+ * $Id: driver.c,v 1.157 2006/01/14 04:37:19 paddy_s Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -162,6 +162,7 @@ main(main_argc, main_argv)
 
     set_pname("driver");
 
+    /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);

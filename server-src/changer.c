@@ -24,11 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.28 2006/01/12 01:57:06 paddy_s Exp $
+ * $Id: changer.c,v 1.29 2006/01/14 04:37:19 paddy_s Exp $
  *
  * interface routines for tape changers
  */
 #include "amanda.h"
+#include "util.h"
 #include "conffile.h"
 #include "version.h"
 
@@ -293,8 +294,6 @@ static int changer_command(cmd, arg)
     char num2[NUM_STR_SIZE];
     char *cmdstr;
     pid_t pid, changer_pid = 0;
-    struct linger linger;
-    int	ndelay;
 
     if (*tapechanger != '/') {
 	tapechanger = vstralloc(libexecdir, "/", tapechanger, versionsuffix(),
@@ -356,18 +355,6 @@ static int changer_command(cmd, arg)
 	goto done;
     }
 
-    linger.l_onoff = 1;
-    linger.l_linger = 60;
-    (void)setsockopt(fd[0], SOL_SOCKET, SO_LINGER,
-	(void *)&linger, (socklen_t)sizeof(linger));
-    (void)setsockopt(fd[1], SOL_SOCKET, SO_LINGER,
-	(void *)&linger, (socklen_t)sizeof(linger));
-    ndelay = 1;
-    (void)setsockopt(fd[0], SOL_TCP, TCP_NODELAY,
-		     &ndelay, sizeof(ndelay));
-    (void)setsockopt(fd[1], SOL_TCP, TCP_NODELAY,
-		     &ndelay, sizeof(ndelay));
-
     switch(changer_pid = fork()) {
     case -1:
 	changer_resultstr = vstralloc ("<error> ",
@@ -386,7 +373,7 @@ static int changer_command(cmd, arg)
 				           "\": ",
 				           strerror(errno),
 				           NULL);
-	    (void)write(fd[1], changer_resultstr, strlen(changer_resultstr));
+	    (void)fullwrite(fd[1], changer_resultstr, strlen(changer_resultstr));
 	    exit(1);
 	}
 	aclose(fd[0]);
@@ -398,7 +385,7 @@ static int changer_command(cmd, arg)
 				           "\": ",
 				           strerror(errno),
 				           NULL);
-	    (void)write(2, changer_resultstr, strlen(changer_resultstr));
+	    (void)fullwrite(2, changer_resultstr, strlen(changer_resultstr));
 	    exit(1);
 	}
 	if(arg) {
@@ -412,7 +399,7 @@ static int changer_command(cmd, arg)
 				       "\": ",
 				       strerror(errno),
 				       NULL);
-	(void)write(2, changer_resultstr, strlen(changer_resultstr));
+	(void)fullwrite(2, changer_resultstr, strlen(changer_resultstr));
 	exit(1);
     default:
 	aclose(fd[1]);

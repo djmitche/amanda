@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.69 2005/12/25 02:22:33 paddy_s Exp $
+ * $Id: diskfile.c,v 1.70 2006/01/14 04:37:19 paddy_s Exp $
  *
  * read disklist file
  */
@@ -1107,6 +1107,9 @@ main(argc, argv)
   safe_fd(-1, 0);
 
   set_pname("diskfile");
+
+  /* Don't die when child closes pipe */
+  signal(SIGPIPE, SIG_IGN);
 
   malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

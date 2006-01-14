@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.52 2006/01/12 22:06:34 martinea Exp $
+/* $Id: amidxtaped.c,v 1.53 2006/01/14 04:37:19 paddy_s Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -126,49 +126,52 @@ int fd;
     static char *line = NULL;
     static int line_size = 0;
     char *s = line;
-    char *line1;
     int len = 0;
     char c;
     int nb;
 
     if(line == NULL) { /* first time only, allocate initial buffer */
-	line = malloc(128);
+	s = line = malloc(128);
 	line_size = 128;
-	s = line;
     }
     while(1) {
 	nb = read(fd, &c, 1);
-	switch(nb) {
-	    case -1:
-		break;
-	    case 0:
-		break;
-	    default:
-		if(len >= line_size-1) { /* increase buffer size */
-		    line_size *= 2;
-		    line1 = malloc(line_size);
-		    strncpy(line1, line, len);
-		    s = &line1[len];
-		    amfree(line);
-		    line = line1;
-		}
-		*s = c;
-		if(c == '\n') {
-		    if(len > 0 && *(s-1) == '\r') { /* remove '\r' */
-			s--;
-			len--;
-		    }
-		    *s = '\0';
-		    return line;
-		}
-		s++;
-		len++;
-		break;
+	if (nb <= 0) {
+	    /* EOF or error */
+	    if ((nb <= 0) && ((errno == EINTR) || (errno == EAGAIN))) {
+		/* Keep looping if failure is temporary */
+		continue;
+	    }
+	    dbprintf(("%s: Control pipe read error - %s\n",
+		pgm, strerror(errno)));
+	    break;
 	}
+
+	if(len >= line_size-1) { /* increase buffer size */
+	    line_size *= 2;
+	    line = realloc(line, line_size);
+	    if (line == NULL) {
+		error("Memory reallocation failure");
+		/* NOTREACHED */
+	    }
+	    s = &line[len];
+	}
+	*s = c;
+	if(c == '\n') {
+	    if(len > 0 && *(s-1) == '\r') { /* remove '\r' */
+		s--;
+		len--;
+	    }
+	    *s = '\0';
+	    return line;
+	}
+	s++;
+	len++;
     }
     line[len] = '\0';
     return line;
 }
+
 
 void check_security_buffer(buffer)
      char *buffer;
@@ -220,7 +223,6 @@ char **argv;
     rst_flags_t *rst_flags;
     int use_changer = 0;
     FILE *prompt_stream = NULL;
-    struct linger linger;
     int re_end = 0;
     char *re_config = NULL;
     char *conf_tapetype;
@@ -228,6 +230,9 @@ char **argv;
 
     safe_fd(-1, 0);
     safe_cd();
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     rst_flags = new_rst_flags();
     rst_flags->mask_splits = 1; /* for older clients */
@@ -430,7 +435,6 @@ char **argv;
 
     /* establish a distinct data connection for dumpfile data */
     if(am_has_feature(their_features, fe_recover_splits)){
-	int ndelay;
 	int data_fd;
 	char *buf;
 	
@@ -451,14 +455,6 @@ char **argv;
 		  strerror(errno));
 	}
 
-	linger.l_onoff = 1;
-	linger.l_linger = 60;
-	(void)setsockopt(data_fd, SOL_SOCKET, SO_LINGER,
-			 &linger, sizeof(linger));
-	ndelay = 1;
-        (void)setsockopt(data_fd, SOL_TCP, TCP_NODELAY,
-		     &ndelay, sizeof(ndelay));
-  
 	buf = get_client_line_fd(data_fd);
 
 	check_security_buffer(buf);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.39 2005/12/25 02:22:33 paddy_s Exp $
+ * $Id: amtape.c,v 1.40 2006/01/14 04:37:19 paddy_s Exp $
  *
  * tape changer interface program
  */
@@ -124,6 +124,9 @@ char **argv;
     safe_cd();
 
     set_pname("amtape");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

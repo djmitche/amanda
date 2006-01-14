@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.42 2005/10/02 13:48:04 martinea Exp $
+ * $Id: amlabel.c,v 1.43 2006/01/14 04:37:19 paddy_s Exp $
  *
  * write an Amanda label on a tape
  */
@@ -90,6 +90,9 @@ int main(argc, argv)
     safe_cd();
 
     set_pname("amlabel");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

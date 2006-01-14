@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.119 2006/01/13 12:12:26 martinea Exp $
+ * $Id: amcheck.c,v 1.120 2006/01/14 04:37:19 paddy_s Exp $
  *
  * checks for common problems in server and clients
  */
@@ -108,9 +108,11 @@ char **argv;
     safe_fd(-1, 0);
     safe_cd();
 
+    set_pname("amcheck");
+
+    /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
-    set_pname("amcheck");
     dbopen();
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
@@ -302,7 +304,7 @@ char **argv;
 	if(lseek(tempfd, 0, 0) == -1)
 	    error("seek temp file: %s", strerror(errno));
 
-	while((size=read(tempfd, buffer, sizeof(buffer))) > 0) {
+	while((size=fullread(tempfd, buffer, sizeof(buffer))) > 0) {
 	    if (fullwrite(mainfd, buffer, size) < 0)
 		error("write main file: %s", strerror(errno));
 	}

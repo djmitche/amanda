@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.23 2006/01/12 01:57:06 paddy_s Exp $
+/* $Id: chunker.c,v 1.24 2006/01/14 04:37:19 paddy_s Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -121,6 +121,9 @@ main(main_argc, main_argv)
     safe_fd(-1, 0);
 
     set_pname("chunker");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

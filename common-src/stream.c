@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.30 2006/01/12 01:57:05 paddy_s Exp $
+ * $Id: stream.c,v 1.31 2006/01/14 04:37:19 paddy_s Exp $
  *
  * functions for managing stream sockets
  */
@@ -49,8 +49,6 @@ int sendsize, recvsize;
 #endif
     struct sockaddr_in server;
     int save_errno;
-    struct linger linger;
-    int	ndelay;
 
     *portp = -1;				/* in case we error exit */
     if((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -140,14 +138,6 @@ out:
     }
 #endif
 
-    linger.l_onoff = 1;
-    linger.l_linger = 60;
-    (void)setsockopt(server_socket, SOL_SOCKET, SO_LINGER,
-	(void *)&linger, (socklen_t)sizeof(linger));
-    ndelay = 1;
-    (void)setsockopt(server_socket, SOL_TCP, TCP_NODELAY,
-		     &ndelay, sizeof(ndelay));
-
     *portp = (int) ntohs(server.sin_port);
     dbprintf(("%s: stream_server: waiting for connection: %s.%d\n",
 	      debug_prefix_time(NULL),
@@ -177,8 +167,6 @@ stream_client_internal(hostname,
     struct hostent *hostp;
     int save_errno;
     char *f;
-    struct linger linger;
-    int	ndelay;
 
     f = priv ? "stream_client_privileged" : "stream_client";
 
@@ -226,13 +214,7 @@ stream_client_internal(hostname,
         return -1;
     }
 #endif
-    linger.l_onoff = 1;
-    linger.l_linger = 60;
-    (void)setsockopt(client_socket, SOL_SOCKET, SO_LINGER,
-	(void *)&linger, (socklen_t)sizeof(linger));
-    ndelay = 1;
-    (void)setsockopt(client_socket, SOL_TCP, TCP_NODELAY,
-		     &ndelay, sizeof(ndelay));
+
     memset(&claddr, 0, sizeof(claddr));
     claddr.sin_family = AF_INET;
     claddr.sin_addr.s_addr = INADDR_ANY;

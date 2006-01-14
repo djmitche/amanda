@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.120 2005/12/21 19:07:50 paddy_s Exp $
+ * $Id: conffile.c,v 1.121 2006/01/14 04:37:19 paddy_s Exp $
  *
  * read configuration file
  */
@@ -3527,6 +3527,9 @@ main(argc, argv)
   safe_fd(-1, 0);
 
   set_pname("conffile");
+
+  /* Don't die when child closes pipe */
+  signal(SIGPIPE, SIG_IGN);
 
   malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

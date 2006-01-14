@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.9 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: amtrmlog.c,v 1.10 2006/01/14 04:37:19 paddy_s Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -71,6 +71,9 @@ char **argv;
     safe_cd();
 
     set_pname("amtrmlog");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     if (argc > 1 && strcmp(argv[1], "-t") == 0) {
 	amtrmidx_debug = 1;

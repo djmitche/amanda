@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.33 2005/09/30 19:13:26 martinea Exp $
+ * $Id: getfsent.c,v 1.34 2006/01/14 04:37:18 paddy_s Exp $
  *
  * generic version of code to read fstab
  */
@@ -622,6 +622,9 @@ int main(argc, argv)
     safe_fd(-1, 0);
 
     set_pname("getfsent");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

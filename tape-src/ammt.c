@@ -156,6 +156,9 @@ main(int argc, char **argv) {
     int save_errno;
     char *s;
 
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
+
     if((pgm = strrchr(argv[0], '/')) != NULL) {
 	pgm++;
     } else {

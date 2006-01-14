@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.4 2005/12/18 00:42:10 martinea Exp $
+ * $Id: amfetchdump.c,v 1.5 2006/01/14 04:37:19 paddy_s Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -42,7 +42,6 @@
 
 #define CREAT_MODE	0640
 
-static int got_sigpipe;
 extern char *rst_conf_logdir;
 extern char *rst_conf_logfile;
 extern char *config_dir;
@@ -71,18 +70,6 @@ void errexit()
  */
 {
     exit(2);
-}
-
-
-void handle_sigpipe(sig)
-int sig;
-/*
- * Signal handler for the SIGPIPE signal.  Just sets a flag and returns.
- * The act of catching the signal causes the pipe write() to fail with
- * EINTR.
- */
-{
-    got_sigpipe++;
 }
 
 
@@ -283,10 +270,12 @@ char **argv;
 
     set_pname("amfetchdump");
 
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
+
     erroutput_type = ERR_INTERACTIVE;
 
     onerror(errexit);
-    signal(SIGPIPE, handle_sigpipe);
 
     if(argc <= 1) usage();
 

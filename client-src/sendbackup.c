@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.75 2005/12/25 02:22:33 paddy_s Exp $
+ * $Id: sendbackup.c,v 1.76 2006/01/14 04:37:18 paddy_s Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -72,7 +72,6 @@ int pipefork P((void (*func) P((void)), char *fname, int *stdinfd,
 		int stdoutfd, int stderrfd));
 void parse_backup_messages P((int mesgin));
 static void process_dumpline P((char *str));
-static void index_closed P((int));
 static void save_fd P((int *, int));
 
 char *optionstr(options)
@@ -167,6 +166,9 @@ char **argv;
     safe_cd();
 
     set_pname("sendbackup");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -727,12 +729,6 @@ char *str;
 
 static volatile int index_finished = 0;
 
-static void index_closed(sig)
-int sig;
-{
-  index_finished = 1;
-}
-
 static void save_fd(fd, min)
 int *fd, min;
 {
@@ -754,7 +750,6 @@ void start_index(createindex, input, mesg, index, cmd)
 int createindex, input, mesg, index;
 char *cmd;
 {
-  struct sigaction act, oact;
   int pipefd[2];
   FILE *pipe_fp;
   int exitcode;
@@ -797,16 +792,6 @@ char *cmd;
     }
   }
 
-  /* set up a signal handler for SIGPIPE for when the pipe is finished
-     creating the index file */
-  /* at that point we obviously want to stop writing to it */
-  act.sa_handler = index_closed;
-  sigemptyset(&act.sa_mask);
-  act.sa_flags = 0;
-  if (sigaction(SIGPIPE, &act, &oact) != 0) {
-    error("couldn't set index SIGPIPE handler [%s]", strerror(errno));
-  }
-
   if ((pipe_fp = popen(cmd, "w")) == NULL) {
     error("couldn't start index creator [%s]", strerror(errno));
   }
@@ -819,9 +804,9 @@ char *cmd;
     int bytes_written;
     int just_written;
 
-    bytes_read = read(0, buffer, sizeof(buffer));
-    if ((bytes_read < 0) && (errno == EINTR))
-      continue;
+    do {
+	bytes_read = read(0, buffer, sizeof(buffer));
+    } while ((bytes_read < 0) && ((errno == EINTR) || (errno == EAGAIN)));
 
     if (bytes_read < 0) {
       error("index tee cannot read [%s]", strerror(errno));
@@ -833,36 +818,31 @@ char *cmd;
     /* write the stuff to the subprocess */
     ptr = buffer;
     bytes_written = 0;
-    while (bytes_read > bytes_written && !index_finished) {
-      just_written = write(fileno(pipe_fp), ptr, bytes_read - bytes_written);
-      if (just_written < 0) {
-	  /* the signal handler may have assigned to index_finished
-	   * just as we waited for write() to complete. */
-	  if (!index_finished) {
-	      dbprintf(("%s: index tee cannot write to index creator [%s]\n",
-			debug_prefix_time(NULL), strerror(errno)));
-	      index_finished = 1;
+    just_written = fullwrite(fileno(pipe_fp), ptr, bytes_read);
+    if (just_written < 0) {
+	/* the signal handler may have assigned to index_finished
+	 * just as we waited for write() to complete.
+	 */
+	if (errno != EPIPE) {
+	    dbprintf(("%s: index tee cannot write to index creator [%s]\n",
+			    debug_prefix_time(NULL), strerror(errno)));
 	}
-      } else {
+    } else {
 	bytes_written += just_written;
 	ptr += just_written;
-      }
     }
 
     /* write the stuff to stdout, ensuring none lost when interrupt
        occurs */
     ptr = buffer;
     bytes_written = 0;
-    while (bytes_read > bytes_written) {
-      just_written = write(3, ptr, bytes_read - bytes_written);
-      if ((just_written < 0) && (errno == EINTR))
-	continue;
-      if (just_written < 0) {
+    just_written = fullwrite(3, ptr, bytes_read);
+    if (just_written < 0) {
 	error("index tee cannot write [%s]", strerror(errno));
-      } else {
+	/* NOTREACHED */
+    } else {
 	bytes_written += just_written;
 	ptr += just_written;
-      }
     }
   }
 

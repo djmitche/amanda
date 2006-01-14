@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: noop.c,v 1.2 2003/06/05 17:26:59 martinea Exp $
+ * $Id: noop.c,v 1.3 2006/01/14 04:37:18 paddy_s Exp $
  *
  * send back features.  This was pulled out to it's own program for
  * consistancy and because it's a hell of a lot easier to code in
@@ -47,8 +47,15 @@ main(argc, argv)
     am_feature_t *our_features = NULL;
     char *our_feature_string = NULL;
     char *options;
+    int n;
 
-    while (read(0, &ch, 1) > 0) {}	/* soak up any stdin */
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
+
+    do {
+ 	/* soak up any stdin */
+	n = read(0, &ch, 1);
+    } while ((n > 0) || ((n < 0) && ((errno == EINTR) || (errno == EAGAIN))));
     our_features = am_init_feature_set();
     our_feature_string = am_feature_to_string(our_features);
     options = vstralloc("OPTIONS features=",

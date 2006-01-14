@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.17 2005/09/21 19:04:37 jrjackson Exp $
+ * $Id: getconf.c,v 1.18 2006/01/14 04:37:19 paddy_s Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -327,6 +327,9 @@ char **argv;
 	pgm++;
     }
     set_pname(pgm);
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     if(argc < 2) {
 	fprintf(stderr, "Usage: %s [config] <parmname>\n", pgm);

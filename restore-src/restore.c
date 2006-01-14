@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.16 2006/01/13 12:12:26 martinea Exp $
+ * $Id: restore.c,v 1.17 2006/01/14 04:37:19 paddy_s Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -46,7 +46,6 @@ static long blocksize = -1;
 static char *cur_tapedev = NULL;
 static char *searchlabel = NULL;
 static int backwards;
-static int got_sigpipe;
 static int exitassemble = 0;
 static int tapefd, nslots;
 
@@ -77,35 +76,6 @@ static int headers_equal P((dumpfile_t *file1, dumpfile_t *file2, int ignore_par
 static int already_have_dump P((dumpfile_t *file));
 
 /* local functions */
-
-#if 0
-static void handle_sigpipe(sig)
-int sig;
-/*
- * Signal handler for the SIGPIPE signal.  Just sets a flag and returns.
- * The act of catching the signal causes the pipe write() to fail with
- * EINTR.
- */
-{
-    got_sigpipe++;
-}
-#endif
-
-static void handle_eof_sigpipe(sig)
-int sig;
-/*
- * This handle the case when reading program (e.g: using bzip2 to 
- * custom uncompress) has closed the pipe prematurely.
- */
-{
-  static int first = 0;
-
-  if ( !first ) {
-    first++;
-    fprintf(stderr, "Strange, reading program closed early, check the restored files.\n");
-  }
-}
-
 
 static void handle_sigint(sig)
 int sig;
@@ -183,7 +153,8 @@ char *filename;
 int fd;
 {
     ssize_t bytes_read;
-    int s, wc = 0, rc = 0;
+    ssize_t s;
+    off_t wc = 0;
     char *buffer;
 
     if(blocksize == -1)
@@ -192,26 +163,37 @@ int fd;
 
     if((tapefd = open(filename, O_RDONLY)) == -1) {
 	error("can't open %s: %s", filename, strerror(errno));
+	/* NOTREACHED */
     }
 
-    do {
+    for (;;) {
 	bytes_read = get_block(tapefd, buffer, 1); /* same as isafile = 1 */
 	if(bytes_read < 0) {
 	    error("read error: %s", strerror(errno));
+	    /* NOTREACHED */
 	}
-	if((s = fullwrite(fd, buffer, bytes_read)) < 0) {
-	    if(got_sigpipe) {
-	        fprintf(stderr,"Error %d (%s) offset %d+%d, wrote %d\n",
-				errno, strerror(errno), wc, bytes_read, rc);
-	        fprintf(stderr, "%s: pipe reader quit in middle of file.\n",
-			        get_pname());
-	    } else {
-		perror("restore: write error");
+
+	if (bytes_read == 0)
+		break;
+
+	s = fullwrite(fd, buffer, bytes_read);
+	if (s < bytes_read) {
+	    fprintf(stderr,"Error %d (%s) offset %lld+%d, wrote %d\n",
+			errno, strerror(errno), wc, bytes_read, s);
+	    if (s < 0) {
+		if((errno == EPIPE) || (errno == ECONNRESET)) {
+		    error("%s: pipe reader has quit in middle of file.\n",
+			get_pname());
+		    /* NOTREACHED */
+		}
+		error("restore: write error = %s", strerror(errno));
+		/* NOTREACHED */
 	    }
-	    exit(2);
+	    error("Short write: wrote %d bytes expected %d\n", s, bytes_read);
+	    /* NOTREACHCED */
 	}
 	wc += bytes_read;
-    } while (bytes_read > 0);
+    }
 
     amfree(buffer);
     aclose(tapefd);
@@ -439,12 +421,10 @@ dumpfile_t *only_file;
 		lastpartnum = cur_file->partnum;
 	    }
 	    else {
-		(void)shutdown(cur_out->outfd, SHUT_RDWR);
 		aclose(cur_out->outfd);
 	    }
 	}
 	if(outfd >= 0) {
-	    (void)shutdown(outfd, SHUT_RDWR);
 	    aclose(outfd);
 	}
 
@@ -464,7 +444,6 @@ dumpfile_t *only_file;
 	    continue;
 	}
 	if(!reassemble) {
-	    (void)shutdown(cur_out->outfd, SHUT_RDWR);
 	    aclose(cur_out->outfd);
 	}
 
@@ -565,10 +544,10 @@ char *datestamp, *hostname, *diskname, *level;
 }
 
 
-ssize_t read_file_header(file, tapefd, isafile, flags)
+void read_file_header(file, tapefd, isafile, flags)
 dumpfile_t *file;
-int isafile;
 int tapefd;
+int isafile;
 rst_flags_t *flags;
 /*
  * Reads the first block of a tape file.
@@ -586,19 +565,21 @@ rst_flags_t *flags;
     bytes_read = get_block(tapefd, buffer, isafile);
     if(bytes_read < 0) {
 	error("error reading file header: %s", strerror(errno));
-    } else if(bytes_read < blocksize) {
+	/* NOTREACHED */
+    }
+
+    if(bytes_read < blocksize) {
 	if(bytes_read == 0) {
 	    fprintf(stderr, "%s: missing file header block\n", get_pname());
 	} else {
-	    fprintf(stderr, "%s: short file header block: %ld byte%s\n",
-		    get_pname(), (long)bytes_read, (bytes_read == 1) ? "" : "s");
+	    fprintf(stderr, "%s: short file header block: %d byte%s\n",
+		    get_pname(), bytes_read, (bytes_read == 1) ? "" : "s");
 	}
 	file->type = F_UNKNOWN;
     } else {
 	parse_file_header(buffer, file, bytes_read);
     }
     amfree(buffer);
-    return bytes_read;
 }
 
 
@@ -618,7 +599,7 @@ rst_flags_t *flags;
     do {
        bytes_read = get_block(tapefd, buffer, 0);
        if(bytes_read < 0) {
-           error("read error: %s", strerror(errno));
+           error("drain read error: %s", strerror(errno));
        }
     } while (bytes_read > 0);
 
@@ -641,6 +622,7 @@ rst_flags_t *flags;
  */
 {
     int dest = -1, out;
+    ssize_t s;
     int file_is_compressed;
     int is_continuation = 0;
     int check_for_aborted = 0;
@@ -648,7 +630,6 @@ rst_flags_t *flags;
     struct stat statinfo;
     open_output_t *myout = NULL, *oldout = NULL;
     dumplist_t *tempdump = NULL, *fileentry = NULL;
-    struct sigaction act, oact;
     char *buffer;
     int need_compress=0, need_uncompress=0, need_decrypt=0;
     int stage=0;
@@ -661,14 +642,6 @@ rst_flags_t *flags;
 	blocksize = flags->blocksize;
     else if(blocksize == -1)
 	blocksize = DISK_BLOCK_BYTES;
-
-    /* set our sigpipe handler, saving the old one */
-    act.sa_handler = handle_eof_sigpipe;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
-    if(sigaction(SIGPIPE, &act, &oact) != 0){
-	error("error setting SIGPIPE handler: %s", strerror(errno));
-    }
 
     if(already_have_dump(file)){
 	fprintf(stderr, " *** Duplicate file %s, one is probably an aborted write\n", make_filename(file));
@@ -977,18 +950,32 @@ rst_flags_t *flags;
     do {
 	bytes_read = get_block(tapefd, buffer, isafile);
 	if(bytes_read < 0) {
-	    error("read error: %s", strerror(errno));
+	    error("restore read error: %s", strerror(errno));
 	    /* NOTREACHED */
 	}
 
-	if(bytes_read == 0 && isafile) {
+	if(bytes_read > 0) {
+	    if((s = fullwrite(pipes[0].pipe[1], buffer, bytes_read)) < 0) {
+		if ((errno == EPIPE) || (errno == ECONNRESET)) {
+		    /*
+		     * reading program has ended early
+		     * e.g: bzip2 closes pipe when it
+		     * trailing garbage after EOF
+		     */
+		    break;
+		}
+		perror("restore: write error");
+		exit(2);
+	    }
+	}
+	else if(isafile) {
 	    /*
 	     * See if we need to switch to the next file in a holding restore
 	     */
 	    if(file->cont_filename[0] == '\0') {
 		break;				/* no more files */
 	    }
-	    close(tapefd);
+	    aclose(tapefd);
 	    if((tapefd = open(file->cont_filename, O_RDONLY)) == -1) {
 		char *cont_filename = strrchr(file->cont_filename,'/');
 		if(cont_filename) {
@@ -1009,25 +996,13 @@ rst_flags_t *flags;
 			  strerror(errno));
 		}
 	    }
-	    bytes_read = read_file_header(file, tapefd, isafile, flags);
+	    read_file_header(file, tapefd, isafile, flags);
 	    if(file->type != F_DUMPFILE && file->type != F_CONT_DUMPFILE
 		    && file->type != F_SPLIT_DUMPFILE) {
 		fprintf(stderr, "unexpected header type: ");
 		print_header(stderr, file);
 		exit(2);
 	    }
-	    continue;
-	}
-
-	if((fullwrite(pipes[0].pipe[1], buffer, bytes_read)) < bytes_read) {
-	    if (errno == EPIPE) {    /* reading program has ended early   */
-				     /* e.g: bzip2 closes pipe when it    */
-			             /* sees trailing garbage after EOF   */
-		fprintf(stderr, "restore: reader reset pipe\n");
-		break;
-	    }
-	    perror("restore: write error");
-	    exit(2);
 	}
     } while (bytes_read > 0);
 
@@ -1057,7 +1032,9 @@ rst_flags_t *flags;
 			    if(prev_fileentry){
 				prev_fileentry->next = fileentry->next;
 			    }
-			    else alldumps_list = fileentry->next;
+			    else {
+				alldumps_list = fileentry->next;
+			    }
 			    amfree(fileentry);
 			    break;
 			}
@@ -1086,11 +1063,6 @@ rst_flags_t *flags;
 		    amfree(tempdump);
 		    amfree(tmp_filename);
 		    amfree(final_filename);
-		    /* put sigpipe back the way we found it */
-		    if(sigaction(SIGPIPE, &oact, &act) != 0){
-			error("error resetting SIGPIPE handler: %s",
-				strerror(errno));
-		    }
                     return (bytes_read);
 		}
 	    }
@@ -1124,12 +1096,10 @@ rst_flags_t *flags;
 	for(fileentry=alldumps_list;fileentry->next;fileentry=fileentry->next);
 	fileentry->next = tempdump;
     }
-    else alldumps_list = tempdump;
-
-    /* put sigpipe back the way we found it */
-    if(sigaction(SIGPIPE, &oact, &act) != 0){
-	error("error resetting SIGPIPE handler: %s", strerror(errno));
+    else {
+	alldumps_list = tempdump;
     }
+
     return (bytes_read);
 }
 
@@ -1174,6 +1144,9 @@ rst_flags_t *flags;
 
     if(flags->blocksize) blocksize = flags->blocksize;
     else if(blocksize == -1) blocksize = DISK_BLOCK_BYTES;
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     /* catch SIGINT with something that'll flush unmerged splits */
     act.sa_handler = handle_sigint;
@@ -1267,7 +1240,7 @@ rst_flags_t *flags;
 	    }
 	    fprintf(stderr, "Reading %s to fd %d\n", desired_tape->label, tapefd);
 
-	    bytes_read = read_file_header(&file, tapefd, 1, flags);
+	    read_file_header(&file, tapefd, 1, flags);
 	    label = stralloc(desired_tape->label);
 	}
 	/*
@@ -1289,8 +1262,7 @@ rst_flags_t *flags;
 		continue;
 	    }
 	
-            bytes_read = read_file_header(&file, tapefd, 0, flags);
-
+            read_file_header(&file, tapefd, 0, flags);
             if(file.type != F_TAPESTART) {
 	        fprintf(stderr, "Not an amanda tape\n");
 	        tapefd_close(tapefd);
@@ -1440,9 +1412,10 @@ rst_flags_t *flags;
 		    error("Could not fsf device %s by %d: %s", cur_tapedev, fsf_by,
 							   strerror(errno));
 		}
-		else filenum = fsf_by;
-
-		bytes_read = read_file_header(&file, tapefd, isafile, flags);
+		else {
+			filenum = fsf_by;
+		}
+		read_file_header(&file, tapefd, isafile, flags);
 	    }
 	}
 
@@ -1532,7 +1505,7 @@ rst_flags_t *flags;
 	      
 	    if(isafile)
                 break;
-            bytes_read = read_file_header(&file, tapefd, isafile, flags);
+            read_file_header(&file, tapefd, isafile, flags);
 
 	    /* only restore a single dump, if piping to stdout */
 	    if(!headers_equal(&prev_rst_file, &file, 1) &&

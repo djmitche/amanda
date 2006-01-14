@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.49 2005/10/15 13:20:47 martinea Exp $
+ * $Id: bsd-security.c,v 1.50 2006/01/14 04:37:19 paddy_s Exp $
  *
  * "BSD" security module
  */
@@ -1420,7 +1420,9 @@ stream_read_callback(arg)
      * Remove the event first, in case they reschedule it in the callback.
      */
     bsd_stream_read_cancel(bs);
-    n = read(bs->fd, bs->databuf, sizeof(bs->databuf));
+    do {
+	n = read(bs->fd, bs->databuf, sizeof(bs->databuf));
+    } while ((n < 0) && ((errno == EINTR) || (errno == EAGAIN)));
     if (n < 0)
 	security_stream_seterror(&bs->secstr, strerror(errno));
     (*bs->fn)(bs->arg, bs->databuf, n);
@@ -1616,6 +1618,9 @@ main (argc, argv)
     struct bsd_handle *bh;
     void *save_cur;
     struct passwd *pwent;
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     /*
      * The following is stolen from amandad to emulate what it would

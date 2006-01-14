@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.150 2005/12/08 18:14:04 martinea Exp $
+ * $Id: sendsize.c,v 1.151 2006/01/14 04:37:18 paddy_s Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -136,6 +136,9 @@ char **argv;
     safe_cd();
 
     set_pname("sendsize");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

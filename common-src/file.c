@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.33 2005/10/15 13:20:47 martinea Exp $
+ * $Id: file.c,v 1.34 2006/01/14 04:37:19 paddy_s Exp $
  *
  * file and directory bashing routines
  */
@@ -673,6 +673,9 @@ int main(argc, argv)
 	safe_fd(-1, 0);
 
 	set_pname("file test");
+
+	/* Don't die when child closes pipe */
+	signal(SIGPIPE, SIG_IGN);
 
 	name = "/tmp/a/b/c/d/e";
 	if (argc > 2 && argv[1][0] != '\0') {

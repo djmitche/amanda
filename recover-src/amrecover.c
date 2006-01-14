@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.51 2005/10/11 01:17:00 vectro Exp $
+ * $Id: amrecover.c,v 1.52 2006/01/14 04:37:19 paddy_s Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -209,28 +209,25 @@ int server_happy ()
 int send_command(cmd)
 char *cmd;
 {
-    size_t l, n;
-    ssize_t s;
-    char *end;
-
     /*
      * NOTE: this routine is called from sigint_handler, so we must be
      * **very** careful about what we do since there is no way to know
      * our state at the time the interrupt happened.  For instance,
-     * do not use any stdio routines here.
+     * do not use any stdio or malloc routines here.
      */
-    for (l = 0, n = strlen(cmd); l < n; l += s)
-	if ((s = write(server_socket, cmd + l, n - l)) < 0) {
-	    perror("amrecover: Error writing to server");
-	    return -1;
-	}
-    end = "\r\n";
-    for (l = 0, n = strlen(end); l < n; l += s)
-	if ((s = write(server_socket, end + l, n - l)) < 0) {
-	    perror("amrecover: Error writing to server");
-	    return -1;
-	}
-    return 0;
+    struct iovec msg[2];
+    ssize_t bytes;
+
+    msg[0].iov_base = cmd;
+    msg[0].iov_len = strlen(msg[0].iov_base);
+    msg[1].iov_base = "\r\n";
+    msg[1].iov_len = strlen(msg[1].iov_base);
+    bytes = msg[0].iov_len + msg[1].iov_len;
+
+    if (writev(server_socket, msg, 2) < bytes) {
+	return -1;
+    }
+    return (0);
 }
 
 
@@ -425,6 +422,10 @@ char **argv;
     safe_fd(-1, 0);
 
     set_pname("amrecover");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
+
     dbopen();
 
 #ifndef IGNORE_UID_CHECK
@@ -503,6 +504,9 @@ char **argv;
     amfree(mount_point);
     amfree(disk_path);
     dump_date[0] = '\0';
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     /* set up signal handler */
     act.sa_handler = sigint_handler;

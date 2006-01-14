@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.174 2005/12/08 19:34:17 martinea Exp $
+ * $Id: planner.c,v 1.175 2006/01/14 04:37:19 paddy_s Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -188,6 +188,7 @@ char **argv;
 
     set_pname("planner");
 
+    /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);

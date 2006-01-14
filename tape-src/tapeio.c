@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.52 2006/01/12 01:57:06 paddy_s Exp $
+ * $Id: tapeio.c,v 1.53 2006/01/14 04:37:20 paddy_s Exp $
  *
  * implements generic tape I/O functions
  */
@@ -1383,6 +1383,9 @@ main(argc, argv)
     int i;
     int j;
     time_t now;
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     if((pgm = strrchr(argv[0], '/')) != NULL) {
 	pgm++;

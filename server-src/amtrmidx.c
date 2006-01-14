@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.33 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: amtrmidx.c,v 1.34 2006/01/14 04:37:19 paddy_s Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -73,6 +73,9 @@ char **argv;
     safe_cd();
 
     set_pname("amtrmidx");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));

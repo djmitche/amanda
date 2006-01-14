@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: runtar.c,v 1.16 2005/09/30 19:07:54 martinea Exp $
+ * $Id: runtar.c,v 1.17 2006/01/14 04:37:18 paddy_s Exp $
  *
  * runs GNUTAR program as root
  */
@@ -47,6 +47,9 @@ char **argv;
     safe_cd();
 
     set_pname("runtar");
+
+    /* Don't die when child closes pipe */
+    signal(SIGPIPE, SIG_IGN);
 
     dbopen();
     dbprintf(("%s: version %s\n", argv[0], version()));
