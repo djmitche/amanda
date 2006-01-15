@@ -1,3 +1,13 @@
+2006-01-15  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/bsd-security.c: Fix memory leak.
+	* common-src/tapelist.c: Fix memory leak.
+	* restore-src/amidxtaped.c: Fix memory leak.
+	* restore-src/restore.c: Fix memory leak.
+	* server-src/amindexd.c: Fix memory leak.
+	* server-src/conffile.c: Fix memory leak.
+	* server-src/disk_history.c: Fix memory leak.
+	* server-src/find.c: Fix memory leak.
+
 2006-01-13  John Franks <jrfranks@zmanda.com>
 	* client-src/amandad.c:      Remove SO_LINGER and TCP_NDELAY.
 	                             Loop on I/O if EINTR or EAGAIN.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.82 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: amindexd.c,v 1.83 2006/01/15 21:01:00 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -782,6 +782,9 @@ int  recursive;
                                 dir_item->dump->date, dir_item->dump->level,
                                 tapelist_str, dir_item->path);
                 }
+		if(am_has_feature(their_features, marshall_feature)) {
+		    amfree(tapelist_str);
+		}
                 str_buffer_size = STR_SIZE;
             }
     }
@@ -1372,5 +1375,8 @@ char **errstr;
 			    " from ", remoteuser, "@", remotehost,
 			    ": ", s, "]", NULL);
     }
+    amfree(s);
+    amfree(remotehost);
+    amfree(remoteuser);
     return s == NULL;
 }

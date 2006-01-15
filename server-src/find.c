@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.22 2005/10/11 01:17:01 vectro Exp $
+ * $Id: find.c,v 1.23 2006/01/15 21:01:00 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -235,14 +235,28 @@ find_result_t *output_find;
 	         cur->datestamp == failed->datestamp &&
 	         cur->datestamp_aux == failed->datestamp_aux &&
 	         cur->level == failed->level){
+		find_result_t *next = cur->next;
+		amfree(cur->diskname);
+		amfree(cur->hostname);
+		next = cur->next;
+		amfree(cur);
 		if(prev){
-  		    prev->next = cur->next;
+  		    prev->next = next;
 		    cur = prev;
 		}
-		else output_find = cur->next;
+		else output_find = next;
 	    }
             else prev = cur;
 	}
+    }
+
+    for(failed=failures; failed;) {
+	find_result_t *fai = failed->next;
+	amfree(failed->diskname);
+	amfree(failed->hostname);
+	fai = failed->next;
+	amfree(failed);
+	failed=fai;
     }
 }
 
@@ -540,6 +554,7 @@ find_result_t **output_find;
 	amfree(output_find_result->label);
 	amfree(output_find_result->partnum);
 	amfree(output_find_result->status);
+	amfree(output_find_result->timestamp);
 	prev = output_find_result;
     }
     if(prev != NULL) amfree(prev);
@@ -659,7 +674,7 @@ int datestamp, datestamp_aux;
     FILE *logf;
     char *host, *host_undo;
     char *disk, *disk_undo;
-    char *partnum, *partnum_undo;
+    char *partnum=NULL, *partnum_undo;
     int   datestampI;
     char *rest;
     char *ck_label;
@@ -714,7 +729,7 @@ int datestamp, datestamp_aux;
 		passlabel = !passlabel;
 	    }
 	}
-	partnum = stralloc("--");
+	partnum = "--";
 	if(curlog == L_SUCCESS || curlog == L_FAIL || curlog == L_CHUNK) {
 	    s = curstr;
 	    ch = *s++;

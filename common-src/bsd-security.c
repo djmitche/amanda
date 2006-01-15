@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.50 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: bsd-security.c,v 1.51 2006/01/15 21:00:59 martinea Exp $
  *
  * "BSD" security module
  */
@@ -1176,6 +1176,7 @@ check_user_amandahosts(host, pwd, remoteuser)
 	bsdprintf(("%s:           \"%s\" (%s)\n", remoteuser,
 		  debug_prefix(NULL), usermatch ? "match" : "no match"));
 #endif								/* } */
+	amfree(line);
 	/* compare */
 	if (hostmatch && usermatch) {
 	    /* success */

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: disk_history.c,v 1.10 2005/10/11 01:17:01 vectro Exp $
+/* $Id: disk_history.c,v 1.11 2006/01/15 21:01:00 martinea Exp $
  *
  * functions for obtaining backup history
  */
@@ -85,6 +85,7 @@ int partnum;
 	    if (!strcmp(item->date, new->date) &&
 		    item->level == new->level && item->is_split){
 		item->tapes = append_to_tapelist(item->tapes, tape, file, isafile);
+		amfree(new);
 		return;
 	    }
 	}

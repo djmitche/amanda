@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.53 2006/01/14 04:37:19 paddy_s Exp $
+/* $Id: amidxtaped.c,v 1.54 2006/01/15 21:01:00 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -374,6 +374,7 @@ char **argv;
 	else {
 	}
     } while (re_end == 0);
+    amfree(buf);
 
     if(!tapes && rst_flags->alt_tapedev){
 	dbprintf(("%s: Looks like we're restoring from a holding file...\n", debug_prefix_time(NULL)));
@@ -393,6 +394,7 @@ char **argv;
 	    amfree(re_config);
 	    re_config = NULL;
 	}
+	amfree(conffile);
     }
 
     /* If we'll be stepping on the tape server's devices, lock them. */
@@ -485,6 +487,14 @@ char **argv;
     
     am_release_feature_set(their_features);
 
+    amfree(rst_flags->alt_tapedev);
+    amfree(rst_flags);
+    amfree(match_list->hostname);
+    amfree(match_list->diskname);
+    amfree(match_list->datestamp);
+    amfree(match_list);
+    amfree(config_dir);
+    amfree(re_config);
     dbclose();
     return 0;
 }
@@ -651,5 +661,7 @@ check_security(addr, str, cksum, errstr)
 			    " from ", remoteuser, "@", remotehost,
 			    ": ", s, "]", NULL);
     }
+    amfree(remoteuser);
+    amfree(remotehost);
     return s == NULL;
 }

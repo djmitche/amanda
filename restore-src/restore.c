@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.17 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: restore.c,v 1.18 2006/01/15 21:01:00 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -796,6 +796,7 @@ rst_flags_t *flags;
 #if 0
 //	strncpy(file->cont_filename, cont_filename, sizeof(file->cont_filename));
 #endif
+	amfree(cont_filename);
 	memcpy(file, &tmp_hdr, sizeof(dumpfile_t));
     }
  
@@ -1288,6 +1289,7 @@ rst_flags_t *flags;
 			!strcmp(tape_seen->slotstr, curslot)){
 		    fprintf(stderr, "Saw repeat tape %s in slot %s\n", label, curslot);
 		    wrongtape = 1;
+		    amfree(label);
 		    break;
 		}
 	    }
@@ -1360,6 +1362,7 @@ rst_flags_t *flags;
 		}
 	    }
 	    newtape = 1;
+	    amfree(label);
 	    continue;
 	}
 
@@ -1422,7 +1425,6 @@ rst_flags_t *flags;
 	while((file.type == F_TAPESTART || file.type == F_DUMPFILE ||
 	      file.type == F_SPLIT_DUMPFILE) &&
 	      (tapefile_idx < 0 || tapefile_idx < desired_tape->numfiles)) {
-	    char *filename = make_filename(&file);
 	    int found_match = 0;
 	    match_list_t *me;
 	    dumplist_t *tempdump = NULL;
@@ -1459,10 +1461,12 @@ rst_flags_t *flags;
 	    }
 
 	    if(found_match){
+		char *filename = make_filename(&file);
 		fprintf(stderr, "%s: %3d: restoring ", get_pname(), filenum);
 		print_header(stderr, &file);
 		bytes_read = restore(&file, filename, tapefd, isafile, flags);
 		filenum ++;
+		amfree(filename);
 	    }
 
 	    /* advance to the next file, fast-forwarding where reasonable */
@@ -1572,6 +1576,21 @@ rst_flags_t *flags;
 	/* only restore a single dump, if piping to stdout */
 	if(!headers_equal(&prev_rst_file, &file, 1) &&
 	  flags->pipe_to_fd == fileno(stdout)) break;
+    }
+
+    while(seentapes != NULL) {
+	struct seentapes *tape_seen = seentapes;
+	seentapes = seentapes->next;
+	while(tape_seen->files != NULL) {
+	    dumplist_t *temp_dump = tape_seen->files;
+	    tape_seen->files = temp_dump->next;
+	    amfree(temp_dump->file);
+	    amfree(temp_dump);
+	}
+	amfree(tape_seen->label);
+	amfree(tape_seen->slotstr);
+	amfree(tape_seen);
+	
     }
 
     if(logstream && logstream != stderr && logstream != stdout){

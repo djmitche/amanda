@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapelist.c,v 1.2 2005/10/18 01:39:14 vectro Exp $
+ * $Id: tapelist.c,v 1.3 2006/01/15 21:00:59 martinea Exp $
  *
  * Support code for amidxtaped and amindexd.
  */
@@ -58,22 +58,6 @@ int file, isafile;
     tapelist_t *new_tape, *cur_tape;
     int c;
 
-    new_tape = alloc(sizeof(tapelist_t));
-    memset(new_tape, 0, sizeof(tapelist_t));
-    new_tape->label = stralloc(label);
-    if(file >= 0){
-	new_tape->files = alloc(sizeof(int));
-	new_tape->files[0] = file;
-	new_tape->numfiles = 1;
-	new_tape->isafile = isafile;
-    }
-
-    /* first instance of anything, start our tapelist with it */
-    if(!tapelist){
-	tapelist = new_tape;
-	return(tapelist);
-    }
-
     /* see if we have this tape already, and if so just add to its file list */
     for(cur_tape = tapelist; cur_tape; cur_tape = cur_tape->next){
 	if(!strcmp(label, cur_tape->label)){
@@ -94,11 +78,24 @@ int file, isafile;
 		amfree(cur_tape->files);
 		cur_tape->files = newfiles;
 	    }
-	    amfree(new_tape->label);
-	    amfree(new_tape->files);
-	    amfree(new_tape);
 	    return(tapelist);
 	}
+    }
+
+    new_tape = alloc(sizeof(tapelist_t));
+    memset(new_tape, 0, sizeof(tapelist_t));
+    new_tape->label = stralloc(label);
+    if(file >= 0){
+	new_tape->files = alloc(sizeof(int));
+	new_tape->files[0] = file;
+	new_tape->numfiles = 1;
+	new_tape->isafile = isafile;
+    }
+
+    /* first instance of anything, start our tapelist with it */
+    if(!tapelist){
+	tapelist = new_tape;
+	return(tapelist);
     }
 
     /* new tape, tack it onto the end of the list */
@@ -200,6 +197,7 @@ int do_escape;
 	else str = vstralloc(str, ";", esc_label, ":", files_str, NULL);
 
 	amfree(esc_label);
+	amfree(files_str);
     }
 
     return(str);
@@ -220,12 +218,12 @@ char *tapelist_str;
 
     input_length = strlen(tapelist_str);
 
-    temp_label = alloc(input_length);
-    temp_filenum = alloc(input_length);
+    temp_label = alloc(input_length+1);
+    temp_filenum = alloc(input_length+1);
 
     do{
 	/* first, read the label part */
-	memset(temp_label, '\0', input_length);
+	memset(temp_label, '\0', input_length+1);
         l_idx = 0;
 	while(*tapelist_str != ':' && *tapelist_str != '\0'){
 	    if(*tapelist_str == '\\') *tapelist_str++; /* skip escapes */
@@ -240,7 +238,7 @@ char *tapelist_str;
 	/* now read the list of file numbers */
 	while(*tapelist_str != ';' && *tapelist_str != '\0'){
 	    int filenum = -1;
-	    memset(temp_filenum, '\0', input_length);
+	    memset(temp_filenum, '\0', input_length+1);
 	    n_idx = 0;
 	    while(*tapelist_str != ';' && *tapelist_str != ',' &&
 		    *tapelist_str != '\0'){

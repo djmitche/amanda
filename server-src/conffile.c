@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.121 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: conffile.c,v 1.122 2006/01/15 21:01:00 martinea Exp $
  *
  * read configuration file
  */
@@ -897,12 +897,14 @@ static void init_defaults()
 
     init_dumptype_defaults();
     dpcur.name = "BSD-AUTH"; dpcur.seen = -1;
-    dpcur.security_driver = "BSD"; dpcur.s_security_driver = -1;
+    amfree(dpcur.security_driver);
+    dpcur.security_driver = stralloc("BSD"); dpcur.s_security_driver = -1;
     save_dumptype();
 
     init_dumptype_defaults();
     dpcur.name = "KRB4-AUTH"; dpcur.seen = -1;
-    dpcur.security_driver = "KRB4"; dpcur.s_security_driver = -1;
+    amfree(dpcur.security_driver);
+    dpcur.security_driver = stralloc("KRB4"); dpcur.s_security_driver = -1;
     save_dumptype();
 
     init_dumptype_defaults();
