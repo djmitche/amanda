@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: disk_history.c,v 1.11 2006/01/15 21:01:00 martinea Exp $
+/* $Id: disk_history.c,v 1.12 2006/01/16 00:07:01 martinea Exp $
  *
  * functions for obtaining backup history
  */
@@ -42,6 +42,13 @@ void clear_list P((void))
     {
 	this = item;
 	item = item->next;
+	while(this->tapes != NULL) {
+	    tapelist_t *tapes = this->tapes;
+	    this->tapes = tapes->next;
+	    amfree(tapes->label);
+	    amfree(tapes->files);
+	    amfree(tapes);
+	}
 	amfree(this);
     }
     disk_hist = NULL;
