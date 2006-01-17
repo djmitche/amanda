@@ -36,8 +36,11 @@ Here are some features of Amanda:
     the unix command line.
   * supports Kerberos 4 security, including encrypted dumps.  The Kerberos
     support is available as a separate add-on package, see the file
-    KERBEROS.HOW-TO-GET on the ftp site, and the file docs/KERBEROS in this
-    package, for more details.
+    KERBEROS.HOW-TO-GET on the sourceforge site, and the file docs/KERBEROS 
+    in this package, for more details.
+  * Supports secure communication between server and client using OpenSSH.
+  * Can encrypt dumps on Amanda client or on Amanda client using GPG or any
+    encryption program.
   * for a restore, tells you what tapes you need, and finds the proper
     backup image on the tape for you.
   * recovers gracefully from errors, including down or hung machines.
@@ -49,7 +52,7 @@ Here are some features of Amanda:
     send an e-mail report of any problems that could cause the backups to
     fail.
   * can compress dumps before sending or after sending over the net, with
-    either compress or gzip.
+    either compress or gzip or custom program.
   * can optionally synchronize with external backups, for those large
     timesharing computers where you want to do full dumps when the system
     is down in single-user mode (since BSD dump is not reliable on active
@@ -86,8 +89,6 @@ than the holding disk: Amanda will send those dumps directly to tape one at
 a time.  If you have many such dumps you will be limited by the dump speed
 of those machines.
 
-Amanda does not yet support single backup images larger than a tape.
-
 
 WHAT SYSTEMS DOES AMANDA RUN ON?
 --------------------------------
@@ -96,7 +97,7 @@ Amanda should run on any modern Unix system that supports dump or GNU
 tar, has sockets and inetd, and either system V shared memory, or BSD
 mmap implemented.
 
-In particular, Amanda 2.4.1p1 has been compiled, and the client side tested
+In particular, Amanda has been compiled, and the client side tested
 on the following systems:
 	AIX 3.2 and 4.1
 	BSDI BSD/OS 2.1 and 3.1
@@ -104,6 +105,7 @@ on the following systems:
 	FreeBSD 2.2.5
 	IRIX 5.2 and 6.3
 	GNU/Linux on x86, m68k, alpha, sparc, arm and powerpc
+        Mac OS X 10
 	NetBSD 1.0
 	Nextstep 3 (*)
 	OpenBSD 2.5 x86, sparc, etc (ports available)
@@ -111,22 +113,18 @@ on the following systems:
 	Ultrix 4.2
 	HP-UX 9.x and 10.x (x >= 01)
 
-The Amanda 2.4.1p1 server side is known to run on all of the other
+The Amanda server side is known to run on all of the other
 machines except on those marked with an asterisk.
-
-If you know of any system that is not listed here on which amanda
-builds successfully, either client&server or client-only, please
-report to amanda-hackers@amanda.org.
 
 
 WHERE DO I GET AMANDA?
 ----------------------
 
-There are several versions of Amanda.  The latest version at the time
-of this writing is available at:
+Amanda is a sourceforge.net project (http://sourceforge.net/projects/amanda).
+Amanda source tree is available at the sourceforge website.
 
-	ftp://ftp.amanda.org/pub/amanda
-
+Most Linux distributions include amanda rpms pre-built for various
+architectures.  
 
 HOW DO I GET AMANDA UP AND RUNNING?
 -----------------------------------
@@ -134,18 +132,16 @@ HOW DO I GET AMANDA UP AND RUNNING?
 Read the file docs/INSTALL.  There are a variety of steps, from compiling
 Amanda to installing it on the tape server host and the client machines.
     docs/INSTALL	contains general installation instructions.
-    docs/SYSTEM.NOTES	contains system-specific information.
-    docs/FAQ            contains answers to frequently asked questions.
-    docs/KERBEROS	explains installation under Kerberos 4.
-    docs/TAPE.CHANGERS	explains how to customize the changer interface.
-    docs/WHATS.NEW	details new features.
+    docs/NEWS		details new features in each release.
+
+You can read Amanda documentation at http://wiki.zmanda.com
 
 
 WHO DO I TALK TO IF I HAVE A PROBLEM?
 -------------------------------------
 
-Amanda is completely unsupported and made available as-is.  However,
-you may be able to get useful information in the Amanda mailing lists:
+You can get Amanda help and questions answered from the mailing lists and
+Amanda forums:
 
 ==> To join a mailing list, DO NOT, EVER, send mail to that list.  Send
     mail to <listname>-request@amanda.org, or amanda-lists@amanda.org,
@@ -163,11 +159,9 @@ you may be able to get useful information in the Amanda mailing lists:
 
     amanda-users
         The amanda-users mailing list is for questions and general discussion
-        about the Amanda Network Backup Manager.  This package and related
-        files are available via anonymous FTP from ftp.amanda.org in the
-        pub/amanda directory.  NOTE: the amanda-users list is itself on the
-        amanda-announce distribution, so you only need to subscribe to one of
-        the two lists, not both.
+        about the Amanda Network Backup Manager.  NOTE: the amanda-users list 
+	is itself on the amanda-announce distribution, so you only need to 
+        subscribe to one of the two lists, not both.
 	To subscribe, send a message to amanda-users-request@amanda.org.
 
     amanda-hackers
@@ -176,6 +170,7 @@ you may be able to get useful information in the Amanda mailing lists:
         ports, bugs, fixes, and alpha testing of new versions.
 	To subscribe, send a message to amanda-hackers-request@amanda.org.
 
+==> Amanda forums: http://forums.zmanda.com
 
 Share and Enjoy,
 The Amanda Development Team
