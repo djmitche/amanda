@@ -134,8 +134,13 @@ Amanda to installing it on the tape server host and the client machines.
     docs/INSTALL	contains general installation instructions.
     docs/NEWS		details new features in each release.
 
-You can read Amanda documentation at http://wiki.zmanda.com
+You can read Amanda documentation at the official project-site
 
+http://www.amanda.org
+
+and at the AMANDA-Wiki at
+
+http://wiki.zmanda.com and
 
 WHO DO I TALK TO IF I HAVE A PROBLEM?
 -------------------------------------
