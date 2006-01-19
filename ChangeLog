@@ -1,3 +1,8 @@
+2006-01-18  Jean-Louis Martineau <martineau@zmanda.com>
+	* Amanda 2.5.0b2 released.
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.0b2).
+	* NEWS: Update for 2.5.0b2
+	
 2006-01-15  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/disk_history.c: Fix memory leak.
 

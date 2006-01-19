@@ -1,5 +1,10 @@
 Changes in release 2.5.0b1
 
+* Possibility to use a custom compression program.
+* Possibility to encrypt data on network and tape.
+
+Changes in release 2.5.0b1
+
 * New tape spanning features.
 * New SECURITY API (see docs/SECURITY.API for details).
 * New DUMPER API (see docs/DUMPER.API for details) (Not yet functionnal).
