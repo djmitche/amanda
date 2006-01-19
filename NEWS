@@ -2,6 +2,7 @@ Changes in release 2.5.0b1
 
 * Possibility to use a custom compression program.
 * Possibility to encrypt data on network and tape.
+* Ability to label media automatically (useful for disk based backups) 
 
 Changes in release 2.5.0b1
 
