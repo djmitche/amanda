@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.4 2006/01/12 01:57:06 paddy_s Exp $
+ * $Id: taperscan.c,v 1.5 2006/01/23 22:31:45 vectro Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -307,7 +307,7 @@ char* find_brand_new_tape_label() {
 
     sprintf(tmpfmt, "%%0%dd", auto_len);
 
-    for (i = 0; i < INT_MAX; i ++) {
+    for (i = 1; i < INT_MAX; i ++) {
         sprintf(tmpnum, tmpfmt, i);
         if (strlen(tmpnum) != auto_len) {
             fprintf(stderr, "All possible auto-labels used.\n");

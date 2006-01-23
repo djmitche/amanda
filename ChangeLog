@@ -1,3 +1,8 @@
+2006-01-23  Ian Turner <ian@zmanda.com>
+	* server-src/taperscan.c (find_brand_new_tape_label): Start 
+	  brand new tape labels at 1 instead of 0. Thanks to Paul 
+	  Bijnens <pbijnens@users.sourceforge.net> for the fix.
+
 2006-01-18  Jean-Louis Martineau <martineau@zmanda.com>
 	* Amanda 2.5.0b2 released.
 	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.0b2).
