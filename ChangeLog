@@ -1,3 +1,9 @@
+2006-01-24  Ian Turner <ian@zmanda.com>
+	* man/xml-source/amanda.conf.5.xml: Put documentation of 
+	  split-dump options in the right place. Thanks to Paul Bijnens 
+	  <pbijnens@users.sourceforge.net> for the fix.
+	* man/xml-source/amanda.8.xml: ditto.
+
 2006-01-23  Ian Turner <ian@zmanda.com>
 	* server-src/taperscan.c (find_brand_new_tape_label): Start 
 	  brand new tape labels at 1 instead of 0. Thanks to Paul 

@@ -1254,6 +1254,7 @@ set to
 to avoid backing up the holding disk into itself.</para>
   </listitem>
   </varlistentry>
+
   <varlistentry>
   <term><emphasis remap='B'>ignore</emphasis> <emphasis remap='I'> boolean</emphasis></term>
   <listitem>
@@ -1446,6 +1447,49 @@ The value should be hh*100+mm, e.g. 6:30PM (18:30) would be entered as
   </listitem>
   </varlistentry>
   </variablelist>
+  </listitem>
+  </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>tape_splitsize</emphasis> <emphasis remap='I'> int</emphasis></term>
+  <listitem>
+<para>Default:
+<emphasis remap='I'>none</emphasis>.
+Split dump file on tape into pieces of a specified size.
+This allows dumps to be spread across multiple tapes, and can potentially
+make more efficient use of tape space.
+Note that if this value is too large (more than half the size of the
+average dump being split), substantial tape space can be wasted.
+If too small, large dumps will be split into innumerable tiny dumpfiles,
+adding to restoration complexity.
+A good rule of thumb, usually, is 1/10 of the size of your tape.</para>
+  </listitem>
+  </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>split_diskbuffer</emphasis> <emphasis remap='I'> string</emphasis></term>
+  <listitem>
+<para>Default:
+<emphasis remap='I'>none</emphasis>.
+When dumping a split dump in PORT-WRITE mode (usually meaning "no holding disk"), buffer the split chunks to a file in the directory specified by this option.
+</para>
+  </listitem>
+  </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>fallback_splitsize</emphasis> <emphasis remap='I'> int</emphasis></term>
+  <listitem>
+<para>Default:
+<emphasis remap='I'>10M</emphasis>.
+When dumping a split dump in PORT-WRITE mode, if no split_diskbuffer is
+specified (or if we somehow fail to use our split_diskbuffer), we must
+buffer split chunks in memory.
+This specifies the maximum size split chunks can be in this scenario,
+and thus the maximum amount of memory consumed for in-memory splitting.
+The size of this buffer can be changed from its (very conservative) default
+to a value reflecting the amount of memory that each taper process on
+the dump server may reasonably consume.
+</para>
   </listitem>
   </varlistentry>
 </variablelist>
