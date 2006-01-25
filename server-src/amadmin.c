@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.103 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: amadmin.c,v 1.104 2006/01/25 23:27:46 ktill Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1594,6 +1594,8 @@ disk_t *dp;
     am_host_t *hp;
     interface_t *ip;
     sle_t *excl;
+    time_t st;
+    struct tm *stm;
 
     hp = dp->host;
     ip = hp->netif;
@@ -1709,12 +1711,40 @@ disk_t *dp;
 	       dp->comprate[0], dp->comprate[1]);
     }
 
-    printf("        security-driver %s\n", dp->security_driver);
-    printf("        kencrypt %s\n", (dp->kencrypt? "YES" : "NO"));
+    printf("        encrypt ");
+    switch(dp->encrypt) {
+    case ENCRYPT_NONE:
+	printf("NONE\n");
+	break;
+    case ENCRYPT_CUST:
+	printf("CLIENT\n");
+	break;
+    case ENCRYPT_SERV_CUST:
+	printf("SERVER\n");
+	break;
+    }
 
+    printf("        auth %s\n", dp->security_driver);
+    printf("        kencrypt %s\n", (dp->kencrypt? "YES" : "NO"));
     printf("        holdingdisk %s\n", (!dp->no_hold? "YES" : "NO"));
     printf("        record %s\n", (dp->record? "YES" : "NO"));
     printf("        index %s\n", (dp->index? "YES" : "NO"));
+    st = dp->start_t;
+        if(st) {
+            stm = localtime(&st);
+            printf("        starttime %d:%02d:%02d\n",
+              stm->tm_hour, stm->tm_min, stm->tm_sec);
+        }
+   
+    if(dp->tape_splitsize > 0) {
+	printf("        tape_splitsize %ld\n", dp->tape_splitsize);
+    }
+    if(dp->split_diskbuffer) {
+	printf("        split_diskbuffer %s\n", dp->split_diskbuffer);
+    }
+    if(dp->fallback_splitsize > 0) {
+	printf("        fallback_splitsize %ldMb\n", (dp->fallback_splitsize / 1024));
+    }
     printf("        skip-incr %s\n", (dp->skip_incr? "YES" : "NO"));
     printf("        skip-full %s\n", (dp->skip_full? "YES" : "NO"));
 
