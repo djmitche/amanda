@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.120 2006/01/12 01:57:05 paddy_s Exp $
+ * $Id: amanda.h,v 1.121 2006/01/25 18:19:34 ktill Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -801,6 +801,8 @@ extern char  *check_user_ruserok     P((const char *host,
 extern char  *check_user_amandahosts P((const char *host,
 					struct passwd *pwd,
 					const char *user));
+extern int check_security P((struct sockaddr_in *, char *, unsigned long,
+			     char **));
 
 extern int debug;
 

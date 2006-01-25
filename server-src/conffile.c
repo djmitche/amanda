@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.122 2006/01/15 21:01:00 martinea Exp $
+ * $Id: conffile.c,v 1.123 2006/01/25 18:19:35 ktill Exp $
  *
  * read configuration file
  */
@@ -146,7 +146,6 @@ ColumnInfo ColumnData[] = {
     { "OrigKB",     1, 7,  0,  0, "%*.*f",  "ORIG-KB" },
     { "OutKB",      0, 7,  0,  0, "%*.*f",  "OUT-KB" },
     { "Compress",   0, 6,  1,  0, "%*.*f",  "COMP%" },
-    { "Encrypt",    0, 7,  1,  0, "%*.*f",  "CRYPT%" },
     { "DumpTime",   0, 7,  7,  0, "%*.*s",  "MMM:SS" },
     { "DumpRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
     { "TapeTime",   1, 6,  6,  0, "%*.*s",  "MMM:SS" },

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.54 2006/01/15 21:01:00 martinea Exp $
+/* $Id: amidxtaped.c,v 1.55 2006/01/25 18:19:35 ktill Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -59,8 +59,6 @@ static am_feature_t *their_features = NULL;
 
 static char *get_client_line P((void));
 static char *get_client_line_fd P((int));
-static int check_security P((struct sockaddr_in *, char *, unsigned long,
-    char **));
 static void check_security_buffer P((char*));
 
 /* exit routine */
@@ -507,161 +505,3 @@ cleanup(void)
     }
 }
 
-static int
-check_security(addr, str, cksum, errstr)
-     struct sockaddr_in *addr;
-     char *str;
-     unsigned long cksum;
-     char **errstr;
-{
-    char *remotehost = NULL, *remoteuser = NULL;
-    char *bad_bsd = NULL;
-    struct hostent *hp;
-    struct passwd *pwptr;
-    int myuid, i, j;
-    char *s, *fp;
-    int ch;
-
-    *errstr = NULL;
-
-    /* what host is making the request? */
-
-    hp = gethostbyaddr((char *)&addr->sin_addr, sizeof(addr->sin_addr),
-		       AF_INET);
-    if(hp == NULL) {
-	/* XXX include remote address in message */
-	*errstr = vstralloc("[",
-			    "addr ", inet_ntoa(addr->sin_addr), ": ",
-			    "hostname lookup failed",
-			    "]", NULL);
-	return 0;
-    }
-    remotehost = stralloc(hp->h_name);
-
-    /* Now let's get the hostent for that hostname */
-    hp = gethostbyname( remotehost );
-    if(hp == NULL) {
-	/* XXX include remote hostname in message */
-	*errstr = vstralloc("[",
-			    "host ", remotehost, ": ",
-			    "hostname lookup failed",
-			    "]", NULL);
-	amfree(remotehost);
-	return 0;
-    }
-
-    /* Verify that the hostnames match -- they should theoretically */
-    if( strncasecmp( remotehost, hp->h_name, strlen(remotehost)+1 ) != 0 ) {
-	*errstr = vstralloc("[",
-			    "hostnames do not match: ",
-			    remotehost, " ", hp->h_name,
-			    "]", NULL);
-	amfree(remotehost);
-	return 0;
-    }
-
-    /* Now let's verify that the ip which gave us this hostname
-     * is really an ip for this hostname; or is someone trying to
-     * break in? (THIS IS THE CRUCIAL STEP)
-     */
-    for (i = 0; hp->h_addr_list[i]; i++) {
-	if (memcmp(hp->h_addr_list[i],
-		   (char *) &addr->sin_addr, sizeof(addr->sin_addr)) == 0)
-	    break;                     /* name is good, keep it */
-    }
-
-    /* If we did not find it, your DNS is messed up or someone is trying
-     * to pull a fast one on you. :(
-     */
-
-   /*   Check even the aliases list. Work around for Solaris if dns goes over NIS */
-
-    if( !hp->h_addr_list[i] ) {
-        for (j = 0; hp->h_aliases[j] !=0 ; j++) {
-	     if ( strcmp(hp->h_aliases[j],inet_ntoa(addr->sin_addr)) == 0)
-	         break;                          /* name is good, keep it */
-        }
-    	if ( !hp->h_aliases[j] ) {
-	    *errstr = vstralloc("[",
-			        "ip address ", inet_ntoa(addr->sin_addr),
-			        " is not in the ip list for ", remotehost,
-			        "]",
-			        NULL);
-	    amfree(remotehost);
-	    return 0;
-	}
-    }
-
-    /* next, make sure the remote port is a "reserved" one */
-
-    if(ntohs(addr->sin_port) >= IPPORT_RESERVED) {
-	char number[NUM_STR_SIZE];
-
-	snprintf(number, sizeof(number), "%d", ntohs(addr->sin_port));
-	*errstr = vstralloc("[",
-			    "host ", remotehost, ": ",
-			    "port ", number, " not secure",
-			    "]", NULL);
-	amfree(remotehost);
-	return 0;
-    }
-
-    /* extract the remote user name from the message */
-
-    s = str;
-    ch = *s++;
-
-    bad_bsd = vstralloc("[",
-			"host ", remotehost, ": ",
-			"bad bsd security line",
-			"]", NULL);
-
-#define sc "USER "
-    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	*errstr = bad_bsd;
-	bad_bsd = NULL;
-	amfree(remotehost);
-	return 0;
-    }
-    s += sizeof(sc)-1;
-    ch = s[-1];
-#undef sc
-
-    skip_whitespace(s, ch);
-    if(ch == '\0') {
-	*errstr = bad_bsd;
-	bad_bsd = NULL;
-	amfree(remotehost);
-	return 0;
-    }
-    fp = s - 1;
-    skip_non_whitespace(s, ch);
-    s[-1] = '\0';
-    remoteuser = stralloc(fp);
-    s[-1] = ch;
-    amfree(bad_bsd);
-
-    /* lookup our local user name */
-
-    myuid = getuid();
-    if((pwptr = getpwuid(myuid)) == NULL)
-        error("error [getpwuid(%d) fails]", myuid);
-
-    dbprintf(("bsd security: remote host %s user %s local user %s\n",
-	      remotehost, remoteuser, pwptr->pw_name));
-
-#ifndef USE_AMANDAHOSTS
-    s = check_user_ruserok(remotehost, pwptr, remoteuser);
-#else
-    s = check_user_amandahosts(remotehost, pwptr, remoteuser);
-#endif
-    if (s != NULL) {
-	*errstr = vstralloc("[",
-			    "access as ", pwptr->pw_name, " not allowed",
-			    " from ", remoteuser, "@", remotehost,
-			    ": ", s, "]", NULL);
-    }
-    amfree(remoteuser);
-    amfree(remotehost);
-    return s == NULL;
-}

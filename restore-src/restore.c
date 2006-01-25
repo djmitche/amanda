@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.18 2006/01/15 21:01:00 martinea Exp $
+ * $Id: restore.c,v 1.19 2006/01/25 18:19:35 ktill Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1086,7 +1086,7 @@ rst_flags_t *flags;
         oldout = alloc(sizeof(open_output_t));
         oldout->file = alloc(sizeof(dumpfile_t));
         memcpy(oldout->file, file, sizeof(dumpfile_t));
-        if(flags->inline_assemble) oldout->outfd = out; 
+        if(flags->inline_assemble) oldout->outfd = pipes[0].pipe[1];
 	else oldout->outfd = -1;
         oldout->comp_enc_pid = -1;
         oldout->lastpartnum = file->partnum;

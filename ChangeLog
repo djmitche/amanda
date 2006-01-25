@@ -1,3 +1,13 @@
+2006-01-25  Kevin Till<ktill@zmanda.com>
+	* common-src/bsd-security.c: move check_security to bsd_security.c, fix faulty return
+				     Thanks to Paul Bijnens
+	* restore-src/amidxtaped.c:  ditto
+	* server-src/amindexd.c:     ditto and no need to tell client about reason for denial
+	* common-src/amanda.h:       add proto of check_security
+	* server-src/conffile.c:     don't list CRYPT in the summary report for now
+	* restore-src/restore.c:     set outfd correctly for amfetchdump cases
+				     Thanks to Paul Bijnens
+
 2006-01-24  Ian Turner <ian@zmanda.com>
 	* man/xml-source/amanda.conf.5.xml: Put documentation of 
 	  split-dump options in the right place. Thanks to Paul Bijnens 
