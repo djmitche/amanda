@@ -109,7 +109,6 @@ some of which have a multiplier effect:</para>
   <listitem>
 <para>Some number of weeks (days*7).</para>
 
-<para>
 <note>The value
 <emphasis remap='B'>inf</emphasis>
 may be used in most places where an integer is expected
@@ -135,7 +134,6 @@ If no argument is given,
 is assumed.
 </para>
 </note>
-</para>
   </listitem>
   </varlistentry>
 </variablelist>
@@ -172,7 +170,6 @@ A space separated list of recipients for mail reports.</para>
 The number of days in the backup cycle.
 Each disk will get a full backup at least this often.
 Setting this to zero tries to do a full backup each run.</para>
-<para>
 <note>This parameter may also be set in a specific
 <emphasis remap='B'>dumptype</emphasis>
 (see below).
@@ -183,7 +180,6 @@ so must appear in
 before any
 <emphasis remap='B'>dumptype</emphasis>s
 are defined.</note>
-</para>
   </listitem>
   </varlistentry>
   
@@ -233,6 +229,7 @@ with damaged or misplaced tapes or schedule adjustments that call for slight adj
   <varlistentry>
   <term><emphasis remap='B'>label_new_tapes</emphasis>
         <emphasis remap='I'> string</emphasis></term>
+<listitem>
     <para>Default: not set.
 When set, this directive will cause &A; to automatically write an Amanda 
 tape label to any black tape she encounters. This option is DANGEROUS 
@@ -245,6 +242,7 @@ specify enough '%' characters that you do not run out of tape labels.
 Example: 
 <markup>label_new_tapes "DailySet1-%%%"</markup>
 </para>
+</listitem>
 </varlistentry>
 
   <varlistentry>
@@ -828,8 +826,7 @@ this column.</para>
 
 <para>Here is an example:</para>
 
-<programlisting>
-columnspec &quot;Disk=1:18,HostName=0:10,OutKB=1:7&quot;</programlisting>
+columnspec &quot;Disk=1:18,HostName=0:10,OutKB=1:7&quot;
 
 <para>The above will display the disk information in 18 characters
 and put one space before it. The hostname column will be 10 characters wide with
@@ -888,37 +885,37 @@ The path to this holding area.</para>
   <varlistentry>
   <term><emphasis remap='B'>use</emphasis> <emphasis remap='I'> int</emphasis></term>
   <listitem>
-<para>Default:
+Default:
 <emphasis remap='I'>0 Gb</emphasis>.
 Amount of space that can be used in this holding disk area.
 If the value is zero, all available space on the file system is used.
-If the value is negative, &A; will use all available space minus that value.</para>
+If the value is negative, &A; will use all available space minus that value.
   </listitem>
   </varlistentry>
   <varlistentry>
   <term><emphasis remap='B'>chunksize</emphasis> <emphasis remap='I'> int</emphasis></term>
   <listitem>
-<para>Default:
+Default:
 <emphasis remap='I'>1 Gb</emphasis>.
 Holding disk chunk size. Dumps larger than the specified size will be stored in multiple
 holding disk files. The size of each chunk will not exceed the specified value.
 However, even though dump images are split in the holding disk, they are concatenated as 
 they are written to tape, so each dump image still corresponds to a single continuous 
-tape section.</para>
+tape section.
 
-<para>If 0 is specified, &A; will create holding disk chunks as large as
-((INT_MAX/1024)-64) Kbytes.</para>
+If 0 is specified, &A; will create holding disk chunks as large as
+((INT_MAX/1024)-64) Kbytes.
 
-<para>Each holding disk chunk includes a 32 Kbyte header, so the minimum
-chunk size is 64 Kbytes (but that would be really silly).</para>
+Each holding disk chunk includes a 32 Kbyte header, so the minimum
+chunk size is 64 Kbytes (but that would be really silly).
 
-<para>Operating systems that are limited to a maximum file size of 2 Gbytes
+Operating systems that are limited to a maximum file size of 2 Gbytes
 actually cannot handle files that large.
 They must be at least one byte less than 2 Gbytes.
 Since &A; works with 32 Kbyte blocks, and
 to handle the final read at the end of the chunk, the chunk size
 should be at least 64 Kbytes (2 * 32 Kbytes) smaller than the maximum
-file size, e.g. 2047 Mbytes.</para>
+file size, e.g. 2047 Mbytes.
   </listitem>
   </varlistentry>
 </variablelist>
@@ -970,8 +967,14 @@ are defined.</para>
   <listitem>
 <para>Default:
 <emphasis remap='I'>bsd</emphasis>.
-Type of authorization to perform between tape server and backup client hosts.
-May be <emphasis remap='B'>krb4</emphasis> to use Kerberos-IV authorization.</para>
+Type of authorization to perform between tape server and backup client hosts.</para>
+<para><emphasis remap='B'>krb4</emphasis> to use Kerberos-IV
+authorization.</para>
+<para><emphasis remap='B'>krb5</emphasis> to use Kerberos-V
+authorization.</para>
+<para><emphasis remap='B'>ssh</emphasis> to use OpenSSH
+authorization.</para>
+
   </listitem>
   </varlistentry>
 
@@ -1291,9 +1294,7 @@ is a file name on the client containing glob expressions.</para>
 <option>--files-from</option> argument. They must start with &quot;./&quot; and contain no other &quot;/&quot;.</para>
 
 <note>For globbing to work at all, even the limited single level, 
-the top level directory of the DLE must be readable
-<!-- ?and executable --> 
-by the &A; user.</note>
+the top level directory of the DLE must be readable by the &A; user.</note>
 
 <para>With the <emphasis remap='B'>append</emphasis> keyword, the
 <emphasis remap='I'>string</emphasis> is appended to the current list, without it, the

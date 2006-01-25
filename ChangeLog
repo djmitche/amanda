@@ -1,4 +1,8 @@
 2006-01-25  Kevin Till<ktill@zmanda.com>
+	* man/xml-source/amanda.conf.5.xml: fix formatting (<para> is not compatible with some tag)
+					    add supported auth types.
+
+2006-01-25  Kevin Till<ktill@zmanda.com>
 	* common-src/bsd-security.c: move check_security to bsd_security.c, fix faulty return
 				     Thanks to Paul Bijnens
 	* restore-src/amidxtaped.c:  ditto
