@@ -1,6 +1,8 @@
 2006-01-25  Kevin Till<ktill@zmanda.com>
 	* server-src/amadmin.c:	fix for sourceforge bug 1412698
 				add missing parameters to "amadmin x disklist"
+	* server-src/amstatus.pl.in: untaint user input, enforce known path.
+	* server-src/amoverview.pl.in: untaint user input (bug 1353481)
 
 2006-01-25  Kevin Till<ktill@zmanda.com>
 	* man/xml-source/amanda.conf.5.xml: fix formatting (<para> is not compatible with some tag)

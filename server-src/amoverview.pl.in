@@ -78,6 +78,15 @@ elsif($#ARGV > 0) {
   Usage();
 }
 
+#untaint user input $ARGV[0]
+
+if ($opt_config =~ /^([\w.-]+)$/) {          # $1 is untainted
+   $opt_config = $1;
+} else {
+    die "filename '$opt_config' has invalid characters.\n";
+}
+
+
 -d "$confdir/$opt_config" or
 	die "$0: directory `$confdir/$opt_config' does not exist.\n";
 

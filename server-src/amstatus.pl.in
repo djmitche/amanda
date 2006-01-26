@@ -53,9 +53,21 @@ else {
 	}
 }
 
+#untaint user input $ARGV[0]
+
+if ($conf =~ /^([\w.-]+)$/) {          # $1 is untainted
+   $conf = $1;
+} else {
+    die "filename '$conf' has invalid characters.\n";
+}
+
+
 if ( ! -d "$confdir/$conf" ) {
     die "amstatus$suf: could not find directory $confdir/$conf";
 }
+
+$oldPATH = $ENV{'PATH'};
+$ENV{'PATH'} = "/bin:/usr/bin:/usr/sbin:/sbin";       # force known path
 
 $pwd = `pwd`;
 chomp $pwd;
@@ -93,6 +105,7 @@ if($nb_options == 0 ) {
 }
 
 $unit=`$sbindir/amgetconf$suf displayunit`;
+$ENV{'PATH'} = $oldPATH;
 chomp($unit);
 $unitdivisor=1;
 if($unit eq 'K') {
