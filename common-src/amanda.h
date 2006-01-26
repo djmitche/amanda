@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.121 2006/01/25 18:19:34 ktill Exp $
+ * $Id: amanda.h,v 1.122 2006/01/26 01:46:57 paddy_s Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -234,8 +234,6 @@ struct iovec {
 #include <ctype.h>
 #include <errno.h>
 #include <netinet/in.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
 #include <pwd.h>
 #include <signal.h>
 #include <setjmp.h>
@@ -801,10 +799,11 @@ extern char  *check_user_ruserok     P((const char *host,
 extern char  *check_user_amandahosts P((const char *host,
 					struct passwd *pwd,
 					const char *user));
-extern int check_security P((struct sockaddr_in *, char *, unsigned long,
-			     char **));
 
 extern int debug;
+extern int check_security P((struct sockaddr_in *, char *, unsigned long,
+                             char **));
+
 
 /*
  * Handle functions which are not always declared on all systems.  This
