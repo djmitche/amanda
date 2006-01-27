@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.5 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: amfetchdump.c,v 1.6 2006/01/27 18:37:11 vectro Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -63,6 +63,9 @@ tapelist_t *list_needed_tapes P((match_list_t *match_list));
 void usage P((void));
 int main P((int argc, char **argv));
 
+/* exit routine */
+static int parent_pid = -1;
+static void cleanup P((void));
 
 void errexit()
 /*
@@ -257,6 +260,7 @@ char **argv;
     char *e;
     int arg_state;
     rst_flags_t *rst_flags;
+    struct passwd *pwent;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -269,6 +273,27 @@ char **argv;
     }
 
     set_pname("amfetchdump");
+
+#ifdef FORCE_USERID
+
+    /* we'd rather not run as root */
+
+    if(client_uid == (uid_t) -1 && (pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
+	client_uid = pwent->pw_uid;
+	client_gid = pwent->pw_gid;
+	endpwent();
+    }
+    if(geteuid() == 0) {
+	if(client_uid == (uid_t) -1) {
+	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	}
+
+	initgroups(CLIENT_LOGIN, client_gid);
+	setgid(client_gid);
+	setuid(client_uid);
+    }
+
+#endif	/* FORCE_USERID */
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
@@ -433,9 +458,11 @@ char **argv;
     /* Decide what tapes we'll need */
     needed_tapes = list_needed_tapes(match_list);
     
+    parent_pid = getpid();
+    atexit(cleanup);
     get_lock = lock_logfile(); /* config is loaded, should be ok here */
     search_tapes(NULL, 1, needed_tapes, match_list, rst_flags);
-    if(get_lock) unlink(rst_conf_logfile);
+    cleanup();
 
     free_match_list(match_list);
 
@@ -447,3 +474,12 @@ char **argv;
 
     return(0);
 }
+
+static void
+cleanup(void)
+{
+    if(parent_pid == getpid()) {
+	if(get_lock) unlink(rst_conf_logfile);
+    }
+}
+

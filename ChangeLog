@@ -1,4 +1,10 @@
-2006-01-25 Paddy Sreenivasan <paddy@zmanda.com>
+2006-01-27  Ian Turner <ian@zmanda.com>
+	* restore-src/amfetchdump.c: Properly clean up logfiles. Also, 
+	  run as user amanda even if we are started as some other user.
+	  Thanks to Paul Bijnens <pbijnens@sourceforge.net> for the 
+	  patch.
+
+2006-01-25  Paddy Sreenivasan <paddy@zmanda.com>
         * common-src/amanda.h:     Removed unnecessary header include files.
 
 2006-01-25  Kevin Till<ktill@zmanda.com>
