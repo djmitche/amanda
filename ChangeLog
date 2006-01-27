@@ -1,7 +1,13 @@
 2006-01-27  Ian Turner <ian@zmanda.com>
+	* configure.in: Add new option --without-xsltproc (and
+	  --with-xsltproc), which turns off (or forces) the use of xsltproc to
+	  build manpages. Thanks to Paul Bijnens
+	  <pbijnens@users.sourceforge.net> for suggesting this feature.
+
+2006-01-27  Ian Turner <ian@zmanda.com>
 	* restore-src/amfetchdump.c: Properly clean up logfiles. Also, 
 	  run as user amanda even if we are started as some other user.
-	  Thanks to Paul Bijnens <pbijnens@sourceforge.net> for the 
+	  Thanks to Paul Bijnens <pbijnens@users.sourceforge.net> for the 
 	  patch.
 
 2006-01-25  Paddy Sreenivasan <paddy@zmanda.com>

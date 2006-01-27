@@ -2930,8 +2930,39 @@ AC_SUBST(LTALLOCA)
 DOC_BUILD_DATE=`date '+%d-%m-%Y'`
 AC_SUBST(DOC_BUILD_DATE)
 
-AC_PATH_PROG(XSLTPROC, xsltproc)
-AM_CONDITIONAL(HAVE_XSLTPROC, test x$XSLTPROC != x)
+AC_ARG_WITH(xsltproc,
+    [  --without-built-manpages Do not build manpages from XML source.],
+    [ case "$withval" in
+        y | ye | yes)
+          USE_XSLTPROC=yes;;
+        n | no)
+          USE_XSLTPROC=no;;
+        *)
+          USE_XSLTPROC=yes;
+          XSLTPROC="$withval";;
+      esac
+    ],
+    [ USE_XSLTPROC=maybe; ])
+
+AC_DEFUN([AC_PATH_XSLTPROC], [AC_PATH_PROG(XSLTPROC, xsltproc)])
+
+# This looks bad, but && and || have equal precedence in shells, so
+# actually it's all OK.
+if test "$USE_XSLTPROC" = "yes" || test "$USE_XSLTPROC" = "maybe" && \
+   test -z "$XSLTPROC"; then
+    AC_PATH_XSLTPROC
+    if test -n "$XSLTPROC"; then
+        USE_XSLTPROC=yes;
+    else
+        if test "$USE_XSLTPROC" = yes; then
+           AC_MSG_ERROR([can't find xsltproc, but running with --with-xsltproc.])
+        else
+           USE_XSLTPROC=no;
+        fi
+    fi
+fi
+
+AM_CONDITIONAL(HAVE_XSLTPROC, test "$USE_XSLTPROC" = yes)
 
 AC_CONFIG_FILES([\
 	amplot/amcat.awk		amplot/amplot.sh		\
