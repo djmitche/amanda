@@ -1,3 +1,7 @@
+2006-01-31  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driver.c (dumper_result): Reset sched(dp)->attempted to 0
+	  before adding it to tapeq.
+
 2006-01-27  Ian Turner <ian@zmanda.com>
 	* configure.in: Add new option --without-xsltproc (and
 	  --with-xsltproc), which turns off (or forces) the use of xsltproc to

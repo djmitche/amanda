@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.157 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: driver.c,v 1.158 2006/02/01 11:49:37 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1204,6 +1204,7 @@ dumper_result(dp)
 	enqueue_disk(&runq, dp);
     }
     else if(size > DISK_BLOCK_KB) {
+	sched(dp)->attempted = 0;
 	enqueue_disk(&tapeq, dp);
 	startaflush();
     }
