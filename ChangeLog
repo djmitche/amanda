@@ -1,3 +1,7 @@
+2006-02-01  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/restore.c: Use OFF_T_FMT to printf off_t variable,
+	  cast size_t to am64_t and use AM64_FMT to printf them.
+
 2006-01-31  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c (dumper_result): Reset sched(dp)->attempted to 0
 	  before adding it to tapeq.
