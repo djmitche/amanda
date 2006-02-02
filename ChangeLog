@@ -1,3 +1,10 @@
+2006-02-02  Ian Turner <ian@zmanda.com>
+	* recover-src/extract_list.c (extract_files_child): Run tar with 
+	  --numeric-owner if we are extracting a non-sambafied tar file. 
+	  Thanks to Paul Bijnens <pbijnens@users.sourceforge.net> for 
+	  the patch. Thanks also to Mark Schaefer for suggesting this 
+	  change.
+
 2006-02-01  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c: Use OFF_T_FMT to printf off_t variable,
 	  cast size_t to am64_t and use AM64_FMT to printf them.
