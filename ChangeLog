@@ -1,3 +1,6 @@
+2006-02-03  John Franks <jrfranks@zmanda.com>
+	* server-src/taper.c: Fix null string printout in CHUNKERSUCCESS log line.
+
 2006-02-03  Ian Turner <ian@zmanda.com>
 	* server-src/amadmin.c (main): Don't free conf_tapelist too 
 	  early. Thanks to Cédric Lucantis

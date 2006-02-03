@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.111 2006/01/14 04:37:19 paddy_s Exp $
+/* $Id: taper.c,v 1.112 2006/02/03 22:20:17 paddy_s Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1428,11 +1428,10 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 				      "[sec ", walltime_str(runtime),
 				      " kb ", kb_str,
 				      " kps ", kps_str,
-				      " ", str ? str : "(null)",
+				      " ", str,
 				      "]",
 				      NULL);
 		q = squote(errstr);
-		amfree(str);
 		if (splitsize == 0) { /* Ordinary dump */
 		    if(first_file.is_partial) {
 			putresult(PARTIAL, "%s %s %d %s\n",
@@ -1459,7 +1458,6 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 		    log_add(L_CHUNK, "%s %s %s %d %d %s", hostname, diskname,
 			    datestamp, num_splits, level, errstr);
 		    if(!nexting){ /* split dump complete */
-			amfree(errstr);
 			rt =curdump_rt.r.tv_sec+curdump_rt.r.tv_usec/1000000.0;
 			snprintf(kb_str, sizeof(kb_str), "%ld",
 				    filesize+cur_span_chunkstart);
@@ -1469,7 +1467,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 					      "[sec ", walltime_str(curdump_rt),
 					      " kb ", kb_str,
 					      " kps ", kps_str,
-					      " ", str ? str : "(null)",
+					      " ", str,
 					      "]",
 					      NULL);
 			putresult(DONE, "%s %s %d %s\n", handle, label,
@@ -1480,6 +1478,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 			amfree(holdfile_path_thischunk);
 		    }
  		}
+		amfree(str);
 
  		if(!nexting){
  		    num_splits = 0;
