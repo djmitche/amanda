@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.104 2006/01/25 23:27:46 ktill Exp $
+ * $Id: amadmin.c,v 1.105 2006/02/03 17:29:28 vectro Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -183,7 +183,6 @@ int main(argc, argv)
     }
     if(read_tapelist(conf_tapelist))
 	error("could not load tapelist \"%s\"", conf_tapelist);
-    amfree(conf_tapelist);
 
     conf_infofile = getconf_str(CNF_INFOFILE);
     if (*conf_infofile == '/') {

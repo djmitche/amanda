@@ -1,3 +1,8 @@
+2006-02-03  Ian Turner <ian@zmanda.com>
+	* server-src/amadmin.c (main): Don't free conf_tapelist too 
+	  early. Thanks to Cédric Lucantis
+	  <cedric-lucantis@users.sourceforge.net> for the patch.
+
 2006-02-02 Kevin Till <ktill@zmanda.com>
 	* man/xml-source/amanda.8.xml: fix formatting. <informaltable> problem 
 				       to be fixed.
