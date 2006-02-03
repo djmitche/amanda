@@ -1,3 +1,8 @@
+2006-02-02 Kevin Till <ktill@zmanda.com>
+	* man/xml-source/amanda.8.xml: fix formatting. <informaltable> problem 
+				       to be fixed.
+	* man/xml-source/amrecover.8.xml: add note on client-encrypted tapes.
+
 2006-02-02  Ian Turner <ian@zmanda.com>
 	* recover-src/extract_list.c (extract_files_child): Run tar with 
 	  --numeric-owner if we are extracting a non-sambafied tar file. 
@@ -35,8 +40,8 @@
 	* server-src/amoverview.pl.in: untaint user input (bug 1353481)
 
 2006-01-25  Kevin Till<ktill@zmanda.com>
-	* man/xml-source/amanda.conf.5.xml: fix formatting (<para> is not compatible with some tag)
-					    add supported auth types.
+	* man/xml-source/amanda.conf.5.xml: fix formatting (<para> is not compatible 
+					    with some tag) add supported auth types.
 
 2006-01-25  Kevin Till<ktill@zmanda.com>
 	* common-src/bsd-security.c: move check_security to bsd_security.c, 

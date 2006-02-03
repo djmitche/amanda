@@ -888,13 +888,13 @@ For instance:</para>
   //some-pc/home normalpw
   //another-pc/disk otheruser%otherpw</programlisting>
 
-<para>With clear text passwords, this file should obviously be tightly protected.
-It only needs to be readable by the &A;-user on the Samba server.</para>
+With clear text passwords, this file should obviously be tightly protected.
+It only needs to be readable by the &A;-user on the Samba server.
 
-<para>You can find further information in the
+You can find further information in the
 <emphasis remap='B'>docs/SAMBA</emphasis>
 <!-- TODO: edit link -->
-file that comes with an &A; distribution.</para>
+file that comes with an &A; distribution.
 
 </listitem>
 </varlistentry>
@@ -906,13 +906,13 @@ file that comes with an &A; distribution.</para>
 The command applies to all disks that match your arguments.
 This section describes the matcher.</para>
 
-<para>The matcher matches by word, each word is a glob expression, words
+The matcher matches by word, each word is a glob expression, words
 are separated by the separator '.' for host and '/' for disk. You
 can anchor the expression at left with a '^'. You can
 anchor the expression at right with a '$'. The matcher
 is case insensitive for host but is case sensitive for disk. A match
 succeeds if all words in your expression match contiguous words in 
-the host or disk.</para>
+the host or disk.
 
 <informaltable frame="all">
 <tgroup cols="2" alignment="left">
@@ -955,7 +955,6 @@ the host or disk.</para>
 </tbody>
 </tgroup>
 </informaltable>
-<para/>
 
 </refsect1>
 

@@ -50,7 +50,9 @@ man page for more details about &A;.</para>
 </refsect1>
 
 <refsect1><title>OPTIONS</title>
-<note>The Default values are those set at compile-time.</note>
+<note>The Default values are those set at compile-time.
+Use <command>amrestore</command> to recover client-encrypted or
+client-custom-compressed tapes.</note>
 <variablelist remap='TP'>
   <varlistentry>
   <term><emphasis remap='B'>[ -C ] config</emphasis></term>
