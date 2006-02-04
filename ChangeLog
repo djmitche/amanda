@@ -1,3 +1,11 @@
+2006-02-4   Paddy Sreenivasan <paddy@zmanda.com>
+        * man/xml-source/amfetchdump.8.xml
+        * man/xml-source/amcrypt.8.xml
+        * man/xml-source/amanda.conf.5.xml
+        * man/xml-source/amanda.8.xml
+        * man/xml-source/amaespipe.8.xml
+        * man/entities/global.entities: Merged changes from xml-docs tree
+
 2006-02-03  John Franks <jrfranks@zmanda.com>
 	* server-src/taper.c: Fix null string printout in CHUNKERSUCCESS log line.
 

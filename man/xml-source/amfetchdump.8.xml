@@ -7,7 +7,6 @@
   %global_entities;
 ]>
 
-<!-- lifted from troff+man by doclifter -->
 <refentry id='amfetchdump.8'>
 
 <refmeta>
@@ -73,9 +72,7 @@ remap='I'>hostname</emphasis> must be specified when not in inventory mode.</par
 
 <para>Unless
 <option>-p</option>
-is used,
-backup images are extracted to files
-in the current directory named:</para>
+is used, backup images are extracted to files in the current directory named:</para>
 
 <!-- .RS -->
 <para><emphasis remap='I'>hostname.diskname.datestamp.dumplevel</emphasis></para>
@@ -140,8 +137,8 @@ option disables the appending behavior, and instead restores each
 piece as an individual file and reassembles them only after all have
 been restored.</para>
 
-<para>Note that this requires at least double the size of your dump in free
-disk space, in order to build the final assembled dumpfile.</para>
+<note>This requires at least double the size of your dump in free
+disk space, in order to build the final assembled dumpfile.</note>
 
 <para>This behavior is implicitly invoked in circumstances where knowing the
 location of all dumps on tape in advance is not possible, such as when
@@ -181,7 +178,7 @@ $ amfetchdump SetA vanya
 </literallayout> <!-- .fi -->
 
 <para>A more likely scenario involves restoring a particular dump from
-a particular date. We'll pipe this one to GNU tar as well, to
+a particular date. We'll pipe this one to &gnutar; as well, to
 automatically extract the dump.</para>
 <!-- .RS -->
 <literallayout remap='.nf'>

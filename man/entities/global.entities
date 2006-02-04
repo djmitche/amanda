@@ -22,9 +22,11 @@
 
 <!-- IDs for AMANDA commands-->
 <!ENTITY amadmin ' <command>amadmin</command>'>
+<!ENTITY amaespipe ' <command>amaespipe</command>'>
 <!ENTITY amcheck ' <command>amcheck</command>'>
 <!ENTITY amcheckdb ' <command>amcheckdb</command>'>
 <!ENTITY amcleanup ' <command>amcleanup</command>'>
+<!ENTITY amcrypt ' <command>amcrypt</command>'>
 <!ENTITY amdd ' <command>amdd</command>'>
 <!ENTITY amdump ' <command>amdump</command>'>
 <!ENTITY amflush ' <command>amflush</command>'>

@@ -227,6 +227,27 @@ with damaged or misplaced tapes or schedule adjustments that call for slight adj
   </varlistentry>
 
   <varlistentry>
+<<<<<<< amanda.conf.5.xml
+  <term><emphasis remap='B'>label_new_tapes</emphasis>
+        <emphasis remap='I'> string</emphasis></term>
+<listitem>
+    <para>Default: not set.
+When set, this directive will cause &A; to automatically write an &A;
+tape label to any black tape she encounters. This option is DANGEROUS 
+because when set, &A; will ERASE any non-&A; tapes you may have, and may 
+also ERASE any near-failing tapes. Use with caution.</para>
+<para>When using this directive, specify the template for new tape 
+labels. The template should contain some number of contiguous '%' 
+characters, which will be replaced with a generated number. Be sure to 
+specify enough '%' characters that you do not run out of tape labels. 
+Example: 
+<markup>label_new_tapes "DailySet1-%%%"</markup>
+</para>
+</listitem>
+</varlistentry>
+
+  <varlistentry>
+=======
   <term><emphasis remap='B'>label_new_tapes</emphasis>
         <emphasis remap='I'> string</emphasis></term>
 <listitem>
@@ -246,6 +267,7 @@ Example:
 </varlistentry>
 
   <varlistentry>
+>>>>>>> 1.6
   <term><emphasis remap='B'>dumpuser</emphasis> <emphasis remap='I'> string</emphasis></term>
   <listitem>
 <para>Default:
@@ -826,7 +848,8 @@ this column.</para>
 
 <para>Here is an example:</para>
 
-columnspec &quot;Disk=1:18,HostName=0:10,OutKB=1:7&quot;
+<programlisting>
+columnspec &quot;Disk=1:18,HostName=0:10,OutKB=1:7&quot;</programlisting>
 
 <para>The above will display the disk information in 18 characters
 and put one space before it. The hostname column will be 10 characters wide with
@@ -1159,7 +1182,7 @@ server host as it goes from the network into the holding disk or to tape.</para>
 </listitem>
 <para>Note that current logic assumes compression then encryption during
 backup(thus decrypt then uncompress during restore). So specifying
-client-encryption and server-compression is not supported.
+client-encryption AND server-compression is not supported.
 <emphasis remap='I'>amcrypt</emphasis> which is a wrapper of
 	    <emphasis remap='I'>aespipe</emphasis> is provided as a reference
 		encryption program.</para>
@@ -1217,6 +1240,9 @@ The path to the specified exclude list file, if present (see description of
 
 <para>All exclude expressions are concatenated in one file and passed to &gnutar;
 as an <option>--exclude-from</option> argument.</para>
+
+<para>All exclude expressions must always be specified as relative to the
+head directory of the DLE.</para>
 
 <para>With the
 <emphasis remap='B'>append</emphasis> keyword, the
@@ -1292,6 +1318,9 @@ is a file name on the client containing glob expressions.</para>
 
 <para>All include expressions are expanded by &A;, concatenated in one file and passed to &gnutar; as a
 <option>--files-from</option> argument. They must start with &quot;./&quot; and contain no other &quot;/&quot;.</para>
+
+<para>All include expressions must always be specified as relative to the
+head directory of the DLE.</para>
 
 <note>For globbing to work at all, even the limited single level, 
 the top level directory of the DLE must be readable by the &A; user.</note>

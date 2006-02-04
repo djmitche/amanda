@@ -7,7 +7,6 @@
   %global_entities;
 ]>
 
-<!-- lifted from troff+man by doclifter -->
 <refentry id='amaespipe.8'>
 <refmeta>
 <refentrytitle>amaespipe</refentrytitle>
@@ -25,17 +24,17 @@
 </refsynopsisdiv>
 
 <refsect1><title>DESCRIPTION</title>
-<para><emphasis remap='B'>Amaespipe</emphasis>
-requires <emphasis remap='B'>aespipe</emphasis> and <emphasis
-remap='B'>gpg</emphasis>  to work. Aespipe is available from http://loop-aes.sourceforge.net/</para>
-<para>Amaespipe will search for aespipe program in the following directory:
+<para>&amaespipe;
+requires <emphasis remap='B'>aespipe</emphasis> and <emphasis remap='B'>gpg</emphasis> to work.
+Aespipe is available from <ulink url="http://loop-aes.sourceforge.net"/></para>
+<para>&amaespipe; will search for the aespipe program in the following directories:
 /usr/bin:/usr/local/bin:/sbin:/usr/sbin. </para>
-Amaespipe is called by amcrypt for &A; data encryption.
-<para>Amaespipe is based on aespipe's bzaespipe program.
+&amaespipe; is called by &amcrypt; for &A; data encryption.
+<para>&amaespipe; is based on aespipe's bzaespipe program.
 It calls aespipe to encrypt data using AES256 as the encryption and SHA256 as the
 hash function. GPG key should be stored in $AMANDA_HOME/.gnupg/am_key.gpg.
-Amaespipe reads passphrase from file descriptor 3.
-During decryption, amaespipe autodects encryption type and hash function from
+&amaespipe; reads passphrase from file descriptor 3.
+During decryption, &amaespipe; autodects encryption type and hash function from
 the encrypted image.</para>
 </refsect1>
 

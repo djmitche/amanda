@@ -7,7 +7,6 @@
   %global_entities;
 ]>
 
-<!-- lifted from troff+man by doclifter -->
 <refentry id='amcrypt.8'>
 <refmeta>
 <refentrytitle>amcrypt</refentrytitle>
@@ -26,14 +25,15 @@
 
 
 <refsect1><title>DESCRIPTION</title>
-<para><emphasis remap='B'>Amcrypt</emphasis>
+<para>&amcrypt; 
 requires <emphasis remap='B'>aespipe</emphasis> and <emphasis
-remap='B'>gpg</emphasis>  to work. Aespipe is available from http://loop-aes.sourceforge.net/</para>
-<para>Amcrypt will search for aespipe program in the following directory:
+remap='B'>gpg</emphasis>  to work. Aespipe is available from <ulink
+url="http://loop-aes.sourceforge.net"/></para>
+<para>&amcrypt; will search for the aespipe program in the following directories:
 /usr/bin:/usr/local/bin:/sbin:/usr/sbin.</para>
-Amcrypt calls <emphasis remap='B'>amaespipe</emphasis> and pass the
+&amcrypt; calls &amaespipe; and pass the
 <emphasis remap='B'>passphrase</emphasis> through file descriptor 3.
-passphrase should be stored in ~amanda/.am_passphrase.
+The passphrase should be stored in ~amanda/.am_passphrase.
 </refsect1>
 
 <refsect1><title>How to create encryption keys for amcrypt</title>
@@ -48,16 +48,17 @@ keyboard, mouse and disks).
 it in the next step.</para>
 <para>2. Store the passphrase inside the home-directory of the AMANDA-user and
 protect it with proper permissions:</para>
+
+<programlisting>
 echo my_secret_passphrase > ~amanda/.am_passphrase
-
 chown amanda:disk ~amanda/.am_passphrase
-
 chmod 700 ~amanda/.am_passphrase
+</programlisting>
 
 </refsect1>
 
 <refsect1><title>Key and Passphrase</title>
-<para>Amcrypt use the same key to encrypt and decrypt data.</para>
+<para>&amcrypt; uses the same key to encrypt and decrypt data.</para>
 It is very important to store and protect the key and the passphrase
 properly. Encrypted backup data can <emphasis remap='B'>only</emphasis> be recovered with the correct key and
 passphrase.
