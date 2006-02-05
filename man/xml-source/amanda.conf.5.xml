@@ -227,7 +227,6 @@ with damaged or misplaced tapes or schedule adjustments that call for slight adj
   </varlistentry>
 
   <varlistentry>
-<<<<<<< amanda.conf.5.xml
   <term><emphasis remap='B'>label_new_tapes</emphasis>
         <emphasis remap='I'> string</emphasis></term>
 <listitem>
