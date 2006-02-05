@@ -266,7 +266,6 @@ Example:
 </varlistentry>
 
   <varlistentry>
->>>>>>> 1.6
   <term><emphasis remap='B'>dumpuser</emphasis> <emphasis remap='I'> string</emphasis></term>
   <listitem>
 <para>Default:
