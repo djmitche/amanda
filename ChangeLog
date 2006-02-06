@@ -1,4 +1,12 @@
-2006-02-4   Paddy Sreenivasan <paddy@zmanda.com>
+2006-02-06  Ian Turner <ian@zmanda.com>
+	* restore-src/amidxtaped.c: Properly handle changers, 
+	  tape-label checking, and tape prompting in amrecover, 
+	  amindexd, and amidextaped. Thanks to Paul Bijnens 
+	  <pbijnens@users.sourceforge.net> for the patch.
+	* restore-src/restore.c: ditto.
+	* server-src/amindexd.c: ditto.
+
+2006-02-04  Paddy Sreenivasan <paddy@zmanda.com>
         * man/xml-source/amfetchdump.8.xml
         * man/xml-source/amcrypt.8.xml
         * man/xml-source/amanda.conf.5.xml

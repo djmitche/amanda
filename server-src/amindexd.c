@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.84 2006/01/25 18:19:35 ktill Exp $
+ * $Id: amindexd.c,v 1.85 2006/02/06 16:31:47 vectro Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -793,7 +793,7 @@ int  recursive;
 }
 
 
-/* returns the value of tapedev from the amanda.conf file if set,
+/* returns the value of changer or tapedev from the amanda.conf file if set,
    otherwise reports an error */
 static int tapedev_is()
 {
@@ -805,15 +805,35 @@ static int tapedev_is()
 	return -1;
     }
 
-    /* get tapedev value */
-    if ((result = getconf_str(CNF_TAPEDEV)) == NULL)
-    {
-	reply(501, "Tapedev not set in config file.");
-	return -1;
+    /* use amrecover_changer if possible */
+    if ((result = getconf_str(CNF_AMRECOVER_CHANGER)) != NULL  &&
+        *result != '\0') {
+	dbprintf(("%s: tapedev_is amrecover_changer: %s\n",
+                  debug_prefix_time(NULL), result));
+	reply(200, result);
+	return 0;
     }
 
-    reply(200, result);
-    return 0;
+    /* use changer if possible */
+    if ((result = getconf_str(CNF_TPCHANGER)) != NULL  &&  *result != '\0') {
+	dbprintf(("%s: tapedev_is tpchanger: %s\n",
+                  debug_prefix_time(NULL), result));
+	reply(200, result);
+	return 0;
+    }
+
+    /* get tapedev value */
+    if ((result = getconf_str(CNF_TAPEDEV)) != NULL  &&  *result != '\0') {
+	dbprintf(("%s: tapedev_is tapedev: %s\n",
+                  debug_prefix_time(NULL), result));
+	reply(200, result);
+	return 0;
+    }
+
+    dbprintf(("%s: No tapedev or changer in config site.\n",
+              debug_prefix_time(NULL)));
+    reply(501, "Tapedev or changer not set in config file.");
+    return -1;
 }
 
 
@@ -1217,4 +1237,3 @@ char **argv;
     dbclose();
     return 0;
 }
-

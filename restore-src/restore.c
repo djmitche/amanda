@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.20 2006/02/01 11:52:14 martinea Exp $
+ * $Id: restore.c,v 1.21 2006/02/06 16:31:47 vectro Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1169,11 +1169,12 @@ rst_flags_t *flags;
     }
 
     /* Suss what tape device we're using, whether there's a changer, etc. */
-    if((have_changer = changer_init()) == 0 || !use_changer) {
+    if(!use_changer || (have_changer = changer_init()) == 0) {
 	if(flags->alt_tapedev) cur_tapedev = stralloc(flags->alt_tapedev);
 	else if(!cur_tapedev) cur_tapedev = getconf_str(CNF_TAPEDEV);
 	/* XXX oughta complain if no config is loaded */
 	fprintf(stderr, "%s: Using tapedev %s\n", get_pname(), cur_tapedev);
+ 	have_changer = 0;
     } else if (have_changer != 1) {
 	error("changer initialization failed: %s", strerror(errno));
     }
@@ -1254,27 +1255,31 @@ rst_flags_t *flags;
 
 	    if((err = tape_rewind(cur_tapedev)) != NULL) {
 	        fprintf(stderr, "Could not rewind device '%s': %s\n",
-	                    cur_tapedev, err);
-	         continue;
+                        cur_tapedev, err);
+ 		wrongtape = 1;
 	    }
 	    if((tapefd = tape_open(cur_tapedev, 0)) < 0){
 		fprintf(stderr, "could not open tape device %s: %s\n",
-	                    cur_tapedev, strerror(errno));
-		continue;
+                        cur_tapedev, strerror(errno));
+ 		wrongtape = 1;
 	    }
-	
-            read_file_header(&file, tapefd, 0, flags);
-            if(file.type != F_TAPESTART) {
-	        fprintf(stderr, "Not an amanda tape\n");
-	        tapefd_close(tapefd);
-  	        continue;
-            }
-            memcpy(&tapestart, &file, sizeof(dumpfile_t));
 
-	    label = stralloc(file.name);
-	}
-	else if(newtape) {
-	    wrongtape = 1; /* nothing loaded */
+ 	    if (!wrongtape) {
+ 		read_file_header(&file, tapefd, 0, flags);
+ 		if (file.type != F_TAPESTART) {
+ 		    fprintf(stderr, "Not an amanda tape\n");
+ 		    tapefd_close(tapefd);
+		    wrongtape = 1;
+ 		} else {
+		    memcpy(&tapestart, &file, sizeof(dumpfile_t));
+ 		    label = stralloc(file.name);
+		}
+ 	    }
+	} else if(newtape) {
+	    wrongtape = 1; /* nothing loaded *	   ) )
+        )
+      ) {
+/
 	    bytes_read = -1;
 	}
 
@@ -1337,7 +1342,7 @@ rst_flags_t *flags;
 		}
 		else{
 		    char *input = NULL;
-                    fprintf(prompt_out,"Insert tape labeled %s and press return\n", desired_tape->label);
+                    fprintf(prompt_out,"Insert tape labeled %s in device %s and press return\n", desired_tape->label, cur_tapedev);
 		    fflush(prompt_out);
                     input = agets(stdin);
  		    amfree(input);

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.55 2006/01/25 18:19:35 ktill Exp $
+/* $Id: amidxtaped.c,v 1.56 2006/02/06 16:31:47 vectro Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -395,26 +395,35 @@ char **argv;
 	amfree(conffile);
     }
 
+    if(tapes && 
+       (!rst_flags->alt_tapedev  ||
+        (re_config && ( strcmp(rst_flags->alt_tapedev,
+                               getconf_str(CNF_AMRECOVER_CHANGER)) == 0 ||
+                        strcmp(rst_flags->alt_tapedev,
+                               getconf_str(CNF_TPCHANGER)) == 0 ) ) ) ) {
+	/* We need certain options, if restoring from more than one tape */
+        if(tapes->next && !am_has_feature(their_features, fe_recover_splits)) {
+            error("%s: Client must support split dumps to restore requested data.",  get_pname());
+            /* NOTREACHED */
+        }
+	dbprintf(("%s: Restoring from changer, checking labels\n", get_pname()));
+	rst_flags->check_labels = 1;
+	use_changer = 1;
+    }
+
     /* If we'll be stepping on the tape server's devices, lock them. */
-    if(re_config) {
+    if(re_config  &&
+       (use_changer || (rst_flags->alt_tapedev &&
+                        strcmp(rst_flags->alt_tapedev,
+                               getconf_str(CNF_TAPEDEV)) == 0) ) ) {
+	dbprintf(("%s: Locking devices\n", get_pname()));
 	parent_pid = getpid();
 	atexit(cleanup);
 	get_lock = lock_logfile();
     }
 
-    /* We need certain options, if restoring from more than one tape */
-    if(tapes && tapes->next) {
-        if(!am_has_feature(their_features, fe_recover_splits)) {
-            error("%s: Client must support split dumps to restore requested data.",  get_pname());
-            /* NOTREACHED */
-        }
-	dbprintf(("%s: Restoring from multiple tapes, blithely ignoring CNF_AMRECOVER_CHECK_LABEL and CNF_AMRECOVER_CHANGER\n", get_pname()));
-	rst_flags->check_labels = 1;
-	use_changer = 1;
-    }
-
     /* Init the tape changer */
-    if(tapes && use_changer && changer_init() == 0){
+    if(tapes && use_changer && changer_init() == 0) {
 	dbprintf(("%s: No changer available\n", debug_prefix_time(NULL)));
     }
 
