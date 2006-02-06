@@ -1,3 +1,6 @@
+2006-02-06 Kevin Till <ktill@zmanda.com> 
+	* restore-src/restore.c: fix comment formatting on version 1.2.1
+
 2006-02-06 Kevin Till <ktill@zmanda.com>
 	* configure.in: Bug 1423731, SSH_SECURITY set only when --with-ssh-security used
 	* server-src/Makefile.am:: not to install planner/dumper setuid-root --with-ssh-security

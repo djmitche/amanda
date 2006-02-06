@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.22 2006/02/06 22:37:21 ktill Exp $
+ * $Id: restore.c,v 1.23 2006/02/06 22:51:16 ktill Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1276,11 +1276,8 @@ rst_flags_t *flags;
 		}
  	    }
 	} else if(newtape) {
-	    wrongtape = 1; /* nothing loaded *	   ) )
-        )
-      ) {
-/
-	    bytes_read = -1;
+	  wrongtape = 1; /* nothing loaded */
+	  bytes_read = -1;
 	}
 
 	/*
@@ -1605,7 +1602,6 @@ rst_flags_t *flags;
 	flush_open_outputs(1, NULL);
     }
     else flush_open_outputs(0, NULL);
-}
 }
 
 /*
