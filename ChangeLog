@@ -3,6 +3,7 @@
 	* server-src/Makefile.am:: not to install planner/dumper setuid-root --with-ssh-security
 	* server-src/amcheck.c:	   ditto
 	* server-src/dumper.c: 	   ditto
+	* restore-src/restore.c:    add missing "}"
 	
 2006-02-06  Ian Turner <ian@zmanda.com>
 	* restore-src/amidxtaped.c: Properly handle changers, 
