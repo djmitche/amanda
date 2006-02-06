@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.120 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: amcheck.c,v 1.121 2006/02/06 22:17:09 ktill Exp $
  *
  * checks for common problems in server and clients
  */
@@ -576,6 +576,10 @@ int start_server_check(fd, do_localchk, do_tapechk)
      * Look up the programs used on the server side.
      */
     if(do_localchk) {
+	int suid_check=1;
+#ifdef SSH_SECURITY
+	suid_check=0;
+#endif 
 	if(access(libexecdir, X_OK) == -1) {
 	    fprintf(outf, "ERROR: program dir %s: not accessible\n",
 		    libexecdir);
@@ -583,10 +587,10 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	} else {
 	    pgmbad = pgmbad \
 		     || test_server_pgm(outf, libexecdir, "planner",
-					1, uid_dumpuser);
+					suid_check, uid_dumpuser);
 	    pgmbad = pgmbad \
 		     || test_server_pgm(outf, libexecdir, "dumper",
-					1, uid_dumpuser);
+					suid_check, uid_dumpuser);
 	    pgmbad = pgmbad \
 		     || test_server_pgm(outf, libexecdir, "driver",
 					0, uid_dumpuser);

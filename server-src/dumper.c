@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.166 2006/01/14 04:37:19 paddy_s Exp $
+/* $Id: dumper.c,v 1.167 2006/02/06 22:17:09 ktill Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -284,7 +284,7 @@ main(main_argc, main_argv)
 	seteuid(ruid);
 	setgid(getgid());
     }
-#ifdef BSD_SECURITY
+#if defined BSD_SECURITY && !defined SSH_SECURITY
     else error("must be run setuid root to communicate correctly");
 #endif
 

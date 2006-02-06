@@ -109,6 +109,7 @@ install-exec-hook:
 		else true; \
 		fi; \
 	done
+if !WANT_SSH_SECURITY
 	@list="dumper planner"; \
 	for p in $$list; do \
 		if echo "$(libexec_PROGRAMS)" | grep $$p >/dev/null 2>&1; then \
@@ -120,6 +121,7 @@ install-exec-hook:
 		else true; \
 		fi; \
 	done
+endif
 
 diskfile_SOURCES = diskfile.test.c
 conffile_SOURCES = conffile.test.c

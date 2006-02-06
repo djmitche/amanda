@@ -1,3 +1,9 @@
+2006-02-06 Kevin Till <ktill@zmanda.com>
+	* configure.in: Bug 1423731, SSH_SECURITY set only when --with-ssh-security used
+	* server-src/Makefile.am:: not to install planner/dumper setuid-root --with-ssh-security
+	* server-src/amcheck.c:	   ditto
+	* server-src/dumper.c: 	   ditto
+	
 2006-02-06  Ian Turner <ian@zmanda.com>
 	* restore-src/amidxtaped.c: Properly handle changers, 
 	  tape-label checking, and tape prompting in amrecover, 

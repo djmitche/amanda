@@ -813,11 +813,12 @@ esac
 AC_ARG_WITH(ssh-security,
     [  --with-ssh-security use ssh as a transport],
     SSH_SECURITY=$withval,
-    : ${SSH_SECURITY=yes}
+    : ${SSH_SECURITY=no}
 )
 case "$SSH_SECURITY" in
 n | no) : ;;
 y |  ye | yes) AC_DEFINE(SSH_SECURITY,1,[Define if SSH transport should be enabled. ])
+	       SSH_SECURITY_SET=true
   ;;
 *) AC_MSG_ERROR([*** You must not supply an argument the to --with-ssh-security option.])
   ;;
@@ -2910,6 +2911,7 @@ AM_CONDITIONAL(WANT_CHG_SCSI, test x"$NO_SCSI_CHANGER_MODE" != x"true")
 AM_CONDITIONAL(WANT_CHIO_SCSI, test x"$NO_CHIO_CHANGER_MODE" != x"true")
 AM_CONDITIONAL(WANT_RUNTIME_PSEUDO_RELOC, test x"$NEED_RUNTIME_PSEUDO_RELOC" = x"true")
 AM_CONDITIONAL(WANT_SETUID_CLIENT, test x"$NEED_SETUID_CLIENT" != x"false")
+AM_CONDITIONAL(WANT_SSH_SECURITY, test x"$SSH_SECURITY_SET" = x"true")
 
 case "${FORCE_USE_RUNDUMP-${USE_RUNDUMP}}" in
 y |  ye | yes) AC_DEFINE(USE_RUNDUMP,1,[Define to invoke rundump (setuid-root) instead of DUMP program directly. ]);;
