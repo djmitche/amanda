@@ -1,3 +1,8 @@
+2006-02-08  Ian Turner <ian@zmanda.com>
+	* server-src/driver.c (handle_taper_result): Properly handle 
+	  SPLIT_NEEDNEXT case. Thanks to Josef Wolf for finding this bug.
+	  Also reindent.
+
 2006-02-06 Kevin Till <ktill@zmanda.com> 
 	* restore-src/restore.c: fix comment formatting on version 1.2.1
 

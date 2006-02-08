@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.158 2006/02/01 11:49:37 martinea Exp $
+ * $Id: driver.c,v 1.159 2006/02/08 16:09:04 vectro Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -968,8 +968,7 @@ static void continue_port_dumps()
 
 
 static void
-handle_taper_result(cookie)
-    void *cookie;
+handle_taper_result(void *cookie)
 {
     disk_t *dp;
     int filenum;
@@ -977,51 +976,52 @@ handle_taper_result(cookie)
     int result_argc;
     char *result_argv[MAX_ARGS+1];
     int avail_tapes = 0;
-
+    
     assert(cookie == NULL);
-
+    
     do {
-
+        
 	short_dump_state();
-
+        
 	cmd = getresult(taper, 1, &result_argc, result_argv, MAX_ARGS+1);
-
+        
 	switch(cmd) {
-
+            
 	case PARTIAL:
 	case DONE:	/* DONE <handle> <label> <tape file> <err mess> */
 	    if(result_argc != 5) {
 		error("error: [taper DONE result_argc != 5: %d", result_argc);
 	    }
-
+            
 	    dp = serial2disk(result_argv[2]);
 	    free_serial(result_argv[2]);
-
+            
 	    filenum = atoi(result_argv[4]);
 	    if(cmd == DONE) {
-		update_info_taper(dp, result_argv[3], filenum, sched(dp)->level);
+		update_info_taper(dp, result_argv[3], filenum,
+                                  sched(dp)->level);
 	    }
-
+            
 	    delete_diskspace(dp);
-
+            
 	    printf("driver: finished-cmd time %s taper wrote %s:%s\n",
 		   walltime_str(curclock()), dp->host->hostname, dp->name);
 	    fflush(stdout);
-
+            
 	    amfree(sched(dp)->destname);
 	    amfree(sched(dp)->dumpdate);
 	    amfree(sched(dp)->degr_dumpdate);
 	    amfree(sched(dp)->datestamp);
 	    amfree(dp->up);
-
+            
 	    taper_busy = 0;
 	    taper_disk = NULL;
 	    startaflush();
-
+            
 	    /* continue with those dumps waiting for diskspace */
 	    continue_port_dumps();
 	    break;
-
+            
 	case TRYAGAIN:  /* TRY-AGAIN <handle> <err mess> */
 	    if (result_argc < 2) {
 		error("error [taper TRYAGAIN result_argc < 2: %d]",
@@ -1032,7 +1032,7 @@ handle_taper_result(cookie)
 	    printf("driver: taper-tryagain time %s disk %s:%s\n",
 		   walltime_str(curclock()), dp->host->hostname, dp->name);
 	    fflush(stdout);
-
+            
 	    /* See how many tapes we have left, but we alwyays
 	       retry once (why?) */
 	    current_tape++;
@@ -1040,95 +1040,101 @@ handle_taper_result(cookie)
 		avail_tapes = conf_runtapes - current_tape;
 	    else
 		avail_tapes = 0;
-
+            
 	    if(sched(dp)->attempted > avail_tapes) {
 		log_add(L_FAIL, "%s %s %s %d [too many taper retries]",
-	    	    dp->host->hostname, dp->name, sched(dp)->datestamp,
-		    sched(dp)->level);
-		printf("driver: taper failed %s %s %s, too many taper retry\n", result_argv[2], dp->host->hostname, dp->name);
+                        dp->host->hostname, dp->name, sched(dp)->datestamp,
+                        sched(dp)->level);
+		printf("driver: taper failed %s %s %s, too many taper retry\n",
+                       result_argv[2], dp->host->hostname, dp->name);
 	    }
 	    else {
 		/* Re-insert into taper queue. */
 		sched(dp)->attempted++;
 		headqueue_disk(&tapeq, dp);
 	    }
-
+            
 	    tape_left = tape_length;
-
+            
 	    /* run next thing from queue */
-
+            
 	    taper_busy = 0;
 	    taper_disk = NULL;
 	    startaflush();
 	    continue_port_dumps();
 	    break;
+            
+        case SPLIT_CONTINUE:  /* SPLIT_CONTINUE <handle> <new_label> */
+            if (result_argc != 3) {
+                error("error [taper SPLIT_CONTINUE result_argc != 3: %d]",
+                      result_argc);
+            }
+            
+            break;
+        case SPLIT_NEEDNEXT:  /* SPLIT-NEEDNEXT <handle> <kb written> */
+            if (result_argc != 3) {
+                error("error [taper SPLIT_NEEDNEXT result_argc != 3: %d]",
+                      result_argc);
+            }
+            
+            /* Update our tape counter and reset tape_left */
+            current_tape++;
+            tape_left = tape_length;
+            
+            /* Reduce the size of the dump by amount written and reduce
+               tape_left by the amount left over */
+            dp = serial2disk(result_argv[2]);
+            sched(dp)->act_size -= atoi(result_argv[3]);
+            if (sched(dp)->act_size < tape_left)
+                tape_left -= sched(dp)->act_size;
+            else
+                tape_length = 0;
+            
+            break;
+            
+        case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
+            dp = serial2disk(result_argv[2]);
+            free_serial(result_argv[2]);
+            printf("driver: finished-cmd time %s taper wrote %s:%s\n",
+                   walltime_str(curclock()), dp->host->hostname, dp->name);
+            fflush(stdout);
 
-     case SPLIT_CONTINUE:  /* SPLIT_CONTINUE <handle> <new_label> */
-       if (result_argc != 3) {
-           error("error [taper SPLIT_CONTINUE result_argc != 3: %d]",
-		 result_argc);
-       }
+        /* FALLTHROUGH */
+        case BOGUS:
+            /*
+             * Since we've gotten a tape error, we can't send anything more
+             * to the taper.  Go into degraded mode to try to get everthing
+             * onto disk.  Later, these dumps can be flushed to a new tape.
+             * The tape queue is zapped so that it appears empty in future
+             * checks. If there are dumps waiting for diskspace to be freed,
+             * cancel one.
+             */
+            if(!nodump) {
+                log_add(L_WARNING,
+                        "going into degraded mode because of tape error.");
+                start_degraded_mode(&runq);
+            }
+            tapeq.head = tapeq.tail = NULL;
+            taper_busy = 0;
+            taper_disk = NULL;
+            if(taper_ev_read != NULL) {
+                event_release(taper_ev_read);
+                taper_ev_read = NULL;
+            }
+            if(cmd != TAPE_ERROR) aclose(taper);
+            continue_port_dumps();
+            break;
 
-       break;
-     case SPLIT_NEEDNEXT:  /* SPLIT-NEEDNEXT <handle> <kb written> */
-       if (result_argc != 3) {
-           error("error [taper SPLIT_NEEDNEXT result_argc != 3: %d]",
-		 result_argc);
-       }
-
-       /* Update our tape counter and reset tape_left */
-       current_tape++;
-       tape_left = tape_length;
-
-       /* Reduce the size of the dump by amount written and reduce tape_left by
-          the amount left over */
-       dp = serial2disk(result_argv[2]);
-       sched(dp)->act_size -= atoi(result_argv[3]);
-       if (sched(dp)->act_size < tape_left) tape_left -= sched(dp)->act_size;
-       else tape_length = 0;
-
-	case TAPE_ERROR: /* TAPE-ERROR <handle> <err mess> */
-	    dp = serial2disk(result_argv[2]);
-	    free_serial(result_argv[2]);
-	    printf("driver: finished-cmd time %s taper wrote %s:%s\n",
-		   walltime_str(curclock()), dp->host->hostname, dp->name);
-	    fflush(stdout);
-	    /* Note: fall through code... */
-
-	case BOGUS:
-	    /*
-	     * Since we've gotten a tape error, we can't send anything more
-	     * to the taper.  Go into degraded mode to try to get everthing
-	     * onto disk.  Later, these dumps can be flushed to a new tape.
-	     * The tape queue is zapped so that it appears empty in future
-	     * checks. If there are dumps waiting for diskspace to be freed,
-	     * cancel one.
-	     */
-	    if(!nodump) {
-		log_add(L_WARNING,
-			"going into degraded mode because of tape error.");
-		start_degraded_mode(&runq);
-	    }
-	    tapeq.head = tapeq.tail = NULL;
-	    taper_busy = 0;
-	    taper_disk = NULL;
-	    if(taper_ev_read != NULL) {
-		event_release(taper_ev_read);
-		taper_ev_read = NULL;
-	    }
-	    if(cmd != TAPE_ERROR) aclose(taper);
-	    continue_port_dumps();
-	    break;
 	default:
-	    error("driver received unexpected token (%s) from taper",
-		  cmdstr[cmd]);
+            error("driver received unexpected token (%s) from taper",
+                  cmdstr[cmd]);
 	}
 	/*
 	 * Wakeup any dumpers that are sleeping because of network
 	 * or disk constraints.
 	 */
 	start_some_dumps(&runq);
-
+        
     } while(areads_dataready(taper));
 }
 
