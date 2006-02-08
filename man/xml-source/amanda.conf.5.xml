@@ -232,7 +232,7 @@ with damaged or misplaced tapes or schedule adjustments that call for slight adj
 <listitem>
     <para>Default: not set.
 When set, this directive will cause &A; to automatically write an &A;
-tape label to any black tape she encounters. This option is DANGEROUS 
+tape label to any blank tape she encounters. This option is DANGEROUS 
 because when set, &A; will ERASE any non-&A; tapes you may have, and may 
 also ERASE any near-failing tapes. Use with caution.</para>
 <para>When using this directive, specify the template for new tape 
@@ -1239,7 +1239,7 @@ The path to the specified exclude list file, if present (see description of
 <para>All exclude expressions are concatenated in one file and passed to &gnutar;
 as an <option>--exclude-from</option> argument.</para>
 
-<para>All exclude expressions must always be specified as relative to the
+<para>Exclude expressions must always be specified as relative to the
 head directory of the DLE.</para>
 
 <para>With the
@@ -1317,7 +1317,7 @@ is a file name on the client containing glob expressions.</para>
 <para>All include expressions are expanded by &A;, concatenated in one file and passed to &gnutar; as a
 <option>--files-from</option> argument. They must start with &quot;./&quot; and contain no other &quot;/&quot;.</para>
 
-<para>All include expressions must always be specified as relative to the
+<para>Include expressions must always be specified as relative to the
 head directory of the DLE.</para>
 
 <note>For globbing to work at all, even the limited single level, 
