@@ -1,7 +1,9 @@
 # Makefile for Amanda file recovery programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/client-src \
-			-I$(top_srcdir)/tape-src
+INCLUDES =	-I$(top_builddir)/common-src \
+		-I$(top_srcdir)/common-src   \
+		-I$(top_srcdir)/client-src   \
+		-I$(top_srcdir)/tape-src
 
 LIB_EXTENSION = la
 
@@ -50,4 +52,4 @@ install-exec-hook:
 
 # so that uscan.c is never generated before uparse.h
 # otherwise we might have makedepend problems
-$(srcdir)/uscan.c: $(srcdir)/uparse.h
+uscan.c: uparse.h

@@ -5,6 +5,7 @@ transform =	s,x,x,;
 AMPLOT_MAN8_PAGES = amplot.8
 
 COMMON_MAN8_PAGES = amanda.8
+
 COMMON_MAN5_PAGES = amanda.conf.5
 
 SERVER_MAN8_PAGES = amadmin.8 \
@@ -39,6 +40,7 @@ RESTORE_MAN8_PAGES = amrestore.8
 endif
 
 man8_MANS = $(COMMON_MAN8_PAGES)
+
 man5_MANS = $(COMMON_MAN5_PAGES)
 
 if WANT_AMPLOT
@@ -66,10 +68,9 @@ ALL_MAN_PAGES = $(AMPLOT_MAN8_PAGES) \
 
 man_MANS = $(man5_MANS) $(man8_MANS)
 
-# Very important to have the / here.
-MANPAGEDIR = xml-source/
+SRCMANPAGEDIR  = $(srcdir)/xml-source
 
-MAN_XML = $(ALL_MAN_PAGES:%=$(MANPAGEDIR)%.xml)
+MAN_XML = $(ALL_MAN_PAGES:%=xml-source/%.xml)
 
 EXTRA_XML = xslt/expand-sambadoc.xsl \
             xslt/man.xsl \
@@ -82,16 +83,16 @@ EXTRA_DIST = $(ALL_MAN_PAGES) $(MAN_XML) $(EXTRA_XML)
 
 if HAVE_XSLTPROC
 
-GEN_XML = $(ALL_MAN_PAGES:%=$(MANPAGEDIR)/%.proc.xml)
+GEN_XML = $(ALL_MAN_PAGES:%=xml-source/%.proc.xml)
 
 MOSTLYCLEANFILES = $(GEN_XML)
 MAINTAINERCLEANFILES = $(ALL_MAN_PAGES)
 
-$(MANPAGEDIR)/%.proc.xml: $(MANPAGEDIR)/%.xml xslt/expand-sambadoc.xsl
-	$(XSLTPROC) --path xslt/ --xinclude --stringparam latex.imagebasedir "$*/" --stringparam noreference 1 --output $@ expand-sambadoc.xsl $<
+xml-source/%.proc.xml: $(SRCMANPAGEDIR)/%.xml $(srcdir)/xslt/expand-sambadoc.xsl
+	$(XSLTPROC) --path $(srcdir)/xslt/ --xinclude --stringparam latex.imagebasedir "$*/" --stringparam noreference 1 --output $@ $(srcdir)/xslt/expand-sambadoc.xsl $<
 
-$(man_MANS): %: $(MANPAGEDIR)/%.proc.xml xslt/man.xsl
-	$(XSLTPROC) --path xslt/ --output $@ man.xsl $<
+$(man_MANS): %: xml-source/%.proc.xml $(srcdir)/xslt/man.xsl
+	$(XSLTPROC) --path $(srcdir)/xslt/ --output $@ man.xsl $<
 
 endif
 # ^- HAVE_XSLTPROC

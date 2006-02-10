@@ -1,6 +1,7 @@
 # Makefile for Amanda wrapper programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src
+INCLUDES =	-I$(top_builddir)/common-src \
+		-I$(top_srcdir)/common-src
 
 dumper_SCRIPTS =	gnutar generic-dumper
 dumperdir =		@DUMPER_DIR@
@@ -15,6 +16,8 @@ SUFFIXES =		.sh .pl
 .sh:
 			cat $< > $@
 			chmod a+x $@
+
+DISTCLEANFILES = $(dumper_SCRIPTS)
 
 # these are used for testing only:
 

@@ -1,6 +1,9 @@
 # Makefile for Amanda tape changer programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src -I$(top_srcdir)/server-src -I$(top_srcdir)/tape-src
+INCLUDES =	-I$(top_builddir)/common-src \
+		-I$(top_srcdir)/common-src   \
+		-I$(top_srcdir)/server-src   \
+		-I$(top_srcdir)/tape-src
 
 LIB_EXTENSION = la
 

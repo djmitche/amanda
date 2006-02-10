@@ -1,6 +1,7 @@
 # Makefile for Amanda client programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src
+INCLUDES =	-I$(top_builddir)/common-src \
+		-I$(top_srcdir)/common-src
 
 lib_LTLIBRARIES =	libamclient.la
 LIB_EXTENSION = la

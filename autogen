@@ -14,6 +14,6 @@ if test x`ls -1t acinclude.m4 2>/dev/null \
     cat config/acinclude.m4i config/libtool.m4i > acinclude.m4
 fi
 
-autoreconf ${1+"$@"}
+autoreconf --warning=syntax --force ${1+"$@"}
 
 exit 0

@@ -1,8 +1,9 @@
 # Makefile for Amanda restore programs.
 
-INCLUDES =		-I$(top_srcdir)/common-src \
-                        -I$(top_srcdir)/tape-src \
-			-I$(top_srcdir)/server-src
+INCLUDES =	-I$(top_builddir)/common-src \
+		-I$(top_srcdir)/common-src   \
+		-I$(top_srcdir)/tape-src     \
+		-I$(top_srcdir)/server-src
 
 lib_LTLIBRARIES =	librestore.la
 LIB_EXTENSION = la

@@ -125,7 +125,7 @@ if test "$LIBRARY_DIRS"; then
 fi
 
 AC_ARG_WITH(dumperdir,
-    [  --with-dumperdir=DIR   where we install the dumpers [EPREFIX/dumper]],
+    [  --with-dumperdir=DIR   where we install the dumpers [[EPREFIX/dumper]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -133,8 +133,11 @@ AC_ARG_WITH(dumperdir,
 	  ;;
 	esac
 	DUMPER_DIR="$withval"
-    ],
-    : ${DUMPER_DIR=$exec_prefix/dumper}
+    ], [
+        test "x$prefix" = xNONE && prefix=$ac_default_prefix
+        test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
+        DUMPER_DIR=$exec_prefix/dumper
+    ]
 )
 DUMPER_DIR=`(
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -145,7 +148,7 @@ AC_DEFINE_UNQUOTED(DUMPER_DIR,"$DUMPER_DIR",[Directory in which dumper interface
 AC_SUBST(DUMPER_DIR)
 
 AC_ARG_WITH(configdir,
-    [  --with-configdir=DIR   runtime config files in DIR [sysconfdir/amanda]],
+    [  --with-configdir=DIR   runtime config files in DIR [[sysconfdir/amanda]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -155,7 +158,7 @@ AC_ARG_WITH(configdir,
 	  ;;
 	esac
     ],
-    : ${CONFIG_DIR=$sysconfdir/amanda}
+    : ${CONFIG_DIR="$sysconfdir/amanda"}
 )
 CONFIG_DIR=`(
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -193,7 +196,7 @@ y | ye | yes)
 
     program_suffix="-$VERSION"
     # This is from the output of configure.in.
-    if test "$program_transform_name" = s,x,x,; then
+    if test "x$program_transform_name" = xs,x,x,; then
 	program_transform_name=
     else
 	# Double any \ or $.  echo might interpret backslashes.
@@ -203,14 +206,14 @@ EOF_SED
 	program_transform_name="`echo $program_transform_name|sed -f conftestsed`"
 	rm -f conftestsed
     fi
-    test "$program_prefix" != NONE &&
+    test "x$program_prefix" != xNONE &&
 	program_transform_name="s,^,${program_prefix},; $program_transform_name"
     # Use a double $ so make ignores it.
-    test "$program_suffix" != NONE &&
+    test "x$program_suffix" != xNONE &&
 	program_transform_name="s,\$\$,${program_suffix},; $program_transform_name"
 
     # sed with no file args requires a program.
-    test "$program_transform_name" = "" && program_transform_name="s,x,x,"
+    test "x$program_transform_name" = "" && program_transform_name="xs,x,x,"
     # Remove empty command
     cat <<\EOF_SED > conftestsed
 s,\;\;,\;,g; s,\; \$,,g; s,\;$,,g
@@ -322,7 +325,7 @@ AC_ARG_WITH(amrecover,
 )
 
 AC_ARG_WITH(index-server,
-   [  --with-index-server=HOST default amanda index server [`uname -n`]],
+   [  --with-index-server=HOST default amanda index server [[`uname -n`]]],
    [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -353,7 +356,7 @@ n | no) :
 esac
 
 AC_ARG_WITH(user,
-    [  --with-user=USER       force execution to USER on client systems [required]],
+    [  --with-user=USER       force execution to USER on client systems [[required]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -372,7 +375,7 @@ AC_DEFINE_UNQUOTED(CLIENT_LOGIN,"$CLIENT_LOGIN",
 AC_SUBST(CLIENT_LOGIN)
 
 AC_ARG_WITH(group,
-    [  --with-group=GROUP     group allowed to execute setuid-root programs [required]],
+    [  --with-group=GROUP     group allowed to execute setuid-root programs [[required]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -389,7 +392,7 @@ fi
 AC_SUBST(SETUID_GROUP)
 
 AC_ARG_WITH(owner,
-    [  --with-owner=USER       force ownership of files to USER [default == --with-user value]],
+    [  --with-owner=USER       force ownership of files to USER [[default == --with-user value]]],
     [
         case "$withval" in
         "" | y | ye | yes | n | no)
@@ -418,7 +421,7 @@ AC_ARG_WITH(rundump,
 )
 
 AC_ARG_WITH(config,
-   [  --with-config=CONFIG   default configuration [DailySet1]],
+   [  --with-config=CONFIG   default configuration [[DailySet1]]],
    [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -435,7 +438,7 @@ AC_DEFINE_UNQUOTED(DEFAULT_CONFIG,"$DEFAULT_CONFIG",
 AC_SUBST(DEFAULT_CONFIG)
 
 AC_ARG_WITH(tape-server,
-    [  --with-tape-server=HOST default restoring tape server is HOST [same as --with-index-server]],
+    [  --with-tape-server=HOST default restoring tape server is HOST [[same as --with-index-server]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -561,7 +564,7 @@ AC_ARG_WITH(norew-tape,
     ],)
 
 AC_ARG_WITH(changer-device,
-    [  --with-changer-device=ARG default tape changer device [/dev/ch0 if it exists]],
+    [  --with-changer-device=ARG default tape changer device [[/dev/ch0 if it exists]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -615,7 +618,7 @@ y |  ye | yes) AC_DEFINE(HAVE_BROKEN_FSF,1,[Define this if issuing a fsf on a ta
 esac
 
 AC_ARG_WITH(gnutar,
-    [  --with-gnutar[=PROG]      use PROG as GNU tar executable [default: looks for one]],
+    [  --with-gnutar[[=PROG]]      use PROG as GNU tar executable [[default: looks for one]]],
     [
 	case "$withval" in
 	    /*)	GNUTAR="$withval";;
@@ -627,7 +630,7 @@ AC_ARG_WITH(gnutar,
 )
 
 AC_ARG_WITH(smbclient,
-    [  --with-smbclient[=PROG]   use PROG as Samba's smbclient executable [default: looks for one]],
+    [  --with-smbclient[[=PROG]]   use PROG as Samba's smbclient executable [[default: looks for one]]],
     [
 	case "$withval" in
 	    /*) SAMBA_CLIENT="$withval";;
@@ -645,7 +648,7 @@ AC_ARG_WITH(samba-user,
 )
 
 AC_ARG_WITH(gnutar-listdir,
-   [  --with-gnutar-listdir=DIR  gnutar directory lists go in DIR [localstatedir/amanda/gnutar-lists]],
+   [  --with-gnutar-listdir=DIR  gnutar directory lists go in DIR [[localstatedir/amanda/gnutar-lists]]],
    [
 	case "$withval" in
 	    n | no)		unset GNUTAR_LISTDIR ;;
@@ -654,7 +657,7 @@ AC_ARG_WITH(gnutar-listdir,
 	    *)			AC_MSG_ERROR([*** You must supply a full pathname to --with-gnutar-listdir])
 	esac
     ],
-    : ${GNUTAR_LISTDIR=$localstatedir/amanda/gnutar-lists}
+    : ${GNUTAR_LISTDIR="$localstatedir/amanda/gnutar-lists"}
 )
 if test "$GNUTAR_LISTDIR"; then
     GNUTAR_LISTDIR=`(
@@ -732,7 +735,7 @@ dnl if the right files are there.
 : ${KRB4_SPOTS="/usr/kerberos /usr/cygnus /usr /opt/kerberos"}
 
 AC_ARG_WITH(krb4-security,
-    [  --with-krb4-security=DIR   Location of Kerberos software [/usr/kerberos /usr/cygnus /usr /opt/kerberos]],
+    [  --with-krb4-security=DIR   Location of Kerberos software [[/usr/kerberos /usr/cygnus /usr /opt/kerberos]]],
     KRB4_SECURITY="$withval",
     : ${KRB4_SECURITY=no}
 )
@@ -746,7 +749,7 @@ y | ye | yes) : ;;
 esac
 
 AC_MSG_CHECKING(for Kerberos and Amanda kerberos4 bits)
-if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ; then
+if test "x${KRB4_SECURITY}" = xyes -a -f  ${srcdir-.}/common-src/krb4-security.c ; then
     for dir in $KRB4_SPOTS; do
 	if test -f ${dir}/lib/libkrb.a -a -f ${dir}/lib/libdes.a ; then
 	    #
@@ -790,7 +793,7 @@ if test "${KRB4_SECURITY}" = yes -a -f  ${srcdir-.}/common-src/krb4-security.c ;
 	fi
     done
 
-    if test "$KRB4LDFLAGS" = "" ; then
+    if test "x$KRB4LDFLAGS" = "x" ; then
 	AC_MSG_RESULT(no libraries found)
     fi
 else
@@ -825,7 +828,7 @@ y |  ye | yes) AC_DEFINE(SSH_SECURITY,1,[Define if SSH transport should be enabl
 esac
 
 AC_ARG_WITH(server-principal,
-    [    --with-server-principal=ARG    server host principal  ["amanda"]],
+    [    --with-server-principal=ARG    server host principal  [["amanda"]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -841,7 +844,7 @@ AC_ARG_WITH(server-principal,
 AC_DEFINE_UNQUOTED(SERVER_HOST_PRINCIPLE,"$SERVER_HOST_PRINCIPLE",[The Kerberos server principle. ])
 
 AC_ARG_WITH(server-instance,
-    [    --with-server-instance=ARG     server host instance   ["amanda"]],
+    [    --with-server-instance=ARG     server host instance   [["amanda"]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -856,7 +859,7 @@ AC_ARG_WITH(server-instance,
 AC_DEFINE_UNQUOTED(SERVER_HOST_INSTANCE,"$SERVER_HOST_INSTANCE",[The Kerberos server instance. ])
 
 AC_ARG_WITH(server-keyfile,
-    [    --with-server-keyfile=ARG      server host key file   ["/.amanda"]],
+    [    --with-server-keyfile=ARG      server host key file   [["/.amanda"]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -871,7 +874,7 @@ AC_ARG_WITH(server-keyfile,
 AC_DEFINE_UNQUOTED(SERVER_HOST_KEY_FILE,"$SERVER_HOST_KEY_FILE",[The Kerberos server key file. ])
 
 AC_ARG_WITH(client-principal,
-    [    --with-client-principal=ARG    client host principal  ["rcmd"]],
+    [    --with-client-principal=ARG    client host principal  [["rcmd"]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -886,7 +889,7 @@ AC_ARG_WITH(client-principal,
 AC_DEFINE_UNQUOTED(CLIENT_HOST_PRINCIPLE,"$CLIENT_HOST_PRINCIPLE",[The Kerberos client host principle. ])
 
 AC_ARG_WITH(client-instance,
-    [    --with-client-instance=ARG     client host instance   [HOSTNAME_INSTANCE]],
+    [    --with-client-instance=ARG     client host instance   [[HOSTNAME_INSTANCE]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -901,7 +904,7 @@ AC_ARG_WITH(client-instance,
 AC_DEFINE_UNQUOTED(CLIENT_HOST_INSTANCE,$CLIENT_HOST_INSTANCE,[The Kerberos client host instance. ])
 
 AC_ARG_WITH(client-keyfile,
-    [    --with-client-keyfile=ARG      client host key file   [KEYFILE]],
+    [    --with-client-keyfile=ARG      client host key file   [[KEYFILE]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -915,14 +918,14 @@ AC_ARG_WITH(client-keyfile,
 )
 
 # Assume it's either KEYFILE (defined in krb.h), or a string filename...
-if test "$CLIENT_HOST_KEY_FILE" != "KEYFILE"; then
+if test "x$CLIENT_HOST_KEY_FILE" != "xKEYFILE"; then
   CLIENT_HOST_KEY_FILE="\"$CLIENT_HOST_KEY_FILE\""
 fi
 
 AC_DEFINE_UNQUOTED(CLIENT_HOST_KEY_FILE,$CLIENT_HOST_KEY_FILE,[The Kerberos client host key file. ])
 
 AC_ARG_WITH(ticket-lifetime,
-    [    --with-ticket-lifetime=ARG     ticket lifetime        [128]],
+    [    --with-ticket-lifetime=ARG     ticket lifetime        [[128]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -943,7 +946,7 @@ dnl if the right files are there.
 : ${KRB5_SPOTS="/usr/kerberos /usr/cygnus /usr /opt/kerberos"}
 
 AC_ARG_WITH(krb5-security,
-    [  --with-krb5-security=DIR   Location of Kerberos V software [/usr/kerberos /usr/cygnus /usr /opt/kerberos]],
+    [  --with-krb5-security=DIR   Location of Kerberos V software [[/usr/kerberos /usr/cygnus /usr /opt/kerberos]]],
     KRB5_SECURITY="$withval",
     : ${KRB5_SECURITY=no}
 )
@@ -1008,19 +1011,19 @@ if test "$KRB5_DIR_FOUND"; then
 	break
 fi
 
-if test "$KRB5LDFLAGS" = "" ; then
+if test "x$KRB5LDFLAGS" = "x" ; then
     AC_MSG_RESULT(no krb5 system libraries found)
 fi
 
 
 AC_ARG_WITH(portrange,
-    [  --with-portrange=low,high     bind unreserved TCP server sockets to ports within this range [unlimited]],
+    [  --with-portrange=low,high     bind unreserved TCP server sockets to ports within this range [[unlimited]]],
     [
 	TCPPORTRANGE="$withval"
     ]
 )
 AC_ARG_WITH(tcpportrange,
-    [  --with-tcpportrange=low,high  bind unreserved TCP server sockets to ports within this range [unlimited]],
+    [  --with-tcpportrange=low,high  bind unreserved TCP server sockets to ports within this range [[unlimited]]],
     [
 	TCPPORTRANGE="$withval"
     ]
@@ -1045,7 +1048,7 @@ if test x"${TCPPORTRANGE+set}" = x"set"; then
 fi
 
 AC_ARG_WITH(udpportrange,
-    [  --with-udpportrange=low,high  bind reserved UDP server sockets to ports within this range [unlimited]],
+    [  --with-udpportrange=low,high  bind reserved UDP server sockets to ports within this range [[unlimited]]],
     [
 	UDPPORTRANGE="$withval"
     ]
@@ -1081,7 +1084,7 @@ AC_DEFINE_UNQUOTED(MAX_TAPE_BLOCK_KB,($MAXTAPEBLOCKSIZE),[Maximum size of a tape
 AC_SUBST(MAXTAPEBLOCKSIZE)
 
 AC_ARG_WITH(db,
-    [  --with-db={text,db,dbm,gdbm,ndbm} use the selected database format [text]],
+    [  --with-db={text,db,dbm,gdbm,ndbm} use the selected database format [[text]]],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -1141,7 +1144,7 @@ y |  ye | yes) AC_DEFINE(ASSERTIONS,1,[Define if you want assertion checking. ])
 esac
 
 AC_ARG_WITH(tmpdir,
-    [  --with-tmpdir[=/temp/dir] area Amanda can use for temp files [/tmp/amanda]],
+    [  --with-tmpdir[=/temp/dir] area Amanda can use for temp files [[/tmp/amanda]]],
     tmpdir="$withval",
     : ${tmpdir=yes}
 )
@@ -1162,7 +1165,7 @@ AC_DEFINE_UNQUOTED(AMANDA_TMPDIR,"$AMANDA_TMPDIR",[The directory in which Amanda
 AC_SUBST(AMANDA_TMPDIR)
 
 AC_ARG_WITH(debugging,
-    [  --with[out]-debugging[=/debug/dir] [do not] record runtime debugging information in specified directory [--with-tmpdir]],
+    [  --with[[out]]-debugging[[=/debug/dir]] [[do not]] record runtime debugging information in specified directory [[--with-tmpdir]]],
     debugging="$withval",
     : ${debugging=yes}
 )
@@ -1186,7 +1189,7 @@ case "$AMANDA_DBGDIR" in
 esac
 
 AC_ARG_WITH(debug_days,
-    [  --with-debug-days=NN    number of days to keep debugging files [default=4]],
+    [  --with-debug-days=NN    number of days to keep debugging files [[default=4]]],
     debug_days="$withval",
     : ${debug_days=4}
 )
@@ -1201,7 +1204,7 @@ AC_DEFINE_UNQUOTED(AMANDA_DEBUG_DAYS,$AMANDA_DEBUG_DAYS,[Number of days to keep 
 AC_SUBST(AMANDA_DEBUG_DAYS)
 
 AC_ARG_WITH(testing,
-    [  --with-testing[=suffix] use alternate service names],
+    [  --with-testing[[=suffix]] use alternate service names],
     TESTING="$withval",
     : ${TESTING=no}
 )
@@ -1392,7 +1395,7 @@ AC_PATH_PROGS(AR,ar,,$LOCSYSPATH)
 
 AC_PROG_AWK
 AMANDA_PROG_AWK_VAR
-if test "$amanda_cv_awk_var_assignment" = no; then
+if test "x$amanda_cv_awk_var_assignment" = xno; then
     NO_AMPLOT_MODE=true
     AC_MSG_WARN([*** Your $awk cannot do command line variable assignment.  Amplot will not be installed.])
 fi
@@ -1579,7 +1582,7 @@ if test "$DUMP" -a "$RESTORE"; then
 	AC_MSG_WARN([*** $DUMP is not executable, cannot run -E/-S test])
 	amanda_cv_dump_estimate=no
     fi
-    if test "$amanda_cv_dump_estimate" != no; then
+    if test "x$amanda_cv_dump_estimate" != xno; then
 	AC_DEFINE_UNQUOTED(HAVE_DUMP_ESTIMATE, "$amanda_cv_dump_estimate",[Define to the string that enables dump estimates. ])
     fi
 
@@ -1617,7 +1620,7 @@ if test "$DUMP" -a "$RESTORE"; then
 	AC_MSG_WARN([*** $DUMP is not executable, cannot run -h test])
 	amanda_cv_honor_nodump=no
       fi
-      if test "$amanda_cv_honor_nodump" = yes; then
+      if test "x$amanda_cv_honor_nodump" = xyes; then
 	AC_DEFINE(HAVE_HONOR_NODUMP,1,[Define this if dump accepts -h for honoring nodump. ])
       fi
     ])
@@ -1749,7 +1752,7 @@ AC_CACHE_CHECK(
 	fi
     ]
 )
-if test "$need_resetofs" = yes; then
+if test "x$need_resetofs" = xyes; then
     AC_DEFINE(NEED_RESETOFS,1,[Define if we have to reset tape offsets when reacing 2GB. ])
 fi
 CFLAGS="$amanda_cv_LFS_CFLAGS $CFLAGS"
@@ -1795,7 +1798,7 @@ changequote([,]), [#include <sys/types.h>
 #endif
 #include <$3>], ac_cv_type_$1=yes, ac_cv_type_$1=no)])dnl
 AC_MSG_RESULT($ac_cv_type_$1)
-if test $ac_cv_type_$1 = no; then
+if test "x$ac_cv_type_$1" = xno; then
   AC_DEFINE($1, $2, [Define if $1 is not a standard system type])
 fi
 ])
@@ -2126,29 +2129,29 @@ case "$target" in
 esac
 
 AC_CHECK_LIB(termcap,tgetent)
-if test "$ac_cv_lib_termcap_tgetent" != yes; then
+if test "x$ac_cv_lib_termcap_tgetent" != xyes; then
     AC_CHECK_LIB(curses,tgetent)
-    if test "$ac_cv_lib_curses_tgetent" != yes; then
+    if test "x$ac_cv_lib_curses_tgetent" != xyes; then
 	AC_CHECK_LIB(ncurses,tgetent)
     fi
 fi
-if test "$ac_cv_lib_termcap_tgetent" = yes ||
-   test "$ac_cv_lib_curses_tgetent" = yes ||
-   test "$ac_cv_lib_ncurses_tgetent" = yes; then
+if test "x$ac_cv_lib_termcap_tgetent" = xyes ||
+   test "x$ac_cv_lib_curses_tgetent" = xyes ||
+   test "x$ac_cv_lib_ncurses_tgetent" = xyes; then
     AC_CHECK_LIB(readline,readline,
 	READLINE_LIBS="-lreadline"; AC_SUBST(READLINE_LIBS)
     )
-    if test "$ac_cv_lib_readline_readline" != yes; then
+    if test "x$ac_cv_lib_readline_readline" != xyes; then
 	AC_MSG_WARN([*** No readline library, no history and command line editing in amrecover!])
     fi
 else
     AC_MSG_WARN([*** No terminal library, no history and command line editing in amrecover!])
 fi
 
-if test "$ac_cv_header_linux_zftape_h" = yes; then
-    if test "$ac_cv_header_vtblc_h" = yes; then
+if test "x$ac_cv_header_linux_zftape_h" = xyes; then
+    if test "x$ac_cv_header_vtblc_h" = xyes; then
         AC_CHECK_LIB(vtblc,main)
-        if test "$ac_cv_lib_vtblc_main" != yes; then
+        if test "x$ac_cv_lib_vtblc_main" != xyes; then
             AC_MSG_WARN([*** vtblc library not found - no QIC volume table support!])
         fi
     else
@@ -2249,11 +2252,11 @@ LIBS="$save_LIBS"
 
 case "$DB_STYLE" in
     db)
-	if test "$ac_cv_header_db_h" = yes; then
+	if test "x$ac_cv_header_db_h" = xyes; then
 	    AC_CHECK_LIB(db,main)
-	    if test "$ac_cv_lib_db_main" = yes; then
+	    if test "x$ac_cv_lib_db_main" = xyes; then
 		AC_CHECK_LIB(db,dbm_open)
-		if test "$ac_cv_lib_db_dbm_open" = yes; then
+		if test "x$ac_cv_lib_db_dbm_open" = xyes; then
 		    DB_HEADER=db.h
 		    DB_LIB=db
 		else
@@ -2261,7 +2264,7 @@ case "$DB_STYLE" in
 		    AC_MSG_WARN([*** db database library requested but dbm_open not found in -ldb.])
 		fi
 	    else
-		if test "$ac_cv_lib_c_dbm_open" = yes; then
+		if test "x$ac_cv_lib_c_dbm_open" = xyes; then
 		    DB_HEADER=db.h
 		    DB_LIB=c
 		else
@@ -2276,11 +2279,11 @@ case "$DB_STYLE" in
 	;;
 
     dbm)
-	if test "$ac_cv_header_dbm_h" = yes; then
+	if test "x$ac_cv_header_dbm_h" = xyes; then
 	    AC_CHECK_LIB(dbm,main)
-	    if test "$ac_cv_lib_dbm_main" = yes; then
+	    if test "x$ac_cv_lib_dbm_main" = xyes; then
 		AC_CHECK_LIB(dbm,dbm_open)
-		if test "$ac_cv_lib_dbm_dbm_open" = yes; then
+		if test "x$ac_cv_lib_dbm_dbm_open" = xyes; then
 		    DB_HEADER=dbm.h
 		    DB_LIB=dbm
 		else
@@ -2288,7 +2291,7 @@ case "$DB_STYLE" in
 		    AC_MSG_WARN([*** dbm database library requested but dbm_open not found in -ldbm.])
 		fi
 	    else
-		if test "$ac_cv_lib_c_dbm_open" = yes; then
+		if test "x$ac_cv_lib_c_dbm_open" = xyes; then
 		    DB_HEADER=dbm.h
 		    DB_LIB=c
 		else
@@ -2303,11 +2306,11 @@ case "$DB_STYLE" in
 	;;
 
     gdbm)
-	if test "$ac_cv_header_ndbm_h" = yes; then
+	if test "x$ac_cv_header_ndbm_h" = xyes; then
 	    AC_CHECK_LIB(gdbm,main)
-	    if test "$ac_cv_lib_gdbm_main" = yes; then
+	    if test "x$ac_cv_lib_gdbm_main" = xyes; then
 		AC_CHECK_LIB(gdbm,dbm_open)
-		if test "$ac_cv_lib_gdbm_dbm_open" = yes; then
+		if test "x$ac_cv_lib_gdbm_dbm_open" = xyes; then
 		    DB_HEADER=ndbm.h
 		    DB_LIB=gdbm
 		else
@@ -2315,7 +2318,7 @@ case "$DB_STYLE" in
 		    AC_MSG_WARN([*** gdbm database library requested but -lgdbm not found.])
 		fi
 	    else
-		if test "$ac_cv_lib_c_dbm_open" = yes; then
+		if test "x$ac_cv_lib_c_dbm_open" = xyes; then
 		    DB_HEADER=ndbm.h
 		    DB_LIB=c
 		else
@@ -2330,11 +2333,11 @@ case "$DB_STYLE" in
 	;;
 
     ndbm)
-	if test "$ac_cv_header_ndbm_h" = yes; then
+	if test "x$ac_cv_header_ndbm_h" = xyes; then
 	    AC_CHECK_LIB(ndbm,main)
-	    if test "$ac_cv_lib_ndbm_main" = yes; then
+	    if test "x$ac_cv_lib_ndbm_main" = xyes; then
 		AC_CHECK_LIB(ndbm,dbm_open)
-		if test "$ac_cv_lib_ndbm_dbm_open" = yes; then
+		if test "x$ac_cv_lib_ndbm_dbm_open" = xyes; then
 		    DB_HEADER=ndbm.h
 		    DB_LIB=ndbm
 		else
@@ -2342,7 +2345,7 @@ case "$DB_STYLE" in
 		    AC_MSG_WARN([*** ndbm database library requested but -lndbm not found.])
 		fi
 	    else
-		if test "$ac_cv_lib_c_dbm_open" = yes; then
+		if test "x$ac_cv_lib_c_dbm_open" = xyes; then
 		    DB_HEADER=ndbm.h
 		    DB_LIB=c
 		else
@@ -2372,52 +2375,52 @@ if test -z "$DB_STYLE"; then
     DB_LIB=
 fi
 
-dnl if test -z "$DB_STYLE" -a "$ac_cv_header_ndbm_h" = yes; then
+dnl if test -z "$DB_STYLE" -a "x$ac_cv_header_ndbm_h" = xyes; then
 dnl     AC_CHECK_LIB(ndbm,dbm_open)
-dnl     if test "$ac_cv_lib_ndbm_dbm_open" = yes; then
+dnl     if test "x$ac_cv_lib_ndbm_dbm_open" = xyes; then
 dnl 	DB_STYLE=ndbm
 dnl 	DB_HEADER=ndbm.h
 dnl 	DB_LIB=ndbm
-dnl     elif test "$ac_cv_lib_c_dbm_open" = yes; then
+dnl     elif test "x$ac_cv_lib_c_dbm_open" = xyes; then
 dnl 	DB_STYLE=ndbm
 dnl	DB_HEADER=ndbm.h
 dnl	DB_LIB=c
 dnl    fi
 dnl fi
 dnl
-dnl if test -z "$DB_STYLE" -a "$ac_cv_header_db_h" = yes; then
+dnl if test -z "$DB_STYLE" -a "x$ac_cv_header_db_h" = xyes; then
 dnl    AC_CHECK_LIB(db,dbm_open)
-dnl    if test "$ac_cv_lib_db_dbm_open" = yes; then
+dnl    if test "x$ac_cv_lib_db_dbm_open" = xyes; then
 dnl	DB_STYLE=db
 dnl	DB_HEADER=db.h
 dnl	DB_LIB=db
-dnl    elif test "$ac_cv_lib_c_dbm_open" = yes; then
+dnl    elif test "x$ac_cv_lib_c_dbm_open" = xyes; then
 dnl	DB_STYLE=db
 dnl	DB_HEADER=db.h
 dnl	DB_LIB=c
 dnl    fi
 dnl fi
 dnl
-dnl if test -z "$DB_STYLE" -a "$ac_cv_header_dbm_h" = yes; then
+dnl if test -z "$DB_STYLE" -a "x$ac_cv_header_dbm_h" = xyes; then
 dnl    AC_CHECK_LIB(dbm,dbm_open)
-dnl    if test "$ac_cv_lib_db_dbm_open" = yes; then
+dnl    if test "x$ac_cv_lib_db_dbm_open" = xyes; then
 dnl	DB_STYLE=dbm
 dnl	DB_HEADER=dbm.h
 dnl	DB_LIB=dbm
-dnl    elif test "$ac_cv_lib_c_dbm_open" = yes; then
+dnl    elif test "x$ac_cv_lib_c_dbm_open" = xyes; then
 dnl	DB_STYLE=dbm
 dnl	DB_HEADER=dbm.h
 dnl	DB_LIB=c
 dnl    fi
 dnl fi
 dnl
-dnl if test -z "$DB_STYLE" -a "$ac_cv_header_ndbm_h" = yes; then
+dnl if test -z "$DB_STYLE" -a "x$ac_cv_header_ndbm_h" = xyes; then
 dnl    AC_CHECK_LIB(gdbm,dbm_open)
-dnl    if test "$ac_cv_lib_gdbm_dbm_open" = yes; then
+dnl    if test "x$ac_cv_lib_gdbm_dbm_open" = xyes; then
 dnl	DB_STYLE=gdbm
 dnl	DB_HEADER=ndbm.h
 dnl	DB_LIB=gdbm
-dnl    elif test "$ac_cv_lib_c_dbm_open" = yes; then
+dnl    elif test "x$ac_cv_lib_c_dbm_open" = xyes; then
 dnl	DB_STYLE=gdbm
 dnl	DB_HEADER=ndbm.h
 dnl	DB_LIB=c
@@ -2425,7 +2428,7 @@ dnl    fi
 dnl fi
 dnl
 dnl if test -z "$DB_STYLE"; then
-dnl    if test "$ac_cv_lib_c_dbm_open" = yes; then
+dnl    if test "x$ac_cv_lib_c_dbm_open" = xyes; then
 dnl	AC_MSG_WARN([*** A dbm_open() routine was found in -lc, but no header])
 dnl	AC_MSG_WARN([*** files exist.  Please remedy the situation.])
 dnl    else
@@ -2440,7 +2443,7 @@ dnl    DB_HEADER=
 dnl    DB_LIB=
 dnl fi
 
-if test "$DB_STYLE" = text; then
+if test "x$DB_STYLE" = xtext; then
     AC_DEFINE(TEXTDB,1,[Define to enable the text-based database format. ])
 else
     AC_MSG_CHECKING([for database])
@@ -2473,7 +2476,7 @@ else
 		]])],[amanda_cv_struct_datum=yes],[amanda_cv_struct_datum=no
 	    ])
 	])
-    if test "$amanda_cv_struct_datum" = yes; then
+    if test "x$amanda_cv_struct_datum" = xyes; then
 	AC_DEFINE(HAVE_STRUCT_DATUM,1,[Define if the database header declares struct datum. ])
     fi
 fi
@@ -2495,7 +2498,7 @@ AC_CACHE_CHECK(whether _POSIX2_RE_DUP_MAX is defined,
   yes
 #endif
 ], amanda_cv_have__posix2_re_dup_max=yes, amanda_cv_have__posix2_re_dup_max=no))
-if test "$amanda_cv_have__posix2_re_dup_max" = yes; then
+if test "x$amanda_cv_have__posix2_re_dup_max" = xyes; then
     AC_DEFINE(HAVE__POSIX2_RE_DUP_MAX,1,[Define if limits.h defines _POSIX2_RE_DUP_MAX. ])
 fi
 
@@ -2507,7 +2510,7 @@ AC_CACHE_CHECK(whether CHAR_MIN is defined,
   yes
 #endif
 ], amanda_cv_have_char_min=yes, amanda_cv_have_char_min=no))
-if test "$amanda_cv_have_char_min" = yes; then
+if test "x$amanda_cv_have_char_min" = xyes; then
     AC_DEFINE(HAVE_CHAR_MIN,1,[Define if limits.h defines CHAR_MIN. ])
 fi
 
@@ -2519,7 +2522,7 @@ AC_CACHE_CHECK(whether CHAR_MAX is defined,
   yes
 #endif
 ], amanda_cv_have_char_max=yes, amanda_cv_have_char_max=no))
-if test "$amanda_cv_have_char_max" = yes; then
+if test "x$amanda_cv_have_char_max" = xyes; then
     AC_DEFINE(HAVE_CHAR_MAX,1,[Define if limits.h defines CHAR_MAX. ])
 fi
 
@@ -2531,7 +2534,7 @@ AC_CACHE_CHECK(whether CHAR_BIT is defined,
   yes
 #endif
 ], amanda_cv_have_char_bit=yes, amanda_cv_have_char_bit=no))
-if test "$amanda_cv_have_char_bit" = yes; then
+if test "x$amanda_cv_have_char_bit" = xyes; then
     AC_DEFINE(HAVE_CHAR_BIT,1,[Define if limits.h defines CHAR_BIT. ])
 fi
 
@@ -2638,10 +2641,10 @@ ICE_CHECK_DECL(shmctl,sys/types.h sys/ipc.h sys/shm.h)
 ICE_CHECK_DECL(shmdt,sys/types.h sys/ipc.h sys/shm.h)
 ICE_CHECK_DECL(shmget,sys/types.h sys/ipc.h sys/shm.h)
 
-if test "$ac_cv_func_mmap_fixed_mapped" != yes; then
+if test "x$ac_cv_func_mmap_fixed_mapped" != xyes; then
     case "$FORCE_MMAP" in
     n | no)
-	if test "$ac_cv_func_shmget" != yes; then
+	if test "x$ac_cv_func_shmget" != xyes; then
 	    AC_MSG_WARN([*** Neither shmget() nor mmap() found!])
 	    AC_MSG_WARN([*** This system will not support the Amanda server.])
 	    NO_SERVER_MODE=true
@@ -2712,7 +2715,7 @@ dfline=`(
     df / | while read line; do
 	set -- $line
 	while test $# -gt 0; do
-	    if test "$1" = "/"; then
+	    if test "x$1" = "x/"; then
 		echo $line
 		break 2
 	    fi
@@ -2805,7 +2808,7 @@ AC_CACHE_CHECK(
 ])
     rm -f /tmp/conftest.lock
 ])
-if test "$amanda_cv_posix_filelocking" = yes; then
+if test "x$amanda_cv_posix_filelocking" = xyes; then
     AC_DEFINE(USE_POSIX_FCNTL,1,[Define to use Posix fcntl for file locking.])
     HAS_WORKING_FILE_LOCK=1
 fi
@@ -2829,7 +2832,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 ])
 	rm -f /tmp/conftest.lock
 ])
-    if test "$amanda_cv_flock_filelocking" = yes; then
+    if test "x$amanda_cv_flock_filelocking" = xyes; then
 	AC_DEFINE(USE_FLOCK,1,[Define to use flock for file locking.])
 	HAS_WORKING_FILE_LOCK=1
     fi
@@ -2854,7 +2857,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 ])
 	rm -f /tmp/conftest.lock
 ])
-    if test "$amanda_cv_lockf_filelocking" = yes; then
+    if test "x$amanda_cv_lockf_filelocking" = xyes; then
 	AC_DEFINE(USE_LOCKF,1,[Define to use lockf for file locking.])
 	HAS_WORKING_FILE_LOCK=1
     fi
@@ -2882,7 +2885,7 @@ if test -z "$HAS_WORKING_FILE_LOCK"; then
 ])
 	rm -f /tmp/conftest.lock
 ])
-    if test "$amanda_cv_lnlock_filelocking" = yes; then
+    if test "x$amanda_cv_lnlock_filelocking" = xyes; then
 	AC_DEFINE(USE_LNLOCK,1,[Define to use a hard-link based approach for file locking.])
 	HAS_WORKING_FILE_LOCK=1
     fi

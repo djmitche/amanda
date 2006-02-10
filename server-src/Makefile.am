@@ -1,14 +1,9 @@
 # Makefile for Amanda server programs.
 
-###
-# Yes, I really mean ../common-src.  The genversion.h file ends up getting
-# built there rather than into the source tree.
-###
-
-INCLUDES =		-I$(top_srcdir)/common-src \
-			-I../common-src \
-			-I../restore-src \
-			-I$(top_srcdir)/tape-src
+INCLUDES =	-I$(top_builddir)/common-src \
+		-I$(top_srcdir)/common-src   \
+		-I$(top_srcdir)/restore-src  \
+		-I$(top_srcdir)/tape-src
 
 lib_LTLIBRARIES = 	libamserver.la
 LIB_EXTENSION = la
