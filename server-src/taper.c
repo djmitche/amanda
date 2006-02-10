@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.112 2006/02/03 22:20:17 paddy_s Exp $
+/* $Id: taper.c,v 1.113 2006/02/10 18:15:00 paddy_s Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -2256,13 +2256,16 @@ char *syncpipe_getstr()
     char *str;
 
     if((len = syncpipe_getint()) <= 0) {
-	return NULL;
+	error("syncpipe_getstr: Protocol error - Invalid length (%d)", len);
+	/* NOTREACHED */
     }
 
     str = alloc(len);
 
-    if ((rc = fullread(getpipe, str, len)) != len)
+    if ((rc = fullread(getpipe, str, len)) != len) {
 	error("syncpipe_getstr: %s", rc < 0 ? strerror(errno) : "short read");
+	/* NOTREACHED */
+    }
 
     return (str);
 }
