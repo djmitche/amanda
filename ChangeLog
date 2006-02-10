@@ -1,3 +1,7 @@
+2006-02-10  Kevin Till <ktill@zmanda.com>
+	* man/xml-source/amanda.conf.5.xml: add note about first character of a 
+			tapetype string must be alphabet
+
 2006-02-10  John Franks <jrfranks@zmanda.com>
  	* server-src/taper.c: Call error() if an invalid string is read
  	  by syncpipe_getstr().
