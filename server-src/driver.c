@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.159 2006/02/08 16:09:04 vectro Exp $
+ * $Id: driver.c,v 1.160 2006/02/13 20:55:41 paddy_s Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1098,11 +1098,15 @@ handle_taper_result(void *cookie)
             printf("driver: finished-cmd time %s taper wrote %s:%s\n",
                    walltime_str(curclock()), dp->host->hostname, dp->name);
             fflush(stdout);
+            log_add(L_WARNING, "Taper  error: %s", result_argv[3]);
+            /* FALLSTHROUGH */
 
-        /* FALLTHROUGH */
         case BOGUS:
+            if (cmd == BOGUS) {
+        	log_add(L_WARNING, "Taper protocol error");
+            }
             /*
-             * Since we've gotten a tape error, we can't send anything more
+             * Since we've gotten a taper error, we can't send anything more
              * to the taper.  Go into degraded mode to try to get everthing
              * onto disk.  Later, these dumps can be flushed to a new tape.
              * The tape queue is zapped so that it appears empty in future
@@ -1111,7 +1115,7 @@ handle_taper_result(void *cookie)
              */
             if(!nodump) {
                 log_add(L_WARNING,
-                        "going into degraded mode because of tape error.");
+                        "going into degraded mode because of taper component error.");
                 start_degraded_mode(&runq);
             }
             tapeq.head = tapeq.tail = NULL;
@@ -2478,7 +2482,7 @@ dump_to_tape(dp)
 
 	free_serial(result_argv[2]);
 
-	sscanf(result_argv[5],"[sec %f kb %ld ",&tapetime,&dumpsize);
+	sscanf(result_argv[5],"[sec %f kb %ld ", &tapetime, &dumpsize);
 
 	if(cmd == DONE) {
 	    /* every thing went fine */
