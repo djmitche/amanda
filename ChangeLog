@@ -1,3 +1,6 @@
+2006-02-10  Kevin Till <ktill@zmanda.com>
+	* man/xml-source/amanda.8.xml: replace informaltable with literallayout 
+
 2006-02-13  John Franks <jrfranks@zmanda.com>
  	* server-src/driver.c: Pring a more precise message when taper
 	  returns an error.  Include error message from taper in log.

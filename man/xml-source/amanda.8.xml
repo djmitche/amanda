@@ -888,13 +888,11 @@ For instance:</para>
   //some-pc/home normalpw
   //another-pc/disk otheruser%otherpw</programlisting>
 
-<para>With clear text passwords, this file should obviously be tightly protected.
-It only needs to be readable by the &A;-user on the Samba server.</para>
+With clear text passwords, this file should obviously be tightly protected.
+It only needs to be readable by the &A;-user on the Samba server.
 
-<para>You can find further information in the
-<emphasis remap='B'>docs/SAMBA</emphasis>
-<!-- TODO: edit link -->
-file that comes with an &A; distribution.</para>
+You can find further information in the
+<emphasis remap='B'>docs/SAMBA</emphasis> <!-- TODO: edit link --> file that comes with an &A; distribution.
 
 </listitem>
 </varlistentry>
@@ -914,48 +912,42 @@ is case insensitive for host but is case sensitive for disk. A match
 succeeds if all words in your expression match contiguous words in 
 the host or disk.</para>
 
-<informaltable frame="all">
-<tgroup cols="2" alignment="left">
-<tbody>
-<row><entry>. </entry><entry>word separator for a host</entry></row>
-<row><entry>/ </entry><entry>word separator for a disk</entry></row>
-<row><entry>^ </entry><entry>anchor at left</entry></row>
-<row><entry>$ </entry><entry>anchor at right</entry></row>
-<row><entry>? </entry><entry>match exactly one character except the separator</entry></row>
-<row><entry>* </entry><entry>match zero or more characters except the separator</entry></row>
-<row><entry>**</entry><entry>match zero or more characters including the separator</entry></row>
-</tbody>
-</tgroup>
-</informaltable>
+
+<literallayout remap='.nf'>
+. 	word separator for a host
+/ 	word separator for a disk
+^ 	anchor at left
+$ 	anchor at right
+? 	match exactly one character except the separator
+* 	match zero or more characters except the separator
+**	match zero or more characters including the separator
+</literallayout>
+
 
 <para>Some examples:</para>
 
-<informaltable frame="all">
-<tgroup cols="3" alignment="left">
-<tbody>
-<row><entry>EXPRESSION</entry><entry>WILL MATCH       </entry><entry>WILL NOT MATCH</entry></row>
-<row><entry>hosta     </entry><entry>hosta            </entry><entry>hostb</entry></row>
-<row><entry>          </entry><entry>hoSTA.dOMAIna.ORG</entry><entry></entry></row>
-<row><entry>          </entry><entry>foo.hosta.org</entry></row>
-<row><entry>host      </entry><entry>host             </entry><entry>hosta</entry></row>
-<row><entry>host?     </entry><entry>hosta            </entry><entry>host</entry></row>
-<row><entry>          </entry><entry>hostb</entry></row>
-<row><entry>ho*na     </entry><entry>hoina            </entry><entry>ho.aina.org</entry></row>
-<row><entry>ho**na    </entry><entry>hoina</entry></row>
-<row><entry>          </entry><entry>ho.aina.org</entry></row>
-<row><entry>^hosta    </entry><entry>hosta            </entry><entry>foo.hosta.org</entry></row>
-<row><entry>sda*      </entry><entry>/dev/sda1</entry></row>
-<row><entry>          </entry><entry>/dev/sda12</entry></row>
-<row><entry>/opt/     </entry><entry>opt (disk)       </entry><entry>opt (host)</entry></row>
-<row><entry>.opt.     </entry><entry>opt (host)       </entry><entry>opt (disk)</entry></row>
-<row><entry>/         </entry><entry>/                </entry><entry>any other disk</entry></row>
-<row><entry>/usr      </entry><entry>/usr</entry></row>
-<row><entry>          </entry><entry>/usr/opt</entry></row>
-<row><entry>/usr$     </entry><entry>/usr             </entry><entry>/usr/opt </entry></row>
-</tbody>
-</tgroup>
-</informaltable>
-<para/>
+<literallayout remap='.nf'>
+EXPRESSION     WILL MATCH           WILL NOT MATCH
+hosta          hosta                hostb
+               hoSTA.dOMAIna.ORG 
+               foo.hosta.org 
+host           host                 hosta
+host?          hosta                host
+               hostb 
+ho*na          hoina                ho.aina.org
+ho**na         hoina 
+               ho.aina.org 
+^hosta         hosta                foo.hosta.org
+sda*           /dev/sda1 
+               /dev/sda12 
+/opt/          opt (disk)           opt (host)
+.opt.          opt (host)           opt (disk)
+/              /                    any other disk
+/usr           /usr 
+               /usr/opt 
+/usr$          /usr                 /usr/opt
+</literallayout>
+
 
 </refsect1>
 
@@ -965,49 +957,15 @@ the host or disk.</para>
 expression is a range expression where we only match the prefix.
 Leading ^ is removed. Trailing $ forces an exact match.</para>
 
-<informaltable frame="all">
-<tgroup cols="2" alignment="left">
-<tbody>
-
-<row>
-<entry>20001212-14</entry>
-<entry>match all dates beginning with 20001212, 20001213 or 20001214</entry>
-</row>
-
-<row>
-<entry>20001212-4</entry>
-<entry>same as previous</entry>
-</row>
-
-<row>
-<entry>20001212-24</entry>
-<entry>match all dates between 20001212 and 20001224</entry>
-</row>
-
-<row>
-<entry>2000121</entry>
-<entry>match all dates that start with 2000121 (20001210-20001219)</entry>
-</row>
-
-<row>
-<entry>2</entry>
-<entry>match all dates that start with 2 (20000101-29991231)</entry>
-</row>
-
-<row>
-<entry>2000-10</entry>
-<entry>match all dates between 20000101-20101231</entry>
-</row>
-
-<row>
-<entry>200010$</entry>
-<entry>match only 200010</entry>
-</row>
-
-</tbody>
-</tgroup>
-</informaltable>
-<para/>
+<literallayout remap='.nf'>
+20001212-14    match all dates beginning with 20001212, 20001213 or 20001214
+20001212-4     same as previous
+20001212-24    match all dates between 20001212 and 20001224
+2000121        match all dates that start with 2000121 (20001210-20001219)
+2              match all dates that start with 2 (20000101-29991231)
+2000-10        match all dates between 20000101-20101231
+200010$        match only 200010
+</literallayout>
 
 </refsect1>
 
