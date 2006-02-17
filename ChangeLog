@@ -1,3 +1,9 @@
+2006-02-16  Kevin Till <ktill@zmanda.com>
+	* example/amanda.conf.in: dumptype option is "encrypt"
+	* man/xml-source/amanda.conf.5.xml: ditto
+	* server-src/holding.c: util.h is include'd twice
+	* common-src/ssh-security.c: set correct debug print 
+
 2006-02-10  Kevin Till <ktill@zmanda.com>
 	* man/xml-source/amanda.8.xml: replace informaltable with literallayout 
 

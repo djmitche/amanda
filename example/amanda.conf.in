@@ -374,7 +374,7 @@ define tapetype MIMSY-MEGATAPE {
 #				it takes only a few seconds but the result is not 
 #				accurate if your disk usage changes from day to day.
 #		  Default: [client]
-#   encryption  - specify encryption of the backed up data. Valid values are:
+#   encrypt     - specify encryption of the backed up data. Valid values are:
 #		  "none"   - don't encrypt the dump output.
 #		  "client" - encrypt on the client using the program specified by 
 #                            client_encrypt "PROG".

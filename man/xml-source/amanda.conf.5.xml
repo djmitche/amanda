@@ -1133,7 +1133,7 @@ ten. Setting this to zero tries to do a full backup each run.</para>
   </varlistentry>
 
   <varlistentry>
-  <term><emphasis remap='B'>encryption[client|server]</emphasis></term>
+  <term><emphasis remap='B'>encrypt[client|server]</emphasis></term>
   <listitem>
 <para>Default: <emphasis remap='I'>none</emphasis>.
 To encrypt backup images, it can do so either on the backup client host before it crosses the network or on the tape

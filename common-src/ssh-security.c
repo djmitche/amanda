@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.7 2005/12/01 01:14:39 martinea Exp $
+ * $Id: ssh-security.c,v 1.8 2006/02/17 00:58:51 ktill Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -46,7 +46,7 @@
 /*#define	SSH_DEBUG*/
 
 #ifdef SSH_DEBUG
-#define	sshprintf(x)	printf x
+#define	sshprintf(x)	dbprintf(x)
 #else
 #define	sshprintf(x)
 #endif

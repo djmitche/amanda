@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.49 2005/12/05 13:33:32 martinea Exp $
+ * $Id: holding.c,v 1.50 2006/02/17 00:58:51 ktill Exp $
  *
  * Functions to access holding disk
  */
@@ -33,7 +33,6 @@
 #include "util.h"
 #include "holding.h"
 #include "fileheader.h"
-#include "util.h"
 #include "logfile.h"
 
 static sl_t *scan_holdingdisk P((sl_t *holding_list, char *diskdir, int verbose));
