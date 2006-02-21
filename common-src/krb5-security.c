@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.11 2005/10/14 14:57:50 martinea Exp $
+ * $Id: krb5-security.c,v 1.12 2006/02/21 04:13:55 ktill Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -64,7 +64,6 @@
 #include <gssapi/gssapi.h>
 #endif
 #include <krb5.h>
-#include <com_err.h>
 
 #ifndef KRB5_ENV_CCNAME
 #define	KRB5_ENV_CCNAME	"KRB5CCNAME"

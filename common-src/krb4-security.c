@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb4-security.c,v 1.8 2005/10/14 14:57:50 martinea Exp $
+ * $Id: krb4-security.c,v 1.9 2006/02/21 04:13:55 ktill Exp $
  *
  * krb4-security.c - helper functions for kerberos v4 security.
  */
@@ -35,7 +35,6 @@
 
 #include <des.h>
 #include <krb.h>
-#include <com_err.h>
 
 #include "amanda.h"
 #include "dgram.h"
@@ -651,7 +650,7 @@ krb4_stream_accept(s)
     assert(ks->socket >= 0);
     assert(ks->fd == -1);
 
-    ks->fd = stream_accept(ks->socket, 30, DEFAULT_SIZE, DEFAULT_SIZE);
+    ks->fd = stream_accept(ks->socket, 30, -1, -1);
     if (ks->fd < 0) {
 	security_stream_seterror(&ks->secstr,
 	    "can't accept new stream connection: %s", strerror(errno));
