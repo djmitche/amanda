@@ -91,11 +91,11 @@ MAINTAINERCLEANFILES = $(ALL_MAN_PAGES)
 xml-source/%.proc.xml: $(SRCMANPAGEDIR)/%.xml $(srcdir)/xslt/expand-sambadoc.xsl
 	$(XSLTPROC) --path $(srcdir)/xslt/ --xinclude --stringparam latex.imagebasedir "$*/" --stringparam noreference 1 --output $@ $(srcdir)/xslt/expand-sambadoc.xsl $<
 
-$(man_MANS): %: xml-source/%.proc.xml $(srcdir)/xslt/man.xsl
+%: xml-source/%.proc.xml $(srcdir)/xslt/man.xsl
 	$(XSLTPROC) --path $(srcdir)/xslt/ --output $@ man.xsl $<
 
 endif
-# ^- HAVE_XSLTPROC
+dnl ^- HAVE_XSLTPROC
 
 install-data-hook:
 	@list="$(man8_MANS)"; \
