@@ -95,7 +95,7 @@ xml-source/%.proc.xml: $(SRCMANPAGEDIR)/%.xml $(srcdir)/xslt/expand-sambadoc.xsl
 	$(XSLTPROC) --path $(srcdir)/xslt/ --output $@ man.xsl $<
 
 endif
-dnl ^- HAVE_XSLTPROC
+# ^- HAVE_XSLTPROC
 
 install-data-hook:
 	@list="$(man8_MANS)"; \
