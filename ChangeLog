@@ -1,4 +1,7 @@
 2006-02-28  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driver.c: Print dumper TRY_AGAIN message.
+
+2006-02-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/planner.c: Don't print estimate size if estimate failed.
 
 2006-02-25  Ian Turner <ian@zmanda.com>

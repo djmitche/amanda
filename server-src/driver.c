@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.160 2006/02/13 20:55:41 paddy_s Exp $
+ * $Id: driver.c,v 1.161 2006/02/28 13:15:57 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1295,10 +1295,12 @@ handle_dumper_result(cookie)
 	     * case for cleanup.
 	     */
 	    if(sched(dp)->attempted) {
-		log_add(L_FAIL, "%s %s %s %d [too many dumper retry]",
+		log_add(L_FAIL, "%s %s %s %d [too many dumper retry: %s]",
 	    	    dp->host->hostname, dp->name, sched(dp)->datestamp,
-	    	    sched(dp)->level);
-		printf("driver: dump failed %s %s %s, too many dumper retry\n", result_argv[2], dp->host->hostname, dp->name);
+	    	    sched(dp)->level, result_argv[3]);
+		printf("driver: dump failed %s %s %s, too many dumper retry: %s\n",
+		        result_argv[2], dp->host->hostname, dp->name
+		        result_argv[3]);
 	    }
 	    /* FALLTHROUGH */
 	case FAILED: /* FAILED <handle> <errstr> */
