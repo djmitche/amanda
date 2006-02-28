@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.161 2006/02/28 13:15:57 martinea Exp $
+ * $Id: driver.c,v 1.162 2006/02/28 17:53:55 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1299,7 +1299,7 @@ handle_dumper_result(cookie)
 	    	    dp->host->hostname, dp->name, sched(dp)->datestamp,
 	    	    sched(dp)->level, result_argv[3]);
 		printf("driver: dump failed %s %s %s, too many dumper retry: %s\n",
-		        result_argv[2], dp->host->hostname, dp->name
+		        result_argv[2], dp->host->hostname, dp->name,
 		        result_argv[3]);
 	    }
 	    /* FALLTHROUGH */
