@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.38 2004/03/09 19:37:05 martinea Exp $
+ * $Id: protocol.c,v 1.39 2006/02/28 16:36:13 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -607,6 +607,7 @@ s_repwait(p, action, pkt)
 	return (A_FINISH);
     }
     else if(pkt->type == P_PREP) {
+	p->timeout = p->repwait - CURTIME + p->curtime + 1;
 	return (A_CONTPEND);
     }
 

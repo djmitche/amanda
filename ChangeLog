@@ -1,4 +1,8 @@
 2006-02-28  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/protocol.c (s_repwait): Decrease p->timeout on receive
+					     of a PREP.
+
+2006-02-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c: Print dumper TRY_AGAIN message.
 
 2006-02-28  Jean-Louis Martineau <martineau@zmanda.com>
