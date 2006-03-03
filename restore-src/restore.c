@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.23 2006/02/06 22:51:16 ktill Exp $
+ * $Id: restore.c,v 1.24 2006/03/03 15:05:16 vectro Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1182,7 +1182,7 @@ rst_flags_t *flags;
 	changer_info(&slots, &curslot, &backwards);
     }
 
-    if(tapelist){
+    if(tapelist && !flags->amidxtaped){
       slots = num_entries(tapelist);
       /*
 	Spit out a list of expected tapes, so people with manual changers know
@@ -1337,15 +1337,33 @@ rst_flags_t *flags;
 			changer_loadslot("next", &curslot, &cur_tapedev);
 		    }
 		}
-		else{
+		else {
 		    char *input = NULL;
-                    fprintf(prompt_out,"Insert tape labeled %s in device %s and press return\n", desired_tape->label, cur_tapedev);
-		    fflush(prompt_out);
-                    input = agets(stdin);
- 		    amfree(input);
-		}
-	    }
+                    int tmp1;
+                    socklen_t tmp2;
+                    if (!flags->amidxtaped) {
+                        fprintf(prompt_out,
+                                "Insert tape labeled %s in device %s "
+                                "and press return\n", 
+                                desired_tape->label, cur_tapedev);
+                        fflush(prompt_out);
+                        input = agets(stdin);
+                        amfree(input);
+                    } else {
+                        fprintf(prompt_out, "FEEDME %s\n",
+                                desired_tape->label);
+                        fflush(prompt_out);
+                        input = agets(stdin); /* Strips \n but not \r */
+                        if (strcmp("OK\r", input) != 0) {
+                            error("Got bad response from amrecover: %s",
+                                  input);
+                        }
+                        amfree(input);
+                    }
+                }
+            }
 	    else{
+                assert(!flags->amidxtaped);
 		if(have_changer){
 		    if(slot_num == 0)
 			changer_loadslot("first", &curslot, &cur_tapedev);
@@ -1354,7 +1372,7 @@ rst_flags_t *flags;
 		    if(have_changer && !cur_tapedev)
 			error("Changer did not set the tape device, probably misconfigured");
 		}
-		else{
+		else {
 		    /* XXX need a condition for ending processing? */
 		    char *input = NULL;
                     fprintf(prompt_out,"Insert a tape to search and press enter, ^D to finish reading tapes\n");

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.122 2006/01/26 01:46:57 paddy_s Exp $
+ * $Id: amanda.h,v 1.123 2006/03/03 15:05:15 vectro Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -448,6 +448,10 @@ extern char *debug_prefix_time P((char *));
 /* MAX_TAPE_BLOCK_KB is defined in config.h */
 /* by configure --with-maxtapeblocksize     */
 #define MAX_TAPE_BLOCK_BYTES (MAX_TAPE_BLOCK_KB*1024)
+
+/* Maximum length of tape label, plus one for null-terminator. */
+#define MAX_TAPE_LABEL_LEN (10240)
+#define MAX_TAPE_LABEL_BUF (MAX_TAPE_LABEL_LEN+1)
 
 /* Define miscellaneous amanda functions.  */
 #define ERR_INTERACTIVE	1

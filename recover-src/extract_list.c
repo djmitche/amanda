@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.94 2006/02/02 17:16:43 vectro Exp $
+ * $Id: extract_list.c,v 1.95 2006/03/03 15:05:15 vectro Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1303,19 +1303,19 @@ int fsf;
     if(am_has_feature(tapesrv_features, fe_recover_splits)){
 	char buffer[32768];
 	int data_port = -1;
-        char * endptr;
+        int nread;
 
-	if (read(tape_control_sock, buffer, sizeof(buffer)) <= 0) {
+        nread = read(tape_control_sock, buffer, sizeof(buffer));
+
+	if (nread <= 0) {
 	    error("Could not read from control socket: %s\n", 
                   strerror(errno));
 	    /* NOTREACHED */
         }
 
-	buffer[32767] = '\0';
-	data_port = strtol(buffer, &endptr, 10);
-
-	if (buffer == endptr) {
-	    error("Got invalid port number from control socket: %s\n",
+	buffer[nread] = '\0';
+        if (sscanf(buffer, "CONNECT %d\n", &data_port) != 1) {
+	    error("Recieved invalid port number message from control socket: %s\n",
                   buffer);
 	    /* NOTREACHED */
         }	
@@ -1707,89 +1707,109 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 	timeout.tv_sec = READ_TIMEOUT;
 	timeout.tv_usec = 0;
 	FD_COPY(&readset, &selectset);
-
+        
 	nfound = select(max_fd, (SELECT_ARG_TYPE *)(&selectset), NULL, NULL,
 			&timeout);
 	if(nfound < 0) {
 	    fprintf(stderr,"select error: %s\n", strerror(errno));
 	    break;
 	}
-
+        
 	if (nfound == 0) { /* timeout */
 	    fprintf(stderr, "timeout waiting %d seconds for restore\n",
 		    READ_TIMEOUT);
 	    fprintf(stderr, "increase READ_TIMEOUT in recover-src/extract_list.c if your tape is slow\n");
 	    break;
 	}
-
+        
 	if(FD_ISSET(ctl_fd, &selectset)) {
-	    bytes_read = read(ctl_fd, buffer, sizeof(buffer));
+	    bytes_read = read(ctl_fd, buffer, sizeof(buffer)-1);
 	    switch(bytes_read) {
-		case -1:
-		    if ((errno != EINTR) && (errno != EAGAIN)) {
-			if (errno != EPIPE) {
-		            fprintf(stderr,"writer ctl fd read error: %s",
-			    	    strerror(errno));
-			}
-		        FD_CLR(ctl_fd, &readset);
-		    }
-		    break;
-
-		case  0:
-		    FD_CLR(ctl_fd, &readset);
-		    break;
-
-		default: {
-		    char *input = NULL;
-
-		    fwrite(buffer, bytes_read, 1, stdout);
-		    fflush(stdout);
-
-		    /* if prompted for a tape, relay said prompt to the user */
-		    if(match_glob("Insert tape labeled *", buffer)){
-			input = agets(stdin);
-			send_to_tape_server(tape_control_sock, "");
-			amfree(input);
-		    }
+            case -1:
+                if ((errno != EINTR) && (errno != EAGAIN)) {
+                    if (errno != EPIPE) {
+                        fprintf(stderr,"writer ctl fd read error: %s",
+                                strerror(errno));
+                    }
+                    FD_CLR(ctl_fd, &readset);
+                }
+                break;
+                
+            case  0:
+                FD_CLR(ctl_fd, &readset);
+                break;
+                
+            default: {
+                char desired_tape[MAX_TAPE_LABEL_BUF];
+                
+                buffer[bytes_read] = '\0';
+                /* if prompted for a tape, relay said prompt to the user */
+                if(sscanf(buffer, "FEEDME %s\n", desired_tape) == 1) {
+                    int done = 0;
+                    while (!done) {
+                        char *input = NULL;
+                        printf("Please insert tape %s. Continue? [Y|n]: ",
+                               desired_tape);
+                        fflush(stdout);
+                        
+                        input = agets(stdin); /* strips \n */
+                        if (strcasecmp("", input) == 0|| 
+                            strcasecmp("y", input) == 0|| 
+                            strcasecmp("yes", input) == 0) {
+                            send_to_tape_server(tape_control_sock, "OK");
+                            done = 1;
+                        } else if (strcasecmp("n", input) == 0|| 
+                                   strcasecmp("no", input) == 0) {
+                            send_to_tape_server(tape_control_sock, "ERROR");
+                            /* Abort!
+                               We are the middle process, so just die. */
+                            exit(EXIT_FAILURE);
+                        }
+                        amfree(input);
+                    }
+                } else {
+                    fprintf(stderr, "Strange message from tape server: %s", buffer);
+                    
 		    break;
 		}
 	    }
-	}
-
-	/* now read some dump data */
-	if(FD_ISSET(data_fd, &selectset)) {
-	    bytes_read = read(data_fd, buffer, sizeof(buffer));
-	    switch(bytes_read) {
-		case -1:
-		    if ((errno != EINTR) && (errno != EAGAIN)) {
-			if (errno != EPIPE) {
-			    fprintf(stderr,"writer data fd read error: %s",
-				            strerror(errno));
-			}
-		        FD_CLR(data_fd, &readset);
-		    }
-		    break;
-
-		case  0:
-		    FD_CLR(data_fd, &readset);
-		    break;
-
-		default:
-		    /*
-		     * spit what we got from the server to the child
-		     *  process handling actual dumpfile extraction
-		     */
-		    if((s = fullwrite(child_pipe[1], buffer, bytes_read)) < 0){
-			if(errno == EPIPE) {
-			    error("%s: pipe data reader has quit: %s\n",
-				    get_pname(), strerror(errno));
-			    /* NOTREACHED */
-			}
-			error("Write error to extract child: %s\n",
-				    strerror(errno));
-			/* NOTREACHED */
-		   }
-		   break;
+            }
+        }
+            
+        /* now read some dump data */
+        if(FD_ISSET(data_fd, &selectset)) {
+            bytes_read = read(data_fd, buffer, sizeof(buffer)-1);
+            switch(bytes_read) {
+            case -1:
+                if ((errno != EINTR) && (errno != EAGAIN)) {
+                    if (errno != EPIPE) {
+                        fprintf(stderr,"writer data fd read error: %s",
+                                strerror(errno));
+                    }
+                    FD_CLR(data_fd, &readset);
+                }
+                break;
+                
+            case  0:
+                FD_CLR(data_fd, &readset);
+                break;
+                
+            default:
+                /*
+                 * spit what we got from the server to the child
+                 *  process handling actual dumpfile extraction
+                 */
+                if((s = fullwrite(child_pipe[1], buffer, bytes_read)) < 0){
+                    if(errno == EPIPE) {
+                        error("%s: pipe data reader has quit: %s\n",
+                              get_pname(), strerror(errno));
+                        /* NOTREACHED */
+                    }
+                    error("Write error to extract child: %s\n",
+                          strerror(errno));
+                    /* NOTREACHED */
+                }
+                break;
 	    }
 	}
     } while(FD_ISSET(ctl_fd, &readset) || FD_ISSET(data_fd, &readset));

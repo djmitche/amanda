@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.h,v 1.3 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: restore.h,v 1.4 2006/03/03 15:05:16 vectro Exp $
  *
  * 
  */
@@ -54,7 +54,7 @@ typedef struct rst_flags_s {
     unsigned int headers:1;
     unsigned int isafile:1;
     unsigned int wait_tape_prompt:1; /* for interactive console use */
-    unsigned int send_tape_prompt:1; /* for client-daemon use (cf amidxtaped) */
+    unsigned int amidxtaped:1; /* for client-daemon use */
     unsigned int check_labels:1;
     unsigned int mask_splits:1;
     unsigned int fsf;

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.56 2006/02/06 16:31:47 vectro Exp $
+/* $Id: amidxtaped.c,v 1.57 2006/03/03 15:05:16 vectro Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -234,6 +234,7 @@ char **argv;
 
     rst_flags = new_rst_flags();
     rst_flags->mask_splits = 1; /* for older clients */
+    rst_flags->amidxtaped = 1;
     our_features = am_init_feature_set();
     their_features = am_set_default_feature_set();
 
@@ -456,7 +457,7 @@ char **argv;
 	dbprintf(("%s: Local port %d set aside for data\n", get_pname(),
 		  data_port));
 	
-	printf("%d", data_port); /* tell client where to connect */
+	printf("CONNECT %d\n", data_port); /* tell client where to connect */
 	fflush(stdout);
 	
 	if((data_fd = stream_accept(data_sock, TIMEOUT, -1, -1)) < 0){

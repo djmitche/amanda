@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.h,v 1.13 2005/12/31 00:02:09 paddy_s Exp $
+ * $Id: amfeatures.h,v 1.14 2006/03/03 15:05:15 vectro Exp $
  *
  * Define feature test related items.
  */
@@ -151,6 +151,7 @@ typedef enum {
     fe_amindexd_marshall_in_OLSD,
     fe_amindexd_marshall_in_ORLD,
     fe_amindexd_marshall_in_DHST,
+    fe_amidxtaped_FEEDME,
 
     /*
      * All new features must be inserted immediately *before* this entry.
