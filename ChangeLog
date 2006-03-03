@@ -1,4 +1,10 @@
 2006-02-28  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/bsd-security.c (bsd_connect, netfd_read_callback, main):
+	  Set bh->proto_handle to NULL after allocating bh.
+	* common-src/bsd-security.c (bsd_close): Donothing if
+	  bh->proto_handle == NULL.
+
+2006-02-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/protocol.c (s_repwait): Decrease p->timeout on receive
 					     of a PREP.
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.52 2006/01/25 18:19:34 ktill Exp $
+ * $Id: bsd-security.c,v 1.53 2006/03/03 14:34:18 martinea Exp $
  *
  * "BSD" security module
  */
@@ -342,6 +342,7 @@ bsd_connect(hostname, conf_fn, fn, arg)
     assert(hostname != NULL);
 
     bh = alloc(sizeof(*bh));
+    bh->proto_handle=NULL;
     security_handleinit(&bh->sech, &bsd_security_driver);
 
     /*
@@ -520,6 +521,10 @@ bsd_close(cookie)
     void *cookie;
 {
     struct bsd_handle *bh = cookie;
+
+    if(bh->proto_handle == NULL) {
+	return;
+    }
 
     bsdprintf(("%s: close handle '%s'\n",
 	       debug_prefix_time(NULL), bh->proto_handle));
@@ -709,6 +714,7 @@ netfd_read_callback(cookie)
     if (he == NULL)
 	return;
     bh = alloc(sizeof(*bh));
+    bh->proto_handle=NULL;
     security_handleinit(&bh->sech, &bsd_security_driver);
     a = inithandle(bh,
 		   he,
@@ -1841,6 +1847,7 @@ main (argc, argv)
     netfd.peer.sin_port = htons(IPPORT_RESERVED - 1);
 
     bh = alloc(sizeof(*bh));
+    bh->proto_handle=NULL;
     netfd.pkt.type = P_REQ;
     dgram_zero(&netfd.dgram);
     save_cur = netfd.dgram.cur;				/* cheating */
