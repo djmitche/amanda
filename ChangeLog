@@ -1,3 +1,7 @@
+2006-03-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taper.c (label_tape): Set errstr and return 0 if no
+	  valid tape are available.
+
 2006-03-03  Ian Turner <ian@zmanda.com>
 	* common-src/amanda.h: New macros MAX_TAPE_LABEL_LEN and 
 	  MAX_TAPE_LABEL_BUF.
