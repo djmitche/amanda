@@ -1,4 +1,7 @@
 2006-03-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/reporter.c (handle_error): Handle error from taper.
+
+2006-03-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taper.c (label_tape): Set errstr and return 0 if no
 	  valid tape are available.
 

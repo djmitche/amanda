@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.103 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: reporter.c,v 1.104 2006/03/06 19:23:56 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1665,23 +1665,22 @@ handle_error()
 
 	skip_whitespace(s, ch);
 #define sc "no-tape"
-	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	    bogus_line();
-	    return;
-	}
-	s += sizeof(sc)-1;
-	ch = s[-1];
+	if(ch != '\0' && strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
+	    s += sizeof(sc)-1;
+	    ch = s[-1];
 #undef sc
 
-	skip_whitespace(s, ch);
-	if(ch != '\0') {
-	    if((nl = strchr(s - 1, '\n')) != NULL) {
-		*nl = '\0';
+	    skip_whitespace(s, ch);
+	    if(ch != '\0') {
+		if((nl = strchr(s - 1, '\n')) != NULL) {
+		    *nl = '\0';
+		}
+		tapestart_error = newstralloc(tapestart_error, s - 1);
+		if(nl) *nl = '\n';
+		degraded_mode = 1;
+		return;
 	    }
-	    tapestart_error = newstralloc(tapestart_error, s - 1);
-	    if(nl) *nl = '\n';
-	    degraded_mode = 1;
-	    return;
+	    /* else some other tape error, handle like other errors */
 	}
 	/* else some other tape error, handle like other errors */
     }
