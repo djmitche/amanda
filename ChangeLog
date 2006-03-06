@@ -1,4 +1,9 @@
 2006-03-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taperscan.c (scan_slot): append slotstr to
+	  ct->error_message.
+	* server-src/taperscan.c: Add a '\n' after each slot error message.
+
+2006-03-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/reporter.c (handle_error): Handle error from taper.
 
 2006-03-06  Jean-Louis Martineau <martineau@zmanda.com>

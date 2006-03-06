@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.5 2006/01/23 22:31:45 vectro Exp $
+ * $Id: taperscan.c,v 1.6 2006/03/06 19:27:36 martinea Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -78,14 +78,15 @@ int scan_read_label(char *dev, char *desired_label,
                 return 3;
             } else {
                 vstrextend(error_message,
-                           "Found a non-amanda tape, but have no labels left.");
+                           "Found a non-amanda tape, but have no labels left.\n",
+			   NULL);
                 return -1;
             }
 
         } else {
             amfree(*timestamp);
             amfree(*label);
-            vstrextend(error_message, result, NULL);
+            vstrextend(error_message, result, "\n", NULL);
             amfree(result);
             return -1;
         }
@@ -106,7 +107,7 @@ int scan_read_label(char *dev, char *desired_label,
 	if(!match(labelstr, *label)) {
             vstrextend(&errstr, "label ", *label,
                        " doesn\'t match labelstr \"",
-                       labelstr, "\"", NULL);
+                       labelstr, "\"\n", NULL);
             return -1;
 	} else {
             tape_t *tp;
@@ -131,7 +132,7 @@ int scan_read_label(char *dev, char *desired_label,
     }
   
     if (errstr != NULL) {
-        vstrextend(error_message, errstr, NULL);
+        vstrextend(error_message, errstr, "\n", NULL);
         amfree(errstr);
         return -1;
     }
@@ -168,6 +169,7 @@ int scan_slot(void *data, int rc, char *slotstr, char *device) {
                      "changer error ", slotstr, ": ", changer_resultstr, NULL);
         return 0;
     case 0:
+	vstrextend(ct->error_message, "slot ", slotstr, ": ", NULL);
         label_result = scan_read_label(device, ct->wantlabel, ct->gotlabel,
                                        ct->timestamp, ct->error_message);
         if (label_result == 1 || label_result == 3 ||
