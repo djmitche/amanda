@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.95 2006/03/03 15:05:15 vectro Exp $
+ * $Id: extract_list.c,v 1.96 2006/03/07 21:16:48 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -479,9 +479,20 @@ char *regex;
     while(j >= 0 && regex[j] == '/') regex[j--] = '\0';
 
     /* convert path (assumed in cwd) to one on disk */
-    if (strcmp(disk_path, "/") == 0)
-	path_on_disk = stralloc2("/", regex);
-    else {
+    if (strcmp(disk_path, "/") == 0) {
+        if (*regex == '/') {
+	    if (strcmp(regex, "/[/]*$") == 0) {
+		/* We want '/' to match everything in directory... */
+		path_on_disk = stralloc("/[^/]*[/]*$");
+	    } else {
+		/* No mods needed if already starts with '/' */
+		path_on_disk = stralloc(regex);
+	    }
+	} else {
+	    /* Prepend '/' */
+	    path_on_disk = stralloc2("/", regex);
+	}
+    } else {
 	char *clean_disk_path = clean_regex(disk_path);
 	path_on_disk = vstralloc(clean_disk_path, "/", regex, NULL);
 	amfree(clean_disk_path);
@@ -1547,7 +1558,8 @@ static void extract_files_child(in_fd, elist)
     	case IS_SAMBA:
 	    if (strcmp(fn->path, "/") == 0)
 	        restore_args[j++] = stralloc(".");
-	    restore_args[j++] = stralloc2(".", fn->path);
+	    else
+	        restore_args[j++] = stralloc2(".", fn->path);
 	    break;
 	case IS_UNKNOWN:
 	case IS_DUMP:

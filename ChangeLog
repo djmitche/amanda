@@ -1,3 +1,9 @@
+2006-03-06  John Franks <jrfranks@zmanda.com>
+	* recover-src/extract_list.c:
+	  1) Don't add '.' directory twice to tar extract list.
+	  2) Don't prepend extra '/' to extract patterns starting with '/'.
+          3) Convert "/" extract pattern to "*" equivalent.
+
 2006-03-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taperscan.c (scan_slot): append slotstr to
 	  ct->error_message.
