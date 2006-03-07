@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.114 2006/03/06 19:22:22 martinea Exp $
+/* $Id: taper.c,v 1.115 2006/03/07 21:52:03 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -599,7 +599,7 @@ int rdpipe, wrpipe;
 	q = squotef("[%s]", result ? result : "(null)");
 	putresult(TAPE_ERROR, "%s\n", q);
 	amfree(q);
-	log_add(L_ERROR,"no-tape [%s]", result);
+	log_add(L_ERROR,"no-tape [%s]", "No writable valid tape found");
 	amfree(result);
 	syncpipe_put('e', 0);			/* ACK error */
 	break;
@@ -1352,7 +1352,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		log_add(L_FAIL, "%s %s %s %d [out of tape]",
 			hostname, diskname, datestamp, level);
-		log_add(L_ERROR,"no-tape [%s]", errstr);
+		log_add(L_ERROR,"no-tape [%s]", "No more writable valid tape found");
 	    }
 	    amfree(q);
 

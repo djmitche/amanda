@@ -1,3 +1,6 @@
+2006-03-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taper.c: Don't log a multi-line message in no-tape case.
+
 2006-03-06  John Franks <jrfranks@zmanda.com>
 	* recover-src/extract_list.c:
 	  1) Don't add '.' directory twice to tar extract list.
