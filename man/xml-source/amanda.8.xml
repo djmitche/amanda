@@ -50,6 +50,11 @@
 </cmdsynopsis>
 
 <cmdsynopsis>
+    <command>amcrypt</command>
+    <sbr/>
+</cmdsynopsis>
+
+<cmdsynopsis>
   <command>amdd</command>    
     <arg choice='opt'><replaceable>options</replaceable></arg>
 </cmdsynopsis>
@@ -57,6 +62,11 @@
 <cmdsynopsis>
   <command>amdump</command>    
     <arg choice='plain'><replaceable>config</replaceable></arg>
+    <sbr/>
+</cmdsynopsis>
+
+<cmdsynopsis>
+    <command>amaespipe</command>
     <sbr/>
 </cmdsynopsis>
 
@@ -368,6 +378,18 @@ ejecting tapes and scanning the tape storage slots.</para>
   <term><emphasis remap='B'>amtapetype</emphasis></term>
   <listitem>
 <para>Generate a tapetype definition.</para>
+  </listitem>
+  </varlistentry>
+  <varlistentry>
+  <term><emphasis remap='B'>amaespipe</emphasis></term>
+  <listitem>
+<para>Wrapper program from aespipe (data encryption utility)</para>
+  </listitem>
+  </varlistentry>
+  <varlistentry>
+  <term><emphasis remap='B'>amcrypt</emphasis></term>
+  <listitem>
+<para>Reference encryption program for Amanda symmetric data encryption</para>
   </listitem>
   </varlistentry>
 </variablelist>

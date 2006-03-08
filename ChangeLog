@@ -1,3 +1,6 @@
+2006-03-07  Paddy Sreenivasan <paddy@zmanda.com>
+	* man/xml-source/amanda.8.xml: added amaespipe and amcrypt.
+
 2006-03-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taper.c: Don't log a multi-line message in no-tape case.
 
