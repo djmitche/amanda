@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.61 2006/01/14 04:37:18 paddy_s Exp $
+ * $Id: amandad.c,v 1.62 2006/03/09 16:51:41 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -175,6 +175,10 @@ main(argc, argv)
 
     safe_fd(-1, 0);
     safe_cd();
+
+    if(argv == NULL) {
+	error("argv == NULL\n");
+    }
 
     /*
      * When called via inetd, it is not uncommon to forget to put the
@@ -529,7 +533,7 @@ send_pkt_out:
     amfree(pktbody);
     amfree(service);
     amfree(arguments);
-    service_delete(as);
+    if(as) service_delete(as);
     do_sendpkt(handle, &pkt_out);
     security_close(handle);
 }
@@ -1144,6 +1148,7 @@ service_new(security_handle, cmd, arguments)
 	    if(am_has_feature(g_options->features, fe_partial_estimate)) {
 		as->send_partial_reply = 1;
 	    }
+	    amfree(g_options);
 	    amfree(option_str);
 	}
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.96 2006/03/07 21:16:48 martinea Exp $
+ * $Id: extract_list.c,v 1.97 2006/03/09 16:51:41 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1245,7 +1245,8 @@ int fsf;
 	    error("Could not read features from control socket\n");
 	    /* NOTREACHED */
 	}
-	tapesrv_features = am_string_to_feature(stralloc(buffer));
+	
+	tapesrv_features = am_string_to_feature(buffer);
 	amfree(our_feature_string);
     }
 

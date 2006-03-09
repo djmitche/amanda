@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.176 2006/02/28 12:24:06 martinea Exp $
+ * $Id: planner.c,v 1.177 2006/03/09 16:51:42 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1780,10 +1780,6 @@ security_handle_t *sech;
 
  error_return:
 
-    if(msgdisk_undo) {
-	*msgdisk_undo = msgdisk_undo_ch;
-	msgdisk_undo = NULL;
-    }
     i = 0;
     for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	if(est(dp)->state != DISK_ACTIVE) continue;

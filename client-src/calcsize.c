@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.35 2006/01/14 04:37:18 paddy_s Exp $
+ * $Id: calcsize.c,v 1.36 2006/03/09 16:51:41 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -330,9 +330,11 @@ char *include;
     int parent_len;
     int has_exclude = !is_empty_sl(exclude_sl) && use_gtar_excl;
 
+    if(parent_dir == NULL || include == NULL) return;
+
     char *aparent = vstralloc(parent_dir, "/", include, NULL);
 
-    if(parent_dir && stat(parent_dir, &finfo) != -1)
+    if(stat(parent_dir, &finfo) != -1)
 	parent_dev = finfo.st_dev;
 
     parent_len = strlen(parent_dir);

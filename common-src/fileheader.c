@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.33 2005/12/31 00:02:09 paddy_s Exp $
+ * $Id: fileheader.c,v 1.34 2006/03/09 16:51:41 martinea Exp $
  */
 
 #include "amanda.h"
@@ -162,8 +162,11 @@ parse_file_header(buffer, file, buflen)
 	       
 	tok = strtok(NULL, " ");
         /* "program" is optional */
-        if (tok == NULL || strcmp(tok, "program") != 0)
+        if (tok == NULL || strcmp(tok, "program") != 0) {
+	    amfree(buf);
+	    amfree(line1);
             return;
+	}
 
         tok = strtok(NULL, " ");
         if (tok == NULL)
@@ -254,8 +257,11 @@ parse_file_header(buffer, file, buflen)
     case F_TAPEEND:
 	tok = strtok(NULL, " ");
 	/* DATE is optional */
-	if (tok == NULL || strcmp(tok, "DATE") != 0)
+	if (tok == NULL || strcmp(tok, "DATE") != 0) {
+	    amfree(buf);
+	    amfree(line1);
 	    return;
+	}
 	strncpy(file->datestamp, tok, sizeof(file->datestamp) - 1);
 	break;
 

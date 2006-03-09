@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.104 2006/03/06 19:23:56 martinea Exp $
+ * $Id: reporter.c,v 1.105 2006/03/09 16:51:42 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1737,6 +1737,7 @@ handle_disk()
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	bogus_line();
+	amfree(hostname);
 	return;
     }
     fp = s - 1;
@@ -1843,8 +1844,14 @@ handle_chunk()
  	}
  	skip_integer(s, ch);
     }
-    
     skip_whitespace(s, ch);
+    
+    if(level < 0 || level > 9) {
+ 	amfree(hostname);
+ 	amfree(diskname);
+ 	amfree(datestamp);
+ 	return NULL;
+    }
     
     if(sscanf(s - 1,"[sec %f kb %f kps %f", &sec, &kbytes, &kps) != 3)  {
  	bogus_line();
@@ -1922,9 +1929,6 @@ handle_success(logtype_t logtype)
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	bogus_line();
-	amfree(hostname);
-	amfree(hostname);
-	amfree(diskname);
 	return NULL;
     }
     fp = s - 1;
@@ -1936,6 +1940,7 @@ handle_success(logtype_t logtype)
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	bogus_line();
+	amfree(hostname);
 	return NULL;
     }
     fp = s - 1;
@@ -1947,6 +1952,8 @@ handle_success(logtype_t logtype)
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	bogus_line();
+	amfree(hostname);
+	amfree(diskname);
 	return NULL;
     }
     fp = s - 1;
@@ -1969,6 +1976,12 @@ handle_success(logtype_t logtype)
 	    return NULL;
 	}
 	skip_integer(s, ch);
+    }
+    if(level < 0 || level > 9) {
+	amfree(hostname);
+	amfree(diskname);
+	amfree(datestamp);
+	return NULL;
     }
 
     skip_whitespace(s, ch);
@@ -2385,6 +2398,7 @@ copy_template_file(lbl_templ)
 		       NULL);
     handle_error();
     amfree(curstr);
+    amfree(lbl_templ);
     afclose(postscript);
     return;
   }
@@ -2399,6 +2413,7 @@ copy_template_file(lbl_templ)
 		         NULL);
       handle_error();
       amfree(curstr);
+      amfree(lbl_templ);
       afclose(postscript);
       return;
     }
@@ -2413,6 +2428,7 @@ copy_template_file(lbl_templ)
 		       NULL);
     handle_error();
     amfree(curstr);
+    amfree(lbl_templ);
     afclose(postscript);
     return;
   }

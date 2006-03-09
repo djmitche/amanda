@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.53 2006/03/03 14:34:18 martinea Exp $
+ * $Id: bsd-security.c,v 1.54 2006/03/09 16:51:41 martinea Exp $
  *
  * "BSD" security module
  */
@@ -1127,6 +1127,7 @@ check_user_amandahosts(host, pwd, remoteuser)
     if ((fp = fopen(ptmp, "r")) == NULL) {
 	result = vstralloc("cannot open ", ptmp, ": ", strerror(errno), NULL);
 	amfree(ptmp);
+	amfree(localuser);
 	return result;
     }
 

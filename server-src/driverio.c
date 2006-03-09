@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.76 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: driverio.c,v 1.77 2006/03/09 16:51:42 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -297,9 +297,9 @@ char *datestamp;
           won't get confused
 	*/
 	if(!dp->split_diskbuffer || dp->split_diskbuffer[0] == '\0'){
-	    diskbuffer = newstralloc(diskbuffer, "NULL");
+	    diskbuffer = "NULL";
 	} else {
-	    diskbuffer = newstralloc(diskbuffer, dp->split_diskbuffer);
+	    diskbuffer = dp->split_diskbuffer;
 	}
 	snprintf(splitsize, sizeof(splitsize), "%ld", dp->tape_splitsize);
 	snprintf(fallback_splitsize, sizeof(fallback_splitsize),

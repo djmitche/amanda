@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.31 2005/12/25 02:22:33 paddy_s Exp $
+ * $Id: client_util.c,v 1.32 2006/03/09 16:51:41 martinea Exp $
  *
  */
 
@@ -212,6 +212,7 @@ int verbose;
 		      debug_prefix(NULL), device));
 		if(verbose)
 		    printf("ERROR [Can't open disk '%s']\n", device);
+		amfree(regex);
 		return 0;
 	    }
 	    else {
@@ -226,6 +227,7 @@ int verbose;
 		}
 		closedir(d);
 	    }
+	    amfree(regex);
 	}
     }
     return nb_exp;

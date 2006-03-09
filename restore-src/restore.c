@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.24 2006/03/03 15:05:16 vectro Exp $
+ * $Id: restore.c,v 1.25 2006/03/09 16:51:41 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -247,13 +247,12 @@ char *device;
                         get_pname(), device, errstr);
                 amfree(errstr);
             }
-	    if(cur_tapedev) amfree(cur_tapedev);
+	    amfree(cur_tapedev);
 	    curslot = stralloc(slotstr);
-	    if(!device) return(1);
-	    cur_tapedev = stralloc(device);
-
             amfree(datestamp);
             amfree(label);
+	    if(device)
+		cur_tapedev = stralloc(device);
             return 1;
         }
     }

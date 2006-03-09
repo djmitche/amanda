@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.167 2006/02/06 22:17:09 ktill Exp $
+/* $Id: dumper.c,v 1.168 2006/03/09 16:51:42 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -928,7 +928,7 @@ do_dump(db)
     double dumptime;	/* Time dump took in secs */
     char *errfname = NULL;
     int indexout;
-    pid_t indexpid;
+    pid_t indexpid = -1;
 
     startclock();
 
@@ -957,7 +957,6 @@ do_dump(db)
     unlink(errfname);				/* so it goes away on close */
     amfree(errfname);
 
-    indexpid = -1;
     if (streams[INDEXFD].fd != NULL) {
 	indexfile_real = getindexfname(hostname, diskname, datestamp, level);
 	indexfile_tmp = stralloc2(indexfile_real, ".tmp");

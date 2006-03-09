@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.85 2006/02/06 16:31:47 vectro Exp $
+ * $Id: amindexd.c,v 1.86 2006/03/09 16:51:41 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -928,7 +928,11 @@ char **argv;
     dbopen();
     dbprintf(("%s: version %s\n", get_pname(), version()));
 
-    if (! (argc >= 1 && argv != NULL && argv[0] != NULL)) {
+    if(argv == NULL) {
+	error("argv == NULL\n");
+    }
+
+    if (! (argc >= 1 && argv[0] != NULL)) {
 	dbprintf(("%s: WARNING: argv[0] not defined: check inetd.conf\n",
 		  debug_prefix_time(NULL)));
     }

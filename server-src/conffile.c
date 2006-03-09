@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.123 2006/01/25 18:19:35 ktill Exp $
+ * $Id: conffile.c,v 1.124 2006/03/09 16:51:41 martinea Exp $
  *
  * read configuration file
  */
@@ -2164,12 +2164,12 @@ static void get_dumpopts() /* XXX - for historical compatability */
 	case EXCLUDE_FILE:
 	    ckseen(&dpcur.s_exclude_file);
 	    get_conftoken(STRING);
-	    dpcur.exclude_file = append_sl(dpcur.exclude_file, stralloc(tokenval.s));
+	    dpcur.exclude_file = append_sl(dpcur.exclude_file, tokenval.s);
 	    break;
 	case EXCLUDE_LIST:
 	    ckseen(&dpcur.s_exclude_list);
 	    get_conftoken(STRING);
-	    dpcur.exclude_list = append_sl(dpcur.exclude_list, stralloc(tokenval.s));
+	    dpcur.exclude_list = append_sl(dpcur.exclude_list, tokenval.s);
 	    break;
 	case KENCRYPT:   ckseen(&dpcur.s_kencrypt);  dpcur.kencrypt = 1; break;
 	case SKIP_INCR:  ckseen(&dpcur.s_skip_incr); dpcur.skip_incr= 1; break;

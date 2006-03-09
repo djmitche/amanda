@@ -196,6 +196,7 @@ char **my_argv;
 	    snprintf(number, sizeof(number), "%d", passwdpipe[0]);
 	    newenv[0] = vstralloc(passwdvar, "=", number, NULL);
 	    for(i = 0; (newenv[i + 1] = env[i]) != NULL; i++) {}
+	    amfree(env);
 	    env = newenv;
 	}
 

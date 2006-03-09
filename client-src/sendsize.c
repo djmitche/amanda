@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.151 2006/01/14 04:37:18 paddy_s Exp $
+ * $Id: sendsize.c,v 1.152 2006/03/09 16:51:41 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1028,6 +1028,7 @@ long getsize_dump(disk, amdevice, level, options)
 	amfree(rundump_cmd);
 	amfree(device);
 	amfree(name);
+	amfree(fstype);
 	return -1;
     default:
 	break; 

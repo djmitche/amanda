@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.76 2006/01/14 04:37:18 paddy_s Exp $
+ * $Id: sendbackup.c,v 1.77 2006/03/09 16:51:41 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -78,43 +78,54 @@ char *optionstr(options)
 option_t *options;
 {
     static char *optstr = NULL;
-    char *compress_opt = "";
-    char *encrypt_opt ="";
-    char *decrypt_opt ="";
+    char *compress_opt;
+    char *encrypt_opt;
+    char *decrypt_opt;
     char *record_opt = "";
     char *index_opt = "";
-    char *auth_opt = "";
+    char *auth_opt;
     char *exclude_file_opt;
     char *exclude_list_opt;
     char *exc = NULL;
     sle_t *excl;
 
     if(options->compress == COMPR_BEST)
-	compress_opt = "compress-best;";
+	compress_opt = stralloc("compress-best;");
     else if(options->compress == COMPR_FAST)
-	compress_opt = "compress-fast;";
+	compress_opt = stralloc("compress-fast;");
     else if(options->compress == COMPR_SERVER_BEST)
-	compress_opt = "srvcomp-best;";
+	compress_opt = stralloc("srvcomp-best;");
     else if(options->compress == COMPR_SERVER_FAST)
-	compress_opt = "srvcomp-fast;";
+	compress_opt = stralloc("srvcomp-fast;");
     else if(options->compress == COMPR_SERVER_CUST)
 	compress_opt = vstralloc("srvcomp-cust=", options->srvcompprog, ";", NULL);
     else if(options->compress == COMPR_CUST)
 	compress_opt = vstralloc("comp-cust=", options->clntcompprog, ";", NULL);
+    else
+	compress_opt = stralloc("");
     
     if(options->encrypt == ENCRYPT_CUST) {
       encrypt_opt = vstralloc("encrypt-cust=", options->clnt_encrypt, ";", NULL);
       if (options->clnt_decrypt_opt)
 	decrypt_opt = vstralloc("client-decrypt-option=", options->clnt_decrypt_opt, ";", NULL);
+      else
+	decrypt_opt = stralloc("");
     }
     else if(options->encrypt == ENCRYPT_SERV_CUST) {
       encrypt_opt = vstralloc("encrypt-serv-cust=", options->srv_encrypt, ";", NULL);
       if(options->srv_decrypt_opt)
 	decrypt_opt = vstralloc("server-decrypt-option=", options->srv_decrypt_opt, ";", NULL);
+      else
+	decrypt_opt = stralloc("");
+    }
+    else {
+	encrypt_opt = stralloc("");
+	decrypt_opt = stralloc("");
     }
 
     if(options->no_record) record_opt = "no-record;";
     if(options->auth) auth_opt = vstralloc("auth=", options->auth, ";", NULL);
+	else auth_opt = stralloc("");
     if(options->createindex) index_opt = "index;";
 
     exclude_file_opt = stralloc("");
@@ -141,6 +152,12 @@ option_t *options;
 			  exclude_file_opt,
 			  exclude_list_opt,
 			  NULL);
+    amfree(compress_opt);
+    amfree(encrypt_opt);
+    amfree(decrypt_opt);
+    amfree(auth_opt);
+    amfree(exclude_file_opt);
+    amfree(exclude_list_opt);
     return optstr;
 }
 

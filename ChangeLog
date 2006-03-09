@@ -1,3 +1,23 @@
+2006-03-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/amandad.c: Fix coverity bug.
+	* client-src/calcsize.c: Fix coverity bug.
+	* client-src/client_util.c: Fix coverity bug.
+	* client-src/sendbackup.c: Fix coverity bug.
+	* client-src/sendsize.c: Fix coverity bug.
+	* common-src/bsd-security.c: Fix coverity bug.
+	* common-src/file.c: Fix coverity bug.
+	* common-src/fileheader.c: Fix coverity bug.
+	* common-src/pipespawn.c: Fix coverity bug.
+	* recover-src/extract_list.c: Fix coverity bug.
+	* restore-src/restore.c: Fix coverity bug.
+	* server-src/amindexd.c: Fix coverity bug.
+	* server-src/conffile.c: Fix coverity bug.
+	* server-src/diskfile.c: Fix coverity bug.
+	* server-src/driverio.c: Fix coverity bug.
+	* server-src/dumper.c: Fix coverity bug.
+	* server-src/planner.c: Fix coverity bug.
+	* server-src/reporter.c: Fix coverity bug.
+
 2006-03-07  Paddy Sreenivasan <paddy@zmanda.com>
 	* man/xml-source/amanda.8.xml: added amaespipe and amcrypt.
 

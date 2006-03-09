@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.70 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: diskfile.c,v 1.71 2006/03/09 16:51:41 martinea Exp $
  *
  * read disklist file
  */
@@ -433,6 +433,8 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 
     if (dup) {
 	if (host == NULL) amfree(hostname);
+	amfree(diskname);
+	amfree(diskdevice);
 	return (-1);
     }
 
