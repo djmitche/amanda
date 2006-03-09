@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.50 2006/02/17 00:58:51 ktill Exp $
+ * $Id: holding.c,v 1.51 2006/03/09 20:06:11 johnfranks Exp $
  *
  * Functions to access holding disk
  */
@@ -452,8 +452,9 @@ int strip_headers;
 	    amfree(filename);
 	    return -1;
 	}
-	buflen = fullread(fd, buffer, sizeof(buffer));
-	parse_file_header(buffer, &file, buflen);
+	if ((buflen = fullread(fd, buffer, sizeof(buffer))) > 0) {
+		parse_file_header(buffer, &file, buflen);
+	}
 	close(fd);
 	if(stat(filename, &finfo) == -1) {
 	    printf("stat %s: %s\n", filename, strerror(errno));
@@ -484,8 +485,9 @@ char *holding_file;
 	    amfree(filename);
 	    return 0;
 	}
-	buflen = fullread(fd, buffer, sizeof(buffer));
-	parse_file_header(buffer, &file, buflen);
+	if ((buflen = fullread(fd, buffer, sizeof(buffer))) > 0) {
+	    parse_file_header(buffer, &file, buflen);
+	}
 	close(fd);
 	unlink(filename);
 	filename = newstralloc(filename,file.cont_filename);
@@ -524,7 +526,7 @@ int complete;
 		    filename_tmp, filename, strerror(errno));
 	}
 
-	if (buflen == 0) {
+	if (buflen <= 0) {
 	    fprintf(stderr,"rename_tmp_holding: %s: empty file?\n", filename);
 	    amfree(filename);
 	    amfree(filename_tmp);

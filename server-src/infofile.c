@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.55 2005/09/30 19:13:27 martinea Exp $
+ * $Id: infofile.c,v 1.56 2006/03/09 20:06:11 johnfranks Exp $
  *
  * manage current info file
  */
@@ -267,7 +267,8 @@ info_t *info;
 
 	onestat.date = date;	/* time_t not guarranteed to be long */
 
-	if(level < 0 || level > DUMP_LEVELS-1) break;
+	if(level < 0 || level > DUMP_LEVELS-1)
+	    break;
 
 	info->inf[level] = onestat;
     }
@@ -276,7 +277,7 @@ info_t *info;
 
     rc = sscanf(line, "last_level: %d %d", 
 		&info->last_level, &info->consecutive_runs);
-		
+
     amfree(line);
     if(rc > 2) return -2;
     rc = 0;
@@ -285,6 +286,7 @@ info_t *info;
     for(i=0;i<=NB_HISTORY;i++) {
 	info->history[i].level = -2;
     }
+
     for(rc = -2; (line = agets(infof)) != NULL; free(line)) {
 	history_t onehistory;	/* one history record */
 	long date;
@@ -303,6 +305,7 @@ info_t *info;
 
 #define sc "history:"
 	if(strncmp(line, sc, sizeof(sc)-1) != 0) {
+	    amfree(line);
 	    break;
 	}
 	s += sizeof(sc)-1;
@@ -311,24 +314,28 @@ info_t *info;
 
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf((s - 1), "%d", &onehistory.level) != 1) {
+	    amfree(line);
 	    break;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf((s - 1), "%ld", &onehistory.size) != 1) {
+	    amfree(line);
 	    break;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf((s - 1), "%ld", &onehistory.csize) != 1) {
+	    amfree(line);
 	    break;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf((s - 1), "%ld", &date) != 1) {
+	    amfree(line);
 	    break;
 	}
 	skip_integer(s, ch);
@@ -339,6 +346,7 @@ info_t *info;
 	skip_whitespace(s, ch);
 	if(ch != '\0') {
 	    if(sscanf((s - 1), "%ld", &onehistory.secs) != 1) {
+		amfree(line);
 		break;
 	    }
 	    skip_integer(s, ch);

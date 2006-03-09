@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.71 2006/03/09 16:51:41 martinea Exp $
+ * $Id: diskfile.c,v 1.72 2006/03/09 20:06:11 johnfranks Exp $
  *
  * read disklist file
  */
@@ -298,7 +298,6 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     int ch, dup = 0;
     char *line = *line_p;
     int line_num = *line_num_p;
-    char *dn;
 
     assert(filename != NULL);
     assert(line_num > 0);
@@ -324,6 +323,8 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
 	parserror(filename, line_num, "disk device name expected");
+	if (host == NULL)
+	  amfree(hostname);
 	return (-1);
     }
     fp = s - 1;
@@ -334,7 +335,8 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
 	parserror(filename, line_num, "disk dumptype expected");
-	if(host == NULL) amfree(hostname);
+	if(host == NULL)
+	    amfree(hostname);
 	amfree(diskname);
 	return 1;
     }
@@ -343,15 +345,15 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     s[-1] = '\0';
 
     /* diskdevice */
-    dn = stralloc(fp);
+    diskdevice = stralloc(fp);
     if(fp[0] != '{' && (dtype = lookup_dumptype(upcase(fp))) == NULL) {
-	diskdevice = dn;
 	skip_whitespace(s, ch);
 	if(ch == '\0' || ch == '#') {
 	    parserror(filename, line_num, "disk dumptype expected");
-	    if(host == NULL) amfree(hostname);
-	    amfree(diskname);
+	    if(host == NULL)
+	    	amfree(hostname);
 	    amfree(diskdevice);
+	    amfree(diskname);
 	    return 1;
 	}
 	fp = s - 1;
@@ -359,8 +361,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	s[-1] = '\0';
     }
     else {
-	diskdevice = NULL;
-	amfree(dn);
+	amfree(diskdevice);
     }
 
     /* check for duplicate disk */
@@ -392,10 +393,15 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	if (strchr(s-1, '}') &&
 	    (strchr(s-1, '#') == NULL ||
 	     strchr(s-1, '}') < strchr(s-1, '#'))) {
-	    if(host == NULL) amfree(hostname);
+	    if(host == NULL)
+	    	amfree(hostname);
 	    if(!dup) {
+		amfree(disk->device);
 		amfree(disk->name);
 		amfree(disk);
+	    } else {
+		amfree(diskdevice);
+		amfree(diskname);
 	    }
 	    return (-1);
 	}
@@ -411,8 +417,12 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	if (dtype == NULL || dup) {
 	    if(host == NULL) amfree(hostname);
 	    if(!dup) {
-	      amfree(disk->name);
-	      amfree(disk);
+		amfree(disk->device);
+	        amfree(disk->name);
+	        amfree(disk);
+	    } else {
+		amfree(diskdevice);
+		amfree(diskname);
 	    }
 	    return (-1);
 	}
@@ -425,16 +435,21 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	parserror(filename, line_num, "undefined dumptype `%s'", fp);
 	if(host == NULL) amfree(hostname);
 	if (!dup) {
+	    amfree(disk->device);
 	    amfree(disk->name);
 	    amfree(disk);
+	} else {
+	    amfree(diskdevice);
+	    amfree(diskname);
 	}
 	return (-1);
     }
 
     if (dup) {
-	if (host == NULL) amfree(hostname);
-	amfree(diskname);
+	if (host == NULL)
+	    amfree(hostname);
 	amfree(diskdevice);
+	amfree(diskname);
 	return (-1);
     }
 
@@ -496,7 +511,8 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	}
 	if(is_digit == 0) {
 	    parserror(filename, line_num, "non-integer spindle `%s'", fp);
-	    if(host == NULL) amfree(hostname);
+	    if(host == NULL)
+		amfree(hostname);
 	    amfree(disk->name);
 	    amfree(disk);
 	    return 1;
@@ -513,7 +529,8 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	if((netif = lookup_interface(upcase(fp))) == NULL) {
 	    parserror(filename, line_num,
 		"undefined network interface `%s'", fp);
-	    if(host == NULL) amfree(hostname);
+	    if(host == NULL)
+		amfree(hostname);
 	    amfree(disk->name);
 	    amfree(disk);
 	    return (-1);
@@ -528,6 +545,8 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     }
 
     if(dtype->ignore || dtype->strategy == DS_SKIP) {
+	amfree(disk->name);
+	amfree(disk);
 	return (1);
     }
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.87 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: sendbackup-dump.c,v 1.88 2006/03/09 20:06:11 johnfranks Exp $
  *
  * send backup data using BSD dump
  */
@@ -389,6 +389,7 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 #endif							/* } */
 
     amfree(dumpkeys);
+    amfree(fstype);
     amfree(device);
     amfree(cmd);
     amfree(indexcmd);

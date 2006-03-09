@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.115 2006/03/07 21:52:03 martinea Exp $
+/* $Id: taper.c,v 1.116 2006/03/09 20:06:11 johnfranks Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -704,6 +704,7 @@ int rdpipe, wrpipe;
 		q = squote(m);
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		amfree(m);
+		amfree(q);
 		break;
 	    }
 	    putresult(PORT, "%d\n", data_port);
@@ -713,6 +714,7 @@ int rdpipe, wrpipe;
 		q = squote("[port connect timeout]");
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		aclose(data_socket);
+		amfree(q);
 		break;
 	    }
 	    expected_splits = -1;
@@ -747,7 +749,6 @@ int rdpipe, wrpipe;
 	    if(a >= cmdargs.argc) {
 		error("error [taper FILE-WRITE: not enough args: filename]");
 	    }
-	    filename = NULL; /* where is this getting freed? */
 	    filename = newstralloc(filename, cmdargs.argv[a++]);
 
 	    if(a >= cmdargs.argc) {
@@ -786,21 +787,22 @@ int rdpipe, wrpipe;
 		      cmdargs.argc, a);
 	    }
 	    if(holdfile_name != NULL) {
-		amfree(filename);
-		filename = holdfile_name;
+		filename = newstralloc(filename, holdfile_name);
 	    }
 
-	    if((expected_splits = predict_splits(stralloc(filename))) < 0) {
+	    if((expected_splits = predict_splits(filename)) < 0) {
 		break;
 	    }
 	    if(stat(filename, &stat_file)!=0) {
 		q = squotef("[%s]", strerror(errno));
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
+		amfree(q);
 		break;
 	    }
 	    if((fd = open(filename, O_RDONLY)) == -1) {
 		q = squotef("[%s]", strerror(errno));
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
+		amfree(q);
 		break;
 	    }
 	    holdfile_path = stralloc(filename);
@@ -809,10 +811,11 @@ int rdpipe, wrpipe;
 
 	    while(read_file(fd,handle,hostname,diskname,datestamp,level)){
 		if(splitsize > 0 && holdfile_path_thischunk)
-		    filename = stralloc(holdfile_path_thischunk);
+		    filename = newstralloc(filename, holdfile_path_thischunk);
 		if((fd = open(filename, O_RDONLY)) == -1) {
 		    q = squotef("[%s]", strerror(errno));
 		    putresult(TAPE_ERROR, "%s %s\n", handle, q);
+		    amfree(q);
 		    break;
 		}
 	    }
@@ -841,6 +844,7 @@ int rdpipe, wrpipe;
 	    amfree(changer_resultstr);
 	    amfree(tapedev);
 	    amfree(conf_tapelist);
+	    amfree(filename);
 	    amfree(config_dir);
 	    amfree(config_name);
 	    if(holdfile_name != NULL) amfree(holdfile_name);
@@ -862,10 +866,10 @@ int rdpipe, wrpipe;
 		q = stralloc("(no input?)");
 	    }
 	    putresult(BAD_COMMAND, "%s\n", q);
+	    amfree(q);
 	    break;
 	}
     }
-    amfree(q);
     amfree(handle);
     am_release_feature_set(their_features);
     amfree(hostname);

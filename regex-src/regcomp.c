@@ -1497,7 +1497,7 @@ struct parse *p;
 register struct re_guts *g;
 {
 	register sop *scan;
-	sop *start =NULL;
+	sop *start;
 	register sop *newstart = NULL;
 	register sopno newlen;
 	register sop s;
@@ -1510,7 +1510,7 @@ register struct re_guts *g;
 
 	/* find the longest OCHAR sequence in strip */
 	newlen = 0;
-	scan = g->strip + 1;
+	start = scan = g->strip + 1;
 	do {
 		s = *scan++;
 		switch (OP(s)) {

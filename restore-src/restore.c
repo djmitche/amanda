@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.25 2006/03/09 16:51:41 martinea Exp $
+ * $Id: restore.c,v 1.26 2006/03/09 20:06:11 johnfranks Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -722,15 +722,19 @@ rst_flags_t *flags;
   	  }
   	  filename_ext = stralloc2(filename, filename_ext);
 	  tmp_filename = stralloc(filename_ext); 
-	  if(flags->restore_dir != NULL)
-	      tmp_filename = vstralloc(flags->restore_dir, "/",
+	  if(flags->restore_dir != NULL) {
+	      char *tmpstr = vstralloc(flags->restore_dir, "/",
 	                               tmp_filename, NULL);
-	   
+	      amfree(tmp_filename);
+	      tmp_filename = tmpstr;
+	  } 
 	  final_filename = stralloc(tmp_filename); 
-	  tmp_filename = vstralloc(tmp_filename, ".tmp", NULL);
-  	  if((dest = creat(tmp_filename, CREAT_MODE)) < 0)
+	  tmp_filename = newvstralloc(tmp_filename, ".tmp", NULL);
+  	  if((dest = creat(tmp_filename, CREAT_MODE)) < 0) {
   	      error("could not create output file %s: %s",
 	                                       tmp_filename, strerror(errno));
+	      /*NOTREACHED*/
+	  }
   	  amfree(filename_ext);
       }
   
@@ -1338,8 +1342,7 @@ rst_flags_t *flags;
 		}
 		else {
 		    char *input = NULL;
-                    int tmp1;
-                    socklen_t tmp2;
+
                     if (!flags->amidxtaped) {
                         fprintf(prompt_out,
                                 "Insert tape labeled %s in device %s "

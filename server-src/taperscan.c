@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.6 2006/03/06 19:27:36 martinea Exp $
+ * $Id: taperscan.c,v 1.7 2006/03/09 20:06:11 johnfranks Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -59,12 +59,12 @@ char *find_brand_new_tape_label();
  */
 int scan_read_label(char *dev, char *desired_label,
                     char** label, char** timestamp, char** error_message) {
-    char * result = NULL;
+    char *result = NULL;
     char *errstr = NULL;
+
     *label = *timestamp = NULL;
-    
     result = tape_rdlabel(dev, timestamp, label);
-    if (result != NULL) {
+    if ((result != NULL) || (label == NULL) || (timestamp == NULL)) {
         if (CHECK_NOT_AMANDA_TAPE_MSG(result) &&
             getconf_seen(CNF_LABEL_NEW_TAPES)) {
             amfree(result);
@@ -76,20 +76,17 @@ int scan_read_label(char *dev, char *desired_label,
                            "Found a non-amanda tape, will label it `",
                            *label, "'.\n", NULL);
                 return 3;
-            } else {
-                vstrextend(error_message,
-                           "Found a non-amanda tape, but have no labels left.\n",
-			   NULL);
-                return -1;
             }
-
-        } else {
-            amfree(*timestamp);
-            amfree(*label);
-            vstrextend(error_message, result, "\n", NULL);
-            amfree(result);
+            vstrextend(error_message,
+                       "Found a non-amanda tape, but have no labels left.\n",
+			NULL);
             return -1;
         }
+        amfree(timestamp);
+        amfree(label);
+        vstrextend(error_message, result, "\n", NULL);
+        amfree(result);
+        return -1;
     }
     
     vstrextend(error_message, "read label `", *label, "', date `",
@@ -131,12 +128,6 @@ int scan_read_label(char *dev, char *desired_label,
         }
     }
   
-    if (errstr != NULL) {
-        vstrextend(error_message, errstr, "\n", NULL);
-        amfree(errstr);
-        return -1;
-    }
-
     /* Yay! We got a good tape! */
     return 2;
 }
@@ -179,7 +170,7 @@ int scan_slot(void *data, int rc, char *slotstr, char *device) {
             return 1;
         } else if (label_result == 2) {
             if (ct->first_labelstr_slot == NULL)
-                newstralloc(ct->first_labelstr_slot, slotstr);
+                ct->first_labelstr_slot = stralloc(slotstr);
             return 0;
         } else {
             return 0;

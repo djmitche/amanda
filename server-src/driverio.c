@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.77 2006/03/09 16:51:42 martinea Exp $
+ * $Id: driverio.c,v 1.78 2006/03/09 20:06:11 johnfranks Exp $
  *
  * I/O-related functions for driver program
  */
@@ -368,11 +368,12 @@ disk_t *dp;
 
     switch(cmd) {
     case PORT_DUMP:
-	snprintf(number, sizeof(number), "%d", sched(dp)->level);
-	snprintf(numberport, sizeof(numberport), "%d", dumper->output_port);
-	features = am_feature_to_string(dp->host->features);
-	o = optionstr(dp, dp->host->features, NULL);
-	cmdline = vstralloc(cmdstr[cmd],
+	if (dp != NULL) {
+	    snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	    snprintf(numberport, sizeof(numberport), "%d", dumper->output_port);
+	    features = am_feature_to_string(dp->host->features);
+	    o = optionstr(dp, dp->host->features, NULL);
+	    cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", numberport,
 			    " ", dp->host->hostname,
@@ -384,8 +385,12 @@ disk_t *dp;
 			    " ", dp->program,
 			    " |", o,
 			    "\n", NULL);
-	amfree(features);
-	amfree(o);
+	    amfree(features);
+	    amfree(o);
+	} else {
+		error("PORT-DUMP without disk pointer\n");
+		/*NOTREACHED*/
+	}
 	break;
     case QUIT:
     case ABORT:
@@ -442,13 +447,14 @@ disk_t *dp;
 
     switch(cmd) {
     case PORT_WRITE:
-	holdalloc(h[activehd]->disk)->allocated_dumpers++;
-	snprintf(number, sizeof(number), "%d", sched(dp)->level);
-	snprintf(chunksize, sizeof(chunksize), "%ld", h[0]->disk->chunksize);
-	snprintf(use, sizeof(use), "%ld", h[0]->reserved );
-	features = am_feature_to_string(dp->host->features);
-	o = optionstr(dp, dp->host->features, NULL);
-	cmdline = vstralloc(cmdstr[cmd],
+	if (dp && h) {
+	    holdalloc(h[activehd]->disk)->allocated_dumpers++;
+	    snprintf(number, sizeof(number), "%d", sched(dp)->level);
+	    snprintf(chunksize, sizeof(chunksize), "%ld", h[0]->disk->chunksize);
+	    snprintf(use, sizeof(use), "%ld", h[0]->reserved );
+	    features = am_feature_to_string(dp->host->features);
+	    o = optionstr(dp, dp->host->features, NULL);
+	    cmdline = vstralloc(cmdstr[cmd],
 			    " ", disk2serial(dp),
 			    " ", sched(dp)->destname,
 			    " ", dp->host->hostname,
@@ -461,8 +467,13 @@ disk_t *dp;
 			    " ", use,
 			    " |", o,
 			    "\n", NULL);
-	amfree(features);
-	amfree(o);
+	    amfree(features);
+	    amfree(o);
+	} else {
+		error("Write command without disk and holding disk.\n",
+		      cmdstr[cmd]);
+		/*NOTREACHED*/
+	}
 	break;
     case CONTINUE:
 	if( dp ) {

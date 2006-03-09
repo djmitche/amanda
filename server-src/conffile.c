@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.124 2006/03/09 16:51:41 martinea Exp $
+ * $Id: conffile.c,v 1.125 2006/03/09 20:06:11 johnfranks Exp $
  *
  * read configuration file
  */
@@ -144,12 +144,12 @@ ColumnInfo ColumnData[] = {
     { "Disk",       1, 11, 11, 0, "%-*.*s", "DISK" },
     { "Level",      1, 1,  1,  0, "%*.*d",  "L" },
     { "OrigKB",     1, 7,  0,  0, "%*.*f",  "ORIG-KB" },
-    { "OutKB",      0, 7,  0,  0, "%*.*f",  "OUT-KB" },
-    { "Compress",   0, 6,  1,  0, "%*.*f",  "COMP%" },
-    { "DumpTime",   0, 7,  7,  0, "%*.*s",  "MMM:SS" },
-    { "DumpRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
+    { "OutKB",      1, 7,  0,  0, "%*.*f",  "OUT-KB" },
+    { "Compress",   1, 6,  1,  0, "%*.*f",  "COMP%" },
+    { "DumpTime",   1, 7,  7,  0, "%*.*s",  "MMM:SS" },
+    { "DumpRate",   1, 6,  1,  0, "%*.*f",  "KB/s" },
     { "TapeTime",   1, 6,  6,  0, "%*.*s",  "MMM:SS" },
-    { "TapeRate",   0, 6,  1,  0, "%*.*f",  "KB/s" },
+    { "TapeRate",   1, 6,  1,  0, "%*.*f",  "KB/s" },
     { NULL,         0, 0,  0,  0, NULL,     NULL }
 };
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: display_commands.c,v 1.18 2005/12/31 00:02:10 paddy_s Exp $
+ * $Id: display_commands.c,v 1.19 2006/03/09 20:06:11 johnfranks Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -110,7 +110,7 @@ void suck_dir_list_from_server P((void))
     char *date, *date_undo, date_undo_ch = '\0';
     int level, fileno;
     char *tape, *tape_undo, tape_undo_ch = '\0';
-    char *dir, *dir_undo, dir_undo_ch = '\0';
+    char *dir;
     char *disk_path_slash = NULL;
     char *disk_path_slash_dot = NULL;
     char *s;
@@ -149,7 +149,7 @@ void suck_dir_list_from_server P((void))
     disk_path_slash_dot = stralloc2(disk_path_slash, ".");
     amfree(cmd);
     amfree(err);
-    date_undo = tape_undo = dir_undo = NULL;
+    date_undo = tape_undo = NULL;
     /* skip the last line -- duplicate of the preamble */
     while ((i = get_reply_line()) != 0)
     {
@@ -161,8 +161,7 @@ void suck_dir_list_from_server P((void))
 	if(err) {
 	    if(cmd == NULL) {
 		if(tape_undo) *tape_undo = tape_undo_ch;
-		if(dir_undo) *dir_undo = dir_undo_ch;
-		date_undo = tape_undo = dir_undo = NULL;
+		date_undo = tape_undo = NULL;
 		cmd = stralloc(l);	/* save for the error report */
 	    }
 	    continue;			/* throw the rest of the lines away */

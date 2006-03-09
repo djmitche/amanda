@@ -768,14 +768,8 @@ int Sense2Action(char *ident,
 						*text));	
 					return(pwork->ret);
 				}			
-				pwork++;
-				continue;
 			}
-			
-			pwork++;
-			continue;
 		}
-		
 		pwork++;
 	}
 
@@ -783,7 +777,7 @@ int Sense2Action(char *ident,
 	 * Ok no match found, so lets return the values from the generic table
 	 */
 	dbprintf(("Sense2Action generic start :\n"));
-	while (generic->ident != NULL)
+	while ((generic != NULL) && generic->ident != NULL)
 	{	  
 		if (generic->sense == -1)
 		{

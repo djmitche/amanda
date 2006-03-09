@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: chg-scsi.c,v 1.43 2006/01/14 04:37:18 paddy_s Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.44 2006/03/09 20:06:10 johnfranks Exp $";
 #endif
 /*
  * 
@@ -666,6 +666,7 @@ int MapBarCode(char *labelfile, MBC_T *result)
               strcpy(plabelv2->barcode, result->data.barcode);
               fwrite(plabelv2, 1, sizeof(LabelV2_T), fp);
               fclose(fp);
+	      free(plabelv2);
               return(1);
             }
           break;
@@ -678,6 +679,7 @@ int MapBarCode(char *labelfile, MBC_T *result)
             {
               DebugPrint(DEBUG_INFO,SECTION_MAP_BARCODE,"MapBarCode FIND_SLOT : \n");
               memcpy(&(result->data), plabelv2, sizeof(LabelV2_T));
+	      free(plabelv2);
               return(1);
            }
           break;
@@ -699,6 +701,7 @@ int MapBarCode(char *labelfile, MBC_T *result)
               plabelv2->LoadCount = plabelv2->LoadCount + result->data.LoadCount;
               fwrite(plabelv2, 1, sizeof(LabelV2_T), fp);
               fclose(fp);
+	      free(plabelv2);
               return(1);
             }
           break;
@@ -718,6 +721,7 @@ int MapBarCode(char *labelfile, MBC_T *result)
               fclose(fp);
               
               memcpy(&(result->data), plabelv2, sizeof(LabelV2_T));
+	      free(plabelv2);
               return(1);
             }
           break;
@@ -732,6 +736,7 @@ int MapBarCode(char *labelfile, MBC_T *result)
               fclose(fp);
               
               memcpy(&(result->data), plabelv2, sizeof(LabelV2_T));
+	      free(plabelv2);
               return(1);
             }
           break;
@@ -777,14 +782,16 @@ int MapBarCode(char *labelfile, MBC_T *result)
       plabelv2->slot = result->data.slot;
       fwrite(plabelv2, 1, sizeof(LabelV2_T), fp);
       fclose(fp);
+      free(plabelv2);
       return(1);
-    }                                                                           
+    }
 
   /*
    * If we hit this point nothing was 
    * found, so return an 0
    */
   fclose(fp);
+  free(plabelv2);
   return(0);
 }
 

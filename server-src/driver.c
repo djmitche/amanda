@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.162 2006/02/28 17:53:55 martinea Exp $
+ * $Id: driver.c,v 1.163 2006/03/09 20:06:11 johnfranks Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -555,19 +555,23 @@ startaflush()
 	    taper_ev_read = event_register(taper, EV_READFD,
 					   handle_taper_result, NULL);
 	}
-	taper_disk = dp;
-	taper_busy = 1;
-	taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
+	if (dp != NULL) {
+	    taper_disk = dp;
+	    taper_busy = 1;
+	    taper_cmd(FILE_WRITE, dp, sched(dp)->destname, sched(dp)->level,
 		  sched(dp)->datestamp);
-	fprintf(stderr,"driver: startaflush: %s %s %s %ld %ld\n",
-		taperalgo2str(conf_taperalgo), dp->host->hostname,
-		dp->name, sched(taper_disk)->act_size, tape_left);
-	if(sched(dp)->act_size <= tape_left)
-	    tape_left -= sched(dp)->act_size;
-	else
-	    tape_left = 0;
-    }
-    else if(!taper_busy && taper_ev_read != NULL) {
+	    fprintf(stderr,"driver: startaflush: %s %s %s %ld %ld\n",
+		    taperalgo2str(conf_taperalgo), dp->host->hostname,
+		    dp->name, sched(taper_disk)->act_size, tape_left);
+	    if(sched(dp)->act_size <= tape_left)
+		tape_left -= sched(dp)->act_size;
+	    else
+		tape_left = 0;
+	} else {
+	    error("FATAL: Taper marked busy and no work found.");
+	    /*NOTREACHED*/
+	}
+    } else if(!taper_busy && taper_ev_read != NULL) {
 	event_release(taper_ev_read);
 	taper_ev_read = NULL;
     }
@@ -938,7 +942,7 @@ static void continue_port_dumps()
      * it will be dumped directly to tape. Actually, case c is a special
      * manifestation of case b) where only one dumper is busy.
      */
-    for( dp=NULL, dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
+    for(dp=NULL, dumper = dmptable; dumper < (dmptable+inparallel); dumper++) {
 	if( dumper->busy ) {
 	    busy_dumpers++;
 	    if( !find_disk(&roomq, dumper->dp) ) {
@@ -949,7 +953,7 @@ static void continue_port_dumps()
 	    }
 	}
     }
-    if( !active_dumpers && busy_dumpers > 0 && 
+    if((dp != NULL) && (active_dumpers == 0) && (busy_dumpers > 0) && 
         ((!taper_busy && empty(tapeq)) || degraded_mode) &&
 	pending_aborts == 0 ) { /* not case a */
 	if( busy_dumpers == 1 ) { /* case c */
@@ -2293,8 +2297,9 @@ char *destname;
 		    filename, strerror(errno));
 	    return NULL;
 	}
-	buflen = fullread(fd, buffer, sizeof(buffer));
-	parse_file_header(buffer, &file, buflen);
+	if ((buflen = fullread(fd, buffer, sizeof(buffer))) > 0) {;
+		parse_file_header(buffer, &file, buflen);
+	}
 	close(fd);
 	filename = file.cont_filename;
     }

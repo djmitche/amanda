@@ -1,3 +1,24 @@
+2006-03-09  John Franks <jrfranks@zmanda.com>
+	* changer-src/chg-scsi.c:        Fix errors found using Coverity tools.
+	* changer-src/scsi-changer-driver.c:
+					 Fix errors found using Coverity tools.
+	* changer-src/sense.c:           Fix errors found using Coverity tools.
+	* client-src/sendbackup-dump.c:  Fix errors found using Coverity tools.
+	* client-src/sendbackup.c:       Fix errors found using Coverity tools.
+	* recover-src/display_commands.c:Fix errors found using Coverity tools.
+	* regex-src/regcomp.c:           Fix errors found using Coverity tools.
+	* restore-src/restore.c:         Fix errors found using Coverity tools.
+	* server-src/amindexd.c:         Fix errors found using Coverity tools.
+	* server-src/diskfile.c:         Fix errors found using Coverity tools.
+	* server-src/driver.c:           Fix errors found using Coverity tools.
+	* server-src/driverio.c:         Fix errors found using Coverity tools.
+	* server-src/infofile.c:         Fix errors found using Coverity tools.
+	* server-src/planner.c:          Fix errors found using Coverity tools.
+	* server-src/taper.c:            Fix errors found using Coverity tools.
+	* server-src/taperscan.c:        Fix errors found using Coverity tools.
+	* server-src/conffile.c:         Change report default to use at least
+	                                 one space between every column.
+
 2006-03-08  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/amandad.c: Fix coverity bug.
 	* client-src/calcsize.c: Fix coverity bug.
