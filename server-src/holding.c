@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.51 2006/03/09 20:06:11 johnfranks Exp $
+ * $Id: holding.c,v 1.52 2006/03/09 22:01:21 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -462,7 +462,12 @@ int strip_headers;
 	}
 	size += (finfo.st_size+1023)/1024;
 	if(strip_headers) size -= DISK_BLOCK_BYTES/1024;
-	filename = newstralloc(filename, file.cont_filename);
+	if(buflen > 0) {
+	    filename = newstralloc(filename, file.cont_filename);
+	}
+	else {
+	    amfree(filename);
+	}
     }
     amfree(filename);
     return size;
@@ -490,7 +495,12 @@ char *holding_file;
 	}
 	close(fd);
 	unlink(filename);
-	filename = newstralloc(filename,file.cont_filename);
+	if(buflen > 0) {
+	    filename = newstralloc(filename, file.cont_filename);
+	}
+	else {
+	    amfree(filename);
+	}
     }
     amfree(filename);
     return 1;

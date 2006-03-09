@@ -1,4 +1,7 @@
 2006-03-09  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/holding.c: Fix John fix.
+
+2006-03-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driverio.c: Fix errors found using Coverity tools.
 	* server-src/planner.c: Fix John fix.
 
