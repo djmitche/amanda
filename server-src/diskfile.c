@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.72 2006/03/09 20:06:11 johnfranks Exp $
+ * $Id: diskfile.c,v 1.73 2006/03/10 13:51:06 martinea Exp $
  *
  * read disklist file
  */
@@ -323,8 +323,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
 	parserror(filename, line_num, "disk device name expected");
-	if (host == NULL)
-	  amfree(hostname);
+	if (host == NULL) amfree(hostname);
 	return (-1);
     }
     fp = s - 1;
@@ -335,8 +334,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
 	parserror(filename, line_num, "disk dumptype expected");
-	if(host == NULL)
-	    amfree(hostname);
+	if(host == NULL) amfree(hostname);
 	amfree(diskname);
 	return 1;
     }
@@ -350,8 +348,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	skip_whitespace(s, ch);
 	if(ch == '\0' || ch == '#') {
 	    parserror(filename, line_num, "disk dumptype expected");
-	    if(host == NULL)
-	    	amfree(hostname);
+	    if(host == NULL) amfree(hostname);
 	    amfree(diskdevice);
 	    amfree(diskname);
 	    return 1;
@@ -393,8 +390,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	if (strchr(s-1, '}') &&
 	    (strchr(s-1, '#') == NULL ||
 	     strchr(s-1, '}') < strchr(s-1, '#'))) {
-	    if(host == NULL)
-	    	amfree(hostname);
+	    if(host == NULL) amfree(hostname);
 	    if(!dup) {
 		amfree(disk->device);
 		amfree(disk->name);
@@ -446,8 +442,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     }
 
     if (dup) {
-	if (host == NULL)
-	    amfree(hostname);
+	if (host == NULL) amfree(hostname);
 	amfree(diskdevice);
 	amfree(diskname);
 	return (-1);
@@ -511,8 +506,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	}
 	if(is_digit == 0) {
 	    parserror(filename, line_num, "non-integer spindle `%s'", fp);
-	    if(host == NULL)
-		amfree(hostname);
+	    if(host == NULL) amfree(hostname);
 	    amfree(disk->name);
 	    amfree(disk);
 	    return 1;
@@ -529,8 +523,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	if((netif = lookup_interface(upcase(fp))) == NULL) {
 	    parserror(filename, line_num,
 		"undefined network interface `%s'", fp);
-	    if(host == NULL)
-		amfree(hostname);
+	    if(host == NULL) amfree(hostname);
 	    amfree(disk->name);
 	    amfree(disk);
 	    return (-1);
@@ -545,6 +538,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     }
 
     if(dtype->ignore || dtype->strategy == DS_SKIP) {
+	if(host == NULL) amfree(hostname);
 	amfree(disk->name);
 	amfree(disk);
 	return (1);

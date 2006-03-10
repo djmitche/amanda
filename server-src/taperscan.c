@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.7 2006/03/09 20:06:11 johnfranks Exp $
+ * $Id: taperscan.c,v 1.8 2006/03/10 13:51:06 martinea Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -64,7 +64,7 @@ int scan_read_label(char *dev, char *desired_label,
 
     *label = *timestamp = NULL;
     result = tape_rdlabel(dev, timestamp, label);
-    if ((result != NULL) || (label == NULL) || (timestamp == NULL)) {
+    if (result != NULL) {
         if (CHECK_NOT_AMANDA_TAPE_MSG(result) &&
             getconf_seen(CNF_LABEL_NEW_TAPES)) {
             amfree(result);
@@ -89,6 +89,10 @@ int scan_read_label(char *dev, char *desired_label,
         return -1;
     }
     
+    if ((*label == NULL) || (*timestamp == NULL)) {
+	error("Invalid return from tape_rdlabel");
+    }
+
     vstrextend(error_message, "read label `", *label, "', date `",
                *timestamp, "'\n", NULL);
 

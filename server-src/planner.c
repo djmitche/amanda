@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.179 2006/03/09 21:32:16 martinea Exp $
+ * $Id: planner.c,v 1.180 2006/03/10 13:51:06 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1760,10 +1760,11 @@ security_handle_t *sech;
 
  NAK_parse_failed:
 
-    if(msgdisk_undo) {
-	*msgdisk_undo = msgdisk_undo_ch;
-	msgdisk_undo = NULL;
-    }
+    /* msgdisk_undo is always NULL */
+    /* if(msgdisk_undo) { */
+    /* 	*msgdisk_undo = msgdisk_undo_ch; */
+    /*	msgdisk_undo = NULL; */
+    /* } */
     errbuf = stralloc2(hostp->hostname, " NAK: [NAK parse failed]");
     fprintf(stderr, "got strange nak from %s:\n----\n%s----\n\n",
 	    hostp->hostname, pkt->body);

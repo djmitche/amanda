@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.47 2006/03/09 20:06:10 johnfranks Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.48 2006/03/10 13:51:05 martinea Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -1955,7 +1955,7 @@ int EXB_BarCode(int DeviceFD)
   extern OpenFiles_T *pDev;
 
   ModePageEXB120VendorUnique_T *pVendor;
-  ModePageEXB120VendorUnique_T *pVendorWork;
+  ModePageEXB120VendorUnique_T *pVendorWork = NULL;
 
   DebugPrint(DEBUG_INFO, SECTION_BARCODE,"##### START EXB_BarCode\n");
   if (pModePage == NULL && LibModeSenseValid == 0)
@@ -2016,7 +2016,7 @@ int EXB_BarCode(int DeviceFD)
 		 pDev[INDEX_CHANGER].inquiry->vendor_specific[19]);
     }
 
-  free(pVendorWork);
+  amfree(pVendorWork);
   return(1);
 }
 
@@ -2075,7 +2075,7 @@ int TapeStatus()
   int ret;
   int true = 1;
   int cnt = 0;
-  RequestSense_T *pRequestSense;
+  RequestSense_T *pRequestSense = NULL;
 
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### START TapeStatus\n");
 
@@ -2156,7 +2156,7 @@ int TapeStatus()
 	}
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP TapeStatus\n");
     }
-    free(pRequestSense);
+    amfree(pRequestSense);
     return(0);
 }
 
@@ -2408,7 +2408,7 @@ int GenericRewind(int DeviceFD)
 {
   CDB_T CDB;
   extern OpenFiles_T *pDev;
-  RequestSense_T *pRequestSense;
+  RequestSense_T *pRequestSense = NULL;
   char *errstr;                    /* Used by tape_rewind */
   int ret;
   int cnt = 0;
@@ -2596,7 +2596,7 @@ int GenericRewind(int DeviceFD)
 	  sleep(2);
 	}
 
-      free(pRequestSense);
+      amfree(pRequestSense);
 
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"GenericRewind : Ready after %d sec, true = %d\n", cnt * 2, true);
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
@@ -2614,13 +2614,13 @@ int GenericRewind(int DeviceFD)
       } else {
           DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Rewind failed %s\n",errstr);
           DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (-1)\n");
-	  free(pRequestSense);
+	  amfree(pRequestSense);
           return(-1);
       }
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP GenericRewind (0)\n");
     }
 
-  free(pRequestSense);
+  amfree(pRequestSense);
   return(0);
 }
 
