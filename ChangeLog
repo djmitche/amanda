@@ -1,3 +1,8 @@
+2006-03-10  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driverio.c: Undo my bad fix.
+	* server-src/infofile.c: Fix errors found using Coverity tools.
+	* tape-src/tapetype.c: Fix errors found using Coverity tools.
+
 2006-03-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c: Fix errors found using Coverity tools.
 

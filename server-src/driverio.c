@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.79 2006/03/09 21:32:16 martinea Exp $
+ * $Id: driverio.c,v 1.80 2006/03/10 11:56:06 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -349,17 +349,17 @@ disk_t *dp;
     char number[NUM_STR_SIZE];
     char numberport[NUM_STR_SIZE];
     char *o;
+    int activehd=0;
+    assignedhd_t **h=NULL;
     char *device;
     char *features;
 
-    if(!dp) {
-	error("db == NULL");
-    }
-    if(!sched(dp)) {
-	error("sched(db) == NULL");
+    if(dp && sched(dp) && sched(dp)->holdp) {
+	h = sched(dp)->holdp;
+	activehd = sched(dp)->activehd;
     }
 
-    if(dp->device) {
+    if(dp && dp->device) {
 	device = dp->device;
     }
     else {
@@ -440,18 +440,10 @@ disk_t *dp;
     assignedhd_t **h=NULL;
     char *features;
 
-    if(!dp) {
-	error("db == NULL");
+    if(dp && sched(dp) && sched(dp)->holdp) {
+	h = sched(dp)->holdp;
+	activehd = sched(dp)->activehd;
     }
-    if(!sched(dp)) {
-	error("sched(db) == NULL");
-    }
-    if(!sched(dp)->holdp) {
-	error("sched(db)->holp == NULL");
-    }
-
-    h = sched(dp)->holdp;
-    activehd = sched(dp)->activehd;
 
     switch(cmd) {
     case PORT_WRITE:

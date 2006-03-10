@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.56 2006/03/09 20:06:11 johnfranks Exp $
+ * $Id: infofile.c,v 1.57 2006/03/10 11:56:06 martinea Exp $
  *
  * manage current info file
  */
@@ -354,6 +354,7 @@ info_t *info;
 
 	info->history[nb_history++] = onehistory;
     }
+    amfree(line);
 
     if((line = agets(infof)) == NULL) return -1; /* // line */
     amfree(line);

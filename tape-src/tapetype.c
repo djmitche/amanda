@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.23 2006/03/09 20:06:12 johnfranks Exp $
+ * $Id: tapetype.c,v 1.24 2006/03/10 11:56:06 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -45,6 +45,7 @@ static int blockkb = 32;
 static int blocksize;
 
 static char *randombytes = (char *) NULL;
+static char *prandombytes = (char *) NULL;
 
 #if USE_RAND
 /* If the C library does not define random(), try to use rand() by
@@ -74,6 +75,7 @@ static void allocrandombytes() {
     } else {
       randombytes = p;				/* alloc already on boundary */
     }
+    prandombytes = p;
   }
 }
 
