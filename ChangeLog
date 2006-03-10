@@ -1,4 +1,7 @@
 2006-03-10  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taperscan.c: Fix Coverity fix.
+
+2006-03-10  Jean-Louis Martineau <martineau@zmanda.com>
 	* changer-src/scsi-changer-driver.c:
 					 Fix errors found using Coverity tools.
 	* server-src/diskfile.c: Fix errors found using Coverity tools.

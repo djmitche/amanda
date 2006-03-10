@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.8 2006/03/10 13:51:06 martinea Exp $
+ * $Id: taperscan.c,v 1.9 2006/03/10 14:29:22 martinea Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -82,8 +82,8 @@ int scan_read_label(char *dev, char *desired_label,
 			NULL);
             return -1;
         }
-        amfree(timestamp);
-        amfree(label);
+        amfree(*timestamp);
+        amfree(*label);
         vstrextend(error_message, result, "\n", NULL);
         amfree(result);
         return -1;
