@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.80 2006/03/10 11:56:06 martinea Exp $
+ * $Id: driverio.c,v 1.81 2006/03/11 21:57:18 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -476,7 +476,7 @@ disk_t *dp;
 	}
 	break;
     case CONTINUE:
-	if( dp ) {
+	if( dp && h) {
 	    holdalloc(h[activehd]->disk)->allocated_dumpers++;
 	    snprintf(chunksize, sizeof(chunksize), "%ld", 
 		     h[activehd]->disk->chunksize );
