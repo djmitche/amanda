@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.h,v 1.4 2006/03/03 15:05:16 vectro Exp $
+ * $Id: restore.h,v 1.5 2006/03/14 13:12:01 martinea Exp $
  *
  * 
  */
@@ -34,6 +34,7 @@
 
 #include "fileheader.h"
 #include "tapelist.h"
+#include "amfeatures.h"
 
 #define CREAT_MODE  0640
 
@@ -75,7 +76,8 @@ ssize_t restore P((dumpfile_t *file, char *filename, int tapefd, int isafile,
 			rst_flags_t *flags));
 void flush_open_outputs P((int reassemble, dumpfile_t *only_file));
 void search_tapes P((FILE *prompt_out, int use_changer, tapelist_t *tapelist,
-                        match_list_t *restorethese, rst_flags_t *flags));
+                        match_list_t *restorethese, rst_flags_t *flags, 
+			am_feature_t *their_features));
 int have_all_parts P((dumpfile_t *file, int upto));
 rst_flags_t *new_rst_flags P((void));
 int check_rst_flags P((rst_flags_t *flags));

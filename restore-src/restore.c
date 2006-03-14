@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.27 2006/03/09 22:07:08 martinea Exp $
+ * $Id: restore.c,v 1.28 2006/03/14 13:12:01 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1118,12 +1118,13 @@ rst_flags_t *flags;
  * tapes to search (rather than "everything I can find"), which in turn can
  * optionally list specific files to restore.
  */
-void search_tapes(prompt_out, use_changer, tapelist, match_list, flags)
+void search_tapes(prompt_out, use_changer, tapelist, match_list, flags, their_features)
 FILE *prompt_out;
 int use_changer;
 tapelist_t *tapelist;
 match_list_t *match_list;
 rst_flags_t *flags;
+am_feature_t *their_features;
 {
     struct stat stat_tape;
     char *err;
@@ -1352,7 +1353,9 @@ rst_flags_t *flags;
                         fflush(prompt_out);
                         input = agets(stdin);
                         amfree(input);
-                    } else {
+                    } else if (their_features &&
+			       am_has_feature(their_features,
+					      fe_amrecover_FEEDME)) {
                         fprintf(prompt_out, "FEEDME %s\n",
                                 desired_tape->label);
                         fflush(prompt_out);
@@ -1362,7 +1365,9 @@ rst_flags_t *flags;
                                   input);
                         }
                         amfree(input);
-                    }
+                    } else {
+                        error("Client doesn't support fe_amrecover_FEEDME");
+		    }
                 }
             }
 	    else{

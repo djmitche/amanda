@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.57 2006/03/03 15:05:16 vectro Exp $
+/* $Id: amidxtaped.c,v 1.58 2006/03/14 13:12:01 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -486,7 +486,8 @@ char **argv;
     }
     
     /* actual restoration */
-    search_tapes(prompt_stream, use_changer, tapes, match_list, rst_flags);
+    search_tapes(prompt_stream, use_changer, tapes, match_list, rst_flags,
+		 their_features);
     dbprintf(("%s: Restoration finished\n", debug_prefix_time(NULL)));
     
     /* cleanup */

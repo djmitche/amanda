@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.17 2005/12/31 00:02:09 paddy_s Exp $
+ * $Id: amfeatures.c,v 1.18 2006/03/14 13:11:58 martinea Exp $
  *
  * Feature test related code.
  */
@@ -126,6 +126,8 @@ am_init_feature_set()
         am_add_feature(f, fe_amindexd_marshall_in_OLSD);
         am_add_feature(f, fe_amindexd_marshall_in_ORLD);
         am_add_feature(f, fe_amindexd_marshall_in_DHST);
+
+        am_add_feature(f, fe_amrecover_FEEDME);
     }
     return f;
 }

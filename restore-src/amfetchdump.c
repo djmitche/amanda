@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.6 2006/01/27 18:37:11 vectro Exp $
+ * $Id: amfetchdump.c,v 1.7 2006/03/14 13:12:01 martinea Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -450,7 +450,7 @@ char **argv;
      */
     if(rst_flags->inventory_log){
 	fprintf(stderr, "Beginning tape-by-tape search.\n");
-	search_tapes(stderr, 1, NULL, match_list, rst_flags);
+	search_tapes(stderr, 1, NULL, match_list, rst_flags, NULL);
 	exit(0);
     }
 
@@ -461,7 +461,7 @@ char **argv;
     parent_pid = getpid();
     atexit(cleanup);
     get_lock = lock_logfile(); /* config is loaded, should be ok here */
-    search_tapes(NULL, 1, needed_tapes, match_list, rst_flags);
+    search_tapes(NULL, 1, needed_tapes, match_list, rst_flags, NULL);
     cleanup();
 
     free_match_list(match_list);

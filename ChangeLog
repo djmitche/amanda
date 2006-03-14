@@ -1,3 +1,14 @@
+2006-03-14  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/amfeatures.h: Rename fe_amidxtaped_FEEDME to
+					  fe_amrecover_FEEDME
+	* common-src/amfeatures.c (am_init_feature_set): Set
+							 fe_amrecover_FEEDME.
+	* restore-src/restore.h (search_tapes): Add their_features parameter.
+	* restore-src/amfetchdump.c: Add NULL pointer to search_tapes call.
+	* restore-src/amidxtaped.c: Add their_features to search_tapes call.
+	* restore-src/restore.c (search_tapes): Send FEEDME only if client
+						support it.
+
 2006-03-11  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driverio.c : Fix errors found using Coverity tools.
 
