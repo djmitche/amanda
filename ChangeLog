@@ -1,3 +1,9 @@
+2006-03-14  Kevin Till <ktill@@zmanda.com>
+	* example/amanda.conf.in: add dumptype custom-compress. 
+	  add ssh,krb5 as valid input for auth. 
+        * man/xml-source/amanda.conf.5.xml: give reference to 
+	  custom-compress, encrypt-fast dumptypes.
+
 2006-03-14  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/amfeatures.h: Rename fe_amidxtaped_FEEDME to
 					  fe_amrecover_FEEDME

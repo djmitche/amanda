@@ -1097,7 +1097,7 @@ is the best compression available, often at the expense of CPU overhead.
 is often not as good a compression as
 <emphasis remap='B'>best</emphasis>,
 but usually less CPU overhead. Or to specify <emphasis remap='B'>Custom</emphasis>
-to use your own compression method</para>
+to use your own compression method. (See dumptype custom-compress in example/amanda.conf for reference)</para>
 
 
 
@@ -1133,7 +1133,7 @@ ten. Setting this to zero tries to do a full backup each run.</para>
   </varlistentry>
 
   <varlistentry>
-  <term><emphasis remap='B'>encrypt[client|server]</emphasis></term>
+  <term><emphasis remap='B'>encrypt [none|client|server]</emphasis></term>
   <listitem>
 <para>Default: <emphasis remap='I'>none</emphasis>.
 To encrypt backup images, it can do so either on the backup client host before it crosses the network or on the tape
@@ -1149,6 +1149,7 @@ server host as it goes from the network into the holding disk or to tape.</para>
 <para>PROG must not contain white space.</para>
 <para>Specify client_decrypt_option &quot;decryption-parameter&quot; Default: &quot;-d&quot;</para>
 <para>decryption-parameter must not contain white space.</para>
+<para>(See dumptype encrypt-fast in example/amanda.conf for reference)</para>
 </listitem>
 <listitem><para>encrypt server</para>
 <para>Specify server_encrypt &quot;PROG&quot;</para>

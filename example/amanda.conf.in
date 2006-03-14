@@ -333,7 +333,8 @@ define tapetype MIMSY-MEGATAPE {
 # These are referred to by the disklist file.  The dumptype specifies
 # certain parameters for dumping including:
 #   auth	- authentication scheme to use between server and client.
-#		  Valid values are "bsd" and "krb4".  Default: [auth bsd]
+#		  Valid values are "bsd", "krb4", "krb5" and "ssh".  
+#		  Default: [auth bsd]
 #   comment	- just a comment string
 #   comprate	- set default compression rate.  Should be followed by one or
 #		  two numbers, optionally separated by a comma.  The 1st is
@@ -448,9 +449,6 @@ define tapetype MIMSY-MEGATAPE {
 #			       prototype.  Amanda then backs up just the
 #			       changes.
 #		  "noinc"    - do level 0 dumps every time.
-#			       Unfortunately, this is not currently
-#			       implemented.  Use `dumpcycle 0'
-#			       instead.
 #		  "skip"     - skip all dumps.  Useful for sharing a single
 #			       disklist in several configurations.
 #		  "incronly" - do only incremental dumps. This is similar
@@ -628,15 +626,23 @@ define dumptype comp-test {
     compress client fast
 }
 
-#define dumptype encrypt-fast {
-#    global
-#    program "GNUTAR"
-#    comment "test dump with fast client compression and server encryption"
-#    compress client fast
-#    encrypt server
-#    server_encrypt "@bindir@/amcrypt"
-#    server_decrypt_option "-d"
-#}
+define dumptype custom-compress {
+   global
+   program "GNUTAR"
+   comment "test dump with custom client compression"
+   compress client custom
+   client_custom_compress "/usr/bin/bzip2"
+}
+
+define dumptype encrypt-fast {
+   global
+   program "GNUTAR"
+   comment "test dump with fast client compression and server symmetric encryption"
+   compress client fast
+   encrypt server
+   server_encrypt "/usr/local/sbin/amcrypt"
+   server_decrypt_option "-d"
+}
 
 # network interfaces
 #
