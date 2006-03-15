@@ -1,3 +1,6 @@
+2006-03-15  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/conffile.c: Fix heritage of auth.
+
 2006-03-14  Kevin Till <ktill@@zmanda.com>
 	* example/amanda.conf.in: add dumptype custom-compress. 
 	  add ssh,krb5 as valid input for auth. 

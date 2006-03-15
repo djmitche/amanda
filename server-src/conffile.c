@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.125 2006/03/09 20:06:11 johnfranks Exp $
+ * $Id: conffile.c,v 1.126 2006/03/15 16:05:17 martinea Exp $
  *
  * read configuration file
  */
@@ -1775,6 +1775,11 @@ static void copy_dumptype()
 	dpcur.program = newstralloc(dpcur.program, dt->program);
 	dpcur.s_program = dt->s_program;
     }
+    if(dt->s_security_driver) {
+	dpcur.security_driver = newstralloc(dpcur.security_driver,
+					    dt->security_driver);
+	dpcur.s_security_driver = dt->s_security_driver;
+    }
     if(dt->s_srvcompprog) {
 	dpcur.srvcompprog = newstralloc(dpcur.srvcompprog, dt->srvcompprog);
 	dpcur.s_srvcompprog = dt->s_srvcompprog;
@@ -1827,7 +1832,7 @@ static void copy_dumptype()
     dtcopy(bumpdays, s_bumpdays);
     dtcopy(bumpmult, s_bumpmult);
     dtcopy(start_t, s_start_t);
-    dtcopy(security_driver, s_security_driver);
+    dtcopy(s_security_driver, s_security_driver);
     dtcopy(record, s_record);
     dtcopy(strategy, s_strategy);
     dtcopy(estimate, s_estimate);
