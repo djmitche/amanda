@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.48 2006/03/10 13:51:05 martinea Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.49 2006/03/16 00:20:53 paddy_s Exp $";
 #endif
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
@@ -2010,13 +2010,13 @@ int EXB_BarCode(int DeviceFD)
             } else {
               DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB_BarCode : SCSI_ModeSelect failed\n");
             }
+	    amfree(pVendorWork);
         }
       dump_hex((char *)pDev[INDEX_CHANGER].inquiry, INQUIRY_SIZE, DEBUG_INFO, SECTION_BARCODE);
       DebugPrint(DEBUG_INFO, SECTION_BARCODE,"EXB_BarCode : vendor_specific[19] %x\n",
 		 pDev[INDEX_CHANGER].inquiry->vendor_specific[19]);
     }
 
-  amfree(pVendorWork);
   return(1);
 }
 
@@ -2144,6 +2144,7 @@ int TapeStatus()
 	  sleep(2);
 	  cnt++;
 	}
+        amfree(pRequestSense);
     } else {
       ret = Tape_Status(INDEX_TAPE);
       if ( ret & TAPE_ONLINE)
@@ -2156,7 +2157,6 @@ int TapeStatus()
 	}
       DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP TapeStatus\n");
     }
-    amfree(pRequestSense);
     return(0);
 }
 
