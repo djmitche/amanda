@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	$Id: amverify.sh.in,v 1.34 2005/10/11 01:17:00 vectro Exp $
+#	$Id: amverify.sh.in,v 1.35 2006/03/16 17:32:32 ktill Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -451,6 +451,9 @@ while [ $SLOT -lt $SLOTS ]; do
 		elif [ -n "$EOF" ]; then
 			report "End-of-Tape detected."
 			break
+		elif [ -n "$EOI" ]; then
+                        report "End-of-Information detected."
+                        break
 		else
 			report "** Error detected ($FILE)"
 			echo "$VOLUME ($FILE):" >>$DEFECTS
