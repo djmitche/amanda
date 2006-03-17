@@ -1,4 +1,9 @@
-2006-03-16  Kevin Till <ktill@@zmanda.com>
+2006-03-17  Ian Turner <ian@zmanda.com>
+	* server-src/taper.c (read_file): When finished flushing a 
+	  chunked dump, print information about the whole dump, not just 
+	  the last chunk. Also, fix some memory leaks.
+
+2006-03-16  Kevin Till <ktill@zmanda.com>
 	* server-src/amverify.sh.in: check for EOI. amrestore only 
 	  reports EOI for some tapetypes.
 

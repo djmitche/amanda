@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.116 2006/03/09 20:06:11 johnfranks Exp $
+/* $Id: taper.c,v 1.117 2006/03/17 15:32:53 vectro Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1417,6 +1417,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 		}
 		str = syncpipe_getstr();	/* reap stats */
 		amfree(str);
+                amfree(errstr);
 	    } else {
 		char kb_str[NUM_STR_SIZE];
 		char kps_str[NUM_STR_SIZE];
@@ -1467,6 +1468,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 				    filesize+cur_span_chunkstart);
 			snprintf(kps_str, sizeof(kps_str), "%3.1f",
 				    rt ? (filesize+cur_span_chunkstart) / rt : 0.0);
+                        amfree(errstr);
 			errstr = newvstralloc(errstr,
 					      "[sec ", walltime_str(curdump_rt),
 					      " kb ", kb_str,
@@ -1474,12 +1476,14 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 					      " ", str,
 					      "]",
 					      NULL);
+                        q = squote(errstr);
 			putresult(DONE, "%s %s %d %s\n", handle, label,
 				  filenum, q);
 			log_add(L_CHUNKSUCCESS, "%s %s %s %d %s",
 				hostname, diskname, datestamp, level, errstr);
 			amfree(save_holdfile);
 			amfree(holdfile_path_thischunk);
+                        amfree(q)
 		    }
  		}
 		amfree(str);
@@ -1493,7 +1497,7 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
  		    curdump_rt = times_zero;
  		}
 		
- 		amfree(q);
+ 		amfree(errstr);
 		
 #ifdef HAVE_LIBVTBLC
 		/* 
