@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.117 2006/03/17 15:32:53 vectro Exp $
+/* $Id: taper.c,v 1.118 2006/03/17 15:34:12 vectro Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1483,8 +1483,8 @@ int read_file(fd, handle, hostname, diskname, datestamp, level)
 				hostname, diskname, datestamp, level, errstr);
 			amfree(save_holdfile);
 			amfree(holdfile_path_thischunk);
-                        amfree(q)
-		    }
+                        amfree(q);
+                    }
  		}
 		amfree(str);
 
