@@ -161,7 +161,7 @@ WARNING: drinkme: selfcheck request timed out.  Host down?
 WARNING: scruffy: selfcheck request timed out.  Host down?
 Client check: 136 hosts checked in 51.945 seconds, 3 problems found.
 
-(brought to you by &A; 2.4.5) 
+(brought to you by &A; 2.5.0) 
 </programlisting>
 
 <para>In this example, if the line
