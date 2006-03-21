@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.24 2006/01/14 04:37:19 paddy_s Exp $
+/* $Id: chunker.c,v 1.25 2006/03/21 13:23:35 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -256,11 +256,10 @@ main(main_argc, main_argv)
 		      cmdargs.argc, a);
 	    }
 
-	    while((infd = startup_chunker(filename, use, chunksize, &db)) < 0) {
+	    if((infd = startup_chunker(filename, use, chunksize, &db)) < 0) {
 		q = squotef("[chunker startup failed: %s]", errstr);
-		if(infd == -2) {
-		    putresult(TRYAGAIN, "%s %s\n", handle, q);
-		}
+		putresult(TRYAGAIN, "%s %s\n", handle, q);
+		error("startup_chunker failed");
 	    }
 	    command_in_transit = -1;
 	    if(infd >= 0 && do_chunk(infd, &db)) {
