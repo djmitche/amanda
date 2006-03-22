@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.163 2006/03/09 20:06:11 johnfranks Exp $
+ * $Id: driver.c,v 1.164 2006/03/22 15:07:08 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -34,7 +34,7 @@
  *     tape.  Probably not effective though, should do this in planner.
  */
 
-#define HOLD_DEBUG
+/*#define HOLD_DEBUG*/
 
 #include "amanda.h"
 #include "clock.h"

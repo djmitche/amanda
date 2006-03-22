@@ -1,3 +1,6 @@
+2006-03-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driver.c: Put '#define HOLD_DEBUG' in comment.
+
 2006-03-21  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/chunker.c: Don't loop on startup_chunker.
 	* server-src/dumper.c: Don't wait for all children, some process (ssh)
