@@ -501,11 +501,11 @@ while(<AMDUMP>) {
 		$error{$hostpart}="driver: (aborted:$error)";
 		$dumpers_active--;
 	}
-	elsif(/driver: result time (\S+) from (dumper\d+): DONE (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]/) {
+	elsif(/driver: result time (\S+) from (dumper\d+): (DONE|PARTIAL) (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]/) {
 		$current_time=$1;
-		$serial=$3;
-		$origsize=$4 / $unitdivisor;
-		$outputsize=$5 / $unitdivisor;
+		$serial=$4;
+		$origsize=$5 / $unitdivisor;
+		$outputsize=$6 / $unitdivisor;
 		$hostpart=$serial{$serial};
 		$size{$hostpart}=$outputsize;
 		$dump_finished{$hostpart}=1;
@@ -514,11 +514,12 @@ while(<AMDUMP>) {
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}="";
 		$dumpers_active--;
+		$partial{$hostpart}=1 if $3 eq "PARTIAL" ;
 	}
-	elsif(/driver: result time (\S+) from (chunker\d+): DONE (\d+-\d+) (\d+) \[.*\]/) {
+	elsif(/driver: result time (\S+) from (chunker\d+): (DONE|PARTIAL) (\d+-\d+) (\d+) \[.*\]/) {
 		$current_time=$1;
-		$serial=$3;
-		$outputsize=$4 / $unitdivisor;
+		$serial=$4;
+		$outputsize=$5 / $unitdivisor;
 		$hostpart=$serial{$serial};
 		$size{$hostpart}=$outputsize;
 		$dump_finished{$hostpart}=1;
@@ -526,6 +527,7 @@ while(<AMDUMP>) {
 		$running_dumper{$2} = "0";
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}="";
+		$partial{$hostpart}=1 if $3 eq "PARTIAL" ;
 	}
 	elsif(/driver: result time (\S+) from (dumper\d+): ABORT-FINISHED (\d+-\d+)/) {
 		$current_time=$1;
@@ -626,11 +628,11 @@ while(<AMDUMP>) {
 		$taper_finished{$hostpart}=0;
 		$taper_time{$hostpart}=$1;
 	}
-	elsif(/driver: result time (\S+) from taper: DONE (\d+-\d+) (\S+) (\d+) \[sec (\S+) kb (\d+) kps/) {
+	elsif(/driver: result time (\S+) from taper: (DONE|PARTIAL) (\d+-\d+) (\S+) (\d+) \[sec (\S+) kb (\d+) kps/) {
 		$current_time=$1;
-		$serial=$2;
-		$label=$3;
-		$size=$6 / $unitdivisor;
+		$serial=$3;
+		$label=$4;
+		$size=$7 / $unitdivisor;
 		$hostpart=$serial{$serial};
 		$taper_finished{$hostpart}=1;
 		$busy_time{"taper"}+=($1-$taper_time{$hostpart});
@@ -646,6 +648,7 @@ while(<AMDUMP>) {
 		else {
 			$ntesize{$nb_tape} += $size{$hostpart};
 		}
+		$partial{$hostpart}=1 if $3 eq "PARTIAL" ;
 	}
 	elsif(/driver: result time (\S+) from taper: (TRY-AGAIN|TAPE-ERROR) (\d+-\d+) (.+)/) {
 		$current_time=$1;
@@ -954,6 +957,7 @@ foreach $host (sort @hosts) {
 							if( defined $starttime ) {
 								print " (", &showtime($taper_time{$hostpart}), ")";
 							}
+							print ", PARTIAL" if defined $partial{$hostpart};
 							print "\n";
 						}
 						$tpartition++;
@@ -1039,7 +1043,9 @@ foreach $host (sort @hosts) {
 							if( defined $starttime ) {
 								print " (", &showtime($dump_time{$hostpart}), ")";
 							}
-							print ", wait for writing to tape\n";
+							print ", wait for writing to tape";
+						   print ", PARTIAL" if defined $partial{$hostpart};
+							print "\n";
 						}
 						$dpartition++;
 						$dsize += $size{$hostpart};
@@ -1059,7 +1065,9 @@ foreach $host (sort @hosts) {
 						printf "%8s ", $datestamp if defined $opt_date;
 						printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
 						printf "%9d$unit", $size{$hostpart};
-						print " waiting to flush\n";
+						print " waiting to flush";
+						print ", PARTIAL" if defined $partial{$hostpart};
+						print "\n";
 					}
 					$wfpartition++;
 					$wfsize += $size{$hostpart};
