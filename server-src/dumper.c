@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.169 2006/03/21 13:23:35 martinea Exp $
+/* $Id: dumper.c,v 1.170 2006/03/22 15:10:52 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1040,6 +1040,7 @@ do_dump(db)
 
     if (errf) afclose(errf);
 
+    aclose(db->fd);
     if (indexfile_tmp) {
 	amwait_t index_status;
 
@@ -1053,6 +1054,13 @@ do_dump(db)
 	amfree(indexfile_real);
     }
 
+    if(db->compresspid != -1) {
+	waitpid(db->compresspid,NULL,0);
+    }
+    if(db->encryptpid != -1) {
+	waitpid(db->encryptpid,NULL,0);
+    }
+
     amfree(errstr);
 
     return 1;
@@ -1062,6 +1070,7 @@ failed:
     putresult(FAILED, "%s %s\n", handle, q);
     amfree(q);
 
+    aclose(db->fd);
     /* kill all child process */
     if (db->compresspid != -1) {
 	fprintf(stderr,"%s: kill compress command\n",get_pname());
@@ -1069,6 +1078,9 @@ failed:
 	    if (errno != ESRCH)
 		fprintf(stderr,"%s: can't kill compress command: %s\n", 
 		    get_pname(), strerror(errno));
+	}
+	else {
+	    waitpid(db->compresspid,NULL,0);
 	}
     }
 
@@ -1079,6 +1091,9 @@ failed:
 		fprintf(stderr,"%s: can't kill encrypt command: %s\n", 
 		    get_pname(), strerror(errno));
 	}
+	else {
+	    waitpid(db->encryptpid,NULL,0);
+	}
     }
 
     if (indexpid != -1) {
@@ -1087,6 +1102,9 @@ failed:
 	    if (errno != ESRCH)
 		fprintf(stderr,"%s: can't kill index command: %s\n", 
 		    get_pname(),strerror(errno));
+	}
+	else {
+	    waitpid(indexpid,NULL,0);
 	}
     }
 

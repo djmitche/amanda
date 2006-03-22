@@ -1,4 +1,7 @@
 2006-03-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/dumper.c: wait for compress/index/encryp subprocess.
+
+2006-03-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amstatus.pl.in: Parse PARTIAL reply.
 
 2006-03-22  Jean-Louis Martineau <martineau@zmanda.com>
