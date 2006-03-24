@@ -1,14 +1,17 @@
-Changes in release 2.5.0b2
+Changes in release 2.5.0
 
-* Possibility to use a custom compression program.
-* Possibility to encrypt data on network and tape.
-* Ability to label media automatically (useful for disk based backups) 
-
-Changes in release 2.5.0b1
-
-* New tape spanning features.
-* New SECURITY API (see docs/SECURITY.API for details).
-* New DUMPER API (see docs/DUMPER.API for details) (Not yet functionnal).
+* Communication security/authentication: Kerberos 4/5, OpenSSH
+* Data security: Symmetric/Assymetric encrytion algorithms (aesutil
+  and gpg encryption),  Encryption can be done on server or client,
+  Custom encryption utilities can be used.
+* Compression: Ability to add custom compression tools. This is a
+  really useful feature especially since it can specified for a DLE.  You
+  can use different compression algorithm for images, binaries, ascii files
+  and so on.
+* Dump images spanning multiple media volumes - Dump images are no
+  longer restricted to a single media volume (tape or vtape).  Data restoration
+  can be done using amrecover and amfetchdump commands.
+* Auto tape labelling - This optional feature is good for disk backups.
 
 Change in release 2.4.5p1
 
