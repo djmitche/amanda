@@ -1,4 +1,7 @@
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amstatus.pl.in: Remove duplicate instruction.
+
+2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amindexd.c: Remove all code that set str_buffer_size,
 				 rename str_buffer_size to reply_buffer_size,
 				 rename buf to reply_buffer,

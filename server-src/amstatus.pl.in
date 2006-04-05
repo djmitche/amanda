@@ -583,7 +583,6 @@ while(<AMDUMP>) {
 		if(!defined $level{$hostpart}) {
 			$level{$hostpart} = $level;
 		}
-		$serial{$serial}=$hostpart;
 		$taper_started{$hostpart}=1;
 		$taper_finished{$hostpart}=0;
 		$taper_time{$hostpart}=$1;
