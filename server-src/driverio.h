@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.32 2005/12/03 13:27:43 martinea Exp $
+ * $Id: driverio.h,v 1.33 2006/04/05 12:53:47 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -117,7 +117,8 @@ GLOBAL event_handle_t *taper_ev_read;
 void init_driverio P((void));
 void startup_tape_process P((char *taper_program));
 void startup_dump_process P((dumper_t *dumper, char *dumper_program));
-void startup_dump_processes P((char *dumper_program, int inparallel));
+void startup_dump_processes P((char *dumper_program, int inparallel,
+			       char *timestamp));
 void startup_chunk_process P((chunker_t *chunker, char *chunker_program));
 
 cmd_t getresult P((int fd, int show, int *result_argc, char **result_argv, int max_arg));

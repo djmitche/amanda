@@ -179,6 +179,13 @@ while(<AMDUMP>) {
 			push @datestamp, $gdatestamp;
 		}
 	}
+	elsif(/planner: timestamp (\S+)/) {
+		$gdatestamp = $1;
+		if(!defined $datestamp{$gdatestamp}) {
+			$datestamp{$gdatestamp} = 1;
+			push @datestamp, $gdatestamp;
+		}
+	}
 	elsif(/setup_estimate: (\S+):(\S+): command .*, options: *(\S+) *last_level -?\d+ next_level0 -?\d+ level_days \d+ *getting estimates (-?\d) \(-2\) (-?\d) \(-2\) (-?\d) \(-2\)/) {
 		$host=$1;
 		$partition=$2;
@@ -600,7 +607,6 @@ while(<AMDUMP>) {
 		if(!defined $level{$hostpart}) {
 			$level{$hostpart} = $level;
 		}
-		$serial{$serial}=$hostpart;
 		$taper_started{$hostpart}=1;
 		$taper_finished{$hostpart}=0;
 		$taper_time{$hostpart}=$1;

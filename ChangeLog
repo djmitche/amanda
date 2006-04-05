@@ -1,4 +1,25 @@
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amflush.c: Send DATE line to driver, use timestamp.
+	* server-src/amindex.c (getindexfname): Increase datebuf size.
+	* server-src/amtrmlog.c: Fix bug with date_keep computation if
+				 dumpcycle is INF.
+	* server-src/amtrmlog.c: rotate timestamped log file.
+	* server-src/chunker.c: Receive START cmd, use timestamp.
+	* server-src/driver.c: Receive DATE line, send START cmd to chunker,
+			       use timestamp.
+	* server-src/driverio.c (startup_dump_processes): Send START cmd to
+							  dumper.
+	* server-src/driverio.c (dumper_cmd, chunker_cmd): Send START command.
+	* server-src/driverio.h (startup_dump_processes): Prototype change,
+							  need the timestamp.
+	* server-src/dumper.c: Receive START cmd, use timestamp.
+	* server-src/find.c (find_nicedate): Fix for timestamp.
+	* server-src/planner.c: Send DATE line to driver, use timestamp.
+	* server-src/server_util.c (cmdstr): Add START.
+	* server-src/server_util.h (cmd_t): Add START.
+	* server-src/taper.c: Get timestamp from TAPER_START command.
+
+2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amindexd.c (amindexd_nicedate): New function.
 	* server-src/find.h (struct find_result_s): Remove datestamp and
 		 datestamp_aux field, only timestamp will be used.

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.25 2006/03/21 13:23:35 martinea Exp $
+/* $Id: chunker.c,v 1.26 2006/04/05 12:53:46 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -84,8 +84,8 @@ static char *options = NULL;
 static char *progname = NULL;
 static int level;
 static char *dumpdate = NULL;
-static char *datestamp;
 static int command_in_transit;
+static char *chunker_timestamp = NULL;
 
 static dumpfile_t file;
 
@@ -167,7 +167,15 @@ main(main_argc, main_argv)
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, SIG_IGN);
 
-    datestamp = construct_datestamp(NULL);
+    cmd = getcmd(&cmdargs);
+    if(cmd == START) {
+	if(cmdargs.argc <= 1)
+	    error("error [dumper START: not enough args: timestamp]");
+	chunker_timestamp = newstralloc(chunker_timestamp, cmdargs.argv[2]);
+    }
+    else {
+	error("Didn't get START command");
+    }
 
 /*    do {*/
 	cmd = getcmd(&cmdargs);
@@ -287,7 +295,7 @@ main(main_argc, main_argv)
 		    putresult(DONE, "%s %ld %s\n",
 			      handle, dumpsize - headersize, q);
 		    log_add(L_SUCCESS, "%s %s %s %d [%s]",
-			    hostname, diskname, datestamp, level, errstr);
+			    hostname, diskname, chunker_timestamp, level, errstr);
 		    break;
 		case BOGUS:
 		case TRYAGAIN:
@@ -297,7 +305,7 @@ main(main_argc, main_argv)
 			putresult(PARTIAL, "%s %ld %s\n",
 				  handle, dumpsize - headersize, q);
 			log_add(L_PARTIAL, "%s %s %s %d [%s]",
-				hostname, diskname, datestamp, level, errstr);
+				hostname, diskname, chunker_timestamp, level, errstr);
 		    }
 		    else {
 			errstr = newvstralloc(errstr,
@@ -308,7 +316,7 @@ main(main_argc, main_argv)
 			q = squotef("[%s]",errstr);
 			putresult(FAILED, "%s %s\n", handle, q);
 			log_add(L_FAIL, "%s %s %s %d [%s]",
-				hostname, diskname, datestamp, level, errstr);
+				hostname, diskname, chunker_timestamp, level, errstr);
 		    }
 		default: break;
 		}
@@ -320,7 +328,7 @@ main(main_argc, main_argv)
 		    }
 		    putresult(FAILED, "%s %s\n", handle, q);
 		    log_add(L_FAIL, "%s %s %s %d [%s]",
-			    hostname, diskname, datestamp, level, errstr);
+			    hostname, diskname, chunker_timestamp, level, errstr);
 		    amfree(q);
 		}
 	    }
@@ -342,7 +350,7 @@ main(main_argc, main_argv)
 /*    } while(cmd != QUIT); */
 
     amfree(errstr);
-    amfree(datestamp);
+    amfree(chunker_timestamp);
     amfree(handle);
     amfree(hostname);
     amfree(diskname);

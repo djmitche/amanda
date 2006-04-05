@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.170 2006/03/22 15:10:52 martinea Exp $
+/* $Id: dumper.c,v 1.171 2006/04/05 12:53:47 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -92,7 +92,7 @@ static char *options = NULL;
 static char *progname = NULL;
 static int level;
 static char *dumpdate = NULL;
-static char *datestamp;
+static char *dumper_timestamp = NULL;
 static int conf_dtimeout;
 static int indexfderror;
 
@@ -301,7 +301,6 @@ main(main_argc, main_argv)
 
     signal(SIGPIPE, SIG_IGN);
 
-    datestamp = construct_datestamp(NULL);
     conf_dtimeout = getconf_int(CNF_DTIMEOUT);
 
     protocol_init();
@@ -310,6 +309,12 @@ main(main_argc, main_argv)
 	cmd = getcmd(&cmdargs);
 
 	switch(cmd) {
+	case START:
+	    if(cmdargs.argc <  2)
+		error("error [dumper START: not enough args: timestamp]");
+	    dumper_timestamp = newstralloc(dumper_timestamp, cmdargs.argv[2]);
+	    break;
+
 	case QUIT:
 	    break;
 
@@ -414,7 +419,7 @@ main(main_argc, main_argv)
 		    handle, q);
 		if (rc == 2)
 		    log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname,
-			datestamp, level, errstr);
+			dumper_timestamp, level, errstr);
 		amfree(q);
 	    } else {
 		if (do_dump(&db)) {
@@ -440,7 +445,7 @@ main(main_argc, main_argv)
     } while(cmd != QUIT);
 
     amfree(errstr);
-    amfree(datestamp);
+    amfree(dumper_timestamp);
     amfree(handle);
     amfree(hostname);
     amfree(diskname);
@@ -820,7 +825,7 @@ finish_tapeheader(file)
     assert(ISSET(status, HEADER_DONE));
 
     file->type = F_DUMPFILE;
-    strncpy(file->datestamp, datestamp, sizeof(file->datestamp) - 1);
+    strncpy(file->datestamp, dumper_timestamp, sizeof(file->datestamp) - 1);
     strncpy(file->name, hostname, sizeof(file->name) - 1);
     strncpy(file->disk, diskname, sizeof(file->disk) - 1);
     file->dumplevel = level;
@@ -955,7 +960,7 @@ do_dump(db)
     amfree(errfname);
 
     if (streams[INDEXFD].fd != NULL) {
-	indexfile_real = getindexfname(hostname, diskname, datestamp, level);
+	indexfile_real = getindexfname(hostname, diskname, dumper_timestamp, level);
 	indexfile_tmp = stralloc2(indexfile_real, ".tmp");
 
 	if (mkpdir(indexfile_tmp, 02755, (uid_t)-1, (gid_t)-1) == -1) {
@@ -1025,7 +1030,7 @@ do_dump(db)
 
     switch(dump_result) {
     case 0:
-	log_add(L_SUCCESS, "%s %s %s %d [%s]", hostname, diskname, datestamp, level, errstr);
+	log_add(L_SUCCESS, "%s %s %s %d [%s]", hostname, diskname, dumper_timestamp, level, errstr);
 
 	break;
 
@@ -1109,7 +1114,7 @@ failed:
     }
 
     log_start_multiline();
-    log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname, datestamp,
+    log_add(L_FAIL, "%s %s %s %d [%s]", hostname, diskname, dumper_timestamp,
 	    level, errstr);
     if (errf) {
 	log_msgout(L_FAIL);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.180 2006/03/10 13:51:06 martinea Exp $
+ * $Id: planner.c,v 1.181 2006/04/05 12:53:47 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -106,7 +106,7 @@ long tt_blocksize;
 long tt_blocksize_kb;
 int runs_per_cycle = 0;
 time_t today;
-char *datestamp = NULL;
+char *planner_timestamp = NULL;
 
 static am_feature_t *our_features = NULL;
 static char *our_feature_string = NULL;
@@ -295,11 +295,14 @@ char **argv;
     conf_reserve  = getconf_int(CNF_RESERVE);
     conf_autoflush = getconf_int(CNF_AUTOFLUSH);
 
-    amfree(datestamp);
+    amfree(planner_timestamp);
     today = time(0);
-    datestamp = construct_datestamp(NULL);
-    log_add(L_START, "date %s", datestamp);
-
+    planner_timestamp = construct_timestamp(NULL);
+    log_add(L_START, "date %s", planner_timestamp);
+    printf("DATE %s\n", planner_timestamp);
+    fflush(stdout);
+    fprintf(stderr, "%s: timestamp %s\n",
+		    get_pname(), planner_timestamp);
     /* some initializations */
 
     if(conf_runspercycle == 0) {
@@ -548,9 +551,9 @@ char **argv;
     fprintf(stderr, "--------\n");
 
     close_infofile();
-    log_add(L_FINISH, "date %s time %s", datestamp, walltime_str(curclock()));
+    log_add(L_FINISH, "date %s time %s", planner_timestamp, walltime_str(curclock()));
 
-    amfree(datestamp);
+    amfree(planner_timestamp);
     amfree(config_dir);
     amfree(config_name);
     amfree(our_feature_string);
@@ -741,7 +744,7 @@ setup_estimate(dp)
 	    fprintf(stderr, "%s: SKIPPED %s %s 0 [skip-full]\n",
 		    get_pname(), dp->host->hostname, dp->name);
 	    log_add(L_SUCCESS, "%s %s %s 0 [skipped: skip-full]",
-		    dp->host->hostname, dp->name, datestamp);
+		    dp->host->hostname, dp->name, planner_timestamp);
 	    return;
 	}
 
@@ -782,7 +785,7 @@ setup_estimate(dp)
 		get_pname(), dp->host->hostname, dp->name);
 
 	log_add(L_SUCCESS, "%s %s %s 1 [skipped: skip-incr]",
-	        dp->host->hostname, dp->name, datestamp);
+	        dp->host->hostname, dp->name, planner_timestamp);
 	return;
     }
 
@@ -1957,10 +1960,10 @@ disk_t *dp;
     errstr = est(dp)->errstr? est(dp)->errstr : "hmm, no error indicator!";
 
     fprintf(stderr, "%s: FAILED %s %s %s 0 [%s]\n",
-	get_pname(), dp->host->hostname, dp->name, datestamp, errstr);
+	get_pname(), dp->host->hostname, dp->name, planner_timestamp, errstr);
 
     log_add(L_FAIL, "%s %s %s 0 [%s]", dp->host->hostname, dp->name, 
-	    datestamp, errstr);
+	    planner_timestamp, errstr);
 
     /* XXX - memory leak with *dp */
 }
@@ -2387,7 +2390,7 @@ arglist_function1(static void delay_one_dump,
     snprintf(level_str, sizeof(level_str), "%d", est(dp)->dump_level);
     bi->errstr = vstralloc(dp->host->hostname,
 			   " ", dp->name,
-			   " ", datestamp ? datestamp : "?",
+			   " ", planner_timestamp ? planner_timestamp : "?",
 			   " ", level_str,
 			   NULL);
     sep = " [";
@@ -2645,9 +2648,9 @@ static void output_scheduleline(dp)
 	fprintf(stderr,
 		"%s: FAILED %s %s %s %d [no estimate]\n",
 		get_pname(),
-		dp->host->hostname, dp->name, datestamp, ep->dump_level);
+		dp->host->hostname, dp->name, planner_timestamp, ep->dump_level);
 	log_add(L_FAIL, "%s %s %s %d [no estimate]",
-	        dp->host->hostname, dp->name, datestamp, ep->dump_level);
+	        dp->host->hostname, dp->name, planner_timestamp, ep->dump_level);
 	return;
     }
 
@@ -2697,7 +2700,7 @@ static void output_scheduleline(dp)
     schedline = vstralloc("DUMP ",dp->host->hostname,
 			  " ", features,
 			  " ", dp->name,
-			  " ", datestamp,
+			  " ", planner_timestamp,
 			  " ", dump_priority_str,
 			  " ", dump_level_str,
 			  " ", dump_date,

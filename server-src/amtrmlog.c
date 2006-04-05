@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.10 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: amtrmlog.c,v 1.11 2006/04/05 12:53:46 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -66,6 +66,7 @@ char **argv;
     char *conf_tapelist;
     char *conf_logdir;
     int amtrmidx_debug = 0;
+    int dumpcycle;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -118,6 +119,8 @@ char **argv;
     amfree(conf_tapelist);
 
     today = time((time_t *)NULL);
+    dumpcycle = getconf_int(CNF_DUMPCYCLE);
+    if(dumpcycle > 5000) dumpcycle = 5000;
     date_keep = today - (getconf_int(CNF_DUMPCYCLE)*86400);
 
     output_find_log = find_log();
@@ -152,8 +155,13 @@ char **argv;
 	if(strncmp(adir->d_name,"log.",4)==0) {
 	    useful=0;
 	    for (name=output_find_log;*name !=NULL; name++) {
-		if(strncmp(adir->d_name,*name,12)==0) {
+		if((strlen(adir->d_name) >= 13 &&
+		    strlen(*name) >= 13 &&
+		    adir->d_name[12] == '.' && (*name)[12] == '.' &&
+		    strncmp(adir->d_name,*name,12)==0) ||
+		   strncmp(adir->d_name,*name,18)==0) {
 		    useful=1;
+		    break;
 		}
 	    }
 	    logname=newvstralloc(logname,

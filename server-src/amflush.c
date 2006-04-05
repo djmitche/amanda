@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.80 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: amflush.c,v 1.81 2006/04/05 12:53:46 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -45,7 +45,8 @@ FILE *driver_stream;
 char *driver_program;
 char *reporter_program;
 char *logroll_program;
-char *datestamp;
+char *amflush_timestamp;
+char *amflush_datestamp;
 sl_t *datestamp_list;
 
 /* local functions */
@@ -159,7 +160,8 @@ char **main_argv;
 	error("could not load tapelist \"%s\"", conf_tapelist);
     amfree(conf_tapelist);
 
-    datestamp = construct_datestamp(NULL);
+    amflush_datestamp = construct_datestamp(NULL);
+    amflush_timestamp = construct_timestamp(NULL);
 
     dumpuser = getconf_str(CNF_DUMPUSER);
     if((pw = getpwnam(dumpuser)) == NULL)
@@ -243,8 +245,8 @@ char **main_argv;
     today = time(NULL);
     strftime(date_string, 100, "%a %b %e %H:%M:%S %Z %Y", localtime (&today));
     fprintf(stderr, "amflush: start at %s\n", date_string);
-    fprintf(stderr, "amflush: datestamp %s\n", datestamp);
-    log_add(L_START, "date %s", datestamp);
+    fprintf(stderr, "amflush: datestamp %s\n", amflush_timestamp);
+    log_add(L_START, "date %s", amflush_timestamp);
 
     /* START DRIVER */
     if(pipe(driver_pipe) == -1) {
@@ -265,6 +267,7 @@ char **main_argv;
     }
     driver_stream = fdopen(driver_pipe[1], "w");
 
+    fprintf(driver_stream, "DATE %s\n", amflush_timestamp);
     for(holding_file=holding_list->first; holding_file != NULL;
 				   holding_file = holding_file->next) {
 	get_dumpfile(holding_file->name, &file);
@@ -427,7 +430,7 @@ void confirm()
     int ch;
     char *extra;
 
-    printf("\nToday is: %s\n",datestamp);
+    printf("\nToday is: %s\n",amflush_datestamp);
     printf("Flushing dumps in");
     extra = "";
     for(dir = datestamp_list->first; dir != NULL; dir = dir->next) {

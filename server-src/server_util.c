@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.13 2005/10/20 23:18:15 martinea Exp $
+ * $Id: server_util.c,v 1.14 2006/04/05 12:53:48 martinea Exp $
  *
  */
 
@@ -35,7 +35,7 @@
 
 const char *cmdstr[] = {
     "BOGUS", "QUIT", "QUITTING", "DONE", "PARTIAL", 
-    "FILE-DUMP", "PORT-DUMP", "CONTINUE", "ABORT",	/* dumper cmds */
+    "START", "FILE-DUMP", "PORT-DUMP", "CONTINUE", "ABORT",/* dumper cmds */
     "FAILED", "TRY-AGAIN", "NO-ROOM", "RQ-MORE-DISK",	/* dumper results */
     "ABORT-FINISHED", "BAD-COMMAND",			/* dumper results */
     "START-TAPER", "FILE-WRITE", "PORT-WRITE",		/* taper cmds */

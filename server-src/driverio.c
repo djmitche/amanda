@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.81 2006/03/11 21:57:18 martinea Exp $
+ * $Id: driverio.c,v 1.82 2006/04/05 12:53:47 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -146,9 +146,10 @@ char *dumper_program;
     }
 }
 
-void startup_dump_processes(dumper_program, inparallel)
+void startup_dump_processes(dumper_program, inparallel, timestamp)
 char *dumper_program;
 int inparallel;
+char *timestamp;
 {
     int i;
     dumper_t *dumper;
@@ -163,6 +164,7 @@ int inparallel;
 	chktable[i].fd = -1;
 
 	startup_dump_process(dumper, dumper_program);
+	dumper_cmd(dumper, START, (void *)timestamp);
     }
 }
 
@@ -354,20 +356,23 @@ disk_t *dp;
     char *device;
     char *features;
 
-    if(dp && sched(dp) && sched(dp)->holdp) {
-	h = sched(dp)->holdp;
-	activehd = sched(dp)->activehd;
-    }
-
-    if(dp && dp->device) {
-	device = dp->device;
-    }
-    else {
-	device = "NODEVICE";
-    }
-
     switch(cmd) {
+    case START:
+	cmdline = vstralloc(cmdstr[cmd], " ", (char *)dp, "\n", NULL);
+	break;
     case PORT_DUMP:
+	if(dp && sched(dp) && sched(dp)->holdp) {
+	    h = sched(dp)->holdp;
+	    activehd = sched(dp)->activehd;
+	}
+
+	if(dp && dp->device) {
+	    device = dp->device;
+	}
+	else {
+	    device = "NODEVICE";
+	}
+
 	if (dp != NULL) {
 	    snprintf(number, sizeof(number), "%d", sched(dp)->level);
 	    snprintf(numberport, sizeof(numberport), "%d", dumper->output_port);
@@ -440,13 +445,16 @@ disk_t *dp;
     assignedhd_t **h=NULL;
     char *features;
 
-    if(dp && sched(dp) && sched(dp)->holdp) {
-	h = sched(dp)->holdp;
-	activehd = sched(dp)->activehd;
-    }
-
     switch(cmd) {
+    case START:
+	cmdline = vstralloc(cmdstr[cmd], " ", (char *)dp, "\n", NULL);
+	break;
     case PORT_WRITE:
+	if(dp && sched(dp) && sched(dp)->holdp) {
+	    h = sched(dp)->holdp;
+	    activehd = sched(dp)->activehd;
+	}
+
 	if (dp && h) {
 	    holdalloc(h[activehd]->disk)->allocated_dumpers++;
 	    snprintf(number, sizeof(number), "%d", sched(dp)->level);
@@ -476,6 +484,11 @@ disk_t *dp;
 	}
 	break;
     case CONTINUE:
+	if(dp && sched(dp) && sched(dp)->holdp) {
+	    h = sched(dp)->holdp;
+	    activehd = sched(dp)->activehd;
+	}
+
 	if( dp && h) {
 	    holdalloc(h[activehd]->disk)->allocated_dumpers++;
 	    snprintf(chunksize, sizeof(chunksize), "%ld", 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.165 2006/04/05 12:27:56 martinea Exp $
+ * $Id: driver.c,v 1.166 2006/04/05 12:53:46 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -65,8 +65,7 @@ static int conf_taperalgo;
 static int conf_runtapes;
 static time_t sleep_time;
 static int idle_reason;
-static char *datestamp;
-static char *timestamp;
+static char *driver_timestamp;
 static am_host_t *flushhost = NULL;
 static int need_degraded=0;
 
@@ -154,6 +153,7 @@ main(main_argc, main_argv)
     amwait_t retstat;
     char *conf_tapetype;
     tapetype_t *tape;
+    char *line;
 
     safe_fd(-1, 0);
 
@@ -204,10 +204,14 @@ main(main_argc, main_argv)
     }
     amfree(conffile);
 
-    amfree(datestamp);
-    datestamp = construct_datestamp(NULL);
-    timestamp = construct_timestamp(NULL);
-    log_add(L_START,"date %s", datestamp);
+    amfree(driver_timestamp);
+    /* read timestamp from stdin */
+    line = agets(stdin);
+    driver_timestamp = alloc(15);
+    strncpy(driver_timestamp, &line[5], 14);
+    driver_timestamp[14] = '\0';
+    amfree(line);
+    log_add(L_START,"date %s", driver_timestamp);
 
     taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
     dumper_program = vstralloc(libexecdir, "/", "dumper", versionsuffix(),
@@ -227,7 +231,7 @@ main(main_argc, main_argv)
     init_driverio();
     if(conf_runtapes > 0) {
 	startup_tape_process(taper_program);
-	taper_cmd(START_TAPER, datestamp, NULL, 0, NULL);
+	taper_cmd(START_TAPER, driver_timestamp, NULL, 0, NULL);
     }
 
     /* start initializing: read in databases */
@@ -286,7 +290,7 @@ main(main_argc, main_argv)
 	       dsk, hdp->diskdir, hdp->disksize, hdp->chunksize);
 
 	newdir = newvstralloc(newdir,
-			      hdp->diskdir, "/", timestamp,
+			      hdp->diskdir, "/", driver_timestamp,
 			      NULL);
 	if(!mkholdingdir(newdir)) {
 	    hdp->disksize = 0L;
@@ -304,7 +308,7 @@ main(main_argc, main_argv)
     if(inparallel > MAX_DUMPERS) inparallel = MAX_DUMPERS;
 
     /* fire up the dumpers now while we are waiting */
-    if(!nodump) startup_dump_processes(dumper_program, inparallel);
+    if(!nodump) startup_dump_processes(dumper_program, inparallel, driver_timestamp);
 
     /*
      * Read schedule from stdin.  Usually, this is a pipe from planner,
@@ -327,7 +331,7 @@ main(main_argc, main_argv)
 	   walltime_str(curclock()), inparallel, free_kps((interface_t *)0),
 	   free_space());
     printf(" dir %s datestamp %s driver: drain-ends tapeq %s big-dumpers %s\n",
-	   "OBSOLETE", datestamp, taperalgo2str(conf_taperalgo),
+	   "OBSOLETE", driver_timestamp, taperalgo2str(conf_taperalgo),
 	   getconf_str(CNF_DUMPORDER));
     fflush(stdout);
 
@@ -456,9 +460,8 @@ main(main_argc, main_argv)
     check_unfree_serial();
     printf("driver: FINISHED time %s\n", walltime_str(curclock()));
     fflush(stdout);
-    log_add(L_FINISH,"date %s time %s", datestamp, walltime_str(curclock()));
-    amfree(datestamp);
-    amfree(timestamp);
+    log_add(L_FINISH,"date %s time %s", driver_timestamp, walltime_str(curclock()));
+    amfree(driver_timestamp);
 
     amfree(dumper_program);
     amfree(taper_program);
@@ -791,6 +794,7 @@ start_some_dumps(rq)
 	    chunker->result = LAST_TOK;
 	    dumper->result = LAST_TOK;
 	    startup_chunk_process(chunker,chunker_program);
+	    chunker_cmd(chunker, START, (void *)driver_timestamp);
 	    chunker->dumper = dumper;
 	    chunker_cmd(chunker, PORT_WRITE, diskp);
 	    cmd = getresult(chunker->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
@@ -2151,7 +2155,7 @@ assign_holdingdisk(holdp, diskp)
     for( ; holdp[i]; i++ ) {
 	holdp[i]->destname = newvstralloc( holdp[i]->destname,
 					   holdp[i]->disk->diskdir, "/",
-					   timestamp, "/",
+					   driver_timestamp, "/",
 					   diskp->host->hostname, ".",
 					   sfn, ".",
 					   lvl, NULL );

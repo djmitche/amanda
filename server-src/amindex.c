@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindex.c,v 1.13 2001/09/01 03:36:24 jrjackson Exp $
+ * $Id: amindex.c,v 1.14 2006/04/05 12:53:46 martinea Exp $
  *
  * index control
  */
@@ -40,7 +40,7 @@ int level;
   char *conf_indexdir;
   char *buf;
   char level_str[NUM_STR_SIZE];
-  char datebuf[8 + 1];
+  char datebuf[14 + 1];
   char *dc = NULL;
   char *pc;
   int ch;

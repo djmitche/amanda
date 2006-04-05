@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.24 2006/04/05 12:52:17 martinea Exp $
+ * $Id: find.c,v 1.25 2006/04/05 12:53:47 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -316,15 +316,7 @@ find_result_t **output_find;
 		    find_result_t *new_output_find =
 			alloc(sizeof(find_result_t));
 		    new_output_find->next=*output_find;
-		    if(strlen(dir->name) == 8) {
-			new_output_find->timestamp=stralloc2(dir->name, "000000");
-		    }
-		    else if(strlen(dir->name) == 14) {
-			new_output_find->timestamp=stralloc(dir->name);
-		    }
-		    else {
-			error("Bad date\n");
-		    }
+		    new_output_find->timestamp=stralloc(dir->name);
 		    new_output_find->hostname=hostname;
 		    hostname = NULL;
 		    new_output_find->diskname=diskname;
@@ -559,17 +551,30 @@ char *datestamp;
 {
     static char nice[20];
     int year, month, day;
-    char date[9];
-    int  numdate;
+    int hours, minutes, seconds;
+    char date[9], atime[7];
+    int  numdate, numtime;
 
     strncpy(date, datestamp, 8);
-    date[9] = '\0';
+    date[8] = '\0';
     numdate = atoi(date);
     year  = numdate / 10000;
     month = (numdate / 100) % 100;
     day   = numdate % 100;
 
-    snprintf(nice, sizeof(nice), "%4d-%02d-%02d", year, month, day);
+    if(strlen(datestamp) <= 8) {
+	snprintf(nice, sizeof(nice), "%4d-%02d-%02d", year, month, day);
+    }
+    else {
+	strncpy(atime, &(datestamp[8]), 6);
+	atime[6] = '\0';
+	numtime = atoi(atime);
+	hours = numtime / 10000;
+	minutes = (numtime / 100) % 100;
+	seconds = numtime % 100;
+
+	snprintf(nice, sizeof(nice), "%4d-%02d-%02d %02d:%02d:%02d", year, month, day, hours, minutes, seconds);
+    }
 
     return nice;
 }
@@ -679,7 +684,6 @@ char *datestamp;
     int ch;
     disk_t *dp;
 
-fprintf(stderr,"search_logfile: %s %s %s\n", label, datestamp, logfile);
     if((logf = fopen(logfile, "r")) == NULL)
 	error("could not open logfile %s: %s", logfile, strerror(errno));
 
@@ -760,7 +764,7 @@ fprintf(stderr,"search_logfile: %s %s %s\n", label, datestamp, logfile);
 	    date_undo = s - 1;
 	    *date_undo = '\0';
 
-	    if(strlen(datestamp) < 3) { /* old log didn't have datestamp */
+	    if(strlen(date) < 3) { /* old log didn't have datestamp */
 		level = atoi(date);
 		date = stralloc(datestamp);
 	    }
@@ -799,12 +803,12 @@ fprintf(stderr,"search_logfile: %s %s %s\n", label, datestamp, logfile);
 		enqueue_disk(find_diskqp, dp);
 	    }
             if(find_match(host, disk) && (curlog != L_SUCCESS ||
-		!seen_chunk_of(*output_find,atoi(date),host,disk,level))){
+		!seen_chunk_of(*output_find, date, host, disk, level))){
 		if(curprog == P_TAPER) {
 		    find_result_t *new_output_find =
 			(find_result_t *)alloc(sizeof(find_result_t));
 		    new_output_find->next=*output_find;
-		    new_output_find->timestamp = stralloc2(datestamp, "000000");
+		    new_output_find->timestamp = stralloc(date);
 		    new_output_find->hostname=stralloc(host);
 		    new_output_find->diskname=stralloc(disk);
 		    new_output_find->level=level;
@@ -821,7 +825,7 @@ fprintf(stderr,"search_logfile: %s %s %s\n", label, datestamp, logfile);
 		    find_result_t *new_output_find =
 			(find_result_t *)alloc(sizeof(find_result_t));
 		    new_output_find->next=*output_find;
-		    new_output_find->timestamp = stralloc2(datestamp, "000000");
+		    new_output_find->timestamp = stralloc(date);
 		    new_output_find->hostname=stralloc(host);
 		    new_output_find->diskname=stralloc(disk);
 		    new_output_find->level=level;

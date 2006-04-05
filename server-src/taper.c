@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.119 2006/04/05 12:52:18 martinea Exp $
+/* $Id: taper.c,v 1.120 2006/04/05 12:53:48 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -182,7 +182,7 @@ int err;
 
 char *procname = "parent";
 
-char *taper_datestamp = NULL;
+char *taper_timestamp = NULL;
 char *label = NULL;
 int filenum;
 char *errstr = NULL;
@@ -578,11 +578,11 @@ int rdpipe, wrpipe;
 
     /* pass start command on to tape writer */
 
-    taper_datestamp = newstralloc(taper_datestamp, cmdargs.argv[2]);
+    taper_timestamp = newstralloc(taper_timestamp, cmdargs.argv[2]);
 
     tape_started = 0;
     syncpipe_put('S', 0);
-    syncpipe_putstr(taper_datestamp);
+    syncpipe_putstr(taper_timestamp);
 
     /* get result of start command */
 
@@ -1769,7 +1769,7 @@ int getp, putp;
 	case 'Q':
 	    end_tape(0);	/* XXX check results of end tape ?? */
 	    clear_tapelist();
-	    amfree(taper_datestamp);
+	    amfree(taper_timestamp);
 	    amfree(label);
 	    amfree(errstr);
 	    amfree(changer_resultstr);
@@ -2354,15 +2354,15 @@ int label_tape()
 
     tapefd_setinfo_length(tape_fd, tt->length);
 
-    tapefd_setinfo_datestamp(tape_fd, taper_datestamp);
+    tapefd_setinfo_datestamp(tape_fd, taper_timestamp);
     tapefd_setinfo_disk(tape_fd, label);
-    result = tapefd_wrlabel(tape_fd, taper_datestamp, label, tt_blocksize);
+    result = tapefd_wrlabel(tape_fd, taper_timestamp, label, tt_blocksize);
     if(result != NULL) {
 	errstr = newstralloc(errstr, result);
 	return 0;
     }
 
-    fprintf(stderr, "taper: wrote label `%s' date `%s'\n", label, taper_datestamp);
+    fprintf(stderr, "taper: wrote label `%s' date `%s'\n", label, taper_timestamp);
     fflush(stderr);
 
 #ifdef HAVE_LIBVTBLC
@@ -2391,14 +2391,14 @@ int label_tape()
 	amfree(conf_tapelist_old);
 
 	remove_tapelabel(label);
-	add_tapelabel(taper_datestamp, label);
+	add_tapelabel(taper_timestamp, label);
 	if(write_tapelist(conf_tapelist)) {
 	    error("could not write tapelist: %s", strerror(errno));
 	}
     }
 
     log_add(L_START, "datestamp %s label %s tape %d",
-	    taper_datestamp, label, cur_tape);
+	    taper_timestamp, label, cur_tape);
     if (first_call && strcmp(label, FAKE_LABEL) == 0) {
 	first_call = 0;
 	log_add(L_WARNING, "tapedev is %s, dumps will be thrown away", tapedev);
@@ -2418,7 +2418,7 @@ char *new_datestamp;
     }
     changer_debug = 1;
 
-    taper_datestamp = newstralloc(taper_datestamp, new_datestamp);
+    taper_timestamp = newstralloc(taper_timestamp, new_datestamp);
 
     if(!label_tape())
 	return 0;
@@ -2469,7 +2469,7 @@ int writerror;
 		goto common_exit;
 	    }
 
-	    result = tapefd_wrendmark(tape_fd, taper_datestamp, tt_blocksize);
+	    result = tapefd_wrendmark(tape_fd, taper_timestamp, tt_blocksize);
 	    if(result != NULL) {
 		errstr = newstralloc(errstr, result);
 		rc = 1;
