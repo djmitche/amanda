@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.89 2006/04/05 13:00:25 martinea Exp $
+ * $Id: amindexd.c,v 1.90 2006/04/05 13:02:14 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -91,11 +91,8 @@ static REMOVE_ITEM *remove_files P((REMOVE_ITEM *));
 static char *uncompress_file P((char *, char **));
 static int process_ls_dump P((char *, DUMP_ITEM *, int, char **));
 
- /* XXX this is a hack to make sure the printf-ish output buffer
-    for lreply and friends is big enough for long label strings.
-    Should go away if someone institutes a more fundamental fix 
-    for that problem. */
- static int str_buffer_size = STR_SIZE;
+static int reply_buffer_size = STR_SIZE;
+static char *reply_buffer = NULL;
 
 static void reply P((int, char *, ...))
     __attribute__ ((format (printf, 2, 3)));
@@ -270,16 +267,21 @@ char **emsg;
 printf_arglist_function1(static void reply, int, n, char *, fmt)
 {
     va_list args;
-    char *buf;
 
-    buf = alloc(str_buffer_size);
+    if(!reply_buffer) reply_buffer = alloc(reply_buffer_size);
 
     arglist_start(args, fmt);
-    snprintf(buf, str_buffer_size, "%03d ", n);
-    vsnprintf(buf+4, str_buffer_size-4, fmt, args);
+    snprintf(reply_buffer, reply_buffer_size, "%03d ", n);
+    while (vsnprintf(reply_buffer+4, reply_buffer_size-4, fmt, args)
+						 >= reply_buffer_size-4) {
+	amfree(reply_buffer);
+	reply_buffer_size *= 2;
+	reply_buffer = alloc(reply_buffer_size);
+	snprintf(reply_buffer, reply_buffer_size, "%03d ", n);
+    }
     arglist_end(args);
 
-    if (printf("%s\r\n", buf) < 0)
+    if (printf("%s\r\n", reply_buffer) < 0)
     {
 	dbprintf(("%s: ! error %d (%s) in printf\n",
 		  debug_prefix_time(NULL), errno, strerror(errno)));
@@ -293,19 +295,23 @@ printf_arglist_function1(static void reply, int, n, char *, fmt)
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
-    dbprintf(("%s: < %s\n", debug_prefix_time(NULL), buf));
-    amfree(buf);
+    dbprintf(("%s: < %s\n", debug_prefix_time(NULL), reply_buffer));
 }
 
-static void lreply_backend(int flush, int n, char *fmt, va_list args) {
-    char *buf;
+static void lreply_backend(int flush, int n, char *fmt, va_list args)
+{
+    if(!reply_buffer) reply_buffer = alloc(reply_buffer_size);
 
-    buf = alloc(str_buffer_size);
+    snprintf(reply_buffer, reply_buffer_size, "%03d-", n);
+    while (vsnprintf(reply_buffer+4, reply_buffer_size-4, fmt, args)
+						 >= reply_buffer_size-4) {
+	amfree(reply_buffer);
+	reply_buffer_size *= 2;
+	reply_buffer = alloc(reply_buffer_size);
+	snprintf(reply_buffer, reply_buffer_size, "%03d ", n);
+    }
 
-    snprintf(buf, str_buffer_size, "%03d-", n);
-    vsnprintf(buf+4, str_buffer_size-4, fmt, args);
-
-    if (printf("%s\r\n", buf) < 0)
+    if (printf("%s\r\n", reply_buffer) < 0)
     {
 	dbprintf(("%s: ! error %d (%s) in printf\n",
 		  debug_prefix_time(NULL), errno, strerror(errno)));
@@ -320,8 +326,7 @@ static void lreply_backend(int flush, int n, char *fmt, va_list args) {
 	exit(1);
     }
 
-    dbprintf(("%s: < %s\n", debug_prefix_time(NULL), buf));
-    amfree(buf);
+    dbprintf(("%s: < %s\n", debug_prefix_time(NULL), reply_buffer));
 }
 
 /* send one line of a multi-line response */
@@ -577,17 +582,12 @@ static int disk_history_list()
 	    date[10] = '\0';
 
 	if(am_has_feature(their_features, fe_amindexd_marshall_in_DHST)){
-	    str_buffer_size = strlen(date) + NUM_STR_SIZE +
-	                      strlen(tapelist_str) + 9;
 	    lreply(201, " %s %d %s", date, item->level, tapelist_str);
 	}
 	else{
-	    str_buffer_size = strlen(date) + NUM_STR_SIZE +
-	                      strlen(tapelist_str) + NUM_STR_SIZE + 9;
 	    lreply(201, " %s %d %s %d", date, item->level, tapelist_str,
 	       item->file);
 	}
-	str_buffer_size = STR_SIZE;
     }
 
     reply(200, "Dump history for config \"%s\" host \"%s\" disk \"%s\"",
@@ -798,18 +798,12 @@ int recursive;
 				     fe_amindexd_fileno_in_OLSD)) ||
        (recursive && am_has_feature(their_features,
 				    fe_amindexd_fileno_in_ORLD))) {
-	str_buffer_size = strlen(date) +
-			  NUM_STR_SIZE + strlen(tapelist_str) + 
-			  strlen(dir_item->path) + NUM_STR_SIZE + 9;
 	fast_lreply(201, " %s %d %s %d %s",
 		    date, dir_item->dump->level,
 		    tapelist_str, dir_item->dump->file,
 		    dir_item->path);
     }
     else {
-	str_buffer_size = strlen(date) +
-			  NUM_STR_SIZE + strlen(tapelist_str) +
-			  strlen(dir_item->path) + 9;
 	fast_lreply(201, " %s %d %s %s",
 		    date, dir_item->dump->level,
 		    tapelist_str, dir_item->path);
@@ -817,7 +811,6 @@ int recursive;
     if(am_has_feature(their_features, marshall_feature)) {
 	amfree(tapelist_str);
     }
-    str_buffer_size = STR_SIZE;
 }
 
 /* returns the value of changer or tapedev from the amanda.conf file if set,

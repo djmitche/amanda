@@ -1,4 +1,11 @@
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amindexd.c: Remove all code that set str_buffer_size,
+				 rename str_buffer_size to reply_buffer_size,
+				 rename buf to reply_buffer,
+	* server-src/amindexd.c(reply, lreply_backend): Increase reply_buffer
+							size if required.
+
+2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/amfeatures.h: Add fe_amrecover_timestamp amfeature.
 	* common-src/amfeatures.c (am_init_feature_set):
 						 Add fe_amrecover_timestamp.
