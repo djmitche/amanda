@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.88 2006/04/05 12:56:19 martinea Exp $
+ * $Id: amindexd.c,v 1.89 2006/04/05 13:00:25 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -110,6 +110,8 @@ static int build_disk_table P((void));
 static int disk_history_list P((void));
 static int is_dir_valid_opaque P((char *));
 static int opaque_ls P((char *, int));
+static void opaque_ls_one P((DIR_ITEM *dir_item, am_feature_e marshall_feature,
+			     int recursive));
 static int tapedev_is P((void));
 static int are_dumps_compressed P((void));
 static char *amindexd_nicedate P((char *datestamp));
@@ -556,6 +558,7 @@ static int build_disk_table()
 static int disk_history_list()
 {
     DUMP_ITEM *item;
+    char date[20];
 
     if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
 	reply(502, "Must set config,host,disk before listing history");
@@ -568,15 +571,20 @@ static int disk_history_list()
     for (item=first_dump(); item!=NULL; item=next_dump(item)){
         char *tapelist_str = marshal_tapelist(item->tapes, 1);
 
+	strncpy(date, item->date, 20);
+	date[19] = '\0';
+	if(!am_has_feature(their_features,fe_amrecover_timestamp))
+	    date[10] = '\0';
+
 	if(am_has_feature(their_features, fe_amindexd_marshall_in_DHST)){
-	    str_buffer_size = strlen(item->date) + NUM_STR_SIZE +
+	    str_buffer_size = strlen(date) + NUM_STR_SIZE +
 	                      strlen(tapelist_str) + 9;
-	    lreply(201, " %s %d %s", item->date, item->level, tapelist_str);
+	    lreply(201, " %s %d %s", date, item->level, tapelist_str);
 	}
 	else{
-	    str_buffer_size = strlen(item->date) + NUM_STR_SIZE +
+	    str_buffer_size = strlen(date) + NUM_STR_SIZE +
 	                      strlen(tapelist_str) + NUM_STR_SIZE + 9;
-	    lreply(201, " %s %d %s %d", item->date, item->level, tapelist_str,
+	    lreply(201, " %s %d %s %d", date, item->level, tapelist_str,
 	       item->file);
 	}
 	str_buffer_size = STR_SIZE;
@@ -685,7 +693,7 @@ int  recursive;
 {
     DUMP_ITEM *dump_item;
     DIR_ITEM *dir_item;
-    int last_level;
+    int level, last_level;
     static char *emsg = NULL;
     am_feature_e marshall_feature;
 
@@ -742,49 +750,24 @@ int  recursive;
 
     /* return the information to the caller */
     lreply(200, " Opaque list of %s", dir);
-        for (dir_item = get_dir_list(); dir_item != NULL; 
-             dir_item = dir_item->next) {
-            char *tapelist_str;
 
-            if (!am_has_feature(their_features, marshall_feature) &&
-                (num_entries(dir_item->dump->tapes) > 1 ||
-                dir_item->dump->tapes->numfiles > 1)) {
-                fast_lreply(501, " ERROR: Split dumps not supported"
-                            " with old version of amrecover.");
-                break;
-            } else {
-                if (am_has_feature(their_features, marshall_feature)) {
-                    tapelist_str = marshal_tapelist(dir_item->dump->tapes, 1);
-                } else {
-                    tapelist_str = dir_item->dump->tapes->label;
-                }
-                
-                if((!recursive && am_has_feature(their_features,
-                                                 fe_amindexd_fileno_in_OLSD))
-                   ||
-                   (recursive && am_has_feature(their_features,
-                                                fe_amindexd_fileno_in_ORLD))) {
-                    str_buffer_size = strlen(dir_item->dump->date) +
-                        NUM_STR_SIZE + strlen(tapelist_str) + 
-                        strlen(dir_item->path) + NUM_STR_SIZE + 9;
-                    fast_lreply(201, " %s %d %s %d %s",
-                                dir_item->dump->date, dir_item->dump->level,
-                                tapelist_str, dir_item->dump->file,
-                                dir_item->path);
-                }
-                else {
-                    str_buffer_size = strlen(dir_item->dump->date) +
-                        NUM_STR_SIZE + strlen(tapelist_str) +
-                        strlen(dir_item->path) + 9;
-                    fast_lreply(201, " %s %d %s %s",
-                                dir_item->dump->date, dir_item->dump->level,
-                                tapelist_str, dir_item->path);
-                }
-		if(am_has_feature(their_features, marshall_feature)) {
-		    amfree(tapelist_str);
+    for(level=0; level<=9; level++) {
+	for (dir_item = get_dir_list(); dir_item != NULL; 
+	     dir_item = dir_item->next) {
+
+	    if(dir_item->dump->level == level) {
+		if (!am_has_feature(their_features, marshall_feature) &&
+	            (num_entries(dir_item->dump->tapes) > 1 ||
+	            dir_item->dump->tapes->numfiles > 1)) {
+	            fast_lreply(501, " ERROR: Split dumps not supported"
+				" with old version of amrecover.");
+		    break;
 		}
-                str_buffer_size = STR_SIZE;
-            }
+		else {
+		    opaque_ls_one(dir_item, marshall_feature, recursive);
+		}
+	    }
+	}
     }
     reply(200, " Opaque list of %s", dir);
 
@@ -792,6 +775,50 @@ int  recursive;
     return 0;
 }
 
+void opaque_ls_one(dir_item, marshall_feature, recursive)
+DIR_ITEM *dir_item;
+am_feature_e marshall_feature;
+int recursive;
+{
+   char date[20];
+   char *tapelist_str;
+
+    if (am_has_feature(their_features, marshall_feature)) {
+	tapelist_str = marshal_tapelist(dir_item->dump->tapes, 1);
+    } else {
+	tapelist_str = dir_item->dump->tapes->label;
+    }
+
+    strncpy(date, dir_item->dump->date, 20);
+    date[19] = '\0';
+    if(!am_has_feature(their_features,fe_amrecover_timestamp))
+	date[10] = '\0';
+
+    if((!recursive && am_has_feature(their_features,
+				     fe_amindexd_fileno_in_OLSD)) ||
+       (recursive && am_has_feature(their_features,
+				    fe_amindexd_fileno_in_ORLD))) {
+	str_buffer_size = strlen(date) +
+			  NUM_STR_SIZE + strlen(tapelist_str) + 
+			  strlen(dir_item->path) + NUM_STR_SIZE + 9;
+	fast_lreply(201, " %s %d %s %d %s",
+		    date, dir_item->dump->level,
+		    tapelist_str, dir_item->dump->file,
+		    dir_item->path);
+    }
+    else {
+	str_buffer_size = strlen(date) +
+			  NUM_STR_SIZE + strlen(tapelist_str) +
+			  strlen(dir_item->path) + 9;
+	fast_lreply(201, " %s %d %s %s",
+		    date, dir_item->dump->level,
+		    tapelist_str, dir_item->path);
+    }
+    if(am_has_feature(their_features, marshall_feature)) {
+	amfree(tapelist_str);
+    }
+    str_buffer_size = STR_SIZE;
+}
 
 /* returns the value of changer or tapedev from the amanda.conf file if set,
    otherwise reports an error */

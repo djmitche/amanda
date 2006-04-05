@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.h,v 1.15 2006/03/14 13:11:58 martinea Exp $
+ * $Id: amfeatures.h,v 1.16 2006/04/05 13:00:25 martinea Exp $
  *
  * Define feature test related items.
  */
@@ -152,6 +152,7 @@ typedef enum {
     fe_amindexd_marshall_in_ORLD,
     fe_amindexd_marshall_in_DHST,
     fe_amrecover_FEEDME,
+    fe_amrecover_timestamp,
 
     /*
      * All new features must be inserted immediately *before* this entry.

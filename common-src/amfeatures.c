@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.18 2006/03/14 13:11:58 martinea Exp $
+ * $Id: amfeatures.c,v 1.19 2006/04/05 13:00:25 martinea Exp $
  *
  * Feature test related code.
  */
@@ -128,6 +128,7 @@ am_init_feature_set()
         am_add_feature(f, fe_amindexd_marshall_in_DHST);
 
         am_add_feature(f, fe_amrecover_FEEDME);
+        am_add_feature(f, fe_amrecover_timestamp);
     }
     return f;
 }
