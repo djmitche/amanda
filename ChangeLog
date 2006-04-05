@@ -1,4 +1,8 @@
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/tapelist.c(unmarshal_tapelist_str): Fix
+	  "value computed is not used" compiler warning.
+
+2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/bsd-security.c (bsd_connect): New datap argument.
 	* common-src/krb4-security.c (krb4_connect): New datap argument.
 	* common-src/krb5-security.c (krb5_connect): New datap argument.

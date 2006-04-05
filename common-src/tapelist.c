@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapelist.c,v 1.3 2006/01/15 21:00:59 martinea Exp $
+ * $Id: tapelist.c,v 1.4 2006/04/05 13:52:21 martinea Exp $
  *
  * Support code for amidxtaped and amindexd.
  */
@@ -226,13 +226,13 @@ char *tapelist_str;
 	memset(temp_label, '\0', input_length+1);
         l_idx = 0;
 	while(*tapelist_str != ':' && *tapelist_str != '\0'){
-	    if(*tapelist_str == '\\') *tapelist_str++; /* skip escapes */
+	    if(*tapelist_str == '\\') tapelist_str++; /* skip escapes */
 	    temp_label[l_idx] = *tapelist_str;
 	    if(*tapelist_str == '\0') break; /* bad format, should kvetch */
-	    *tapelist_str++;
+	    tapelist_str++;
 	    l_idx++;
 	}
-	if(*tapelist_str != '\0') *tapelist_str++;
+	if(*tapelist_str != '\0') tapelist_str++;
 	tapelist = append_to_tapelist(tapelist, temp_label, -1, 0);
 
 	/* now read the list of file numbers */
@@ -243,15 +243,15 @@ char *tapelist_str;
 	    while(*tapelist_str != ';' && *tapelist_str != ',' &&
 		    *tapelist_str != '\0'){
 		temp_filenum[n_idx] = *tapelist_str; 
-		*tapelist_str++;
+		tapelist_str++;
 		n_idx++;
 	    }
 	    filenum = atoi(temp_filenum);
 
 	    tapelist = append_to_tapelist(tapelist, temp_label, filenum, 0);
-	    if(*tapelist_str != '\0' && *tapelist_str != ';') *tapelist_str++;
+	    if(*tapelist_str != '\0' && *tapelist_str != ';') tapelist_str++;
 	}
-	if(*tapelist_str != '\0') *tapelist_str++;
+	if(*tapelist_str != '\0') tapelist_str++;
 
     } while(*tapelist_str != '\0');
 
