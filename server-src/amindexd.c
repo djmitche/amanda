@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.86 2006/03/09 16:51:41 martinea Exp $
+ * $Id: amindexd.c,v 1.87 2006/04/05 12:52:17 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -112,6 +112,7 @@ static int is_dir_valid_opaque P((char *));
 static int opaque_ls P((char *, int));
 static int tapedev_is P((void));
 static int are_dumps_compressed P((void));
+static char *amindexd_nicedate P((char *datestamp));
 int main P((int, char **));
 
 static REMOVE_ITEM *remove_files(remove)
@@ -496,8 +497,8 @@ char *config;
 
 static int build_disk_table()
 {
-    char date[3 * NUM_STR_SIZE + 2 + 1];
-    long last_datestamp;
+    char *date;
+    char *last_timestamp;
     int last_filenum;
     int last_level;
     int last_partnum;
@@ -509,7 +510,7 @@ static int build_disk_table()
     }
 
     clear_list();
-    last_datestamp = -1;
+    last_timestamp = NULL;
     last_filenum = -1;
     last_level = -1;
     last_partnum = -1;
@@ -529,19 +530,17 @@ static int build_disk_table()
 	     * for the same datestamp after we see a holding disk entry
 	     * (as indicated by a filenum of zero).
 	     */
-	    if(find_output->datestamp == last_datestamp &&
+	    if(last_timestamp &&
+	       strcmp(find_output->timestamp, last_timestamp) == 0 &&
 	       find_output->level == last_level && 
 	       partnum == last_partnum && last_filenum == 0) {
 		continue;
 	    }
-	    last_datestamp = find_output->datestamp;
+	    last_timestamp = find_output->timestamp;
 	    last_filenum = find_output->filenum;
 	    last_level = find_output->level;
 	    last_partnum = partnum;
-	    snprintf(date, sizeof(date), "%04d-%02d-%02d",
-			find_output->datestamp/10000,
-			(find_output->datestamp/100) %100,
-			find_output->datestamp %100);
+	    date = amindexd_nicedate(find_output->timestamp);
 	    add_dump(date, find_output->level, find_output->label, 
 		     find_output->filenum, partnum);
 	    dbprintf(("%s: - %s %d %s %d %d\n",
@@ -1241,3 +1240,24 @@ char **argv;
     dbclose();
     return 0;
 }
+
+static char *amindexd_nicedate(datestamp)
+char *datestamp;
+{
+    static char nice[20];
+    int year, month, day;
+    char date[9];
+    int  numdate;
+
+    strncpy(date, datestamp, 8);
+    date[9] = '\0';
+    numdate = atoi(date);
+    year  = numdate / 10000;
+    month = (numdate / 100) % 100;
+    day   = numdate % 100;
+
+    snprintf(nice, sizeof(nice), "%4d-%02d-%02d", year, month, day);
+
+    return nice;
+}
+

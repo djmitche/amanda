@@ -1,4 +1,19 @@
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amindexd.c (amindexd_nicedate): New function.
+	* server-src/find.h (struct find_result_s): Remove datestamp and
+		 datestamp_aux field, only timestamp will be used.
+	* restore-src/amfetchdump.c: Convert datestamp to 'char *'.
+	* restore-src/restore.c: Convert datestamp to 'char *'.
+	* server-src/amindexd.c: Convert datestamp to 'char *'.
+	* server-src/amlabel.c: Convert datestamp to 'char *'.
+	* server-src/amtrmidx.c: Convert datestamp to 'char *'.
+	* server-src/find.c: Convert datestamp to 'char *'.
+	* server-src/reporter.c: Convert datestamp to 'char *'.
+	* server-src/tapefile.c: Convert datestamp to 'char *'.
+	* server-src/tapefile.h: Convert datestamp to 'char *'.
+	* server-src/taper.c: Convert datestamp to 'char *'.
+
+2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.1b1).
 
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>

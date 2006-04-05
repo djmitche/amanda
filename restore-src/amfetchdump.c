@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.7 2006/03/14 13:12:01 martinea Exp $
+ * $Id: amfetchdump.c,v 1.8 2006/04/05 12:52:16 martinea Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -157,8 +157,8 @@ match_list_t *match_list;
 	for(curmatch = matches; curmatch; curmatch = curmatch->next){
 	    int havetape = 0;
 	    if(strcmp("OK", curmatch->status)){
-		fprintf(stderr,"Dump %d %s %s %d had status '%s', skipping\n",
-		                 curmatch->datestamp, curmatch->hostname,
+		fprintf(stderr,"Dump %s %s %s %d had status '%s', skipping\n",
+		                 curmatch->timestamp, curmatch->hostname,
 				 curmatch->diskname, curmatch->level,
 				 curmatch->status);
 		continue;

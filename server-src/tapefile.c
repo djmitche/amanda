@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.28 2003/10/24 13:44:35 martinea Exp $
+ * $Id: tapefile.c,v 1.29 2006/04/05 12:52:18 martinea Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -37,7 +37,7 @@ static tape_t *tape_list = NULL;
 /* local functions */
 static tape_t *parse_tapeline P((int *status, char *line));
 static tape_t *insert P((tape_t *list, tape_t *tp));
-static time_t stamp2time P((int datestamp));
+static time_t stamp2time P((char *datestamp));
 
 
 
@@ -86,7 +86,7 @@ char *tapefile;
     }
 
     for(tp = tape_list; tp != NULL; tp = tp->next) {
-	fprintf(tapef, "%d %s", tp->datestamp, tp->label);
+	fprintf(tapef, "%s %s", tp->datestamp, tp->label);
 	if(tp->reuse) fprintf(tapef, " reuse");
 	else fprintf(tapef, " no-reuse");
 	fprintf(tapef, "\n");
@@ -140,12 +140,12 @@ int pos;
 
 
 tape_t *lookup_tapedate(datestamp)
-int datestamp;
+char *datestamp;
 {
     tape_t *tp;
 
     for(tp = tape_list; tp != NULL; tp = tp->next) {
-	if(tp->datestamp == datestamp) return tp;
+	if(strcmp(tp->datestamp, datestamp) == 0) return tp;
     }
     return NULL;
 }
@@ -237,7 +237,7 @@ char *label;
 }
 
 tape_t *add_tapelabel(datestamp, label)
-int datestamp;
+char *datestamp;
 char *label;
 {
     tape_t *cur, *new;
@@ -246,7 +246,7 @@ char *label;
 
     new = (tape_t *) alloc(sizeof(tape_t));
 
-    new->datestamp = datestamp;
+    new->datestamp = stralloc(datestamp);
     new->position = 0;
     new->reuse = 1;
     new->label = stralloc(label);
@@ -327,18 +327,18 @@ char *line;
 	amfree(tp);
 	return NULL;
     }
-    if (sscanf(s - 1, "%d", &tp->datestamp) != 1) {
-	amfree(tp);
-	*status = 1;
-	return NULL;
-    }
-    skip_integer(s, ch);
+    s1 = s - 1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    tp->datestamp = stralloc(s1);
+
 
     skip_whitespace(s, ch);
     s1 = s - 1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
     tp->label = stralloc(s1);
+
     skip_whitespace(s, ch);
     tp->reuse = 1;
 #define sc "reuse"
@@ -378,9 +378,10 @@ tape_t *list, *tp;
 
 
 static time_t stamp2time(datestamp)
-int datestamp;
+char *datestamp;
 /*
- * Converts datestamp (an int of the form YYYYMMDD) into a real time_t value.
+ * Converts datestamp (an char of the form YYYYMMDD or YYYYMMDDHHMMSS) into a real
+ * time_t value.
  * Since the datestamp contains no timezone or hh/mm/ss information, the
  * value is approximate.  This is ok for our purposes, since we round off
  * scheduling calculations to the nearest day.
@@ -388,13 +389,18 @@ int datestamp;
 {
     struct tm tm;
     time_t now;
+    char date[9];
+    int dateint;
 
+    strncpy(date, datestamp, 8);
+    date[8] = '\0';
+    dateint = atoi(date);
     now = time(0);
     tm = *localtime(&now);	/* initialize sec/min/hour & gmtoff */
 
-    tm.tm_year = ( datestamp          / 10000) - 1900;
-    tm.tm_mon  = ((datestamp % 10000) /   100) - 1;
-    tm.tm_mday = ((datestamp %   100)        );
+    tm.tm_year = ( dateint          / 10000) - 1900;
+    tm.tm_mon  = ((dateint % 10000) /   100) - 1;
+    tm.tm_mday = ((dateint %   100)        );
 
     return mktime(&tm);
 }

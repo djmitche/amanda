@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.118 2006/03/17 15:34:12 vectro Exp $
+/* $Id: taper.c,v 1.119 2006/04/05 12:52:18 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -2391,7 +2391,7 @@ int label_tape()
 	amfree(conf_tapelist_old);
 
 	remove_tapelabel(label);
-	add_tapelabel(atoi(taper_datestamp), label);
+	add_tapelabel(taper_datestamp, label);
 	if(write_tapelist(conf_tapelist)) {
 	    error("could not write tapelist: %s", strerror(errno));
 	}

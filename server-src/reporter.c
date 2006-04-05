@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.105 2006/03/09 16:51:42 martinea Exp $
+ * $Id: reporter.c,v 1.106 2006/04/05 12:52:17 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -169,7 +169,7 @@ static void output_strange P((void));
 static void sort_disks P((void));
 static int sort_by_name P((disk_t *a, disk_t *b));
 static void bogus_line P((void));
-static char *nicedate P((int datestamp));
+static char *nicedate P((char *datestamp));
 static char *prefix P((char *host, char *disk, int level));
 static char *prefixstrange P((char *host, char *disk, int level, int len_host, int len_disk));
 static void addtostrange P((char *host, char *disk, int level, char *str));
@@ -521,7 +521,7 @@ main(argc, argv)
     subj_str = vstralloc(getconf_str(CNF_ORG),
 			 " ", amflush_run ? "AMFLUSH" : "AMANDA",
 			 " ", "MAIL REPORT FOR",
-			 " ", nicedate(run_datestamp ? atoi(run_datestamp) : 0),
+			 " ", nicedate(run_datestamp ? run_datestamp : "0"),
 			 NULL);
 	
     /* lookup the tapetype and printer type from the amanda.conf file. */
@@ -1397,7 +1397,7 @@ bogus_line()
 
 static char *
 nicedate(datestamp)
-    int datestamp;
+    char *datestamp;
 /*
  * Formats an integer of the form YYYYMMDD into the string
  * "Monthname DD, YYYY".  A pointer to the statically allocated string
@@ -1406,15 +1406,20 @@ nicedate(datestamp)
  */
 {
     static char nice[64];
+    char date[9];
+    int  numdate;
     static char *months[13] = { "BogusMonth",
 	"January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December"
     };
     int year, month, day;
 
-    year  = datestamp / 10000;
-    day   = datestamp % 100;
-    month = (datestamp / 100) % 100;
+    strncpy(date, datestamp, 8);
+    date[8] = '\0';
+    numdate = atoi(date);
+    year  = numdate / 10000;
+    day   = numdate % 100;
+    month = (numdate / 100) % 100;
 
     snprintf(nice, sizeof(nice), "%s %d, %d", months[month], day, year);
 
@@ -1962,8 +1967,8 @@ handle_success(logtype_t logtype)
     datestamp = stralloc(fp);
     s[-1] = ch;
 
-    level = atoi(datestamp);
-    if(level < 100)  {
+    if(strlen(datestamp) < 3) {
+	level = atoi(datestamp);
 	datestamp = newstralloc(datestamp, run_datestamp);
     }
     else {
@@ -2490,7 +2495,7 @@ static void do_postscript_output()
 
 	/* generate a few elements */
 	fprintf(postscript,"(%s) DrawDate\n\n",
-		    nicedate(run_datestamp ? atoi(run_datestamp) : 0));
+		    nicedate(run_datestamp ? run_datestamp : "0"));
 	fprintf(postscript,"(Amanda Version %s) DrawVers\n",version());
 	fprintf(postscript,"(%s) DrawTitle\n", current_tape->label);
 

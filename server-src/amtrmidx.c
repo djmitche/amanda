@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.34 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: amtrmidx.c,v 1.35 2006/04/05 12:52:17 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -220,10 +220,14 @@ char **argv;
 	     * of index files to keep.
 	     */
 	    for(i = 0; i < name_count; i++) {
+		char *datestamp;
+		int level;
+		datestamp = stralloc(names[i]);
+		datestamp[8] = '\0';
+		level = names[i][sizeof("YYYYMMDD_L")-1-1] - '0';
 		if(!dump_exist(output_find,
 					 diskp->host->hostname,diskp->name,
-					 atoi(names[i]),
-					 names[i][sizeof("YYYYMMDD_L")-1-1] - '0')) {
+					 datestamp, level)) {
 		    char *path;
 		    path = stralloc2(indexdir, names[i]);
 		    dbprintf(("rm %s\n", path));
@@ -233,6 +237,7 @@ char **argv;
 		    }
 		    amfree(path);
 		}
+		amfree(datestamp);
 		amfree(names[i]);
 	    }
 	    amfree(names);

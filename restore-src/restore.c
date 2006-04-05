@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.28 2006/03/14 13:12:01 martinea Exp $
+ * $Id: restore.c,v 1.29 2006/04/05 12:52:16 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -215,6 +215,7 @@ scan_init(ud, rc, ns, bk, s)
 
     return 0;
 }
+
 int loadlabel_slot(ud, rc, slotstr, device)
      void *ud;
 int rc;
@@ -224,7 +225,6 @@ char *device;
     char *errstr;
     char *datestamp = NULL;
     char *label = NULL;
-
 
     if(rc > 1)
         error("could not load slot %s: %s", slotstr, changer_resultstr);
@@ -355,7 +355,7 @@ dumpfile_t *only_file;
 	    }
 	    cur_find_res = alloc(sizeof(find_result_t));
 	    memset(cur_find_res, '\0', sizeof(find_result_t));
-	    cur_find_res->datestamp = atoi(cur_file->datestamp);
+	    cur_find_res->timestamp = stralloc(cur_file->datestamp);
 	    cur_find_res->hostname = stralloc(cur_file->name);
 	    cur_find_res->diskname = stralloc(cur_file->disk);
 	    cur_find_res->level = cur_file->dumplevel;

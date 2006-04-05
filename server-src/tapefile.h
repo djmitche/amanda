@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapefile.h,v 1.7 1999/05/14 21:40:21 kashmir Exp $
+ * $Id: tapefile.h,v 1.8 2006/04/05 12:52:18 martinea Exp $
  *
  * interface for active tape list manipulation routines
  */
@@ -37,7 +37,7 @@
 typedef struct tape_s {
     struct tape_s *next, *prev;
     int position;
-    int datestamp;
+    char * datestamp;
     int reuse;
     char *label;
 } tape_t;
@@ -47,11 +47,11 @@ int write_tapelist P((char *tapefile));
 void clear_tapelist P((void));
 tape_t *lookup_tapelabel P((char *label));
 tape_t *lookup_tapepos P((int pos));
-tape_t *lookup_tapedate P((int datestamp));
+tape_t *lookup_tapedate P((char *datestamp));
 int lookup_nb_tape P((void));
 tape_t *lookup_last_reusable_tape P((int skip));
 void remove_tapelabel P((char *label));
-tape_t *add_tapelabel P((int datestamp, char *label));
+tape_t *add_tapelabel P((char *datestamp, char *label));
 int reusable_tape P((tape_t *tp));
 
 int guess_runs_from_tapelist P((void));
