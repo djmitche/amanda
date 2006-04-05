@@ -1,4 +1,40 @@
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/bsd-security.c (bsd_connect): New datap argument.
+	* common-src/krb4-security.c (krb4_connect): New datap argument.
+	* common-src/krb5-security.c (krb5_connect): New datap argument.
+	* common-src/rsh-security.c (rsh_connect): New datap argument,
+		 retrieve amanda_path and client_username from configuration.
+	* common-src/ssh-security.c (ssh_connect): New datap argument,
+		retrieve amanda_path and client_username from configuration.
+	* common-src/protocol.c: Pass new datap argument to security_connect.
+	* common-src/security.h(connect): New prototype.
+	* common-src/security.h(security_connect): Add datap to macro.
+	* server-src/amadmin.c(disklist_one): Print amandad_path and
+					      client_username.
+	* server-src/conffile.c(AMANDAD_PATH, CLIENT_USERNAME): Parse new
+				dumptype option.
+	* server-src/conffile.h(dumptype_t): Add amandad_path and
+					     client_username.
+	* server-src/diskfile.c(parse_diskline): Copy new field.
+	* server-src/diskfile.h(disk_t) Add amandad_path and client_username.
+	* server-src/driverio.c(dumper_cmd): Send dp->amandad_path and
+	  dp->client_username in a PORT_DUMP command to the dumper.
+	* server-src/dumper.c: Parse amandad_path and client_username in a
+			       PORT_DUMP command.
+	* server-src/dumper.c(dumper_get_security_conf): New function to return
+				configuration option to the security-api.
+	* server-src/dumper.c: Use dumper_get_security_conf for the callback
+			       to protocol_sendreq.
+	* server-src/planner.c Use amhost_get_security_conf for the callback
+			       to protocol_sendreq.
+	* server-src/amcheck.c: Use amhost_get_security_conf for the callback
+				to protocol_sendreq.
+	* server-src/server_util.c(amhost_get_security_conf): New function to
+			return configuration option to the security-api,
+			it expect an am_host_t arg.
+	* server-src/server_util.h(amhost_get_security_conf): Prototype.
+
+2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amstatus.pl.in: Remove duplicate instruction.
 
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>

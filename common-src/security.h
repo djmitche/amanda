@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.11 2003/04/26 02:02:19 kovert Exp $
+ * $Id: security.h,v 1.12 2006/04/05 13:24:01 martinea Exp $
  *
  * security api
  */
@@ -58,7 +58,7 @@ typedef struct security_driver {
     void (*connect) P((const char *,
 	char *(*)(char *, void *),
 	void (*)(void *, struct security_handle *, security_status_t),
-	void *));
+	void *, void *));
 
     /*
      * This form sets up a callback that returns new handles as
@@ -180,9 +180,9 @@ void security_seterror P((security_handle_t *, const char *, ...))
 
 
 /* void security_connect P((const security_driver_t *, const char *,
-    void (*)(void *, security_handle_t *, security_status_t), void *)); */
-#define	security_connect(driver, hostname, conf_fn, fn, arg)	\
-    (*(driver)->connect)(hostname, conf_fn, fn, arg)
+    void (*)(void *, security_handle_t *, security_status_t), void *, void *)); */
+#define	security_connect(driver, hostname, conf_fn, fn, arg, datap)	\
+    (*(driver)->connect)(hostname, conf_fn, fn, arg, datap)
 /* void security_accept P((const security_driver_t *, int, int,
     void (*)(security_handle_t *, pkt_t *))); */
 #define	security_accept(driver, in, out, fn)	\

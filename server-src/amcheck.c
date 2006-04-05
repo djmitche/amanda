@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.121 2006/02/06 22:17:09 ktill Exp $
+ * $Id: amcheck.c,v 1.122 2006/04/05 13:24:01 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1364,7 +1364,7 @@ void start_host(hostp)
 	error("could not find security driver '%s' for host '%s'",
 	      hostp->disks->security_driver, hostp->hostname);
     }
-    protocol_sendreq(hostp->hostname, secdrv, generic_get_security_conf, 
+    protocol_sendreq(hostp->hostname, secdrv, amhost_get_security_conf, 
 		     req, conf_ctimeout, handle_result, hostp);
 
     amfree(req);

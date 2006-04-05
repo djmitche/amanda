@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.39 2006/02/28 16:36:13 martinea Exp $
+ * $Id: protocol.c,v 1.40 2006/04/05 13:24:01 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -168,7 +168,8 @@ protocol_sendreq(hostname, security_driver, conf_fn, req, repwait, continuation,
 	      debug_prefix_time(": protocol"), hostname, (int)p));
 #endif
 
-    security_connect(p->security_driver, p->hostname, conf_fn, connect_callback, p);
+    security_connect(p->security_driver, p->hostname, conf_fn, connect_callback, p,
+		     p->datap);
 }
 
 /*
@@ -243,7 +244,7 @@ connect_wait_callback(cookie)
 
     event_release((event_handle_t *)p->security_handle);
     security_connect(p->security_driver, p->hostname, p->conf_fn,
-	connect_callback, p);
+	connect_callback, p, p->datap);
 }
 
 

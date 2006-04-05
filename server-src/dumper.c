@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.171 2006/04/05 12:53:47 martinea Exp $
+/* $Id: dumper.c,v 1.172 2006/04/05 13:24:01 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -90,6 +90,8 @@ static char *diskname = NULL;
 static char *device = NULL;
 static char *options = NULL;
 static char *progname = NULL;
+static char *amandad_path=NULL;
+static char *client_username=NULL;
 static int level;
 static char *dumpdate = NULL;
 static char *dumper_timestamp = NULL;
@@ -134,7 +136,8 @@ static int runencrypt P((int, pid_t *,  encrypt_t));
 
 static void sendbackup_response P((void *, pkt_t *, security_handle_t *));
 static int startup_dump P((const char *, const char *, const char *, int,
-			   const char *, const char *, const char *));
+			   const char *, const char *, const char *,
+			   const char *, const char *));
 static void stop_dump P((void));
 
 static void read_indexfd P((void *, void *, ssize_t));
@@ -330,6 +333,8 @@ main(main_argc, main_argv)
 	     *   level
 	     *   dumpdate
 	     *   progname
+	     *   amandad_path
+	     *   client_username
 	     *   options
 	     */
 	    cmdargs.argc++;			/* true count of args */
@@ -385,6 +390,16 @@ main(main_argc, main_argv)
 	    if(a >= cmdargs.argc) {
 		error("error [dumper PORT-DUMP: not enough args: handle]");
 	    }
+	    amandad_path = newstralloc(amandad_path, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
+	    client_username = newstralloc(client_username, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
 	    options = newstralloc(options, cmdargs.argv[a++]);
 
 	    if(a != cmdargs.argc) {
@@ -412,6 +427,8 @@ main(main_argc, main_argv)
 			      level,
 			      dumpdate,
 			      progname,
+			      amandad_path,
+			      client_username,
 			      options);
 	    if (rc != 0) {
 		q = squote(errstr);
@@ -1706,9 +1723,31 @@ connect_error:
     *response_error = 1;
 }
 
+static char *
+dumper_get_security_conf(string, arg)
+        char *string;
+        void *arg;
+{
+        if(!string || !*string)
+                return(NULL);
+
+        if(strcmp(string, "krb5principal")==0) {
+                return(getconf_str(CNF_KRB5PRINCIPAL));
+        } else if(strcmp(string, "krb5keytab")==0) {
+                return(getconf_str(CNF_KRB5KEYTAB));
+        } else if(strcmp(string, "amandad_path")==0) {
+                return (amandad_path);
+        } else if(strcmp(string, "client_username")==0) {
+                return (client_username);
+        }
+        return(NULL);
+}
+
 static int
-startup_dump(hostname, disk, device, level, dumpdate, progname, options)
-    const char *hostname, *disk, *device, *dumpdate, *progname, *options;
+startup_dump(hostname, disk, device, level, dumpdate, progname, amandad_path,
+	     client_username, options)
+    const char *hostname, *disk, *device, *dumpdate, *progname, *amandad_path;
+    const char *client_username, *options;
     int level;
 {
     char level_string[NUM_STR_SIZE];
@@ -1772,7 +1811,7 @@ startup_dump(hostname, disk, device, level, dumpdate, progname, options)
 	    authopt, hostname);
     }
 
-    protocol_sendreq(hostname, secdrv, generic_get_security_conf, req,
+    protocol_sendreq(hostname, secdrv, dumper_get_security_conf, req,
 	STARTUP_TIMEOUT, sendbackup_response, &response_error);
 
     amfree(req);

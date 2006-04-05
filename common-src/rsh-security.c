@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.18 2005/12/01 01:14:39 martinea Exp $
+ * $Id: rsh-security.c,v 1.19 2006/04/05 13:24:01 martinea Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -59,7 +59,7 @@
 /*
  * Arguments to rsh.  This should also be configurable
  */
-#define	RSH_ARGS	"-l", CLIENT_LOGIN
+/*#define	RSH_ARGS	*/
 
 /*
  * Number of seconds rsh has to start up
@@ -143,7 +143,7 @@ static void rsh_accept P((int, int,
 static void rsh_close P((void *));
 static void rsh_connect P((const char *,
     char *(*)(char *, void *), 
-    void (*)(void *, security_handle_t *, security_status_t), void *));
+    void (*)(void *, security_handle_t *, security_status_t), void *, void *));
 static void rsh_recvpkt P((void *,
     void (*)(void *, pkt_t *, security_status_t), void *, int));
 static void rsh_recvpkt_cancel P((void *));
@@ -215,7 +215,7 @@ static void recvpkt_callback P((void *, void *, ssize_t));
 static void recvpkt_timeout P((void *));
 static void stream_read_callback P((void *));
 
-static int runrsh P((struct rsh_conn *));
+static int runrsh P((struct rsh_conn *, const char *, const char *));
 static struct rsh_conn *conn_get P((const char *));
 static void conn_put P((struct rsh_conn *));
 static void conn_read P((struct rsh_conn *));
@@ -232,14 +232,16 @@ static void parse_pkt P((pkt_t *, const void *, size_t));
  * up a network "connection".
  */
 static void
-rsh_connect(hostname, conf_fn, fn, arg)
+rsh_connect(hostname, conf_fn, fn, arg, datap)
     const char *hostname;
     char *(*conf_fn) P((char *, void *));
     void (*fn) P((void *, security_handle_t *, security_status_t));
     void *arg;
+    void *datap;
 {
     struct rsh_handle *rh;
     struct hostent *he;
+    char *amandad_path=NULL, *client_username=NULL;
 
     assert(fn != NULL);
     assert(hostname != NULL);
@@ -272,7 +274,11 @@ rsh_connect(hostname, conf_fn, fn, arg)
 	 *
 	 * XXX need to eventually limit number of outgoing connections here.
 	 */
-	if (runrsh(rh->rs->rc) < 0) {
+	if(conf_fn) {
+	    amandad_path    = conf_fn("amandad_path", datap);
+	    client_username = conf_fn("client_username", datap);
+	}
+	if (runrsh(rh->rs->rc, amandad_path, client_username) < 0) {
 	    security_seterror(&rh->sech,
 		"can't connect to %s: %s", hostname, rh->rs->rc->errmsg);
 	    goto error;
@@ -493,16 +499,21 @@ rsh_close(inst)
  * Returns negative on error, with an errmsg in rc->errmsg.
  */
 static int
-runrsh(rc)
+runrsh(rc, amandad_path, client_username)
     struct rsh_conn *rc;
+    const char *amandad_path;
+    const char *client_username;
 {
     int rpipe[2], wpipe[2];
-    char *amandad_path;
+    char *xamandad_path = (char *)amandad_path;
+    char *xclient_username = (char *)client_username;
 
     if (pipe(rpipe) < 0 || pipe(wpipe) < 0) {
 	rc->errmsg = newvstralloc("pipe: ", strerror(errno), NULL);
 	return (-1);
     }
+
+
     switch (rc->pid = fork()) {
     case -1:
 	rc->errmsg = newvstralloc("fork: ", strerror(errno), NULL);
@@ -526,10 +537,15 @@ runrsh(rc)
 
     safe_fd(-1, 0);
 
-    amandad_path = vstralloc(libexecdir, "/", "amandad", versionsuffix(),
-	NULL);
-    execlp(RSH_PATH, RSH_PATH, RSH_ARGS, rc->hostname, amandad_path,
-	"-auth=rsh", NULL);
+    if(!xamandad_path || strlen(xamandad_path) <= 1)
+	xamandad_path = vstralloc(libexecdir, "/", "amandad",
+				  versionsuffix(), NULL);
+    if(!xclient_username || strlen(xclient_username) <= 1)
+	xclient_username = CLIENT_LOGIN;
+
+
+    execlp(RSH_PATH, RSH_PATH, "-l", xclient_username,
+	   rc->hostname, xamandad_path, "-auth=rsh", NULL);
     error("error: couldn't exec %s: %s", RSH_PATH, strerror(errno));
 
     /* should nerver go here, shut up compiler warning */

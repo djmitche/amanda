@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.14 2006/04/05 12:53:48 martinea Exp $
+ * $Id: server_util.c,v 1.15 2006/04/05 13:24:02 martinea Exp $
  *
  */
 
@@ -32,6 +32,8 @@
 #include "server_util.h"
 #include "arglist.h"
 #include "token.h"
+#include "conffile.h"
+#include "diskfile.h"
 
 const char *cmdstr[] = {
     "BOGUS", "QUIT", "QUITTING", "DONE", "PARTIAL", 
@@ -94,4 +96,27 @@ printf_arglist_function1(void putresult, cmd_t, result, const char *, format)
     vprintf(format, argp);
     fflush(stdout);
     arglist_end(argp);
+}
+
+char *
+amhost_get_security_conf(string, arg)
+    char *string;
+    void *arg;
+{
+    if(!string || !*string)
+	return(NULL);
+
+    if(strcmp(string, "krb5principal")==0)
+	return(getconf_str(CNF_KRB5PRINCIPAL));
+    else if(strcmp(string, "krb5keytab")==0)
+	return(getconf_str(CNF_KRB5KEYTAB));
+
+    if(!arg || !((am_host_t *)arg)->disks) return(NULL);
+
+    if(strcmp(string, "amandad_path")==0)
+	return ((am_host_t *)arg)->disks->amandad_path;
+    else if(strcmp(string, "client_username")==0)
+	return ((am_host_t *)arg)->disks->client_username;
+
+    return(NULL);
 }

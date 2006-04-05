@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.181 2006/04/05 12:53:47 martinea Exp $
+ * $Id: planner.c,v 1.182 2006/04/05 13:24:02 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1494,7 +1494,7 @@ am_host_t *hostp;
 	}
     }
 
-    protocol_sendreq(hostp->hostname, secdrv, generic_get_security_conf, 
+    protocol_sendreq(hostp->hostname, secdrv, amhost_get_security_conf, 
 	req, timeout, handle_result, hostp);
     amfree(req);
 }

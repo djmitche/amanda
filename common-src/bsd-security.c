@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.54 2006/03/09 16:51:41 martinea Exp $
+ * $Id: bsd-security.c,v 1.55 2006/04/05 13:24:00 martinea Exp $
  *
  * "BSD" security module
  */
@@ -171,7 +171,7 @@ struct bsd_stream {
  */
 static void bsd_connect P((const char *,
     char *(*)(char *, void *), 
-    void (*)(void *, security_handle_t *, security_status_t), void *));
+    void (*)(void *, security_handle_t *, security_status_t), void *, void *));
 static void bsd_accept P((int, int, void (*)(security_handle_t *, pkt_t *)));
 static void bsd_close P((void *));
 static int bsd_sendpkt P((void *, pkt_t *));
@@ -324,11 +324,12 @@ void show_stat_info(a, b)
  * Setup and return a handle outgoing to a client
  */
 static void
-bsd_connect(hostname, conf_fn, fn, arg)
+bsd_connect(hostname, conf_fn, fn, arg, datap)
     const char *hostname;
     char *(*conf_fn) P((char *, void *));
     void (*fn) P((void *, security_handle_t *, security_status_t));
     void *arg;
+    void *datap;
 {
     struct bsd_handle *bh;
     struct servent *se;

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.8 2006/02/17 00:58:51 ktill Exp $
+ * $Id: ssh-security.c,v 1.9 2006/04/05 13:24:01 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -59,7 +59,7 @@
 /*
  * Arguments to ssh.  This should also be configurable
  */
-#define	SSH_ARGS	"-x", "-l", CLIENT_LOGIN
+#define	SSH_ARGS	"-x", "-o", "PasswordAuthentication=no"
 
 /*
  * Number of seconds ssh has to start up
@@ -143,7 +143,7 @@ static void ssh_accept P((int, int,
 static void ssh_close P((void *));
 static void ssh_connect P((const char *,
     char *(*)(char *, void *), 
-    void (*)(void *, security_handle_t *, security_status_t), void *));
+    void (*)(void *, security_handle_t *, security_status_t), void *, void *));
 static void ssh_recvpkt P((void *,
     void (*)(void *, pkt_t *, security_status_t), void *, int));
 static void ssh_recvpkt_cancel P((void *));
@@ -215,7 +215,7 @@ static void recvpkt_callback P((void *, void *, ssize_t));
 static void recvpkt_timeout P((void *));
 static void stream_read_callback P((void *));
 
-static int runssh P((struct ssh_conn *));
+static int runssh P((struct ssh_conn *, const char *, const char *));
 static struct ssh_conn *conn_get P((const char *));
 static void conn_put P((struct ssh_conn *));
 static void conn_read P((struct ssh_conn *));
@@ -232,14 +232,16 @@ static void parse_pkt P((pkt_t *, const void *, size_t));
  * up a network "connection".
  */
 static void
-ssh_connect(hostname, conf_fn, fn, arg)
+ssh_connect(hostname, conf_fn, fn, arg, datap)
     const char *hostname;
     char *(*conf_fn) P((char *, void *));
     void (*fn) P((void *, security_handle_t *, security_status_t));
     void *arg;
+    void *datap;
 {
     struct ssh_handle *rh;
     struct hostent *he;
+    char *amandad_path=NULL, *client_username=NULL;
 
     assert(fn != NULL);
     assert(hostname != NULL);
@@ -272,7 +274,11 @@ ssh_connect(hostname, conf_fn, fn, arg)
 	 *
 	 * XXX need to eventually limit number of outgoing connections here.
 	 */
-	if (runssh(rh->rs->rc) < 0) {
+        if(conf_fn) {
+	    amandad_path    = conf_fn("amandad_path", datap);
+	    client_username = conf_fn("client_username", datap);
+	}
+	if (runssh(rh->rs->rc, amandad_path, client_username) < 0) {
 	    security_seterror(&rh->sech,
 		"can't connect to %s: %s", hostname, rh->rs->rc->errmsg);
 	    goto error;
@@ -495,11 +501,14 @@ ssh_close(inst)
  * Returns negative on error, with an errmsg in rc->errmsg.
  */
 static int
-runssh(rc)
+runssh(rc, amandad_path, client_username)
     struct ssh_conn *rc;
+    const char *amandad_path;
+    const char *client_username;
 {
     int rpipe[2], wpipe[2];
-    char *amandad_path;
+    char *xamandad_path = (char *)amandad_path;
+    char *xclient_username = (char *)client_username;
 
     if (pipe(rpipe) < 0 || pipe(wpipe) < 0) {
 	rc->errmsg = newvstralloc("pipe: ", strerror(errno), NULL);
@@ -528,10 +537,14 @@ runssh(rc)
 
     safe_fd(-1, 0);
 
-    amandad_path = vstralloc(libexecdir, "/", "amandad", versionsuffix(),
-	NULL);
-    execlp(SSH_PATH, SSH_PATH, SSH_ARGS, rc->hostname, amandad_path,
-	"-auth=ssh", NULL);
+    if(!xamandad_path || strlen(xamandad_path) <= 1) 
+	xamandad_path = vstralloc(libexecdir, "/", "amandad",
+				 versionsuffix(), NULL);
+    if(!xclient_username || strlen(xclient_username) <= 1)
+	xclient_username = CLIENT_LOGIN;
+
+    execlp(SSH_PATH, SSH_PATH, SSH_ARGS, "-l", xclient_username,
+	   rc->hostname, xamandad_path, "-auth=ssh", NULL);
     error("error: couldn't exec %s: %s", SSH_PATH, strerror(errno));
 
     /* should nerver go here, shut up compiler warning */

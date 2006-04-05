@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.12 2006/02/21 04:13:55 ktill Exp $
+ * $Id: krb5-security.c,v 1.13 2006/04/05 13:24:01 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -230,7 +230,7 @@ static void krb5_accept P((int, int,
 static void krb5_close P((void *));
 static void krb5_connect P((const char *,
     char *(*)(char *, void *),
-    void (*)(void *, security_handle_t *, security_status_t), void *));
+    void (*)(void *, security_handle_t *, security_status_t), void *, void *));
 static void krb5_recvpkt P((void *,
     void (*)(void *, pkt_t *, security_status_t), void *, int));
 static void krb5_recvpkt_cancel P((void *));
@@ -340,11 +340,12 @@ static void parse_pkt P((pkt_t *, const void *, size_t));
  * up a network "connection".
  */
 static void
-krb5_connect(hostname, conf_fn, fn, arg)
+krb5_connect(hostname, conf_fn, fn, arg, datap)
     const char *hostname;
     char *(*conf_fn) P((char *, void *));
     void (*fn) P((void *, security_handle_t *, security_status_t));
     void *arg;
+    void *datap;
 {
     struct krb5_handle *kh;
     struct hostent *he;
@@ -374,14 +375,14 @@ krb5_connect(hostname, conf_fn, fn, arg)
     keytab_name = AMANDA_KEYTAB;
 #else
     if(conf_fn) {
-    	keytab_name = conf_fn("krb5keytab", arg);
+    	keytab_name = conf_fn("krb5keytab", datap);
     }
 #endif
 #ifdef AMANDA_PRINCIPAL
     principal_name = AMANDA_PRINCIPAL;
 #else
     if(conf_fn) {
-    	principal_name = conf_fn("krb5principal", arg);
+    	principal_name = conf_fn("krb5principal", datap);
     }
 #endif
 

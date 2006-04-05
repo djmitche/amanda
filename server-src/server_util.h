@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.h,v 1.9 2006/04/05 12:53:48 martinea Exp $
+ * $Id: server_util.h,v 1.10 2006/04/05 13:24:02 martinea Exp $
  *
  */
 #ifndef SERVER_UTIL_H
@@ -54,5 +54,6 @@ struct cmdargs {
 cmd_t getcmd P((struct cmdargs *cmdargs));
 void putresult P((cmd_t result, const char *, ...))
      __attribute__ ((format (printf, 2, 3)));
+char *amhost_get_security_conf P((char *string, void *arg));
 
 #endif	/* SERVER_UTIL_H */

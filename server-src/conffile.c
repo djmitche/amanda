@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.127 2006/03/15 16:26:13 martinea Exp $
+ * $Id: conffile.c,v 1.128 2006/04/05 13:24:01 martinea Exp $
  *
  * read configuration file
  */
@@ -90,6 +90,7 @@ typedef enum {
     EXCLUDE, INCLUDE, KENCRYPT, IGNORE, COMPRATE, TAPE_SPLITSIZE,
     SPLIT_DISKBUFFER, FALLBACK_SPLITSIZE, SRVCOMPPROG, CLNTCOMPPROG,
     SRV_ENCRYPT, CLNT_ENCRYPT, SRV_DECRYPT_OPT, CLNT_DECRYPT_OPT,
+    AMANDAD_PATH, CLIENT_USERNAME,
 
     /* tape type */
     /*COMMENT,*/ BLOCKSIZE, FILE_PAD, LBL_TEMPL, FILEMARK, LENGTH, SPEED,
@@ -1399,6 +1400,8 @@ keytab_t dumptype_keytable[] = {
     { "CLIENT_CUSTOM_COMPRESS", CLNTCOMPPROG },
     { "SERVER_ENCRYPT", SRV_ENCRYPT },
     { "CLIENT_ENCRYPT", CLNT_ENCRYPT },
+    { "AMANDAD_PATH", AMANDAD_PATH },
+    { "CLIENT_USERNAME", CLIENT_USERNAME },
     { NULL, IDENT }
 };
 
@@ -1609,6 +1612,12 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
         case CLNT_ENCRYPT:
 	    get_simple((val_t *)&dpcur.clnt_encrypt, &dpcur.s_clnt_encrypt, STRING);
 	    break;
+        case AMANDAD_PATH:
+	    get_simple((val_t *)&dpcur.amandad_path, &dpcur.s_amandad_path, STRING);
+	    break;
+        case CLIENT_USERNAME:
+	    get_simple((val_t *)&dpcur.client_username, &dpcur.s_client_username, STRING);
+	    break;
 	case RBRACE:
 	    done = 1;
 	    break;
@@ -1659,6 +1668,8 @@ static void init_dumptype_defaults()
     dpcur.clntcompprog = stralloc("");
     dpcur.srv_encrypt = stralloc("");
     dpcur.clnt_encrypt = stralloc("");
+    dpcur.amandad_path = stralloc("X");
+    dpcur.client_username = stralloc("X");
     dpcur.exclude_file = NULL;
     dpcur.exclude_list = NULL;
     dpcur.include_file = NULL;
@@ -1700,6 +1711,8 @@ static void init_dumptype_defaults()
     dpcur.s_clntcompprog = 0;
     dpcur.s_clnt_encrypt= 0;
     dpcur.s_srv_encrypt= 0;
+    dpcur.s_amandad_path= 0;
+    dpcur.s_client_username= 0;
 
     dpcur.s_exclude_file = 0;
     dpcur.s_exclude_list = 0;
@@ -1803,6 +1816,15 @@ static void copy_dumptype()
     if(dt->s_clnt_decrypt_opt) {
 	dpcur.clnt_decrypt_opt = newstralloc(dpcur.clnt_decrypt_opt, dt->clnt_decrypt_opt);
 	dpcur.s_clnt_decrypt_opt = dt->s_clnt_decrypt_opt;
+    }
+
+    if(dt->s_amandad_path) {
+	dpcur.amandad_path = newstralloc(dpcur.amandad_path, dt->amandad_path);
+	dpcur.s_amandad_path = dt->s_amandad_path;
+    }
+    if(dt->s_client_username) {
+	dpcur.client_username = newstralloc(dpcur.client_username, dt->client_username);
+	dpcur.s_client_username = dt->s_client_username;
     }
 
     if(dt->s_exclude_file) {
@@ -3379,6 +3401,8 @@ dump_configuration(filename)
 	printf("	CLIENT_ENCRYPT \"%s\"\n", dp->clnt_encrypt);
 	printf("	SERVER_DECRYPT_OPTION \"%s\"\n", dp->srv_decrypt_opt);
 	printf("	CLIENT_DECRYPT_OPTION \"%s\"\n", dp->clnt_decrypt_opt);
+	printf("	AMANDAD_PATH \"%s\"\n", dp->amandad_path);
+	printf("	CLIENT_USERNAME \"%s\"\n", dp->client_username);
 	printf("	PRIORITY %ld\n", (long)dp->priority);
 	printf("	DUMPCYCLE %ld\n", (long)dp->dumpcycle);
 	st = dp->start_t;

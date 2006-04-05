@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.32 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: diskfile.h,v 1.33 2006/04/05 13:24:01 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -63,6 +63,8 @@ typedef struct disk_s {
     char *clntcompprog;                 /* custom compression client filter */
     char *srv_encrypt;                  /* custom encryption server filter */
     char *clnt_encrypt;                 /* custom encryption client filter */
+    char *amandad_path;			/* amandad path on the client */
+    char *client_username;		/* username to connect on the client */
     sl_t *exclude_file;			/* file exclude spec */
     sl_t *exclude_list;			/* exclude list */
     sl_t *include_file;			/* file include spec */

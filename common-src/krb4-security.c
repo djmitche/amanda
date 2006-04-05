@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb4-security.c,v 1.9 2006/02/21 04:13:55 ktill Exp $
+ * $Id: krb4-security.c,v 1.10 2006/04/05 13:24:01 martinea Exp $
  *
  * krb4-security.c - helper functions for kerberos v4 security.
  */
@@ -113,7 +113,7 @@ struct krb4_stream {
  */
 static void krb4_connect P((const char *,
     char *(*)(char *, void *),  
-    void (*)(void *, security_handle_t *, security_status_t), void *));
+    void (*)(void *, security_handle_t *, security_status_t), void *, void *));
 static void krb4_accept P((int, int, void (*)(security_handle_t *, pkt_t *)));
 static void krb4_close P((void *));
 static int krb4_sendpkt P((void *, pkt_t *));
@@ -341,11 +341,12 @@ get_tgt()
  * up a network "connection".
  */
 static void
-krb4_connect(hostname, conf_fn, fn, arg)
+krb4_connect(hostname, conf_fn, fn, arg, datap)
     const char *hostname;
     char *(*conf_fn) P((char *, void *));
     void (*fn) P((void *, security_handle_t *, security_status_t));
     void *arg;
+    void *datap;
 {
     struct krb4_handle *kh;
     char handle[32];

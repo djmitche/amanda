@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.60 2005/12/21 19:07:50 paddy_s Exp $
+ * $Id: conffile.h,v 1.61 2006/04/05 13:24:01 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -162,6 +162,8 @@ typedef struct dumptype_s {
     char *clntcompprog;
     char *srv_encrypt;
     char *clnt_encrypt;
+    char *amandad_path;
+    char *client_username;
     sl_t *exclude_file;
     sl_t *exclude_list;
     sl_t *include_file;
@@ -206,6 +208,8 @@ typedef struct dumptype_s {
     int s_clntcompprog;
     int s_srv_encrypt;
     int s_clnt_encrypt;
+    int s_amandad_path;
+    int s_client_username;
     int s_exclude_file;
     int s_exclude_list;
     int s_include_file;

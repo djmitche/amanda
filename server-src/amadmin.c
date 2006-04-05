@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.105 2006/02/03 17:29:28 vectro Exp $
+ * $Id: amadmin.c,v 1.106 2006/04/05 13:24:01 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1725,6 +1725,8 @@ disk_t *dp;
 
     printf("        auth %s\n", dp->security_driver);
     printf("        kencrypt %s\n", (dp->kencrypt? "YES" : "NO"));
+    printf("        amandad_path %s\n", dp->amandad_path);
+    printf("        client_username %s\n", dp->client_username);
     printf("        holdingdisk %s\n", (!dp->no_hold? "YES" : "NO"));
     printf("        record %s\n", (dp->record? "YES" : "NO"));
     printf("        index %s\n", (dp->index? "YES" : "NO"));
