@@ -1,4 +1,7 @@
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.1b1).
+
+2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c: Change expression to remove overflow.
 
 2006-03-29  Jean-Louis Martineau <martineau@zmanda.com>
