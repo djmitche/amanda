@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.166 2006/04/05 12:53:46 martinea Exp $
+ * $Id: driver.c,v 1.167 2006/04/05 14:31:37 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -780,8 +780,6 @@ start_some_dumps(rq)
 	    sched(diskp)->dumper = dumper;
 	    sched(diskp)->timestamp = now;
 
-	    dumper->ev_read = event_register(dumper->fd, EV_READFD,
-		handle_dumper_result, dumper);
 	    dumper->busy = 1;		/* dumper is now busy */
 	    dumper->dp = diskp;		/* link disk to dumper */
 	    remove_disk(rq, diskp);		/* take it off the run queue */
@@ -799,17 +797,39 @@ start_some_dumps(rq)
 	    chunker_cmd(chunker, PORT_WRITE, diskp);
 	    cmd = getresult(chunker->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
 	    if(cmd != PORT) {
+		assignedhd_t **h=NULL;
+		int activehd;
+
 		printf("driver: did not get PORT from %s for %s:%s\n",
 		       chunker->name, diskp->host->hostname, diskp->name);
 		fflush(stdout);
-		return ;	/* fatal problem */
+
+		deallocate_bandwidth(diskp->host->netif, sched(diskp)->est_kps);
+		h = sched(diskp)->holdp;
+		activehd = sched(diskp)->activehd;
+		h[activehd]->used = 0;
+		holdalloc(h[activehd]->disk)->allocated_dumpers--;
+		adjust_diskspace(diskp, DONE);
+		delete_diskspace(diskp);
+		diskp->host->inprogress--;
+		diskp->inprogress = 0;
+		sched(diskp)->dumper = NULL;
+		dumper->busy = 0;
+		dumper->dp = NULL;
+		sched(diskp)->attempted++;
+		free_serial_dp(diskp);
+		if(sched(diskp)->attempted < 2)
+		    enqueue_disk(rq, diskp);
 	    }
-	    chunker->ev_read = event_register(chunker->fd, EV_READFD,
-		    handle_chunker_result, chunker);
-	    dumper->output_port = atoi(result_argv[2]);
+	    else {
+		dumper->ev_read = event_register(dumper->fd, EV_READFD,
+						 handle_dumper_result, dumper);
+		chunker->ev_read = event_register(chunker->fd, EV_READFD,
+						   handle_chunker_result, chunker);
+		dumper->output_port = atoi(result_argv[2]);
 
-	    dumper_cmd(dumper, PORT_DUMP, diskp);
-
+		dumper_cmd(dumper, PORT_DUMP, diskp);
+	    }
 	    diskp->host->start_t = now + 15;
 	} else if (/* cur_idle != NOT_IDLE && */
 	    (num_busy_dumpers() > 0 || taper_busy)) {
@@ -2428,9 +2448,6 @@ dump_to_tape(dp)
 
     cmd = getresult(dumper->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
 
-    if(cmd != BOGUS)
-	free_serial(result_argv[2]);
-
     switch(cmd) {
     case BOGUS:
 	/* either eof or garbage from dumper */
@@ -2450,8 +2467,6 @@ dump_to_tape(dp)
     case NO_ROOM: /* NO-ROOM <handle> */
 	dumper_cmd(dumper, ABORT, dp);
 	cmd = getresult(dumper->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
-	if(cmd != BOGUS)
-	    free_serial(result_argv[2]);
 	assert(cmd == ABORT_FINISHED);
 
     case TRYAGAIN: /* TRY-AGAIN <handle> <errstr> */

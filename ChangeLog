@@ -1,4 +1,10 @@
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driver.c (start_some_dumps): Recover correctly if the
+	  chunker reply with something that is not a PORT command.
+	* server-src/driver.c (dump_to_tape): remove duplicate free_serial.
+	* server-src/driverio.c: Improve debugging.
+
+2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/tapelist.c(unmarshal_tapelist_str): Fix
 	  "value computed is not used" compiler warning.
 

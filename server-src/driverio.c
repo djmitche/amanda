@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.83 2006/04/05 13:24:01 martinea Exp $
+ * $Id: driverio.c,v 1.84 2006/04/05 14:31:37 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -561,7 +561,7 @@ char *str;
 	error("error [serial out of range 0..%d: %d]", MAX_SERIAL, s);
     }
     if(gen != stable[s].gen)
-	printf("driver: error time %s serial gen mismatch %s\n",
+	printf("driver: serial2disk error time %s serial gen mismatch %s\n",
 	       walltime_str(curclock()), str);
     return stable[s].dp;
 }
@@ -582,8 +582,8 @@ char *str;
     }
 
     if(gen != stable[s].gen)
-	printf("driver: error time %s serial gen mismatch\n",
-	       walltime_str(curclock()));
+	printf("driver: free_serial error time %s serial gen mismatch %s\n",
+	       walltime_str(curclock()),str);
     stable[s].gen = 0;
     stable[s].dp = NULL;
 }
