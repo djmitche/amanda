@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.13 2006/04/05 13:24:01 martinea Exp $
+ * $Id: krb5-security.c,v 1.14 2006/04/05 18:20:06 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -198,6 +198,7 @@ struct krb5_handle {
 					/* func to call when connected */
     } fn;
     void *arg;				/* argument to pass function */
+    void *datap;			/* argument to pass function */
     event_handle_t *ev_wait;		/* wait handle for connects */
     char *(*conf_fn) P((char *, void *)); /* used to get config info */
     event_handle_t *ev_timeout;		/* timeout handle for recv */
@@ -402,6 +403,7 @@ krb5_connect(hostname, conf_fn, fn, arg, datap)
     kh->fn.connect = fn;
     kh->conf_fn = conf_fn;
     kh->arg = arg;
+    kh->datap = datap;
     kh->hostname = stralloc(he->h_name);
     kh->ks = krb5_stream_client(kh, newhandle++);
 
@@ -471,7 +473,7 @@ open_callback(cookie)
 
     k5printf(("krb5: open_callback: possible connections available, retry %s\n",
 	kh->hostname));
-    krb5_connect(kh->hostname, kh->conf_fn, kh->fn.connect, kh->arg);
+    krb5_connect(kh->hostname, kh->conf_fn, kh->fn.connect, kh->arg,kh->datap);
     amfree(kh->hostname);
     amfree(kh);
 }

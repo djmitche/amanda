@@ -1,4 +1,7 @@
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/krb5-security.c: Fix for krb5_connect call in open_callback.
+
+2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c (start_some_dumps): Recover correctly if the
 	  chunker reply with something that is not a PORT command.
 	* server-src/driver.c (dump_to_tape): remove duplicate free_serial.
