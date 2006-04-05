@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.87 2006/04/05 12:52:17 martinea Exp $
+ * $Id: amindexd.c,v 1.88 2006/04/05 12:56:19 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -113,6 +113,7 @@ static int opaque_ls P((char *, int));
 static int tapedev_is P((void));
 static int are_dumps_compressed P((void));
 static char *amindexd_nicedate P((char *datestamp));
+static int cmp_date P((const char *date1, const char *date2));
 int main P((int, char **));
 
 static REMOVE_ITEM *remove_files(remove)
@@ -615,7 +616,7 @@ char *dir;
 
     /* scan through till we find first dump on or before date */
     for (item=first_dump(); item!=NULL; item=next_dump(item))
-	if (strcmp(item->date, target_date) <= 0)
+	if (cmp_date(item->date, target_date) <= 0)
 	    break;
 
     if (item == NULL)
@@ -707,7 +708,7 @@ int  recursive;
 
     /* scan through till we find first dump on or before date */
     for (dump_item=first_dump(); dump_item!=NULL; dump_item=next_dump(dump_item))
-	if (strcmp(dump_item->date, target_date) <= 0)
+	if (cmp_date(dump_item->date, target_date) <= 0)
 	    break;
 
     if (dump_item == NULL)
@@ -1246,18 +1247,36 @@ char *datestamp;
 {
     static char nice[20];
     int year, month, day;
-    char date[9];
-    int  numdate;
+    int hours, minutes, seconds;
+    char date[9], atime[7];
+    int  numdate, numtime;
 
     strncpy(date, datestamp, 8);
-    date[9] = '\0';
+    date[8] = '\0';
     numdate = atoi(date);
     year  = numdate / 10000;
     month = (numdate / 100) % 100;
     day   = numdate % 100;
 
-    snprintf(nice, sizeof(nice), "%4d-%02d-%02d", year, month, day);
+    if(strlen(datestamp) <= 8) {
+	snprintf(nice, sizeof(nice), "%4d-%02d-%02d", year, month, day);
+    }
+    else {
+	strncpy(atime, &(datestamp[8]), 6);
+	atime[6] = '\0';
+	numtime = atoi(atime);
+	hours = numtime / 10000;
+	minutes = (numtime / 100) % 100;
+	seconds = numtime % 100;
+
+	snprintf(nice, sizeof(nice), "%4d-%02d-%02d-%02d-%02d-%02d", year, month, day, hours, minutes, seconds);
+    }
 
     return nice;
 }
 
+static int cmp_date(date1, date2)
+const char *date1, *date2;
+{
+    return strncmp(date1, date2, strlen(date2));
+}

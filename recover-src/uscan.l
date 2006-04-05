@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uscan.l,v 1.22 2004/02/11 13:03:29 martinea Exp $
+ * $Id: uscan.l,v 1.23 2006/04/05 12:56:18 martinea Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -35,7 +35,7 @@
 
 #define YY_NO_UNPUT
 
-#define	DATE_ALLOC_SIZE		sizeof("YYYY-MM-DD")	/* includes null */
+#define	DATE_ALLOC_SIZE		sizeof("YYYY-MM-DD-HH-MM-SS")	/* includes null */
 
 extern void yyerror P((char *s));
 extern int  yyparse P((void));
@@ -89,6 +89,7 @@ mode    { return MODE; }
 ---[0-9]+		{ return ll_parse_date(1, yytext); }
 --[0-9]+-[0-9]+		{ return ll_parse_date(2, yytext); }
 [0-9]+-[0-9]+-[0-9]+	{ return ll_parse_date(3, yytext); }
+[0-9]+-[0-9]+-[0-9]+-[0-9]+-[0-9]+-[0-9]+	{ return ll_parse_date(4, yytext); }
 
 %{
     /* file names */
@@ -165,7 +166,7 @@ char *text;
 {
     time_t now;
     struct tm *t;
-    int y, m, d;
+    int y, m, d, h=0, mi=0, s=0;
     int ret;
 
     now = time((time_t *)NULL);
@@ -177,24 +178,37 @@ char *text;
 	sscanf(text, "---%d", &d);
     } else if(type == 2) {
 	sscanf(text, "--%d-%d", &m, &d);
-    } else {
+    } else if(type == 3) {
 	sscanf(text, "%d-%d-%d", &y, &m, &d);
-	if(y < 70) {
-	    y += 2000;
-	} else if(y < 100) {
-	    y += 1900;
-	}
+    } else {
+	sscanf(text, "%d-%d-%d-%d-%d-%d", &y, &m, &d, &h, &mi, &s);
     }
+    
     ret = PATH;				/* cause a parse error */
+    if(y < 70) {
+	y += 2000;
+    } else if(y < 100) {
+	y += 1900;
+    }
     if(y < 1000 || y > 9999) {
 	yyerror("invalid year");
     } else if(m < 1 || m > 12) {
 	yyerror("invalid month");
     } else if(d < 1 || d > 31) {
 	yyerror("invalid day");
-    } else {
+    } else if(h < 0 || h > 24) {
+	yyerror("invalid hour");
+    } else if(mi < 0 || mi > 59) {
+	yyerror("invalid minute");
+    } else if(s < 0 || s > 59) {
+	yyerror("invalid second");
+    } else if(type < 4) {
 	yylval.strval = alloc(DATE_ALLOC_SIZE);
 	snprintf(yylval.strval, DATE_ALLOC_SIZE, "%04d-%02d-%02d", y, m, d);
+	ret = DATE;
+    } else {
+	yylval.strval = alloc(DATE_ALLOC_SIZE);
+	snprintf(yylval.strval, DATE_ALLOC_SIZE, "%04d-%02d-%02d-%02d-%02d-%02d", y, m, d, h, mi, s);
 	ret = DATE;
     }
     return ret;

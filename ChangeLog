@@ -1,4 +1,12 @@
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* recover-src/uscan.l: Parse "setdate YYYY-MM-DD-HH-MM-SS".
+	* server-src/amindexd.c (cmp_date): New function to cmp datestamp with
+					    timestamp, use it where needed.
+	* server-src/amindexd.c (amindexd_nicedate): Fix for timestamp.
+	* server-src/amtrmidx.c: Fix for timestamp.
+	* server-src/disk_history.h (DUMP_ITEM): Increase size of date.
+
+2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amflush.c: Send DATE line to driver, use timestamp.
 	* server-src/amindex.c (getindexfname): Increase datebuf size.
 	* server-src/amtrmlog.c: Fix bug with date_keep computation if

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.29 2006/04/05 12:52:16 martinea Exp $
+ * $Id: restore.c,v 1.30 2006/04/05 12:56:18 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -234,8 +234,12 @@ char *device;
     else if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL)
         fprintf(stderr, "%s: slot %s: %s\n", get_pname(), slotstr, errstr);
     else {
-        fprintf(stderr, "%s: slot %s: date %-8s label %s",
-                get_pname(), slotstr, datestamp, label);
+	if(strlen(datestamp)>8)
+            fprintf(stderr, "%s: slot %s: date %-14s label %s",
+		    get_pname(), slotstr, datestamp, label);
+	else
+            fprintf(stderr, "%s: slot %s: date %-8s label %s",
+		    get_pname(), slotstr, datestamp, label);
         if(strcmp(label, FAKE_LABEL) != 0
            && strcmp(label, searchlabel) != 0)
             fprintf(stderr, " (wrong tape)\n");

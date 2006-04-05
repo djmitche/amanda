@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: disk_history.h,v 1.4 2005/10/11 01:17:01 vectro Exp $
+/* $Id: disk_history.h,v 1.5 2006/04/05 12:56:19 martinea Exp $
  *
  * interface for obtaining disk backup history
  */
@@ -32,7 +32,7 @@
 
 typedef struct DUMP_ITEM
 {
-    char date[11];
+    char date[20];
     int  level;
     int  is_split;
     char tape[256];

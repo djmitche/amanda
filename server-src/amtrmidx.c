@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.35 2006/04/05 12:52:17 martinea Exp $
+ * $Id: amtrmidx.c,v 1.36 2006/04/05 12:56:19 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -143,6 +143,7 @@ char **argv;
 	    int name_count;
 	    char *host;
 	    char *disk;
+	    int len_date;
 
 	    dbprintf(("%s %s\n", diskp->host->hostname, diskp->name));
 
@@ -169,21 +170,24 @@ char **argv;
 		if(is_dot_or_dotdot(f->d_name)) {
 		    continue;
 		}
-		for(i = 0; i < sizeof("YYYYMMDD")-1; i++) {
+		for(i = 0; i < sizeof("YYYYMMDDHHMMSS")-1; i++) {
 		    if(! isdigit((int)(f->d_name[i]))) {
 			break;
 		    }
 		}
-		if(i < sizeof("YYYYMMDD")-1
-		    || f->d_name[i] != '_'
-		    || ! isdigit((int)(f->d_name[i+1]))) {
+		len_date = i;
+		/* len_date=8  for YYYYMMDD       */
+		/* len_date=14 for YYYYMMDDHHMMSS */
+		if((len_date != 8 && len_date != 14)
+		    || f->d_name[len_date] != '_'
+		    || ! isdigit((int)(f->d_name[len_date+1]))) {
 		    continue;			/* not an index file */
 		}
 		/*
 		 * Clear out old index temp files.
 		 */
 		l = strlen(f->d_name) - (sizeof(".tmp")-1);
-		if(l > sizeof("YYYYMMDD_L")-1
+		if(l > len_date+1
 		    && strcmp (f->d_name + l, ".tmp") == 0) {
 		    struct stat sbuf;
 		    char *path;
@@ -204,11 +208,11 @@ char **argv;
 		if(name_count >= name_length) {
 		    char **new_names;
 
-		    new_names = alloc((name_length + 100) * sizeof(char *));
+		    new_names = alloc((name_length*2) * sizeof(char *));
 		    memcpy(new_names, names, name_length * sizeof(char *));
-		    name_length += 100;
 		    amfree(names);
 		    names = new_names;
+		    name_length *= 2;
 		}
 		names[name_count++] = stralloc(f->d_name);
 	    }
@@ -222,9 +226,17 @@ char **argv;
 	    for(i = 0; i < name_count; i++) {
 		char *datestamp;
 		int level;
+		int len_date;
+
+		for(len_date = 0; len_date < sizeof("YYYYMMDDHHMMSS")-1; len_date++) {
+                    if(! isdigit((int)(names[i][len_date]))) {
+                        break;
+                    }
+                }
+
 		datestamp = stralloc(names[i]);
-		datestamp[8] = '\0';
-		level = names[i][sizeof("YYYYMMDD_L")-1-1] - '0';
+		datestamp[len_date] = '\0';
+		level = names[i][len_date+1] - '0';
 		if(!dump_exist(output_find,
 					 diskp->host->hostname,diskp->name,
 					 datestamp, level)) {
