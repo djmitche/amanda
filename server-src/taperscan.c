@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.9 2006/03/10 14:29:22 martinea Exp $
+ * $Id: taperscan.c,v 1.10 2006/04/06 17:43:27 martinea Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -203,6 +203,9 @@ int changer_taper_scan(char* wantlabel,
     changertrack_t local_data = {wantlabel, gotlabel, timestamp,
                                  error_message, tapedev, NULL, 0, 0};
 
+    char *outslotstr = NULL;
+    int result;
+
     *gotlabel = *timestamp = *tapedev = NULL;
     
     changer_find(&local_data, scan_init, scan_slot, wantlabel);
@@ -212,8 +215,10 @@ int changer_taper_scan(char* wantlabel,
         return local_data.tape_status;
     } else if (local_data.first_labelstr_slot) {
         /* Use plan B. */
-        if (changer_loadslot(local_data.first_labelstr_slot,
-                             NULL, tapedev) == 0) {
+	result = changer_loadslot(local_data.first_labelstr_slot,
+				  &outslotstr, tapedev);
+	amfree(outslotstr);
+        if (result == 0) {
             return scan_read_label(*tapedev, NULL, gotlabel, timestamp,
                                    error_message);
         }

@@ -1,4 +1,8 @@
 2006-04-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taperscan.c (changer_taper_scan): Pass a pointer to the
+	  changer_loadslot call.
+
+2006-04-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/tapefile.c (lookup_last_reusable_tape): Fix a datestamp
 	  test with an int.
 
