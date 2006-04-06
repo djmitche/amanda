@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.106 2006/04/05 12:52:17 martinea Exp $
+ * $Id: reporter.c,v 1.107 2006/04/06 13:22:49 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1823,33 +1823,26 @@ handle_chunk()
     s[-1] = '\0';
     datestamp = stralloc(fp);
     s[-1] = ch;
-    
-    level = atoi(datestamp);
-    if(level < 100)  {
- 	datestamp = newstralloc(datestamp, run_datestamp);
-    }
-    else {
- 	skip_whitespace(s, ch);
- 	if(ch == '\0' || sscanf(s - 1, "%d", &chunk) != 1) {
- 	    bogus_line();
- 	    amfree(hostname);
- 	    amfree(diskname);
- 	    amfree(datestamp);
- 	    return NULL;
- 	}
- 	skip_integer(s, ch);
-	
- 	skip_whitespace(s, ch);
- 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
- 	    bogus_line();
- 	    amfree(hostname);
- 	    amfree(diskname);
- 	    amfree(datestamp);
- 	    return NULL;
- 	}
- 	skip_integer(s, ch);
-    }
+ 
     skip_whitespace(s, ch);
+    if(ch == '\0' || sscanf(s - 1, "%d", &chunk) != 1) {
+	bogus_line();
+	amfree(hostname);
+	amfree(diskname);
+	amfree(datestamp);
+	return NULL;
+    }
+    skip_integer(s, ch);
+
+    skip_whitespace(s, ch);
+    if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+	bogus_line();
+	amfree(hostname);
+	amfree(diskname);
+	amfree(datestamp);
+	return NULL;
+    }
+    skip_integer(s, ch);
     
     if(level < 0 || level > 9) {
  	amfree(hostname);
@@ -1858,6 +1851,7 @@ handle_chunk()
  	return NULL;
     }
     
+    skip_whitespace(s, ch);
     if(sscanf(s - 1,"[sec %f kb %f kps %f", &sec, &kbytes, &kps) != 3)  {
  	bogus_line();
  	amfree(hostname);

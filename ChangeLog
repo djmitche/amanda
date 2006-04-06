@@ -1,5 +1,10 @@
+2006-04-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/reporter.c (handle_chunk): CHUNK line always have the
+	  datestamp.
+
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
-	* server-src/krb5-security.c: Fix for krb5_connect call in open_callback.
+	* server-src/krb5-security.c: Fix for krb5_connect call in
+	   open_callback.
 
 2006-04-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c (start_some_dumps): Recover correctly if the
