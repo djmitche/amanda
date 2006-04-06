@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.52 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: amrecover.c,v 1.53 2006/04/06 13:24:17 vectro Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -403,6 +403,12 @@ void quit ()
 
 char *localhost = NULL;
 
+#ifdef DEFAULT_TAPE_SERVER
+# define DEFAULT_TAPE_SERVER_FAILOVER (DEFAULT_TAPE_SERVER)
+#else
+# define DEFAULT_TAPE_SERVER_FAILOVER (NULL)
+#endif
+
 int main(argc, argv)
 int argc;
 char **argv;
@@ -442,12 +448,14 @@ char **argv;
     localhost[MAX_HOSTNAME_LENGTH] = '\0';
 
     config = newstralloc(config, DEFAULT_CONFIG);
-    server_name = newstralloc(server_name, DEFAULT_SERVER);
-#ifdef DEFAULT_TAPE_SERVER
-    tape_server_name = newstralloc(tape_server_name, DEFAULT_TAPE_SERVER);
-#else
+    server_name = newstralloc(server_name,
+                              getenv("AMANDA_SERVER") || DEFAULT_SERVER);
+
     amfree(tape_server_name);
-#endif
+    tape_server_name = getenv("AMANDA_TAPE_SERVER") || DEFAULT_TAPE_SERVER;
+    if (tape_server_name)
+	tape_server_name = stralloc(tape_server_name);
+
     if (argc > 1 && argv[1][0] != '-')
     {
 	/*

@@ -558,6 +558,16 @@ commands will use $PAGER to display the file lists.
 Defaults to
 <emphasis remap='I'>more</emphasis>
 if PAGER is not set.</para>
+<para><envar>AMANDA_SERVER</envar>
+If set, $AMANDA_SERVER will be used as index-server.
+The value will take precedence over the compiled default,
+but will be overridden by the -s switch.
+</para>
+<para><envar>AMANDA_TAPE_SERVER</envar>
+If set, $AMANDA_TAPE_SERVER will be used as tape-server.
+The value will take precedence over the compiled default,
+but will be overridden by the -t switch.
+</para>
 <!-- .RE -->
 </refsect1>
 
