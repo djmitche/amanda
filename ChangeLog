@@ -1,3 +1,7 @@
+2006-04-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/tapefile.c (lookup_last_reusable_tape): Fix a datestamp
+	  test with an int.
+
 2006-04-06  Ian Turner <vectro@vectro.org>
 	* recover-src/amrecover.c (main): Check AMANDA_SERVER and 
 	  AMANDA_TAPE_SERVER environment variables before falling back 
