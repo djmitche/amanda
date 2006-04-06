@@ -1,3 +1,10 @@
+2006-04-06  Kevin Till <ktill@zmanda.com>
+	* server-src/Makefile.am: always install planner/dumper setuid-root
+	* server-src/amcheck.c:	  check planner/dumper for setuid-root
+	* server-src/dumper.c:	  drop privilege asap. Switch between bsd 
+	  and ssh auth is now possible with the same installation.
+	* server-src/planner.c:	  ditto
+
 2006-04-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taperscan.c (changer_taper_scan): Pass a pointer to the
 	  changer_loadslot call.

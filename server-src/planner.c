@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.182 2006/04/05 13:24:02 martinea Exp $
+ * $Id: planner.c,v 1.183 2006/04/06 18:10:28 ktill Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -164,6 +164,7 @@ char **argv;
     char *conf_tapelist;
     char *conf_infofile;
     times_t section_start;
+    uid_t ruid;
 
     safe_fd(-1, 0);
 
@@ -211,15 +212,13 @@ char **argv;
      *
      * Planner runs setuid to get a priviledged socket for BSD security.
      * We get the socket right away as root, then setuid back to a normal
-     * user.  If we are not using BSD security, planner is not installed
-     * setuid root.
+     * user. Keeping saved uid as root.
      */
 
     protocol_init();
 
+    ruid = getuid();
     if(geteuid() == 0) {
-	uid_t ruid = getuid();
-	setuid(0);
 	seteuid(ruid);
 	setgid(getgid());
     }
@@ -537,6 +536,12 @@ char **argv;
 		    walltime_str(curclock()),
 		    walltime_str(timessub(curclock(), section_start)));
 
+
+    /* done with prvileged ops, make sure root privilege is dropped */
+    if ( geteuid() == 0 ) {
+      setuid(ruid);
+      seteuid(ruid);
+    }
 
     /*
      * 9. Output Schedule

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.172 2006/04/05 13:24:01 martinea Exp $
+/* $Id: dumper.c,v 1.173 2006/04/06 18:10:28 ktill Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -238,6 +238,7 @@ main(main_argc, main_argv)
     char *conffile;
     char *q = NULL;
     int a;
+    uid_t ruid;
 
     safe_fd(-1, 0);
 
@@ -278,17 +279,19 @@ main(main_argc, main_argv)
     amfree(conffile);
 
     /*
-     * Make our effective uid nonprivlidged, but keep our real uid as root
+     * Make our effective uid nonprivlidged, keeping save uid as root
      * in case we need to get back (to bind privlidged ports, etc).
      */
+    ruid = getuid();
     if(geteuid() == 0) {
-	uid_t ruid = getuid();
-	setuid(0);
 	seteuid(ruid);
 	setgid(getgid());
     }
 #if defined BSD_SECURITY && !defined SSH_SECURITY
-    else error("must be run setuid root to communicate correctly");
+    else {
+    	error("must be run setuid root to communicate correctly");
+	/*NOTREACHED*/
+    }
 #endif
 
     fprintf(stderr,
@@ -460,6 +463,12 @@ main(main_argc, main_argv)
 	if (outfd != -1)
 	    aclose(outfd);
     } while(cmd != QUIT);
+
+    /* make sure root privilege is dropped */
+    if ( geteuid() == 0 ) {
+      setuid(ruid);
+      seteuid(ruid);
+    }
 
     amfree(errstr);
     amfree(dumper_timestamp);
