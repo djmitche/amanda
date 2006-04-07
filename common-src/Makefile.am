@@ -51,7 +51,7 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 EXTRA_PROGRAMS = genversion $(TEST_PROGS)
 
 genversion_SOURCES = genversion.c
-genversion_LDADD = $(libamanda_la_LIBADD) versuff.o
+genversion_LDADD = $(libamanda_la_LIBADD) versuff.lo
 
 genversion.@OBJEXT@: genversion.h
 genversion.h: $(top_builddir)/config.status

@@ -1,4 +1,8 @@
 2006-04-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/Makefile.am: Fix dependency between genversion and
+				  versuff.o.
+
+2006-04-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/amrecover.c: Change initialization of server_name and
 				   tape_server_name.
 
