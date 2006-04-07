@@ -1,3 +1,6 @@
+2006-04-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/amrestore.c: reset count_error to 0 on a restore.
+
 2006-04-06  Kevin Till <ktill@zmanda.com>
 	* server-src/Makefile.am: always install planner/dumper setuid-root
 	* server-src/amcheck.c:	  check planner/dumper for setuid-root
