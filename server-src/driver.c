@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.16 2005/09/20 21:31:52 jrjackson Exp $
+ * $Id: driver.c,v 1.58.2.31.2.8.2.20.2.17 2006/04/07 11:04:01 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -146,6 +146,7 @@ int main(main_argc, main_argv)
     amwait_t retstat;
     char *conf_tapetype;
     tapetype_t *tape;
+    int need_degraded;
 
     safe_fd(-1, 0);
 
@@ -326,8 +327,11 @@ int main(main_argc, main_argv)
 
     if(cmd != TAPER_OK) {
 	/* no tape, go into degraded mode: dump to holding disk */
-	start_degraded_mode(&runq);
+	need_degraded=1;
 	FD_CLR(taper,&readset);
+    }
+    else {
+	need_degraded=0;
     }
 
     short_dump_state();					/* for amstatus */
@@ -361,6 +365,7 @@ int main(main_argc, main_argv)
 
 	/* Read the dump schedule */
 	read_schedule(&waitq, &runq);
+	if(need_degraded==1) start_degraded_mode(&runq);
     }
 
     /* Start any needed flushes */
