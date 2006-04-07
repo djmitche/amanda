@@ -1,4 +1,8 @@
 2006-04-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* recover-src/amrecover.c: Change initialization of server_name and
+				   tape_server_name.
+
+2006-04-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/amrestore.c: reset count_error to 0 on a restore.
 
 2006-04-06  Kevin Till <ktill@zmanda.com>

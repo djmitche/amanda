@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.53 2006/04/06 13:24:17 vectro Exp $
+ * $Id: amrecover.c,v 1.54 2006/04/07 17:56:05 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -448,13 +448,16 @@ char **argv;
     localhost[MAX_HOSTNAME_LENGTH] = '\0';
 
     config = newstralloc(config, DEFAULT_CONFIG);
-    server_name = newstralloc(server_name,
-                              getenv("AMANDA_SERVER") || DEFAULT_SERVER);
+
+    amfree(server_name);
+    server_name = getenv("AMANDA_SERVER");
+    if(!server_name) server_name = DEFAULT_SERVER;
+    server_name = stralloc(server_name);
 
     amfree(tape_server_name);
-    tape_server_name = getenv("AMANDA_TAPE_SERVER") || DEFAULT_TAPE_SERVER;
-    if (tape_server_name)
-	tape_server_name = stralloc(tape_server_name);
+    tape_server_name = getenv("AMANDA_TAPESERVER");
+    if(!tape_server_name) tape_server_name = DEFAULT_TAPE_SERVER;
+    tape_server_name = stralloc(tape_server_name);
 
     if (argc > 1 && argv[1][0] != '-')
     {
