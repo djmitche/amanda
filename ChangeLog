@@ -1,4 +1,10 @@
 2006-04-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amadmin.c: Fix use of datestamp as int.
+	* server-src/find.c: Ditto.
+	* server-src/reporter.c: Ditto.
+	* server-src/tapefile.c: Ditto.
+
+2006-04-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/Makefile.am: Fix dependency between genversion and
 				  versuff.o.
 

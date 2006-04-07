@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.107 2006/04/06 13:22:49 martinea Exp $
+ * $Id: reporter.c,v 1.108 2006/04/07 18:00:13 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -936,9 +936,9 @@ output_tapeinfo()
 
     lasttp = lookup_tapepos(lookup_nb_tape());
     run_tapes = getconf_int(CNF_RUNTAPES);
-    if(lasttp && run_tapes > 0 && lasttp->datestamp == 0) {
+    if(lasttp && run_tapes > 0 && strcmp(lasttp->datestamp,"0") == 0) {
 	int c = 0;
-	while(lasttp && run_tapes > 0 && lasttp->datestamp == 0) {
+	while(lasttp && run_tapes > 0 && strcmp(lasttp->datestamp,"0") == 0) {
 	    c++;
 	    lasttp = lasttp->prev;
 	    run_tapes--;
@@ -953,7 +953,7 @@ output_tapeinfo()
 		    lasttp->label);
 	    lasttp = lasttp->prev;
 	    c--;
-	    while(lasttp && c > 0 && lasttp->datestamp == 0) {
+	    while(lasttp && c > 0 && strcmp(lasttp->datestamp,"0") == 0) {
 		fprintf(mailf, ", %s", lasttp->label);
 		lasttp = lasttp->prev;
 		c--;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.25 2006/04/05 12:53:47 martinea Exp $
+ * $Id: find.c,v 1.26 2006/04/07 18:00:13 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -103,7 +103,7 @@ disklist_t* diskqp;
 	if(access(logfile,R_OK) == 0) {
 	    logs += search_logfile(&output_find, tp->label, tp->datestamp, logfile);
 	}
-	if(logs == 0 && tp->datestamp != 0)
+	if(logs == 0 && strcmp(tp->datestamp,"0") != 0)
 	    printf("Warning: no log files found for tape %s written %s\n",
 		   tp->label, find_nicedate(tp->datestamp));
     }
@@ -184,7 +184,7 @@ char **find_log()
 		logs++;
 	    }
 	}
-	if(logs == 0 && tp->datestamp != 0)
+	if(logs == 0 && strcmp(tp->datestamp,"0") != 0)
 	    printf("Warning: no log files found for tape %s written %s\n",
 		   tp->label, find_nicedate(tp->datestamp));
     }

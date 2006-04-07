@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.106 2006/04/05 13:24:01 martinea Exp $
+ * $Id: amadmin.c,v 1.107 2006/04/07 18:00:13 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -779,9 +779,9 @@ char **argv;
     }
     lasttp = lookup_tapepos(lookup_nb_tape());
     i = runtapes;
-    if(lasttp && i > 0 && lasttp->datestamp == 0) {
+    if(lasttp && i > 0 && strcmp(lasttp->datestamp,"0") == 0) {
 	int c = 0;
-	while(lasttp && i > 0 && lasttp->datestamp == 0) {
+	while(lasttp && i > 0 && strcmp(lasttp->datestamp,"0") == 0) {
 	    c++;
 	    lasttp = lasttp->prev;
 	    i--;
@@ -797,7 +797,7 @@ char **argv;
 		   lasttp->label);
 	    lasttp = lasttp->prev;
 	    c--;
-	    while(lasttp && c > 0 && lasttp->datestamp == 0) {
+	    while(lasttp && c > 0 && strcmp(lasttp->datestamp,"0") == 0) {
 		printf(", %s", lasttp->label);
 		lasttp = lasttp->prev;
 		c--;
