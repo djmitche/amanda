@@ -1,3 +1,17 @@
+2006-04-07  Ian Turner <ian@zmanda.com>
+	* server-src/changer.c: Don't crash if we go to taperscan "Plan 
+	  B".
+
+2006-04-07  Ian Turner <ian@zmanda.com>
+	* server-src/changer.c: Only print changer debug messages if 
+	  there was a problem.
+
+2006-04-07  Ian Turner <ian@zmanda.com>
+	* recover-src/amrecover.c: Print a more helpful command if mount
+	  point autodetection fails.
+	* recover-src/display_commands.c: Print a more helpful message
+	  if the user tries to ls without having setdisk earlier.
+
 2006-04-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amadmin.c: Fix use of datestamp as int.
 	* server-src/find.c: Ditto.
@@ -232,11 +246,11 @@
 	* restore-src/restore.c: Fix errors found using Coverity tools.
 
 2006-03-09  Jean-Louis Martineau <martineau@zmanda.com>
-	* server-src/holding.c: Fix John fix.
+	* server-src/holding.c: Fix errors found using Coverity tools.
 
 2006-03-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driverio.c: Fix errors found using Coverity tools.
-	* server-src/planner.c: Fix John fix.
+	* server-src/planner.c: Fix errors found using Coverity tools.
 
 2006-03-09  John Franks <jrfranks@zmanda.com>
 	* changer-src/chg-scsi.c:        Fix errors found using Coverity tools.

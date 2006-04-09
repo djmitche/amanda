@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.54 2006/04/07 17:56:05 martinea Exp $
+ * $Id: amrecover.c,v 1.55 2006/04/09 13:47:08 paddy_s Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -649,7 +649,7 @@ char **argv;
 		case 2:
 		case -1:
 		default:
-		    printf("Can't determine disk and mount point from $CWD '%s'\n", cwd);
+		    printf("Use the setdisk command to choose dump disk to recover\n");
 		    /* fake an unhappy server */
 		    server_line[0] = '5';
 		    break;

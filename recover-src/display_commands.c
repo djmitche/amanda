@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: display_commands.c,v 1.19 2006/03/09 20:06:11 johnfranks Exp $
+ * $Id: display_commands.c,v 1.20 2006/04/09 13:47:08 paddy_s Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -258,7 +258,7 @@ void list_directory P((void))
     char *pager_command;
 
     if (disk_path == NULL) {
-	printf("Must select a disk before listing files\n");
+	printf("Must select a disk before listing files; use the setdisk command.\n");
 	return;
     }
 
