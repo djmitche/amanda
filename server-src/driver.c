@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.167 2006/04/05 14:31:37 martinea Exp $
+ * $Id: driver.c,v 1.168 2006/04/10 11:22:25 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -66,6 +66,7 @@ static int conf_runtapes;
 static time_t sleep_time;
 static int idle_reason;
 static char *driver_timestamp;
+static char *hd_driver_timestamp;
 static am_host_t *flushhost = NULL;
 static int need_degraded=0;
 
@@ -213,6 +214,24 @@ main(main_argc, main_argv)
     amfree(line);
     log_add(L_START,"date %s", driver_timestamp);
 
+    /* check that we don't do many dump in a day and usetimestamps is off */
+    if(strlen(driver_timestamp) == 8) {
+	char *conf_logdir = getconf_str(CNF_LOGDIR);
+	char *logfile    = vstralloc(conf_logdir, "/log.",
+				     driver_timestamp, ".0", NULL);
+	char *oldlogfile = vstralloc(conf_logdir, "/oldlog/log.",
+				     driver_timestamp, ".0", NULL);
+	if(access(logfile, F_OK) == 0 || access(oldlogfile, F_OK) == 0) {
+	    log_add(L_ERROR, "WARNING: This is not the first amdump run today. Enable the usetimestamps option in the configuration file if you want to run amdump more than once per calendar day.");
+	amfree(oldlogfile);
+	amfree(logfile);
+}
+	hd_driver_timestamp = construct_timestamp(NULL);
+    }
+    else {
+	hd_driver_timestamp = stralloc(driver_timestamp);
+    }
+
     taper_program = vstralloc(libexecdir, "/", "taper", versionsuffix(), NULL);
     dumper_program = vstralloc(libexecdir, "/", "dumper", versionsuffix(),
 			       NULL);
@@ -290,7 +309,7 @@ main(main_argc, main_argv)
 	       dsk, hdp->diskdir, hdp->disksize, hdp->chunksize);
 
 	newdir = newvstralloc(newdir,
-			      hdp->diskdir, "/", driver_timestamp,
+			      hdp->diskdir, "/", hd_driver_timestamp,
 			      NULL);
 	if(!mkholdingdir(newdir)) {
 	    hdp->disksize = 0L;
@@ -2175,7 +2194,7 @@ assign_holdingdisk(holdp, diskp)
     for( ; holdp[i]; i++ ) {
 	holdp[i]->destname = newvstralloc( holdp[i]->destname,
 					   holdp[i]->disk->diskdir, "/",
-					   driver_timestamp, "/",
+					   hd_driver_timestamp, "/",
 					   diskp->host->hostname, ".",
 					   sfn, ".",
 					   lvl, NULL );

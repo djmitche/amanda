@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.81 2006/04/05 12:53:46 martinea Exp $
+ * $Id: amflush.c,v 1.82 2006/04/10 11:22:24 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -73,6 +73,7 @@ char **main_argv;
     char *conf_diskfile;
     char *conf_tapelist;
     char *conf_logfile;
+    int conf_usetimestamps;
     disklist_t diskq;
     disk_t *dp;
     pid_t pid;
@@ -160,8 +161,15 @@ char **main_argv;
 	error("could not load tapelist \"%s\"", conf_tapelist);
     amfree(conf_tapelist);
 
+    conf_usetimestamps = getconf_int(CNF_USETIMESTAMPS);
+
     amflush_datestamp = construct_datestamp(NULL);
-    amflush_timestamp = construct_timestamp(NULL);
+    if(conf_usetimestamps == 0) {
+	amflush_timestamp = stralloc(amflush_datestamp);
+    }
+    else {
+	amflush_timestamp = construct_timestamp(NULL);
+    }
 
     dumpuser = getconf_str(CNF_DUMPUSER);
     if((pw = getpwnam(dumpuser)) == NULL)

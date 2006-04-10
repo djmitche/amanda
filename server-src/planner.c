@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.183 2006/04/06 18:10:28 ktill Exp $
+ * $Id: planner.c,v 1.184 2006/04/10 11:22:25 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -62,6 +62,7 @@ int conf_tapecycle;
 int conf_etimeout;
 int conf_reserve;
 int conf_autoflush;
+int conf_usetimestamps;
 
 #define HOST_READY				((void *)0)	/* must be 0 */
 #define HOST_ACTIVE				((void *)1)
@@ -293,10 +294,16 @@ char **argv;
     conf_etimeout = getconf_int(CNF_ETIMEOUT);
     conf_reserve  = getconf_int(CNF_RESERVE);
     conf_autoflush = getconf_int(CNF_AUTOFLUSH);
+    conf_usetimestamps = getconf_int(CNF_USETIMESTAMPS);
 
     amfree(planner_timestamp);
     today = time(0);
-    planner_timestamp = construct_timestamp(NULL);
+    if(conf_usetimestamps == 0) {
+	planner_timestamp = construct_datestamp(NULL);
+    }
+    else {
+	planner_timestamp = construct_timestamp(NULL);
+    }
     log_add(L_START, "date %s", planner_timestamp);
     printf("DATE %s\n", planner_timestamp);
     fflush(stdout);

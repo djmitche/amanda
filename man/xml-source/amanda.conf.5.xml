@@ -227,6 +227,23 @@ with damaged or misplaced tapes or schedule adjustments that call for slight adj
   </varlistentry>
 
   <varlistentry>
+  <term><emphasis remap='B'>usetimestamps</emphasis>
+	<emphasis remap='I'> bool</emphasis></term>
+    <listitem>
+      <para>Default: <emphasis remap='B'>No</emphasis>.
+By default, Amanda can only track at most one run per calendar day. When
+this option is enabled, however, Amanda can track as many runs as you care
+to make.
+      </para>
+      <para>
+<emphasis remap='B'>WARNING</emphasis>: This option is not backward-compatible.
+Do not enable it if you intend to downgrade your server installation to
+any version earlier than Amanda 2.5.1.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
   <term><emphasis remap='B'>label_new_tapes</emphasis>
         <emphasis remap='I'> string</emphasis></term>
 <listitem>

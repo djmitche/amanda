@@ -1,3 +1,15 @@
+2006-04-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/conffile.c: New configuration option usetimestamps.
+	* server-src/conffile.h: New configuration option usetimestamps.
+	* example/amanda.conf.in: Document new usetimestamps options.
+	* man/xml-source/amanda.conf.5.xml: Document new usetimestamps options.
+	* server-src/amflush.c: Use datestamp or timestamp depending of
+				usetimesstamps.
+	* server-src/planner.c: Use datestamp or timestamp depending of
+				usetimesstamps.
+	* server-src/driver.c: Log an ERROR if many run a day and
+			       usetimestamps us set to no.
+
 2006-04-07  Ian Turner <ian@zmanda.com>
 	* server-src/changer.c: Don't crash if we go to taperscan "Plan 
 	  B".
