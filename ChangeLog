@@ -1,4 +1,8 @@
 2006-04-11  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taper.c: log_add(L_WARNING) the output of taper_scan if
+			       no valid tape are found.
+
+2006-04-11  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amcheck.c: Call taper_scan with
 		(..., FILE_taperscan_output_callback,outf) arguments.
 	* server-src/amtape.c:  Call taper_scan with
