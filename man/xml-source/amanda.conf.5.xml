@@ -1012,9 +1012,31 @@ Type of authorization to perform between tape server and backup client hosts.</p
 authorization.</para>
 <para><emphasis remap='B'>krb5</emphasis> to use Kerberos-V
 authorization.</para>
+<para><emphasis remap='B'>rsh</emphasis> to use rsh
+authorization.</para>
 <para><emphasis remap='B'>ssh</emphasis> to use OpenSSH
 authorization.</para>
 
+  </listitem>
+  </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>amandad_path</emphasis> <emphasis remap='I'> string</emphasis></term>
+  <listitem>
+<para>Default:
+<emphasis remap='I'>$libexec/amandad</emphasis>.
+Specify the amandad path of the client, only use with rsh/ssh authentification.
+</para>
+  </listitem>
+  </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>client_username</emphasis> <emphasis remap='I'> string</emphasis></term>
+  <listitem>
+<para>Default:
+<emphasis remap='I'>CLIENT_LOGIN</emphasis>.
+Specify the username to connect on the client, only use with rsh/ssh authentification.
+</para>
   </listitem>
   </varlistentry>
 
