@@ -1,3 +1,8 @@
+2006-04-11  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/krb4-security.c: Increase timeout to 60 seconds.
+	* common-src/rsh-security.c: Increase timeout to 60 seconds.
+	* common-src/ssh-security.c: Increase timeout to 60 seconds.
+
 2006-04-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/amrestore.c: reset count_error to 0 on a restore.
 

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.18 2005/12/01 01:14:39 martinea Exp $
+ * $Id: rsh-security.c,v 1.18.2.1 2006/04/11 11:11:16 martinea Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -933,7 +933,7 @@ conn_read_callback(cookie)
     rshprintf(("rsh: conn_read_callback\n"));
 
     /* Read the data off the wire.  If we get errors, shut down. */
-    rval = recv_token(rc, 5);
+    rval = recv_token(rc, 60);
     rshprintf(("rsh: conn_read_callback: recv_token returned %d\n", rval));
     if (rval <= 0) {
 	rc->pktlen = 0;

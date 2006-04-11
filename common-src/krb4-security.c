@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb4-security.c,v 1.9 2006/02/21 04:13:55 ktill Exp $
+ * $Id: krb4-security.c,v 1.9.2.1 2006/04/11 11:11:16 martinea Exp $
  *
  * krb4-security.c - helper functions for kerberos v4 security.
  */
@@ -763,7 +763,7 @@ krb4_stream_auth(s)
      * and useconds by one.  Reencrypt, and present to the other side.
      * Timeout in 10 seconds.
      */
-    if (net_read(fd, &enc, sizeof(enc), 10) < 0) {
+    if (net_read(fd, &enc, sizeof(enc), 60) < 0) {
 	security_stream_seterror(&ks->secstr,
 	    "krb4 stream handshake read error: %s", strerror(errno));
 	return (-1);
@@ -785,7 +785,7 @@ krb4_stream_auth(s)
      * If they incremented it properly, then succeed.
      * Timeout in 10 seconds.
      */
-    if (net_read(fd, &enc, sizeof(enc), 10) < 0) {
+    if (net_read(fd, &enc, sizeof(enc), 60) < 0) {
 	security_stream_seterror(&ks->secstr,
 	    "krb4 stream handshake read error: %s", strerror(errno));
 	return (-1);
