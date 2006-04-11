@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.9 2006/04/05 13:24:01 martinea Exp $
+ * $Id: ssh-security.c,v 1.10 2006/04/11 12:21:47 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -948,7 +948,7 @@ conn_read_callback(cookie)
     sshprintf(("%s: ssh: conn_read_callback\n",debug_prefix_time(NULL)));
 
     /* Read the data off the wire.  If we get errors, shut down. */
-    rval = recv_token(rc, 5);
+    rval = recv_token(rc, 60);
     sshprintf(("%s: ssh: conn_read_callback: recv_token returned %d\n", debug_prefix_time(NULL), rval));
     if (rval <= 0) {
 	rc->pktlen = 0;
