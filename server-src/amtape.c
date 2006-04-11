@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.40 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: amtape.c,v 1.41 2006/04/11 13:47:13 martinea Exp $
  *
  * tape changer interface program
  */
@@ -128,6 +128,8 @@ char **argv;
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
+    dbopen();
+
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     erroutput_type = ERR_INTERACTIVE;
@@ -201,6 +203,7 @@ char **argv;
 	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
     }
 
+    dbclose();
     return 0;
 }
 
@@ -460,12 +463,13 @@ char **argv;
 
 
 /* ---------------------------- */
+
 void amtape_taper_scan(argc, argv)
 int argc;
 char **argv;
 {
     char *device = NULL;
-    char *label = NULL, *errmsg = NULL;
+    char *label = NULL;
 
     if((tp = lookup_last_reusable_tape(0)) == NULL)
 	searchlabel = NULL;
@@ -481,16 +485,13 @@ char **argv;
     if(searchlabel) fprintf(stderr, "tape label %s or ", searchlabel);
     fprintf(stderr, "a new tape.\n");
 
-    if (taper_scan(searchlabel, &label, &datestamp, &errmsg, &device) <= 0) {
-        fprintf(stderr, "%s\n", errmsg);
-    }
+    taper_scan(searchlabel, &label, &datestamp,&device, FILE_taperscan_output_callback, stderr);
 
     fprintf(stderr, "%s: label %s is now loaded.\n",
             get_pname(), label);
 
     amfree(label);
     amfree(datestamp);
-    amfree(errmsg);
     amfree(device);
 }
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.123 2006/04/06 18:10:28 ktill Exp $
+ * $Id: amcheck.c,v 1.124 2006/04/11 13:47:13 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -463,7 +463,7 @@ char *first_match_label = NULL, *first_match = NULL, *found_device = NULL;
 char *label;
 char *searchlabel, *labelstr;
 tape_t *tp;
-FILE *errf;
+FILE *errf = NULL;
 
 int test_server_pgm(outf, dir, pgm, suid, dumpuid)
 FILE *outf;
@@ -504,7 +504,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 {
     char *tapename;
     generic_fs_stats_t fs;
-    FILE *outf;
+    FILE *outf = NULL;
     holdingdisk_t *hdp;
     int pid;
     int confbad = 0, tapebad = 0, disklow = 0, logbad = 0;
@@ -806,7 +806,6 @@ int start_server_check(fd, do_localchk, do_tapechk)
 
     if (testtape) {
 	/* check that the tape is a valid amanda tape */
-        char *error_msg;
         int tape_status;
 
 	tapedays = getconf_int(CNF_TAPECYCLE);
@@ -818,10 +817,8 @@ int start_server_check(fd, do_localchk, do_tapechk)
 		    "WARNING: if a tape changer is not available, runtapes must be set to 1\n");
 	}
 
-        tape_status = taper_scan(NULL, &label, &datestamp, &error_msg,
-                                 &tapename);
-        fprintf(outf, "%s\n", error_msg);
-        amfree(error_msg);
+        tape_status = taper_scan(NULL, &label, &datestamp, &tapename,
+				 FILE_taperscan_output_callback, outf);
         if (tape_status < 0) {
 	    tape_t *exptape = lookup_last_reusable_tape(0);
 	    fprintf(outf, "       (expecting ");

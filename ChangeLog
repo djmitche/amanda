@@ -1,4 +1,22 @@
 2006-04-11  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amcheck.c: Call taper_scan with
+		(..., FILE_taperscan_output_callback,outf) arguments.
+	* server-src/amtape.c:  Call taper_scan with
+		(..., FILE_taperscan_output_callback,stderr) arguments.
+	* server-src/taper.c:   Call taper_scan with
+		(..., CHAR_taperscan_output_callback, &error_msg) arguments.
+	* server-src/taperscan.h(FILE_taperscan_output_callback,
+				 CHAR_taperscan_output_callback): Protoype.
+	* server-src/taperscan.h(taper_scan): New protoype, remove
+	  error_message arg, add taperscan_output_callback and data arg.
+	* server-src/taperscan.c(FILE_taperscan_output_callback): Callback
+	  that print the msg to it's arg, which is FILE*.
+	* server-src/taperscan.c(CHAR_taperscan_output_callback): Callback
+	  that append the msg to it's arg, which is char*.
+	* server-src/taperscan.c(taper_scan): Fix for new arguments.
+	* server-src/taperscan.c(changer_taper_scan): Fix for new arguments.
+
+2006-04-11  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/xml-source/amanda.conf.5.xml: Document amandad_path and
 					    client_username dumptype option.
 

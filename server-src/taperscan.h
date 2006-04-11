@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.h,v 1.1 2005/12/21 19:07:51 paddy_s Exp $
+ * $Id: taperscan.h,v 1.2 2006/04/11 13:47:13 martinea Exp $
  *
  * This contains the interface to the tape-scan algorithm implementation.
  * The interface is rather simple: Calling programs (taper, amcheck,
@@ -48,5 +48,9 @@
  * All returned strings are newly-allocated. */
 
 int taper_scan P((char* wantlabel,
-                  char** gotlabel, char** timestamp, char** error_message,
-                  char **tapedev));
+                  char** gotlabel, char** timestamp,
+                  char **tapedev,
+		  void taperscan_output_callback(void *data, char *msg),
+		  void *data));
+void FILE_taperscan_output_callback P((void *data, char *msg));
+void CHAR_taperscan_output_callback P((void *data, char *msg));
