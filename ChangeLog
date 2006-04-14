@@ -1,4 +1,8 @@
 2006-04-14  Jean-Louis Martineau <martineau@zmanda.com>
+	* recover-src/help.c: Document setdate YYYY-MM-DD-HH-MM-SS format.
+	* man/xml-source/amrecover.8.xml: Ditto.
+
+2006-04-14  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/amandad.c: Use %p to printf pointer.
 
 2006-04-14  Jean-Louis Martineau <martineau@zmanda.com>

@@ -101,7 +101,7 @@ The following commands are available:</para>
   </listitem>
   </varlistentry>
   <varlistentry>
-  <term><emphasis remap='B'>setdate YYYY-MM-DD</emphasis></term>
+  <term><emphasis remap='B'>setdate YYYY-MM-DD-HH-MM-SS|YYYY-MM-DD</emphasis></term>
   <listitem>
 <para>Set the date (default: today).
 File listing commands only return information on
