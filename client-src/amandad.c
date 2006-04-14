@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.62 2006/03/09 16:51:41 martinea Exp $
+ * $Id: amandad.c,v 1.63 2006/04/14 11:36:19 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -553,21 +553,21 @@ state_machine(as, action, pkt)
     pkt_t nak;
 
 #ifdef AMANDAD_DEBUG
-    dbprintf(("%s: state_machine: %X entering\n",
-	debug_prefix_time(NULL), (unsigned int)as));
+    dbprintf(("%s: state_machine: %p entering\n",
+	debug_prefix_time(NULL), as));
 #endif
     for (;;) {
 	curstate = as->state;
 #ifdef AMANDAD_DEBUG
-	dbprintf(("%s: state_machine: %X curstate=%s action=%s\n",
-	    debug_prefix_time(NULL), (unsigned int)as,
+	dbprintf(("%s: state_machine: %p curstate=%s action=%s\n",
+	    debug_prefix_time(NULL), as,
 	    state2str(curstate), action2str(action)));
 #endif
 	retaction = (*curstate)(as, action, pkt);
 #ifdef AMANDAD_DEBUG
-	dbprintf(("%s: state_machine: %X curstate=%s returned %s (nextstate=%s)\n",
+	dbprintf(("%s: state_machine: %p curstate=%s returned %s (nextstate=%s)\n",
 	    debug_prefix_time(NULL),
-	    (unsigned int)as, state2str(curstate), action2str(retaction),
+	    as, state2str(curstate), action2str(retaction),
 	    state2str(as->state)));
 #endif
 
@@ -577,8 +577,8 @@ state_machine(as, action, pkt)
 	 */
 	case A_PENDING:
 #ifdef AMANDAD_DEBUG
-	    dbprintf(("%s: state_machine: %X leaving (A_PENDING)\n",
-		debug_prefix_time(NULL), (unsigned int)as));
+	    dbprintf(("%s: state_machine: %p leaving (A_PENDING)\n",
+		debug_prefix_time(NULL), as));
 #endif
 	    return;
 
@@ -600,8 +600,8 @@ state_machine(as, action, pkt)
 		pkt_type2str(pkt->type));
 	    do_sendpkt(as->security_handle, &nak);
 #ifdef AMANDAD_DEBUG
-	    dbprintf(("%s: state_machine: %X leaving (A_SENDNAK)\n",
-		debug_prefix_time(NULL), (unsigned int)as));
+	    dbprintf(("%s: state_machine: %p leaving (A_SENDNAK)\n",
+		debug_prefix_time(NULL), as));
 #endif
 	    return;
 
@@ -611,8 +611,8 @@ state_machine(as, action, pkt)
 	case A_FINISH:
 	    service_delete(as);
 #ifdef AMANDAD_DEBUG
-	    dbprintf(("%s: state_machine: %X leaving (A_FINISH)\n",
-		debug_prefix_time(NULL), (unsigned int)as));
+	    dbprintf(("%s: state_machine: %p leaving (A_FINISH)\n",
+		debug_prefix_time(NULL), as));
 #endif
 	    return;
 
