@@ -1,3 +1,6 @@
+2006-04-14  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amtape.c: Add update command.
+
 2006-04-11  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taper.c: log_add(L_WARNING) the output of taper_scan if
 			       no valid tape are found.
