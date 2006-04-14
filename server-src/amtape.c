@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.40 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: amtape.c,v 1.40.2.1 2006/04/14 11:32:07 martinea Exp $
  *
  * tape changer interface program
  */
@@ -47,8 +47,10 @@ void load_slot P((int argc, char **argv));
 void load_label P((int argc, char **argv));
 void show_slots P((int argc, char **argv));
 void show_current P((int argc, char **argv));
+void update_labeldb P((int argc, char **argv));
 void amtape_taper_scan P((int argc, char **argv));
 void show_device P((int argc, char **argv));
+int update_one_slot P((void *ud, int rc, char *slotstr, char *device));
 int loadlabel_slot P((void *ud, int rc, char *slotstr, char *device));
 int show_init P((void *ud, int rc, int ns, int bk, int s));
 int show_init_all P((void *ud, int rc, int ns, int bk, int s));
@@ -90,6 +92,8 @@ static const struct {
 	"taper                perform taper's scan alg." },
     { "device", show_device,
 	"device               show current tape device" },
+    { "update", update_labeldb,
+	"update               update the label matchingdatabase"},
 };
 #define	NCMDS	(sizeof(cmdtab) / sizeof(cmdtab[0]))
 
@@ -509,3 +513,43 @@ char **argv;
     amfree(slot);
     amfree(device);
 }
+
+/* ---------------------------- */
+
+int update_one_slot(ud, rc, slotstr, device)
+    void *ud;
+    int rc;
+    char *slotstr;
+    char *device;
+{
+    char *errstr = NULL;
+    char *datestamp = NULL;
+    char *label = NULL;
+
+    if(rc > 1)
+	error("could not load slot %s: %s", slotstr, changer_resultstr);
+    else if(rc == 1)
+	fprintf(stderr, "slot %s: %s\n", slotstr, changer_resultstr);
+    else if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL)
+	fprintf(stderr, "slot %s: %s\n", slotstr, errstr);
+    else {
+	fprintf(stderr, "slot %s: date %-8s label %s\n",
+		slotstr, datestamp, label);
+	changer_label(slotstr, label);
+    }
+    amfree(errstr);
+    amfree(datestamp);
+    amfree(label);
+    return 0;
+}
+
+void update_labeldb(argc, argv)
+int argc;
+char **argv;
+{
+    if(argc != 1)
+	usage();
+
+    changer_find(NULL, show_init_all, update_one_slot, NULL);
+}
+
