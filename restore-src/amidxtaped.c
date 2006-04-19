@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.58 2006/03/14 13:12:01 martinea Exp $
+/* $Id: amidxtaped.c,v 1.59 2006/04/19 14:13:19 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -141,7 +141,7 @@ int fd;
 		continue;
 	    }
 	    dbprintf(("%s: Control pipe read error - %s\n",
-		pgm, strerror(errno)));
+		      pgm, strerror(errno)));
 	    break;
 	}
 
@@ -178,33 +178,33 @@ void check_security_buffer(buffer)
     struct sockaddr_in addr;
     char *s, *fp, ch;
     char *errstr = NULL;
-    
-     i = sizeof (addr);
-     if (getpeername(0, (struct sockaddr *)&addr, &i) == -1)
-	 error("getpeername: %s", strerror(errno));
-     if (addr.sin_family != AF_INET || ntohs(addr.sin_port) == 20) {
-       error("connection rejected from %s family %d port %d",
-             inet_ntoa(addr.sin_addr), addr.sin_family, htons(addr.sin_port));
-     }
-     
-     /* do the security thing */
-     s = buffer;
-     ch = *s++;
 
-     skip_whitespace(s, ch);
-     if (ch == '\0') {
-	     error("cannot parse SECURITY line");
-     }
-     fp = s-1;
-     skip_non_whitespace(s, ch);
-     s[-1] = '\0';
-     if (strcmp(fp, "SECURITY") != 0) {
-	 error("cannot parse SECURITY line");
-     }
-     skip_whitespace(s, ch);
-     if (!check_security(&addr, s-1, 0, &errstr)) {
-	 error("security check failed: %s", errstr);
-     }
+    i = sizeof (addr);
+    if (getpeername(0, (struct sockaddr *)&addr, &i) == -1)
+	error("getpeername: %s", strerror(errno));
+    if (addr.sin_family != AF_INET || ntohs(addr.sin_port) == 20) {
+	error("connection rejected from %s family %d port %d",
+	      inet_ntoa(addr.sin_addr), addr.sin_family, htons(addr.sin_port));
+    }
+
+    /* do the security thing */
+    s = buffer;
+    ch = *s++;
+
+    skip_whitespace(s, ch);
+    if (ch == '\0') {
+	error("cannot parse SECURITY line");
+    }
+    fp = s-1;
+    skip_non_whitespace(s, ch);
+    s[-1] = '\0';
+    if (strcmp(fp, "SECURITY") != 0) {
+	error("cannot parse SECURITY line");
+    }
+    skip_whitespace(s, ch);
+    if (!check_security(&addr, s-1, 0, &errstr)) {
+	error("security check failed: %s", errstr);
+    }
 }
 
 int main(argc, argv)
