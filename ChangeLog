@@ -1,3 +1,6 @@
+2006-04-21  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/changer.c (changer_command): Make sure fd[0] != 1.
+
 2006-04-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/amidxtaped.c: Cleanup.
 
