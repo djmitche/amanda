@@ -1,3 +1,7 @@
+2006-04-23  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driver.c (handle_chunker_result): make sure that
+						       est_size > act-size.
+
 2006-04-21  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/changer.c (changer_command): Make sure fd[0] != 1.
 
