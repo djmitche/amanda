@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.165.2.1 2006/04/23 18:52:04 martinea Exp $
+ * $Id: driver.c,v 1.165.2.2 2006/04/23 23:04:33 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1469,6 +1469,9 @@ handle_chunker_result(cookie)
 		sched(dp)->act_size = sched(dp)->est_size; /* not quite true */
 		sched(dp)->est_size = (sched(dp)->act_size/20) * 21; /* +5% */
 		sched(dp)->est_size = am_round(sched(dp)->est_size, DISK_BLOCK_KB);
+		if(sched(dp)->est_size <=  sched(dp)->act_size + DISK_BLOCK_KB)
+		    sched(dp)->est_size = sched(dp)->act_size + 
+					  2 * DISK_BLOCK_KB;
 		h = find_diskspace( sched(dp)->est_size - sched(dp)->act_size,
 				    &dummy,
 				    h[activehd-1] );

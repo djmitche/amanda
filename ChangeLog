@@ -1,4 +1,8 @@
 2006-04-23  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driver.c (handle_chunker_result): make sure that
+						       est_size > act-size.
+
+2006-04-23  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/chunker.c: Read the START command to set the datestamp.
 	* server-src/driver.c: Send a START command to the chunker.
 	* server-src/driverio.c (chunker_cmd): Add the START command.
