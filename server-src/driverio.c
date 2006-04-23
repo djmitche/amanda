@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.81 2006/03/11 21:57:18 martinea Exp $
+ * $Id: driverio.c,v 1.81.2.1 2006/04/23 18:52:04 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -440,12 +440,15 @@ disk_t *dp;
     assignedhd_t **h=NULL;
     char *features;
 
-    if(dp && sched(dp) && sched(dp)->holdp) {
+    if(cmd != START && dp && sched(dp) && sched(dp)->holdp) {
 	h = sched(dp)->holdp;
 	activehd = sched(dp)->activehd;
     }
 
     switch(cmd) {
+    case START:
+	cmdline = vstralloc(cmdstr[cmd], " ", (char *)dp, "\n", NULL);
+	break;
     case PORT_WRITE:
 	if (dp && h) {
 	    holdalloc(h[activehd]->disk)->allocated_dumpers++;

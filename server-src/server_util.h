@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.h,v 1.8 2005/10/11 01:17:01 vectro Exp $
+ * $Id: server_util.h,v 1.8.2.1 2006/04/23 18:52:04 martinea Exp $
  *
  */
 #ifndef SERVER_UTIL_H
@@ -36,7 +36,7 @@
 
 typedef enum {
     BOGUS, QUIT, QUITTING, DONE, PARTIAL,
-    FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
+    START, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,	/* dumper cmds */
     FAILED, TRYAGAIN, NO_ROOM, RQ_MORE_DISK,		/* dumper results */
     ABORT_FINISHED, BAD_COMMAND,			/* dumper results */
     START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */

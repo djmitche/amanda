@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.25 2006/03/21 13:23:35 martinea Exp $
+/* $Id: chunker.c,v 1.25.2.1 2006/04/23 18:52:04 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -84,7 +84,7 @@ static char *options = NULL;
 static char *progname = NULL;
 static int level;
 static char *dumpdate = NULL;
-static char *datestamp;
+static char *datestamp = NULL;
 static int command_in_transit;
 
 static dumpfile_t file;
@@ -167,7 +167,15 @@ main(main_argc, main_argv)
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, SIG_IGN);
 
-    datestamp = construct_datestamp(NULL);
+    cmd = getcmd(&cmdargs);
+    if(cmd == START) {
+	if(cmdargs.argc <= 1)
+	    error("error [dumper START: not enough args: datestamp]");
+	datestamp = newstralloc(datestamp, cmdargs.argv[2]);
+    }
+    else {
+	error("Didn't get START command");
+    }
 
 /*    do {*/
 	cmd = getcmd(&cmdargs);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.165 2006/04/05 12:27:56 martinea Exp $
+ * $Id: driver.c,v 1.165.2.1 2006/04/23 18:52:04 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -791,6 +791,7 @@ start_some_dumps(rq)
 	    chunker->result = LAST_TOK;
 	    dumper->result = LAST_TOK;
 	    startup_chunk_process(chunker,chunker_program);
+	    chunker_cmd(chunker, START, (void *)datestamp);
 	    chunker->dumper = dumper;
 	    chunker_cmd(chunker, PORT_WRITE, diskp);
 	    cmd = getresult(chunker->fd, 1, &result_argc, result_argv, MAX_ARGS+1);
