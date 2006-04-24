@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.184 2006/04/10 11:22:25 martinea Exp $
+ * $Id: planner.c,v 1.185 2006/04/24 11:16:26 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -929,15 +929,19 @@ static int when_overwrite(label)
 char *label;
 {
     tape_t *tp;
+    int runtapes;
+
+    runtapes = conf_runtapes;
+    if(runtapes == 0) runtapes = 1;
 
     if((tp = lookup_tapelabel(label)) == NULL)
 	return 1;	/* "shouldn't happen", but trigger warning message */
     else if(!reusable_tape(tp))
 	return 1024;
     else if(lookup_nb_tape() > conf_tapecycle)
-	return (lookup_nb_tape() - tp->position) / conf_runtapes;
+	return (lookup_nb_tape() - tp->position) / runtapes;
     else
-	return (conf_tapecycle - tp->position) / conf_runtapes;
+	return (conf_tapecycle - tp->position) / runtapes;
 }
 
 /* Return the estimated size for a particular dump */
@@ -1075,7 +1079,10 @@ int lev;
     old_tape = lookup_tapelabel(info->inf[lev-1].label);
     if(cur_tape == NULL || old_tape == NULL) return 0;
 
-    nb_runs = (old_tape->position - cur_tape->position) / conf_runtapes;
+    if(conf_runtapes == 0)
+	nb_runs = (old_tape->position - cur_tape->position) / 1;
+    else
+	nb_runs = (old_tape->position - cur_tape->position) / conf_runtapes;
     info->consecutive_runs = nb_runs;
 
     return nb_runs;
