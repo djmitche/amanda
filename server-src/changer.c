@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.29 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: changer.c,v 1.29.2.1 2006/04/24 14:43:01 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -89,8 +89,12 @@ char **rest;
     char *s;
     int ch;
 
-    *slotstr = NULL;
-    *rest = NULL;
+    if (slotstr) {
+	*slotstr = NULL;
+    }
+    if (rest) {
+	*rest = NULL;
+    }
     exitcode = changer_command(cmd, arg);
     s = changer_resultstr;
     ch = *s++;
@@ -100,11 +104,15 @@ char **rest;
     slot = s - 1;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
-    *slotstr = newstralloc(*slotstr, slot);
+    if (slotstr) {
+	*slotstr = newstralloc(*slotstr, slot);
+    }
     s[-1] = ch;
 
     skip_whitespace(s, ch);
-    *rest = s - 1;
+    if(rest) {
+	*rest = s - 1;
+    }
 
     if(exitcode) {
 	if(ch == '\0') return report_bad_resultstr();

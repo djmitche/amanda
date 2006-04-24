@@ -1,3 +1,6 @@
+2006-04-24  Ian Turner <ian@zmanda.com>
+	  * server-src/changer.c: Don't crash if we go to taperscan "Plan B".
+
 2006-04-24  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/planner.c: Fix divide by zero if runtapes==0.
 
