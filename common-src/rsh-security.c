@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.21 2006/04/26 15:13:52 martinea Exp $
+ * $Id: rsh-security.c,v 1.22 2006/04/26 15:28:16 martinea Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -105,6 +105,7 @@ struct rsh_handle {
     security_handle_t sech;		/* MUST be first */
     char *hostname;			/* ptr to rc->hostname */
     struct rsh_stream *rs;		/* virtual stream we xmit over */
+    struct rsh_conn *rc;		/* */
 
     union {
 	void (*recvpkt) P((void *, pkt_t *, security_status_t));
@@ -249,13 +250,15 @@ rsh_connect(hostname, conf_fn, fn, arg, datap)
     assert(fn != NULL);
     assert(hostname != NULL);
 
-    rshprintf(("rsh_connect: %s\n", hostname));
+    rshprintf(("%s: rsh: rsh_connect: %s\n", debug_prefix_time(NULL),
+	       hostname));
 
     rh = alloc(sizeof(*rh));
     security_handleinit(&rh->sech, &rsh_security_driver);
     rh->hostname = NULL;
     rh->rs = NULL;
     rh->ev_timeout = NULL;
+    rh->rc = NULL;
 
     if ((he = gethostbyname(hostname)) == NULL) {
 	security_seterror(&rh->sech,
@@ -271,21 +274,19 @@ rsh_connect(hostname, conf_fn, fn, arg, datap)
 
     rh->hostname = rh->rs->rc->hostname;
 
-    if (rh->rs->rc->pid < 0) {
-	/*
-	 * We need to open a new connection.
-	 *
-	 * XXX need to eventually limit number of outgoing connections here.
-	 */
-	if(conf_fn) {
-	    amandad_path    = conf_fn("amandad_path", datap);
-	    client_username = conf_fn("client_username", datap);
-	}
-	if (runrsh(rh->rs->rc, amandad_path, client_username) < 0) {
-	    security_seterror(&rh->sech,
-		"can't connect to %s: %s", hostname, rh->rs->rc->errmsg);
-	    goto error;
-	}
+    /*
+     * We need to open a new connection.
+     *
+     * XXX need to eventually limit number of outgoing connections here.
+     */
+    if(conf_fn) {
+	amandad_path    = conf_fn("amandad_path", datap);
+	client_username = conf_fn("client_username", datap);
+    }
+    if (runrsh(rh->rs->rc, amandad_path, client_username) < 0) {
+	security_seterror(&rh->sech, "can't connect to %s: %s",
+			  hostname, rh->rs->rc->errmsg);
+	goto error;
     }
     /*
      * The socket will be opened async so hosts that are down won't
@@ -371,21 +372,23 @@ conn_get(hostname)
 {
     struct rsh_conn *rc;
 
-    rshprintf(("rsh: conn_get: %s\n", hostname));
+    rshprintf(("%s: rsh: conn_get: %s\n", debug_prefix_time(NULL), hostname));
 
     for (rc = connq_first(); rc != NULL; rc = connq_next(rc)) {
 	if (strcasecmp(hostname, rc->hostname) == 0)
 	    break;
     }
 
-    if (rc != NULL) {
+    if (rc != NULL && strcmp(hostname,"unknown")==0) {
 	rc->refcnt++;
-	rshprintf(("rsh: conn_get: exists, refcnt to %s is now %d\n",
-	    rc->hostname, rc->refcnt));
+	rshprintf(("%s: rsh: conn_get: exists, refcnt to %s is now %d\n",
+		   debug_prefix_time(NULL),
+		   rc->hostname, rc->refcnt));
 	return (rc);
     }
 
-    rshprintf(("rsh: conn_get: creating new handle\n"));
+    rshprintf(("%s: rsh: conn_get: creating new handle\n",
+	       debug_prefix_time(NULL)));
     /*
      * We can't be creating a new handle if we are the client
      */
@@ -416,12 +419,15 @@ conn_put(rc)
     amwait_t status;
 
     assert(rc->refcnt > 0);
-    if (--rc->refcnt > 0) {
-	rshprintf(("rsh: conn_put: decrementing refcnt for %s to %d\n",
-	    rc->hostname, rc->refcnt));
+    --rc->refcnt;
+    rshprintf(("%s: rsh: conn_put: decrementing refcnt for %s to %d\n",
+	       debug_prefix_time(NULL),
+	rc->hostname, rc->refcnt));
+    if (rc->refcnt > 0) {
 	return;
     }
-    rshprintf(("rsh: conn_put: closing connection to %s\n", rc->hostname));
+    rshprintf(("%s: rsh: conn_put: closing connection to %s\n",
+	       debug_prefix_time(NULL), rc->hostname));
     if (rc->read != -1)
 	aclose(rc->read);
     if (rc->write != -1)
@@ -438,7 +444,7 @@ conn_put(rc)
 }
 
 /*
- * Turn on read events for a conn.  Or, increase a refcnt if we are
+ * Turn on read events for a conn.  Or, increase a ev_read_refcnt if we are
  * already receiving read events.
  */
 static void
@@ -448,11 +454,13 @@ conn_read(rc)
 
     if (rc->ev_read != NULL) {
 	rc->ev_read_refcnt++;
-	rshprintf(("rsh: conn_read: incremented refcnt to %d for %s\n",
-	    rc->ev_read_refcnt, rc->hostname));
+	rshprintf((
+	       "%s: rsh: conn_read: incremented ev_read_refcnt to %d for %s\n",
+	       debug_prefix_time(NULL), rc->ev_read_refcnt, rc->hostname));
 	return;
     }
-    rshprintf(("rsh: conn_read registering event handler for %s\n",
+    rshprintf(("%s: rsh: conn_read registering event handler for %s\n",
+	       debug_prefix_time(NULL),
 	rc->hostname));
     rc->ev_read = event_register(rc->read, EV_READFD, conn_read_callback, rc);
     rc->ev_read_refcnt = 1;
@@ -463,13 +471,16 @@ conn_read_cancel(rc)
     struct rsh_conn *rc;
 {
 
-    if (--rc->ev_read_refcnt > 0) {
-	rshprintf(("rsh: conn_read_cancel: decremented refcnt to %d for %s\n",
-	    rc->ev_read_refcnt, rc->hostname));
+    --rc->ev_read_refcnt;
+    rshprintf((
+	"%s: rsh: conn_read_cancel: decremented ev_read_refcnt to %d for %s\n",
+	debug_prefix_time(NULL),
+	rc->ev_read_refcnt, rc->hostname));
+    if(rc->ev_read_refcnt > 0) {
 	return;
     }
-    rshprintf(("rsh: conn_read_cancel: releasing event handler for %s\n",
-	rc->hostname));
+    rshprintf(("%s: rsh: conn_read_cancel: releasing event handler for %s\n",
+	       debug_prefix_time(NULL), rc->hostname));
     event_release(rc->ev_read);
     rc->ev_read = NULL;
 }
@@ -485,7 +496,8 @@ rsh_close(inst)
 
     assert(rh != NULL);
 
-    rshprintf(("rsh: closing handle to %s\n", rh->hostname));
+    rshprintf(("%s: rsh: closing handle to %s\n", debug_prefix_time(NULL),
+	       rh->hostname));
 
     if (rh->rs != NULL) {
 	/* This may be null if we get here on an error */
@@ -516,7 +528,6 @@ runrsh(rc, amandad_path, client_username)
 	return (-1);
     }
 
-
     switch (rc->pid = fork()) {
     case -1:
 	rc->errmsg = newvstralloc("fork: ", strerror(errno), NULL);
@@ -540,18 +551,17 @@ runrsh(rc, amandad_path, client_username)
 
     safe_fd(-1, 0);
 
-    if(!xamandad_path || strlen(xamandad_path) <= 1)
+    if(!xamandad_path || strlen(xamandad_path) <= 1) 
 	xamandad_path = vstralloc(libexecdir, "/", "amandad",
-				  versionsuffix(), NULL);
+				 versionsuffix(), NULL);
     if(!xclient_username || strlen(xclient_username) <= 1)
 	xclient_username = CLIENT_LOGIN;
-
 
     execlp(RSH_PATH, RSH_PATH, "-l", xclient_username,
 	   rc->hostname, xamandad_path, "-auth=rsh", NULL);
     error("error: couldn't exec %s: %s", RSH_PATH, strerror(errno));
 
-    /* should nerver go here, shut up compiler warning */
+    /* should never go here, shut up compiler warning */
     return(-1);
 }
 
@@ -570,14 +580,16 @@ rsh_sendpkt(cookie, pkt)
     assert(rh != NULL);
     assert(pkt != NULL);
 
-    rshprintf(("rsh: sendpkt: enter\n"));
+    rshprintf(("%s: rsh: sendpkt: enter\n", debug_prefix_time(NULL)));
 
     len = strlen(pkt->body) + 2;
     buf[0] = (char)pkt->type;
     strcpy(&buf[1], pkt->body);
 
-    rshprintf(("rsh: sendpkt: %s (%d) pkt_t (len %d) contains:\n\n\"%s\"\n\n",
-	pkt_type2str(pkt->type), pkt->type, strlen(pkt->body), pkt->body));
+    rshprintf((
+	    "%s: rsh: sendpkt: %s (%d) pkt_t (len %d) contains:\n\n\"%s\"\n\n",
+	    debug_prefix_time(NULL), pkt_type2str(pkt->type), pkt->type,
+	    strlen(pkt->body), pkt->body));
 
     if (rsh_stream_write(rh->rs, buf, len) < 0) {
 	security_seterror(&rh->sech, security_stream_geterror(&rh->rs->secstr));
@@ -600,7 +612,8 @@ rsh_recvpkt(cookie, fn, arg, timeout)
 
     assert(rh != NULL);
 
-    rshprintf(("rsh: recvpkt registered for %s\n", rh->hostname));
+    rshprintf(("%s: rsh: recvpkt registered for %s\n",
+	       debug_prefix_time(NULL), rh->hostname));
 
     /*
      * Reset any pending timeout on this handle
@@ -630,7 +643,8 @@ rsh_recvpkt_cancel(cookie)
 {
     struct rsh_handle *rh = cookie;
 
-    rshprintf(("rsh: cancelling recvpkt for %s\n", rh->hostname));
+    rshprintf(("%s: rsh: cancelling recvpkt for %s\n",
+	       debug_prefix_time(NULL), rh->hostname));
 
     assert(rh != NULL);
 
@@ -676,8 +690,10 @@ recvpkt_callback(cookie, buf, bufsize)
     }
 
     parse_pkt(&pkt, buf, bufsize);
-    rshprintf(("rsh: received %s packet (%d) from %s, contains:\n\n\"%s\"\n\n",
-	pkt_type2str(pkt.type), pkt.type, rh->hostname, pkt.body));
+    rshprintf((
+	   "%s: rsh: received %s packet (%d) from %s, contains:\n\n\"%s\"\n\n",
+	   debug_prefix_time(NULL), pkt_type2str(pkt.type), pkt.type,
+	   rh->hostname, pkt.body));
     (*rh->fn.recvpkt)(rh->arg, &pkt, S_OK);
 }
 
@@ -692,7 +708,8 @@ recvpkt_timeout(cookie)
 
     assert(rh != NULL);
 
-    rshprintf(("rsh: recvpkt timeout for %s\n", rh->hostname));
+    rshprintf(("%s: rsh: recvpkt timeout for %s\n",
+	       debug_prefix_time(NULL), rh->hostname));
 
     rsh_recvpkt_cancel(rh);
     (*rh->fn.recvpkt)(rh->arg, NULL, S_TIMEOUT);
@@ -713,7 +730,14 @@ rsh_stream_server(h)
 
     rs = alloc(sizeof(*rs));
     security_streaminit(&rs->secstr, &rsh_security_driver);
-    rs->rc = conn_get(rh->hostname);
+    if(rh->rc) {
+	rs->rc = rh->rc;
+	rs->rc->refcnt++;
+    }
+    else {
+	rs->rc = conn_get(rh->hostname);
+	rh->rc = rs->rc;
+    }
     /*
      * Stream should already be setup!
      */
@@ -730,7 +754,8 @@ rsh_stream_server(h)
      */
     rs->handle = 5000 - newhandle++;
     rs->ev_read = NULL;
-    rshprintf(("rsh: stream_server: created stream %d\n", rs->handle));
+    rshprintf(("%s: rsh: stream_server: created stream %d\n",
+	       debug_prefix_time(NULL), rs->handle));
     return (rs);
 }
 
@@ -770,9 +795,17 @@ rsh_stream_client(h, id)
     security_streaminit(&rs->secstr, &rsh_security_driver);
     rs->handle = id;
     rs->ev_read = NULL;
-    rs->rc = conn_get(rh->hostname);
+    if(rh->rc) {
+	rs->rc = rh->rc;
+	rh->rc->refcnt++;
+    }
+    else {
+	rs->rc = conn_get(rh->hostname);
+	rh->rc = rs->rc;
+    }
 
-    rshprintf(("rsh: stream_client: connected to stream %d\n", id));
+    rshprintf(("%s: rsh: stream_client: connected to stream %d\n",
+	       debug_prefix_time(NULL), id));
 
     return (rs);
 }
@@ -788,7 +821,8 @@ rsh_stream_close(s)
 
     assert(rs != NULL);
 
-    rshprintf(("rsh: stream_close: closing stream %d\n", rs->handle));
+    rshprintf(("%s: rsh: stream_close: closing stream %d\n",
+	       debug_prefix_time(NULL), rs->handle));
 
     rsh_stream_read_cancel(rs);
     conn_put(rs->rc);
@@ -835,9 +869,10 @@ rsh_stream_write(s, buf, size)
     struct rsh_stream *rs = s;
 
     assert(rs != NULL);
+    assert(rs->rc != NULL);
 
-    rshprintf(("rsh: stream_write: writing %d bytes to %s:%d\n", size,
-	rs->rc->hostname, rs->handle));
+    rshprintf(("%s: rsh: stream_write: writing %d bytes to %s:%d\n",
+	       debug_prefix_time(NULL), size, rs->rc->hostname, rs->handle));
 
     if (send_token(rs->rc, rs->handle, buf, size) < 0) {
 	security_stream_seterror(&rs->secstr, rs->rc->errmsg);
@@ -870,6 +905,7 @@ rsh_stream_read(s, fn, arg)
     rs->fn = fn;
     rs->arg = arg;
 }
+
 /*
  * Write a chunk of data to a stream.  Blocks until completion.
  */
@@ -889,14 +925,12 @@ rsh_stream_read_sync(s, buf)
 	return -1;
     }
     rs->ev_read = event_register((event_id_t)rs->rc, EV_WAIT,
-				 stream_read_sync_callback, rs);
+        stream_read_sync_callback, rs);
     conn_read(rs->rc);
     event_wait((event_id_t)rs->rc);
     *buf = rs->rc->pkt;
     return (rs->rc->pktlen);
-
 }
-
 
 /*
  * Callback for rsh_stream_read_sync
@@ -908,8 +942,8 @@ stream_read_sync_callback(s)
     struct rsh_stream *rs = s;
     assert(rs != NULL);
 
-    rshprintf(("%s: rsh: stream_read_callback_sync: handle %d\n", debug_prefix_time(NUL
-L), rs->handle));
+    rshprintf(("%s: rsh: stream_read_callback_sync: handle %d\n",
+	       debug_prefix_time(NULL), rs->handle));
 
     /*
      * Make sure this was for us.  If it was, then blow away the handle
@@ -918,12 +952,12 @@ L), rs->handle));
      * If the handle is EOF, pass that up to our callback.
      */
     if (rs->rc->handle == rs->handle) {
-        rshprintf(("%s: rsh: stream_read_callback_sync: it was for us\n", debug_prefix_
-time(NULL)));
+        rshprintf(("%s: rsh: stream_read_callback_sync: it was for us\n",
+		   debug_prefix_time(NULL)));
         rs->rc->handle = H_TAKEN;
     } else if (rs->rc->handle != H_EOF) {
-        rshprintf(("%s: rsh: stream_read_callback_sync: not for us\n", debug_prefix_tim
-e(NULL)));
+        rshprintf(("%s: rsh: stream_read_callback_sync: not for us\n",
+		   debug_prefix_time(NULL)));
         return;
     }
 
@@ -935,12 +969,13 @@ e(NULL)));
     rsh_stream_read_cancel(rs);
 
     if (rs->rc->pktlen == 0) {
-        rshprintf(("%s: rsh: stream_read_callback_sync: EOF\n", debug_prefix_time(NULL)
-));
+        rshprintf(("%s: rsh: stream_read_callback_sync: EOF\n",
+		   debug_prefix_time(NULL)));
         return;
     }
-    rshprintf(("%s: rsh: stream_read_callback_sync: read %ld bytes from %s:%d\n", debug
-_prefix_time(NULL),
+    rshprintf((
+	     "%s: rsh: stream_read_callback_sync: read %ld bytes from %s:%d\n",
+	     debug_prefix_time(NULL),
         rs->rc->pktlen, rs->rc->hostname, rs->handle));
 }
 
@@ -973,7 +1008,8 @@ stream_read_callback(arg)
     struct rsh_stream *rs = arg;
     assert(rs != NULL);
 
-    rshprintf(("rsh: stream_read_callback: handle %d\n", rs->handle));
+    rshprintf(("%s: rsh: stream_read_callback: handle %d\n",
+	       debug_prefix_time(NULL), rs->handle));
 
     /*
      * Make sure this was for us.  If it was, then blow away the handle
@@ -982,10 +1018,12 @@ stream_read_callback(arg)
      * If the handle is EOF, pass that up to our callback.
      */
     if (rs->rc->handle == rs->handle) {
-	rshprintf(("rsh: stream_read_callback: it was for us\n"));
+	rshprintf(("%s: rsh: stream_read_callback: it was for us\n",
+		   debug_prefix_time(NULL)));
 	rs->rc->handle = H_TAKEN;
     } else if (rs->rc->handle != H_EOF) {
-	rshprintf(("rsh: stream_read_callback: not for us\n"));
+	rshprintf(("%s: rsh: stream_read_callback: not for us\n",
+		   debug_prefix_time(NULL)));
 	return;
     }
 
@@ -997,11 +1035,13 @@ stream_read_callback(arg)
     rsh_stream_read_cancel(rs);
 
     if (rs->rc->pktlen == 0) {
-	rshprintf(("rsh: stream_read_callback: EOF\n"));
+	rshprintf(("%s: rsh: stream_read_callback: EOF\n",
+		   debug_prefix_time(NULL)));
 	(*rs->fn)(rs->arg, NULL, 0);
 	return;
     }
-    rshprintf(("rsh: stream_read_callback: read %ld bytes from %s:%d\n",
+    rshprintf(("%s: rsh: stream_read_callback: read %ld bytes from %s:%d\n",
+	       debug_prefix_time(NULL),
 	rs->rc->pktlen, rs->rc->hostname, rs->handle));
     (*rs->fn)(rs->arg, rs->rc->pkt, rs->rc->pktlen);
 }
@@ -1022,16 +1062,18 @@ conn_read_callback(cookie)
 
     assert(cookie != NULL);
 
-    rshprintf(("rsh: conn_read_callback\n"));
+    rshprintf(("%s: rsh: conn_read_callback\n", debug_prefix_time(NULL)));
 
     /* Read the data off the wire.  If we get errors, shut down. */
     rval = recv_token(rc, 60);
-    rshprintf(("rsh: conn_read_callback: recv_token returned %d\n", rval));
+    rshprintf(("%s: rsh: conn_read_callback: recv_token returned %d\n",
+	       debug_prefix_time(NULL), rval));
     if (rval <= 0) {
 	rc->pktlen = 0;
 	rc->handle = H_EOF;
 	rval = event_wakeup((event_id_t)rc);
-	rshprintf(("rsh: conn_read_callback: event_wakeup return %d\n", rval));
+	rshprintf(("%s: rsh: conn_read_callback: event_wakeup return %d\n",
+		   debug_prefix_time(NULL), rval));
 	/* delete our 'accept' reference */
 	if (accept_fn != NULL)
 	    conn_put(rc);
@@ -1041,7 +1083,8 @@ conn_read_callback(cookie)
 
     /* If there are events waiting on this handle, we're done */
     rval = event_wakeup((event_id_t)rc);
-    rshprintf(("rsh: conn_read_callback: event_wakeup return %d\n", rval));
+    rshprintf(("%s: rsh: conn_read_callback: event_wakeup return %d\n",
+	       debug_prefix_time(NULL), rval));
     if (rval > 0)
 	return;
 
@@ -1052,12 +1095,13 @@ conn_read_callback(cookie)
     rh = alloc(sizeof(*rh));
     security_handleinit(&rh->sech, &rsh_security_driver);
     rh->hostname = rc->hostname;
-    rh->rs = rsh_stream_client(rh, rc->handle);
     rh->ev_timeout = NULL;
+    rh->rc = NULL;
+    rh->rs = rsh_stream_client(rh, rc->handle);
 
-    rshprintf(("rsh: new connection\n"));
+    rshprintf(("%s: rsh: new connection\n", debug_prefix_time(NULL)));
     parse_pkt(&pkt, rc->pkt, rc->pktlen);
-    rshprintf(("rsh: calling accept_fn\n"));
+    rshprintf(("%s: rsh: calling accept_fn\n", debug_prefix_time(NULL)));
     (*accept_fn)(&rh->sech, &pkt);
 }
 
@@ -1069,7 +1113,8 @@ parse_pkt(pkt, buf, bufsize)
 {
     const unsigned char *bufp = buf;
 
-    rshprintf(("rsh: parse_pkt: parsing buffer of %d bytes\n", bufsize));
+    rshprintf(("%s: rsh: parse_pkt: parsing buffer of %d bytes\n",
+	       debug_prefix_time(NULL), bufsize));
 
     pkt->type = (pktype_t)*bufp++;
     bufsize--;
@@ -1083,8 +1128,9 @@ parse_pkt(pkt, buf, bufsize)
 	pkt->body[sizeof(pkt->body) - 1] = '\0';
     }
 
-    rshprintf(("rsh: parse_pkt: %s (%d): \"%s\"\n", pkt_type2str(pkt->type),
-	pkt->type, pkt->body));
+    rshprintf(("%s: rsh: parse_pkt: %s (%d): \"%s\"\n",
+	       debug_prefix_time(NULL), pkt_type2str(pkt->type),
+	       pkt->type, pkt->body));
 }
 
 
@@ -1102,8 +1148,8 @@ send_token(rc, handle, buf, len)
     unsigned int netlength, nethandle;
     struct iovec iov[3];
 
-    rshprintf(("rsh: send_token: writing %d bytes to %s\n", len,
-	rc->hostname));
+    rshprintf(("%s: rsh: send_token: handle %d writing %d bytes to %s\n",
+	       debug_prefix_time(NULL), handle, len, rc->hostname));
 
     assert(sizeof(netlength) == 4);
 
@@ -1143,15 +1189,20 @@ recv_token(rc, timeout)
 
     assert(rc->read >= 0);
 
-    rshprintf(("rsh: recv_token: reading from %s\n", rc->hostname));
+    rshprintf(("%s: rsh: recv_token: reading from %s\n",
+	        debug_prefix_time(NULL), rc->hostname));
 
     switch (net_read(rc, &netint, sizeof(netint), timeout)) {
     case -1:
 	rc->errmsg = newvstralloc(rc->errmsg, "recv error: ", strerror(errno),
 	    NULL);
+	rshprintf(("%s: rsh: recv_token: A return(-1)\n",
+		   debug_prefix_time(NULL)));
 	return (-1);
     case 0:
 	rc->pktlen = 0;
+	rshprintf(("%s: rsh: recv_token: A return(0)\n",
+		   debug_prefix_time(NULL)));
 	return (0);
     default:
 	break;
@@ -1159,6 +1210,8 @@ recv_token(rc, timeout)
     rc->pktlen = ntohl(netint);
     if (rc->pktlen > sizeof(rc->pkt)) {
 	rc->errmsg = newstralloc(rc->errmsg, "recv error: huge packet");
+	rshprintf(("%s: rsh: recv_token: B return(-1)\n",
+		   debug_prefix_time(NULL)));
 	return (-1);
     }
 
@@ -1166,9 +1219,13 @@ recv_token(rc, timeout)
     case -1:
 	rc->errmsg = newvstralloc(rc->errmsg, "recv error: ", strerror(errno),
 	    NULL);
+	rshprintf(("%s: rsh: recv_token: C return(-1)\n",
+		   debug_prefix_time(NULL)));
 	return (-1);
     case 0:
 	rc->pktlen = 0;
+	rshprintf(("%s: rsh: recv_token: D return(0)\n",
+		   debug_prefix_time(NULL)));
 	return (0);
     default:
 	break;
@@ -1179,6 +1236,8 @@ recv_token(rc, timeout)
     case -1:
 	rc->errmsg = newvstralloc(rc->errmsg, "recv error: ", strerror(errno),
 	    NULL);
+	rshprintf(("%s: rsh: recv_token: E return(-1)\n",
+		   debug_prefix_time(NULL)));
 	return (-1);
     case 0:
 	rc->pktlen = 0;
@@ -1187,8 +1246,10 @@ recv_token(rc, timeout)
 	break;
     }
 
-    rshprintf(("rsh: recv_token: read %ld bytes from %s\n", rc->pktlen,
-	rc->hostname));
+    rshprintf(("%s: rsh: recv_token: read %ld bytes from %s\n",
+	       debug_prefix_time(NULL), rc->pktlen, rc->hostname));
+    rshprintf(("%s: rsh: recv_token: end %d\n", debug_prefix_time(NULL),
+	       rc->pktlen));
     return (rc->pktlen);
 }
 
@@ -1251,12 +1312,21 @@ net_read(rc, vbuf, origsize, timeout)
     int nread;
     size_t size = origsize;
 
+    rshprintf(("%s: rsh: net_read: begin %d\n", debug_prefix_time(NULL), origsize));
     while (size > 0) {
+	rshprintf(("%s: rsh: net_read: while %d\n",
+		   debug_prefix_time(NULL), size));
 	if (rc->readbuf.left == 0) {
-	    if (net_read_fillbuf(rc, timeout, size) < 0)
+	    if (net_read_fillbuf(rc, timeout, size) < 0) {
+    		rshprintf(("%s: rsh: net_read: end retrun(-1)\n",
+			   debug_prefix_time(NULL)));
 		return (-1);
-	    if (rc->readbuf.size == 0)
+	    }
+	    if (rc->readbuf.size == 0) {
+    		rshprintf(("%s: rsh: net_read: end retrun(0)\n",
+			   debug_prefix_time(NULL)));
 		return (0);
+	    }
 	}
 	nread = min(rc->readbuf.left, size);
 	off = rc->readbuf.buf + rc->readbuf.size - rc->readbuf.left;
@@ -1266,6 +1336,8 @@ net_read(rc, vbuf, origsize, timeout)
 	size -= nread;
 	rc->readbuf.left -= nread;
     }
+    rshprintf(("%s: rsh: net_read: end %d\n",
+	       debug_prefix_time(NULL), origsize));
     return ((ssize_t)origsize);
 }
 
@@ -1282,6 +1354,7 @@ net_read_fillbuf(rc, timeout, size)
     struct timeval tv;
     if(size > sizeof(rc->readbuf.buf)) size = sizeof(rc->readbuf.buf);
 
+    rshprintf(("%s: rsh: net_read_fillbuf: begin\n", debug_prefix_time(NULL)));
     FD_ZERO(&readfds);
     FD_SET(rc->read, &readfds);
     tv.tv_sec = timeout;
@@ -1291,11 +1364,17 @@ net_read_fillbuf(rc, timeout, size)
 	errno = ETIMEDOUT;
 	/* FALLTHROUGH */
     case -1:
+	rshprintf(("%s: rsh: net_read_fillbuf: case -1\n",
+		   debug_prefix_time(NULL)));
 	return (-1);
     case 1:
+	rshprintf(("%s: rsh: net_read_fillbuf: case 1\n",
+		   debug_prefix_time(NULL)));
 	assert(FD_ISSET(rc->read, &readfds));
 	break;
     default:
+	rshprintf(("%s: rsh: net_read_fillbuf: case default\n",
+		   debug_prefix_time(NULL)));
 	assert(0);
 	break;
     }
@@ -1304,6 +1383,8 @@ net_read_fillbuf(rc, timeout, size)
     if (rc->readbuf.size < 0)
 	return (-1);
     rc->readbuf.left = rc->readbuf.size;
+    rshprintf(("%s: rsh: net_read_fillbuf: end %d\n",
+	       debug_prefix_time(NULL),rc->readbuf.size));
     return (0);
 }
 

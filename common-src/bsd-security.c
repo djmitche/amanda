@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.56 2006/04/26 15:13:52 martinea Exp $
+ * $Id: bsd-security.c,v 1.57 2006/04/26 15:28:16 martinea Exp $
  *
  * "BSD" security module
  */
@@ -298,7 +298,7 @@ void show_stat_info(a, b)
     char *group;
 
     if (stat(name, &sbuf) != 0) {
-	bsdprintf(("%s: cannot stat %s: %s\n",
+	bsdprintf(("%s: bsd: cannot stat %s: %s\n",
 		   debug_prefix_time(NULL), name, strerror(errno)));
 	amfree(name);
 	return;
@@ -315,8 +315,8 @@ void show_stat_info(a, b)
     } else {
 	group = stralloc(grptr->gr_name);
     }
-    bsdprintf(("%s: processing file: %s\n", debug_prefix(NULL), name));
-    bsdprintf(("%s:                  owner=%s group=%s mode=%03o\n",
+    bsdprintf(("%s: bsd: processing file: %s\n", debug_prefix(NULL), name));
+    bsdprintf(("%s: bsd:                  owner=%s group=%s mode=%03o\n",
 	       debug_prefix(NULL), owner, group, (int) (sbuf.st_mode & 0777)));
     amfree(name);
     amfree(owner);
@@ -440,6 +440,8 @@ inithandle(bh, he, port, handle, sequence)
     /*
      * Save the hostname and port info
      */
+    bsdprintf(("inithandle port %d handle %s sequence %d\n", ntohs(port),
+	         handle, sequence));
     strncpy(bh->hostname, he->h_name, sizeof(bh->hostname) - 1);
     bh->hostname[sizeof(bh->hostname) - 1] = '\0';
     bh->peer.sin_addr = *(struct in_addr *)he->h_addr;
@@ -512,7 +514,7 @@ inithandle(bh, he, port, handle, sequence)
     bh->ev_read = NULL;
     bh->ev_timeout = NULL;
 
-    bsdprintf(("%s: adding handle '%s'\n",
+    bsdprintf(("%s: bsd: adding handle '%s'\n",
 	       debug_prefix_time(NULL), bh->proto_handle));
 
     return(0);
@@ -531,7 +533,7 @@ bsd_close(cookie)
 	return;
     }
 
-    bsdprintf(("%s: close handle '%s'\n",
+    bsdprintf(("%s: bsd: close handle '%s'\n",
 	       debug_prefix_time(NULL), bh->proto_handle));
 
     bsd_recvpkt_cancel(bh);
@@ -740,7 +742,7 @@ netfd_read_callback(cookie)
 	    bh_first = bh->prev;
 	}
 
-	bsdprintf(("%s: closeX handle '%s'\n",
+	bsdprintf(("%s: bsd: closeX handle '%s'\n",
 		  debug_prefix_time(NULL), bh->proto_handle));
 
 	amfree(bh);
@@ -769,7 +771,7 @@ recvpkt_callback(cookie)
     void *arg;
 
     assert(bh != NULL);
-    bsdprintf(("%s: receive handle '%s' netfd '%s'\n",
+    bsdprintf(("%s: bsd: receive handle '%s' netfd '%s'\n",
 	       debug_prefix_time(NULL), bh->proto_handle,netfd.handle));
 
     if(strcmp(bh->proto_handle,netfd.handle) != 0) assert(1);
@@ -1020,11 +1022,11 @@ check_user_ruserok(host, pwd, remoteuser)
 	{
 	char *dir = stralloc(pwd->pw_dir);
 
-	bsdprintf(("%s: calling ruserok(%s, %d, %s, %s)\n",
+	bsdprintf(("%s: bsd: calling ruserok(%s, %d, %s, %s)\n",
 		   debug_prefix_time(NULL),
 	           host, myuid == 0, remoteuser, pwd->pw_name));
 	if (myuid == 0) {
-	    bsdprintf(("%s: because you are running as root, ",
+	    bsdprintf(("%s: bsd: because you are running as root, ",
 		       debug_prefix(NULL)));
 	    bsdprintf(("/etc/hosts.equiv will not be used\n"));
 	} else {
@@ -1165,7 +1167,7 @@ check_user_amandahosts(host, pwd, remoteuser)
     found = 0;
     while ((line = agets(fp)) != NULL) {
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
-	bsdprintf(("%s: processing line: <%s>\n", debug_prefix(NULL), line));
+	bsdprintf(("%s: bsd: processing line: <%s>\n", debug_prefix(NULL), line));
 #endif								/* } */
 	/* get the host out of the file */
 	if ((filehost = strtok(line, " \t")) == NULL) {
@@ -1181,11 +1183,11 @@ check_user_amandahosts(host, pwd, remoteuser)
 	hostmatch = (strcasecmp(filehost, host) == 0);
 	usermatch = (strcasecmp(fileuser, remoteuser) == 0);
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
-	bsdprintf(("%s: comparing \"%s\" with\n", debug_prefix(NULL), filehost));
-	bsdprintf(("%s:           \"%s\" (%s)\n", host,
+	bsdprintf(("%s: bsd: comparing \"%s\" with\n", debug_prefix(NULL), filehost));
+	bsdprintf(("%s: bsd:           \"%s\" (%s)\n", host,
 		  debug_prefix(NULL), hostmatch ? "match" : "no match"));
-	bsdprintf(("%s:       and \"%s\" with\n", fileuser, debug_prefix(NULL)));
-	bsdprintf(("%s:           \"%s\" (%s)\n", remoteuser,
+	bsdprintf(("%s: bsd:       and \"%s\" with\n", fileuser, debug_prefix(NULL)));
+	bsdprintf(("%s: bsd:           \"%s\" (%s)\n", remoteuser,
 		  debug_prefix(NULL), usermatch ? "match" : "no match"));
 #endif								/* } */
 	amfree(line);
@@ -1580,7 +1582,7 @@ bsd_stream_read_sync(s, buf)
     if(bs->ev_read != NULL) {
         return -1;
     }
-    event_register(bs->fd, EV_READFD, stream_read_sync_callback, bs);
+    bs->ev_read = event_register(bs->fd, EV_READFD, stream_read_sync_callback, bs);
     event_wait((event_id_t)bs->fd);
     *buf = bs->databuf;
     return (bs->len);
@@ -1600,7 +1602,8 @@ stream_read_sync_callback(s)
 
     assert(bs != NULL);
 
-    bsdprintf(("%s: bsd: stream_read_callback_sync: handle %d\n", debug_prefix_time(NULL), bs->handle));
+    bsdprintf(("%s: bsd: stream_read_callback_sync: fd %d\n",
+		 debug_prefix_time(NULL), bs->fd));
 
     /*
      * Remove the event first, in case they reschedule it in the callback.
@@ -1673,7 +1676,7 @@ pkthdr2str(bh, pkt)
 	VERSION_MAJOR, VERSION_MINOR, pkt_type2str(pkt->type),
 	bh->proto_handle, bh->sequence);
 
-    bsdprintf(("%s: pkthdr2str handle '%s'\n",
+    bsdprintf(("%s: bsd: pkthdr2str handle '%s'\n",
 	       debug_prefix_time(NULL), bh->proto_handle));
 
     /* check for truncation.  If only we had asprintf()... */

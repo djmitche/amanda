@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.11 2006/04/26 15:13:52 martinea Exp $
+ * $Id: ssh-security.c,v 1.12 2006/04/26 15:28:16 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -105,6 +105,7 @@ struct ssh_handle {
     security_handle_t sech;		/* MUST be first */
     char *hostname;			/* ptr to rc->hostname */
     struct ssh_stream *rs;		/* virtual stream we xmit over */
+    struct ssh_conn *rc;		/* */
 
     union {
 	void (*recvpkt) P((void *, pkt_t *, security_status_t));
@@ -249,13 +250,15 @@ ssh_connect(hostname, conf_fn, fn, arg, datap)
     assert(fn != NULL);
     assert(hostname != NULL);
 
-    sshprintf(("%s: ssh: ssh_connect: %s\n", debug_prefix_time(NULL), hostname));
+    sshprintf(("%s: ssh: ssh_connect: %s\n", debug_prefix_time(NULL),
+	       hostname));
 
     rh = alloc(sizeof(*rh));
     security_handleinit(&rh->sech, &ssh_security_driver);
     rh->hostname = NULL;
     rh->rs = NULL;
     rh->ev_timeout = NULL;
+    rh->rc = NULL;
 
     if ((he = gethostbyname(hostname)) == NULL) {
 	security_seterror(&rh->sech,
@@ -271,21 +274,19 @@ ssh_connect(hostname, conf_fn, fn, arg, datap)
 
     rh->hostname = rh->rs->rc->hostname;
 
-    if (rh->rs->rc->pid < 0) {
-	/*
-	 * We need to open a new connection.
-	 *
-	 * XXX need to eventually limit number of outgoing connections here.
-	 */
-        if(conf_fn) {
-	    amandad_path    = conf_fn("amandad_path", datap);
-	    client_username = conf_fn("client_username", datap);
-	}
-	if (runssh(rh->rs->rc, amandad_path, client_username) < 0) {
-	    security_seterror(&rh->sech,
-		"can't connect to %s: %s", hostname, rh->rs->rc->errmsg);
-	    goto error;
-	}
+    /*
+     * We need to open a new connection.
+     *
+     * XXX need to eventually limit number of outgoing connections here.
+     */
+    if(conf_fn) {
+	amandad_path    = conf_fn("amandad_path", datap);
+	client_username = conf_fn("client_username", datap);
+    }
+    if (runssh(rh->rs->rc, amandad_path, client_username) < 0) {
+	security_seterror(&rh->sech, "can't connect to %s: %s",
+			  hostname, rh->rs->rc->errmsg);
+	goto error;
     }
     /*
      * The socket will be opened async so hosts that are down won't
@@ -378,14 +379,16 @@ conn_get(hostname)
 	    break;
     }
 
-    if (rc != NULL) {
+    if (rc != NULL && strcmp(hostname,"unknown")==0) {
 	rc->refcnt++;
-	sshprintf(("%s: ssh: conn_get: exists, refcnt to %s is now %d\n", debug_prefix_time(NULL),
-	    rc->hostname, rc->refcnt));
+	sshprintf(("%s: ssh: conn_get: exists, refcnt to %s is now %d\n",
+		   debug_prefix_time(NULL),
+		   rc->hostname, rc->refcnt));
 	return (rc);
     }
 
-    sshprintf(("%s: ssh: conn_get: creating new handle\n", debug_prefix_time(NULL)));
+    sshprintf(("%s: ssh: conn_get: creating new handle\n",
+	       debug_prefix_time(NULL)));
     /*
      * We can't be creating a new handle if we are the client
      */
@@ -417,12 +420,14 @@ conn_put(rc)
 
     assert(rc->refcnt > 0);
     --rc->refcnt;
-    sshprintf(("%s: ssh: conn_put: decrementing refcnt for %s to %d\n", debug_prefix_time(NULL),
+    sshprintf(("%s: ssh: conn_put: decrementing refcnt for %s to %d\n",
+	       debug_prefix_time(NULL),
 	rc->hostname, rc->refcnt));
     if (rc->refcnt > 0) {
 	return;
     }
-    sshprintf(("%s: ssh: conn_put: closing connection to %s\n", debug_prefix_time(NULL), rc->hostname));
+    sshprintf(("%s: ssh: conn_put: closing connection to %s\n",
+	       debug_prefix_time(NULL), rc->hostname));
     if (rc->read != -1)
 	aclose(rc->read);
     if (rc->write != -1)
@@ -449,11 +454,13 @@ conn_read(rc)
 
     if (rc->ev_read != NULL) {
 	rc->ev_read_refcnt++;
-	sshprintf(("%s: ssh: conn_read: incremented ev_read_refcnt to %d for %s\n", debug_prefix_time(NULL),
-	    rc->ev_read_refcnt, rc->hostname));
+	sshprintf((
+	       "%s: ssh: conn_read: incremented ev_read_refcnt to %d for %s\n",
+	       debug_prefix_time(NULL), rc->ev_read_refcnt, rc->hostname));
 	return;
     }
-    sshprintf(("%s: ssh: conn_read registering event handler for %s\n", debug_prefix_time(NULL),
+    sshprintf(("%s: ssh: conn_read registering event handler for %s\n",
+	       debug_prefix_time(NULL),
 	rc->hostname));
     rc->ev_read = event_register(rc->read, EV_READFD, conn_read_callback, rc);
     rc->ev_read_refcnt = 1;
@@ -465,13 +472,15 @@ conn_read_cancel(rc)
 {
 
     --rc->ev_read_refcnt;
-    sshprintf(("%s: ssh: conn_read_cancel: decremented ev_read_refcnt to %d for %s\n", debug_prefix_time(NULL),
+    sshprintf((
+	"%s: ssh: conn_read_cancel: decremented ev_read_refcnt to %d for %s\n",
+	debug_prefix_time(NULL),
 	rc->ev_read_refcnt, rc->hostname));
     if(rc->ev_read_refcnt > 0) {
 	return;
     }
-    sshprintf(("%s: ssh: conn_read_cancel: releasing event handler for %s\n", debug_prefix_time(NULL),
-	rc->hostname));
+    sshprintf(("%s: ssh: conn_read_cancel: releasing event handler for %s\n",
+	       debug_prefix_time(NULL), rc->hostname));
     event_release(rc->ev_read);
     rc->ev_read = NULL;
 }
@@ -487,7 +496,8 @@ ssh_close(inst)
 
     assert(rh != NULL);
 
-    sshprintf(("%s: ssh: closing handle to %s\n", debug_prefix_time(NULL), rh->hostname));
+    sshprintf(("%s: ssh: closing handle to %s\n", debug_prefix_time(NULL),
+	       rh->hostname));
 
     if (rh->rs != NULL) {
 	/* This may be null if we get here on an error */
@@ -550,7 +560,7 @@ runssh(rc, amandad_path, client_username)
 	   rc->hostname, xamandad_path, "-auth=ssh", NULL);
     error("error: couldn't exec %s: %s", SSH_PATH, strerror(errno));
 
-    /* should nerver go here, shut up compiler warning */
+    /* should never go here, shut up compiler warning */
     return(-1);
 }
 
@@ -575,8 +585,10 @@ ssh_sendpkt(cookie, pkt)
     buf[0] = (char)pkt->type;
     strcpy(&buf[1], pkt->body);
 
-    sshprintf(("%s: ssh: sendpkt: %s (%d) pkt_t (len %d) contains:\n\n\"%s\"\n\n", debug_prefix_time(NULL),
-	pkt_type2str(pkt->type), pkt->type, strlen(pkt->body), pkt->body));
+    sshprintf((
+	    "%s: ssh: sendpkt: %s (%d) pkt_t (len %d) contains:\n\n\"%s\"\n\n",
+	    debug_prefix_time(NULL), pkt_type2str(pkt->type), pkt->type,
+	    strlen(pkt->body), pkt->body));
 
     if (ssh_stream_write(rh->rs, buf, len) < 0) {
 	security_seterror(&rh->sech, security_stream_geterror(&rh->rs->secstr));
@@ -599,7 +611,8 @@ ssh_recvpkt(cookie, fn, arg, timeout)
 
     assert(rh != NULL);
 
-    sshprintf(("%s: ssh: recvpkt registered for %s\n", debug_prefix_time(NULL), rh->hostname));
+    sshprintf(("%s: ssh: recvpkt registered for %s\n",
+	       debug_prefix_time(NULL), rh->hostname));
 
     /*
      * Reset any pending timeout on this handle
@@ -629,7 +642,8 @@ ssh_recvpkt_cancel(cookie)
 {
     struct ssh_handle *rh = cookie;
 
-    sshprintf(("%s: ssh: cancelling recvpkt for %s\n", debug_prefix_time(NULL), rh->hostname));
+    sshprintf(("%s: ssh: cancelling recvpkt for %s\n",
+	       debug_prefix_time(NULL), rh->hostname));
 
     assert(rh != NULL);
 
@@ -675,8 +689,10 @@ recvpkt_callback(cookie, buf, bufsize)
     }
 
     parse_pkt(&pkt, buf, bufsize);
-    sshprintf(("%s: ssh: received %s packet (%d) from %s, contains:\n\n\"%s\"\n\n", debug_prefix_time(NULL),
-	pkt_type2str(pkt.type), pkt.type, rh->hostname, pkt.body));
+    sshprintf((
+	   "%s: ssh: received %s packet (%d) from %s, contains:\n\n\"%s\"\n\n",
+	   debug_prefix_time(NULL), pkt_type2str(pkt.type), pkt.type,
+	   rh->hostname, pkt.body));
     (*rh->fn.recvpkt)(rh->arg, &pkt, S_OK);
 }
 
@@ -691,7 +707,8 @@ recvpkt_timeout(cookie)
 
     assert(rh != NULL);
 
-    sshprintf(("%s: ssh: recvpkt timeout for %s\n", debug_prefix_time(NULL), rh->hostname));
+    sshprintf(("%s: ssh: recvpkt timeout for %s\n",
+	       debug_prefix_time(NULL), rh->hostname));
 
     ssh_recvpkt_cancel(rh);
     (*rh->fn.recvpkt)(rh->arg, NULL, S_TIMEOUT);
@@ -712,7 +729,14 @@ ssh_stream_server(h)
 
     rs = alloc(sizeof(*rs));
     security_streaminit(&rs->secstr, &ssh_security_driver);
-    rs->rc = conn_get(rh->hostname);
+    if(rh->rc) {
+	rs->rc = rh->rc;
+	rs->rc->refcnt++;
+    }
+    else {
+	rs->rc = conn_get(rh->hostname);
+	rh->rc = rs->rc;
+    }
     /*
      * Stream should already be setup!
      */
@@ -729,7 +753,8 @@ ssh_stream_server(h)
      */
     rs->handle = 5000 - newhandle++;
     rs->ev_read = NULL;
-    sshprintf(("%s: ssh: stream_server: created stream %d\n", debug_prefix_time(NULL), rs->handle));
+    sshprintf(("%s: ssh: stream_server: created stream %d\n",
+	       debug_prefix_time(NULL), rs->handle));
     return (rs);
 }
 
@@ -769,9 +794,17 @@ ssh_stream_client(h, id)
     security_streaminit(&rs->secstr, &ssh_security_driver);
     rs->handle = id;
     rs->ev_read = NULL;
-    rs->rc = conn_get(rh->hostname);
+    if(rh->rc) {
+	rs->rc = rh->rc;
+	rh->rc->refcnt++;
+    }
+    else {
+	rs->rc = conn_get(rh->hostname);
+	rh->rc = rs->rc;
+    }
 
-    sshprintf(("%s: ssh: stream_client: connected to stream %d\n", debug_prefix_time(NULL), id));
+    sshprintf(("%s: ssh: stream_client: connected to stream %d\n",
+	       debug_prefix_time(NULL), id));
 
     return (rs);
 }
@@ -787,7 +820,8 @@ ssh_stream_close(s)
 
     assert(rs != NULL);
 
-    sshprintf(("%s: ssh: stream_close: closing stream %d\n", debug_prefix_time(NULL), rs->handle));
+    sshprintf(("%s: ssh: stream_close: closing stream %d\n",
+	       debug_prefix_time(NULL), rs->handle));
 
     ssh_stream_read_cancel(rs);
     conn_put(rs->rc);
@@ -834,9 +868,10 @@ ssh_stream_write(s, buf, size)
     struct ssh_stream *rs = s;
 
     assert(rs != NULL);
+    assert(rs->rc != NULL);
 
-    sshprintf(("%s: ssh: stream_write: writing %d bytes to %s:%d\n", debug_prefix_time(NULL), size,
-	rs->rc->hostname, rs->handle));
+    sshprintf(("%s: ssh: stream_write: writing %d bytes to %s:%d\n",
+	       debug_prefix_time(NULL), size, rs->rc->hostname, rs->handle));
 
     if (send_token(rs->rc, rs->handle, buf, size) < 0) {
 	security_stream_seterror(&rs->secstr, rs->rc->errmsg);
@@ -906,7 +941,8 @@ stream_read_sync_callback(s)
     struct ssh_stream *rs = s;
     assert(rs != NULL);
 
-    sshprintf(("%s: ssh: stream_read_callback_sync: handle %d\n", debug_prefix_time(NULL), rs->handle));
+    sshprintf(("%s: ssh: stream_read_callback_sync: handle %d\n",
+	       debug_prefix_time(NULL), rs->handle));
 
     /*
      * Make sure this was for us.  If it was, then blow away the handle
@@ -915,10 +951,12 @@ stream_read_sync_callback(s)
      * If the handle is EOF, pass that up to our callback.
      */
     if (rs->rc->handle == rs->handle) {
-        sshprintf(("%s: ssh: stream_read_callback_sync: it was for us\n", debug_prefix_time(NULL)));
+        sshprintf(("%s: ssh: stream_read_callback_sync: it was for us\n",
+		   debug_prefix_time(NULL)));
         rs->rc->handle = H_TAKEN;
     } else if (rs->rc->handle != H_EOF) {
-        sshprintf(("%s: ssh: stream_read_callback_sync: not for us\n", debug_prefix_time(NULL)));
+        sshprintf(("%s: ssh: stream_read_callback_sync: not for us\n",
+		   debug_prefix_time(NULL)));
         return;
     }
 
@@ -930,10 +968,13 @@ stream_read_sync_callback(s)
     ssh_stream_read_cancel(rs);
 
     if (rs->rc->pktlen == 0) {
-        sshprintf(("%s: ssh: stream_read_callback_sync: EOF\n", debug_prefix_time(NULL)));
+        sshprintf(("%s: ssh: stream_read_callback_sync: EOF\n",
+		   debug_prefix_time(NULL)));
         return;
     }
-    sshprintf(("%s: ssh: stream_read_callback_sync: read %ld bytes from %s:%d\n", debug_prefix_time(NULL),
+    sshprintf((
+	     "%s: ssh: stream_read_callback_sync: read %ld bytes from %s:%d\n",
+	     debug_prefix_time(NULL),
         rs->rc->pktlen, rs->rc->hostname, rs->handle));
 }
 
@@ -966,7 +1007,8 @@ stream_read_callback(arg)
     struct ssh_stream *rs = arg;
     assert(rs != NULL);
 
-    sshprintf(("%s: ssh: stream_read_callback: handle %d\n", debug_prefix_time(NULL), rs->handle));
+    sshprintf(("%s: ssh: stream_read_callback: handle %d\n",
+	       debug_prefix_time(NULL), rs->handle));
 
     /*
      * Make sure this was for us.  If it was, then blow away the handle
@@ -975,10 +1017,12 @@ stream_read_callback(arg)
      * If the handle is EOF, pass that up to our callback.
      */
     if (rs->rc->handle == rs->handle) {
-	sshprintf(("%s: ssh: stream_read_callback: it was for us\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: stream_read_callback: it was for us\n",
+		   debug_prefix_time(NULL)));
 	rs->rc->handle = H_TAKEN;
     } else if (rs->rc->handle != H_EOF) {
-	sshprintf(("%s: ssh: stream_read_callback: not for us\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: stream_read_callback: not for us\n",
+		   debug_prefix_time(NULL)));
 	return;
     }
 
@@ -990,11 +1034,13 @@ stream_read_callback(arg)
     ssh_stream_read_cancel(rs);
 
     if (rs->rc->pktlen == 0) {
-	sshprintf(("%s: ssh: stream_read_callback: EOF\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: stream_read_callback: EOF\n",
+		   debug_prefix_time(NULL)));
 	(*rs->fn)(rs->arg, NULL, 0);
 	return;
     }
-    sshprintf(("%s: ssh: stream_read_callback: read %ld bytes from %s:%d\n", debug_prefix_time(NULL),
+    sshprintf(("%s: ssh: stream_read_callback: read %ld bytes from %s:%d\n",
+	       debug_prefix_time(NULL),
 	rs->rc->pktlen, rs->rc->hostname, rs->handle));
     (*rs->fn)(rs->arg, rs->rc->pkt, rs->rc->pktlen);
 }
@@ -1015,16 +1061,18 @@ conn_read_callback(cookie)
 
     assert(cookie != NULL);
 
-    sshprintf(("%s: ssh: conn_read_callback\n",debug_prefix_time(NULL)));
+    sshprintf(("%s: ssh: conn_read_callback\n", debug_prefix_time(NULL)));
 
     /* Read the data off the wire.  If we get errors, shut down. */
     rval = recv_token(rc, 60);
-    sshprintf(("%s: ssh: conn_read_callback: recv_token returned %d\n", debug_prefix_time(NULL), rval));
+    sshprintf(("%s: ssh: conn_read_callback: recv_token returned %d\n",
+	       debug_prefix_time(NULL), rval));
     if (rval <= 0) {
 	rc->pktlen = 0;
 	rc->handle = H_EOF;
 	rval = event_wakeup((event_id_t)rc);
-	sshprintf(("%s: ssh: conn_read_callback: event_wakeup return %d\n", debug_prefix_time(NULL), rval));
+	sshprintf(("%s: ssh: conn_read_callback: event_wakeup return %d\n",
+		   debug_prefix_time(NULL), rval));
 	/* delete our 'accept' reference */
 	if (accept_fn != NULL)
 	    conn_put(rc);
@@ -1034,7 +1082,8 @@ conn_read_callback(cookie)
 
     /* If there are events waiting on this handle, we're done */
     rval = event_wakeup((event_id_t)rc);
-    sshprintf(("%s: ssh: conn_read_callback: event_wakeup return %d\n", debug_prefix_time(NULL), rval));
+    sshprintf(("%s: ssh: conn_read_callback: event_wakeup return %d\n",
+	       debug_prefix_time(NULL), rval));
     if (rval > 0)
 	return;
 
@@ -1045,8 +1094,9 @@ conn_read_callback(cookie)
     rh = alloc(sizeof(*rh));
     security_handleinit(&rh->sech, &ssh_security_driver);
     rh->hostname = rc->hostname;
-    rh->rs = ssh_stream_client(rh, rc->handle);
     rh->ev_timeout = NULL;
+    rh->rc = NULL;
+    rh->rs = ssh_stream_client(rh, rc->handle);
 
     sshprintf(("%s: ssh: new connection\n", debug_prefix_time(NULL)));
     parse_pkt(&pkt, rc->pkt, rc->pktlen);
@@ -1062,7 +1112,8 @@ parse_pkt(pkt, buf, bufsize)
 {
     const unsigned char *bufp = buf;
 
-    sshprintf(("%s: ssh: parse_pkt: parsing buffer of %d bytes\n", debug_prefix_time(NULL), bufsize));
+    sshprintf(("%s: ssh: parse_pkt: parsing buffer of %d bytes\n",
+	       debug_prefix_time(NULL), bufsize));
 
     pkt->type = (pktype_t)*bufp++;
     bufsize--;
@@ -1076,8 +1127,9 @@ parse_pkt(pkt, buf, bufsize)
 	pkt->body[sizeof(pkt->body) - 1] = '\0';
     }
 
-    sshprintf(("%s: ssh: parse_pkt: %s (%d): \"%s\"\n", debug_prefix_time(NULL), pkt_type2str(pkt->type),
-	pkt->type, pkt->body));
+    sshprintf(("%s: ssh: parse_pkt: %s (%d): \"%s\"\n",
+	       debug_prefix_time(NULL), pkt_type2str(pkt->type),
+	       pkt->type, pkt->body));
 }
 
 
@@ -1095,8 +1147,8 @@ send_token(rc, handle, buf, len)
     unsigned int netlength, nethandle;
     struct iovec iov[3];
 
-    sshprintf(("%s: ssh: send_token: handle %d writing %d bytes to %s\n", debug_prefix_time(NULL), handle, len,
-	rc->hostname));
+    sshprintf(("%s: ssh: send_token: handle %d writing %d bytes to %s\n",
+	       debug_prefix_time(NULL), handle, len, rc->hostname));
 
     assert(sizeof(netlength) == 4);
 
@@ -1136,17 +1188,20 @@ recv_token(rc, timeout)
 
     assert(rc->read >= 0);
 
-    sshprintf(("%s: ssh: recv_token: reading from %s\n", debug_prefix_time(NULL), rc->hostname));
+    sshprintf(("%s: ssh: recv_token: reading from %s\n",
+	        debug_prefix_time(NULL), rc->hostname));
 
     switch (net_read(rc, &netint, sizeof(netint), timeout)) {
     case -1:
 	rc->errmsg = newvstralloc(rc->errmsg, "recv error: ", strerror(errno),
 	    NULL);
-	sshprintf(("%s: ssh: recv_token: A return(-1)\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: recv_token: A return(-1)\n",
+		   debug_prefix_time(NULL)));
 	return (-1);
     case 0:
 	rc->pktlen = 0;
-	sshprintf(("%s: ssh: recv_token: A return(0)\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: recv_token: A return(0)\n",
+		   debug_prefix_time(NULL)));
 	return (0);
     default:
 	break;
@@ -1154,7 +1209,8 @@ recv_token(rc, timeout)
     rc->pktlen = ntohl(netint);
     if (rc->pktlen > sizeof(rc->pkt)) {
 	rc->errmsg = newstralloc(rc->errmsg, "recv error: huge packet");
-	sshprintf(("%s: ssh: recv_token: B return(-1)\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: recv_token: B return(-1)\n",
+		   debug_prefix_time(NULL)));
 	return (-1);
     }
 
@@ -1162,11 +1218,13 @@ recv_token(rc, timeout)
     case -1:
 	rc->errmsg = newvstralloc(rc->errmsg, "recv error: ", strerror(errno),
 	    NULL);
-	sshprintf(("%s: ssh: recv_token: C return(-1)\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: recv_token: C return(-1)\n",
+		   debug_prefix_time(NULL)));
 	return (-1);
     case 0:
 	rc->pktlen = 0;
-	sshprintf(("%s: ssh: recv_token: D return(0)\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: recv_token: D return(0)\n",
+		   debug_prefix_time(NULL)));
 	return (0);
     default:
 	break;
@@ -1177,7 +1235,8 @@ recv_token(rc, timeout)
     case -1:
 	rc->errmsg = newvstralloc(rc->errmsg, "recv error: ", strerror(errno),
 	    NULL);
-	sshprintf(("%s: ssh: recv_token: E return(-1)\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: recv_token: E return(-1)\n",
+		   debug_prefix_time(NULL)));
 	return (-1);
     case 0:
 	rc->pktlen = 0;
@@ -1186,9 +1245,10 @@ recv_token(rc, timeout)
 	break;
     }
 
-    sshprintf(("%s: ssh: recv_token: read %ld bytes from %s\n", debug_prefix_time(NULL), rc->pktlen,
-	rc->hostname));
-    sshprintf(("%s: ssh: recv_token: end %d\n", debug_prefix_time(NULL),rc->pktlen));
+    sshprintf(("%s: ssh: recv_token: read %ld bytes from %s\n",
+	       debug_prefix_time(NULL), rc->pktlen, rc->hostname));
+    sshprintf(("%s: ssh: recv_token: end %d\n", debug_prefix_time(NULL),
+	       rc->pktlen));
     return (rc->pktlen);
 }
 
@@ -1253,14 +1313,17 @@ net_read(rc, vbuf, origsize, timeout)
 
     sshprintf(("%s: ssh: net_read: begin %d\n", debug_prefix_time(NULL), origsize));
     while (size > 0) {
-	sshprintf(("%s: ssh: net_read: while %d\n", debug_prefix_time(NULL), size));
+	sshprintf(("%s: ssh: net_read: while %d\n",
+		   debug_prefix_time(NULL), size));
 	if (rc->readbuf.left == 0) {
 	    if (net_read_fillbuf(rc, timeout, size) < 0) {
-    		sshprintf(("%s: ssh: net_read: end retrun(-1)\n", debug_prefix_time(NULL)));
+    		sshprintf(("%s: ssh: net_read: end retrun(-1)\n",
+			   debug_prefix_time(NULL)));
 		return (-1);
 	    }
 	    if (rc->readbuf.size == 0) {
-    		sshprintf(("%s: ssh: net_read: end retrun(0)\n", debug_prefix_time(NULL)));
+    		sshprintf(("%s: ssh: net_read: end retrun(0)\n",
+			   debug_prefix_time(NULL)));
 		return (0);
 	    }
 	}
@@ -1272,7 +1335,8 @@ net_read(rc, vbuf, origsize, timeout)
 	size -= nread;
 	rc->readbuf.left -= nread;
     }
-    sshprintf(("%s: ssh: net_read: end %d\n", debug_prefix_time(NULL), origsize));
+    sshprintf(("%s: ssh: net_read: end %d\n",
+	       debug_prefix_time(NULL), origsize));
     return ((ssize_t)origsize);
 }
 
@@ -1299,14 +1363,17 @@ net_read_fillbuf(rc, timeout, size)
 	errno = ETIMEDOUT;
 	/* FALLTHROUGH */
     case -1:
-	sshprintf(("%s: ssh: net_read_fillbuf: case -1\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: net_read_fillbuf: case -1\n",
+		   debug_prefix_time(NULL)));
 	return (-1);
     case 1:
-	sshprintf(("%s: ssh: net_read_fillbuf: case 1\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: net_read_fillbuf: case 1\n",
+		   debug_prefix_time(NULL)));
 	assert(FD_ISSET(rc->read, &readfds));
 	break;
     default:
-	sshprintf(("%s: ssh: net_read_fillbuf: case default\n", debug_prefix_time(NULL)));
+	sshprintf(("%s: ssh: net_read_fillbuf: case default\n",
+		   debug_prefix_time(NULL)));
 	assert(0);
 	break;
     }
@@ -1315,7 +1382,8 @@ net_read_fillbuf(rc, timeout, size)
     if (rc->readbuf.size < 0)
 	return (-1);
     rc->readbuf.left = rc->readbuf.size;
-    sshprintf(("%s: ssh: net_read_fillbuf: end %d\n", debug_prefix_time(NULL),rc->readbuf.size));
+    sshprintf(("%s: ssh: net_read_fillbuf: end %d\n",
+	       debug_prefix_time(NULL),rc->readbuf.size));
     return (0);
 }
 
