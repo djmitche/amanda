@@ -1,4 +1,8 @@
 2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/amandad.c (service_new): Pass the "amandad" argument to
+					      the service.
+
+2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/bsd-security.c: Allow to run many services on the same
 				     client. Cleanup.
 	* common-src/rsh-security.c: Ditto.
