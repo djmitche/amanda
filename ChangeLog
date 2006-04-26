@@ -1,4 +1,10 @@
 2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/amanda.h (check_user_ruserok, check_user_amandahosts):
+	  Remove prototype.
+	* common-src/bsd-security.c: Pass the service name across check_user*
+	  function and validate it from the .amandahosts file.
+
+2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/amidxtaped.c: Can be launched by amandad.
 	* server-src/Makefile.am (INCLUDES): Add -I$(top_srcdir)/amandad-src
 	* server-src/Makefile.am (amidxtaped__LDADD): Link with libamandad.

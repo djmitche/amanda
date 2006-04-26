@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.123 2006/03/03 15:05:15 vectro Exp $
+ * $Id: amanda.h,v 1.124 2006/04/26 18:19:12 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -796,14 +796,7 @@ extern int    mkpdir    P((char *file, int mode, uid_t uid, gid_t gid));
 extern int    rmpdir    P((char *file, char *topdir));
 extern char  *sanitise_filename P((char *inp));
 
-/* from bsd-security.c */
-extern char  *check_user_ruserok     P((const char *host,
-					struct passwd *pwd,
-					const char *user));
-extern char  *check_user_amandahosts P((const char *host,
-					struct passwd *pwd,
-					const char *user));
-
+/* from old bsd-security.c */
 extern int debug;
 extern int check_security P((struct sockaddr_in *, char *, unsigned long,
                              char **));

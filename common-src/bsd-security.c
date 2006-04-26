@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.57 2006/04/26 15:28:16 martinea Exp $
+ * $Id: bsd-security.c,v 1.58 2006/04/26 18:19:12 martinea Exp $
  *
  * "BSD" security module
  */
@@ -270,7 +270,7 @@ static void (*accept_fn) P((security_handle_t *, pkt_t *));
 /*
  * These are the internal helper functions
  */
-static char *check_user P((struct bsd_handle *, const char *));
+static char *check_user P((struct bsd_handle *, const char *, const char *));
 static int inithandle P((struct bsd_handle *, struct hostent *,
 			 int, char *, int));
 static const char *pkthdr2str P((const struct bsd_handle *, const pkt_t *));
@@ -281,6 +281,13 @@ static void recvpkt_timeout P((void *));
 static int recv_security_ok P((struct bsd_handle *));
 static void stream_read_callback P((void *));
 static void stream_read_sync_callback P((void *));
+static char  *check_user_ruserok     P((const char *host,
+                                        struct passwd *pwd,
+                                        const char *user));
+static char  *check_user_amandahosts P((const char *host,
+                                        struct passwd *pwd,
+                                        const char *user,
+					const char *service));
 
 
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
@@ -833,6 +840,7 @@ recv_security_ok(bh)
 {
     char *tok, *security, *body, *result;
     pkt_t *pkt = &netfd.pkt;
+    char *service = NULL;
 
     /*
      * Set this preempively before we mangle the body.  
@@ -862,6 +870,15 @@ recv_security_ok(bh)
     } else {
 	security = NULL;
 	body = pkt->body;
+    }
+
+    /*
+     * Now, find the SERVICE line in the body, and parse it out
+     * into an argv.
+     */
+    if (strncmp(body, "SERVICE", sizeof("SERVICE") - 1) == 0) {
+	service = stralloc(body + strlen("SERVICE "));
+	service = strtok(service, "\n");
     }
 
     /*
@@ -907,7 +924,7 @@ recv_security_ok(bh)
 	/* the third word is the username */
 	if ((tok = strtok(NULL, "")) == NULL)
 	    return (-1);	/* default errmsg */
-	if ((result = check_user(bh, tok)) != NULL) {
+	if ((result = check_user(bh, tok, service)) != NULL) {
 	    security_seterror(&bh->sech, "%s", result);
 	    amfree(result);
 	    return (-1);
@@ -918,6 +935,7 @@ recv_security_ok(bh)
     default:
 	break;
     }
+    amfree(service);
 
     /*
      * If there is security info at the front of the packet, we need to
@@ -929,9 +947,10 @@ recv_security_ok(bh)
 }
 
 static char *
-check_user(bh, remoteuser)
+check_user(bh, remoteuser, service)
     struct bsd_handle *bh;
     const char *remoteuser;
+    const char *service;
 {
     struct passwd *pwd;
     char *r;
@@ -952,7 +971,7 @@ check_user(bh, remoteuser)
 #ifndef USE_AMANDAHOSTS
     r = check_user_ruserok(bh->hostname, pwd, remoteuser);
 #else
-    r = check_user_amandahosts(bh->hostname, pwd, remoteuser);
+    r = check_user_amandahosts(bh->hostname, pwd, remoteuser, service);
 #endif
     if (r != NULL) {
 	result = vstralloc("access as ", localuser, " not allowed",
@@ -1100,10 +1119,11 @@ check_user_ruserok(host, pwd, remoteuser)
  * Returns -1 on failure, or 0 on success.
  */
 char *
-check_user_amandahosts(host, pwd, remoteuser)
+check_user_amandahosts(host, pwd, remoteuser, service)
     const char *host;
     struct passwd *pwd;
     const char *remoteuser;
+    const char *service;
 {
     char *line = NULL;
     char *filehost;
@@ -1119,6 +1139,7 @@ check_user_amandahosts(host, pwd, remoteuser)
     int usermatch;
     uid_t localuid;
     char *localuser = NULL;
+    char *aservice = NULL;
 
     /*
      * Save copies of what we need from the passwd structure in case
@@ -1162,7 +1183,7 @@ check_user_amandahosts(host, pwd, remoteuser)
     }
 
     /*
-     * Now, scan the file for the host/user.
+     * Now, scan the file for the host/user/service.
      */
     found = 0;
     while ((line = agets(fp)) != NULL) {
@@ -1190,9 +1211,55 @@ check_user_amandahosts(host, pwd, remoteuser)
 	bsdprintf(("%s: bsd:           \"%s\" (%s)\n", remoteuser,
 		  debug_prefix(NULL), usermatch ? "match" : "no match"));
 #endif								/* } */
-	amfree(line);
 	/* compare */
-	if (hostmatch && usermatch) {
+	if (!hostmatch || !usermatch) {
+	    amfree(line);
+	    continue;
+	}
+
+        if(!service) {
+	    /* success */
+	    amfree(line);
+	    found = 1;
+	    break;
+	}
+	/* get the services.  If no service specified, then use
+	 * noop/selfcheck/sendsize/sendbackup
+         */
+	aservice = strtok(NULL, " \t,");
+	if(!aservice) {
+	    if(strcmp(service,"noop") == 0 ||
+	       strcmp(service,"selfcheck") == 0 ||
+	       strcmp(service,"sendsize") == 0 ||
+	       strcmp(service,"sendbackup") == 0) {
+		/* success */
+		found = 1;
+		amfree(line);
+		break;
+	    }
+	    else {
+		amfree(line);
+		break;
+	    }
+	}
+
+	do {
+	    if(strcmp(aservice,service) == 0) {
+		found = 1;
+		break;
+	    }
+	    if(strcmp(aservice,"amdump") == 0 && 
+	       (strcmp(service,"noop") == 0 ||
+		strcmp(service,"selfcheck") == 0 ||
+		strcmp(service,"sendsize") == 0 ||
+		strcmp(service,"sendbackup") == 0)) {
+		found = 1;
+		break;
+	    }
+	} while((aservice = strtok(NULL, " \t,")) != NULL);
+
+	amfree(line);
+	if(aservice && strcmp(aservice,service) == 0) {
 	    /* success */
 	    found = 1;
 	    break;
@@ -1362,7 +1429,7 @@ char **errstr;
 #ifndef USE_AMANDAHOSTS
     s = check_user_ruserok(remotehost, pwptr, remoteuser);
 #else
-    s = check_user_amandahosts(remotehost, pwptr, remoteuser);
+    s = check_user_amandahosts(remotehost, pwptr, remoteuser, NULL);
 #endif
 
     if (s != NULL) {
