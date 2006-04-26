@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.14 2006/04/05 18:20:06 martinea Exp $
+ * $Id: krb5-security.c,v 1.15 2006/04/26 15:13:52 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -214,6 +214,8 @@ struct krb5_stream {
     event_handle_t *ev_read;		/* read (EV_WAIT) event handle */
     void (*fn) P((void *, void *, int));	/* read event fn */
     void *arg;				/* arg for previous */
+    char buf[KRB5_STREAM_BUFSIZE];
+    ssize_t len;
 };
 
 /*
@@ -238,6 +240,7 @@ static void krb5_recvpkt_cancel P((void *));
 static void krb5_stream_close P((void *));
 static void krb5_stream_read P((void *, void (*)(void *, void *, int),
     void *));
+static int krb5_stream_read_sync P((void *, void **));
 static void krb5_stream_read_cancel P((void *));
 
 /*
@@ -259,6 +262,7 @@ const security_driver_t krb5_security_driver = {
     krb5_stream_id,
     krb5_stream_write,
     krb5_stream_read,
+    krb5_stream_read_sync,
     krb5_stream_read_cancel,
 };
 
@@ -313,6 +317,8 @@ static int recv_token P((struct krb5_conn *, int *, gss_buffer_desc *, int));
 static void recvpkt_callback P((void *, void *, ssize_t));
 static void recvpkt_timeout P((void *));
 static void stream_read_callback P((void *));
+static void stream_read_sync_callback P((void *));
+static void stream_read_sync_callback2 P((void *, void *, ssize_t));
 static int gss_server P((struct krb5_conn *));
 static int gss_client P((struct krb5_handle *));
 static const char *gss_error P((OM_uint32, OM_uint32));
@@ -1051,6 +1057,62 @@ krb5_stream_read(s, fn, arg)
 	    stream_read_callback, ks);
 	conn_read(ks->kc);
     }
+}
+
+/*
+ * Submit a request to read some data.  Calls back with the given
+ * function and arg when completed.
+ */
+static int
+krb5_stream_read_sync(s, buf)
+    void *s, **buf;
+{
+    struct krb5_stream *ks = s;
+
+    assert(ks != NULL);
+
+    /*
+     * Only one read request can be active per stream.
+     */
+    ks->fn = stream_read_sync_callback2;
+    ks->arg = ks;
+
+    /*
+     * First see if there's any queued frames for this stream.
+     * If so, we're done.
+     */
+    if (conn_run_frameq(ks->kc, ks) > 0)
+	return;
+
+    if (ks->ev_read != NULL)
+	event_release(ks->ev_read);
+
+    ks->ev_read = event_register((event_id_t)ks->kc, EV_WAIT,
+	stream_read_callback, ks);
+    conn_read(ks->kc);
+    event_wait((event_id_t)ks->kc);
+    buf = (void **)&ks->buf;
+    return ks->len;
+}
+
+
+/*
+ * Callback for krb5_stream_read_sync
+ */
+static void
+stream_read_sync_callback2(arg, buf, size)
+    void *arg;
+    void *buf;
+    ssize_t size;
+{
+    struct krb5_stream *ks = arg;
+
+    assert(ks != NULL);
+
+    k5printf(("krb5: stream_read_sync_callback2: handle %d\n", ks->handle));
+
+    memcpy(ks->buf, buf, size);
+    ks->len = size;
 }
 
 /*

@@ -1,4 +1,12 @@
 2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/security.h (security_stream_read_sync): Prototype.
+	* common-src/bsd-security.c (bsd_stream_read_sync): New function.
+	* common-src/krb4-security.c (krb4_stream_read_sync): New function.
+	* common-src/krb5-security.c (krb5_stream_read_sync): New function.
+	* common-src/rsh-security.c (rsh_stream_read_sync): New function.
+	* common-src/ssh-security.c (ssh_stream_read_sync): New function.
+
+2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/amandad.c: Open pipe in both direction to the services.
 	* client-src/sendbackup.c: Deal with the newer pipe.
 

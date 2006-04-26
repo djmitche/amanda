@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.55 2006/04/05 13:24:00 martinea Exp $
+ * $Id: bsd-security.c,v 1.56 2006/04/26 15:13:52 martinea Exp $
  *
  * "BSD" security module
  */
@@ -164,6 +164,7 @@ struct bsd_stream {
      * to the read callback.
      */
     char databuf[NETWORK_BLOCK_BYTES];
+    int len;
 };
 
 /*
@@ -188,6 +189,7 @@ static int bsd_stream_id P((void *));
 static int bsd_stream_write P((void *, const void *, size_t));
 static void bsd_stream_read P((void *, void (*)(void *, void *, ssize_t),
     void *));
+static int bsd_stream_read_sync P((void *, void **));
 static void bsd_stream_read_cancel P((void *));
 
 /*
@@ -209,6 +211,7 @@ const security_driver_t bsd_security_driver = {
     bsd_stream_id,
     bsd_stream_write,
     bsd_stream_read,
+    bsd_stream_read_sync,
     bsd_stream_read_cancel,
 };
 
@@ -277,6 +280,7 @@ static void recvpkt_callback P((void *));
 static void recvpkt_timeout P((void *));
 static int recv_security_ok P((struct bsd_handle *));
 static void stream_read_callback P((void *));
+static void stream_read_sync_callback P((void *));
 
 
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
@@ -1556,6 +1560,58 @@ bsd_stream_read(s, fn, arg)
     bs->ev_read = event_register(bs->fd, EV_READFD, stream_read_callback, bs);
     bs->fn = fn;
     bs->arg = arg;
+}
+
+/*
+ * Read a chunk of data to a stream.  Blocks until completion.
+ */
+static int
+bsd_stream_read_sync(s, buf)
+    void *s;
+    void **buf;
+{
+    struct bsd_stream *bs = s;
+
+    assert(bs != NULL);
+
+    /*
+     * Only one read request can be active per stream.
+     */
+    if(bs->ev_read != NULL) {
+        return -1;
+    }
+    event_register(bs->fd, EV_READFD, stream_read_sync_callback, bs);
+    event_wait((event_id_t)bs->fd);
+    *buf = bs->databuf;
+    return (bs->len);
+
+}
+
+
+/*
+ * Callback for bsd_stream_read_sync
+ */
+static void
+stream_read_sync_callback(s)
+    void *s;
+{
+    struct bsd_stream *bs = s;
+    ssize_t n;
+
+    assert(bs != NULL);
+
+    bsdprintf(("%s: bsd: stream_read_callback_sync: handle %d\n", debug_prefix_time(NULL), bs->handle));
+
+    /*
+     * Remove the event first, in case they reschedule it in the callback.
+     */
+    bsd_stream_read_cancel(bs);
+    do {
+	n = read(bs->fd, bs->databuf, sizeof(bs->databuf));
+    } while ((n < 0) && ((errno == EINTR) || (errno == EAGAIN)));
+    if (n < 0)
+        security_stream_seterror(&bs->secstr, strerror(errno));
+    bs->len = n;
 }
 
 /*

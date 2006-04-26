@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb4-security.c,v 1.11 2006/04/11 12:21:47 martinea Exp $
+ * $Id: krb4-security.c,v 1.12 2006/04/26 15:13:52 martinea Exp $
  *
  * krb4-security.c - helper functions for kerberos v4 security.
  */
@@ -99,6 +99,7 @@ struct krb4_stream {
     int socket;				/* fd for server-side accepts */
     event_handle_t *ev_read;		/* read event handle */
     char databuf[MAX_TAPE_BLOCK_BYTES];	/* read buffer */
+    int len;				/* */
     void (*fn) P((void *, void *, int));	/* read event fn */
     void *arg;				/* arg for previous */
 };
@@ -130,6 +131,7 @@ static int krb4_stream_id P((void *));
 static int krb4_stream_write P((void *, const void *, size_t));
 static void krb4_stream_read P((void *, void (*)(void *, void *, int),
     void *));
+static int krb4_stream_read_sync P((void *, void **));
 static void krb4_stream_read_cancel P((void *));
 
 
@@ -152,6 +154,7 @@ const security_driver_t krb4_security_driver = {
     krb4_stream_id,
     krb4_stream_write,
     krb4_stream_read,
+    krb4_stream_read_sync,
     krb4_stream_read_cancel,
 };
 
@@ -237,6 +240,7 @@ static void recvpkt_callback P((void *));
 static void recvpkt_timeout P((void *));
 static int recv_security_ok P((struct krb4_handle *, pkt_t *));
 static void stream_read_callback P((void *));
+static void stream_read_sync_callback P((void *));
 static int net_write P((int, const void *, size_t));
 static int net_read P((int, void *, size_t, int));
 
@@ -863,6 +867,52 @@ krb4_stream_read(s, fn, arg)
     ks->ev_read = event_register(ks->fd, EV_READFD, stream_read_callback, ks);
     ks->fn = fn;
     ks->arg = arg;
+}
+
+/*
+ * Write a chunk of data to a stream.  Blocks until completion.
+ */
+static int
+krb4_stream_read_sync(s, buf)
+    void *s;
+    void **buf;
+{
+    struct krb4_stream *ks = s;
+
+    assert(ks != NULL);
+
+    if (ks->ev_read != NULL)
+	event_release(ks->ev_read);
+
+    ks->ev_read = event_register(ks->fd, EV_READFD, stream_read_sync_callback, ks);
+    event_wait(ks->fd);
+    return(ks->len)
+}
+
+/*
+ * Callback for krb4_stream_read_sync
+ */
+static void
+stream_read_sync_callback(arg)
+    void *arg;
+{
+    struct krb4_stream *ks = arg;
+    int n;
+
+    assert(ks != NULL);
+    assert(ks->fd != -1);
+
+    /*
+     * Remove the event first, and then call the callback.
+     * We remove it first because we don't want to get in their
+     * way if they reschedule it.
+     */
+    krb4_stream_read_cancel(ks);
+    n = read(ks->fd, ks->databuf, sizeof(ks->databuf));
+    if (n < 0)
+	security_stream_seterror(&ks->secstr,
+	    strerror(errno));
+    ks->len = n;
 }
 
 /*

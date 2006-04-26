@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.10 2006/04/11 12:21:47 martinea Exp $
+ * $Id: ssh-security.c,v 1.11 2006/04/26 15:13:52 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -150,6 +150,7 @@ static void ssh_recvpkt_cancel P((void *));
 static void ssh_stream_close P((void *));
 static void ssh_stream_read P((void *, void (*)(void *, void *, ssize_t),
     void *));
+static int ssh_stream_read_sync P((void *, void **));
 static void ssh_stream_read_cancel P((void *));
 
 /*
@@ -171,6 +172,7 @@ const security_driver_t ssh_security_driver = {
     ssh_stream_id,
     ssh_stream_write,
     ssh_stream_read,
+    ssh_stream_read_sync,
     ssh_stream_read_cancel,
 };
 
@@ -214,6 +216,7 @@ static int recv_token P((struct ssh_conn *, int));
 static void recvpkt_callback P((void *, void *, ssize_t));
 static void recvpkt_timeout P((void *));
 static void stream_read_callback P((void *));
+static void stream_read_sync_callback P((void *));
 
 static int runssh P((struct ssh_conn *, const char *, const char *));
 static struct ssh_conn *conn_get P((const char *));
@@ -865,6 +868,73 @@ ssh_stream_read(s, fn, arg)
     }
     rs->fn = fn;
     rs->arg = arg;
+}
+
+/*
+ * Write a chunk of data to a stream.  Blocks until completion.
+ */
+static int
+ssh_stream_read_sync(s, buf)
+    void *s;
+    void **buf;
+{
+    struct ssh_stream *rs = s;
+
+    assert(rs != NULL);
+
+    /*
+     * Only one read request can be active per stream.
+     */
+    if(rs->ev_read != NULL) {
+	return -1;
+    }
+    rs->ev_read = event_register((event_id_t)rs->rc, EV_WAIT,
+        stream_read_sync_callback, rs);
+    conn_read(rs->rc);
+    event_wait((event_id_t)rs->rc);
+    *buf = rs->rc->pkt;
+    return (rs->rc->pktlen);
+}
+
+/*
+ * Callback for ssh_stream_read_sync
+ */
+static void
+stream_read_sync_callback(s)
+    void *s;
+{
+    struct ssh_stream *rs = s;
+    assert(rs != NULL);
+
+    sshprintf(("%s: ssh: stream_read_callback_sync: handle %d\n", debug_prefix_time(NULL), rs->handle));
+
+    /*
+     * Make sure this was for us.  If it was, then blow away the handle
+     * so it doesn't get claimed twice.  Otherwise, leave it alone.
+     *
+     * If the handle is EOF, pass that up to our callback.
+     */
+    if (rs->rc->handle == rs->handle) {
+        sshprintf(("%s: ssh: stream_read_callback_sync: it was for us\n", debug_prefix_time(NULL)));
+        rs->rc->handle = H_TAKEN;
+    } else if (rs->rc->handle != H_EOF) {
+        sshprintf(("%s: ssh: stream_read_callback_sync: not for us\n", debug_prefix_time(NULL)));
+        return;
+    }
+
+    /*
+     * Remove the event first, and then call the callback.
+     * We remove it first because we don't want to get in their
+     * way if they reschedule it.
+     */
+    ssh_stream_read_cancel(rs);
+
+    if (rs->rc->pktlen == 0) {
+        sshprintf(("%s: ssh: stream_read_callback_sync: EOF\n", debug_prefix_time(NULL)));
+        return;
+    }
+    sshprintf(("%s: ssh: stream_read_callback_sync: read %ld bytes from %s:%d\n", debug_prefix_time(NULL),
+        rs->rc->pktlen, rs->rc->hostname, rs->handle));
 }
 
 /*

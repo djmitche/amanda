@@ -24,12 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.12 2006/04/05 13:24:01 martinea Exp $
+ * $Id: security.h,v 1.13 2006/04/26 15:13:52 martinea Exp $
  *
  * security api
  */
 #ifndef SECURITY_H
 #define	SECURITY_H
+
+#include "packet.h"
 
 struct security_handle;
 
@@ -140,6 +142,11 @@ typedef struct security_driver {
     void (*stream_read) P((void *, void (*)(void *, void *, ssize_t), void *));
 
     /*
+     * Read syncronously from a stream.
+     */
+    int (*stream_read_sync) P((void *, void **));
+
+    /*
      * Cancel a stream read request
      */
     void (*stream_read_cancel) P((void *));
@@ -237,6 +244,11 @@ void security_stream_close P((security_stream_t *));
     void (*)(void *, void *, size_t), void *)); */
 #define	security_stream_read(stream, fn, arg)		\
     (*(stream)->driver->stream_read)(stream, fn, arg)
+
+/* void security_stream_read_sync P((security_stream_t *,
+    void *, size_t)); */
+#define	security_stream_read_sync(stream, buf)		\
+    (*(stream)->driver->stream_read_sync)(stream, buf)
 
 /* void security_stream_read_cancel P((security_stream_t *)); */
 #define	security_stream_read_cancel(stream)		\
