@@ -15,6 +15,8 @@ endif
 libamandad_la_SOURCES= amandad_util.c
 libamandad_la_LDFLAGS = -release $(VERSION)
 
+noinst_HEADERS  = amandad.h
+
 ###
 # Because libamanda includes routines (e.g. regex) provided by some system
 # libraries, and because of the way libtool sets up the command line, we

@@ -70,7 +70,8 @@ sendbackup_SOURCES = 	sendbackup.c		sendbackup.h	\
 			sendbackup-dump.c	sendbackup-gnutar.c
 
 noinst_HEADERS	= 	amandates.h	getfsent.h	\
-			findpass.h	client_util.h
+			findpass.h	client_util.h	\
+			clientconf.h
 
 install-exec-hook:
 	@list="$(sbin_SCRIPTS)"; \
