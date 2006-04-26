@@ -32,6 +32,8 @@ Table of Contents
 
         event_loop
 
+	event_wait
+
         event_wakeup
 
 
@@ -100,6 +102,12 @@ Process all pending events. If the argument is zero, this will keep running
 until all events have been released. If the argument is nonzero, this will do
 one pass over all pending events, and fire the ones that are immediately ready,
 and then return.
+
+ event_wait
+
+void event_wait(event_id_t id);
+Like event_loop(0), except that it will stop as soon as the event id is
+serviced.
 
  event_wakeup
 

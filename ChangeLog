@@ -1,3 +1,8 @@
+2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/event.c(event_wait): New function.
+	* common-src/event.h(event_wait): prototype.
+	* docs/eventapi.txt: Document event_wait.
+
 2006-04-24  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/planner.c: Fix divide by zero if runtapes==0.
 

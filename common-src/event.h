@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.h,v 1.6 2005/11/30 22:35:11 martinea Exp $
+ * $Id: event.h,v 1.7 2006/04/26 14:42:29 martinea Exp $
  */
 #ifndef EVENT_H
 #define EVENT_H
@@ -94,6 +94,11 @@ void event_release P((event_handle_t *));
  * Wake up all EV_WAIT events waiting on a specific id
  */
 int event_wakeup P((event_id_t));
+
+/*
+ * Block until the event is terminated.
+ */
+int event_wait P((event_id_t));
 
 /*
  * Process events.  If the argument is nonzero, then the loop does
