@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.30 2006/04/05 12:56:18 martinea Exp $
+ * $Id: restore.c,v 1.31 2006/04/26 18:12:13 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1374,7 +1374,7 @@ am_feature_t *their_features;
 		    }
                 }
             }
-	    else{
+	    else {
                 assert(!flags->amidxtaped);
 		if(have_changer){
 		    if(slot_num == 0)

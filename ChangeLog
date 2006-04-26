@@ -1,4 +1,10 @@
 2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/amidxtaped.c: Can be launched by amandad.
+	* server-src/Makefile.am (INCLUDES): Add -I$(top_srcdir)/amandad-src
+	* server-src/Makefile.am (amidxtaped__LDADD): Link with libamandad.
+	* restore-src/restore.c: Fix indentation.
+
+2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amindexd.c: Can be launched by amandad
 	* server-src/Makefile.am (INCLUDES): Add -I$(top_srcdir)/amandad-src
 	* server-src/Makefile.am (amindexd_LDADD): Link with libamandad.

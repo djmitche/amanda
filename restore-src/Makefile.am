@@ -3,7 +3,8 @@
 INCLUDES =	-I$(top_builddir)/common-src \
 		-I$(top_srcdir)/common-src   \
 		-I$(top_srcdir)/tape-src     \
-		-I$(top_srcdir)/server-src
+		-I$(top_srcdir)/server-src   \
+		-I$(top_srcdir)/amandad-src
 
 lib_LTLIBRARIES =	librestore.la
 LIB_EXTENSION = la
@@ -22,6 +23,7 @@ libexec_PROGRAMS = 	amidxtaped
 LDADD = librestore.$(LIB_EXTENSION) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
+amidxtaped_LDADD = $(LDADD) ../amandad-src/libamandad.$(LIB_EXTENSION)
 amidxtaped_SOURCES = 	amidxtaped.c
 
 amfetchdump_SOURCES = 	amfetchdump.c

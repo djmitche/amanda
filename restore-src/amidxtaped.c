@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.59 2006/04/19 14:13:19 martinea Exp $
+/* $Id: amidxtaped.c,v 1.60 2006/04/26 18:12:13 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -43,6 +43,7 @@
 #include "logfile.h"
 #include "amfeatures.h"
 #include "stream.h"
+#include "amandad.h"
 
 #define TIMEOUT 30
 
@@ -53,13 +54,15 @@ extern char *rst_conf_logfile;
 extern char *config_dir;
 
 static int get_lock = 0;
+static int from_amandad;
 
 static am_feature_t *our_features = NULL;
 static am_feature_t *their_features = NULL;
+static g_option_t *g_options = NULL;
+static int ctlfdin, ctlfdout, datafdout;
 
 static char *get_client_line P((void));
 static char *get_client_line_fd P((int));
-static void check_security_buffer P((char*));
 
 /* exit routine */
 static int parent_pid = -1;
@@ -225,8 +228,9 @@ char **argv;
     char *re_config = NULL;
     char *conf_tapetype;
     tapetype_t *tape;
+    char *line;
 
-    safe_fd(-1, 0);
+    safe_fd(DATA_FD_OFFSET, 4);
     safe_cd();
 
     /* Don't die when child closes pipe */
@@ -253,6 +257,14 @@ char **argv;
     }
 
     set_pname(pgm);
+
+    if(argv[1] && strcmp(argv[1], "amandad") == 0) {
+	from_amandad = 1;
+    }
+    else {
+	from_amandad = 0;
+	safe_fd(-1, 0);
+    }
 
 #ifdef FORCE_USERID
 
@@ -304,18 +316,55 @@ char **argv;
 		  debug_prefix_time(NULL)));
     }
 
-    socklen = sizeof (addr);
-    if (getpeername(0, (struct sockaddr *)&addr, &socklen) == -1)
-	error("getpeername: %s", strerror(errno));
-    if (addr.sin_family != AF_INET || ntohs(addr.sin_port) == 20) {
-	error("connection rejected from %s family %d port %d",
-	      inet_ntoa(addr.sin_addr), addr.sin_family, htons(addr.sin_port));
-    }
+    if(from_amandad == 0) {
+	socklen = sizeof (addr);
+	if (getpeername(0, (struct sockaddr *)&addr, &socklen) == -1)
+	    error("getpeername: %s", strerror(errno));
+	if (addr.sin_family != AF_INET || ntohs(addr.sin_port) == 20) {
+	    error("connection rejected from %s family %d port %d",
+		  inet_ntoa(addr.sin_addr), addr.sin_family,
+		  htons(addr.sin_port));
+	}
 
-    /* do the security thing */
-    amfree(buf);
-    buf = stralloc(get_client_line());
-    check_security_buffer(buf);
+	/* do the security thing */
+	amfree(buf);
+	buf = stralloc(get_client_line());
+	check_security_buffer(buf);
+    }
+    else {
+	ctlfdout  = DATA_FD_OFFSET + 0;
+	ctlfdin   = DATA_FD_OFFSET + 1;
+	datafdout = DATA_FD_OFFSET + 2;
+	close(DATA_FD_OFFSET +3);
+
+	/* read the REQ packet */
+	for(; (line = agets(stdin)) != NULL; free(line)) {
+#define sc "OPTIONS "
+	    if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+#undef sc
+		g_options = parse_g_options(line+8, 1);
+		if(!g_options->hostname) {
+		    g_options->hostname = alloc(MAX_HOSTNAME_LENGTH+1);
+		    gethostname(g_options->hostname, MAX_HOSTNAME_LENGTH);
+		    g_options->hostname[MAX_HOSTNAME_LENGTH] = '\0';
+		}
+	    }
+	}
+	amfree(line);
+
+	/* send the REP packet */
+	printf("CONNECT CTL %d DATA %d\n", DATA_FD_OFFSET, DATA_FD_OFFSET+1);
+	printf("\n");
+	fflush(stdout);
+	fclose(stdout);
+	close(1);
+/*
+	fclose(stdin);
+	close(0);
+*/
+	stdout = fdopen(ctlfdout,"w");
+	stdin  = fdopen(ctlfdin,"r");
+    }
 
     /* get the number of arguments */
     match_list = alloc(sizeof(match_list_t));
@@ -325,7 +374,7 @@ char **argv;
     match_list->level = "";
     match_list->diskname = "";
 
-   do {
+    do {
 	amfree(buf);
 	buf = stralloc(get_client_line());
 	if(strncmp(buf, "LABEL=", 6) == 0) {
@@ -344,7 +393,10 @@ char **argv;
 	    their_features = am_string_to_feature(their_feature_string);
 	    amfree(their_feature_string);
 	    our_feature_string = am_feature_to_string(our_features);
-	    printf("%s", our_feature_string);
+	    if(from_amandad == 1) 
+		printf("FEATURES=%s\r\n", our_feature_string);
+	    else
+		printf("%s", our_feature_string);
 	    fflush(stdout);
 	    amfree(our_feature_string);
 	}
@@ -444,32 +496,37 @@ char **argv;
     }
 
     /* establish a distinct data connection for dumpfile data */
-    if(am_has_feature(their_features, fe_recover_splits)){
-	int data_fd;
-	char *buf;
-	
-	dbprintf(("%s: Client understands split dumpfiles\n", get_pname()));
-	
-	if((data_sock = stream_server(&data_port, STREAM_BUFSIZE, -1)) < 0){
-	    error("%s: could not create data socket: %s", get_pname(),
-		  strerror(errno));
+    if(am_has_feature(their_features, fe_recover_splits)) {
+	if(from_amandad == 1) {
+	    rst_flags->pipe_to_fd = datafdout;
+            prompt_stream = stdout;
 	}
-	dbprintf(("%s: Local port %d set aside for data\n", get_pname(),
-		  data_port));
-	
-	printf("CONNECT %d\n", data_port); /* tell client where to connect */
-	fflush(stdout);
-	
-	if((data_fd = stream_accept(data_sock, TIMEOUT, -1, -1)) < 0){
-	    error("stream_accept failed for client data connection: %s\n",
-		  strerror(errno));
+	else {
+	    int data_fd;
+	    char *buf;
+
+	    dbprintf(("%s: Client understands split dumpfiles\n",get_pname()));
+
+	    if((data_sock = stream_server(&data_port, STREAM_BUFSIZE,-1)) < 0){
+		error("%s: could not create data socket: %s", get_pname(),
+		      strerror(errno));
+	    }
+	    dbprintf(("%s: Local port %d set aside for data\n", get_pname(),			     data_port));
+
+	    printf("CONNECT %d\n", data_port); /*tell client where to connect*/
+	    fflush(stdout);
+
+	    if((data_fd = stream_accept(data_sock, TIMEOUT, -1, -1)) < 0){
+		error("stream_accept failed for client data connection: %s\n",
+		      strerror(errno));
+	    }
+
+	    buf = get_client_line_fd(data_fd);
+
+	    check_security_buffer(buf);
+	    rst_flags->pipe_to_fd = data_fd;
+	    prompt_stream = stdout;
 	}
-
-	buf = get_client_line_fd(data_fd);
-
-	check_security_buffer(buf);
-	rst_flags->pipe_to_fd = data_fd;
-        prompt_stream = stdout;
     }
     else {
 	rst_flags->pipe_to_fd = fileno(stdout);
@@ -484,7 +541,7 @@ char **argv;
 	if(rst_flags->pipe_to_fd != -1) aclose(rst_flags->pipe_to_fd);
 	exit(1);
     }
-    
+
     /* actual restoration */
     search_tapes(prompt_stream, use_changer, tapes, match_list, rst_flags,
 		 their_features);
