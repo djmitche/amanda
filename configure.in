@@ -2973,6 +2973,8 @@ AC_CONFIG_FILES([\
 	amplot/amcat.awk		amplot/amplot.sh		\
 	amplot/Makefile							\
 									\
+	amandad-src/Makefile						\
+									\
 	changer-src/chg-manual.sh	changer-src/chg-multi.sh	\
 	changer-src/chg-mtx.sh		changer-src/chg-chs.sh		\
 	changer-src/chg-rth.pl		changer-src/chg-chio.pl		\

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.32 2006/03/09 16:51:41 martinea Exp $
+ * $Id: client_util.c,v 1.33 2006/04/26 15:53:36 martinea Exp $
  *
  */
 
@@ -614,105 +614,3 @@ int verbose;
     return options;
 }
 
-
-void init_g_options(g_options)
-g_option_t *g_options;
-{
-    g_options->features = NULL;
-    g_options->hostname = NULL;
-    g_options->maxdumps = 0;
-}
-
-
-g_option_t *parse_g_options(str, verbose)
-char *str;
-int verbose;
-{
-    g_option_t *g_options;
-    char *p, *tok;
-    int new_maxdumps;
-
-    g_options = alloc(sizeof(g_option_t));
-    init_g_options(g_options);
-    g_options->str = stralloc(str);
-
-    p = stralloc(str);
-    tok = strtok(p,";");
-
-    while (tok != NULL) {
-	if(strncmp(tok,"features=", 9) == 0) {
-	    if(g_options->features != NULL) {
-		dbprintf(("%s: multiple features option\n", 
-			  debug_prefix(NULL)));
-		if(verbose) {
-		    printf("ERROR [multiple features option]\n");
-		}
-	    }
-	    if((g_options->features = am_string_to_feature(tok+9)) == NULL) {
-		dbprintf(("%s: bad features value \"%s\n",
-			  debug_prefix(NULL), tok+10));
-		if(verbose) {
-		    printf("ERROR [bad features value \"%s\"]\n", tok+10);
-		}
-	    }
-	}
-	else if(strncmp(tok,"hostname=", 9) == 0) {
-	    if(g_options->hostname != NULL) {
-		dbprintf(("%s: multiple hostname option\n", 
-			  debug_prefix(NULL)));
-		if(verbose) {
-		    printf("ERROR [multiple hostname option]\n");
-		}
-	    }
-	    g_options->hostname = stralloc(tok+9);
-	}
-	else if(strncmp(tok,"maxdumps=", 9) == 0) {
-	    if(g_options->maxdumps != 0) {
-		dbprintf(("%s: multiple maxdumps option\n", 
-			  debug_prefix(NULL)));
-		if(verbose) {
-		    printf("ERROR [multiple maxdumps option]\n");
-		}
-	    }
-	    if(sscanf(tok+9, "%d;", &new_maxdumps) == 1) {
-		if (new_maxdumps > MAXMAXDUMPS) {
-		    g_options->maxdumps = MAXMAXDUMPS;
-		}
-		else if (new_maxdumps > 0) {
-		    g_options->maxdumps = new_maxdumps;
-		}
-		else {
-		    dbprintf(("%s: bad maxdumps value \"%s\"\n",
-			      debug_prefix(NULL), tok+9));
-		    if(verbose) {
-			printf("ERROR [bad maxdumps value \"%s\"]\n",
-			       tok+9);
-		    }
-		}
-	    }
-	    else {
-		dbprintf(("%s: bad maxdumps value \"%s\"\n",
-			  debug_prefix(NULL), tok+9));
-		if(verbose) {
-		    printf("ERROR [bad maxdumps value \"%s\"]\n",
-			   tok+9);
-		}
-	    }
-	}
-	else {
-	    dbprintf(("%s: unknown option \"%s\"\n",
-                                  debug_prefix(NULL), tok));
-	    if(verbose) {
-		printf("ERROR [unknown option \"%s\"]\n", tok);
-	    }
-	}
-	tok = strtok(NULL, ";");
-    }
-    if(g_options->features == NULL) {
-	g_options->features = am_set_default_feature_set();
-    }
-    if(g_options->maxdumps == 0) /* default */
-	g_options->maxdumps = 1;
-    amfree(p);
-    return g_options;
-}

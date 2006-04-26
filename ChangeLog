@@ -1,4 +1,23 @@
 2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c: New file.
+	* amandad-src/amandad.h: New file.
+	* amandad-src/amandad_util.c: New file, add function init_g_options
+				      parse_g_options.
+	* amandad-src/Makefile.am: New file.
+	* client-src/amandad.c: Removed file.
+	* client-src/amandad.h: Removed file.
+	* client-src/client_util.c (init_g_options, parse_g_options): Remove.
+	* client-src/client_util.h (init_g_options, parse_g_options): Remove.
+	* client-src/Makefile.am (INCLUDES): -I$(top_srcdir)/amandad-src
+	* client-src/Makefile.am (libexec_PROGRAMS): Remove amandad.
+	* client-src/Makefile.am (LDADD): Add
+				  ../amandad-src/libamandad.$(LIB_EXTENSION).
+	* client-src/selfcheck.c: #include "amandad.h".
+	* client-src/sendsize.c: #include "amandad.h".
+	* configure.in (AC_CONFIG_FILES): amandad-src/Makefile.
+	* Makefile.am (SUBDIRS): amandad-src.
+
+2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* docs/security-api.txt: Document security_read_sync.
 	* common-src/security.h: Typo.
 

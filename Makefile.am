@@ -28,6 +28,7 @@ endif
 SUBDIRS = \
 	config \
 	common-src \
+	amandad-src \
 	$(TAPE_SUBDIRS) \
 	$(CLIENT_SUBDIRS) \
 	$(SERVER_SUBDIRS) \

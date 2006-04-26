@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.152 2006/03/09 16:51:41 martinea Exp $
+ * $Id: sendsize.c,v 1.153 2006/04/26 15:53:36 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -38,6 +38,7 @@
 #include "getfsent.h"
 #include "version.h"
 #include "client_util.h"
+#include "amandad.h"
 
 #ifdef SAMBA_CLIENT
 #include "findpass.h"

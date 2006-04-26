@@ -1,12 +1,13 @@
 # Makefile for Amanda client programs.
 
 INCLUDES =	-I$(top_builddir)/common-src \
-		-I$(top_srcdir)/common-src
+		-I$(top_srcdir)/common-src \
+		-I$(top_srcdir)/amandad-src
 
 lib_LTLIBRARIES =	libamclient.la
 LIB_EXTENSION = la
 
-libexec_PROGRAMS =	amandad noop calcsize killpgrp rundump runtar selfcheck sendbackup sendsize versionsuffix
+libexec_PROGRAMS =	noop calcsize killpgrp rundump runtar selfcheck sendbackup sendsize versionsuffix
 
 sbin_SCRIPTS =		@CLIENT_SCRIPTS_OPT@
 
@@ -34,7 +35,8 @@ libamclient_la_LDFLAGS = -release $(VERSION)
 ###
 
 LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
-	libamclient.$(LIB_EXTENSION)
+	libamclient.$(LIB_EXTENSION) \
+	../amandad-src/libamandad.$(LIB_EXTENSION)
 if WANT_SERVER
 LDADD += ../tape-src/libamtape.$(LIB_EXTENSION)
 endif
@@ -67,7 +69,7 @@ EXTRA_DIST =		amhpfixdevs.sh		amsinixfixdevs.sh
 sendbackup_SOURCES = 	sendbackup.c		sendbackup.h	\
 			sendbackup-dump.c	sendbackup-gnutar.c
 
-noinst_HEADERS	= 	amandad.h	amandates.h	getfsent.h	\
+noinst_HEADERS	= 	amandates.h	getfsent.h	\
 			findpass.h	client_util.h
 
 install-exec-hook:
