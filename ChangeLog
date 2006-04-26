@@ -1,4 +1,9 @@
 2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amindexd.c: Can be launched by amandad
+	* server-src/Makefile.am (INCLUDES): Add -I$(top_srcdir)/amandad-src
+	* server-src/Makefile.am (amindexd_LDADD): Link with libamandad.
+
+2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c: New file.
 	* amandad-src/amandad.h: New file.
 	* amandad-src/amandad_util.c: New file, add function init_g_options

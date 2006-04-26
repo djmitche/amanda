@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.90 2006/04/05 13:02:14 martinea Exp $
+ * $Id: amindexd.c,v 1.91 2006/04/26 18:02:21 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -53,6 +53,7 @@
 #include "token.h"
 #include "find.h"
 #include "tapefile.h"
+#include "amandad.h"
 
 #ifdef HAVE_NETINET_IN_SYSTM_H
 #include <netinet/in_systm.h>
@@ -71,13 +72,16 @@ typedef struct REMOVE_ITEM
 } REMOVE_ITEM;
 
 /* state */
-char local_hostname[MAX_HOSTNAME_LENGTH+1];	/* me! */
-char *remote_hostname = NULL;			/* the client */
-char *dump_hostname = NULL;			/* machine we are restoring */
-char *disk_name;				/* disk we are restoring */
-char *target_date = NULL;
-disklist_t disk_list;				/* all disks in cur config */
-find_result_t *output_find = NULL;
+static int from_amandad;
+static char local_hostname[MAX_HOSTNAME_LENGTH+1];	/* me! */
+static char *remote_hostname = NULL;			/* the client */
+static char *dump_hostname = NULL;		/* machine we are restoring */
+static char *disk_name;				/* disk we are restoring */
+static char *target_date = NULL;
+static disklist_t disk_list;			/* all disks in cur config */
+static find_result_t *output_find = NULL;
+static g_option_t *g_options = NULL;
+static int cmdfdin, cmdfdout;
 
 static int amindexd_debug = 0;
 
@@ -588,6 +592,7 @@ static int disk_history_list()
 	    lreply(201, " %s %d %s %d", date, item->level, tapelist_str,
 	       item->file);
 	}
+	amfree(tapelist_str);
     }
 
     reply(200, "Dump history for config \"%s\" host \"%s\" disk \"%s\"",
@@ -905,9 +910,9 @@ char **argv;
     int len;
     int user_validated = 0;
     char *errstr = NULL;
-    char *pgm = "amindexd";			/* in case argv[0] is not set */
+    char *pgm = "amindexd";		/* in case argv[0] is not set */
 
-    safe_fd(-1, 0);
+    safe_fd(DATA_FD_OFFSET, 2);
     safe_cd();
 
     /*
@@ -975,6 +980,16 @@ char **argv;
 	argv++;
     }
 
+    if(argc > 0 && strcmp(*argv, "amandad") == 0) {
+	from_amandad = 1;
+	argc--;
+	argv++;
+    }
+    else {
+	from_amandad = 0;
+	safe_fd(-1, 0);
+    }
+
     if (argc > 0) {
 	config_name = stralloc(*argv);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
@@ -992,44 +1007,77 @@ char **argv;
     while(ch && ch != '.') ch = *s++;
     s[-1] = '\0';
 
-    if(amindexd_debug) {
-	/*
-	 * Fake the remote address as the local address enough to get
-	 * through the security check.
-	 */
-	his_name = gethostbyname(local_hostname);
-	if(his_name == NULL) {
-	    error("gethostbyname(%s) failed\n", local_hostname);
+    if(from_amandad == 0) {
+	if(amindexd_debug) {
+	    /*
+	     * Fake the remote address as the local address enough to get
+	     * through the security check.
+	     */
+	    his_name = gethostbyname(local_hostname);
+	    if(his_name == NULL) {
+		error("gethostbyname(%s) failed\n", local_hostname);
+	    }
+	    assert(his_name->h_addrtype == AF_INET);
+	    his_addr.sin_family = his_name->h_addrtype;
+	    his_addr.sin_port = htons(0);
+	    memcpy((char *)&his_addr.sin_addr.s_addr,
+		   (char *)his_name->h_addr_list[0], his_name->h_length);
+	} else {
+	    /* who are we talking to? */
+	    socklen = sizeof (his_addr);
+	    if (getpeername(0, (struct sockaddr *)&his_addr, &socklen) == -1)
+		error("getpeername: %s", strerror(errno));
 	}
-	assert(his_name->h_addrtype == AF_INET);
-	his_addr.sin_family = his_name->h_addrtype;
-	his_addr.sin_port = htons(0);
-	memcpy((char *)&his_addr.sin_addr.s_addr,
-	       (char *)his_name->h_addr_list[0], his_name->h_length);
-    } else {
-	/* who are we talking to? */
-	socklen = sizeof (his_addr);
-	if (getpeername(0, (struct sockaddr *)&his_addr, &socklen) == -1)
-	    error("getpeername: %s", strerror(errno));
+	if (his_addr.sin_family != AF_INET || ntohs(his_addr.sin_port) == 20)
+	{
+	    error("connection rejected from %s family %d port %d",
+		  inet_ntoa(his_addr.sin_addr), his_addr.sin_family,
+		  htons(his_addr.sin_port));
+	}
+	if ((his_name = gethostbyaddr((char *)&(his_addr.sin_addr),
+				      sizeof(his_addr.sin_addr),
+				      AF_INET)) == NULL) {
+	    error("gethostbyaddr(%s): hostname lookup failed",
+		  inet_ntoa(his_addr.sin_addr));
+	}
+	fp = s = his_name->h_name;
+	ch = *s++;
+	while(ch && ch != '.') ch = *s++;
+	s[-1] = '\0';
+	remote_hostname = newstralloc(remote_hostname, fp);
+	s[-1] = ch;
     }
-    if (his_addr.sin_family != AF_INET || ntohs(his_addr.sin_port) == 20)
-    {
-	error("connection rejected from %s family %d port %d",
-	      inet_ntoa(his_addr.sin_addr), his_addr.sin_family,
-	      htons(his_addr.sin_port));
+    else {
+	cmdfdout  = DATA_FD_OFFSET + 0;
+	cmdfdin   = DATA_FD_OFFSET + 1;
+
+	/* read the REQ packet */
+	for(; (line = agets(stdin)) != NULL; free(line)) {
+#define sc "OPTIONS "
+	    if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+#undef sc
+		g_options = parse_g_options(line+8, 1);
+		if(!g_options->hostname) {
+		    g_options->hostname = alloc(MAX_HOSTNAME_LENGTH+1);
+		    gethostname(g_options->hostname, MAX_HOSTNAME_LENGTH);
+		    g_options->hostname[MAX_HOSTNAME_LENGTH] = '\0';
+		}
+	    }
+	}
+	amfree(line);
+
+	/* send the REP packet */
+	printf("CONNECT MESG %d\n", DATA_FD_OFFSET);
+	printf("\n");
+	fflush(stdout);
+	fclose(stdout);
+	close(1);
+	fclose(stdin);
+	close(0);
+
+	stdout = fdopen(cmdfdout,"w");
+	stdin  = fdopen(cmdfdin,"r");
     }
-    if ((his_name = gethostbyaddr((char *)&(his_addr.sin_addr),
-				  sizeof(his_addr.sin_addr),
-				  AF_INET)) == NULL) {
-	error("gethostbyaddr(%s): hostname lookup failed",
-	      inet_ntoa(his_addr.sin_addr));
-    }
-    fp = s = his_name->h_name;
-    ch = *s++;
-    while(ch && ch != '.') ch = *s++;
-    s[-1] = '\0';
-    remote_hostname = newstralloc(remote_hostname, fp);
-    s[-1] = ch;
 
     /* clear these so we can detect when the have not been set by the client */
     amfree(dump_hostname);
@@ -1045,6 +1093,8 @@ char **argv;
 
     reply(220, "%s AMANDA index server (%s) ready.", local_hostname,
 	  version());
+
+    user_validated = from_amandad;
 
     /* a real simple parser since there are only a few commands */
     while (1)
