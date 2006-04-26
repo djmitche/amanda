@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.13 2006/04/26 15:13:52 martinea Exp $
+ * $Id: security.h,v 1.14 2006/04/26 15:41:13 martinea Exp $
  *
  * security api
  */
@@ -245,8 +245,7 @@ void security_stream_close P((security_stream_t *));
 #define	security_stream_read(stream, fn, arg)		\
     (*(stream)->driver->stream_read)(stream, fn, arg)
 
-/* void security_stream_read_sync P((security_stream_t *,
-    void *, size_t)); */
+/* void security_stream_read_sync P((security_stream_t *, void *)); */
 #define	security_stream_read_sync(stream, buf)		\
     (*(stream)->driver->stream_read_sync)(stream, buf)
 

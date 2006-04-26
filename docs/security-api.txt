@@ -78,6 +78,8 @@ Table of Contents
 
         stream_read
 
+        stream_read_sync
+
         stream_read_cancel
 
 
@@ -280,6 +282,15 @@ On error, the bufsize will be negative. An error message can be retrieved by
 calling security_stream_geterror().
 This function uses the event interface. Callbacks will only be generated while
 in event_loop().
+
+ security_stream_read_sync
+
+size_t security_stream_read_sync(security_stream_t *s, void **buf);
+Return a buffer of data read from the stream. This function will block until
+something can be read, but other event will be fired. A pointer to the data is returned in *buf and the size of the buffer is returned.
+On error, the size will be negative. An error message can be retrieved by
+calling security_stream_geterror().
+This function uses the event interface.
 
  security_stream_read_cancel
 
