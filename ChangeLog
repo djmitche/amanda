@@ -1,4 +1,7 @@
 2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* man/xml-source/amanda-client.conf.5.xml: New file.
+
+2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/amanda.h (check_user_ruserok, check_user_amandahosts):
 	  Remove prototype.
 	* common-src/bsd-security.c: Pass the service name across check_user*
