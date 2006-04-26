@@ -577,10 +577,13 @@ but will be overridden by the -t switch.
 </refsect1>
 
 <refsect1><title>SEE ALSO</title>
-<para><citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<para>
+<citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>amanda-client.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amrestore</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amfetchdump</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
-<citerefentry><refentrytitle>readline</refentrytitle><manvolnum>3</manvolnum></citerefentry></para>
+<citerefentry><refentrytitle>readline</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
 </refsect1>
 </refentry>
 

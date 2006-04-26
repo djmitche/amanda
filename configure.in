@@ -2989,7 +2989,7 @@ AC_CONFIG_FILES([\
 	common-src/versuff.c		common-src/Makefile		\
 									\
 	example/amanda.conf		example/Makefile		\
-	example/chg-mcutil.conf						\
+	example/chg-mcutil.conf		example/amanda-client.conf	\
 									\
 	man/Makefile							\
 									\

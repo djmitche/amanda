@@ -6,7 +6,8 @@ AMPLOT_MAN8_PAGES = amplot.8
 
 COMMON_MAN8_PAGES = amanda.8
 
-COMMON_MAN5_PAGES = amanda.conf.5
+COMMON_MAN5_PAGES = amanda.conf.5 \
+		    amanda-client.conf.5
 
 SERVER_MAN8_PAGES = amadmin.8 \
 		    amcheck.8 \

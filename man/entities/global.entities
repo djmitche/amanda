@@ -11,6 +11,7 @@
 <!-- IDs for AMANDA files-->
 <!ENTITY amandaddebug ' <filename>amandad.debug</filename>'>
 <!ENTITY amconf '<filename>amanda.conf</filename>'>
+<!ENTITY amclientconf '<filename>amanda-client.conf</filename>'>
 <!ENTITY amandahosts '<filename>.amandahosts</filename>'>
 <!ENTITY disklist '<filename>disklist</filename>'>
 <!ENTITY amandapass '<filename>/etc/amandapass</filename>'>

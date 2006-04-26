@@ -22,7 +22,7 @@ endif
 
 libamclient_la_SOURCES=	amandates.c		getfsent.c	\
 			unctime.c		client_util.c	\
-			$(samba_sources)
+			clientconf.c		$(samba_sources)
 
 libamclient_la_LDFLAGS = -release $(VERSION)
 

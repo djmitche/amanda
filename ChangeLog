@@ -1,4 +1,20 @@
 2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/clientconf.c: New file to read the client configuration
+				   file.
+	* client-src/clientconf.h: Header.
+	* client-src/Makefile.am: Link clientconf into libamclient.
+	* configure.in (AC_CONFIG_FILES): example/amanda-client.conf.
+	* docs/amanda-client.conf.5.txt: New documentation.
+	* docs/Makefile.am (pkgdata_DATA): amanda-client.conf.5.txt.
+	* example/amanda-client.conf.in: exemple.
+	* example/Makefile.am  (noinst_DATA): amanda-client.conf.
+	* man/entities/global.entities: amclientconf.
+	* man/Makefile.am (COMMON_MAN5_PAGES): amanda-client.conf.5.
+	* man/xml-source/amanda.8.xml (SEE ALSO): amanda-client.conf(5).
+	* man/xml-source/amanda.conf.5.xml (SEE ALSO): amanda-client.conf(5).
+	* man/xml-source/amrecover.8.xml (SEE ALSO): amanda-client.conf(5).
+
+2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/event.c(event_wait): New function.
 	* common-src/event.h(event_wait): prototype.
 	* docs/eventapi.txt: Document event_wait.

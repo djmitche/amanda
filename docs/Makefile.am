@@ -4,6 +4,7 @@ pkgdata_DATA = \
 	amadmin.8.txt \
 	amanda.8.txt \
 	amanda.conf.5.txt \
+	amanda-client.conf.5.txt \
 	amcheck.8.txt \
 	amcheckdb.8.txt \
 	amcleanup.8.txt \
