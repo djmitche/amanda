@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.77 2006/03/09 16:51:41 martinea Exp $
+ * $Id: sendbackup.c,v 1.78 2006/04/26 15:06:41 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -179,7 +179,11 @@ char **argv;
 
     /* initialize */
 
-    safe_fd(DATA_FD_OFFSET, DATA_FD_COUNT);
+    safe_fd(DATA_FD_OFFSET, DATA_FD_COUNT*2);
+    /* close writer side of pipe */
+    close(DATA_FD_OFFSET+1);
+    close(DATA_FD_OFFSET+3);
+    close(DATA_FD_OFFSET+5);
     safe_cd();
 
     set_pname("sendbackup");
@@ -341,14 +345,15 @@ char **argv;
 
     if(!interactive) {
 	datafd = DATA_FD_OFFSET + 0;
-	mesgfd = DATA_FD_OFFSET + 1;
-	indexfd = DATA_FD_OFFSET + 2;
+	mesgfd = DATA_FD_OFFSET + 2;
+	indexfd = DATA_FD_OFFSET + 4;
     }
     if (!options->createindex)
 	indexfd = -1;
 
     printf("CONNECT DATA %d MESG %d INDEX %d\n",
-	   datafd, mesgfd, indexfd);
+	   DATA_FD_OFFSET, DATA_FD_OFFSET+1,
+	   indexfd == -1 ? -1 : DATA_FD_OFFSET+2);
     printf("OPTIONS ");
     if(am_has_feature(g_options->features, fe_rep_options_features)) {
 	printf("features=%s;", our_feature_string);
