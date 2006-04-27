@@ -1,4 +1,9 @@
 2006-04-27  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/rsh-security.c: Pass "amdump amindexd amidxtaped" option
+				     to amandad.
+	* common-src/ssh-security.c: Ditto.
+
+2006-04-27  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c: Accept a list of services on the command line.
 
 2006-04-27  Jean-Louis Martineau <martineau@zmanda.com>

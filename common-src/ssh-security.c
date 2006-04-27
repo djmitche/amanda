@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.12 2006/04/26 15:28:16 martinea Exp $
+ * $Id: ssh-security.c,v 1.13 2006/04/27 17:56:27 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -557,7 +557,8 @@ runssh(rc, amandad_path, client_username)
 	xclient_username = CLIENT_LOGIN;
 
     execlp(SSH_PATH, SSH_PATH, SSH_ARGS, "-l", xclient_username,
-	   rc->hostname, xamandad_path, "-auth=ssh", NULL);
+	   rc->hostname, xamandad_path, "-auth=ssh", "amdump", "amindexd",
+	   "amidxtaped", NULL);
     error("error: couldn't exec %s: %s", SSH_PATH, strerror(errno));
 
     /* should never go here, shut up compiler warning */

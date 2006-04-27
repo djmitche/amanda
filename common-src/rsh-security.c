@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.22 2006/04/26 15:28:16 martinea Exp $
+ * $Id: rsh-security.c,v 1.23 2006/04/27 17:56:26 martinea Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -558,7 +558,8 @@ runrsh(rc, amandad_path, client_username)
 	xclient_username = CLIENT_LOGIN;
 
     execlp(RSH_PATH, RSH_PATH, "-l", xclient_username,
-	   rc->hostname, xamandad_path, "-auth=rsh", NULL);
+	   rc->hostname, xamandad_path, "-auth=rsh", "amdump", "amindexd",
+	   "amidxtaped", NULL);
     error("error: couldn't exec %s: %s", RSH_PATH, strerror(errno));
 
     /* should never go here, shut up compiler warning */
