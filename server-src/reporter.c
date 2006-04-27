@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.108 2006/04/07 18:00:13 martinea Exp $
+ * $Id: reporter.c,v 1.109 2006/04/27 12:17:59 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -980,6 +980,7 @@ static void output_strange()
 	str = vstralloc("  ", prefixstrange(strange->hostname, strange->diskname, strange->level, len_host, len_disk),
 			"  ", strange->str, NULL);
 	fprintf(mailf, "%s\n", str);
+	amfree(str);
     }
 }
 

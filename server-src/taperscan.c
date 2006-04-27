@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.11 2006/04/11 13:47:13 martinea Exp $
+ * $Id: taperscan.c,v 1.12 2006/04/27 12:17:59 martinea Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -62,7 +62,6 @@ char *find_brand_new_tape_label();
 int scan_read_label(char *dev, char *desired_label,
                     char** label, char** timestamp, char** error_message) {
     char *result = NULL;
-    char *errstr = NULL;
 
     *label = *timestamp = NULL;
     result = tape_rdlabel(dev, timestamp, label);
@@ -108,7 +107,7 @@ int scan_read_label(char *dev, char *desired_label,
         char *labelstr;
         labelstr = getconf_str(CNF_LABELSTR);
 	if(!match(labelstr, *label)) {
-            vstrextend(&errstr, "label ", *label,
+            vstrextend(error_message, "label ", *label,
                        " doesn\'t match labelstr \"",
                        labelstr, "\"\n", NULL);
             return -1;
@@ -122,12 +121,12 @@ int scan_read_label(char *dev, char *desired_label,
             tp = lookup_tapelabel(*label);
          
             if(tp == NULL) {
-                vstrextend(&errstr, "label ", *label,
+                vstrextend(error_message, "label ", *label,
                      " match labelstr but it not listed in the tapelist file.\n",
                            NULL);
                 return -1;
             } else if(tp != NULL && !reusable_tape(tp)) {
-                vstrextend(&errstr, "cannot overwrite active tape ", *label,
+                vstrextend(error_message, "cannot overwrite active tape ", *label,
                            "\n", NULL);
                 return -1;
             }

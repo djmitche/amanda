@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.1 2006/04/26 15:53:35 martinea Exp $
+ * $Id: amandad.c,v 1.2 2006/04/27 12:17:59 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -419,6 +419,7 @@ protocol_accept(handle, pkt)
     pkt_t pkt_out;
     struct active_service *as;
     char *pktbody, *tok, *service, *arguments;
+    char *service_path = NULL;
     int i;
 
     /*
@@ -483,21 +484,20 @@ protocol_accept(handle, pkt)
 	goto send_pkt_out;
     }
 
-    service = newvstralloc(service,
-		       libexecdir, "/", service, versionsuffix(),
-		       NULL);
-    if (access(service, X_OK) < 0) {
+    service_path = vstralloc(libexecdir, "/", service, versionsuffix(), NULL);
+    if (access(service_path, X_OK) < 0) {
 	dbprintf(("%s: can't execute %s: %s\n",
-	    debug_prefix_time(NULL), service, strerror(errno)));
-	    pkt_init(&pkt_out, P_NAK, "ERROR execute access to \"%s\" denied\n",
-	    service);
+	    debug_prefix_time(NULL), service_path, strerror(errno)));
+	    pkt_init(&pkt_out, P_NAK,
+		     "ERROR execute access to \"%s\" denied\n",
+		     service_path);
 	goto send_pkt_out;
     }
 
     /* see if its already running */
     for (as = TAILQ_FIRST(&serviceq.tailq); as != NULL;
 	as = TAILQ_NEXT(as, tq)) {
-	    if (strcmp(as->cmd, service) == 0 &&
+	    if (strcmp(as->cmd, service_path) == 0 &&
 		strcmp(as->arguments, arguments) == 0) {
 		    dbprintf(("%s: %s %s: already running, acking req\n",
 			debug_prefix_time(NULL), service, arguments));
@@ -512,7 +512,7 @@ protocol_accept(handle, pkt)
      */
     dbprintf(("%s: creating new service: %s\n%s\n",
 	debug_prefix_time(NULL), service, arguments));
-    as = service_new(handle, service, arguments);
+    as = service_new(handle, service_path, arguments);
     if (writebuf(as, arguments, strlen(arguments)) < 0) {
 	const char *errmsg = strerror(errno);
 	dbprintf(("%s: error sending arguments to %s: %s\n",
@@ -525,6 +525,7 @@ protocol_accept(handle, pkt)
 
     amfree(pktbody);
     amfree(service);
+    amfree(service_path);
     amfree(arguments);
 
     /*
@@ -542,6 +543,7 @@ badreq:
 
 send_pkt_out:
     amfree(pktbody);
+    amfree(service_path);
     amfree(service);
     amfree(arguments);
     if(as) service_delete(as);
@@ -1193,7 +1195,7 @@ service_new(security_handle, cmd, arguments)
 	    if(am_has_feature(g_options->features, fe_partial_estimate)) {
 		as->send_partial_reply = 1;
 	    }
-	    amfree(g_options);
+	    free_g_options(g_options);
 	    amfree(option_str);
 	}
 

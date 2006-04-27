@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: amandad_util.c,v 1.1 2006/04/26 15:53:35 martinea Exp $
+ * $Id: amandad_util.c,v 1.2 2006/04/27 12:17:59 martinea Exp $
  *
  */
 
@@ -36,6 +36,7 @@
 void init_g_options(g_options)
 g_option_t *g_options;
 {
+    g_options->str      = NULL;
     g_options->features = NULL;
     g_options->hostname = NULL;
     g_options->maxdumps = 0;
@@ -133,4 +134,13 @@ int verbose;
 	g_options->maxdumps = 1;
     amfree(p);
     return g_options;
+}
+
+void free_g_options(g_options)
+g_option_t *g_options;
+{
+    amfree(g_options->str);
+    am_release_feature_set(g_options->features);
+    amfree(g_options->hostname);
+    amfree(g_options);
 }
