@@ -1,4 +1,7 @@
 2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amcheck.c (start_server_check): Memory leak.
+
+2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/Makefile.am (noinst_HEADERS): Add amandad.h.
 	* client-src/Makefile.am (noinst_HEADERS): Add clientconf.h.
 

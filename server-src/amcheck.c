@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.124 2006/04/11 13:47:13 martinea Exp $
+ * $Id: amcheck.c,v 1.125 2006/04/27 00:09:08 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -800,6 +800,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    }
 	}
 
+	amfree(olddir);
 	amfree(logfile);
 	amfree(conf_logdir);
     }
