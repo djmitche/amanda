@@ -1,4 +1,7 @@
 2006-04-27  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c: Accept a list of services on the command line.
+
+2006-04-27  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/tapelist.c (append_to_tapelist): Fix memory leak.
 
 2006-04-27  Jean-Louis Martineau <martineau@zmanda.com>

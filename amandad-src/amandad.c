@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.2 2006/04/27 12:17:59 martinea Exp $
+ * $Id: amandad.c,v 1.3 2006/04/27 17:46:36 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -105,11 +105,16 @@ struct active_service {
 /* 
  * Here are the services that we allow.
  */
-static const char *services[] = {
-    "noop",
-    "sendsize",
-    "sendbackup",
-    "selfcheck",
+static struct services {
+    char *name;
+    int  active;
+} services[] = {
+    { "noop", 1 },
+    { "sendsize", 1 },
+    { "sendbackup", 1 },
+    { "selfcheck", 1 },
+    { "amindexd", 0 },
+    { "amidxtaped", 0 }
 };
 #define	NSERVICES	(sizeof(services) / sizeof(services[0]))
 
@@ -171,7 +176,9 @@ main(argc, argv)
     int argc;
     char **argv;
 {
-    int i, in, out;
+    int i, j;
+    int have_services;
+    int in, out;
     const security_driver_t *secdrv;
     int no_exit = 0;
     char *pgm = "amandad";		/* in case argv[0] is not set */
@@ -230,9 +237,11 @@ main(argc, argv)
      *			-tcp=[port]
      *			-udp=[port]
 #endif
+     * We also add a list of services that amandad can launch
      */
     secdrv = NULL;
     in = 0; out = 1;		/* default to stdin/stdout */
+    have_services = 0;
     for (i = 1; i < argc; i++) {
 	/*
 	 * accept -krb4 as an alias for -auth=krb4 (for compatibility)
@@ -246,7 +255,7 @@ main(argc, argv)
 	/*
 	 * Get a driver for a security type specified after -auth=
 	 */
-	if (strncmp(argv[i], "-auth=", strlen("-auth=")) == 0) {
+	else if (strncmp(argv[i], "-auth=", strlen("-auth=")) == 0) {
 	    argv[i] += strlen("-auth=");
 	    secdrv = security_getdriver(argv[i]);
 	    auth = argv[i];
@@ -259,7 +268,7 @@ main(argc, argv)
 	 * If -no-exit is specified, always run even after requests have
 	 * been satisfied.
 	 */
-	if (strcmp(argv[i], "-no-exit") == 0) {
+	else if (strcmp(argv[i], "-no-exit") == 0) {
 	    no_exit = 1;
 	    continue;
 	}
@@ -269,7 +278,7 @@ main(argc, argv)
 	 * Allow us to directly bind to a udp port for debugging.
 	 * This may only apply to some security types.
 	 */
-	if (strncmp(argv[i], "-udp=", strlen("-udp=")) == 0) {
+	else if (strncmp(argv[i], "-udp=", strlen("-udp=")) == 0) {
 	    struct sockaddr_in sin;
 
 	    argv[i] += strlen("-udp=");
@@ -286,9 +295,10 @@ main(argc, argv)
 	/*
 	 * Ditto for tcp ports.
 	 */
-	if (strncmp(argv[i], "-tcp=", strlen("-tcp=")) == 0) {
+	else if (strncmp(argv[i], "-tcp=", strlen("-tcp=")) == 0) {
 	    struct sockaddr_in sin;
-	    int sock, n;
+	    int sock;
+	    socklen_t n;
 
 	    argv[i] += strlen("-tcp=");
 	    sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -307,6 +317,35 @@ main(argc, argv)
 	    in = out = accept(sock, (struct sockaddr *)&sin, &n);
 	}
 #endif
+	/*
+	 * It must be a service name
+	 */
+	else {
+	    /* clear all services */
+	    if(!have_services) {
+		for (j = 0; j < NSERVICES; j++)
+		    services[j].active = 0;
+	    }
+	    have_services = 1;
+
+	    if(strcmp(argv[i],"amdump") == 0) {
+		services[0].active = 1;
+		services[1].active = 1;
+		services[2].active = 1;
+		services[3].active = 1;
+	    }
+	    else {
+		for (j = 0; j < NSERVICES; j++)
+		    if (strcmp(services[j].name, argv[i]) == 0)
+			break;
+		if (j == NSERVICES) {
+		    dbprintf(("%s: %s: invalid service\n",
+			      debug_prefix_time(NULL), argv[i]));
+		    exit(1);
+		}
+		services[j].active = 1;
+	    }
+	}
     }
 
     /*
@@ -475,7 +514,7 @@ protocol_accept(handle, pkt)
 
     /* see if it's one we allow */
     for (i = 0; i < NSERVICES; i++)
-	if (strcmp(services[i], service) == 0)
+	if (services[i].active == 1 && strcmp(services[i].name, service) == 0)
 	    break;
     if (i == NSERVICES) {
 	dbprintf(("%s: %s: invalid service\n",
