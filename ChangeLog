@@ -1,4 +1,7 @@
 2006-04-27  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/tapelist.c (append_to_tapelist): Fix memory leak.
+
+2006-04-27  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c: Fix memory leak.
 	* amandad-src/amandad.h (free_g_options): Prototype.
 	* amandad-src/amandad_util.c (free_g_options): New function to free a
