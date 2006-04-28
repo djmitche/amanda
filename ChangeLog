@@ -1,5 +1,10 @@
+2006-04-28  Ian Turner <ian@zmanda.com>
+	* Amanda 2.5.0p1 released.
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.0p1).
+	* NEWS: Changes in release 2.5.0p1.
+
 2006-04-24  Ian Turner <ian@zmanda.com>
-	  * server-src/changer.c: Don't crash if we go to taperscan "Plan B".
+	* server-src/changer.c: Don't crash if we go to taperscan "Plan B".
 
 2006-04-24  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/planner.c: Fix divide by zero if runtapes==0.
