@@ -1,4 +1,7 @@
-2006-04-28  Ian Turner <ian@zmanda.com>
+2006-05-02  Jean-Louis Martineau <martineau@zmanda.com>
+	* amstatus.pl.in: Limit characters for hostname in setup_estimate line.
+
+2006-04-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* Amanda 2.5.0p1 released.
 	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.0p1).
 	* NEWS: Changes in release 2.5.0p1.
