@@ -186,7 +186,7 @@ while(<AMDUMP>) {
 			push @datestamp, $gdatestamp;
 		}
 	}
-	elsif(/setup_estimate: (\S+):(\S+): command .*, options: *(\S+) *last_level -?\d+ next_level0 -?\d+ level_days \d+ *getting estimates (-?\d) \(-2\) (-?\d) \(-2\) (-?\d) \(-2\)/) {
+	elsif(/setup_estimate: ([_\-\d\.A-Za-z]*):(\S+): command .*, options: *(\S+) *last_level -?\d+ next_level0 -?\d+ level_days \d+ *getting estimates (-?\d) \(-2\) (-?\d) \(-2\) (-?\d) \(-2\)/) {
 		$host=$1;
 		$partition=$2;
 		$hostpart=&make_hostpart($host,$partition,$gdatestamp);

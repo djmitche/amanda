@@ -1,3 +1,6 @@
+2006-05-02  Jean-Louis Martineau <martineau@zmanda.com>
+	* amstatus.pl.in: Limit characters for hostname in setup_estimate line.
+
 2006-04-27  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/rsh-security.c: Pass "amdump amindexd amidxtaped" option
 				     to amandad.
