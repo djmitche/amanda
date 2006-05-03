@@ -10,7 +10,7 @@ amreport  generate a formatted output of statistics for an AMANDA run
 
 Synopsis
 
-amreport [config] [ -l logfile ] [ -f outputfile ] [ -p postscriptfile ]
+amreport [config] [ -i ] [ -Maddress ] [ -l logfile ] [ -f outputfile ] [ -p postscriptfile ]
 
 DESCRIPTION
 
@@ -25,6 +25,12 @@ OPTIONS
 
   config
       Name of the configuration to process.
+
+  -i 
+      Don't email the report. 
+
+  -Maddress
+      Mail the report to address instead of the mailto value from amanda.conf.
 
   -l logfile
       Name of the log file to parse to generate the report. If a log file is

@@ -23,6 +23,8 @@
 <cmdsynopsis>
   <command>amreport</command>    
     <arg choice='opt'><replaceable>config</replaceable></arg>
+    <arg choice='opt'><arg choice='plain'>-i </arg></arg>
+    <arg choice='opt'><arg choice='plain'>-M </arg><arg choice='plain'><replaceable>address</replaceable></arg></arg>
     <arg choice='opt'><arg choice='plain'>-l </arg><arg choice='plain'><replaceable>logfile</replaceable></arg></arg>
     <arg choice='opt'><arg choice='plain'>-f </arg><arg choice='plain'><replaceable>outputfile</replaceable></arg></arg>
     <arg choice='opt'><arg choice='plain'>-p </arg><arg choice='plain'><replaceable>postscriptfile</replaceable></arg></arg>
@@ -49,6 +51,24 @@ man page for more details about &A;.</para>
   <term><emphasis remap='I'>config</emphasis></term>
   <listitem>
 <para>Name of the configuration to process.</para>
+  </listitem>
+  </varlistentry>
+  <varlistentry>
+  <term><option>-i</option></term>
+  <listitem>
+<para>Don't email the report.</para>
+  </listitem>
+  </varlistentry>
+  <varlistentry>
+  <term><option>-M</option> <replaceable>address</replaceable></term>
+  <listitem>
+<para>Mail the report to
+<emphasis remap='I'>address</emphasis>
+instead of the
+<emphasis remap='B'>mailto</emphasis>
+value from
+<emphasis remap='I'>amanda.conf</emphasis>.
+</para>
   </listitem>
   </varlistentry>
   <varlistentry>

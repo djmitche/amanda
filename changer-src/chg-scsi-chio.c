@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi-chio.c,v 1.8 2006/01/14 04:37:18 paddy_s Exp $
+ *  $Id: chg-scsi-chio.c,v 1.9 2006/05/03 02:36:42 paddy_s Exp $
  *
  *  chg-scsi.c -- generic SCSI changer driver
  *
@@ -573,26 +573,35 @@ void clean_tape(int fd,char *tapedev,char *cnt_file, int drivenum,
       /* Now we should inform the administrator */
       char *mail_cmd;
       FILE *mailf;
-      mail_cmd = vstralloc(MAILER,
+      int mail_pipe_opened = 1;
+      if(getconf_seen(CNF_MAILTO) && strlen(getconf_str(CNF_MAILTO)) > 0 &&
+         validate_mailto(getconf_str(CNF_MAILTO))) {
+         mail_cmd = vstralloc(MAILER,
                            " -s", " \"", "AMANDA PROBLEM: PLEASE FIX", "\"",
                            " ", getconf_str(CNF_MAILTO),
                            NULL);
-      if((mailf = popen(mail_cmd, "w")) == NULL){
+         if((mailf = popen(mail_cmd, "w")) == NULL){
+        printf("Mail failed\n");
         error("could not open pipe to \"%s\": %s",
               mail_cmd, strerror(errno));
-        printf("Mail failed\n");
-        return;
       }
+      }
+      else{
+	 mail_pipe_opened = 0;
+	 mailf = stderr;
+         fprintf(mailf, "\nNo mail recipient specified, output redirected to stderr");
+	}
+	
       fprintf(mailf,"\nThe usage count of your cleaning tape in slot %d",
               cleancart);
       fprintf(mailf,"\nis more than %d. (cleanmax)",maxclean);
       fprintf(mailf,"\nTapedrive %s needs to be cleaned",tapedev);
       fprintf(mailf,"\nPlease insert a new cleaning tape and reset");
       fprintf(mailf,"\nthe countingfile %s",cnt_file);
-
-      if(pclose(mailf) != 0)
-        error("mail command failed: %s", mail_cmd);
-
+      
+      if(mail_pipe_opened == 1 && pclose(mailf) != 0) {
+          error("mail command failed: %s", mail_cmd);
+      }
       return;
     }
     put_current_slot(cnt_file,counter);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.109 2006/04/27 12:17:59 martinea Exp $
+ * $Id: reporter.c,v 1.110 2006/05/03 02:36:43 paddy_s Exp $
  *
  * nightly Amanda Report generator
  */
@@ -274,7 +274,7 @@ addline(lp, str)
 static void
 usage()
 {
-    error("Usage: amreport conf [-f output-file] [-l logfile] [-p postscript-file]");
+    error("Usage: amreport conf [-i] [-Maddress] [-f output-file] [-l logfile] [-p postscript-file]");
 }
 
 int
@@ -297,6 +297,8 @@ main(argc, argv)
     char *ColumnSpec = "";
     char *errstr = NULL;
     int cn;
+    int mailout = 1;
+    char *mailto = NULL;
 
     safe_fd(-1, 0);
 
@@ -331,8 +333,21 @@ main(argc, argv)
 	config_name = stralloc(argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
 	--argc; ++argv;
-	while((opt = getopt(argc, argv, "f:l:p:")) != EOF) {
+	while((opt = getopt(argc, argv, "M:f:l:p:i")) != EOF) {
 	    switch(opt) {
+	    case 'i': 
+		mailout = 0;
+		break;
+            case 'M':
+		if (mailto != NULL) {
+		    error("you may specify at most one -M");
+		}
+                mailto = stralloc(optarg);
+		if(!validate_mailto(mailto)) {
+		    error("mail address has invalid characters");
+		    /*NOTREACHED*/
+		}
+                break;
             case 'f':
 		if (outfname != NULL) {
 		    error("you may specify at most one -f");
@@ -378,6 +393,11 @@ main(argc, argv)
 	    return 1;
 	}
     }
+    if( !mailout && mailto ){
+	printf("You cannot specify both -i & -M at the same time\n");
+	exit(1);
+    }
+
 
 #if !defined MAILER
     if(!outfname) {
@@ -406,6 +426,14 @@ main(argc, argv)
 	error("could not load disklist \"%s\"", conf_diskfile);
     }
     amfree(conf_diskfile);
+    if(mailout && !mailto && 
+       getconf_seen(CNF_MAILTO) && strlen(getconf_str(CNF_MAILTO)) > 0) {
+		mailto = getconf_str(CNF_MAILTO);
+                if(!validate_mailto(mailto)){
+		   mailto = NULL;
+                }
+    }
+    
     conf_tapelist = getconf_str(CNF_TAPELIST);
     if (*conf_tapelist == '/') {
 	conf_tapelist = stralloc(conf_tapelist);
@@ -538,18 +566,27 @@ main(argc, argv)
 	if((mailf = fopen(outfname,"w")) == NULL) {
 	    error("could not open output file: %s %s", outfname, strerror(errno));
 	}
-	fprintf(mailf, "To: %s\n", getconf_str(CNF_MAILTO));
+	fprintf(mailf, "To: %s\n", mailto);
 	fprintf(mailf, "Subject: %s\n\n", subj_str);
 
     } else {
 #ifdef MAILER
-	mail_cmd = vstralloc(MAILER,
+        if(mailto) {
+		mail_cmd = vstralloc(MAILER,
 			     " -s", " \"", subj_str, "\"",
-			     " ", getconf_str(CNF_MAILTO),
+			     " ", mailto,
 			     NULL);
-	if((mailf = popen(mail_cmd, "w")) == NULL)
-	    error("could not open pipe to \"%s\": %s",
-		  mail_cmd, strerror(errno));
+		if((mailf = popen(mail_cmd, "w")) == NULL)
+	    	error("could not open pipe to \"%s\": %s",
+		  	mail_cmd, strerror(errno));
+        }
+        else {
+               if(mailout) {
+                  printf("No mail sent! ");
+                  printf("No valid mail address has been specified in amanda.conf or on the commmand line\n");
+               }
+               mailf = NULL;
+        }
 #endif
     }
 
@@ -611,6 +648,7 @@ main(argc, argv)
 
     amfree(subj_str);
 
+    if(mailf) {
 
     if(!got_finish) fputs("*** THE DUMPS DID NOT FINISH PROPERLY!\n\n", mailf);
 
@@ -640,6 +678,7 @@ main(argc, argv)
     }
     fprintf(mailf,"\n(brought to you by Amanda version %s)\n",
 	    version());
+    }
 
     if (postscript) {
 	do_postscript_output();
@@ -661,7 +700,7 @@ main(argc, argv)
     if(outfname) {
         afclose(mailf);
     }
-    else {
+    else if(mailf){
         if(pclose(mailf) != 0)
             error("mail command failed: %s", mail_cmd);
         mailf = NULL;

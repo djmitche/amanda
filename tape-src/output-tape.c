@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.14 2006/03/09 20:06:12 johnfranks Exp $
+ * $Id: output-tape.c,v 1.15 2006/05/03 02:36:43 paddy_s Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -472,6 +472,33 @@ int tape_tape_open(filename, flags, mask)
 	}
 	sleep(delay);
     }
+
+    if (ret < 0) {
+        /* Open failed. */
+        fprintf(stderr, "Opening tapedev %s: got error %s.\n",
+                filename, strerror(errno));
+    }
+#ifdef MTIOCGET
+    else {
+        /* Now check that we opened a /tape device/. */
+        struct mtget mt;
+        if (ioctl(ret, MTIOCGET, &mt) < 0) {
+            close(ret);
+            fprintf(stderr, "tapedev %s is not a tape device!\n", filename);
+            return -1;
+        }
+#ifdef GMT_ONLINE
+        else if (!GMT_ONLINE(mt.mt_gstat)) {
+            close(ret);
+            fprintf(stderr, "tapedev %s is offline or has no loaded tape.\n",
+                    filename);
+            return -1;
+        }
+#endif /* GMT_ONLINE */
+    }
+#endif /* MTIOCGET */
+
+
 #ifdef HAVE_LINUX_ZFTAPE_H
     /*
      * switch the block size for the zftape driver (3.04d)

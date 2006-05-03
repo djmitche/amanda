@@ -110,6 +110,16 @@
 	* man/xml-source/amanda.conf.5.xml (SEE ALSO): amanda-client.conf(5).
 	* man/xml-source/amrecover.8.xml (SEE ALSO): amanda-client.conf(5).
 
+2006-04-26  K. K. George<kkg@zmanda.com>
+	* server-src/reporter.c: Fix to untaint the mailto parameter.
+	* server-src/amcheck.c: Fix to untaint the mailto parameter
+        * changer-src/chg-scsi.c: Fix to untaint the mailto parameter.
+        * changer-src/chg-scsi-chio.c: Fix to untaint the mailto parameter.
+        * common-src/util.h: Added function to check if the mailto 
+          parameter is untainted
+        * common-src/util.c: Added function to check if the mailto 
+          parameter is untainted
+
 2006-04-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/event.c(event_wait): New function.
 	* common-src/event.h(event_wait): prototype.
@@ -117,6 +127,21 @@
 
 2006-04-24  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/planner.c: Fix divide by zero if runtapes==0.
+
+2006-04-24  K. K. George<kkg@zmanda.com>
+        * server-src/reporter.c: Fix to make the mailto parameter in
+          amanda.conf optional. Added two more commandline options
+          -i & -Maddress.
+        * server-src/amcheck.c: Fix to make the mailto parameter in
+          amanda.conf optional.
+        * man/xml-source/amreport.8.xml: Modified to document the
+          -i & -Maddress commandline parameters
+        * docs/amreport.8.txt: Modified to document the
+          -i & -Maddress commandline parameters
+        * changer-src/chg-scsi.c: Fix to make the mailto parameter in
+          amanda.conf optional.
+        * changer-src/chg-scsi-chio.c: Fix to make the mailto parameter in
+          amanda.conf optional.
 
 2006-04-23  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c (handle_chunker_result): make sure that
@@ -127,6 +152,22 @@
 
 2006-04-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/amidxtaped.c: Cleanup.
+
+2006-04-19  Ian Turner <ian@zmanda.com>
+	* tape-src/output-tape.c: Do a more thourough check to ensure 
+	  that we actually got a tape device, before proceeding to use 
+	  it.
+
+2006-04-18  Ian Turner <ian@zmanda.com>
+	* changer-src/chg-disk.sh.in: Check that the virtual device is a 
+	  directory with proper permissions.
+	* server-src/changer.c: Do the right thing (failure) if there is 
+	  a problem with the changer.
+
+2006-04-18  Ian Turner <ian@zmanda.com>
+	* recover-src/uscan.l: Accept setdate of the form
+	  yyyy-MM-dd-hh-mm in addition to yyyy-MM-dd-hh-mm-ss.
+	* man/xml-source/amrecover.8.xml: Document this change.
 
 2006-04-14  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/help.c: Document setdate YYYY-MM-DD-HH-MM-SS format.

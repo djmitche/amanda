@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.125 2006/04/27 00:09:08 martinea Exp $
+ * $Id: amcheck.c,v 1.126 2006/05/03 02:36:42 paddy_s Exp $
  *
  * checks for common problems in server and clients
  */
@@ -140,6 +140,10 @@ char **argv;
     while((opt = getopt(argc, argv, "M:mawsclt")) != EOF) {
 	switch(opt) {
 	case 'M':	mailto=stralloc(optarg);
+			if(!validate_mailto(mailto)){
+			   printf("Invalid characters in mail address\n");
+			   exit(1);
+			}
 	case 'm':	
 #ifdef MAILER
 			mailout = 1;
@@ -194,6 +198,34 @@ char **argv;
 	error("errors processing config file \"%s\"", conffile);
     }
     amfree(conffile);
+    if(mailout && !mailto && 
+       (getconf_seen(CNF_MAILTO)==0 || strlen(getconf_str(CNF_MAILTO)) == 0)) {
+	printf("\nNo mail address configured in  amanda.conf\n");
+        if(alwaysmail)        
+ 		printf("When using -a option please specify -Maddress also\n\n"); 
+	else
+ 		printf("Use -Maddress instead of -m\n\n"); 
+	exit(1);
+    }
+    if(mailout && !mailto)
+    { 
+       if(getconf_seen(CNF_MAILTO) && 
+          strlen(getconf_str(CNF_MAILTO)) > 0) {
+          if(!validate_mailto(getconf_str(CNF_MAILTO))){
+		printf("\nMail address in amanda.conf has invalid characters"); 
+		printf("\nNo email will be sent\n"); 
+                mailout = 0;
+          }
+       }
+       else {
+	  printf("\nNo mail address configured in  amanda.conf\n");
+          if(alwaysmail)        
+ 		printf("When using -a option please specify -Maddress also\n\n"); 
+	  else
+ 		printf("Use -Maddress instead of -m\n\n"); 
+	  exit(1);
+      }
+    }
 
     conf_ctimeout = getconf_int(CNF_CTIMEOUT);
 

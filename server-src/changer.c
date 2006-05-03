@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.31 2006/04/21 13:02:35 martinea Exp $
+ * $Id: changer.c,v 1.32 2006/05/03 02:36:42 paddy_s Exp $
  *
  * interface routines for tape changers
  */
@@ -230,6 +230,13 @@ void changer_find(user_data, user_init, user_slot, searchlabel)
     int nslots, checked, backwards, rc, done, searchable;
 
     rc = changer_query(&nslots, &curslotstr, &backwards, &searchable);
+
+    if (rc != 0) {
+        /* Problem with the changer script. Bail. */
+        fprintf(stderr, "Changer problem: %s\n", changer_resultstr);
+        return;
+    }
+
     done = user_init(user_data, rc, nslots, backwards, searchable);
     amfree(curslotstr);
    

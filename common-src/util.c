@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.17 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: util.c,v 1.18 2006/05/03 02:36:42 paddy_s Exp $
  */
 
 #include "amanda.h"
@@ -207,4 +207,17 @@ construct_timestamp(t)
 	     tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
 	     tm->tm_hour, tm->tm_min, tm->tm_sec);
     return stralloc(timestamp);
+}
+
+/*
+    Return 0 if the following characters are present
+    * ( ) < > [ ] , ; : ! $ \ / "
+    else returns 1
+*/
+
+int
+validate_mailto(mailto)
+     const char *mailto;
+{
+    return !match("\\*|<|>|\\(|\\)|\\[|\\]|,|;|:|\\\\|/|\"|\\!|\\$|\\|", mailto);
 }

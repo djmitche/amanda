@@ -101,9 +101,9 @@ The following commands are available:</para>
   </listitem>
   </varlistentry>
   <varlistentry>
-  <term><emphasis remap='B'>setdate YYYY-MM-DD-HH-MM-SS|YYYY-MM-DD</emphasis></term>
+  <term><emphasis remap='B'>setdate YYYY-MM-DD-HH-MM[-SS] | YYYY-MM-DD</emphasis></term>
   <listitem>
-<para>Set the date (default: today).
+<para>Set the restore time (default: now).
 File listing commands only return information on
 backup images for this day,
 for the day before with the next lower dump level,
@@ -120,8 +120,8 @@ the specified date is encountered.</para>
 1996-07-06 through 1997-07-08 were level 2 backups
 </literallayout> <!-- .fi -->
 
-<para>then if 1997-07-08 is the requested date,
-files from the following days would be used:</para>
+<para>then the command <emphasis remap='B'>setdate 1997-07-08-00</emphasis>
+would yield files from the following days:</para>
 
 <!-- .RS -->
 <literallayout remap='.nf'>
@@ -577,13 +577,11 @@ but will be overridden by the -t switch.
 </refsect1>
 
 <refsect1><title>SEE ALSO</title>
-<para>
-<citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<para><citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amanda-client.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amrestore</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>amfetchdump</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
-<citerefentry><refentrytitle>readline</refentrytitle><manvolnum>3</manvolnum></citerefentry>
-</para>
+<citerefentry><refentrytitle>readline</refentrytitle><manvolnum>3</manvolnum></citerefentry></para>
 </refsect1>
 </refentry>
 

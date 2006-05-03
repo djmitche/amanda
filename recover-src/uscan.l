@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uscan.l,v 1.23 2006/04/05 12:56:18 martinea Exp $
+ * $Id: uscan.l,v 1.24 2006/05/03 02:36:42 paddy_s Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -90,6 +90,7 @@ mode    { return MODE; }
 --[0-9]+-[0-9]+		{ return ll_parse_date(2, yytext); }
 [0-9]+-[0-9]+-[0-9]+	{ return ll_parse_date(3, yytext); }
 [0-9]+-[0-9]+-[0-9]+-[0-9]+-[0-9]+-[0-9]+	{ return ll_parse_date(4, yytext); }
+[0-9]+-[0-9]+-[0-9]+-[0-9]+-[0-9]+	{ return ll_parse_date(5, yytext); }
 
 %{
     /* file names */
@@ -180,8 +181,10 @@ char *text;
 	sscanf(text, "--%d-%d", &m, &d);
     } else if(type == 3) {
 	sscanf(text, "%d-%d-%d", &y, &m, &d);
-    } else {
+    } else if (type == 4) {
 	sscanf(text, "%d-%d-%d-%d-%d-%d", &y, &m, &d, &h, &mi, &s);
+    } else {
+        sscanf(text, "%d-%d-%d-%d-%d", &y, &m, &d, &h, &mi);
     }
     
     ret = PATH;				/* cause a parse error */

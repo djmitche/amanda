@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.5 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: util.h,v 1.6 2006/05/03 02:36:42 paddy_s Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -40,5 +40,12 @@ int bind_portrange P((int, struct sockaddr_in *, int, int, char *));
 
 char *construct_datestamp P((time_t *t));
 char *construct_timestamp P((time_t *t));
+
+/*
+   validate_email return 0 if the following characters are present
+   * ( ) < > [ ] , ; : ! $ \ / "
+   else returns 1
+*/
+int validate_mailto P((const char *mailto));
 
 #endif	/* UTIL_H */
