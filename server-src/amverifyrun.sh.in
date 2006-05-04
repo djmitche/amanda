@@ -52,10 +52,13 @@ FIRST_SLOT=`grep "taper: slot" $AMLOG | fgrep 'exact label match
 new tape
 first labelstr match' | sed 1q | sed 's/://g' | awk '{print $3}'`
 if [ X"$FIRST_SLOT" = X"" ]; then
-  FIRST_SLOT='-1'
+  FIRST_SLOT=`grep "taper: slot: .* wrote label" $AMLOG | sed 1q | sed 's/://g' | awk '{print $3}'`
+  if [ X"$FIRST_SLOT" = X"" ]; then
+    FIRST_SLOT='-1'
+  fi
 fi
 
-NBTAPES=`grep -c "taper: wrote label " $AMLOG`
+NBTAPES=`grep -c "taper: .*wrote label " $AMLOG`
 
 if [ X"$NBTAPES" != X"0" ]; then
   $AMVERIFY $CONFIG $FIRST_SLOT $NBTAPES
