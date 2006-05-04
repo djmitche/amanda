@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.118 2006/03/17 15:34:12 vectro Exp $
+/* $Id: taper.c,v 1.118.2.1 2006/05/04 21:31:15 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -2332,6 +2332,8 @@ int label_tape()
     static int first_call = 1;
     char *timestamp;
     char *error_msg;
+    char *s, *r;
+    int slot = -1;
 
     if (taper_scan(NULL, &label, &timestamp, &error_msg, &tapedev) < 0) {
         fprintf(stderr, "%s\n", error_msg);
@@ -2340,7 +2342,13 @@ int label_tape()
         amfree(timestamp);
 	return 0;
     }
-    
+    if(error_msg) {
+	s = error_msg; r = NULL;
+	while((s=strstr(s,"slot "))) { s += 5; r=s; };
+	if(r) {
+	    slot = atoi(r);
+	}
+    }
     if((tape_fd = tape_open(tapedev, O_WRONLY)) == -1) {
 	if(errno == EACCES) {
 	    errstr = newstralloc(errstr,
@@ -2362,7 +2370,14 @@ int label_tape()
 	return 0;
     }
 
-    fprintf(stderr, "taper: wrote label `%s' date `%s'\n", label, taper_datestamp);
+    if(slot > -1) {
+	fprintf(stderr, "taper: slot: %d wrote label `%s' date `%s'\n", slot,
+		label, taper_datestamp);
+    }
+    else {
+	fprintf(stderr, "taper: wrote label `%s' date `%s'\n", label,
+		taper_datestamp);
+    }
     fflush(stderr);
 
 #ifdef HAVE_LIBVTBLC

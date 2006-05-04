@@ -1,3 +1,8 @@
+2006-05-04  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taper.c: Write the slot number in the
+	                      'taper: wrote label' line.
+	* server-src/amverifyrun.sh.in: Parse that line.
+
 2006-05-02  Jean-Louis Martineau <martineau@zmanda.com>
 	* amstatus.pl.in: Limit characters for hostname in setup_estimate line.
 
