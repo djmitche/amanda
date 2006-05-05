@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapelist.c,v 1.5 2006/04/27 17:40:08 martinea Exp $
+ * $Id: tapelist.c,v 1.6 2006/05/05 14:37:10 martinea Exp $
  *
  * Support code for amidxtaped and amindexd.
  */
@@ -77,7 +77,6 @@ int file, isafile;
 		cur_tape->numfiles++;
 		amfree(cur_tape->files);
 		cur_tape->files = newfiles;
-		amfree(newfiles);
 	    }
 	    return(tapelist);
 	}
