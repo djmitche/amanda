@@ -1,3 +1,8 @@
+2006-05-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c (service_new): Make sur that the 3 data_read[]
+	  and the 3 data_write[] fd are not in the range DATA_FD_OFFSET to
+	  DATA_FD_OFFSET+DATA_FD_COUNT-1.
+
 2006-05-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/tapelist.c (append_to_tapelist): Remove bad amfree.
 
