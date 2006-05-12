@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.26 2004/03/16 19:09:39 martinea Exp $
+ * $Id: security.c,v 1.27 2006/05/12 22:42:48 martinea Exp $
  *
  * Security driver interface for the Amanda backup system.
  */
@@ -49,6 +49,12 @@ extern const security_driver_t rsh_security_driver;
 #ifdef SSH_SECURITY
 extern const security_driver_t ssh_security_driver;
 #endif
+#ifdef BSDTCP_SECURITY
+extern const security_driver_t bsdtcp_security_driver;
+#endif
+#ifdef BSDUDP_SECURITY
+extern const security_driver_t bsdudp_security_driver;
+#endif
 
 static const security_driver_t *drivers[] = {
 #ifdef BSD_SECURITY
@@ -65,6 +71,12 @@ static const security_driver_t *drivers[] = {
 #endif
 #ifdef SSH_SECURITY
     &ssh_security_driver,
+#endif
+#ifdef BSDTCP_SECURITY
+    &bsdtcp_security_driver,
+#endif
+#ifdef BSDUDP_SECURITY
+    &bsdudp_security_driver,
 #endif
 };
 #define	NDRIVERS	(sizeof(drivers) / sizeof(drivers[0]))

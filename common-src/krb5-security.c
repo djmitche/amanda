@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.16 2006/05/12 19:36:04 martinea Exp $
+ * $Id: krb5-security.c,v 1.17 2006/05/12 22:42:48 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -33,11 +33,13 @@
 #include "config.h"
 #ifdef KRB5_SECURITY
 #include "amanda.h"
+#include "util.h"
 #include "arglist.h"
 #include "event.h"
 #include "packet.h"
 #include "queue.h"
 #include "security.h"
+#include "security-util.h"
 #include "stream.h"
 #include "version.h"
 
@@ -212,7 +214,7 @@ struct krb5_stream {
     struct krb5_conn *kc;		/* physical connection */
     int handle;				/* protocol handle */
     event_handle_t *ev_read;		/* read (EV_WAIT) event handle */
-    void (*fn) P((void *, void *, int));	/* read event fn */
+    void (*fn) P((void *, void *, ssize_t));	/* read event fn */
     void *arg;				/* arg for previous */
     char buf[KRB5_STREAM_BUFSIZE];
     ssize_t len;
@@ -228,7 +230,7 @@ static int krb5_stream_id P((void *));
 static int krb5_stream_write P((void *, const void *, size_t));
 static void *krb5_stream_client P((void *, int));
 static void *krb5_stream_server P((void *));
-static void krb5_accept P((int, int,
+static void krb5_accept P((const struct security_driver *, int, int,
     void (*)(security_handle_t *, pkt_t *)));
 static void krb5_close P((void *));
 static void krb5_connect P((const char *,
@@ -238,7 +240,7 @@ static void krb5_recvpkt P((void *,
     void (*)(void *, pkt_t *, security_status_t), void *, int));
 static void krb5_recvpkt_cancel P((void *));
 static void krb5_stream_close P((void *));
-static void krb5_stream_read P((void *, void (*)(void *, void *, int),
+static void krb5_stream_read P((void *, void (*)(void *, void *, ssize_t),
     void *));
 static int krb5_stream_read_sync P((void *, void **));
 static void krb5_stream_read_cancel P((void *));
@@ -277,19 +279,19 @@ static char hostname[MAX_HOSTNAME_LENGTH+1];
 static struct {
     TAILQ_HEAD(, krb5_conn) tailq;
     int qlength;
-} connq = {
-    TAILQ_HEAD_INITIALIZER(connq.tailq), 0
+} krb5_connq = {
+    TAILQ_HEAD_INITIALIZER(krb5_connq.tailq), 0
 };
-#define	connq_first()		TAILQ_FIRST(&connq.tailq)
-#define	connq_next(kc)		TAILQ_NEXT(kc, tq)
-#define	connq_append(kc)	do {					\
-    TAILQ_INSERT_TAIL(&connq.tailq, kc, tq);				\
-    connq.qlength++;							\
+#define	krb5_connq_first()		TAILQ_FIRST(&krb5_connq.tailq)
+#define	krb5_connq_next(kc)		TAILQ_NEXT(kc, tq)
+#define	krb5_connq_append(kc)	do {					\
+    TAILQ_INSERT_TAIL(&krb5_connq.tailq, kc, tq);				\
+    krb5_connq.qlength++;							\
 } while (0)
-#define	connq_remove(kc)	do {					\
-    assert(connq.qlength > 0);						\
-    TAILQ_REMOVE(&connq.tailq, kc, tq);					\
-    connq.qlength--;							\
+#define	krb5_connq_remove(kc)	do {					\
+    assert(krb5_connq.qlength > 0);						\
+    TAILQ_REMOVE(&krb5_connq.tailq, kc, tq);					\
+    krb5_connq.qlength--;							\
 } while (0)
 
 static int newhandle = 1;
@@ -317,7 +319,6 @@ static int recv_token P((struct krb5_conn *, int *, gss_buffer_desc *, int));
 static void recvpkt_callback P((void *, void *, ssize_t));
 static void recvpkt_timeout P((void *));
 static void stream_read_callback P((void *));
-static void stream_read_sync_callback P((void *));
 static void stream_read_sync_callback2 P((void *, void *, ssize_t));
 static int gss_server P((struct krb5_conn *));
 static int gss_client P((struct krb5_handle *));
@@ -335,11 +336,7 @@ static void conn_read P((struct krb5_conn *));
 static void conn_read_cancel P((struct krb5_conn *));
 static void conn_read_callback P((void *));
 static int conn_run_frameq P((struct krb5_conn *, struct krb5_stream *));
-static int net_writev P((int, struct iovec *, int));
-static ssize_t net_read P((struct krb5_conn *, void *, size_t, int));
-static int net_read_fillbuf P((struct krb5_conn *, int));
 static char *krb5_checkuser(char *, char *, char *);
-static void parse_pkt P((pkt_t *, const void *, size_t));
 
 
 /*
@@ -423,9 +420,9 @@ krb5_connect(hostname, conf_fn, fn, arg, datap)
 	 * We need to open a new connection.  See if we have too
 	 * many connections open.
 	 */
-	if (connq.qlength > AMANDA_KRB5_MAXCONN) {
+	if (krb5_connq.qlength > AMANDA_KRB5_MAXCONN) {
 	    k5printf(("krb5_connect: too many conections (%d), delaying %s\n",
-		connq.qlength, kh->hostname));
+		krb5_connq.qlength, kh->hostname));
 	    krb5_stream_close(kh->ks);
 	    kh->ev_wait = event_register((event_id_t)open_callback,
 		EV_WAIT, open_callback, kh);
@@ -532,12 +529,13 @@ connect_timeout(cookie)
  * Setup to handle new incoming connections
  */
 static void
-krb5_accept(in, out, fn)
+krb5_accept(driver, in, out, fn)
+    const struct security_driver *driver;
     int in, out;
     void (*fn) P((security_handle_t *, pkt_t *));
 {
     struct sockaddr_in sin;
-    size_t len;
+    socklen_t len;
     struct krb5_conn *kc;
     struct hostent *he;
 
@@ -575,7 +573,7 @@ conn_get(hostname)
 
     k5printf(("krb5: conn_get: %s\n", hostname));
 
-    for (kc = connq_first(); kc != NULL; kc = connq_next(kc)) {
+    for (kc = krb5_connq_first(); kc != NULL; kc = krb5_connq_next(kc)) {
 	if (strcasecmp(hostname, kc->hostname) == 0)
 	    break;
     }
@@ -610,7 +608,7 @@ conn_get(hostname)
      */
     kc->refcnt = 2;
     TAILQ_INIT(&kc->frameq);
-    connq_append(kc);
+    krb5_connq_append(kc);
     return (kc);
 }
 
@@ -645,7 +643,7 @@ conn_put(kc)
 	    amfree(kf->tok.value);
 	amfree(kf);
     }
-    connq_remove(kc);
+    krb5_connq_remove(kc);
     amfree(kc);
     /* signal that a connection is available */
     event_wakeup((event_id_t)open_callback);
@@ -721,7 +719,7 @@ krb5_sendpkt(cookie, pkt)
     struct krb5_handle *kh = cookie;
     gss_buffer_desc tok;
     int rval;
-    unsigned char c, *buf;
+    char c, *buf;
 
     assert(kh != NULL);
     assert(pkt != NULL);
@@ -1033,7 +1031,7 @@ krb5_stream_write(s, buf, size)
 static void
 krb5_stream_read(s, fn, arg)
     void *s, *arg;
-    void (*fn) P((void *, void *, int));
+    void (*fn) P((void *, void *, ssize_t));
 {
     struct krb5_stream *ks = s;
 
@@ -1082,7 +1080,7 @@ krb5_stream_read_sync(s, buf)
      * If so, we're done.
      */
     if (conn_run_frameq(ks->kc, ks) > 0)
-	return;
+	return ks->len;
 
     if (ks->ev_read != NULL)
 	event_release(ks->ev_read);
@@ -1597,14 +1595,13 @@ init()
     static int beenhere = 0;
     struct hostent *he;
     char *p;
-    int krb5_setenv P((const char *, const char *, int));
 
     if (beenhere)
 	return;
     beenhere = 1;
 
 #ifndef BROKEN_MEMORY_CCACHE
-    krb5_setenv(KRB5_ENV_CCNAME, "MEMORY:amanda_ccache", 1);
+    setenv(KRB5_ENV_CCNAME, "MEMORY:amanda_ccache", 1);
 #else
     /*
      * MEMORY ccaches seem buggy and cause a lot of internal heap
@@ -1619,7 +1616,7 @@ init()
 	char ccache[64];
 	snprintf(ccache, sizeof(ccache), "FILE:/tmp/amanda_ccache.%ld.%ld",
 	    (long)geteuid(), (long)getpid());
-	krb5_setenv(KRB5_ENV_CCNAME, ccache, 1);
+	setenv(KRB5_ENV_CCNAME, ccache, 1);
     }
 #endif
 
@@ -1684,7 +1681,7 @@ get_tgt(keytab_name, principal_name)
 	return (error);
     }
 
-    krb5_init_ets(context);
+    /*krb5_init_ets(context);*/
 
     if(!keytab_name) {
         error = vstralloc("error  -- no krb5 keytab defined", NULL);
@@ -1785,7 +1782,7 @@ cleanup2:
 /*
  * get rid of tickets
  */
-kdestroy()
+void kdestroy()
 {
     krb5_context context;
     krb5_ccache ccache;
@@ -1804,34 +1801,6 @@ cleanup:
      krb5_free_context(context);
      return;
 }
-
-static void
-parse_pkt(pkt, buf, bufsize)
-    pkt_t *pkt;
-    const void *buf;
-    size_t bufsize;
-{
-    const unsigned char *bufp = buf;
-
-    k5printf(("krb5: parse_pkt: parsing buffer of %d bytes\n", bufsize));
-
-    pkt->type = (pktype_t)*bufp++;
-    bufsize--;
-
-    pkt->packet_size = bufsize+1;
-    pkt->body = alloc(pkt->packet_size);
-    if (bufsize == 0) {
-	pkt->body[0] = '\0';
-    } else {
-	memcpy(pkt->body, bufp, bufsize);
-	pkt->body[pkt->packet_size - 1] = '\0';
-    }
-    pkt->size = strlen(pkt->body);
-
-    k5printf(("krb5: parse_pkt: %s (%d): \"%s\"\n", pkt_type2str(pkt->type),
-	pkt->type, pkt->body));
-}
-
 
 /*
  * Formats an error from the gss api
@@ -1911,14 +1880,14 @@ recv_token(kc, handle, gtok, timeout)
     gss_buffer_desc *gtok;
     int timeout;
 {
-    OM_uint32 netint;
+    OM_uint32 netint[2];
 
     assert(kc->fd >= 0);
     assert(gtok != NULL);
 
     k5printf(("krb5: recv_token: reading from %s\n", kc->hostname));
 
-    switch (net_read(kc, &netint, sizeof(netint), timeout)) {
+    switch (net_read(kc->fd, &netint, sizeof(netint), timeout)) {
     case -1:
 	kc->errmsg = newvstralloc(kc->errmsg, "recv error: ", strerror(errno),
 	    NULL);
@@ -1930,7 +1899,7 @@ recv_token(kc, handle, gtok, timeout)
     default:
 	break;
     }
-    gtok->length = ntohl(netint);
+    gtok->length = ntohl(netint[0]);
 
     if (gtok->length > AMANDA_MAX_TOK_SIZE) {
 	kc->errmsg = newstralloc(kc->errmsg, "recv error: buffer too large");
@@ -1938,23 +1907,11 @@ recv_token(kc, handle, gtok, timeout)
 	return (-1);
     }
 
-    switch (net_read(kc, &netint, sizeof(netint), timeout)) {
-    case -1:
-	kc->errmsg = newvstralloc(kc->errmsg, "recv error: ", strerror(errno),
-	    NULL);
-	k5printf(("krb5 recv_token error return: %s\n", kc->errmsg));
-	return (-1);
-    case 0:
-	gtok->length = 0;
-	return (0);
-    default:
-	break;
-    }
     if (handle != NULL)
-	*handle = ntohl(netint);
+	*handle = ntohl(netint[1]);
 
     gtok->value = alloc(gtok->length);
-    switch (net_read(kc, gtok->value, gtok->length, timeout)) {
+    switch (net_read(kc->fd, gtok->value, gtok->length, timeout)) {
     case -1:
 	kc->errmsg = newvstralloc(kc->errmsg, "recv error: ", strerror(errno),
 	    NULL);
@@ -2016,121 +1973,6 @@ kdecrypt(ks, enctok, tok)
     return (0);
 }
 #endif
-
-/*
- * Writes out the entire iovec
- */
-static int
-net_writev(fd, iov, iovcnt)
-    int fd, iovcnt;
-    struct iovec *iov;
-{
-    int delta, n, total;
-
-    assert(iov != NULL);
-
-    total = 0;
-    while (iovcnt > 0) {
-	/*
-	 * Write the iovec
-	 */
-	total += n = writev(fd, iov, iovcnt);
-	if (n < 0)
-	    return (-1);
-	if (n == 0) {
-	    errno = EIO;
-	    return (-1);
-	}
-	/*
-	 * Iterate through each iov.  Figure out what we still need
-	 * to write out.
-	 */
-	for (; n > 0; iovcnt--, iov++) {
-	    /* 'delta' is the bytes written from this iovec */
-	    delta = n < iov->iov_len ? n : iov->iov_len;
-	    /* subtract from the total num bytes written */
-	    n -= delta;
-	    assert(n >= 0);
-	    /* subtract from this iovec */
-	    iov->iov_len -= delta;
-	    (char *)iov->iov_base += delta;
-	    /* if this iovec isn't empty, run the writev again */
-	    if (iov->iov_len > 0)
-		break;
-	}
-    }
-    return (total);
-}
-
-/*
- * Like read(), but waits until the entire buffer has been filled.
- */
-static ssize_t
-net_read(kc, vbuf, origsize, timeout)
-    struct krb5_conn *kc;
-    void *vbuf;
-    size_t origsize;
-    int timeout;
-{
-    char *buf = vbuf, *off;	/* ptr arith */
-    int nread;
-    size_t size = origsize;
-
-    while (size > 0) {
-	if (kc->readbuf.left == 0) {
-	    if (net_read_fillbuf(kc, timeout) < 0)
-		return (-1);
-	    if (kc->readbuf.size == 0)
-		return (0);
-	}
-	nread = min(kc->readbuf.left, size);
-	off = kc->readbuf.buf + kc->readbuf.size - kc->readbuf.left;
-	memcpy(buf, off, nread);
-
-	buf += nread;
-	size -= nread;
-	kc->readbuf.left -= nread;
-    }
-    return ((ssize_t)origsize);
-}
-
-/*
- * net_read likes to do a lot of little reads.  Buffer it.
- */
-static int
-net_read_fillbuf(kc, timeout)
-    struct krb5_conn *kc;
-    int timeout;
-{
-    fd_set readfds;
-    struct timeval tv;
-
-    FD_ZERO(&readfds);
-    FD_SET(kc->fd, &readfds);
-    tv.tv_sec = timeout;
-    tv.tv_usec = 0;
-    switch (select(kc->fd + 1, &readfds, NULL, NULL, &tv)) {
-    case 0:
-	errno = ETIMEDOUT;
-	/* FALLTHROUGH */
-    case -1:
-	return (-1);
-    case 1:
-	assert(FD_ISSET(kc->fd, &readfds));
-	break;
-    default:
-	assert(0);
-	break;
-    }
-    kc->readbuf.left = 0;
-    kc->readbuf.size = read(kc->fd, kc->readbuf.buf,
-	sizeof(kc->readbuf.buf));
-k5printf(("net_read_fillbuf: read %d characters w/ errno %d\n", kc->readbuf.size, errno));
-    if (kc->readbuf.size < 0)
-	return (-1);
-    kc->readbuf.left = kc->readbuf.size;
-    return (0);
-}
 
 /*
  * hackish, but you can #undef AMANDA_PRINCIPAL here, and you can both

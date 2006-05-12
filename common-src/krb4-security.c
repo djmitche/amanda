@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb4-security.c,v 1.12 2006/04/26 15:13:52 martinea Exp $
+ * $Id: krb4-security.c,v 1.13 2006/05/12 22:42:48 martinea Exp $
  *
  * krb4-security.c - helper functions for kerberos v4 security.
  */
@@ -42,6 +42,7 @@
 #include "packet.h"
 #include "queue.h"
 #include "security.h"
+#include "security-util.h"
 #include "protocol.h"
 #include "stream.h"
 #include "version.h"
@@ -115,7 +116,7 @@ struct krb4_stream {
 static void krb4_connect P((const char *,
     char *(*)(char *, void *),  
     void (*)(void *, security_handle_t *, security_status_t), void *, void *));
-static void krb4_accept P((int, int, void (*)(security_handle_t *, pkt_t *)));
+static void krb4_accept P((const struct security_driver *, int, int, void (*)(security_handle_t *, pkt_t *)));
 static void krb4_close P((void *));
 static int krb4_sendpkt P((void *, pkt_t *));
 static void krb4_recvpkt P((void *,
@@ -387,7 +388,8 @@ krb4_connect(hostname, conf_fn, fn, arg, datap)
  * Setup to handle new incoming connections
  */
 static void
-krb4_accept(in, out, fn)
+krb4_accept(driver, in, out, fn)
+    const struct security_driver *driver;
     int in, out;
     void (*fn) P((security_handle_t *, pkt_t *));
 {

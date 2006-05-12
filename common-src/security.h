@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.14 2006/04/26 15:41:13 martinea Exp $
+ * $Id: security.h,v 1.15 2006/05/12 22:42:48 martinea Exp $
  *
  * security api
  */
@@ -66,7 +66,7 @@ typedef struct security_driver {
      * This form sets up a callback that returns new handles as
      * they are received.  It takes an input and output file descriptor.
      */
-    void (*accept) P((int, int, void (*)(struct security_handle *, pkt_t *)));
+    void (*accept) P((const struct security_driver *, int, int, void (*)(struct security_handle *, pkt_t *)));
 
     /*
      * Frees up handles allocated by the previous
@@ -193,7 +193,7 @@ void security_seterror P((security_handle_t *, const char *, ...))
 /* void security_accept P((const security_driver_t *, int, int,
     void (*)(security_handle_t *, pkt_t *))); */
 #define	security_accept(driver, in, out, fn)	\
-    (*(driver)->accept)(in, out, fn)
+    (*(driver)->accept)(driver, in, out, fn)
 void security_close P((security_handle_t *));
 
 /* int security_sendpkt P((security_handle_t *, const pkt_t *)); */

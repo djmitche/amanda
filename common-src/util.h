@@ -24,11 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.6 2006/05/03 02:36:42 paddy_s Exp $
+ * $Id: util.h,v 1.7 2006/05/12 22:42:48 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
 
+#include "amanda.h"
 
 #define BSTRNCMP(a,b)  strncmp(a, b, strlen(b)) 
                                                   
@@ -36,6 +37,7 @@
 ssize_t fullread P((int, void *, size_t));
 ssize_t fullwrite P((int, const void *, size_t));
 
+int connect_portrange P((struct sockaddr_in *, int, int, char *, struct sockaddr_in *, int));
 int bind_portrange P((int, struct sockaddr_in *, int, int, char *));
 
 char *construct_datestamp P((time_t *t));

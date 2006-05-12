@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.31 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: stream.c,v 1.32 2006/05/12 22:42:48 martinea Exp $
  *
  * functions for managing stream sockets
  */
@@ -159,14 +159,11 @@ stream_client_internal(hostname,
 {
     int client_socket;
     socklen_t len;
-#ifdef SO_KEEPALIVE
-    int on = 1;
-    int r;
-#endif
     struct sockaddr_in svaddr, claddr;
     struct hostent *hostp;
     int save_errno;
     char *f;
+    struct sockaddr_in server;
 
     f = priv ? "stream_client_privileged" : "stream_client";
 
@@ -185,36 +182,6 @@ stream_client_internal(hostname,
     svaddr.sin_port = htons(port);
     memcpy(&svaddr.sin_addr, hostp->h_addr, hostp->h_length);
 
-    if((client_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-	save_errno = errno;
-	dbprintf(("%s: %s: socket() failed: %s\n",
-		  debug_prefix(NULL),
-		  f,
-		  strerror(save_errno)));
-	errno = save_errno;
-	return -1;
-    }
-    if(client_socket < 0 || client_socket >= FD_SETSIZE) {
-	aclose(client_socket);
-	errno = EMFILE;				/* out of range */
-	return -1;
-    }
-
-#ifdef SO_KEEPALIVE
-    r = setsockopt(client_socket, SOL_SOCKET, SO_KEEPALIVE,
-	(void *)&on, sizeof(on));
-    if(r == -1) {
-	save_errno = errno;
-	dbprintf(("%s: %s: setsockopt() failed: %s\n",
-		  debug_prefix(NULL),
-		  f,
-		  strerror(save_errno)));
-        aclose(client_socket);
-	errno = save_errno;
-        return -1;
-    }
-#endif
-
     memset(&claddr, 0, sizeof(claddr));
     claddr.sin_family = AF_INET;
     claddr.sin_addr.s_addr = INADDR_ANY;
@@ -230,10 +197,9 @@ stream_client_internal(hostname,
      * is within the range it requires.
      */
     if (priv) {
-	int b;
-
-	b = bind_portrange(client_socket, &claddr, 512, IPPORT_RESERVED - 1, "tcp");
-	if (b == 0) {
+	client_socket = connect_portrange(&claddr, 512, IPPORT_RESERVED - 1,
+					  "tcp", &svaddr, nonblock);
+	if (client_socket >= 0) {
 	    goto out;				/* got what we wanted */
 	}
 	save_errno = errno;
@@ -247,56 +213,19 @@ stream_client_internal(hostname,
     }
 
 #ifdef TCPPORTRANGE
-    if (bind_portrange(client_socket, &claddr, TCPPORTRANGE, "tcp") == 0)
+    if((client_socket = connect_portrange(&claddr, TCPPORTRANGE,
+					  "tcp", &svaddr, nonblock)) >= 0)
 	goto out;
 #endif
 
-    claddr.sin_port = INADDR_ANY;
-    if (bind(client_socket, (struct sockaddr *)&claddr, sizeof(claddr)) == -1) {
-	save_errno = errno;
-	dbprintf(("%s: %s: bind(INADDR_ANY) failed: %s\n",
-		  debug_prefix(NULL),
-		  f,
-		  strerror(save_errno)));
-	aclose(client_socket);
-	errno = save_errno;
-	return -1;
-    }
+    if((client_socket = connect_portrange(&claddr, IPPORT_RESERVED+1, 65535,
+					  "tcp", &svaddr, nonblock)) >= 0)
+	goto out;
 
+    return -1;
 out:
 
     /* find out what port was actually used */
-
-    len = sizeof(claddr);
-    if(getsockname(client_socket, (struct sockaddr *)&claddr, &len) == -1) {
-	save_errno = errno;
-	dbprintf(("%s: %s: getsockname() failed: %s\n",
-		  debug_prefix(NULL),
-		  f,
-		  strerror(save_errno)));
-	aclose(client_socket);
-	errno = save_errno;
-	return -1;
-    }
-
-    if (nonblock)
-	fcntl(client_socket, F_SETFL,
-	    fcntl(client_socket, F_GETFL, 0)|O_NONBLOCK);
-
-    if(connect(client_socket, (struct sockaddr *)&svaddr, sizeof(svaddr))
-       == -1 && !nonblock) {
-	save_errno = errno;
-	dbprintf(("%s: %s: connect to %s.%d failed: %s\n",
-		  debug_prefix_time(NULL),
-		  f,
-		  inet_ntoa(svaddr.sin_addr),
-		  ntohs(svaddr.sin_port),
-		  strerror(save_errno)));
-	aclose(client_socket);
-	errno = save_errno;
-	return -1;
-    }
-
     dbprintf(("%s: %s: connected to %s.%d\n",
 	      debug_prefix_time(NULL),
 	      f,
@@ -316,6 +245,16 @@ out:
     if (localport != NULL)
 	*localport = ntohs(claddr.sin_port);
 
+    len = sizeof(server);
+    if(getsockname(client_socket, (struct sockaddr *)&server, &len) == -1) {
+        save_errno = errno;
+        dbprintf(("%s: stream_server: getsockname() failed: %s\n",
+                  debug_prefix(NULL),
+                  strerror(save_errno)));
+        aclose(client_socket);
+        errno = save_errno;
+        return -1;
+    }
     return client_socket;
 }
 

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.5 2006/05/12 19:36:04 martinea Exp $
+ * $Id: amandad.c,v 1.6 2006/05/12 22:42:47 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -359,7 +359,9 @@ main(argc, argv)
 	    error("no driver for default security type 'BSD'");
     }
 
-    if(strcmp(auth, "rsh") == 0 || strcmp(auth, "ssh") == 0) {
+    if(strcmp(auth, "rsh") == 0 ||
+       strcmp(auth, "ssh") == 0  ||
+       strcmp(auth, "bsdtcp") == 0) {
 	allow_many_services = 0;
     }
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.41 2006/05/12 19:36:04 martinea Exp $
+ * $Id: protocol.c,v 1.42 2006/05/12 22:42:48 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -164,8 +164,8 @@ protocol_sendreq(hostname, security_driver, conf_fn, req, repwait, continuation,
     p->datap = datap;
 
 #ifdef PROTO_DEBUG
-    dbprintf(("%s: security_connect: host %s -> p %X\n", 
-	      debug_prefix_time(": protocol"), hostname, (int)p));
+    dbprintf(("%s: security_connect: host %s -> p %p\n", 
+	      debug_prefix_time(": protocol"), hostname, p));
 #endif
 
     security_connect(p->security_driver, p->hostname, conf_fn, connect_callback, p,
@@ -192,8 +192,8 @@ connect_callback(cookie, security_handle, status)
     p->security_handle = security_handle;
 
 #ifdef PROTO_DEBUG
-    dbprintf(("%s: connect_callback: p %X\n",
-	      debug_prefix_time(": protocol"), (int)p));
+    dbprintf(("%s: connect_callback: p %p\n",
+	      debug_prefix_time(": protocol"), p));
 #endif
 
     switch (status) {
@@ -215,8 +215,8 @@ connect_callback(cookie, security_handle, status)
 	    state_machine(p, A_ABORT, NULL);
 	} else {
 #ifdef PROTO_DEBUG
-    dbprintf(("%s: connect_callback: p %X: retrying %s\n",
-	      debug_prefix_time(": protocol"), (int)p, p->hostname));
+    dbprintf(("%s: connect_callback: p %p: retrying %s\n",
+	      debug_prefix_time(": protocol"), p, p->hostname));
 #endif
 	    security_close(p->security_handle);
 	    /* XXX overload p->security handle to hold the event handle */
@@ -301,9 +301,9 @@ state_machine(p, action, pkt)
     action_t retaction;
 
 #ifdef PROTO_DEBUG
-	dbprintf(("%s: state_machine: initial: p %X action %s pkt %X\n",
+	dbprintf(("%s: state_machine: initial: p %p action %s pkt %p\n",
 		debug_prefix_time(": protocol"),
-		(int)p, action2str(action), NULL));
+		p, action2str(action), NULL));
 #endif
 
     assert(p != NULL);
@@ -312,9 +312,9 @@ state_machine(p, action, pkt)
 
     for (;;) {
 #ifdef PROTO_DEBUG
-	dbprintf(("%s: state_machine: p %X state %s action %s\n",
+	dbprintf(("%s: state_machine: p %p state %s action %s\n",
 		  debug_prefix_time(": protocol"),
-		  (int)p, pstate2str(p->state), action2str(action)));
+		  p, pstate2str(p->state), action2str(action)));
 	if (pkt != NULL) {
 	    dbprintf(("%s: pkt: %s (t %d) orig REQ (t %d cur %d)\n",
 		      debug_prefix(": protocol"),
@@ -349,9 +349,9 @@ state_machine(p, action, pkt)
 	    retaction = (*curstate)(p, action, pkt);
 
 #ifdef PROTO_DEBUG
-	dbprintf(("%s: state_machine: p %X state %s returned %s\n",
+	dbprintf(("%s: state_machine: p %p state %s returned %s\n",
 		  debug_prefix_time(": protocol"),
-		  (int)p, pstate2str(p->state), action2str(retaction)));
+		  p, pstate2str(p->state), action2str(retaction)));
 #endif
 
 	/*
@@ -371,9 +371,9 @@ state_machine(p, action, pkt)
 
 	case A_PENDING:
 #ifdef PROTO_DEBUG
-	    dbprintf(("%s: state_machine: p %X state %s: timeout %d\n",
+	    dbprintf(("%s: state_machine: p %9 state %s: timeout %d\n",
 		      debug_prefix_time(": protocol"),
-		      (int)p, pstate2str(p->state), (int)p->timeout));
+		      p, pstate2str(p->state), (int)p->timeout));
 #endif
 	    /*
 	     * Get the security layer to register a receive event for this
@@ -391,9 +391,9 @@ state_machine(p, action, pkt)
 	case A_CONTINUE:
 	    assert(p->state != curstate);
 #ifdef PROTO_DEBUG
-	    dbprintf(("%s: state_machine: p %X: moved from %s to %s\n",
+	    dbprintf(("%s: state_machine: p %p: moved from %s to %s\n",
 		      debug_prefix_time(": protocol"),
-		      (unsigned int)p, pstate2str(curstate),
+		      p, pstate2str(curstate),
 		      pstate2str(p->state)));
 #endif
 	    continue;

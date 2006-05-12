@@ -24,11 +24,19 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.18 2006/05/03 02:36:42 paddy_s Exp $
+ * $Id: util.c,v 1.19 2006/05/12 22:42:48 martinea Exp $
  */
 
 #include "amanda.h"
 #include "util.h"
+
+/*#define NET_READ_DEBUG*/
+
+#ifdef NET_READ_DEBUG
+#define netprintf(x)    dbprintf(x)
+#else
+#define netprintf(x)
+#endif
 
 /*
  * Keep calling read() until we've read buflen's worth of data, or EOF,
@@ -90,6 +98,129 @@ fullwrite(fd, vbuf, buflen)
 	buflen -= nwritten;
     }
     return (tot);
+}
+
+int make_socket()
+{
+    int s;
+    int save_errno;
+    int on=1;
+    int r;
+
+    if((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        save_errno = errno;
+        dbprintf(("%s: make_socket: socket() failed: %s\n",
+                  debug_prefix(NULL),
+                  strerror(save_errno)));
+        errno = save_errno;
+        return -1;
+    }
+    if(s < 0 || s >= FD_SETSIZE) {
+        aclose(s);
+        errno = EMFILE;                         /* out of range */
+        return -1;
+    }
+
+    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+
+#ifdef SO_KEEPALIVE
+    r = setsockopt(s, SOL_SOCKET, SO_KEEPALIVE,
+		   (void *)&on, sizeof(on));
+    if(r == -1) {
+	save_errno = errno;
+	dbprintf(("%s: make_socket: setsockopt() failed: %s\n",
+                  debug_prefix(NULL),
+                  strerror(save_errno)));
+	aclose(s);
+	errno = save_errno;
+	return -1;
+    }
+#endif
+
+    return s;
+}
+
+/* addrp is my address */
+/* svaddr is the address of the remote machine */
+int connect_portrange(addrp, first_port, last_port, proto, svaddr, nonblock)
+    struct sockaddr_in *addrp;
+    int first_port, last_port;
+    char *proto;
+    struct sockaddr_in *svaddr;
+    int nonblock;
+{
+    int s;
+    int save_errno;
+    struct servent *servPort;
+    int port;
+    socklen_t len;
+
+    assert(first_port > 0 && first_port <= last_port && last_port < 65536);
+
+    if((s = make_socket()) == -1) return -1;
+
+    for(port=first_port; port<=last_port; port++) {
+	servPort = getservbyport(htons(port), proto);
+	if((servPort == NULL) || strstr(servPort->s_name, "amanda")){
+	    dbprintf(("%s: connect_portrange: trying port=%d\n",
+		      debug_prefix_time(NULL), port));
+	    addrp->sin_port = htons(port);
+	    if (bind(s, (struct sockaddr *)addrp, sizeof(*addrp)) >= 0) {
+		/* find out what port was actually used */
+
+		len = sizeof(*addrp);
+		if(getsockname(s, (struct sockaddr *)addrp, &len) == -1) {
+		    save_errno = errno;
+		    dbprintf((
+			   "%s: connect_portrange: getsockname() failed: %s\n",
+			   debug_prefix(NULL),
+			   strerror(save_errno)));
+		    aclose(s);
+		    if((s = make_socket()) == -1) return -1;
+		    errno = save_errno;
+		}
+
+		else {
+		    if (nonblock)
+			fcntl(s, F_SETFL,
+			      fcntl(s, F_GETFL, 0)|O_NONBLOCK);
+
+		    if(connect(s, (struct sockaddr *)svaddr,
+			       sizeof(*svaddr)) == -1 && !nonblock) {
+			save_errno = errno;
+			dbprintf((
+			"%s: connect_portrange: connect to %s.%d failed: %s\n",
+				  debug_prefix_time(NULL),
+				  inet_ntoa(svaddr->sin_addr),
+				  ntohs(svaddr->sin_port),
+				  strerror(save_errno)));
+			aclose(s);
+			if(save_errno != EADDRNOTAVAIL) {
+			    dbprintf(("errno %d strerror %s\n",
+				      errno, strerror(errno)));
+			    errno = save_errno;
+			    return -1;
+			}
+			if((s = make_socket()) == -1) return -1;
+		    }
+		    else {
+			return s;
+		    }
+		}
+	    }
+	    /*
+	     * If the error was something other then port in use, stop.
+	     */
+	    else if (errno != EADDRINUSE) {
+		dbprintf(("errno %d strerror %s\n",
+			  errno, strerror(errno)));
+		errno = save_errno;
+		return -1;
+	    }
+	}
+	port++;
+    }
+    return -1;
 }
 
 /*
@@ -221,3 +352,4 @@ validate_mailto(mailto)
 {
     return !match("\\*|<|>|\\(|\\)|\\[|\\]|,|;|:|\\\\|/|\"|\\!|\\$|\\|", mailto);
 }
+

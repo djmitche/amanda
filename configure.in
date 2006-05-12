@@ -827,6 +827,34 @@ y |  ye | yes) AC_DEFINE(SSH_SECURITY,1,[Define if SSH transport should be enabl
   ;;
 esac
 
+AC_ARG_WITH(bsdtcp-security,
+    [  --with-bsdtcp-security use tcp as a transport],
+    BSDTCP_SECURITY=$withval,
+    : ${BSDTCP_SECURITY=yes}
+)
+case "$BSDTCP_SECURITY" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(BSDTCP_SECURITY,1,[Define if BSDTCP transport should be enabled. ])
+	       BSDTCP_SECURITY_SET=true
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument the to --with-bsdtcp-security option.])
+  ;;
+esac
+
+AC_ARG_WITH(bsdudp-security,
+    [  --with-bsdudp-security use tcp as a transport],
+    BSDUDP_SECURITY=$withval,
+    : ${BSDUDP_SECURITY=yes}
+)
+case "$BSDUDP_SECURITY" in
+n | no) : ;;
+y |  ye | yes) AC_DEFINE(BSDUDP_SECURITY,1,[Define if BSDUDP transport should be enabled. ])
+	       BSDUDP_SECURITY_SET=true
+  ;;
+*) AC_MSG_ERROR([*** You must not supply an argument the to --with-bsdudp-security option.])
+  ;;
+esac
+
 AC_ARG_WITH(server-principal,
     [    --with-server-principal=ARG    server host principal  [["amanda"]]],
     [
@@ -968,17 +996,23 @@ AC_MSG_CHECKING(for Kerberos V)
 KRB5_DIR_FOUND=""
 KRB5_CFLAGS=""
 for dir in $KRB5_SPOTS; do
-    k5libdir=${dir}/lib
+  for lib in lib lib64; do
+    k5libdir=${dir}/${lib}
     if test -f ${k5libdir}/libkrb5.a -a -f ${k5libdir}/libgssapi_krb5.a -a -f ${k5libdir}/libcom_err.a; then
-	if test -f ${k5libdir}/libcrypto.a; then
-	    K5CRYPTO=${k5libdir}/libcrypto.a
-	elif test -f ${k5libdir}/libk5crypto.a; then
+	if test -f ${k5libdir}/libk5crypto.a; then
 	    K5CRYPTO=${k5libdir}/libk5crypto.a
+	elif test -f ${k5libdir}/libcrypto.a; then
+	    K5CRYPTO=${k5libdir}/libcrypto.a
 	else
 	    K5CRYPTO=""
 	fi
+	if test -f ${k5libdir}/libkrb5support.a; then
+	    K5SUPPORT=${k5libdir}/libkrb5support.a
+	else
+	    K5SUPPORT=""
+	fi
 	KRB5_DIR_FOUND=$dir
-	KRB5LIBS="${k5libdir}/libgssapi_krb5.a ${k5libdir}/libkrb5.a $K5CRYPTO ${k5libdir}/libcom_err.a"
+	KRB5LIBS="${k5libdir}/libgssapi_krb5.a ${k5libdir}/libkrb5.a $K5CRYPTO $K5SUPPORT ${k5libdir}/libcom_err.a"
 	KRB5CFLAGS=""
 	break
     elif test -f ${k5libdir}/libkrb5.a -a -f ${k5libdir}/libasn1.a -a -f ${k5libdir}/libgssapi.a; then
@@ -987,6 +1021,7 @@ for dir in $KRB5_SPOTS; do
 	KRB5_CFLAGS="-DKRB5_HEIMDAL_INCLUDES"
 	break
     fi
+  done
 done
 
 if test "$KRB5_DIR_FOUND"; then

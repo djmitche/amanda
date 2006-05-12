@@ -9,7 +9,7 @@ INCLUDES = -I$(REGsrcdir)
 
 libamanda_la_SOURCES = \
 	alloc.c		amflock.c	\
-	bsd-security.c	\
+	bsd-security.c	bsdtcp-security.c	bsdudp-security.c	\
 	clock.c		\
 	debug.c		dgram.c		\
 	event.c		error.c		\
@@ -21,6 +21,7 @@ libamanda_la_SOURCES = \
 	regcomp.c	regerror.c	regexec.c	regfree.c	\
 	rsh-security.c	\
 	security.c	sl.c		ssh-security.c	statfs.c	\
+	security-util.c	\
 	stream.c	tapelist.c	\
 	token.c		\
 	util.c		\
