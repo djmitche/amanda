@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: bsdtcp-security.c,v 1.1 2006/05/12 23:11:50 martinea Exp $
+ * $Id: bsdtcp-security.c,v 1.2 2006/05/12 23:39:09 martinea Exp $
  *
  * bsdtcp-security.c - security and transport over bsdtcp or a bsdtcp-like command.
  *
@@ -245,7 +245,7 @@ runbsdtcp(rh)
 
     if(my_port >= IPPORT_RESERVED) {
 	security_seterror(&rh->sech,
-			  did not get a reserved port: %d", my_port);
+			  "did not get a reserved port: %d", my_port);
     }
 
     rc->read = rc->write = server_socket;

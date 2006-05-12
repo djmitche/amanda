@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.124 2006/05/12 19:36:04 martinea Exp $
+/* $Id: taper.c,v 1.125 2006/05/12 23:39:10 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -61,10 +61,10 @@ static int len       =  0;
 static int offset    =  0;
 static char *datestr = NULL;
 static char start_datestr[20];
-time_t raw_time;
-struct tm tape_time;
-struct tm backup_time;
-struct tm *tape_timep = &tape_time;
+static time_t raw_time;
+static struct tm tape_time;
+static struct tm backup_time;
+static struct tm *tape_timep = &tape_time;
 typedef struct vtbl_lbls {
     u_int8_t  label[45];
     u_int8_t  date[20];
@@ -76,38 +76,34 @@ static vtbl_lbls vtbl_entry[MAX_VOLUMES];
  * XXX advance to next tape first in next_tape
  * XXX label is being read twice?
  */
-long splitsize = 0; /* max size of dumpfile before split (Kb) */
-char *splitbuf = NULL;
-char *splitbuf_wr_ptr = NULL; /* the number of Kb we've written into splitbuf */
+static long splitsize = 0; /* max size of dumpfile before split (Kb) */
+static char *splitbuf = NULL;
+static char *splitbuf_wr_ptr = NULL; /* the number of Kb we've written into splitbuf */
 int orig_holdfile = -1;
 
 /* NBUFS replaced by conf_tapebufs */
 /* #define NBUFS		20 */
-int conf_tapebufs;
+static int conf_tapebufs;
 
-off_t maxseek = (off_t)1 << ((sizeof(off_t) * 8) - 11);
+static off_t maxseek = (off_t)1 << ((sizeof(off_t) * 8) - 11);
 
-char *holdfile_path = NULL;
-char *holdfile_path_thischunk = NULL;
-int num_holdfile_chunks = 0;
-dumpfile_t holdfile_hdr;
-dumpfile_t holdfile_hdr_thischunk;
-off_t holdfile_offset_thischunk = (off_t)0;
-int splitbuffer_fd = -1;
-char *splitbuffer_path = NULL;
+static char *holdfile_path = NULL;
+static char *holdfile_path_thischunk = NULL;
+static int num_holdfile_chunks = 0;
+static off_t holdfile_offset_thischunk = (off_t)0;
+static int splitbuffer_fd = -1;
+static char *splitbuffer_path = NULL;
 
 #define MODE_NONE 0
 #define MODE_FILE_WRITE 1
 #define MODE_PORT_WRITE 2
 
-int mode = MODE_NONE;
+static int mode = MODE_NONE;
 
 /* This is now the number of empties, not full bufs */
 #define THRESHOLD	1
 
 #define CONNECT_TIMEOUT 2*60
-
-
 
 #define EMPTY 1
 #define FILLING 2

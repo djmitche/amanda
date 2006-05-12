@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.75 2006/05/12 23:11:30 martinea Exp $
+ * $Id: diskfile.c,v 1.76 2006/05/12 23:39:09 martinea Exp $
  *
  * read disklist file
  */
@@ -40,7 +40,7 @@ static am_host_t *hostlist;
 /* local functions */
 static char *upcase P((char *st));
 static int parse_diskline P((disklist_t *, const char *, FILE *, int *, char **));
-static void parserror P((const char *, int, const char *, ...))
+static void disk_parserror P((const char *, int, const char *, ...))
     __attribute__ ((format (printf, 3, 4)));
 
 
@@ -322,7 +322,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
-	parserror(filename, line_num, "disk device name expected");
+	disk_parserror(filename, line_num, "disk device name expected");
 	if (host == NULL) amfree(hostname);
 	return (-1);
     }
@@ -333,7 +333,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 
     skip_whitespace(s, ch);
     if(ch == '\0' || ch == '#') {
-	parserror(filename, line_num, "disk dumptype expected");
+	disk_parserror(filename, line_num, "disk dumptype expected");
 	if(host == NULL) amfree(hostname);
 	amfree(diskname);
 	return 1;
@@ -347,7 +347,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     if(fp[0] != '{' && (dtype = lookup_dumptype(upcase(fp))) == NULL) {
 	skip_whitespace(s, ch);
 	if(ch == '\0' || ch == '#') {
-	    parserror(filename, line_num, "disk dumptype expected");
+	    disk_parserror(filename, line_num, "disk dumptype expected");
 	    if(host == NULL) amfree(hostname);
 	    amfree(diskdevice);
 	    amfree(diskname);
@@ -363,7 +363,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 
     /* check for duplicate disk */
     if(host && (disk = lookup_disk(hostname, diskname)) != NULL) {
-	parserror(filename, line_num,
+	disk_parserror(filename, line_num,
 	    "duplicate disk record, previous on line %d", disk->line);
 	dup = 1;
     } else {
@@ -383,7 +383,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	s = fp+2;
 	skip_whitespace(s, ch);
 	if (ch != '\0' && ch != '#') {
-	    parserror(filename, line_num,
+	    disk_parserror(filename, line_num,
 		      "expected line break after `{\', ignoring rest of line");
 	}
 
@@ -428,7 +428,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	s = line;
 	ch = *s++;
     } else if((dtype = lookup_dumptype(upcase(fp))) == NULL) {
-	parserror(filename, line_num, "undefined dumptype `%s'", fp);
+	disk_parserror(filename, line_num, "undefined dumptype `%s'", fp);
 	if(host == NULL) amfree(hostname);
 	if (!dup) {
 	    amfree(disk->device);
@@ -508,7 +508,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	    }
 	}
 	if(is_digit == 0) {
-	    parserror(filename, line_num, "non-integer spindle `%s'", fp);
+	    disk_parserror(filename, line_num, "non-integer spindle `%s'", fp);
 	    if(host == NULL) amfree(hostname);
 	    amfree(disk->name);
 	    amfree(disk);
@@ -524,7 +524,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 	if((netif = lookup_interface(upcase(fp))) == NULL) {
-	    parserror(filename, line_num,
+	    disk_parserror(filename, line_num,
 		"undefined network interface `%s'", fp);
 	    if(host == NULL) amfree(hostname);
 	    amfree(disk->name);
@@ -537,7 +537,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 
     skip_whitespace(s, ch);
     if(ch && ch != '#') {		/* now we have garbage, ignore it */
-	parserror(filename, line_num, "end of line expected");
+	disk_parserror(filename, line_num, "end of line expected");
     }
 
     if(dtype->ignore || dtype->strategy == DS_SKIP) {
@@ -579,7 +579,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
 }
 
 
-printf_arglist_function2(static void parserror, const char *, filename,
+printf_arglist_function2(void disk_parserror, const char *, filename,
     int, line_num, const char *, format)
 {
     va_list argp;

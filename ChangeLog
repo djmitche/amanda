@@ -1,4 +1,14 @@
 2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
+	Build a big tok_t enum for server and client config.
+	* client-src/clientconf.c: Move many things to util.c.
+	* client-src/clientconf.h: Remove extern variable.
+	* common-src/util.c: Add common part of clientconf.c and conffile.c
+	* common-src/util.h: Prototype.
+	* server-src/conffile.c: Move many things to util.c.
+	* server-src/diskfile.c(disk_parserror): Rename from parserror.
+	* server-src/taper.c: Make many variable static.
+
+2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c: Fix use of possibly NULL input.
 
 2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>

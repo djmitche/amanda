@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.h,v 1.1 2006/04/26 15:02:04 martinea Exp $
+ * $Id: clientconf.h,v 1.2 2006/05/12 23:39:09 martinea Exp $
  *
  * interface for client config file reading code
  */
@@ -44,9 +44,6 @@ typedef enum conf_e {
     CLN_AUTH,
     CLN_SSH_KEYS
 } confparm_t;
-
-extern char *config_name;
-extern char *config_dir;
 
 int read_clientconf P((char *filename));
 int client_getconf_seen P((confparm_t parameter));

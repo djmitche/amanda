@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.16 2006/05/12 23:11:29 martinea Exp $
+ * $Id: ssh-security.c,v 1.17 2006/05/12 23:39:09 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -110,7 +110,7 @@ static int newhandle = 1;
  * Local functions
  */
 static int runssh P((struct tcp_conn *, const char *, const char *,
-		     const char *));));
+		     const char *));
 
 
 /*
