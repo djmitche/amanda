@@ -1,3 +1,43 @@
+2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/ssh-security.c (ssh_connect): Retrieve ssh_keys from
+	                                           configuration.
+	* server-src/amadmin.c(disklist_one): Print ssh_keys.
+	* server-src/conffile.c(SSH_KEYS): Parse new dumptype option.
+	* server-src/conffile.h(dumptype_t): Add ssh_keys.
+	* server-src/diskfile.c(parse_diskline): Copy new field.
+	* server-src/diskfile.h(disk_t) Add ssh_keys.
+	* server-src/driverio.c(dumper_cmd): Send dp->ssh_keys in a PORT_DUMP
+	                                     command to the dumper.
+	* server-src/dumper.c: Parse ssh_keys in a PORT_DUMP command.
+	* server-src/dumper.c(dumper_get_security_conf): Return the ssh_keys.
+	* server-src/server_util.c(amhost_get_security_conf): Return the
+	                                                      ssh_keys.
+
+2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c: Set allow_many_services to 0 if auth=bsdtcp.
+	* common-src/bsd-security.c: Use security-util.c.
+	* common-src/bsdtcp-security.c: New security-api.
+	* common-src/bsdudp-security.c: New secutity-api.
+	* common-src/krb4-security.c: Use security-util.c.
+	* common-src/krb5-security.c: Use security-util.c.
+	* common-src/Makefile.am (libamanda_la_SOURCES): Add bsdtcp-security.c,
+							     bsdtcp-security.c
+							 and security-util.c.
+	* common-src/protocol.c: Debuging cleanup.
+	* common-src/rsh-security.c Use security-util.c.
+	* common-src/security.c: Use bsdtcp_security_driver
+				 and bsdudp_security_driver.
+	* common-src/security.h(accept): New prototype.
+	* common-src/security-util.c: Many common function for security-api.
+	* common-src/security-util.h: many prototype for security-api.
+	* common-src/ssh-security.c Use security-util.c.
+	* common-src/stream.c (stream_client_internal): Call connect_portrange.
+	* common-src/util.c (make_socket): Make a socket.
+	* common-src/util.c (connect_portrange): Make a socket, bind it and
+						 connect.
+	* common-src/util.h (connect_portrange): Prototype.
+	* configure.in: new --with-bsdtcp-security and --with-bsdudp-security.
+
 2006-05-10  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by <amanda@inventivetechnology.at>
 	* man/xml-source/amrecover.8.xml: Document listhost command.

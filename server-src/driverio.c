@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.84 2006/04/05 14:31:37 martinea Exp $
+ * $Id: driverio.c,v 1.85 2006/05/12 23:11:30 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -390,6 +390,7 @@ disk_t *dp;
 			    " ", dp->program,
 			    " ", dp->amandad_path,
 			    " ", dp->client_username,
+			    " ", dp->ssh_keys,
 			    " |", o,
 			    "\n", NULL);
 	    amfree(features);

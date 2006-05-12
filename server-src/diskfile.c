@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.74 2006/04/05 13:24:01 martinea Exp $
+ * $Id: diskfile.c,v 1.75 2006/05/12 23:11:30 martinea Exp $
  *
  * read disklist file
  */
@@ -482,6 +482,7 @@ parse_diskline(lst, filename, diskf, line_num_p, line_p)
     disk->clnt_encrypt  = dtype->clnt_encrypt;
     disk->amandad_path  = dtype->amandad_path;
     disk->client_username  = dtype->client_username;
+    disk->ssh_keys      = dtype->ssh_keys;
     disk->comprate[0]	= dtype->comprate[0];
     disk->comprate[1]	= dtype->comprate[1];
     disk->record	= dtype->record;

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.15 2006/05/12 22:42:48 martinea Exp $
+ * $Id: ssh-security.c,v 1.16 2006/05/12 23:11:29 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -109,7 +109,8 @@ static int newhandle = 1;
 /*
  * Local functions
  */
-static int runssh P((struct tcp_conn *, const char *, const char *));
+static int runssh P((struct tcp_conn *, const char *, const char *,
+		     const char *));));
 
 
 /*
@@ -126,7 +127,7 @@ ssh_connect(hostname, conf_fn, fn, arg, datap)
 {
     struct sec_handle *rh;
     struct hostent *he;
-    char *amandad_path=NULL, *client_username=NULL;
+    char *amandad_path=NULL, *client_username=NULL, *ssh_keys=NULL;
 
     assert(fn != NULL);
     assert(hostname != NULL);
@@ -163,8 +164,9 @@ ssh_connect(hostname, conf_fn, fn, arg, datap)
     if(conf_fn) {
 	amandad_path    = conf_fn("amandad_path", datap);
 	client_username = conf_fn("client_username", datap);
+	ssh_keys        = conf_fn("ssh_keys", datap);
     }
-    if (runssh(rh->rs->rc, amandad_path, client_username) < 0) {
+    if (runssh(rh->rs->rc, amandad_path, client_username, ssh_keys) < 0) {
 	security_seterror(&rh->sech, "can't connect to %s: %s",
 			  hostname, rh->rs->rc->errmsg);
 	goto error;
@@ -195,14 +197,16 @@ error:
  * Returns negative on error, with an errmsg in rc->errmsg.
  */
 static int
-runssh(rc, amandad_path, client_username)
+runssh(rc, amandad_path, client_username, ssh_keys)
     struct tcp_conn *rc;
     const char *amandad_path;
     const char *client_username;
+    const char *ssh_keys;
 {
     int rpipe[2], wpipe[2];
     char *xamandad_path = (char *)amandad_path;
     char *xclient_username = (char *)client_username;
+    char *xssh_keys = (char *)ssh_keys;
 
     if (pipe(rpipe) < 0 || pipe(wpipe) < 0) {
 	rc->errmsg = newvstralloc("pipe: ", strerror(errno), NULL);
@@ -237,10 +241,16 @@ runssh(rc, amandad_path, client_username)
 				 versionsuffix(), NULL);
     if(!xclient_username || strlen(xclient_username) <= 1)
 	xclient_username = CLIENT_LOGIN;
-
-    execlp(SSH_PATH, SSH_PATH, SSH_ARGS, "-l", xclient_username,
-	   rc->hostname, xamandad_path, "-auth=ssh", "amdump", "amindexd",
-	   "amidxtaped", NULL);
+    if(!ssh_keys || strlen(ssh_keys) <= 1) {
+	execlp(SSH_PATH, SSH_PATH, SSH_ARGS, "-l", xclient_username,
+	       rc->hostname, xamandad_path, "-auth=ssh", "amdump", "amindexd",
+	       "amidxtaped", NULL);
+    }
+    else {
+	execlp(SSH_PATH, SSH_PATH, SSH_ARGS, "-l", xclient_username,
+	       "-i", xssh_keys, rc->hostname, xamandad_path, "-auth=ssh",
+	       "amdump", "amindexd", "amidxtaped", NULL);
+    }
     error("error: couldn't exec %s: %s", SSH_PATH, strerror(errno));
 
     /* should never go here, shut up compiler warning */

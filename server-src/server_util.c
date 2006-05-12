@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.15 2006/04/05 13:24:02 martinea Exp $
+ * $Id: server_util.c,v 1.16 2006/05/12 23:11:30 martinea Exp $
  *
  */
 
@@ -117,6 +117,8 @@ amhost_get_security_conf(string, arg)
 	return ((am_host_t *)arg)->disks->amandad_path;
     else if(strcmp(string, "client_username")==0)
 	return ((am_host_t *)arg)->disks->client_username;
+    else if(strcmp(string, "ssh_keys")==0)
+	return ((am_host_t *)arg)->disks->ssh_keys;
 
     return(NULL);
 }

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.173 2006/04/06 18:10:28 ktill Exp $
+/* $Id: dumper.c,v 1.174 2006/05/12 23:11:30 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -92,6 +92,7 @@ static char *options = NULL;
 static char *progname = NULL;
 static char *amandad_path=NULL;
 static char *client_username=NULL;
+static char *ssh_keys=NULL;
 static int level;
 static char *dumpdate = NULL;
 static char *dumper_timestamp = NULL;
@@ -137,7 +138,7 @@ static int runencrypt P((int, pid_t *,  encrypt_t));
 static void sendbackup_response P((void *, pkt_t *, security_handle_t *));
 static int startup_dump P((const char *, const char *, const char *, int,
 			   const char *, const char *, const char *,
-			   const char *, const char *));
+			   const char *, const char *, const char *));
 static void stop_dump P((void));
 
 static void read_indexfd P((void *, void *, ssize_t));
@@ -338,6 +339,7 @@ main(main_argc, main_argv)
 	     *   progname
 	     *   amandad_path
 	     *   client_username
+	     *   ssh_keys
 	     *   options
 	     */
 	    cmdargs.argc++;			/* true count of args */
@@ -403,6 +405,11 @@ main(main_argc, main_argv)
 	    if(a >= cmdargs.argc) {
 		error("error [dumper PORT-DUMP: not enough args: handle]");
 	    }
+	    ssh_keys = newstralloc(ssh_keys, cmdargs.argv[a++]);
+
+	    if(a >= cmdargs.argc) {
+		error("error [dumper PORT-DUMP: not enough args: handle]");
+	    }
 	    options = newstralloc(options, cmdargs.argv[a++]);
 
 	    if(a != cmdargs.argc) {
@@ -432,6 +439,7 @@ main(main_argc, main_argv)
 			      progname,
 			      amandad_path,
 			      client_username,
+			      ssh_keys,
 			      options);
 	    if (rc != 0) {
 		q = squote(errstr);
@@ -1748,15 +1756,17 @@ dumper_get_security_conf(string, arg)
                 return (amandad_path);
         } else if(strcmp(string, "client_username")==0) {
                 return (client_username);
+        } else if(strcmp(string, "ssh_keys")==0) {
+                return (ssh_keys);
         }
         return(NULL);
 }
 
 static int
 startup_dump(hostname, disk, device, level, dumpdate, progname, amandad_path,
-	     client_username, options)
+	     client_username, ssh_keys, options)
     const char *hostname, *disk, *device, *dumpdate, *progname, *amandad_path;
-    const char *client_username, *options;
+    const char *client_username, *ssh_keys, *options;
     int level;
 {
     char level_string[NUM_STR_SIZE];
