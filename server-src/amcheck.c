@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.121 2006/02/06 22:17:09 ktill Exp $
+ * $Id: amcheck.c,v 1.121.2.1 2006/05/12 19:26:12 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -831,6 +831,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    fprintf(outf, "       (expecting ");
 	    if(exptape != NULL) fprintf(outf, "tape %s or ", exptape->label);
 	    fprintf(outf, "a new tape)\n");
+	    tapebad = 1;
 	} else {
             if (overwrite) {
                 char *wrlabel_status;

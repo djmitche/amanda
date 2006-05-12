@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.62 2006/03/09 16:51:41 martinea Exp $
+ * $Id: amandad.c,v 1.62.2.1 2006/05/12 19:26:12 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1112,6 +1112,7 @@ service_new(security_handle, cmd, arguments)
     int data[DATA_FD_COUNT + 2][2], i;
     struct active_service *as;
     pid_t pid;
+    int newfd;
 
     assert(security_handle != NULL);
     assert(cmd != NULL);
@@ -1217,12 +1218,30 @@ service_new(security_handle, cmd, arguments)
 	 * The rest start at the offset defined in amandad.h, and continue
 	 * through the internal defined.
 	 */
+	for (i = 0; i < DATA_FD_COUNT; i++)
+	    aclose(data[i + 2][0]);
+
+	/*
+	 *  Make sure they are not open in the range DATA_FD_OFFSET to 
+	 *	DATA_FD_OFFSET + DATA_FD_COUNT - 1
+	 */
+	for (i = 0; i < DATA_FD_COUNT; i++) {
+	    while(data[i + 2][1] >= DATA_FD_OFFSET &&
+		  data[i + 2][1] <= DATA_FD_OFFSET + DATA_FD_COUNT - 1) {
+		newfd = dup(data[i + 2][1]);
+		if(newfd == -1)
+		    error("Can't dup out off DATA_FD range");
+		data[i + 2][1] = newfd;
+	    }
+	}
+	for (i = 0; i < DATA_FD_COUNT; i++)
+	    close(DATA_FD_OFFSET + i);
+
 	for (i = 0; i < DATA_FD_COUNT; i++) {
 	    if (dup2(data[i + 2][1], i + DATA_FD_OFFSET) < 0) {
 		error("dup %d to %d failed: %s\n", data[i + 2][1],
 		    i + DATA_FD_OFFSET, strerror(errno));
 	    }
-	    aclose(data[i + 2][0]);
 	    aclose(data[i + 2][1]);
 	}
 

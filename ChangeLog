@@ -1,3 +1,30 @@
+2006-05-10  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by <amanda@inventivetechnology.at>
+	* man/xml-source/amrecover.8.xml: Document listhost command.
+
+2006-05-08  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by <amanda@inventivetechnology.at>
+	* server-src/amindexd.c: new LISTHOST command.
+	* recover-src/set_commands.c (list_host): New function.
+	* recover-src/amrecover.h (list_host): Prototype.
+	* recover-src/help.c (list_host): Print help.
+	* recover-src/uscan.l: Parse listhost command.
+	* recover-src/uparse.y: LISTHOST command.
+
+2006-05-08  Ian Turner <ian@zmanda.com>
+	* server-src/amcheck.c: Make it an error when the expected new
+	  tape cannot be found. Thanks to Paul Bijnens
+	  <paul.bijnens@xplanation.com> for the patch and to Jason L
+	  Tibbitts III <tibbs@math.uh.edu> for noticing this problem.
+
+2006-05-28  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c (service_new): Apply the correct patch.
+
+2006-05-28  Jean-Louis Martineau <martineau@zmanda.com>
+	* Amanda 2.5.0p2 released.
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.0p2).
+	* NEWS: Changes in release 2.5.0p2.
+
 2006-05-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c (service_new): Make sure that the 3 data[] fd
 	  are not in the range DATA_FD_OFFSET to

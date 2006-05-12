@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.23 2004/02/11 13:15:18 martinea Exp $
+ * $Id: set_commands.c,v 1.23.2.1 2006/05/12 19:26:12 martinea Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -135,6 +135,16 @@ char *host;
 	amfree(disk_path);
 	clear_dir_list();
     }
+    amfree(cmd);
+}
+
+void list_host()
+{
+    char *cmd = NULL;
+
+    cmd = stralloc("LISTHOST");
+    if (converse(cmd) == -1)
+        exit(1);
     amfree(cmd);
 }
 

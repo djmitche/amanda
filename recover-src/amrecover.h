@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.h,v 1.17 2005/12/31 00:02:10 paddy_s Exp $
+ * $Id: amrecover.h,v 1.17.2.1 2006/05/12 19:26:12 martinea Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -76,6 +76,7 @@ extern void help_list P((void));		/* list commands */
 extern void set_disk P((char *dsk, char *mtpt));
 extern void list_disk P((char *amdevice));
 extern void set_host P((char *host));
+extern void list_host P((void));
 extern int set_date P((char *date));
 extern void set_directory P((char *dir));
 extern void cd_glob P((char *dir));

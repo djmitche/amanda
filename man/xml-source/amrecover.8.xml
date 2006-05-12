@@ -178,6 +178,13 @@ mount point instead of full pathnames.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
+  <term><emphasis remap='B'>listhost [diskdevice]</emphasis></term>
+  <listitem>
+<para>List all
+<emphasis remap='B'>host</emphasis></para>
+  </listitem>
+  </varlistentry>
+  <varlistentry>
   <term><emphasis remap='B'>listdisk [diskdevice]</emphasis></term>
   <listitem>
 <para>List all
