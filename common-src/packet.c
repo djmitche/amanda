@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.c,v 1.6 2004/02/13 14:00:35 martinea Exp $
+ * $Id: packet.c,v 1.7 2006/05/12 19:36:04 martinea Exp $
  *
  * Routines for modifying the amanda protocol packet type
  */
@@ -54,16 +54,24 @@ printf_arglist_function2(void pkt_init, pkt_t *, pkt, pktype_t, type,
     const char *, fmt)
 {
     va_list argp;
+    size_t size;
 
     assert(pkt != NULL);
     assert(strcmp(pkt_type2str(type), "BOGUS") != 0);
     assert(fmt != NULL);
 
     pkt->type = type;
-
+    pkt->packet_size = 1000;
+    pkt->body = alloc(pkt->packet_size);
     arglist_start(argp, fmt);
-    vsnprintf(pkt->body, sizeof(pkt->body), fmt, argp);
+    while((size = vsnprintf(pkt->body, pkt->packet_size, fmt, argp))
+			 >= pkt->packet_size-1) {
+	pkt->packet_size *= 2;
+	amfree(pkt->body);
+	pkt->body = alloc(pkt->packet_size);
+    }
     arglist_end(argp);
+    pkt->size = strlen(pkt->body);
 }
 
 /*
@@ -71,22 +79,30 @@ printf_arglist_function2(void pkt_init, pkt_t *, pkt, pktype_t, type,
  */
 printf_arglist_function1(void pkt_cat, pkt_t *, pkt, const char *, fmt)
 {
-    size_t len, bufsize;
+    size_t len;
     va_list argp;
+    size_t size;
+    char * pktbody;
 
     assert(pkt != NULL);
     assert(fmt != NULL);
 
     len = strlen(pkt->body);
-    assert(len < sizeof(pkt->body));
-
-    bufsize = sizeof(pkt->body) - len;
-    if (bufsize <= 0)
-	return;
 
     arglist_start(argp, fmt);
-    vsnprintf(pkt->body + len, bufsize, fmt, argp);
+    while((size = vsnprintf(pkt->body + len, pkt->packet_size - len, fmt,argp))
+			 >= pkt->packet_size - len - 1) {
+	pkt->packet_size *= 2;
+	pktbody = alloc(pkt->packet_size);
+	strncpy(pktbody, pkt->body, len);
+	pktbody[len] = '\0';
+	amfree(pkt->body);
+	pkt->body = pktbody;
     arglist_end(argp);
+    arglist_start(argp, fmt);
+    }
+    arglist_end(argp);
+    pkt->size = strlen(pkt->body);
 }
 
 /*

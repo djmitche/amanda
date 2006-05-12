@@ -2998,6 +2998,8 @@ AC_CONFIG_FILES([\
 	docs/Makefile							\
 									\
 	recover-src/Makefile						\
+
+	oldrecover-src/Makefile						\
 									\
 	restore-src/Makefile						\
 									\

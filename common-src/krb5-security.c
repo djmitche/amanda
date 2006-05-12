@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.15 2006/04/26 15:13:52 martinea Exp $
+ * $Id: krb5-security.c,v 1.16 2006/05/12 19:36:04 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -1818,14 +1818,15 @@ parse_pkt(pkt, buf, bufsize)
     pkt->type = (pktype_t)*bufp++;
     bufsize--;
 
+    pkt->packet_size = bufsize+1;
+    pkt->body = alloc(pkt->packet_size);
     if (bufsize == 0) {
 	pkt->body[0] = '\0';
     } else {
-	if (bufsize > sizeof(pkt->body) - 1)
-	    bufsize = sizeof(pkt->body) - 1;
 	memcpy(pkt->body, bufp, bufsize);
-	pkt->body[sizeof(pkt->body) - 1] = '\0';
+	pkt->body[pkt->packet_size - 1] = '\0';
     }
+    pkt->size = strlen(pkt->body);
 
     k5printf(("krb5: parse_pkt: %s (%d): \"%s\"\n", pkt_type2str(pkt->type),
 	pkt->type, pkt->body));

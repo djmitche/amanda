@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.4 2006/05/07 20:19:39 martinea Exp $
+ * $Id: amandad.c,v 1.5 2006/05/12 19:36:04 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -83,7 +83,8 @@ struct active_service {
     event_handle_t *ev_repfd;		/* read event handle for repfd */
     event_handle_t *ev_reptimeout;	/* timeout for rep data */
     pkt_t rep_pkt;			/* rep packet we're sending out */
-    char repbuf[MAX_PACKET];		/* buffer to read the rep into */
+    char *repbuf;			/* buffer to read the rep into */
+    int bufsize;			/* length of repbuf */
     int repbufsize;			/* length of repbuf */
     int repretry;			/* times we'll retry sending the rep */
     /*
@@ -461,6 +462,8 @@ protocol_accept(handle, pkt)
     char *service_path = NULL;
     int i;
 
+    pkt_out.body = NULL;
+
     /*
      * If pkt is NULL, then there was a problem with the new connection.
      */
@@ -469,6 +472,7 @@ protocol_accept(handle, pkt)
 	    debug_prefix_time(NULL), security_geterror(handle)));
 	pkt_init(&pkt_out, P_NAK, "ERROR %s\n", security_geterror(handle));
 	do_sendpkt(handle, &pkt_out);
+	amfree(pkt_out.body);
 	security_close(handle);
 	return;
     }
@@ -541,7 +545,7 @@ protocol_accept(handle, pkt)
 		    dbprintf(("%s: %s %s: already running, acking req\n",
 			debug_prefix_time(NULL), service, arguments));
 		    pkt_init(&pkt_out, P_ACK, "");
-		    goto send_pkt_out;
+		    goto send_pkt_out_no_delete;
 	    }
     }
 
@@ -581,13 +585,15 @@ badreq:
 	debug_prefix_time(NULL), pkt_type2str(pkt->type), pkt->body));
 
 send_pkt_out:
+    if(as) service_delete(as);
+send_pkt_out_no_delete:
     amfree(pktbody);
     amfree(service_path);
     amfree(service);
     amfree(arguments);
-    if(as) service_delete(as);
     do_sendpkt(handle, &pkt_out);
     security_close(handle);
+    amfree(pkt_out.body);
 }
 
 /*
@@ -651,6 +657,7 @@ state_machine(as, action, pkt)
 	    pkt_init(&nak, P_NAK, "ERROR unexpected packet type %s\n",
 		pkt_type2str(pkt->type));
 	    do_sendpkt(as->security_handle, &nak);
+	    amfree(nak.body);
 #ifdef AMANDAD_DEBUG
 	    dbprintf(("%s: state_machine: %p leaving (A_SENDNAK)\n",
 		debug_prefix_time(NULL), as));
@@ -692,8 +699,10 @@ s_sendack(as, action, pkt)
     if (do_sendpkt(as->security_handle, &ack) < 0) {
 	dbprintf(("%s: error sending ACK: %s\n",
 	    debug_prefix_time(NULL), security_geterror(as->security_handle)));
+	amfree(ack.body);
 	return (A_FINISH);
     }
+    amfree(ack.body);
 
     /*
      * move to the repwait state
@@ -723,6 +732,7 @@ s_repwait(as, action, pkt)
     pkt_t *pkt;
 {
     int n;
+    char *repbuf_temp;
 
     /*
      * We normally shouldn't receive any packets while waiting
@@ -737,6 +747,7 @@ s_repwait(as, action, pkt)
 	if (pkt->type == P_REQ) {
 	    dbprintf(("%s: received dup P_REQ packet, ACKing it\n",
 		debug_prefix_time(NULL)));
+	    amfree(as->rep_pkt.body);
 	    pkt_init(&as->rep_pkt, P_ACK, "");
 	    do_sendpkt(as->security_handle, &as->rep_pkt);
 	    return (A_PENDING);
@@ -746,6 +757,7 @@ s_repwait(as, action, pkt)
     }
 
     if (action == A_TIMEOUT) {
+	amfree(as->rep_pkt.body);
 	pkt_init(&as->rep_pkt, P_NAK, "ERROR timeout on reply pipe\n");
 	dbprintf(("%s: %s timed out waiting for REP data\n",
 	    debug_prefix_time(NULL), as->cmd));
@@ -754,30 +766,22 @@ s_repwait(as, action, pkt)
     }
 
     assert(action == A_RECVREP);
-
-    /*
-     * If the read fails, consider the process dead, and remove it.
-     * Always save room for nul termination.
-     */
-    if (as->repbufsize + 1 >= sizeof(as->repbuf)) {
-	dbprintf(("%s: more than %d bytes in reply\n",
-	    debug_prefix_time(NULL), sizeof(as->repbuf)));
-	dbprintf(("%s: reply so far:\n%s\n", debug_prefix(NULL), as->repbuf));
-	pkt_init(&as->rep_pkt, P_NAK, "ERROR more than %d bytes in reply\n",
-	    sizeof(as->repbuf));
-	do_sendpkt(as->security_handle, &as->rep_pkt);
-	return (A_FINISH);
+    if(as->bufsize == 0) {
+	as->bufsize = NETWORK_BLOCK_BYTES;
+	as->repbuf = alloc(as->bufsize);
     }
+
     do {
 	n = read(as->repfd, as->repbuf + as->repbufsize,
-		 sizeof(as->repbuf) - as->repbufsize - 1);
+		 as->bufsize - as->repbufsize - 1);
     } while ((n < 0) && ((errno == EINTR) || (errno == EAGAIN)));
     if (n < 0) {
 	const char *errstr = strerror(errno);
 	dbprintf(("%s: read error on reply pipe: %s\n",
-	    debug_prefix_time(NULL), errstr));
+		  debug_prefix_time(NULL), errstr));
+	amfree(as->rep_pkt.body);
 	pkt_init(&as->rep_pkt, P_NAK, "ERROR read error on reply pipe: %s\n",
-	    errstr);
+		 errstr);
 	do_sendpkt(as->security_handle, &as->rep_pkt);
 	return (A_FINISH);
     }
@@ -788,9 +792,18 @@ s_repwait(as, action, pkt)
     as->repbuf[n + as->repbufsize] = '\0';
     if (n > 0) {
 	as->repbufsize += n;
-	if(as->send_partial_reply) {
+	if(as->repbufsize >= as->bufsize - 1) {
+	    as->bufsize *= 2;
+	    repbuf_temp = alloc(as->bufsize);
+	    memcpy(repbuf_temp, as->repbuf, as->repbufsize + 1);
+	    amfree(as->repbuf);
+	    as->repbuf = repbuf_temp;
+	}
+	else if(as->send_partial_reply) {
+	    amfree(as->rep_pkt.body);
 	    pkt_init(&as->rep_pkt, P_PREP, "%s", as->repbuf);
 	    do_sendpkt(as->security_handle, &as->rep_pkt);
+	    amfree(as->rep_pkt.body);
 	    pkt_init(&as->rep_pkt, P_REP, "");
 	}
  
@@ -842,6 +855,7 @@ s_processrep(as, action, pkt)
      * to the amanda server.  If the handle is -1, then we don't map.
      */
     repbuf = stralloc(as->repbuf);
+    amfree(as->rep_pkt.body);
     pkt_init(&as->rep_pkt, P_REP, "");
     tok = strtok(repbuf, " ");
     if (tok == NULL)
@@ -1073,6 +1087,8 @@ process_readnetfd(cookie)
     struct active_service *as = dh->as;
     int n;
 
+    nak.body = NULL;
+
     do {
 	n = read(dh->fd_read, as->databuf, sizeof(as->databuf));
     } while ((n < 0) && ((errno == EINTR) || (errno == EAGAIN)));
@@ -1115,6 +1131,7 @@ process_readnetfd(cookie)
 sendnak:
     do_sendpkt(as->security_handle, &nak);
     service_delete(as);
+    amfree(nak.body);
 }
 
 /*
@@ -1191,8 +1208,8 @@ service_new(security_handle, cmd, arguments)
     const char *cmd, *arguments;
 {
     int i;
-    int data_read[DATA_FD_COUNT + 2][2];
-    int data_write[DATA_FD_COUNT + 2][2];
+    int data_read[DATA_FD_COUNT + 1][2];
+    int data_write[DATA_FD_COUNT + 1][2];
     struct active_service *as;
     pid_t pid;
     int newfd;
@@ -1202,7 +1219,7 @@ service_new(security_handle, cmd, arguments)
     assert(arguments != NULL);
 
     /* a plethora of pipes */
-    for (i = 0; i < DATA_FD_COUNT + 2; i++) {
+    for (i = 0; i < DATA_FD_COUNT + 1; i++) {
 	if (pipe(data_read[i]) < 0)
 	    error("pipe: %s", strerror(errno));
 	if (pipe(data_write[i]) < 0)
@@ -1246,21 +1263,24 @@ service_new(security_handle, cmd, arguments)
 	/*
 	 * read from the reply pipe
 	 */
-	as->repfd = data_read[1][0];
-	aclose(data_read[1][1]);
+	as->repfd = data_write[0][0];
+	aclose(data_write[0][1]);
 	as->ev_repfd = NULL;
+	as->repbuf = NULL;
 	as->repbufsize = 0;
+	as->bufsize = 0;
 	as->repretry = 0;
+	as->rep_pkt.body = NULL;
 
 	/*
 	 * read from the rest of the general-use pipes
 	 * (netfds are opened as the client requests them)
 	 */
 	for (i = 0; i < DATA_FD_COUNT; i++) {
-	    aclose(data_read[i + 2][1]);
-	    aclose(data_write[i + 2][0]);
-	    as->data[i].fd_read = data_read[i + 2][0];
-	    as->data[i].fd_write = data_write[i + 2][1];
+	    aclose(data_read[i + 1][1]);
+	    aclose(data_write[i + 1][0]);
+	    as->data[i].fd_read = data_read[i + 1][0];
+	    as->data[i].fd_write = data_write[i + 1][1];
 	    as->data[i].ev_read = NULL;
 	    as->data[i].ev_write = NULL;
 	    as->data[i].netfd = NULL;
@@ -1296,55 +1316,58 @@ service_new(security_handle, cmd, arguments)
 	/*
 	 * The reply stream is stdout
 	 */
-        if (dup2(data_read[1][1], 1) < 0) {
-	    error("dup %d to %d failed: %s\n", data_read[1][1], 1,
+        if (dup2(data_write[0][1], 1) < 0) {
+	    error("dup %d to %d failed: %s\n", data_write[0][1], 1,
 		strerror(errno));
 	}
-        aclose(data_read[1][0]);
-        aclose(data_read[1][1]);
+        aclose(data_write[0][0]);
+        aclose(data_write[0][1]);
 
 	/*
-	 *  Make sure they are not open in the range DATA_FD_COUNT to
-	 *      DATA_FD_COUNT + DATA_FD_OFFSET - 1
+	 *  Make sure they are not open in the range DATA_FD_OFFSET to
+	 *      DATA_FD_OFFSET + DATA_FD_COUNT*2 - 1
 	 */
 	for (i = 0; i < DATA_FD_COUNT; i++) {
-	    while(data_read[i + 2][1] >= DATA_FD_COUNT &&
-		  data_read[i + 2][1] <= DATA_FD_COUNT + DATA_FD_OFFSET - 1) {
-		newfd = dup(data_read[i + 2][1]);
+	    while(data_read[i + 1][1] >= DATA_FD_OFFSET &&
+		  data_read[i + 1][1] <= DATA_FD_OFFSET + DATA_FD_COUNT*2 - 1) {
+		newfd = dup(data_read[i + 1][1]);
 		if(newfd == -1)
 		    error("Can't dup out off DATA_FD range");
-		data_read[i + 2][1] = newfd;
+		data_read[i + 1][1] = newfd;
 	    }
-	    while(data_write[i + 2][0] >= DATA_FD_COUNT &&
-		  data_write[i + 2][0] <= DATA_FD_COUNT + DATA_FD_OFFSET - 1) {
-		newfd = dup(data_write[i + 2][0]);
+	    while(data_write[i + 1][0] >= DATA_FD_OFFSET &&
+		  data_write[i + 1][0] <= DATA_FD_OFFSET + DATA_FD_COUNT*2 - 1) {
+		newfd = dup(data_write[i + 1][0]);
 		if(newfd == -1)
 		    error("Can't dup out off DATA_FD range");
-		data_write[i + 2][0] = newfd;
+		data_write[i + 1][0] = newfd;
 	    }
 	}
 	for (i = 0; i < DATA_FD_COUNT; i++)
-	    close(DATA_FD_COUNT + i);
+	    close(DATA_FD_OFFSET + i);
 
 	/*
 	 * The rest start at the offset defined in amandad.h, and continue
 	 * through the internal defined.
 	 */
 	for (i = 0; i < DATA_FD_COUNT; i++) {
-	    if (dup2(data_read[i + 2][1], i*2 + DATA_FD_OFFSET) < 0) {
-		error("dup %d to %d failed: %s\n", data_read[i + 2][1],
+	    if (dup2(data_read[i + 1][1], i*2 + DATA_FD_OFFSET) < 0) {
+		error("dup %d to %d failed: %s\n", data_read[i + 1][1],
 		    i + DATA_FD_OFFSET, strerror(errno));
 	    }
-	    aclose(data_read[i + 2][0]);
-	    aclose(data_read[i + 2][1]);
+	    aclose(data_read[i + 1][0]);
+	    aclose(data_read[i + 1][1]);
 
-	    if (dup2(data_write[i + 2][0], i*2 + 1 + DATA_FD_OFFSET) < 0) {
-		error("dup %d to %d failed: %s\n", data_write[i + 2][0],
+	    if (dup2(data_write[i + 1][0], i*2 + 1 + DATA_FD_OFFSET) < 0) {
+		error("dup %d to %d failed: %s\n", data_write[i + 1][0],
 		    i + DATA_FD_OFFSET, strerror(errno));
 	    }
-	    aclose(data_write[i + 2][0]);
-	    aclose(data_write[i + 2][1]);
+	    aclose(data_write[i + 1][0]);
+	    aclose(data_write[i + 1][1]);
 	}
+
+	/* close all unneeded fd */
+	safe_fd(DATA_FD_OFFSET, DATA_FD_COUNT*2);
 
 	execle(cmd, cmd, "amandad", NULL, safe_env());
 	error("could not exec service %s: %s", cmd, strerror(errno));
@@ -1412,6 +1435,10 @@ service_delete(as)
     assert(serviceq.qlength > 0);
     serviceq.qlength--;
 
+    amfree(as->cmd);
+    amfree(as->arguments);
+    amfree(as->repbuf);
+    amfree(as->rep_pkt.body);
     amfree(as);
 
     if(allow_many_services == 0 && serviceq.qlength == 0) {

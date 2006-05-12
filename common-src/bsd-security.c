@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.58 2006/04/26 18:19:12 martinea Exp $
+ * $Id: bsd-security.c,v 1.59 2006/05/12 19:36:04 martinea Exp $
  *
  * "BSD" security module
  */
@@ -368,6 +368,8 @@ bsd_connect(hostname, conf_fn, fn, arg, datap)
 	seteuid(0);
 	dgram_bind(&netfd.dgram, &port);
 	seteuid(euid);
+	netfd.handle = NULL;
+	netfd.pkt.body = NULL;
 	/*
 	 * We must have a reserved port.  Bomb if we didn't get one.
 	 */
@@ -557,6 +559,7 @@ bsd_close(cookie)
 	bh_first = bh->next;
     }
 
+    amfree(bh->proto_handle);
     amfree(bh);
 }
 
@@ -779,14 +782,15 @@ recvpkt_callback(cookie)
 
     assert(bh != NULL);
     bsdprintf(("%s: bsd: receive handle '%s' netfd '%s'\n",
-	       debug_prefix_time(NULL), bh->proto_handle,netfd.handle));
+	       debug_prefix_time(NULL), bh->proto_handle, netfd.handle));
 
-    if(strcmp(bh->proto_handle,netfd.handle) != 0) assert(1);
+    if(strcmp(bh->proto_handle, netfd.handle) != 0) assert(1);
 
     /* if it didn't come from the same host/port, forget it */
     if (memcmp(&bh->peer.sin_addr, &netfd.peer.sin_addr,
 	sizeof(netfd.peer.sin_addr)) != 0 ||
 	bh->peer.sin_port != netfd.peer.sin_port) {
+	amfree(netfd.handle);
 	netfd.handle = NULL;
 	return;
     }
@@ -840,7 +844,7 @@ recv_security_ok(bh)
 {
     char *tok, *security, *body, *result;
     pkt_t *pkt = &netfd.pkt;
-    char *service = NULL;
+    char *service = NULL, *serviceX;
 
     /*
      * Set this preempively before we mangle the body.  
@@ -877,8 +881,9 @@ recv_security_ok(bh)
      * into an argv.
      */
     if (strncmp(body, "SERVICE", sizeof("SERVICE") - 1) == 0) {
-	service = stralloc(body + strlen("SERVICE "));
-	service = strtok(service, "\n");
+	serviceX = stralloc(body + strlen("SERVICE "));
+	service  = stralloc(strtok(serviceX, "\n"));
+	amfree(serviceX);
     }
 
     /*
@@ -913,11 +918,14 @@ recv_security_ok(bh)
 	}
 
 	/* second word must be USER */
-	if ((tok = strtok(security, " ")) == NULL)
+	if ((tok = strtok(security, " ")) == NULL) {
+	    amfree(service);
 	    return (-1);	/* default errmsg */
+	}
 	if (strcmp(tok, "USER") != 0) {
 	    security_seterror(&bh->sech,
 		"REQ SECURITY line parse error, expecting USER, got %s", tok);
+	    amfree(service);
 	    return (-1);
 	}
 
@@ -926,6 +934,7 @@ recv_security_ok(bh)
 	    return (-1);	/* default errmsg */
 	if ((result = check_user(bh, tok, service)) != NULL) {
 	    security_seterror(&bh->sech, "%s", result);
+	    amfree(service);
 	    amfree(result);
 	    return (-1);
 	}
@@ -1781,6 +1790,7 @@ str2pkthdr()
     /* Read in the packet type */
     if ((tok = strtok(NULL, " ")) == NULL)
 	goto parse_error;
+    amfree(pkt->body);
     pkt_init(pkt, pkt_str2type(tok), "");
     if (pkt->type == (pktype_t)-1)    
 	goto parse_error;
@@ -1792,6 +1802,7 @@ str2pkthdr()
     /* parse the handle */
     if ((tok = strtok(NULL, " ")) == NULL)
 	goto parse_error;
+    amfree(netfd.handle);
     netfd.handle = stralloc(tok);
 
     /* Read in "SEQ" */

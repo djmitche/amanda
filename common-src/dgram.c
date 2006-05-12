@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.29 2006/01/12 01:57:05 paddy_s Exp $
+ * $Id: dgram.c,v 1.30 2006/05/12 19:36:04 martinea Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -328,10 +328,11 @@ dgram_t *dgram;
     *(dgram->cur) = '\0';
 }
 
-printf_arglist_function1(void dgram_cat, dgram_t *, dgram, const char *, fmt)
+printf_arglist_function1(int dgram_cat, dgram_t *, dgram, const char *, fmt)
 {
     size_t bufsize;
     va_list argp;
+    int len;
 
     assert(dgram != NULL);
     assert(fmt != NULL);
@@ -341,12 +342,23 @@ printf_arglist_function1(void dgram_cat, dgram_t *, dgram, const char *, fmt)
 
     bufsize = sizeof(dgram->data) - dgram->len;
     if (bufsize <= 0)
-	return;
+	return -1;
 
     arglist_start(argp, fmt);
-    dgram->len += vsnprintf(dgram->cur, bufsize, fmt, argp);
-    dgram->cur = dgram->data + dgram->len;
+    len = vsnprintf(dgram->cur, bufsize, fmt, argp);
     arglist_end(argp);
+    if(len > bufsize) {
+	dgram->len = sizeof(dgram->data);
+	dgram->cur = dgram->data + dgram->len;
+	return -1;
+    }
+    else {
+	arglist_start(argp, fmt);
+	dgram->len += vsnprintf(dgram->cur, bufsize, fmt, argp);
+	arglist_end(argp);
+	dgram->cur = dgram->data + dgram->len;
+    }
+    return 0;
 }
 
 void dgram_eatline(dgram)

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.33 2006/04/05 12:53:47 martinea Exp $
+ * $Id: driverio.h,v 1.34 2006/05/12 19:36:04 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -80,7 +80,8 @@ typedef struct sched_s {
     int attempted, priority;
     int level, degr_level;
     long est_time, degr_time;
-    unsigned long est_size, degr_size, act_size;
+    unsigned long est_nsize, est_csize, est_size;
+    unsigned long degr_nsize, degr_csize, act_size;
     unsigned long origsize, dumpsize;
     unsigned long dumptime, tapetime;
     char *dumpdate, *degr_dumpdate;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.169 2006/04/23 23:04:07 martinea Exp $
+ * $Id: driver.c,v 1.170 2006/05/12 19:36:04 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -701,10 +701,6 @@ start_some_dumps(rq)
 	for(diskp = rq->head; diskp != NULL; diskp = diskp->next) {
 	    assert(diskp->host != NULL && sched(diskp) != NULL);
 
-	    /* round estimate to next multiple of DISK_BLOCK_KB */
-	    sched(diskp)->est_size = am_round(sched(diskp)->est_size,
-					      DISK_BLOCK_KB);
-
 	    if (diskp->host->start_t > now) {
 		cur_idle = max(cur_idle, IDLE_START_WAIT);
 		if (delayed_diskp == NULL || sleep_time > diskp->host->start_t) {
@@ -924,7 +920,8 @@ start_degraded_mode(queuep)
 	    else if(sched(dp)->degr_level != -1) {
 		sched(dp)->level = sched(dp)->degr_level;
 		sched(dp)->dumpdate = sched(dp)->degr_dumpdate;
-		sched(dp)->est_size = sched(dp)->degr_size;
+		sched(dp)->est_nsize = sched(dp)->degr_nsize;
+		sched(dp)->est_csize = sched(dp)->degr_csize;
 		sched(dp)->est_time = sched(dp)->degr_time;
 		sched(dp)->est_kps  = sched(dp)->degr_kps;
 		enqueue_disk(&newq, dp);
@@ -1236,6 +1233,11 @@ dumper_result(dp)
     if(dumper->result == DONE && chunker->result == DONE) {
 	update_info_dumper(dp, sched(dp)->origsize,
 			   sched(dp)->dumpsize, sched(dp)->dumptime);
+	log_add(L_STATS, "estimate %s %s %s %d [sec %ld nkb %ld ckb %ld kps %d]",
+		dp->host->hostname, dp->name, sched(dp)->datestamp,
+		sched(dp)->level,
+		sched(dp)->est_time, sched(dp)->est_nsize, sched(dp)->est_csize,
+		sched(dp)->est_kps);
     }
 
     deallocate_bandwidth(dp->host->netif, sched(dp)->est_kps);
@@ -1722,11 +1724,13 @@ read_flush()
 	sp->dumpdate = NULL;
 	sp->degr_dumpdate = NULL;
 	sp->datestamp = stralloc(file.datestamp);
+	sp->est_nsize = 0;
+	sp->est_csize = 0;
 	sp->est_size = 0;
 	sp->est_time = 0;
+	sp->est_kps = 10;
 	sp->priority = 0;
 	sp->degr_level = -1;
-	sp->est_kps = 10;
 	sp->attempted = 0;
 	sp->act_size = size_holding_files(destname, 0);
 	sp->holdp = build_diskspace(destname);
@@ -1754,7 +1758,8 @@ read_schedule(cookie)
     char *dumpdate, *degr_dumpdate;
     int degr_level;
     long time, degr_time;
-    unsigned long size, degr_size;
+    unsigned long nsize, csize, degr_nsize, degr_csize;
+    unsigned long kps, degr_kps;
     char *hostname, *features, *diskname, *datestamp, *inpline = NULL;
     char *command;
     char *s;
@@ -1846,9 +1851,16 @@ read_schedule(cookie)
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 
-	skip_whitespace(s, ch);			/* find the size number */
-	if(ch == '\0' || sscanf(s - 1, "%lu", &size) != 1) {
-	    error("schedule line %d: syntax error (bad size)", line);
+	skip_whitespace(s, ch);			/* find the native size */
+	if(ch == '\0' || sscanf(s - 1, "%lu", &nsize) != 1) {
+	    error("schedule line %d: syntax error (bad nsize)", line);
+	    continue;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);			/* find the compressed size */
+	if(ch == '\0' || sscanf(s - 1, "%lu", &csize) != 1) {
+	    error("schedule line %d: syntax error (bad csize)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
@@ -1856,6 +1868,13 @@ read_schedule(cookie)
 	skip_whitespace(s, ch);			/* find the time number */
 	if(ch == '\0' || sscanf(s - 1, "%ld", &time) != 1) {
 	    error("schedule line %d: syntax error (bad estimated time)", line);
+	    continue;
+	}
+	skip_integer(s, ch);
+
+	skip_whitespace(s, ch);			/* find the kps number */
+	if(ch == '\0' || sscanf(s - 1, "%ld", &kps) != 1) {
+	    error("schedule line %d: syntax error (bad kps)", line);
 	    continue;
 	}
 	skip_integer(s, ch);
@@ -1878,9 +1897,16 @@ read_schedule(cookie)
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';
 
-	    skip_whitespace(s, ch);		/* find the degr size number */
-	    if(ch == '\0'  || sscanf(s - 1, "%lu", &degr_size) != 1) {
-		error("schedule line %d: syntax error (bad degr size)", line);
+	    skip_whitespace(s, ch);		/* find the degr native size */
+	    if(ch == '\0'  || sscanf(s - 1, "%lu", &degr_nsize) != 1) {
+		error("schedule line %d: syntax error (bad degr nsize)", line);
+		continue;
+	    }
+	    skip_integer(s, ch);
+
+	    skip_whitespace(s, ch);		/* find the degr compressed size */
+	    if(ch == '\0'  || sscanf(s - 1, "%lu", &degr_csize) != 1) {
+		error("schedule line %d: syntax error (bad degr csize)", line);
 		continue;
 	    }
 	    skip_integer(s, ch);
@@ -1888,6 +1914,13 @@ read_schedule(cookie)
 	    skip_whitespace(s, ch);		/* find the degr time number */
 	    if(ch == '\0' || sscanf(s - 1, "%lu", &degr_time) != 1) {
 		error("schedule line %d: syntax error (bad degr estimated time)", line);
+		continue;
+	    }
+	    skip_integer(s, ch);
+
+	    skip_whitespace(s, ch);		/* find the degr kps number */
+	    if(ch == '\0' || sscanf(s - 1, "%lu", &degr_kps) != 1) {
+		error("schedule line %d: syntax error (bad degr kps)", line);
 		continue;
 	    }
 	    skip_integer(s, ch);
@@ -1904,31 +1937,28 @@ read_schedule(cookie)
 	sp = (sched_t *) alloc(sizeof(sched_t));
 	sp->level    = level;
 	sp->dumpdate = stralloc(dumpdate);
-	sp->est_size = DISK_BLOCK_KB + size; /* include header */
+	sp->est_nsize = DISK_BLOCK_KB + nsize; /* include header */
+	sp->est_csize = DISK_BLOCK_KB + csize; /* include header */
+	/* round estimate to next multiple of DISK_BLOCK_KB */
+	sp->est_csize = am_round(sp->est_csize, DISK_BLOCK_KB);
+	sp->est_size = sp->est_csize;
 	sp->est_time = time;
+	sp->est_kps = kps;
 	sp->priority = priority;
 	sp->datestamp = stralloc(datestamp);
 
 	if(degr_dumpdate) {
 	    sp->degr_level = degr_level;
 	    sp->degr_dumpdate = stralloc(degr_dumpdate);
-	    sp->degr_size = DISK_BLOCK_KB + degr_size;
+	    sp->degr_nsize = DISK_BLOCK_KB + degr_nsize;
+	    sp->degr_csize = DISK_BLOCK_KB + degr_csize;
+	    /* round estimate to next multiple of DISK_BLOCK_KB */
+	    sp->degr_csize = am_round(sp->degr_csize, DISK_BLOCK_KB);
 	    sp->degr_time = degr_time;
+	    sp->degr_kps = degr_kps;
 	} else {
 	    sp->degr_level = -1;
 	    sp->degr_dumpdate = NULL;
-	}
-
-	if(time <= 0)
-	    sp->est_kps = 10;
-	else
-	    sp->est_kps = size/time;
-
-	if(sp->degr_level != -1) {
-	    if(degr_time <= 0)
-		sp->degr_kps = 10;
-	    else
-		sp->degr_kps = degr_size/degr_time;
 	}
 
 	sp->attempted = 0;

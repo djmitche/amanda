@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.13 2006/04/27 17:56:27 martinea Exp $
+ * $Id: ssh-security.c,v 1.14 2006/05/12 19:36:04 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -43,7 +43,7 @@
 
 #ifdef SSH_SECURITY
 
-/*#define	SSH_DEBUG*/
+#define	SSH_DEBUG
 
 #ifdef SSH_DEBUG
 #define	sshprintf(x)	dbprintf(x)
@@ -79,7 +79,7 @@
 struct ssh_conn {
     int read, write;				/* pipes to ssh */
     pid_t pid;					/* pid of ssh process */
-    char pkt[NETWORK_BLOCK_BYTES];		/* last pkt read */
+    char *pkt;					/* last pkt read */
     unsigned long pktlen;			/* len of above */
     struct {					/* buffer read() calls */
 	char buf[STREAM_BUFSIZE];		/* buffer */
@@ -404,6 +404,7 @@ conn_get(hostname)
     rc->errmsg = NULL;
     rc->refcnt = 1;
     rc->handle = -1;
+    rc->pkt = NULL;
     connq_append(rc);
     return (rc);
 }
@@ -440,6 +441,7 @@ conn_put(rc)
     if (rc->errmsg != NULL)
 	amfree(rc->errmsg);
     connq_remove(rc);
+    amfree(rc->pkt);
     amfree(rc);
 }
 
@@ -573,7 +575,7 @@ ssh_sendpkt(cookie, pkt)
     void *cookie;
     pkt_t *pkt;
 {
-    char buf[sizeof(pkt_t)];
+    char *buf;
     struct ssh_handle *rh = cookie;
     size_t len;
 
@@ -583,6 +585,7 @@ ssh_sendpkt(cookie, pkt)
     sshprintf(("%s: ssh: sendpkt: enter\n", debug_prefix_time(NULL)));
 
     len = strlen(pkt->body) + 2;
+    buf = alloc(len);
     buf[0] = (char)pkt->type;
     strcpy(&buf[1], pkt->body);
 
@@ -595,6 +598,7 @@ ssh_sendpkt(cookie, pkt)
 	security_seterror(&rh->sech, security_stream_geterror(&rh->rs->secstr));
 	return (-1);
     }
+    amfree(buf);
     return (0);
 }
 
@@ -695,6 +699,7 @@ recvpkt_callback(cookie, buf, bufsize)
 	   debug_prefix_time(NULL), pkt_type2str(pkt.type), pkt.type,
 	   rh->hostname, pkt.body));
     (*rh->fn.recvpkt)(rh->arg, &pkt, S_OK);
+    amfree(pkt.body);
 }
 
 /*
@@ -1100,9 +1105,11 @@ conn_read_callback(cookie)
     rh->rs = ssh_stream_client(rh, rc->handle);
 
     sshprintf(("%s: ssh: new connection\n", debug_prefix_time(NULL)));
+    pkt.body = NULL;
     parse_pkt(&pkt, rc->pkt, rc->pktlen);
     sshprintf(("%s: ssh: calling accept_fn\n", debug_prefix_time(NULL)));
     (*accept_fn)(&rh->sech, &pkt);
+    amfree(pkt.body);
 }
 
 static void
@@ -1119,14 +1126,15 @@ parse_pkt(pkt, buf, bufsize)
     pkt->type = (pktype_t)*bufp++;
     bufsize--;
 
+    pkt->packet_size = bufsize+1;
+    pkt->body = alloc(pkt->packet_size);
     if (bufsize == 0) {
 	pkt->body[0] = '\0';
     } else {
-	if (bufsize > sizeof(pkt->body) - 1)
-	    bufsize = sizeof(pkt->body) - 1;
 	memcpy(pkt->body, bufp, bufsize);
-	pkt->body[sizeof(pkt->body) - 1] = '\0';
+	pkt->body[pkt->packet_size - 1] = '\0';
     }
+    pkt->size = strlen(pkt->body);
 
     sshprintf(("%s: ssh: parse_pkt: %s (%d): \"%s\"\n",
 	       debug_prefix_time(NULL), pkt_type2str(pkt->type),
@@ -1208,12 +1216,8 @@ recv_token(rc, timeout)
 	break;
     }
     rc->pktlen = ntohl(netint);
-    if (rc->pktlen > sizeof(rc->pkt)) {
-	rc->errmsg = newstralloc(rc->errmsg, "recv error: huge packet");
-	sshprintf(("%s: ssh: recv_token: B return(-1)\n",
-		   debug_prefix_time(NULL)));
-	return (-1);
-    }
+    amfree(rc->pkt);
+    rc->pkt = alloc(rc->pktlen);
 
     switch (net_read(rc, &netint, sizeof(netint), timeout)) {
     case -1:

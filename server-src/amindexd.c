@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.91 2006/04/26 18:02:21 martinea Exp $
+ * $Id: amindexd.c,v 1.92 2006/05/12 19:36:04 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -1196,6 +1196,38 @@ char **argv;
 		dump_hostname = newstralloc(dump_hostname, arg);
 		reply(200, "Dump host set to %s.", dump_hostname);
 		amfree(disk_name);		/* invalidate any value */
+	    }
+	    s[-1] = ch;
+	} else if (strcmp(cmd, "LISTHOST") == 0) {
+	    disk_t *disk, 
+                   *diskdup;
+	    int nbhost = 0,
+                found = 0;
+	    s[-1] = '\0';
+	    if (config_name == NULL) {
+		reply(501, "Must set config before listhost");
+	    }
+	    else {
+		lreply(200, " List hosts for config %s", config_name);
+		for (disk = disk_list.head; disk!=NULL; disk = disk->next) {
+                    found = 0;
+		    for (diskdup = disk_list.head; diskdup!=disk; diskdup = diskdup->next) {
+		        if(strcmp(diskdup->host->hostname, disk->host->hostname) == 0) {
+                          found = 1;
+                          break;
+		        }
+                    }
+                    if(!found){
+	                fast_lreply(201, " %s", disk->host->hostname);
+                        nbhost++;
+                    }
+		}
+		if(nbhost > 0) {
+		    reply(200, " List hosts for config %s", config_name);
+		}
+		else {
+		    reply(200, "No hosts for config %s", config_name);
+		}
 	    }
 	    s[-1] = ch;
 	} else if (strcmp(cmd, "DISK") == 0 && arg) {

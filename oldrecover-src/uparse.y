@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uparse.y,v 1.12 2006/05/12 19:36:04 martinea Exp $
+ * $Id: uparse.y,v 1.1 2006/05/12 19:36:04 martinea Exp $
  *
  * parser for amrecover interactive language
  */

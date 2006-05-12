@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.110 2006/05/03 02:36:43 paddy_s Exp $
+ * $Id: reporter.c,v 1.111 2006/05/12 19:36:04 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -68,6 +68,7 @@ typedef struct timedata_s {
 typedef struct repdata_s {
     disk_t *disk;
     char *datestamp;
+    float est_nsize, est_csize;
     timedata_t taper;
     timedata_t dumper;
     timedata_t chunker;
@@ -161,6 +162,7 @@ static void handle_partial P((void));
 static void handle_strange P((void));
 static void handle_failed P((void));
 static void generate_missing P((void));
+static void generate_bad_estimate P((void));
 static void output_tapeinfo P((void));
 static void output_lines P((line_t *lp, FILE *f));
 static void output_stats P((void));
@@ -543,8 +545,10 @@ main(argc, argv)
     }
     afclose(logfile);
     close_infofile();
-    if(!amflush_run)
+    if(!amflush_run) {
 	generate_missing();
+	generate_bad_estimate();
+    }
 
     subj_str = vstralloc(getconf_str(CNF_ORG),
 			 " ", amflush_run ? "AMFLUSH" : "AMANDA",
@@ -1654,8 +1658,13 @@ handle_finish()
 static void
 handle_stats()
 {
-    char *s;
+    char *s, *fp;
     int ch;
+    char *hostname, *diskname, *datestamp;
+    int level;
+    float sec, kps, nbytes, cbytes;
+    repdata_t *repdata;
+    disk_t *dp;
 
     if(curprog == P_DRIVER) {
 	s = curstr;
@@ -1663,24 +1672,112 @@ handle_stats()
 
 	skip_whitespace(s, ch);
 #define sc "startup time"
-	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
-	    bogus_line();
-	    return;
-	}
-	s += sizeof(sc)-1;
-	ch = s[-1];
+	if(ch != '\0' && strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
+	    s += sizeof(sc)-1;
+	    ch = s[-1];
 #undef sc
 
-	skip_whitespace(s, ch);
-	if(ch == '\0') {
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') {
+		bogus_line();
+		return;
+	    }
+	    if(sscanf(s - 1, "%f", &startup_time) != 1) {
+		bogus_line();
+		return;
+	    }
+	    planner_time = startup_time;
+	}
+#define sc "estimate"
+	else if(ch != '\0' && strncmp(s - 1, sc, sizeof(sc)-1) == 0) {
+	    s += sizeof(sc)-1;
+	    ch = s[-1];
+#undef sc
+
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') {
+		bogus_line();
+		return;
+	    }
+	    fp = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';
+	    hostname = stralloc(fp);
+	    s[-1] = ch;
+
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') {
+		bogus_line();
+		amfree(hostname);
+		return;
+	    }
+	    fp = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';
+	    diskname = stralloc(fp);
+	    s[-1] = ch;
+
+	    skip_whitespace(s, ch);
+	    if(ch == '\0') {
+		bogus_line();
+		amfree(hostname);
+		amfree(diskname);
+		return;
+	    }
+	    fp = s - 1;
+	    skip_non_whitespace(s, ch);
+	    s[-1] = '\0';
+	    datestamp = stralloc(fp);
+	    s[-1] = ch;
+
+	    skip_whitespace(s, ch);
+	    if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
+		bogus_line();
+		amfree(hostname);
+		amfree(diskname);
+		amfree(datestamp);
+		return;
+	    }
+	    skip_integer(s, ch);
+	    if(level < 0 || level > 9) {
+		amfree(hostname);
+		amfree(diskname);
+		amfree(datestamp);
+		return;
+	    }
+
+	    skip_whitespace(s, ch);
+
+	    if(sscanf(s - 1,"[sec %f nkb %f ckb %f kps %f",
+		      &sec, &nbytes, &cbytes, &kps) != 4)  {
+		bogus_line();
+		amfree(hostname);
+		amfree(diskname);
+		amfree(datestamp);
+		return;
+	    }
+
+	    dp = lookup_disk(hostname, diskname);
+	    if(dp == NULL) {
+		addtostrange(hostname, diskname, level,
+			     "ERROR [not in disklist]");
+		amfree(hostname);
+		amfree(diskname);
+		amfree(datestamp);
+		return;
+	    }
+
+	    repdata = find_repdata(dp, datestamp, level);
+
+	    repdata->est_nsize = nbytes;
+	    repdata->est_csize = cbytes;
+	}
+	else {
 	    bogus_line();
 	    return;
 	}
-	if(sscanf(s - 1, "%f", &startup_time) != 1) {
-	    bogus_line();
-	    return;
-	}
-	planner_time = startup_time;
+#undef sc
+
     }
 }
 
@@ -2324,6 +2421,65 @@ generate_missing()
 }
 
 
+static void
+generate_bad_estimate()
+{
+    disk_t *dp;
+    repdata_t *repdata;
+    char s[1000];
+    float outsize;
+
+    for(dp = diskq.head; dp != NULL; dp = dp->next) {
+	if(dp->todo) {
+	    for(repdata = data(dp); repdata != NULL; repdata = repdata->next) {
+		if(repdata->est_csize >= 0.1) {
+		    if(repdata->taper.result == L_SUCCESS ||
+		       repdata->taper.result == L_PARTIAL ||
+		       repdata->taper.result == L_CHUNKSUCCESS)
+			outsize  = repdata->taper.outsize;
+		    else if(repdata->chunker.result == L_SUCCESS ||
+			    repdata->chunker.result == L_PARTIAL ||
+			    repdata->chunker.result == L_CHUNKSUCCESS)
+			outsize  = repdata->chunker.outsize;
+		    else
+			outsize  = repdata->dumper.outsize;
+
+		    if(repdata->est_csize * 0.9 > outsize) {
+			snprintf(s, 1000,
+				"  big estimate: %s %s %d",
+				 repdata->disk->host->hostname,
+				 repdata->disk->name,
+				 repdata->level);
+			s[999] = '\0';
+			addline(&notes, s);
+			snprintf(s, 1000,
+				 "                est: %.0f%s    out %.0f%s",
+				 du(repdata->est_csize), displayunit,
+				 du(outsize), displayunit);
+			s[999] = '\0';
+			addline(&notes, s);
+		    }
+		    else if(repdata->est_csize * 1.1 < outsize) {
+			snprintf(s, 1000,
+				"  small estimate: %s %s %d",
+				 repdata->disk->host->hostname,
+				 repdata->disk->name,
+				 repdata->level);
+			s[999] = '\0';
+			addline(&notes, s);
+			snprintf(s, 1000,
+				 "                  est: %.0f%s    out %.0f%s",
+				 du(repdata->est_csize), displayunit,
+				 du(outsize), displayunit);
+			s[999] = '\0';
+			addline(&notes, s);
+		    }
+		}
+	    }
+	}
+    }
+}
+
 static char *
 prefix (host, disk, level)
     char *host;
@@ -2495,6 +2651,8 @@ find_repdata(dp, datestamp, level)
 	repdata->disk = dp;
 	repdata->datestamp = stralloc(datestamp ? datestamp : "");
 	repdata->level = level;
+	repdata->est_nsize = 0.0;
+	repdata->est_csize = 0.0;
 	repdata->dumper.result = L_BOGUS;
 	repdata->taper.result = L_BOGUS;
 	repdata->next = NULL;

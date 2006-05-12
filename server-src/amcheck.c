@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.126 2006/05/03 02:36:42 paddy_s Exp $
+ * $Id: amcheck.c,v 1.127 2006/05/12 19:36:04 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -857,6 +857,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	    fprintf(outf, "       (expecting ");
 	    if(exptape != NULL) fprintf(outf, "tape %s or ", exptape->label);
 	    fprintf(outf, "a new tape)\n");
+            tapebad = 1;
 	} else {
             if (overwrite) {
                 char *wrlabel_status;
@@ -1351,13 +1352,7 @@ void start_host(hostp)
 	    }
 	    l_len = strlen(l);
 	    amfree(o);
-	    /*
-	     * Allow 2X for err response.
-	     */
-	    if(req_len + l_len > MAX_PACKET / 2) {
-		amfree(l);
-		break;
-	    }
+
 	    strappend(req, l);
 	    req_len += l_len;
 	    amfree(l);

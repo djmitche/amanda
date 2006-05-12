@@ -24,22 +24,19 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.h,v 1.6 2004/02/13 14:00:35 martinea Exp $
+ * $Id: packet.h,v 1.7 2006/05/12 19:36:04 martinea Exp $
  *
  * interfaces for modifying amanda protocol packet type
  */
 #ifndef PACKET_H
 #define PACKET_H
 
-/*
- * We limit our body length to 50k.
- */
-#define	MAX_PACKET	(50*1024)
-
 typedef enum { P_REQ = 0, P_REP = 1, P_PREP = 2, P_ACK = 3, P_NAK = 4 } pktype_t;
 typedef struct {
     pktype_t type;				/* type of packet */
-    char body[MAX_PACKET];			/* body of packet */
+    char *body;					/* body of packet */
+    int size;
+    int packet_size;
 } pkt_t;
 
 /*

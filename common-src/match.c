@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.21 2005/10/11 01:17:00 vectro Exp $
+ * $Id: match.c,v 1.22 2006/05/12 19:36:04 martinea Exp $
  *
  * functions for checking and matching regular expressions
  */
@@ -33,7 +33,7 @@
 #include "regex.h"
 
 char *validate_regexp(regex)
-char *regex;
+const char *regex;
 {
     regex_t regc;
     int result;
@@ -51,7 +51,7 @@ char *regex;
 }
 
 char *clean_regex(regex)
-char *regex;
+const char *regex;
 {
     char *result;
     int j;
@@ -68,7 +68,7 @@ char *regex;
 }
 
 int match(regex, str)
-char *regex, *str;
+const char *regex, *str;
 {
     regex_t regc;
     int result;
@@ -92,7 +92,7 @@ char *regex, *str;
 }
 
 char *validate_glob(glob)
-char *glob;
+const char *glob;
 {
     char *regex = NULL;
     regex_t regc;
@@ -114,7 +114,7 @@ char *glob;
 }
 
 int match_glob(glob, str)
-char *glob, *str;
+const char *glob, *str;
 {
     char *regex = NULL;
     regex_t regc;
@@ -141,7 +141,7 @@ char *glob, *str;
 }
 
 char *glob_to_regex(glob)
-char *glob;
+const char *glob;
 {
     char *regex;
     char *r;
@@ -217,7 +217,7 @@ char *glob;
 
 
 int match_tar(glob, str)
-char *glob, *str;
+const char *glob, *str;
 {
     char *regex = NULL;
     regex_t regc;
@@ -244,7 +244,7 @@ char *glob, *str;
 }
 
 char *tar_to_regex(glob)
-char *glob;
+const char *glob;
 {
     char *regex;
     char *r;
@@ -320,8 +320,8 @@ char *glob;
 
 
 int match_word(glob, word, separator)
-char *glob, *word;
-char separator;
+const char *glob, *word;
+const char separator;
 {
     char *regex;
     char *r;
@@ -332,7 +332,8 @@ char separator;
     size_t  lenword;
     char *nword;
     char *nglob;
-    char *g, *w;
+    char *g;
+    const char *w;
     int  i;
 
     lenword = strlen(word);
@@ -471,10 +472,11 @@ char separator;
 
 
 int match_host(glob, host)
-char *glob, *host;
+const char *glob, *host;
 {
     char *lglob, *lhost;
-    char *c, *d;
+    char *c;
+    const char *d;
     int i;
 
     
@@ -498,13 +500,13 @@ char *glob, *host;
 
 
 int match_disk(glob, disk)
-char *glob, *disk;
+const char *glob, *disk;
 {
     return match_word(glob, disk, '/');
 }
 
 int match_datestamp(dateexp, datestamp)
-char *dateexp, *datestamp;
+const char *dateexp, *datestamp;
 {
     char *dash;
     size_t len, len_suffix;
@@ -566,7 +568,7 @@ char *dateexp, *datestamp;
 
 
 int match_level(levelexp, level)
-char *levelexp, *level;
+const char *levelexp, *level;
 {
     char *dash;
     size_t len, len_suffix;

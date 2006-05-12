@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.185 2006/04/24 11:16:26 martinea Exp $
+ * $Id: planner.c,v 1.186 2006/05/12 19:36:04 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -78,9 +78,11 @@ typedef struct est_s {
     int got_estimate;
     int dump_priority;
     int dump_level;
-    long dump_size;
+    long dump_nsize;	/* native size */
+    long dump_csize;	/* compressed size */
     int degr_level;	/* if dump_level == 0, what would be the inc level */
-    long degr_size;
+    long degr_nsize;	/* native degraded size */
+    long degr_csize;	/* compressed degraded size */
     int last_level;
     long last_lev0size;
     int next_level0;
@@ -123,7 +125,8 @@ typedef struct bi_s {
     int deleted;		/* 0=modified, 1=deleted */
     disk_t *dp;			/* The disk that was changed */
     int level;			/* The original level */
-    long size;			/* The original size */
+    long nsize;			/* The original native size */
+    long csize;			/* The original compressed size */
     char *errstr;		/* A message describing why this disk is here */
 } bi_t;
 
@@ -477,9 +480,9 @@ char **argv;
 
 	fprintf(stderr, "INITIAL SCHEDULE (size " AM64_FMT "):\n", total_size);
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
-	    fprintf(stderr, "  %s %s pri %d lev %d size %ld\n",
+	    fprintf(stderr, "  %s %s pri %d lev %d nsize %ld csize %ld\n",
 		    dp->host->hostname, dp->name, est(dp)->dump_priority,
-		    est(dp)->dump_level, est(dp)->dump_size);
+		    est(dp)->dump_level, est(dp)->dump_nsize, est(dp)->dump_csize);
 	}
     }
 
@@ -656,7 +659,8 @@ setup_estimate(dp)
     malloc_mark(ep);
     dp->up = (void *) ep;
     ep->state = DISK_READY;
-    ep->dump_size = -1;
+    ep->dump_nsize = -1;
+    ep->dump_csize = -1;
     ep->dump_priority = dp->priority;
     ep->errstr = 0;
     ep->promote = 0;
@@ -1350,13 +1354,7 @@ am_host_t *hostp;
 		    amfree(l);
 		    amfree(excludefree);
 		}
-		/*
-		 * Allow 2X for err response.
-		 */
-		if(req_len + s_len > MAX_PACKET / 2) {
-		    amfree(s);
-		    break;
-		}
+
 		if (s != NULL) {
 		    estimates += i;
 		    strappend(req, s);
@@ -1862,7 +1860,8 @@ disk_t *dp;
     }
 
     ep->degr_level = -1;
-    ep->degr_size = -1;
+    ep->degr_nsize = -1;
+    ep->degr_csize = -1;
 
     if(ep->next_level0 <= 0
        || (have_info && ep->last_level == 0 && (info.command & FORCE_NO_BUMP))) {
@@ -1870,36 +1869,42 @@ disk_t *dp;
 	    fprintf(stderr,"(due for level 0) ");
 	}
 	ep->dump_level = 0;
-	ep->dump_size = est_tape_size(dp, 0);
-	if(ep->dump_size <= 0) {
+	ep->dump_nsize = est_size(dp, 0);
+	ep->dump_csize = est_tape_size(dp, 0);
+	if(ep->dump_csize <= 0) {
 	    fprintf(stderr,
 		    "(no estimate for level 0, picking an incr level)\n");
 	    ep->dump_level = pick_inclevel(dp);
-	    ep->dump_size = est_tape_size(dp, ep->dump_level);
+	    ep->dump_nsize = est_size(dp, ep->dump_level);
+	    ep->dump_csize = est_tape_size(dp, ep->dump_level);
 
-	    if(ep->dump_size == -1) {
+	    if(ep->dump_csize == -1) {
 		ep->dump_level = ep->dump_level + 1;
-		ep->dump_size = est_tape_size(dp, ep->dump_level);
+		ep->dump_nsize = est_size(dp, ep->dump_level);
+		ep->dump_csize = est_tape_size(dp, ep->dump_level);
 	    }
 	}
 	else {
-	    total_lev0 += (double) ep->dump_size;
+	    total_lev0 += (double) ep->dump_csize;
 	    if(ep->last_level == -1 || dp->skip_incr) {
 		fprintf(stderr,"(%s disk, can't switch to degraded mode)\n",
 			dp->skip_incr? "skip-incr":"new");
 		ep->degr_level = -1;
-		ep->degr_size = -1;
+		ep->degr_nsize = -1;
+		ep->degr_csize = -1;
 	    }
 	    else {
 		/* fill in degraded mode info */
 		fprintf(stderr,"(picking inclevel for degraded mode)");
 		ep->degr_level = pick_inclevel(dp);
-		ep->degr_size = est_tape_size(dp, ep->degr_level);
-		if(ep->degr_size == -1) {
+		ep->degr_nsize = est_size(dp, ep->degr_level);
+		ep->degr_csize = est_tape_size(dp, ep->degr_level);
+		if(ep->degr_csize == -1) {
 		    ep->degr_level = ep->degr_level + 1;
-		    ep->degr_size = est_tape_size(dp, ep->degr_level);
+		    ep->degr_nsize = est_size(dp, ep->degr_level);
+		    ep->degr_csize = est_tape_size(dp, ep->degr_level);
 		}
-		if(ep->degr_size == -1) {
+		if(ep->degr_csize == -1) {
 		    fprintf(stderr,"(no inc estimate)");
 		    ep->degr_level = -1;
 		}
@@ -1911,27 +1916,31 @@ disk_t *dp;
 	fprintf(stderr,"(not due for a full dump, picking an incr level)\n");
 	/* XXX - if this returns -1 may be we should force a total? */
 	ep->dump_level = pick_inclevel(dp);
-	ep->dump_size = est_tape_size(dp, ep->dump_level);
+	ep->dump_nsize = est_size(dp, ep->dump_level);
+	ep->dump_csize = est_tape_size(dp, ep->dump_level);
 
-	if(ep->dump_size == -1) {
+	if(ep->dump_csize == -1) {
 	    ep->dump_level = ep->last_level;
-	    ep->dump_size = est_tape_size(dp, ep->dump_level);
+	    ep->dump_nsize = est_size(dp, ep->dump_level);
+	    ep->dump_csize = est_tape_size(dp, ep->dump_level);
 	}
-	if(ep->dump_size == -1) {
+	if(ep->dump_csize == -1) {
 	    ep->dump_level = ep->last_level + 1;
-	    ep->dump_size = est_tape_size(dp, ep->dump_level);
+	    ep->dump_nsize = est_size(dp, ep->dump_level);
+	    ep->dump_csize = est_tape_size(dp, ep->dump_level);
 	}
-	if(ep->dump_size == -1) {
+	if(ep->dump_csize == -1) {
 	    ep->dump_level = 0;
-	    ep->dump_size = est_tape_size(dp, ep->dump_level);
+	    ep->dump_nsize = est_size(dp, ep->dump_level);
+	    ep->dump_csize = est_tape_size(dp, ep->dump_level);
 	}
     }
 
-    fprintf(stderr,"  curr level %d size %ld ", ep->dump_level, ep->dump_size);
+    fprintf(stderr,"  curr level %d nsize %ld csize %ld", ep->dump_level, ep->dump_nsize, ep->dump_csize);
 
     insert_disk(&schedq, dp, schedule_order);
 
-    total_size += tt_blocksize_kb + ep->dump_size + tape_mark;
+    total_size += tt_blocksize_kb + ep->dump_csize + tape_mark;
 
     /* update the balanced size */
     if(!(dp->skip_full || dp->strategy == DS_NOFULL || 
@@ -2001,7 +2010,7 @@ disk_t *a, *b;
     diff = est(b)->dump_priority - est(a)->dump_priority;
     if(diff != 0) return diff;
 
-    ldiff = est(b)->dump_size - est(a)->dump_size;
+    ldiff = est(b)->dump_csize - est(a)->dump_csize;
     if(ldiff < 0) return -1; /* XXX - there has to be a better way to dothis */
     if(ldiff > 0) return 1;
     return 0;
@@ -2132,13 +2141,13 @@ static void delay_dumps P((void))
 
 	ndp = dp->next; /* remove_disk zaps this */
 
-	if (est(dp)->dump_size == -1 ||
-	    est(dp)->dump_size <= tape->length * avail_tapes) {
+	if (est(dp)->dump_csize == -1 ||
+	    est(dp)->dump_csize <= tape->length * avail_tapes) {
 	    continue;
 	}
 
         /* Format dumpsize for messages */
-	snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
+	snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_csize);
 
 	if(est(dp)->dump_level == 0) {
 	    if(dp->skip_incr) {
@@ -2153,7 +2162,7 @@ static void delay_dumps P((void))
 		delete = 1;
 		message = "but no incremental estimate";
 	    }
-	    else if (est(dp)->degr_size > tape->length) {
+	    else if (est(dp)->degr_csize > tape->length) {
 		delete = 1;
 		message = "incremental dump also larger than tape";
 	    }
@@ -2207,7 +2216,7 @@ static void delay_dumps P((void))
 	if(dp != preserve) {
 
             /* Format dumpsize for messages */
-	    snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
+	    snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_csize);
 
 	    if(dp->skip_incr) {
 		delete = 1;
@@ -2240,7 +2249,7 @@ static void delay_dumps P((void))
 	    if(est(dp)->dump_level == 0 && dp != preserve) {
 
 		/* Format dumpsize for messages */
-		snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
+		snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_csize);
 
 		if(dp->skip_incr) {
 		    delete = 1;
@@ -2280,7 +2289,7 @@ static void delay_dumps P((void))
 	if(est(dp)->dump_level != 0) {
 
             /* Format dumpsize for messages */
-	    snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_size);
+	    snprintf(est_kb, 20, "%ld KB,", est(dp)->dump_csize);
 
 	    delay_one_dump(dp, 1,
 			   "dumps way too big,",
@@ -2306,22 +2315,23 @@ static void delay_dumps P((void))
 	if(dp->tape_splitsize > 0) avail_tapes = conf_runtapes;
 
 	if(bi->deleted)
-	    new_total = total_size + tt_blocksize_kb + bi->size + tape_mark;
+	    new_total = total_size + tt_blocksize_kb + bi->csize + tape_mark;
 	else
-	    new_total = total_size - est(dp)->dump_size + bi->size;
+	    new_total = total_size - est(dp)->dump_csize + bi->csize;
 
-	if(new_total <= tape_length && bi->size < tape->length * avail_tapes) {
+	if(new_total <= tape_length && bi->csize < tape->length * avail_tapes) {
 	    /* reinstate it */
 	    total_size = new_total;
 	    if(bi->deleted) {
 		if(bi->level == 0) {
-		    total_lev0 += (double) bi->size;
+		    total_lev0 += (double) bi->csize;
 		}
 		insert_disk(&schedq, dp, schedule_order);
 	    }
 	    else {
 		est(dp)->dump_level = bi->level;
-		est(dp)->dump_size = bi->size;
+		est(dp)->dump_nsize = bi->nsize;
+		est(dp)->dump_csize = bi->csize;
 	    }
 
 	    /* Keep it clean */
@@ -2387,9 +2397,9 @@ arglist_function1(static void delay_one_dump,
 
     arglist_start(argp, delete);
 
-    total_size -= tt_blocksize_kb + est(dp)->dump_size + tape_mark;
+    total_size -= tt_blocksize_kb + est(dp)->dump_csize + tape_mark;
     if(est(dp)->dump_level == 0) {
-	total_lev0 -= (double) est(dp)->dump_size;
+	total_lev0 -= (double) est(dp)->dump_csize;
     }
 
     bi = alloc(sizeof(bi_t));
@@ -2404,7 +2414,8 @@ arglist_function1(static void delay_one_dump,
     bi->deleted = delete;
     bi->dp = dp;
     bi->level = est(dp)->dump_level;
-    bi->size = est(dp)->dump_size;
+    bi->nsize = est(dp)->dump_nsize;
+    bi->csize = est(dp)->dump_csize;
 
     snprintf(level_str, sizeof(level_str), "%d", est(dp)->dump_level);
     bi->errstr = vstralloc(dp->host->hostname,
@@ -2424,8 +2435,9 @@ arglist_function1(static void delay_one_dump,
 	remove_disk(&schedq, dp);
     } else {
 	est(dp)->dump_level = est(dp)->degr_level;
-	est(dp)->dump_size = est(dp)->degr_size;
-	total_size += tt_blocksize_kb + est(dp)->dump_size + tape_mark;
+	est(dp)->dump_nsize = est(dp)->degr_nsize;
+	est(dp)->dump_csize = est(dp)->degr_csize;
+	total_size += tt_blocksize_kb + est(dp)->dump_csize + tape_mark;
     }
 
     return;
@@ -2460,7 +2472,7 @@ static int promote_highest_priority_incremental P((void))
 	    continue;
 
 	new_size = est_tape_size(dp, 0);
-	new_total = total_size - est(dp)->dump_size + new_size;
+	new_total = total_size - est(dp)->dump_csize + new_size;
 	new_lev0 = total_lev0 + new_size;
 
 	nb_today = 0;
@@ -2518,16 +2530,18 @@ static int promote_highest_priority_incremental P((void))
 	dp = dp_promote;
 
 	new_size = est_tape_size(dp, 0);
-	new_total = total_size - est(dp)->dump_size + new_size;
+	new_total = total_size - est(dp)->dump_csize + new_size;
 	new_lev0 = total_lev0 + new_size;
 
 	total_size = new_total;
 	total_lev0 = new_lev0;
 	check_days = est(dp)->next_level0;
 	est(dp)->degr_level = est(dp)->dump_level;
-	est(dp)->degr_size = est(dp)->dump_size;
+	est(dp)->degr_nsize = est(dp)->dump_nsize;
+	est(dp)->degr_csize = est(dp)->dump_csize;
 	est(dp)->dump_level = 0;
-	est(dp)->dump_size = new_size;
+	est(dp)->dump_nsize = est_size(dp, 0);
+	est(dp)->dump_csize = new_size;
 	est(dp)->next_level0 = 0;
 
 	fprintf(stderr,
@@ -2604,17 +2618,19 @@ static int promote_hills P((void))
 	       dp->strategy == DS_INCRONLY)
 		continue;
 	    new_size = est_tape_size(dp, 0);
-	    new_total = total_size - est(dp)->dump_size + new_size;
+	    new_total = total_size - est(dp)->dump_csize + new_size;
 	    if(new_total > tape_length)
 		continue;
 	    /* We found a disk we can promote */
 	    total_size = new_total;
 	    total_lev0 += new_size;
 	    est(dp)->degr_level = est(dp)->dump_level;
-	    est(dp)->degr_size = est(dp)->dump_size;
+	    est(dp)->degr_nsize = est(dp)->dump_nsize;
+	    est(dp)->degr_csize = est(dp)->dump_csize;
 	    est(dp)->dump_level = 0;
 	    est(dp)->next_level0 = 0;
-	    est(dp)->dump_size = new_size;
+	    est(dp)->dump_nsize = est_size(dp, 0);
+	    est(dp)->dump_csize = new_size;
 
 	    fprintf(stderr,
 		    "   promote: moving %s:%s up, total_lev0 %1.0f, total_size " AM64_FMT "\n",
@@ -2648,21 +2664,26 @@ static void output_scheduleline(dp)
 {
     est_t *ep;
     long dump_time = 0, degr_time = 0;
+    double dump_kps = 0, degr_kps = 0;
     char *schedline = NULL, *degr_str = NULL;
     char dump_priority_str[NUM_STR_SIZE];
     char dump_level_str[NUM_STR_SIZE];
-    char dump_size_str[NUM_STR_SIZE];
+    char dump_nsize_str[NUM_STR_SIZE];
+    char dump_csize_str[NUM_STR_SIZE];
     char dump_time_str[NUM_STR_SIZE];
+    char dump_kps_str[NUM_STR_SIZE];
     char degr_level_str[NUM_STR_SIZE];
-    char degr_size_str[NUM_STR_SIZE];
+    char degr_nsize_str[NUM_STR_SIZE];
+    char degr_csize_str[NUM_STR_SIZE];
     char degr_time_str[NUM_STR_SIZE];
+    char degr_kps_str[NUM_STR_SIZE];
     char *dump_date, *degr_date;
     char *features;
     int i;
 
     ep = est(dp);
 
-    if(ep->dump_size == -1) {
+    if(ep->dump_csize == -1) {
 	/* no estimate, fail the disk */
 	fprintf(stderr,
 		"%s: FAILED %s %s %s %d [no estimate]\n",
@@ -2684,37 +2705,50 @@ static void output_scheduleline(dp)
 #define fix_rate(rate) (rate < 1.0 ? DEFAULT_DUMPRATE : rate)
 
     if(ep->dump_level == 0) {
-	dump_time = ep->dump_size / fix_rate(ep->fullrate);
+	dump_kps = fix_rate(ep->fullrate);
+	dump_time = ep->dump_csize / dump_kps;
 
-	if(ep->degr_size != -1) {
-	    degr_time = ep->degr_size / fix_rate(ep->incrrate);
+	if(ep->degr_csize != -1) {
+	    degr_kps = fix_rate(ep->incrrate);
+	    degr_time = ep->degr_csize / degr_kps;
 	}
     }
     else {
-	dump_time = ep->dump_size / fix_rate(ep->incrrate);
+	dump_kps = fix_rate(ep->incrrate);
+	dump_time = ep->dump_csize / dump_kps;
     }
 
-    if(ep->dump_level == 0 && ep->degr_size != -1) {
+    if(ep->dump_level == 0 && ep->degr_csize != -1) {
 	snprintf(degr_level_str, sizeof(degr_level_str),
 		    "%d", ep->degr_level);
-	snprintf(degr_size_str, sizeof(degr_size_str),
-		    "%ld", ep->degr_size);
+	snprintf(degr_nsize_str, sizeof(degr_nsize_str),
+		    "%ld", ep->degr_nsize);
+	snprintf(degr_csize_str, sizeof(degr_csize_str),
+		    "%ld", ep->degr_csize);
 	snprintf(degr_time_str, sizeof(degr_time_str),
 		    "%ld", degr_time);
+	snprintf(degr_kps_str, sizeof(degr_kps_str),
+		    "%.0f", degr_kps);
 	degr_str = vstralloc(" ", degr_level_str,
 			     " ", degr_date,
-			     " ", degr_size_str,
+			     " ", degr_nsize_str,
+			     " ", degr_csize_str,
 			     " ", degr_time_str,
+			     " ", degr_kps_str,
 			     NULL);
     }
     snprintf(dump_priority_str, sizeof(dump_priority_str),
 		"%d", ep->dump_priority);
     snprintf(dump_level_str, sizeof(dump_level_str),
 		"%d", ep->dump_level);
-    snprintf(dump_size_str, sizeof(dump_size_str),
-		"%ld", ep->dump_size);
+    snprintf(dump_nsize_str, sizeof(dump_nsize_str),
+		"%ld", ep->dump_nsize);
+    snprintf(dump_csize_str, sizeof(dump_csize_str),
+		"%ld", ep->dump_csize);
     snprintf(dump_time_str, sizeof(dump_time_str),
 		"%ld", dump_time);
+    snprintf(dump_kps_str, sizeof(dump_kps_str),
+		"%.0f", dump_kps);
     features = am_feature_to_string(dp->host->features);
     schedline = vstralloc("DUMP ",dp->host->hostname,
 			  " ", features,
@@ -2723,8 +2757,10 @@ static void output_scheduleline(dp)
 			  " ", dump_priority_str,
 			  " ", dump_level_str,
 			  " ", dump_date,
-			  " ", dump_size_str,
+			  " ", dump_nsize_str,
+			  " ", dump_csize_str,
 			  " ", dump_time_str,
+			  " ", dump_kps_str,
 			  degr_str ? degr_str : "",
 			  "\n", NULL);
 

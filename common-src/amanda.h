@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.124 2006/04/26 18:19:12 martinea Exp $
+ * $Id: amanda.h,v 1.125 2006/05/12 19:36:04 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -555,18 +555,18 @@ extern void   safe_fd         P((int fd_start, int fd_count));
 extern void   safe_cd         P((void));
 extern void   save_core       P((void));
 extern char **safe_env        P((void));
-extern char  *validate_regexp P((char *regex));
-extern char  *validate_glob   P((char *glob));
-extern char  *clean_regex     P((char *regex));
-extern int    match           P((char *regex, char *str));
-extern int    match_glob      P((char *glob, char *str));
-extern char  *glob_to_regex   P((char *glob));
-extern int    match_tar       P((char *glob, char *str));
-extern char  *tar_to_regex    P((char *glob));
-extern int    match_host      P((char *glob, char *host));
-extern int    match_disk      P((char *glob, char *disk));
-extern int    match_datestamp P((char *dateexp, char *datestamp));
-extern int    match_level     P((char *levelexp, char *level));
+extern char  *validate_regexp P((const char *regex));
+extern char  *validate_glob   P((const char *glob));
+extern char  *clean_regex     P((const char *regex));
+extern int    match           P((const char *regex, const char *str));
+extern int    match_glob      P((const char *glob, const char *str));
+extern char  *glob_to_regex   P((const char *glob));
+extern int    match_tar       P((const char *glob, const char *str));
+extern char  *tar_to_regex    P((const char *glob));
+extern int    match_host      P((const char *glob, const char *host));
+extern int    match_disk      P((const char *glob, const char *disk));
+extern int    match_datestamp P((const char *dateexp, const char *datestamp));
+extern int    match_level     P((const char *levelexp, const char *level));
 extern time_t unctime         P((char *timestr));
 extern ssize_t  areads_dataready  P((int fd));
 extern void     areads_relbuf     P((int fd));

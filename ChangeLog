@@ -1,3 +1,81 @@
+2006-05-10  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by <amanda@inventivetechnology.at>
+	* man/xml-source/amrecover.8.xml: Document listhost command.
+
+2006-05-08  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by <amanda@inventivetechnology.at>
+	* server-src/amindexd.c: new LISTHOST command.
+	* recover-src/set_commands.c (list_host): New function.
+	* recover-src/amrecover.h (list_host): Prototype.
+	* recover-src/help.c (list_host): Print help.
+	* recover-src/uscan.l: Parse listhost command.
+	* recover-src/uparse.y: LISTHOST command.
+	* oldrecover-src/set_commands.c (list_host): New function.
+	* oldrecover-src/amrecover.h (list_host): Prototype.
+	* oldrecover-src/help.c (list_host): Print help.
+	* oldrecover-src/uscan.l: Parse listhost command.
+	* oldrecover-src/uparse.y: LISTHOST command.
+
+2006-05-08  Ian Turner <ian@zmanda.com>
+	* server-src/amcheck.c: Make it an error when the expected new 
+	  tape cannot be found. Thanks to Paul Bijnens
+	  <paul.bijnens@xplanation.com> for the patch and to Jason L 
+	  Tibbitts III <tibbs@math.uh.edu> for noticing this problem.
+
+2006-05-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* driverio.h (shed_s): Add est_nsize, est_csize, degr_nsize, degr_csize
+	                       for nativa and compressed estimate size.
+	* planner.c: Send the native and compressed estimate size to the driver.
+	* driver.c: log with L_STATS the estimate of a successful dump.
+	* reporter.c: Parse the L_STATS.
+	* reporter.c(generate_bad_estimate): New function that will put in the
+	                                     NOTES section all bad estimate.
+
+2006-05-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* configure.in (AC_CONFIG_FILES): Add oldrecover-src/Makefile.
+	* Makefile.am (RECOVER_SUBDIRS): Add oldrecover-src.
+	* oldrecover-src/amrecover.c: Copy of old recover-src/amrecover.c
+	* oldrecover-src/amrecover.h: Copy of old recover-src/amrecover.h
+	* oldrecover-src/display_commands.c: Copy of old
+					     recover-src/display_commands.c
+	* oldrecover-src/extract_list.c: Copy of old recover-src/extract_list.c
+	* oldrecover-src/help.c: Copy of old recover-src/help.c
+	* oldrecover-src/Makefile.am: Copy of old recover-src/Makefile.am
+	* oldrecover-src/set_commands.c: Copy of old recover-src/set_commands.c
+	* oldrecover-src/uparse.y: Copy of old recover-src/uparse.y
+	* oldrecover-src/uscan.l: Copy of old recover-src/uscan.l
+	* recover-src/amrecover.c: Works with security-api.
+	* recover-src/amrecover.h: Works with security-api.
+	* recover-src/extract_list.c: Works with security-api.
+
+2006-05-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c: Fixup.
+
+2006-05-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/packet.h: pkt_t.body is now a char*.
+	* common-src/packet.c (pkt_init): Return an alloced pkt.body.
+	* common-src/packet.c (pkt_cat): Increade pkt.body size if needed.
+	* common-src/protocol.c: Free allocated pkt.body.
+	* common-src/dgram.c (dgram_cat): Return int.
+	* common-src/dgram.h (dgram_cat): New prototype.
+	* common-src/krb5-security.c: Work with dynamicaly allocated packet
+				      body.
+	* common-src/rsh-security.c: Work with dynamicaly allocated packet
+				     body.
+	* common-src/ssh-security.c: Work with dynamicaly allocated packet
+				     body.
+	* amandad-src/amandad.c: Work with dynamicaly allocated packet body.
+	* server-src/amcheck.c: Don't limit packet size.
+	* server-src/planner.c: Don't limit packet size.
+
+2006-05-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c (service_new): Apply the correct patch.
+
+2006-05-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taper.c: Fix compiler warning.
+	* common-src/match.c: Many function get const parameters.
+	* common-src/amanda.h: Prototype change.
+
 2006-05-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c (service_new): Make sur that the 3 data_read[]
 	  and the 3 data_write[] fd are not in the range DATA_FD_OFFSET to

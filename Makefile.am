@@ -19,7 +19,7 @@ if WANT_RESTORE
 RESTORE_SUBDIRS = restore-src
 endif
 if WANT_RECOVER
-RECOVER_SUBDIRS = recover-src
+RECOVER_SUBDIRS = recover-src oldrecover-src
 endif
 if WANT_AMPLOT
 PLOT_SUBDIRS = amplot
