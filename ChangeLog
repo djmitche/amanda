@@ -1,4 +1,7 @@
 2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/restore.c: Fix use of possibly NULL input.
+
+2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/ssh-security.c (ssh_connect): Retrieve ssh_keys from
 	                                           configuration.
 	* server-src/amadmin.c(disklist_one): Print ssh_keys.

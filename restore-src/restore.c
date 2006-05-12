@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.31 2006/04/26 18:12:13 martinea Exp $
+ * $Id: restore.c,v 1.32 2006/05/12 23:13:11 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1364,7 +1364,10 @@ am_feature_t *their_features;
                                 desired_tape->label);
                         fflush(prompt_out);
                         input = agets(stdin); /* Strips \n but not \r */
-                        if (strcmp("OK\r", input) != 0) {
+			if(!input) {
+			    error("Connection lost with amrecover");
+			}
+                        else if (strcmp("OK\r", input) != 0) {
                             error("Got bad response from amrecover: %s",
                                   input);
                         }
