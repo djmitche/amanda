@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.54 2006/03/09 16:51:41 martinea Exp $
+ * $Id: bsd-security.c,v 1.54.2.1 2006/05/12 22:31:52 martinea Exp $
  *
  * "BSD" security module
  */
@@ -382,8 +382,10 @@ bsd_connect(hostname, conf_fn, fn, arg)
     sequence = (int)sequence_time.tv_sec ^ (int)sequence_time.tv_usec;
     handle=malloc(15);
     snprintf(handle,14,"000-%08x", newhandle++);
-    if (inithandle(bh, he, port, handle, sequence) < 0)
+    if (inithandle(bh, he, port, handle, sequence) < 0) {
 	(*fn)(arg, &bh->sech, S_ERROR);
+	amfree(bh);
+    }
     else
 	(*fn)(arg, &bh->sech, S_OK);
 }
@@ -441,12 +443,6 @@ inithandle(bh, he, port, handle, sequence)
     bh->peer.sin_port = port;
     bh->peer.sin_family = AF_INET;
 
-    bh->prev = bh_last;
-    if(bh_last) {bh->prev->next = bh;}
-    if(!bh_first) {bh_first = bh;}
-    bh->next = NULL;
-    bh_last = bh;
-
     /*
      * Do a forward lookup of the hostname.  This is unnecessary if we
      * are initiating the connection, but is very serious if we are
@@ -463,7 +459,8 @@ inithandle(bh, he, port, handle, sequence)
      */
     if (strncasecmp(bh->hostname, he->h_name, strlen(bh->hostname)) != 0) {
 	security_seterror(&bh->sech,
-	    "%s: did not resolve to %s", bh->hostname, bh->hostname);
+	    "%s: did not resolve to itself, it resolv to %s",
+	    bh->hostname, he->h_name);
 	return (-1);
     }
 
@@ -498,6 +495,12 @@ inithandle(bh, he, port, handle, sequence)
 	    return (-1);
 	}
     }
+
+    bh->prev = bh_last;
+    if(bh_last) {bh->prev->next = bh;}
+    if(!bh_first) {bh_first = bh;}
+    bh->next = NULL;
+    bh_last = bh;
 
     bh->sequence = sequence;
     bh->event_id = newevent++;
@@ -722,19 +725,6 @@ netfd_read_callback(cookie)
 		   netfd.handle,
 		   netfd.sequence);
     if (a < 0) {
-	if(bh->next) {
-	    bh->next->prev = bh->prev;
-	}
-	else {
-	    bh_last = bh->prev;
-	}
-	if(bh->prev) {
-	    bh->prev->next = bh->next;
-	}
-	else {
-	    bh_first = bh->prev;
-	}
-
 	bsdprintf(("%s: closeX handle '%s'\n",
 		  debug_prefix_time(NULL), bh->proto_handle));
 
