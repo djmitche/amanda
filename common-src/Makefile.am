@@ -38,6 +38,7 @@ noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
 			packet.h	pipespawn.h	protocol.h	\
 			queue.h		\
 			sl.h		security.h	statfs.h	\
+			security-util.h	\
 			stream.h	\
 			tapelist.h	\
 			token.h		\

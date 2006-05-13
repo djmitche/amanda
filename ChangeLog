@@ -1,4 +1,7 @@
 2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/Makefile.am (noinst_HEADERS): Add security-util.h.
+
+2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
 	Build a big tok_t enum for server and client config.
 	* client-src/clientconf.c: Move many things to util.c.
 	* client-src/clientconf.h: Remove extern variable.
