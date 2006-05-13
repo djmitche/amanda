@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.60 2006/05/12 22:42:47 martinea Exp $
+ * $Id: bsd-security.c,v 1.61 2006/05/13 01:19:08 martinea Exp $
  *
  * "BSD" security module
  */
@@ -733,7 +733,7 @@ main (argc, argv)
 
     netfd.accept_fn = fake_accept_function;
     netfd.recv_security_ok = &bsd_recv_security_ok;
-    netfd.bsd_prefix_packet = &bsd_prefix_packet;
+    netfd.prefix_packet = &bsd_prefix_packet;
     udp_netfd_read_callback(&netfd);
 
     return 0;

@@ -1,4 +1,7 @@
 2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* commmon-src/bsd-security.c: Typo.
+
+2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/Makefile.am (noinst_HEADERS): Add security-util.h.
 
 2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
