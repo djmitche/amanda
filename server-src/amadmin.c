@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.108 2006/05/12 23:11:29 martinea Exp $
+ * $Id: amadmin.c,v 1.109 2006/05/15 15:42:47 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1749,6 +1749,7 @@ disk_t *dp;
     }
     printf("        skip-incr %s\n", (dp->skip_incr? "YES" : "NO"));
     printf("        skip-full %s\n", (dp->skip_full? "YES" : "NO"));
+    printf("        spindle %d\n", dp->spindle);
 
     printf("\n");
 }

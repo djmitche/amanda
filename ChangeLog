@@ -1,3 +1,6 @@
+2006-05-15  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amadmin.c (disklist_one): print spindle.
+
 2006-05-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* commmon-src/bsd-security.c: Typo.
 
