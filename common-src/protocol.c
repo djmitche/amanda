@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.42 2006/05/12 22:42:48 martinea Exp $
+ * $Id: protocol.c,v 1.43 2006/05/16 23:43:55 paddy_s Exp $
  *
  * implements amanda protocol
  */
@@ -371,7 +371,7 @@ state_machine(p, action, pkt)
 
 	case A_PENDING:
 #ifdef PROTO_DEBUG
-	    dbprintf(("%s: state_machine: p %9 state %s: timeout %d\n",
+	    dbprintf(("%s: state_machine: p %p state %s: timeout %d\n",
 		      debug_prefix_time(": protocol"),
 		      p, pstate2str(p->state), (int)p->timeout));
 #endif

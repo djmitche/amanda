@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: help.c,v 1.10 2006/05/12 19:36:04 martinea Exp $
+ * $Id: help.c,v 1.11 2006/05/16 23:43:55 paddy_s Exp $
  *
  * implements the "help" command in amrecover
  */
@@ -54,7 +54,7 @@ void help_list P((void))
     printf("mode              - show the method used to extract SMB shares\n");
     printf("pwd               - show cwd on virtual file system\n");
     printf("quit\n");
-    printf("listdisk          - list hosts\n");
+    printf("listhost          - list hosts\n");
     printf("listdisk [diskdevice]              - list disks\n");
     printf("setdate {YYYY-MM-DD|--MM-DD|---DD} - set date of look\n");
     printf("        {YYYY-MM-DD-HH-MM-SS}      - set date of look\n");

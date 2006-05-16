@@ -15,7 +15,7 @@
  *
  * U.M. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL U.M.
- * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR CONF_ANY DAMAGES
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.131 2006/05/12 23:39:09 martinea Exp $
+ * $Id: conffile.c,v 1.132 2006/05/16 23:43:55 paddy_s Exp $
  *
  * read configuration file
  */
@@ -364,6 +364,9 @@ char *str;
 	}
     } else if(np->typ == CONF_REAL) {
 	snprintf(number, sizeof(number), "%f", getconf_real(np->parm));
+	tmpstr = newstralloc(tmpstr, number);
+    } else if(np->typ == CONF_AM64){
+	snprintf(number, sizeof(number), "%ld", getconf_am64(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else {
 	tmpstr = newstralloc(tmpstr, getconf_str(np->parm));
@@ -2001,7 +2004,7 @@ static void get_interface()
 	case CONF_USE:
 	    get_simple((val_t *)&ifcur.maxusage, &ifcur.s_maxusage, CONF_INT);
 	    if(ifcur.maxusage <1) {
-		conf_parserror("use must bbe positive");
+		conf_parserror("use must be positive");
 	    }
 	    break;
 	case CONF_IDENT:
