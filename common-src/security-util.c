@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.2 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: security-util.c,v 1.3 2006/05/25 14:07:30 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -415,7 +415,7 @@ tcpm_send_token(
     size_t	len)
 {
     uint32_t		nethandle;
-    size_t		netlength;
+    uint32_t		netlength;
     struct iovec	iov[3];
 
     assert(SIZEOF(netlength) == 4);
@@ -768,7 +768,7 @@ bsd_prefix_packet(
     }
     buf = alloc(16+strlen(pwd->pw_name));
     strncpy(buf, "SECURITY USER ", (16 + strlen(pwd->pw_name)));
-    strncpy(&buf[14], pwd->pw_name, (16 + strlen(pwd->pw_name - 14)));
+    strncpy(&buf[14], pwd->pw_name, (16 + strlen(pwd->pw_name) - 14));
     buf[14 + strlen(pwd->pw_name)] = '\n';
     buf[15 + strlen(pwd->pw_name)] = '\0';
 

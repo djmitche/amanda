@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.35 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: fileheader.c,v 1.36 2006/05/25 14:07:30 martinea Exp $
  */
 
 #include "amanda.h"
@@ -521,7 +521,10 @@ validate_datestamp(
 	    return;
 	}
 
-	if ((strlen(datestamp) == 14) && match("^[0-9]{8,14}$", datestamp)) {
+	if ((strlen(datestamp) == 8) && match("^[0-9]{8}$", datestamp)) {
+	    return;
+	}
+	if ((strlen(datestamp) == 14) && match("^[0-9]{14}$", datestamp)) {
 	    return;
 	}
 	error("Invalid datestamp '%s'\n", datestamp);

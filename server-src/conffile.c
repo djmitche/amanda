@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.133 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: conffile.c,v 1.134 2006/05/25 14:07:30 martinea Exp $
  *
  * read configuration file
  */
@@ -1549,6 +1549,8 @@ read_dumptype(
     val_t tmpval;
     FILE *saved_conf = NULL;
     char *saved_fname = NULL;
+    time_t st = (time_t)start_time.r.tv_sec;
+    struct tm *stm;
 
     if (from) {
 	saved_conf = conf_conf;
@@ -1776,7 +1778,12 @@ read_dumptype(
 
 	case CONF_STARTTIME:
 	    get_simple(&tmpval,  &dpcur.s_start_t,  CONF_TIME);
-	    dpcur.start_t = tmpval.t;
+	    stm = localtime(&st);
+	    st -= stm->tm_sec + 60 * (stm->tm_min + 60 * stm->tm_hour);
+	    st += ((tmpval.t / 100 * 60) + tmpval.t % 100) * 60;
+	    if ((st - start_time.r.tv_sec) < -43200)
+		st += 86400;
+	    dpcur.start_t = st;
 	    break;
 
 	case CONF_STRATEGY:

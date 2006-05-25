@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.21 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: util.c,v 1.22 2006/05/25 14:07:30 martinea Exp $
  */
 
 #include "amanda.h"
@@ -593,8 +593,6 @@ get_simple(
 time_t
 get_time(void)
 {
-    time_t st = (time_t)start_time.r.tv_sec;
-    struct tm *stm;
     time_t hhmm;
 
     get_conftoken(CONF_ANY);
@@ -640,15 +638,7 @@ get_time(void)
 	hhmm = 0;
 	break;
     }
-
-    stm = localtime(&st);
-    st -= stm->tm_sec + 60 * (stm->tm_min + 60 * stm->tm_hour);
-    st += ((hhmm / 100 * 60) + hhmm % 100) * 60;
-
-    if ((st - start_time.r.tv_sec) < -43200)
-	st += 86400;
-
-    return st;
+    return hhmm;
 }
 
 keytab_t numb_keytable[] = {

@@ -1,4 +1,13 @@
 2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/fileheader.c (validate_datestamp): Works for 8 characters
+							datestamp.
+	* common-src/security-util.c (tcpm_send_token): netlength must be
+							uint32_t.
+	* common-src/security-util.c (bsd_prefix_packet): Fix typo.
+	* common-src/util.c (get_time): Don't do computation for starttime.
+	* server-src/conffile.c (read_dumptype): Do computation for starttime.
+
+2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/krb5-security.c (krb5_sendpkt, krb5_stream_read_sync,
 				      recv_token): Return ssize_t.
 	* common-src/krb5-security.c (krb5_accept, krb5_stream_accept,i
