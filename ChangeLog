@@ -1,4 +1,12 @@
 2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
+	Fix for program not compiled by default.
+	make bsdsecurity still not compile.
+	* common-src/bsd-security.c(bind_portrange): prototype change.
+	* common-src/Makefile.am (STANDARD_COMMON_STUFF_NOT_FILE): Add match.o.
+	* server-src/conffile.c: Many typo.
+	* tape-src/tapeio.c: Use OFF_T_FMT and SSIZE_T_FMT when needed, typo.
+	
+2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/fileheader.c (validate_datestamp): Works for 8 characters
 							datestamp.
 	* common-src/security-util.c (tcpm_send_token): netlength must be

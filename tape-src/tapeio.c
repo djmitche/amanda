@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.54 2006/05/25 01:47:27 johnfranks Exp $
+ * $Id: tapeio.c,v 1.55 2006/05/25 15:08:58 martinea Exp $
  *
  * implements generic tape I/O functions
  */
@@ -1186,7 +1186,7 @@ do_read(void)
 	    perror("");
 	    break;
 	} else if(result == 0) {
-	    fprintf(stderr, "%d (EOF)\n", result);
+	    fprintf(stderr,  SSIZE_T_FMT" (EOF)\n", result);
 	    /*
 	     * If we were not given a count, EOF breaks the loop, otherwise
 	     * we keep trying (to test read after EOF handling).
@@ -1208,7 +1208,7 @@ do_read(void)
 	     * the effort to deal with.
 	     */
 	    fprintf(stderr,
-		    "%d (%s): file %d: record %d",
+		    SSIZE_T_FMT " (%s): file %d: record %d",
 		    result,
 		    s,
 		    p[0],
@@ -1274,7 +1274,7 @@ do_write(void)
     for(i = 0; i < count; i++, (current_record += (off_t)1)) {
 	p[0] = current_file;
 	p[1] = current_record;
-	fprintf(stderr, "tapefd_write(%d): ", i);
+	fprintf(stderr, "tapefd_write(" OFF_T_FMT "): ", i);
 	if((result = tapefd_write(fd, write_buf, SIZEOF(write_buf))) < 0) {
 	    perror("");
 	    break;
@@ -1285,7 +1285,7 @@ do_write(void)
 		s = "short write";
 	    }
 	    fprintf(stderr,
-		    "%d (%s): file %d: record %d",
+		    "%d (%s): file " OFF_T_FMT ": record " OFF_T_FMT,
 		    result,
 		    s,
 		    p[0],
@@ -1317,7 +1317,7 @@ do_fsf(void)
 	count = (off_t)1;
     }
 
-    fprintf(stderr, "tapefd_fsf(" OFF_T_FMT "): ", (OFF_T_FMT_TPE)count);
+    fprintf(stderr, "tapefd_fsf(" OFF_T_FMT "): ", (OFF_T_FMT_TYPE)count);
     if((result = tapefd_fsf(fd, count)) < 0) {
 	perror("");
     } else {
@@ -1339,7 +1339,7 @@ do_weof(void)
 	count = (off_t)1;
     }
 
-    fprintf(stderr, "tapefd_weof(%d): ", count);
+    fprintf(stderr, "tapefd_weof(" OFF_T_FMT "): ", count);
     if((result = tapefd_weof(fd, count)) < 0) {
 	perror("");
     } else {
@@ -1479,7 +1479,7 @@ main(
      */
     time(&now);
     srandom(now);
-    for(j = 0; j < SIZEOF(write_buf); j++) {
+    for(j = 0; j < (int)SIZEOF(write_buf); j++) {
 	write_buf[j] = (char)random();
     }
 
@@ -1491,7 +1491,7 @@ main(
     while(1) {
 	if(cmdline) {
 	    for(token_count = 1;
-		token_count < SIZEOF(token_area) / SIZEOF(token_area[0])
+		token_count < (int)(SIZEOF(token_area) / SIZEOF(token_area[0]))
 		&& optind < argc;
 		token_count++, optind++) {
 		if(strcmp(argv[optind], "%") == 0) {

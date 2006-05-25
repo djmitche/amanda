@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.62 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: bsd-security.c,v 1.63 2006/05/25 15:08:58 martinea Exp $
  *
  * "BSD" security module
  */
@@ -544,8 +544,8 @@ int
 bind_portrange(
     int			s,
     struct sockaddr_in *addrp,
-    int			first_port,
-    int			last_port,
+    in_port_t		first_port,
+    in_port_t		last_port,
     char *		proto)
 {
     (void)s;		/* Quiet unused parameter warning */
@@ -610,6 +610,9 @@ construct_timestamp(
 const security_driver_t krb4_security_driver = {};
 const security_driver_t krb5_security_driver = {};
 const security_driver_t rsh_security_driver = {};
+const security_driver_t ssh_security_driver = {};
+const security_driver_t bsdtcp_security_driver = {};
+const security_driver_t bsdudp_security_driver = {};
 
 /*
  * This function will be called to accept the connection and is used

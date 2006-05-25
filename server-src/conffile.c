@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.134 2006/05/25 14:07:30 martinea Exp $
+ * $Id: conffile.c,v 1.135 2006/05/25 15:08:58 martinea Exp $
  *
  * read configuration file
  */
@@ -3079,6 +3079,8 @@ getconf_unit_divisor(void)
 
 #ifdef TEST
 
+void dump_configuration(char *filename);
+
 void
 dump_configuration(
     char *filename)
@@ -3117,7 +3119,7 @@ dump_configuration(
 		(OFF_T_FMT_TYPE)getconf_int(CNF_BUMPSIZE));
     printf("conf_bumpdays = %d\n", getconf_int(CNF_BUMPDAYS));
     printf("conf_bumpmult = %lf\n", getconf_real(CNF_BUMPMULT));
-    printf("conf_netusage = %l\n", getconf_long(CNF_NETUSAGE));
+    printf("conf_netusage = %ld\n", getconf_long(CNF_NETUSAGE));
     printf("conf_inparallel = %d\n", getconf_int(CNF_INPARALLEL));
     printf("conf_dumporder = \"%s\"\n", getconf_str(CNF_DUMPORDER));
     /*printf("conf_timeout = " TIME_T_FMT "\n",
@@ -3133,9 +3135,9 @@ dump_configuration(
     printf("conf_autoflush  = %d\n", getconf_int(CNF_AUTOFLUSH));
     printf("conf_reserve  = %d\n", getconf_int(CNF_RESERVE));
     printf("conf_maxdumpsize  = " OFF_T_FMT "\n",
-		(OFF_T_FMT_TYPE)getconf_am64_t(CNF_MAXDUMPSIZE));
+		(OFF_T_FMT_TYPE)getconf_am64(CNF_MAXDUMPSIZE));
     printf("conf_amrecover_do_fsf  = " OFF_T_FMT "\n",
-		(OFF_T_FMT_TYPE)getconf_am64_t(CNF_AMRECOVER_DO_FSF));
+		(OFF_T_FMT_TYPE)getconf_am64(CNF_AMRECOVER_DO_FSF));
     printf("conf_amrecover_check_label  = %d\n", getconf_int(CNF_AMRECOVER_CHECK_LABEL));
     printf("conf_amrecover_changer = \"%s\"\n", getconf_str(CNF_AMRECOVER_CHANGER));
     printf("conf_taperalgo  = %s\n", taperalgo2str(getconf_int(CNF_TAPERALGO)));
@@ -3162,7 +3164,7 @@ dump_configuration(
 	printf("	LBL_TEMPL %s\n", tp->lbl_templ);
 	printf("	BLOCKSIZE " SSIZE_T_FMT "\n", tp->blocksize);
 	printf("	FILE_PAD %s\n", (tp->file_pad) ? "YES" : "NO");
-	printf("	LENGTH " OFF_T_FMT "\n", (OFF_T_FMT_SIZE)tp->length);
+	printf("	LENGTH " OFF_T_FMT "\n", (OFF_T_FMT_TYPE)tp->length);
 	printf("	FILEMARK " SSIZE_T_FMT "\n", tp->filemark);
 	printf("	SPEED %ld\n", (long)tp->speed);
     }

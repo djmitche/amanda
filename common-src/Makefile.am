@@ -134,7 +134,8 @@ STANDARD_COMMON_STUFF_NOT_FILE = \
 	clock.$(OBJEXT) \
 	debug.$(OBJEXT) \
 	error.$(OBJEXT) \
-	util.$(OBJEXT)
+	util.$(OBJEXT) \
+	match.$(OBJEXT)
 
 STANDARD_COMMON_STUFF = \
 	$(STANDARD_COMMON_STUFF_NOT_FILE) \
