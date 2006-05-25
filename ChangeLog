@@ -1,3 +1,6 @@
+2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* configure.in(AM_INIT_AUTOMAKE): Fix.
+
 2006-05-24  John Franks <jrfranks@zmanda.com>
 	Add support for binary path names on disk and in configuration files.
            (Allow spaces in filenames.)
