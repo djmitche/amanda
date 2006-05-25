@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.13 2006/05/25 01:47:20 johnfranks Exp $
+ * $Id: taperscan.c,v 1.14 2006/05/25 18:32:54 martinea Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -176,15 +176,16 @@ scan_slot(
 
     switch (rc) {
     default:
-        newvstralloc(*(ct->error_message), *(ct->error_message),
-                     "fatal changer error ", slotstr, ": ",
-                     changer_resultstr, NULL);
+	vstrextend(ct->error_message,
+		   "fatal changer error: slot ", slotstr, ": ",
+		   changer_resultstr, "\n", NULL);
         result = 1;
 	break;
 
     case 1:
-        newvstralloc(*(ct->error_message), *(ct->error_message),
-                     "changer error ", slotstr, ": ", changer_resultstr, NULL);
+	vstrextend(ct->error_message,
+		   "changer error: slot ", slotstr, ": ", changer_resultstr,
+		   "\n", NULL);
         result = 0;
 	break;
 
@@ -223,8 +224,9 @@ scan_init(
     (void)searchable;	/* Quiet unused parameter warning */
 
     if (rc) {
-	newvstralloc(*(ct->error_message), *(ct->error_message),
-		     "could not get changer info: ", changer_resultstr, NULL);
+	vstrextend(ct->error_message,
+		   "could not get changer info: ", changer_resultstr, "\n",
+		   NULL);
 	ct->taperscan_output_callback(ct->data, *(ct->error_message));
 	amfree(*(ct->error_message));
     }

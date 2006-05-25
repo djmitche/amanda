@@ -1,4 +1,7 @@
 2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taperscan.c: Replace bogus newvstralloc by vstrextend.
+
+2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/getfsent.c (print_entry): Add prototype.
 	* common-src/token.c (main): Shut up compiler warning.
 	* server-src/infofile.c (dump_rec, dump_db): Add prototype.
