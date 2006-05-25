@@ -1,3 +1,6 @@
+#ifndef CCLASS_H
+#define CCLASS_H
+
 /* character-class table */
 static struct cclass {
 	char *name;
@@ -43,3 +46,5 @@ static struct cclass {
 	NULL, NULL, ""
     }
 };
+
+#endif	/* !CCLASS_H */

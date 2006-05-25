@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.2 2006/05/12 23:39:09 martinea Exp $
+ * $Id: clientconf.c,v 1.3 2006/05/25 01:47:11 johnfranks Exp $
  *
  * read configuration file
  */
@@ -41,13 +41,8 @@
 #include "clientconf.h"
 #include "clock.h"
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-static char *cln_config_dir = NULL;
-
 /* configuration parameters */
+static char *cln_config_dir = NULL;
 
 /* strings */
 static val_t cln_conf;
@@ -72,10 +67,10 @@ static int seen_ssh_keys;
 
 /* predeclare local functions */
 
-static void init_defaults P((void));
-static void read_conffile_recursively P((char *filename));
+static void init_defaults(void);
+static void read_conffile_recursively(char *filename);
 
-static int read_confline P((void));
+static int read_confline(void);
 
 /*
 ** ------------------------
@@ -83,8 +78,9 @@ static int read_confline P((void));
 ** ------------------------
 */
 
-int read_clientconf(filename)
-char *filename;
+int
+read_clientconf(
+    char *	filename)
 {
     init_defaults();
 
@@ -96,20 +92,21 @@ char *filename;
 
 struct byname {
     char *name;
-    confparm_t parm;
+    cconfparm_t parm;
     tok_t typ;
 } byname_table [] = {
-    { "CONF", CLN_CONF, CONF_STRING },
-    { "INDEX_SERVER", CLN_INDEX_SERVER, CONF_STRING },
-    { "TAPE_SERVER", CLN_TAPE_SERVER, CONF_STRING },
-    { "TAPEDEV", CLN_TAPEDEV, CONF_STRING },
-    { "AUTH", CLN_AUTH, CONF_STRING },
-    { "SSH_KEYS", CLN_SSH_KEYS, CONF_STRING },
-    { NULL }
+    { "CONF",		CLN_CONF,		CONF_STRING },
+    { "INDEX_SERVER",	CLN_INDEX_SERVER,	CONF_STRING },
+    { "TAPE_SERVER",	CLN_TAPE_SERVER,	CONF_STRING },
+    { "TAPEDEV",	CLN_TAPEDEV,		CONF_STRING },
+    { "AUTH",		CLN_AUTH,		CONF_STRING },
+    { "SSH_KEYS",	CLN_SSH_KEYS,		CONF_STRING },
+    { NULL,		CLN_CONF,		CONF_UNKNOWN }
 };
 
-char *client_getconf_byname(str)
-char *str;
+char *
+client_getconf_byname(
+    char *	str)
 {
     static char *tmpstr;
     char number[NUM_STR_SIZE];
@@ -120,7 +117,8 @@ char *str;
     tmpstr = stralloc(str);
     s = tmpstr;
     while((ch = *s++) != '\0') {
-	if(islower((int)ch)) s[-1] = toupper(ch);
+	if(islower((int)ch))
+	    s[-1] = (char)toupper(ch);
     }
 
     for(np = byname_table; np->name != NULL; np++)
@@ -139,7 +137,7 @@ char *str;
 	    tmpstr = newstralloc(tmpstr, "on");
 	}
     } else if(np->typ == CONF_REAL) {
-	snprintf(number, sizeof(number), "%f", client_getconf_real(np->parm));
+	snprintf(number, sizeof(number), "%lf", client_getconf_real(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else {
 	tmpstr = newstralloc(tmpstr, client_getconf_str(np->parm));
@@ -148,8 +146,9 @@ char *str;
     return tmpstr;
 }
 
-int client_getconf_seen(parm)
-confparm_t parm;
+int
+client_getconf_seen(
+    cconfparm_t parm)
 {
     switch(parm) {
     case CLN_CONF: return seen_conf;
@@ -162,8 +161,9 @@ confparm_t parm;
     }
 }
 
-int client_getconf_int(parm)
-confparm_t parm;
+int
+client_getconf_int(
+    cconfparm_t	parm)
 {
     int r = 0;
 
@@ -175,8 +175,9 @@ confparm_t parm;
     return r;
 }
 
-am64_t client_getconf_am64(parm)
-confparm_t parm;
+am64_t
+client_getconf_am64(
+    cconfparm_t	parm)
 {
     am64_t r = 0;
 
@@ -188,8 +189,9 @@ confparm_t parm;
     return r;
 }
 
-double client_getconf_real(parm)
-confparm_t parm;
+double
+client_getconf_real(
+    cconfparm_t	parm)
 {
     double r = 0;
 
@@ -201,8 +203,9 @@ confparm_t parm;
     return r;
 }
 
-char *client_getconf_str(parm)
-confparm_t parm;
+char *
+client_getconf_str(
+    cconfparm_t parm)
 {
     char *r = 0;
 
@@ -229,7 +232,8 @@ confparm_t parm;
 */
 
 
-static void init_defaults()
+static void
+init_defaults(void)
 {
     char *s;
 
@@ -287,15 +291,15 @@ static void init_defaults()
 
 }
 
-static void read_conffile_recursively(filename)
-char *filename;
+static void
+read_conffile_recursively(
+    char *	filename)
 {
-    extern int errno;
-
     /* Save globals used in read_confline(), elsewhere. */
     int  save_line_num  = conf_line_num;
     FILE *save_conf     = conf_conf;
     char *save_confname = conf_confname;
+    int	rc;
 
     if (*filename == '/' || cln_config_dir == NULL) {
 	conf_confname = stralloc(filename);
@@ -314,7 +318,9 @@ char *filename;
     conf_line_num = 0;
 
     /* read_confline() can invoke us recursively via "includefile" */
-    while(read_confline());
+    do {
+	rc = read_confline();
+    } while (rc != 0);
     afclose(conf_conf);
 
     amfree(conf_confname);
@@ -339,7 +345,8 @@ keytab_t main_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static int read_confline()
+static int
+read_confline(void)
 {
     keytable = main_keytable;
 
@@ -355,21 +362,42 @@ static int read_confline()
 	    read_conffile_recursively(fn);
 	}
 	break;
-    case CONF_CONF: get_simple(&cln_conf, &seen_conf, CONF_STRING); break;
-    case CONF_INDEX_SERVER: get_simple(&cln_index_server, &seen_index_server, CONF_STRING); break;
-    case CONF_TAPE_SERVER: get_simple(&cln_tape_server, &seen_tape_server, CONF_STRING); break;
-    case CONF_TAPEDEV:  get_simple(&cln_tapedev, &seen_tapedev, CONF_STRING); break;
-    case CONF_AUTH:     get_simple(&cln_auth, &seen_auth, CONF_STRING); break;
-    case CONF_SSH_KEYS: get_simple(&cln_ssh_keys, &seen_ssh_keys, CONF_STRING); break;
+
+    case CONF_CONF:
+	get_simple(&cln_conf, &seen_conf, CONF_STRING);
+	break;
+
+    case CONF_INDEX_SERVER:
+	get_simple(&cln_index_server, &seen_index_server, CONF_STRING);
+	break;
+
+    case CONF_TAPE_SERVER:
+	get_simple(&cln_tape_server, &seen_tape_server, CONF_STRING);
+	break;
+
+    case CONF_TAPEDEV:
+	get_simple(&cln_tapedev, &seen_tapedev, CONF_STRING);
+	break;
+
+    case CONF_AUTH:
+	get_simple(&cln_auth, &seen_auth, CONF_STRING);
+	break;
+
+    case CONF_SSH_KEYS:
+	get_simple(&cln_ssh_keys, &seen_ssh_keys, CONF_STRING);
+	break;
 
     case CONF_NL:	/* empty line */
 	break;
+
     case CONF_END:	/* end of file */
 	return 0;
+
     default:
 	conf_parserror("configuration keyword expected");
     }
-    if(tok != CONF_NL) get_conftoken(CONF_NL);
+    if(tok != CONF_NL)
+	get_conftoken(CONF_NL);
     return 1;
 }
 
@@ -383,8 +411,8 @@ static char *cln_config_name = NULL;
 static char *cln_config_dir = NULL;
 
 void
-dump_configuration(filename)
-    char *filename;
+dump_configuration(
+    char *filename)
 {
     printf("AMANDA CLIENT CONFIGURATION FROM FILE \"%s\":\n\n", filename);
 
@@ -397,9 +425,9 @@ dump_configuration(filename)
 }
 
 int
-main(argc, argv)
-    int argc;
-    char *argv[];
+main(
+    int		argc,
+    char **	argv)
 {
   char *conffile;
   char *diskfile;
@@ -464,10 +492,12 @@ main(argc, argv)
 #endif /* TEST */
 
 char *
-generic_client_get_security_conf(string, arg)
-	char *string;
-	void *arg;
+generic_client_get_security_conf(
+    char *	string,
+    void *	arg)
 {
+	(void)arg;	/* Quiet unused parameter warning */
+
 	if(!string || !*string)
 		return(NULL);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.28 2006/03/09 20:06:10 johnfranks Exp $
+ * $Id: scsi-linux.c,v 1.29 2006/05/25 01:47:08 johnfranks Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -78,18 +78,18 @@
 
 #include <scsi-defs.h>
 
+extern OpenFiles_T *pDev;
 
-void SCSI_OS_Version()
+void SCSI_OS_Version(void)
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-linux.c,v 1.28 2006/03/09 20:06:10 johnfranks Exp $";
+   static char rcsid[] = "$Id: scsi-linux.c,v 1.29 2006/05/25 01:47:08 johnfranks Exp $";
    DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
 
 int SCSI_CloseDevice(int DeviceFD)
 {
-  extern OpenFiles_T *pDev;
   int ret = 0;
   
   if (pDev[DeviceFD].devopen == 1)
@@ -114,7 +114,6 @@ int SCSI_CloseDevice(int DeviceFD)
 #ifdef LINUX_SG
 int SCSI_OpenDevice(int ip)
 {
-  extern OpenFiles_T *pDev;
   int DeviceFD;
   int i;
   int timeout;
@@ -206,7 +205,7 @@ int SCSI_OpenDevice(int ip)
                 }
             }
           pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
-          if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
+          if (SCSI_Inquiry(ip, pDev[ip].inquiry, (u_char)INQUIRY_SIZE) == 0)
             {
               if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip].inquiry->type == TYPE_CHANGER)
                 {
@@ -288,21 +287,27 @@ int SCSI_OpenDevice(int ip)
   return(0);
 }
 
-#define SCSI_OFF sizeof(struct sg_header)
+#define SCSI_OFF SIZEOF(struct sg_header)
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
                         CDB_T CDB,
-                        int CDB_Length,
+                        size_t CDB_Length,
                         void *DataBuffer,
-                        int DataBufferLength,
-                        char *pRequestSense,
-                        int RequestSenseLength)
+                        size_t DataBufferLength,
+                        RequestSense_T *pRequestSense,
+                        size_t RequestSenseLength)
 {
-  extern OpenFiles_T *pDev;
   struct sg_header *psg_header;
   char *buffer;
-  int osize = 0;
-  int status;
+  size_t osize = 0;
+  ssize_t status;
+
+  /* Basic sanity checks */
+  assert(CDB_Length <= UCHAR_MAX);
+  assert(RequestSenseLength <= UCHAR_MAX);
+
+  /* Clear buffer for cases where sense is not returned */
+  memset(pRequestSense, 0, RequestSenseLength);
 
   if (pDev[DeviceFD].avail == 0)
     {
@@ -337,7 +342,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
       psg_header->twelve_byte = 0;
     }
   psg_header->result = 0;
-  psg_header->reply_len = SCSI_OFF + DataBufferLength;
+  psg_header->reply_len = (int)(SCSI_OFF + DataBufferLength);
   
   switch (Direction)
     {
@@ -352,8 +357,9 @@ int SCSI_ExecuteCommand(int DeviceFD,
   DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
   
   status = write(pDev[DeviceFD].fd, buffer, SCSI_OFF + CDB_Length + osize);
-  if ( status < 0 || status != SCSI_OFF + CDB_Length + osize ||
-       psg_header->result ) 
+  if ( (status < (ssize_t)0) ||
+       (status != (ssize_t)(SCSI_OFF + CDB_Length + osize)) ||
+       (psg_header->result != 0)) 
     {
       dbprintf(("SCSI_ExecuteCommand error send \n"));
       SCSI_CloseDevice(DeviceFD);
@@ -366,8 +372,9 @@ int SCSI_ExecuteCommand(int DeviceFD,
   memset(pRequestSense, 0, RequestSenseLength);
   memcpy(pRequestSense, psg_header->sense_buffer, 16);
   
-  if ( status < 0 || status != SCSI_OFF + DataBufferLength || 
-       psg_header->result ) 
+  if ( (status < 0) ||
+       (status != (ssize_t)(SCSI_OFF + DataBufferLength)) || 
+       (psg_header->result != 0)) 
     { 
       dbprintf(("SCSI_ExecuteCommand error read \n"));
       dbprintf(("Status %d (%d) %2X\n", status, SCSI_OFF + DataBufferLength,psg_header->result ));
@@ -401,7 +408,6 @@ static inline int max(int x, int y)
 
 int SCSI_OpenDevice(int ip)
 {
-  extern OpenFiles_T *pDev;
   int DeviceFD;
   int i;
 
@@ -415,7 +421,7 @@ int SCSI_OpenDevice(int ip)
           pDev[ip].SCSI = 0;
           pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
           dbprintf(("SCSI_OpenDevice : use ioctl interface\n"));
-          if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
+          if (SCSI_Inquiry(ip, pDev[ip].inquiry, (u_char)INQUIRY_SIZE) == 0)
             {
               if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip].inquiry->type == TYPE_CHANGER)
                 {
@@ -457,10 +463,9 @@ int SCSI_ExecuteCommand(int DeviceFD,
                         int CDB_Length,
                         void *DataBuffer,
                         int DataBufferLength,
-                        char *pRequestSense,
+                        RequestSense_T *pRequestSense,
                         int RequestSenseLength)
 {
-  extern OpenFiles_T *pDev;
   unsigned char *Command;
   int Zero = 0, Result;
  
@@ -523,7 +528,6 @@ int SCSI_ExecuteCommand(int DeviceFD,
  */
 int Tape_Ioctl( int DeviceFD, int command)
 {
-  extern OpenFiles_T *pDev;
   struct mtop mtop;
   int ret = 0;
 
@@ -545,7 +549,7 @@ int Tape_Ioctl( int DeviceFD, int command)
 
   if (ioctl(pDev[DeviceFD].fd , MTIOCTOP, &mtop) != 0)
     {
-      dbprintf(("Tape_Ioctl error ioctl %d\n",errno));
+      dbprintf(("Tape_Ioctl error ioctl %s\n",strerror(errno)));
       SCSI_CloseDevice(DeviceFD);
       return(-1);
     }
@@ -556,10 +560,10 @@ int Tape_Ioctl( int DeviceFD, int command)
 
 int Tape_Status( int DeviceFD)
 {
-  extern OpenFiles_T *pDev;
   struct mtget mtget;
   int ret = 0;
 
+  memset(&mtget, 0, SIZEOF(mtget));
   if (pDev[DeviceFD].devopen == 0)
     {
       if (SCSI_OpenDevice(DeviceFD) == 0)
@@ -568,7 +572,8 @@ int Tape_Status( int DeviceFD)
 
   if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
   {
-     DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Tape_Status error ioctl %d\n",errno);
+     DebugPrint(DEBUG_ERROR, SECTION_TAPE,"Tape_Status error ioctl %s\n",
+		strerror(errno));
      SCSI_CloseDevice(DeviceFD);
      return(-1);
   }
@@ -612,8 +617,6 @@ int ScanBus(int print)
 {
   DIR *dir;
   struct dirent *dirent;
-  extern OpenFiles_T *pDev;
-  extern int errno;
   int count = 0;
 
   if ((dir = opendir("/dev/")) == NULL)
@@ -628,7 +631,8 @@ int ScanBus(int print)
       {
         pDev[count].dev = malloc(10);
         pDev[count].inqdone = 0;
-        sprintf(pDev[count].dev,"/dev/%s", dirent->d_name);
+        snprintf(pDev[count].dev, SIZEOF(pDev[count].dev),
+	    "/dev/%s", dirent->d_name);
         if (OpenDevice(count,pDev[count].dev, "Scan", NULL ))
           {
             SCSI_CloseDevice(count);

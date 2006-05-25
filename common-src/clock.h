@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.h,v 1.5 2002/04/08 00:16:18 jrjackson Exp $
+ * $Id: clock.h,v 1.6 2006/05/25 01:47:11 johnfranks Exp $
  *
  * interface for timing functions
  */
@@ -52,13 +52,13 @@ extern times_t times_zero, start_time;
 #  define amanda_gettimeofday(x, y) gettimeofday((x))
 #endif
 
-void startclock P((void));
-times_t stopclock P((void));
-times_t curclock P((void));
-times_t timesadd P((times_t a, times_t b));
-times_t timessub P((times_t a, times_t b));
-char * times_str P((times_t t));
-char * walltime_str P((times_t t));
-int clock_is_running P((void));
+void startclock(void);
+times_t stopclock(void);
+times_t curclock(void);
+times_t timesadd(times_t a, times_t b);
+times_t timessub(times_t a, times_t b);
+char * times_str(times_t t);
+char * walltime_str(times_t t);
+int clock_is_running(void);
 
 #endif /* CLOCK_H */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.h,v 1.22 2005/10/11 01:17:01 vectro Exp $
+ * $Id: holding.h,v 1.23 2006/05/25 01:47:20 johnfranks Exp $
  *
  */
 
@@ -37,24 +37,24 @@
 #include "sl.h"
 
 /* local functions */
-int is_dir P((char *fname));
-int is_emptyfile P((char *fname));
-int is_datestr P((char *fname));
-int non_empty P((char *fname));
-void free_holding_list P(( sl_t *holding_list));
+int is_dir(char *fname);
+int is_emptyfile(char *fname);
+int is_datestr(char *fname);
+int non_empty(char *fname);
+void free_holding_list( sl_t *holding_list);
 sl_t *get_flush(sl_t *dateargs, char *datestamp, int amflush, int verbose);
-sl_t *pick_datestamp P((int verbose));
-sl_t *pick_all_datestamp P((int verbose));
-filetype_t get_amanda_names P((char *fname,
+sl_t *pick_datestamp(int verbose);
+sl_t *pick_all_datestamp(int verbose);
+filetype_t get_amanda_names(char *fname,
 			       char **hostname,
 			       char **diskname,
-			       int *level));
-void get_dumpfile P((char *fname, dumpfile_t *file));
-long size_holding_files P((char *holding_file, int strip_headers));
-int unlink_holding_files P((char *holding_file));
-int rename_tmp_holding P((char *holding_file, int complete));
-void cleanup_holdingdisk P((char *diskdir, int verbose));
-int mkholdingdir P((char *diskdir));
+			       int *level);
+void get_dumpfile(char *fname, dumpfile_t *file);
+off_t size_holding_files(char *holding_file, int strip_headers);
+int unlink_holding_files(char *holding_file);
+int rename_tmp_holding(char *holding_file, int complete);
+void cleanup_holdingdisk(char *diskdir, int verbose);
+int mkholdingdir(char *diskdir);
 
 
 #endif /* HOLDING_H */

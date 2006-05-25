@@ -1,5 +1,5 @@
 /*
- * Amanda, The Advanced Maryland Automatic Network Disk Archiver
+ * amanda, the advanced maryland automatic network disk archiver
  * Copyright (c) 1991-2000 University of Maryland at College Park
  * All Rights Reserved.
  *
@@ -24,25 +24,39 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uscan.l,v 1.1 2006/05/12 19:36:04 martinea Exp $
+ * $Id: uscan.l,v 1.2 2006/05/25 01:47:13 johnfranks Exp $
  *
  * lexer for amrecover interactive language
  */
 %{
 #include "amanda.h"
-#undef ECHO
 #include "uparse.h"
+
+/*
+ * We redefine this here to prevent compiler warning about ignoring fwrite
+ * return value...
+ */
+#undef ECHO
+#define ECHO do {						\
+		if (fwrite(yytext, (size_t)yyleng, 1, yyout) <= 0) {	\
+		    yyerror("ECHO failure");			\
+		}						\
+	} while (0)
 
 #define YY_NO_UNPUT
 
 #define	DATE_ALLOC_SIZE		sizeof("YYYY-MM-DD-HH-MM-SS")	/* includes null */
 
-extern void yyerror P((char *s));
-extern int  yyparse P((void));
-static int  ll_parse_date P((int type, char *text));
+#define YY_DECL	int yylex()
+extern int yylex(void);
+
+extern void	yyerror(char *s);
+extern int	yyparse(void);
+static int	ll_parse_date(int type, char *text);
+int		process_line(char *line);
 %}
 
-%x quotedstring
+%x quotedpath
 
 %{
 static char *string_buf = NULL;
@@ -94,48 +108,48 @@ mode    { return MODE; }
 [0-9]+-[0-9]+-[0-9]+-[0-9]+-[0-9]+	{ return ll_parse_date(5, yytext); }
 
 %{
-    /* file names */
-%}
-
-[^ \t\r"]+		{
-  yylval.strval = stralloc(yytext); return PATH;
-}
-
-%{
     /* quoted file names */
 %}
 
-\"               { if(string_buf != NULL) {printf("ERROR:string_buf != NULL: %s\n",string_buf);}; BEGIN(quotedstring); }
+\"			{
+    if(string_buf != NULL) {
+	printf("ERROR:string_buf != NULL: %s\n",string_buf);
+    }
+    BEGIN(quotedpath);
+    strappend(string_buf, yytext);
+}
 
-<quotedstring>\"        { /* saw closing quote - all done */
-  BEGIN(INITIAL);
-  if(string_buf) {
+<quotedpath>[^\\\"]+	{
+    strappend(string_buf, yytext);
+}
+
+<quotedpath>\\.	{
+    /* escaped character (including quote) */
+    strappend(string_buf, yytext);
+}
+
+<quotedpath>\"	{ /* saw closing quote - all done */
+    strappend(string_buf, yytext);
     yylval.strval = string_buf;
     string_buf = NULL;
-  } else {
-    yylval.strval = "";
-  }
-  return PATH;
+    BEGIN(INITIAL);
+    return PATH;
 }
 
-<quotedstring>\\\" {
-  /* escaped quote */
-  strappend(string_buf, "\\\"");
-}
+%{
+    /* file names */
+%}
 
-<quotedstring>\n        {
-  /* error - unterminated string constant */
-  yyerror("unterminated string");
-  amfree(string_buf);
+[^[:space:][:cntrl:]"]+		{
+    yylval.strval = stralloc(yytext);
+    return PATH;
 }
-
-<quotedstring>[^\\\n\"]+        { strappend(string_buf, yytext); }
 
 %{
     /* whitespace */
 %}
 
-[ \t\r]+	;     /* whitespace */
+[[:space:]]+	;     /* whitespace */
 
 %{
     /* anything else */
@@ -150,8 +164,9 @@ mode    { return MODE; }
 
 %%
 
-int process_line(line)
-char *line;
+int
+process_line(
+    char *	line)
 {
     YY_BUFFER_STATE b;
     int result;
@@ -162,9 +177,10 @@ char *line;
     return result;
 }
 
-static int ll_parse_date(type, text)
-int type;
-char *text;
+static int
+ll_parse_date(
+    int		type,
+    char *	text)
 {
     time_t now;
     struct tm *t;
@@ -176,18 +192,34 @@ char *text;
     y = 1900+t->tm_year;
     m = t->tm_mon+1;
     d = t->tm_mday;
-    if(type == 1) {
-	sscanf(text, "---%d", &d);
-    } else if(type == 2) {
-	sscanf(text, "--%d-%d", &m, &d);
-    } else if(type == 3) {
-	sscanf(text, "%d-%d-%d", &y, &m, &d);
-    } else if (type == 4) {
-	sscanf(text, "%d-%d-%d-%d-%d-%d", &y, &m, &d, &h, &mi, &s);
-    } else {
-        sscanf(text, "%d-%d-%d-%d-%d", &y, &m, &d, &h, &mi);
+    switch(type) {
+    case 1:
+	if (sscanf(text, "---%d", &d) != 1) {
+	    yyerror("invalid date");
+        }
+        break;
+    case 2:
+	if (sscanf(text, "--%d-%d", &m, &d) != 2) {
+	    yyerror("invalid date");
+        }
+        break;
+    case 3:
+	if (sscanf(text, "%d-%d-%d", &y, &m, &d) != 3) {
+	    yyerror("invalid date");	    
+        }
+        break;
+    case 4:
+	if (sscanf(text, "%d-%d-%d-%d-%d-%d", &y, &m, &d, &h, &mi, &s) != 6) {
+	    yyerror("invalid date");
+	}
+        break;
+    case 5:
+	if (sscanf(text, "%d-%d-%d-%d-%d", &y, &m, &d, &h, &mi) != 5) {
+	    yyerror("invalid date");
+	}
+        break;
     }
-    
+
     ret = PATH;				/* cause a parse error */
     if(y < 70) {
 	y += 2000;
@@ -218,6 +250,8 @@ char *text;
     return ret;
 }
 
-int yywrap() {
+int
+yywrap(void)
+{
   return 1;
 }

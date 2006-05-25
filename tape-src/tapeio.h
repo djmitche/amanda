@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapeio.h,v 1.20 2005/12/21 19:07:51 paddy_s Exp $
+ * $Id: tapeio.h,v 1.21 2006/05/25 01:47:27 johnfranks Exp $
  *
  * interface for tapeio.c
  */
@@ -68,82 +68,82 @@ struct am_mt_status {
 #define	FAKE_LABEL	"[fake-label]"
 #define NO_LABEL        "[no-label-yet]"
 
-int tape_open (char *, int, ...);
+int tape_open(char *, int, ...);
 
-int tapefd_rewind P((int tapefd));
-int tapefd_unload P((int tapefd));
-int tapefd_fsf P((int tapefd, int count));
-int tapefd_weof P((int tapefd, int count));
+int tapefd_rewind(int tapefd);
+int tapefd_unload(int tapefd);
+int tapefd_fsf(int tapefd, off_t count);
+int tapefd_weof(int tapefd, off_t count);
 
-int tapefd_status P((int tapefd, struct am_mt_status *));
+int tapefd_status(int tapefd, struct am_mt_status *);
 
-void tapefd_resetofs P((int tapefd));
+void tapefd_resetofs(int tapefd);
 
-ssize_t tapefd_read P((int tapefd, void *buffer, size_t count));
-ssize_t tapefd_write P((int tapefd, const void *buffer, size_t count));
+ssize_t tapefd_read(int, void *, size_t);
+ssize_t tapefd_write(int tapefd, const void *buffer, size_t count);
 
-char *tapefd_rdlabel P((int tapefd, char **datestamp, char **label));
-char *tapefd_wrlabel P((int tapefd,
+char *tapefd_rdlabel(int tapefd, char **datestamp, char **label);
+char *tapefd_wrlabel(int tapefd,
 			char  *datestamp,
 			char  *label,
-			unsigned int s));
+			size_t s);
 
-char *auto_tapefd_label P((int tapefd, char **datestamp, char **label));
-char *auto_tape_label P((char *dev, char **datestamp, char **label));
+char *auto_tapefd_label(int tapefd, char **datestamp, char **label);
+char *auto_tape_label(char *dev, char **datestamp, char **label);
 
-char *tapefd_wrendmark P((int tapefd, char *datestamp, unsigned int s));
+char *tapefd_wrendmark(int tapefd, char *datestamp, size_t s);
 
-int tapefd_eof P((int tapefd));		/* just used in tapeio-test */
-int tapefd_close P((int tapefd));
-int tapefd_can_fork P((int tapefd));
+int tapefd_eof(int tapefd);		/* just used in tapeio-test */
+int tapefd_close(int tapefd);
+int tapefd_can_fork(int tapefd);
 
-char *tape_unload P((char *dev));
-char *tape_rewind P((char *dev));
-char *tape_fsf P((char *dev, int count));
-char *tape_rdlabel P((char *dev, char **datestamp, char **label));
-char *tape_wrlabel P((char *dev,
+char *tape_unload(char *dev);
+char *tape_rewind(char *dev);
+char *tape_fsf(char *dev, off_t count);
+char *tape_rdlabel(char *dev, char **datestamp, char **label);
+char *tape_wrlabel(char *dev,
 		      char  *datestamp,
 		      char  *label,
-		      unsigned int size));
-char *tape_wrendmark P((char *dev,
+		      size_t size);
+char *tape_wrendmark(char *dev,
 			char *datestamp,
-			unsigned int size));
-char *tape_writable P((char *dev));
+			size_t size);
+char *tape_writable(char *dev);
 
-int tape_access P((char *dev, int mode));
-int tape_stat P((char *filename, struct stat *buf));
+int tape_access(char *dev, int mode);
+int tape_stat(char *filename, struct stat *buf);
 
-char *tapefd_getinfo_label P((int fd));
-void tapefd_setinfo_label P((int fd, char *v));
-char *tapefd_getinfo_host P((int fd));
-void tapefd_setinfo_host P((int fd, char *v));
-char *tapefd_getinfo_disk P((int fd));
-void tapefd_setinfo_disk P((int fd, char *v));
-int tapefd_getinfo_level P((int fd));
-void tapefd_setinfo_level P((int fd, int v));
-char *tapefd_getinfo_datestamp P((int fd));
-void tapefd_setinfo_datestamp P((int fd, char *v));
-long tapefd_getinfo_length P((int fd));
-void tapefd_setinfo_length P((int fd, long v));
-char *tapefd_getinfo_tapetype P((int fd));
-void tapefd_setinfo_tapetype P((int fd, char *v));
-int tapefd_getinfo_fake_label P((int fd));
-void tapefd_setinfo_fake_label P((int fd, int v));
-int tapefd_getinfo_ioctl_fork P((int fd));
-void tapefd_setinfo_ioctl_fork P((int fd, int v));
-void tapefd_set_master_fd P((int tapefd, int master_fd));
+char *tapefd_getinfo_label(int fd);
+void tapefd_setinfo_label(int fd, char *v);
+char *tapefd_getinfo_host(int fd);
+void tapefd_setinfo_host(int fd, char *v);
+char *tapefd_getinfo_disk(int fd);
+void tapefd_setinfo_disk(int fd, char *v);
+int tapefd_getinfo_level(int fd);
+void tapefd_setinfo_level(int fd, int v);
+char *tapefd_getinfo_datestamp(int fd);
+void tapefd_setinfo_datestamp(int fd, char *v);
+off_t tapefd_getinfo_length(int fd);
+void tapefd_setinfo_length(int fd, off_t v);
+char *tapefd_getinfo_tapetype(int fd);
+void tapefd_setinfo_tapetype(int fd, char *v);
+int tapefd_getinfo_fake_label(int fd);
+void tapefd_setinfo_fake_label(int fd, int v);
+int tapefd_getinfo_ioctl_fork(int fd);
+void tapefd_setinfo_ioctl_fork(int fd, int v);
+void tapefd_set_master_fd(int tapefd, int master_fd);
 
 #ifdef HAVE_LINUX_ZFTAPE_H
-int is_zftape P((const char *filename));
+int is_zftape(const char *filename);
 #endif
 
-int tapeio_init_devname P((char * dev,
+int tapeio_init_devname(char * dev,
 			   char **dev_left,
 			   char **dev_right,
-			   char **dev_next));
-char *tapeio_next_devname P((char * dev_left,
+			   char **dev_next);
+char *tapeio_next_devname(char * dev_left,
 			     char * dev_right,
-			     char **dev_next));
+			     char **dev_next);
 
 #define NOT_AMANDA_TAPE_MSG "not an amanda tape"
 #define CHECK_NOT_AMANDA_TAPE_MSG(x) (!BSTRNCMP(x, NOT_AMANDA_TAPE_MSG))

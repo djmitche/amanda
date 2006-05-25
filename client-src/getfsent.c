@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.34 2006/01/14 04:37:18 paddy_s Exp $
+ * $Id: getfsent.c,v 1.35 2006/05/25 01:47:11 johnfranks Exp $
  *
  * generic version of code to read fstab
  */
@@ -34,14 +34,11 @@
 #ifdef TEST
 #  include <stdio.h>
 #  include <sys/types.h>
-#  undef P
-#  define P(x)	x
 #endif
 
 #include "getfsent.h"
 
-static char *dev2rdev P((char *));
-static int samefile P((struct stat[3], struct stat *));
+static char *dev2rdev(char *);
 
 /*
  * You are in a twisty maze of passages, all alike.
@@ -56,19 +53,22 @@ static int samefile P((struct stat[3], struct stat *));
 
 #include <fstab.h>
 
-int open_fstab()
+int
+open_fstab(void)
 {
     return setfsent();
 }
 
-void close_fstab()
+void
+close_fstab(void)
 {
     endfsent();
 }
 
 
-int get_fstab_nextentry(fsent)
-generic_fsent_t *fsent;
+int
+get_fstab_nextentry(
+    generic_fsent_t *	fsent)
 {
     struct fstab *sys_fsent = getfsent();
     static char *xfsname = NULL, *xmntdir = NULL;
@@ -106,24 +106,28 @@ generic_fsent_t *fsent;
 
 static FILE *fstabf = NULL;
 
-int open_fstab()
+int
+open_fstab(void)
 {
     close_fstab();
     return (fstabf = fopen(VFSTAB, "r")) != NULL;
 }
 
-void close_fstab()
+void
+close_fstab(void)
 {
     if(fstabf)
 	afclose(fstabf);
     fstabf = NULL;
 }
 
-int get_fstab_nextentry(fsent)
-generic_fsent_t *fsent;
+int
+get_fstab_nextentry(
+    generic_fsent_t *	fsent)
 {
     struct vfstab sys_fsent;
 
+    memset(&sys_fsent, 0, SIZEOF(sys_fsent));
     if(getvfsent(fstabf, &sys_fsent) != 0)
 	return 0;
 
@@ -156,7 +160,8 @@ static FILE *fstabf1 = NULL;		/* /proc/mounts */
 static FILE *fstabf2 = NULL;		/* MOUNTED */
 static FILE *fstabf3 = NULL;		/* MNTTAB */
 
-int open_fstab()
+int
+open_fstab(void)
 {
     close_fstab();
 #if defined(HAVE_SETMNTENT)
@@ -175,7 +180,8 @@ int open_fstab()
     return (fstabf1 != NULL || fstabf2 != NULL || fstabf3 != NULL);
 }
 
-void close_fstab()
+void
+close_fstab(void)
 {
     if (fstabf1) {
 	AMCLOSE_MNTENT(fstabf1);
@@ -191,8 +197,9 @@ void close_fstab()
     }
 }
 
-int get_fstab_nextentry(fsent)
-generic_fsent_t *fsent;
+int
+get_fstab_nextentry(
+    generic_fsent_t *	fsent)
 {
     struct mntent *sys_fsent = NULL;
 
@@ -245,13 +252,15 @@ generic_fsent_t *fsent;
 
 static FILE *fstabf = NULL;
 
-int open_fstab()
+int
+open_fstab(void)
 {
     close_fstab();
     return (fstabf = fopen(FSTAB, "r")) != NULL;
 }
 
-void close_fstab()
+void
+close_fstab(void)
 {
     if(fstabf)
 	afclose(fstabf);
@@ -260,8 +269,9 @@ void close_fstab()
 
 static generic_fsent_t _fsent;
 
-int get_fstab_nextentry(fsent)
-generic_fsent_t *fsent;
+int
+get_fstab_nextentry(
+    generic_fsent_t *	fsent)
 {
     static char *lfsnam = NULL;
     static char *opts = NULL;
@@ -271,6 +281,8 @@ generic_fsent_t *fsent;
 
     amfree(cp);
     for (; (cp = agets(fstabf)) != NULL; free(cp)) {
+	if (cp[0] == '\0')
+	    continue;
 	fsent->fsname = strtok(cp, " \t");
 	if ( fsent->fsname && *fsent->fsname != '#' )
 	    break;
@@ -303,7 +315,7 @@ generic_fsent_t *fsent;
     fsent->fstype = lfsnam;
 
 #define sc "hs"
-    if (strncmp(fsent->fstype, sc, sizeof(sc)-1) == 0)
+    if (strncmp(fsent->fstype, sc, SIZEOF(sc)-1) == 0)
 	fsent->fstype = "iso9660";
 #undef sc
 
@@ -333,13 +345,15 @@ generic_fsent_t *fsent;
 
 static FILE *fstabf = NULL;
 
-int open_fstab()
+int
+open_fstab(void)
 {
     close_fstab();
     return (fstabf = fopen(MNTTAB, "r")) != NULL;
 }
 
-void close_fstab()
+void
+close_fstab(void)
 {
     if(fstabf)
 	afclose(fstabf);
@@ -348,22 +362,23 @@ void close_fstab()
 
 static generic_fsent_t _fsent;
 
-int get_fstab_nextentry(fsent)
-generic_fsent_t *fsent;
+int
+get_fstab_nextentry(
+    generic_fsent_t *fsent)
 {
     struct statfs fsd;
     char typebuf[FSTYPSZ];
     static struct mnttab mnt;
     char *dp, *ep;
 
-    if(!fread (&mnt, sizeof mnt, 1, fstabf))
+    if(!fread (&mnt, SIZEOF(mnt), 1, fstabf))
       return 0;
 
     fsent->fsname  = mnt.mt_dev;
     fsent->mntdir  = mnt.mt_filsys;
     fsent->fstype = "";
 
-    if (statfs (fsent->mntdir, &fsd, sizeof fsd, 0) != -1
+    if (statfs (fsent->mntdir, &fsd, SIZEOF(fsd), 0) != -1
         && sysfs (GETFSTYP, fsd.f_fstyp, typebuf) != -1) {
        dp = typebuf;
        ep = fsent->fstype = malloc(strlen(typebuf)+2);
@@ -411,8 +426,9 @@ generic_fsent_t *fsent;
  *=====================================================================
  */
 
-static char *dev2rdev(name)
-char *name;
+static char *
+dev2rdev(
+    char *	name)
 {
   char *fname = NULL;
   struct stat st;
@@ -443,7 +459,7 @@ char *name;
     if (ch == '/') {
       s[-1] = '\0';
       fname = newvstralloc(fname, name, "/r", s, NULL);
-      s[-1] = ch;
+      s[-1] = (char)ch;
       if(stat(fname, &st) == 0 && S_ISCHR(st.st_mode)) return fname;
     }
     ch = *s++;
@@ -452,8 +468,13 @@ char *name;
   return stralloc(name);			/* no match */
 }
 
-static int samefile(stats, estat)
-struct stat stats[3], *estat;
+#ifndef IGNORE_FSTAB
+static int samefile(struct stat[3], struct stat *);
+
+static int
+samefile(
+    struct stat stats[3],
+    struct stat *estat)
 {
   int i;
   for(i = 0; i < 3; ++i) {
@@ -463,11 +484,13 @@ struct stat stats[3], *estat;
   }
   return 0;
 }
+#endif /* !IGNORE_FSTAB */
 
-int search_fstab(name, fsent, check_dev)
-     char *name;
-     generic_fsent_t *fsent;
-     int check_dev;
+int
+search_fstab(
+     char *		name,
+     generic_fsent_t *	fsent,
+     int		check_dev)
 {
 #ifdef IGNORE_FSTAB
   /* There is no real mount table so this will always fail and
@@ -483,21 +506,22 @@ int search_fstab(name, fsent, check_dev)
   if (!name)
     return 0;
 
-  stats[0].st_dev = stats[1].st_dev = stats[2].st_dev = -1;
+  memset(stats, 0, SIZEOF(stats));
+  stats[0].st_dev = stats[1].st_dev = stats[2].st_dev = (dev_t)-1;
 
   if (stat(name, &stats[0]) == -1)
-    stats[0].st_dev = -1;
+    stats[0].st_dev = (dev_t)-1;
   if (name[0] != '/') {
     fullname = stralloc2(DEV_PREFIX, name);
     if (stat(fullname, &stats[1]) == -1)
-      stats[1].st_dev = -1;
+      stats[1].st_dev = (dev_t)-1;
     fullname = newstralloc2(fullname, RDEV_PREFIX, name);
     if (stat(fullname, &stats[2]) == -1)
-      stats[2].st_dev = -1;
+      stats[2].st_dev = (dev_t)-1;
     amfree(fullname);
   }
   else if (stat((rdev = dev2rdev(name)), &stats[1]) == -1)
-    stats[1].st_dev = -1;
+    stats[1].st_dev = (dev_t)-1;
 
   amfree(rdev);
 
@@ -543,8 +567,9 @@ int search_fstab(name, fsent, check_dev)
 #endif /* !IGNORE_FSTAB */
 }
 
-int is_local_fstype(fsent)
-generic_fsent_t *fsent;
+int
+is_local_fstype(
+    generic_fsent_t *	fsent)
 {
     if(fsent->fstype == NULL)	/* unknown, assume local */
 	return 1;
@@ -560,8 +585,9 @@ generic_fsent_t *fsent;
 }
 
 
-char *amname_to_devname(str)
-char *str;
+char *
+amname_to_devname(
+    char *	str)
 {
     generic_fsent_t fsent;
 
@@ -573,8 +599,9 @@ char *str;
     return dev2rdev(str);
 }
 
-char *amname_to_dirname(str)
-char *str;
+char *
+amname_to_dirname(
+    char *	str)
 {
     generic_fsent_t fsent;
 
@@ -586,8 +613,8 @@ char *str;
     return stralloc(str);
 }
 
-char *amname_to_fstype(str)
-char *str;
+char *amname_to_fstype(
+    char *	str)
 {
     generic_fsent_t fsent;
 
@@ -600,8 +627,8 @@ char *str;
 #ifdef TEST
 
 void
-print_entry(fsent)
-generic_fsent_t *fsent;
+print_entry(
+    generic_fsent_t *	fsent)
 {
 #define nchk(s)	((s)? (s) : "<NULL>")
     printf("%-20.20s %-14.14s %-7.7s %4d %5d %s\n",
@@ -609,9 +636,10 @@ generic_fsent_t *fsent;
 	   fsent->freq, fsent->passno, nchk(fsent->mntopts));
 }
 
-int main(argc, argv)
-    int argc;
-    char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
     generic_fsent_t fsent;
     char *s;
@@ -622,6 +650,8 @@ int main(argc, argv)
     safe_fd(-1, 0);
 
     set_pname("getfsent");
+
+    dbopen();
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);

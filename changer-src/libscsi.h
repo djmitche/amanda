@@ -1,5 +1,5 @@
 /*
- *	$Id: libscsi.h,v 1.9 2000/06/25 18:48:11 ant Exp $
+ *	$Id: libscsi.h,v 1.10 2006/05/25 01:47:07 johnfranks Exp $
  *
  *	libscsi.h -- library header for routines to handle the changer
  *			support for chio based systems
@@ -19,54 +19,54 @@
 /*
  * This function gets the actual cleaning state of the drive 
  */
-int get_clean_state P((char *tape));
+int get_clean_state(char *tape);
 
 /*
  * This function gets the next empty slot from the changer
  * (From this slot the tape is loaded ...)
  */
-int GetCurrentSlot P((int fd, int drive));
+int GetCurrentSlot(int fd, int drive);
 
 /*
  * Eject the actual tape from the tapedrive
  */
-void eject_tape P((char *tape, int type));
+int eject_tape(char *tape, int type);
 
 
 /* 
  * is the specified slot empty?
  */
-int isempty P((int fd, int slot));
+int isempty(int fd, int slot);
 
 /*
  * find the first empty slot 
  */
-int find_empty P((int fd, int start, int count));
+int find_empty(int fd, int start, int count);
 
 /*
  * returns one if there is a tape loaded in the drive 
  */
-int drive_loaded P((int fd, int drivenum));
+int drive_loaded(int fd, int drivenum);
 
 
 /*
  * unloads the drive, putting the tape in the specified slot 
  */
-int unload P((int fd, int drive, int slot));
+int unload(int fd, int drive, int slot);
 
 /*
  * moves tape from the specified slot into the drive 
  */
-int load P((int fd, int drive, int slot));
+int load(int fd, int drive, int slot);
 
 /* 
  * return the number of slots in the robot
  */
-int get_slot_count P((int fd));
+int get_slot_count(int fd);
 
 /*
  * return the number of drives in the robot
  */
-int get_drive_count P((int fd));
+int get_drive_count(int fd);
 
 #endif	/* !LIBSCSI_H */

@@ -47,9 +47,16 @@ else
 	SUF=
 fi
 
+if [ $# -lt 1 ]
+then
+        echo "Usage: amdump config [host [disk...]...]" 1>&2
+        exit 1
+fi
+
+
 conf=$1
 if [ ! -d $confdir/$conf ]; then
-    echo "amdump$SUF: could not find directory $confdir/$conf"
+    echo "amdump$SUF: could not find directory $confdir/$conf" 1>&2
     exit 1
 fi
 
@@ -74,19 +81,19 @@ if [ $? -ne 0 ]; then
 fi
 
 if [ $runuser != $dumpuser ]; then
-	echo "amdump: must be run as user $dumpuser, not $runuser"
+	echo "amdump: must be run as user $dumpuser, not $runuser" 1>&2
 	exit 1
 fi
 
 if test -f hold; then
-	echo "amdump: waiting for hold file to be removed" >&2
+	echo "amdump: waiting for hold file to be removed" 1>&2
 	while test -f hold; do
 		sleep 60
 	done
 fi
 
 if test -f $errfile || test -f $logdir/log; then
-	echo "amdump: amdump or amflush is already running, or you must run amcleanup" >&2
+	echo "amdump: amdump or amflush is already running, or you must run amcleanup" 1>&2
 	exit 1
 fi
 

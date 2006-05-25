@@ -26,7 +26,8 @@
 
 <refsect1><title>DESCRIPTION</title>
 <para>&amcrypt; 
-requires <emphasis remap='B'>aespipe</emphasis> and <emphasis
+requires <emphasis remap='B'>aespipe</emphasis>, <emphasis
+remap='B'>uuencode</emphasis> and <emphasis
 remap='B'>gpg</emphasis>  to work. Aespipe is available from <ulink
 url="http://loop-aes.sourceforge.net"/></para>
 <para>&amcrypt; will search for the aespipe program in the following directories:

@@ -24,35 +24,56 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: display_commands.c,v 1.1 2006/05/12 19:36:04 martinea Exp $
+ * $Id: display_commands.c,v 1.2 2006/05/25 01:47:13 johnfranks Exp $
  *
  * implements the directory-display related commands in amrecover
  */
 
 #include "amanda.h"
 #include "amrecover.h"
+#include "util.h"
+
+DIR_ITEM *get_dir_list(void);
+DIR_ITEM *get_next_dir_item(DIR_ITEM *this);
+
+void clear_dir_list(void);
+void free_dir_item(DIR_ITEM *item);
+static int add_dir_list_item(char *date,
+				int level,
+				char *tape,
+				off_t fileno,
+				char *path);
+void list_disk_history(void);
+void suck_dir_list_from_server(void);
+void list_directory(void);
 
 static DIR_ITEM *dir_list = NULL;
 
-DIR_ITEM *get_dir_list P((void))
+DIR_ITEM *
+get_dir_list(void)
 {
     return dir_list;
 }
 
-DIR_ITEM *get_next_dir_item(this)
-DIR_ITEM *this;
+DIR_ITEM *
+get_next_dir_item(
+    /*@keep@*/ DIR_ITEM *	this)
 {
     return this->next;
 }
 
 
-void clear_dir_list P((void))
+void
+clear_dir_list(void)
 {
     free_dir_item(dir_list); /* Frees all items from dir_list to end of list */
     dir_list = NULL;
 }
 
-void free_dir_item P((DIR_ITEM *item)) {
+void
+free_dir_item(
+    DIR_ITEM *	item)
+{
     DIR_ITEM *next;
 
     while (item != NULL) {
@@ -66,17 +87,19 @@ void free_dir_item P((DIR_ITEM *item)) {
 }
 
 /* add item to list if path not already on list */
-static int add_dir_list_item(date, level, tape, fileno, path)
-char *date;
-int level;
-char *tape;
-int fileno;
-char *path;
+static int
+add_dir_list_item(
+    char *	date,
+    int		level,
+    char *	tape,
+    off_t	fileno,
+    char *	path)
 {
     DIR_ITEM *next;
 
-    dbprintf(("add_dir_list_item: Adding \"%s\" \"%d\" \"%s\" \"%d\" \"%s\"\n",
-	      date, level, tape, fileno, path));
+    dbprintf(("add_dir_list_item: Adding \"%s\" \"%d\" \"%s\" \""
+	      OFF_T_FMT "\" \"%s\"\n",
+	      date, level, tape, (OFF_T_FMT_TYPE)fileno, path));
 
     next = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
     memset(next, 0, sizeof(DIR_ITEM));
@@ -94,23 +117,26 @@ char *path;
 }
 
 
-void list_disk_history P((void))
+void
+list_disk_history(void)
 {
     if (converse("DHST") == -1)
 	exit(1);
 }
 
 
-void suck_dir_list_from_server P((void))
+void
+suck_dir_list_from_server(void)
 {
     char *cmd = NULL;
     char *err = NULL;
     int i;
     char *l = NULL;
-    char *date, *date_undo, date_undo_ch = '\0';
-    int level, fileno;
+    char *date;
+    int level = 0;
+    off_t fileno = (off_t)-1;
     char *tape, *tape_undo, tape_undo_ch = '\0';
-    char *dir;
+    char *dir, *qdir;
     char *disk_path_slash = NULL;
     char *disk_path_slash_dot = NULL;
     char *s;
@@ -149,7 +175,7 @@ void suck_dir_list_from_server P((void))
     disk_path_slash_dot = stralloc2(disk_path_slash, ".");
     amfree(cmd);
     amfree(err);
-    date_undo = tape_undo = NULL;
+    tape_undo = NULL;
     /* skip the last line -- duplicate of the preamble */
     while ((i = get_reply_line()) != 0)
     {
@@ -161,7 +187,7 @@ void suck_dir_list_from_server P((void))
 	if(err) {
 	    if(cmd == NULL) {
 		if(tape_undo) *tape_undo = tape_undo_ch;
-		date_undo = tape_undo = NULL;
+		tape_undo = NULL;
 		cmd = stralloc(l);	/* save for the error report */
 	    }
 	    continue;			/* throw the rest of the lines away */
@@ -187,9 +213,7 @@ void suck_dir_list_from_server P((void))
 	}
 	date = s - 1;
 	skip_non_whitespace(s, ch);
-	date_undo = s - 1;
-	date_undo_ch = *date_undo;
-	*date_undo = '\0';
+	*(s - 1) = '\0';
 
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
@@ -211,14 +235,15 @@ void suck_dir_list_from_server P((void))
 
 	if(am_has_feature(indexsrv_features, fe_amindexd_fileno_in_OLSD)) {
 	    skip_whitespace(s, ch);
-	    if(ch == '\0' || sscanf(s - 1, "%d", &fileno) != 1) {
+	    if(ch == '\0' || sscanf(s - 1, OFF_T_FMT,
+				    (OFF_T_FMT_TYPE *)&fileno) != 1) {
 		err = "bad reply: cannot parse fileno field";
 		continue;
 	    }
 	    skip_integer(s, ch);
 	}
 	else {
-	    fileno = -1;
+	    fileno = (off_t)-1;
 	}
 
 	skip_whitespace(s, ch);
@@ -226,13 +251,16 @@ void suck_dir_list_from_server P((void))
 	    err = "bad reply: missing directory field";
 	    continue;
 	}
-	dir = s - 1;
+	qdir = s - 1;
+	dir = unquote_string(qdir);
 
 	/* add a '.' if it a the entry for the current directory */
-	if(strcmp(disk_path,dir)==0 || strcmp(disk_path_slash,dir)==0) {
-	    dir = disk_path_slash_dot;
+	if((strcmp(disk_path,dir)==0) || (strcmp(disk_path_slash,dir)==0)) {
+	    amfree(dir);
+	    dir = stralloc(disk_path_slash_dot);
 	}
 	add_dir_list_item(date, level, tape, fileno, dir);
+	amfree(dir);
     }
     amfree(disk_path_slash_dot);
     amfree(disk_path_slash);
@@ -249,13 +277,15 @@ void suck_dir_list_from_server P((void))
 }
 
 
-void list_directory P((void))
+void
+list_directory(void)
 {
     size_t i;
     DIR_ITEM *item;
     FILE *fp;
     char *pager;
     char *pager_command;
+    char *quoted;
 
     if (disk_path == NULL) {
 	printf("Must select a disk before listing files; use the setdisk command.\n");
@@ -280,7 +310,10 @@ void list_directory P((void))
     i = strlen(disk_path);
     if (i != 1)
 	i++;				/* so disk_path != "/" */
-    for (item = get_dir_list(); item != NULL; item=get_next_dir_item(item))
-	fprintf(fp, "%s %s\n", item->date, item->path+i);
+    for (item = get_dir_list(); item != NULL; item=get_next_dir_item(item)) {
+	quoted = quote_string(item->path + i);
+	fprintf(fp, "%s %s\n", item->date, quoted);
+	amfree(quoted);
+    }
     apclose(fp);
 }

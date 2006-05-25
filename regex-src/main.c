@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
+#include "amanda.h"
 #include <regex.h>
-#include <assert.h>
 
 #include "main.ih"
 
@@ -76,9 +73,9 @@ char *argv[];
 
 	err = regcomp(&re, argv[optind++], copts);
 	if (err) {
-		len = regerror(err, &re, erbuf, sizeof(erbuf));
+		len = regerror(err, &re, erbuf, SIZEOF(erbuf));
 		fprintf(stderr, "error %s, %d/%d `%s'\n",
-			eprint(err), len, sizeof(erbuf), erbuf);
+			eprint(err), len, SIZEOF(erbuf), erbuf);
 		exit(status);
 	}
 	regprint(&re, stdout);	
@@ -94,9 +91,9 @@ char *argv[];
 	}
 	err = regexec(&re, argv[optind], (size_t)NS, subs, eopts);
 	if (err) {
-		len = regerror(err, &re, erbuf, sizeof(erbuf));
+		len = regerror(err, &re, erbuf, SIZEOF(erbuf));
 		fprintf(stderr, "error %s, %d/%d `%s'\n",
-			eprint(err), len, sizeof(erbuf), erbuf);
+			eprint(err), len, SIZEOF(erbuf), erbuf);
 		exit(status);
 	}
 	if (!(copts&REG_NOSUB)) {
@@ -138,7 +135,7 @@ FILE *in;
 	char *bpname = "REG_BADPAT";
 	regex_t re;
 
-	while (fgets(inbuf, sizeof(inbuf), in) != NULL) {
+	while (fgets(inbuf, (int)sizeof(inbuf), in) != NULL) {
 		line++;
 		if (inbuf[0] == '#' || inbuf[0] == '\n')
 			continue;			/* NOTE CONTINUE */
@@ -163,7 +160,7 @@ FILE *in;
 					options('c', f[1]) &~ REG_EXTENDED);
 	}
 
-	ne = regerror(REG_BADPAT, (regex_t *)NULL, erbuf, sizeof(erbuf));
+	ne = regerror(REG_BADPAT, (regex_t *)NULL, erbuf, SIZEOF(erbuf));
 	if (strcmp(erbuf, badpat) != 0 || ne != strlen(badpat)+1) {
 		fprintf(stderr, "end: regerror() test gave `%s' not `%s'\n",
 							erbuf, badpat);
@@ -176,14 +173,14 @@ FILE *in;
 						erbuf, SHORT-1, badpat);
 		status = 1;
 	}
-	ne = regerror(REG_ITOA|REG_BADPAT, (regex_t *)NULL, erbuf, sizeof(erbuf));
+	ne = regerror(REG_ITOA|REG_BADPAT, (regex_t *)NULL, erbuf, SIZEOF(erbuf));
 	if (strcmp(erbuf, bpname) != 0 || ne != strlen(bpname)+1) {
 		fprintf(stderr, "end: regerror() ITOA test gave `%s' not `%s'\n",
 						erbuf, bpname);
 		status = 1;
 	}
 	re.re_endp = bpname;
-	ne = regerror(REG_ATOI, &re, erbuf, sizeof(erbuf));
+	ne = regerror(REG_ATOI, &re, erbuf, SIZEOF(erbuf));
 	if (atoi(erbuf) != (int)REG_BADPAT) {
 		fprintf(stderr, "end: regerror() ATOI test gave `%s' not `%ld'\n",
 						erbuf, (long)REG_BADPAT);
@@ -223,17 +220,17 @@ int opts;			/* may not match f1 */
 	char f0copy[1000];
 	char f2copy[1000];
 
-	strncpy(f0copy, f0, sizeof(f0copy)-1);
-	f0copy[sizeof(f0copy)-1] = '\0';
+	strncpy(f0copy, f0, SIZEOF(f0copy)-1);
+	f0copy[SIZEOF(f0copy)-1] = '\0';
 	re.re_endp = (opts&REG_PEND) ? f0copy + strlen(f0copy) : NULL;
 	fixstr(f0copy);
 	err = regcomp(&re, f0copy, opts);
 	if (err != 0 && (!opt('C', f1) || err != efind(f2))) {
 		/* unexpected error or wrong error */
-		len = regerror(err, &re, erbuf, sizeof(erbuf));
+		len = regerror(err, &re, erbuf, SIZEOF(erbuf));
 		fprintf(stderr, "%d: %s error %s, %d/%d `%s'\n",
 					line, type, eprint(err), len,
-					sizeof(erbuf), erbuf);
+					SIZEOF(erbuf), erbuf);
 		status = 1;
 	} else if (err == 0 && opt('C', f1)) {
 		/* unexpected success */
@@ -248,8 +245,8 @@ int opts;			/* may not match f1 */
 		return;
 	}
 
-	strncpy(f2copy, f2, sizeof(f2copy)-1);
-	f2copy[sizeof(f2copy)-1] = '\0';
+	strncpy(f2copy, f2, SIZEOF(f2copy)-1);
+	f2copy[SIZEOF(f2copy)-1] = '\0';
 	fixstr(f2copy);
 
 	if (options('e', f1)&REG_STARTEND) {
@@ -262,10 +259,10 @@ int opts;			/* may not match f1 */
 
 	if (err != 0 && (f3 != NULL || err != REG_NOMATCH)) {
 		/* unexpected error or wrong error */
-		len = regerror(err, &re, erbuf, sizeof(erbuf));
+		len = regerror(err, &re, erbuf, SIZEOF(erbuf));
 		fprintf(stderr, "%d: %s exec error %s, %d/%d `%s'\n",
 					line, type, eprint(err), len,
-					sizeof(erbuf), erbuf);
+					SIZEOF(erbuf), erbuf);
 		status = 1;
 	} else if (err != 0) {
 		/* nothing more to check */
@@ -427,7 +424,7 @@ char *should;
 				(sub.rm_so != -1 && sub.rm_eo == -1) ||
 				(sub.rm_so != -1 && sub.rm_so < 0) ||
 				(sub.rm_eo != -1 && sub.rm_eo < 0) ) {
-		snprintf(grump, sizeof(grump),
+		snprintf(grump, SIZEOF(grump),
 			    "start %ld end %ld", (long)sub.rm_so,
 			    (long)sub.rm_eo);
 		return(grump);
@@ -441,7 +438,7 @@ char *should;
 
 	/* check for in range */
 	if (sub.rm_eo > strlen(str)) {
-		snprintf(grump, sizeof(grump),
+		snprintf(grump, SIZEOF(grump),
 			    "start %ld end %ld, past end of string",
 			    (long)sub.rm_so, (long)sub.rm_eo);
 		return(grump);
@@ -453,13 +450,13 @@ char *should;
 
 	/* check for not supposed to match */
 	if (should == NULL) {
-		snprintf(grump, sizeof(grump), "matched `%.*s'", len, p);
+		snprintf(grump, SIZEOF(grump), "matched `%.*s'", len, p);
 		return(grump);
 	}
 
 	/* check for wrong match */
 	if (len != shlen || strncmp(p, should, (size_t)shlen) != 0) {
-		snprintf(grump, sizeof(grump),
+		snprintf(grump, SIZEOF(grump),
 			    "matched `%.*s' instead", len, p);
 		return(grump);
 	}
@@ -473,7 +470,7 @@ char *should;
 	if (shlen == 0)
 		shlen = 1;	/* force check for end-of-string */
 	if (strncmp(p, at, shlen) != 0) {
-		snprintf(grump, sizeof(grump), "matched null at `%.20s'", p);
+		snprintf(grump, SIZEOF(grump), "matched null at `%.20s'", p);
 		return(grump);
 	}
 	return(NULL);
@@ -490,8 +487,8 @@ int err;
 	static char epbuf[100];
 	size_t len;
 
-	len = regerror(REG_ITOA|err, (regex_t *)NULL, epbuf, sizeof(epbuf));
-	assert(len <= sizeof(epbuf));
+	len = regerror(REG_ITOA|err, (regex_t *)NULL, epbuf, SIZEOF(epbuf));
+	assert(len <= SIZEOF(epbuf));
 	return(epbuf);
 }
 
@@ -507,9 +504,9 @@ char *name;
 	size_t n;
 	regex_t re;
 
-	snprintf(efbuf, sizeof(efbuf), "REG_%s", name);
-	assert(strlen(efbuf) < sizeof(efbuf));
+	snprintf(efbuf, SIZEOF(efbuf), "REG_%s", name);
+	assert(strlen(efbuf) < SIZEOF(efbuf));
 	re.re_endp = efbuf;
-	(void) regerror(REG_ATOI, &re, efbuf, sizeof(efbuf));
+	(void) regerror(REG_ATOI, &re, efbuf, SIZEOF(efbuf));
 	return(atoi(efbuf));
 }

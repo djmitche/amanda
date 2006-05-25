@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-aix.c,v 1.22 2005/10/15 13:20:47 martinea Exp $
+ * $Id: scsi-aix.c,v 1.23 2006/05/25 01:47:07 johnfranks Exp $
  *
  * Interface to execute SCSI commands on an AIX System
  *
@@ -35,6 +35,8 @@
 #include <amanda.h>
 
 #ifdef HAVE_AIX_LIKE_SCSI
+
+#include <scsi-defs.h>
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -61,10 +63,10 @@
 #include <scsi-defs.h>
 #include <gscdds.h>
 
-void SCSI_OS_Version()
+void SCSI_OS_Version(void)
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-aix.c,v 1.22 2005/10/15 13:20:47 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-aix.c,v 1.23 2006/05/25 01:47:07 johnfranks Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -126,12 +128,10 @@ int SCSI_OpenDevice(int ip)
                  free(pDev[ip].inquiry);
                  return(0);
                }
-           } else {
-             free(pDev[ip].inquiry);
-             pDev[ip].inquiry = NULL;
-             return(1);
            }
-	 return(1);
+           free(pDev[ip].inquiry);
+           pDev[ip].inquiry = NULL;
+           return(1);
        } else {
 	 dbprintf(("SCSI_OpenDevice %s failed\n", pDev[ip].dev));
          return(0);
@@ -161,11 +161,11 @@ int SCSI_CloseDevice(int DeviceFD)
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
                         CDB_T CDB,
-                        int CDB_Length,
+                        size_t CDB_Length,
                         void *DataBuffer,
-                        int DataBufferLength,
-                        char *RequestSenseBuf,
-                        int RequestSenseLength)
+                        size_t DataBufferLength,
+                        RequestSense_T *RequestSenseBuf,
+                        size_t RequestSenseLength)
 {
   extern OpenFiles_T *pDev;
   extern FILE * debug_file;
@@ -179,6 +179,12 @@ int SCSI_ExecuteCommand(int DeviceFD,
   int isbusy = 0;
   int target = 3;
 
+  /* Basic sanity checks */
+  assert(CDB_Length <= UCHAR_MAX);
+  assert(RequestSenseLength <= UCHAR_MAX);
+
+  /* Clear buffer for cases where sense is not returned */
+  memset(RequestSenseBuf, 0, RequestSenseLength);
 
   if (pDev[DeviceFD].avail == 0)
     {
@@ -192,7 +198,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
       scmd.cdblen = CDB_Length;
       scmd.data_buf = DataBuffer;
       scmd.datalen = DataBufferLength;
-      scmd.sense_buf = RequestSenseBuf;
+      scmd.sense_buf = (unsigned char *)RequestSenseBuf;
       scmd.senselen = RequestSenseLength;
       scmd.statusp = &sbyte;
       scmd.timeval = 60;
@@ -212,9 +218,9 @@ int SCSI_ExecuteCommand(int DeviceFD,
       return(SCSI_OK);
 
     } else {
-      bzero(&ds, sizeof(struct sc_iocmd));
+      bzero(&ds, SIZEOF(struct sc_iocmd));
       bzero(RequestSenseBuf, RequestSenseLength);
-      bzero(&ExtendedRequestSense, sizeof(ExtendedRequestSense_T));
+      bzero(&ExtendedRequestSense, SIZEOF(ExtendedRequestSense_T));
       
       ds.flags = SC_ASYNC; 
       /* Timeout */
@@ -235,7 +241,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
       /* Sense Buffer is not available on AIX ?*/
       /*
         ds.req_sense_length = 255;
-        ds.request_sense_ptr = (char *)RequestSense;
+        ds.request_sense_ptr = (unsigned char *)RequestSense;
       */
       switch (Direction) 
         {
@@ -267,7 +273,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
               SINQ[5] = 0x80;
               bcopy(SINQ, ds.scsi_cdb, 6);
               ds.command_length = 6;
-              ds.buffer = RequestSenseBuf;
+              ds.buffer = (unsigned char *)RequestSenseBuf;
               ds.data_length = RequestSenseLength;
               
               if (pDev[DeviceFD].devopen == 0)
@@ -276,10 +282,10 @@ int SCSI_ExecuteCommand(int DeviceFD,
               Result = ioctl(pDev[DeviceFD].fd, STIOCMD, &ds);
               SCSI_CloseDevice(DeviceFD);
               return(SCSI_OK);
-              break;
+
             case SC_BUSY_STATUS:
               return(SCSI_BUSY);
-              break;
+
             case SC_CHECK_CONDITION:
               SINQ[0] = SC_COM_REQUEST_SENSE;
               SINQ[1] = 0; 
@@ -289,8 +295,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
               SINQ[5] = 0x80;
               bcopy(SINQ, ds.scsi_cdb, 6);
               ds.command_length = 6;
-              ds.buffer = RequestSenseBuf;
-              ds.data_length = RequestSenseLength;
+              ds.buffer = (unsigned char *)RequestSenseBuf;
+              ds.data_length = (unsigned char)RequestSenseLength;
 
               if (pDev[DeviceFD].devopen == 0)
                 if (SCSI_OpenDevice(DeviceFD) == 0)
@@ -298,7 +304,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
               Result = ioctl(pDev[DeviceFD].fd, STIOCMD, &ds);
               SCSI_CloseDevice(DeviceFD);
               return(SCSI_CHECK);
-              break;
+
             default:
               /*
                * Makes no sense yet, may result in an endless loop
@@ -325,10 +331,9 @@ int SCSI_ExecuteCommand(int DeviceFD,
     }
 }
 
-int SCSI_Scan()
+int SCSI_Scan(void)
 {
   int fd;
-  extern int errno;
   struct sc_inquiry si;
   u_char buf[255];
   int target;
@@ -356,7 +361,7 @@ int SCSI_Scan()
             isbusy = 0;
           }
           
-          bzero(&si, sizeof(si));
+          bzero(&si, SIZEOF(si));
           si.scsi_id = target;
           si.lun_id = lun;
           si.inquiry_len = 255;
@@ -366,9 +371,9 @@ int SCSI_Scan()
               printf("SCIOINQU: %s\n", strerror(errno));
             } else {
               dump_hex(&buf, 255, DEBUG_INFO, SECTION_SCSI);
-              type = buf[0] & 0x1f;
+              type = buf[0] & 0x1lf;
               buf[8+28] = 0;
-              printf(stdout,"%-28s|Device Type %d\n",buf[8], type);
+              printf("%-28s|Device Type %d\n",buf[8], type);
             }
           if (!isbusy && ioctl(fd, SCIOSTOP, IDLUN(target, lun)) == -1)
             return(1);

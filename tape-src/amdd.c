@@ -25,8 +25,10 @@ extern int optind;
 static int debug_amdd = 0;
 static char *pgm = NULL;
 
+static void usage(void);
+
 static void
-usage()
+usage(void)
 {
     fprintf(stderr, "usage: %s ", pgm);
     fprintf(stderr, " [-d]");
@@ -40,25 +42,29 @@ usage()
     exit(1);
 }
 
+static ssize_t (*read_func)(int, void *, size_t);
+static ssize_t (*write_func)(int, const void *, size_t);
+
 int
-main(int argc, char **argv) {
+main(
+    int		argc,
+    char **	argv)
+{
     int infd = 0;				/* stdin */
     int outfd = 1;				/* stdout */
-    int blocksize = 512;
-    int skip=0;
-    int len;
+    size_t blocksize = 512;
+    off_t skip = (off_t)0;
+    ssize_t len;
     int pread, fread, pwrite, fwrite;
     int res = 0;
     char *buf;
-    int count = 0;
+    off_t count = (off_t)0;
     int have_count = 0;
     int save_errno;
     int ch;
     char *eq;
-    int length = 0;
+    off_t length = (off_t)0;
     int have_length = 0;
-    ssize_t (*read_func)(int, void *, size_t);
-    ssize_t (*write_func)(int, const void *, size_t);
 
     if((pgm = strrchr(argv[0], '/')) != NULL) {
 	pgm++;
@@ -71,38 +77,42 @@ main(int argc, char **argv) {
 	    debug_amdd = 1;
 	    fprintf(stderr, "debug mode!\n");
 	    break;
+
 	case 'l':
 	    have_length = 1;
-	    length = atoi(optarg);
-	    len = strlen(optarg);
+	    length = OFF_T_ATOI(optarg);
+	    len = (ssize_t)strlen(optarg);
 	    if(len > 0) {
 		switch(optarg[len-1] ) {
 		case 'k':				break;
-		case 'b': length /= 2;	 		break;
-		case 'M': length *= 1024;		break;
-		default:  length /= 1024;		break;
+		case 'b': length /= (off_t)2;	 	break;
+		case 'M': length *= (off_t)1024;	break;
+		default:  length /= (off_t)1024;	break;
 		}
 	    } else {
-		length /= 1024;
+		length /= (off_t)1024;
 	    }
 	    break;
+
 	case 'h':
 	default:
 	    usage();
-	    /* NOTREACHED */
+	    /*NOTREACHED*/
 	}
     }
 
+    /*@ignore@*/
     read_func = read;
     write_func = write;
+    /*@end@*/
     for( ; optind < argc; optind++) {
 	if(0 == (eq = strchr(argv[optind], '='))) {
 	    usage();
-	    /* NOTREACHED */
+	    /*NOTREACHED*/
 	}
-	len = eq - argv[optind];
-	if(0 == strncmp("if", argv[optind], len)) {
-	    if((infd = tape_open(eq + 1, O_RDONLY)) < 0) {
+	len = (ssize_t)(eq - argv[optind]);
+	if(0 == strncmp("if", argv[optind], (size_t)len)) {
+	    if((infd = tape_open(eq + 1, O_RDONLY, 0)) < 0) {
 		save_errno = errno;
 		fprintf(stderr, "%s: %s: ", pgm, eq + 1);
 		errno = save_errno;
@@ -114,7 +124,7 @@ main(int argc, char **argv) {
 		fprintf(stderr, "input opened \"%s\", got fd %d\n",
 				eq + 1, infd);
 	    }
-	} else if(0 == strncmp("of", argv[optind], len)) {
+	} else if(0 == strncmp("of", argv[optind], (size_t)len)) {
 	    if((outfd = tape_open(eq + 1, O_RDWR|O_CREAT|O_TRUNC, 0644)) < 0) {
 		save_errno = errno;
 		fprintf(stderr, "%s: %s: ", pgm, eq + 1);
@@ -129,13 +139,14 @@ main(int argc, char **argv) {
 	    }
 	    if(have_length) {
 		if(debug_amdd) {
-		    fprintf(stderr, "length set to %d\n", length);
+		    fprintf(stderr, "length set to " OFF_T_FMT "\n",
+			(OFF_T_FMT_TYPE)length);
 		}
 		tapefd_setinfo_length(outfd, length);
 	    }
-	} else if(0 == strncmp("bs", argv[optind], len)) {
-	    blocksize = atoi(eq + 1);
-	    len = strlen(argv[optind]);
+	} else if(0 == strncmp("bs", argv[optind], (size_t)len)) {
+	    blocksize = SIZE_T_ATOI(eq + 1);
+	    len = (ssize_t)strlen(argv[optind]);
 	    if(len > 0) {
 		switch(argv[optind][len-1] ) {
 		case 'k': blocksize *= 1024;		break;
@@ -144,18 +155,21 @@ main(int argc, char **argv) {
 		}
 	    }
 	    if(debug_amdd) {
-		fprintf(stderr, "blocksize set to %d\n", blocksize);
+		fprintf(stderr, "blocksize set to " SIZE_T_FMT "\n",
+			(SIZE_T_FMT_TYPE)blocksize);
 	    }
-	} else if(0 == strncmp("count", argv[optind], len)) {
-	    count = atoi(eq + 1);
+	} else if(0 == strncmp("count", argv[optind], (size_t)len)) {
+	    count = OFF_T_ATOI(eq + 1);
 	    have_count = 1;
 	    if(debug_amdd) {
-		fprintf(stderr, "count set to %d\n", count);
+		fprintf(stderr, "count set to " OFF_T_FMT "\n",
+			(OFF_T_FMT_TYPE)count);
 	    }
-	} else if(0 == strncmp("skip", argv[optind], len)) {
-	    skip = atoi(eq + 1);
+	} else if(0 == strncmp("skip", argv[optind], (size_t)len)) {
+	    skip = OFF_T_ATOI(eq + 1);
 	    if(debug_amdd) {
-		fprintf(stderr, "skip set to %d\n", skip);
+		fprintf(stderr, "skip set to " OFF_T_FMT "\n",
+			(OFF_T_FMT_TYPE)skip);
 	    }
 	} else {
 	    fprintf(stderr, "%s: bad argument: \"%s\"\n", pgm, argv[optind]);
@@ -174,25 +188,25 @@ main(int argc, char **argv) {
     eq = "read error";
     pread = fread = pwrite = fwrite = 0;
     while(0 < (len = (*read_func)(infd, buf, blocksize))) {
-	if(skip-- > 0) {
+	if((skip -= (off_t)1) > (off_t)0) {
 	    continue;
 	}
-	if(len == blocksize) {
+	if((size_t)len == blocksize) {
 	    fread++;
 	} else if(len > 0) {
 	    pread++;
 	}
-	len = (*write_func)(outfd, buf, len);
+	len = (*write_func)(outfd, buf, (size_t)len);
 	if(len < 0) {
 	    eq = "write error";
 	    break;
-	} else if(len == blocksize) {
+	} else if((size_t)len == blocksize) {
 	    fwrite++;
 	} else if(len > 0) {
 	    pwrite++;
 	}
 	if(have_count) {
-	    if(--count <= 0) {
+	    if((count -= (off_t)1) <= (off_t)0) {
 		len = 0;
 		break;
 	    }

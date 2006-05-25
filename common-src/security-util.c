@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.1 2006/05/12 23:11:50 martinea Exp $
+ * $Id: security-util.c,v 1.2 2006/05/25 01:47:12 johnfranks Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -43,7 +43,8 @@
 #include "stream.h"
 #include "version.h"
 
-/*#define	SEC_DEBUG*/
+#define	SEC_DEBUG
+#define	SHOW_SECURITY_DETAIL
 
 #ifdef SEC_DEBUG
 #define	secprintf(x)	dbprintf(x)
@@ -69,12 +70,12 @@ static int newevent = 1;
 /*
  * Local functions
  */
-static void recvpkt_callback P((void *, void *, ssize_t));
-static void stream_read_callback P((void *));
-static void stream_read_sync_callback P((void *));
+static void recvpkt_callback(void *, void *, ssize_t);
+static void stream_read_callback(void *);
+static void stream_read_sync_callback(void *);
 
-static void sec_tcp_conn_read_cancel P((struct tcp_conn *));
-static void sec_tcp_conn_read_callback P((void *));
+static void sec_tcp_conn_read_cancel(struct tcp_conn *);
+static void sec_tcp_conn_read_callback(void *);
 
 
 /*
@@ -83,10 +84,10 @@ static void sec_tcp_conn_read_callback P((void *));
  * on startup.
  */
 int
-sec_stream_auth(s)
-    void *s;
+sec_stream_auth(
+    void *	s)
 {
-
+    (void)s;	/* Quiet unused parameter warning */
     return (0);
 }
 
@@ -95,8 +96,8 @@ sec_stream_auth(s)
  * port.
  */
 int
-sec_stream_id(s)
-    void *s;
+sec_stream_id(
+    void *	s)
 {
     struct sec_stream *rs = s;
 
@@ -109,10 +110,11 @@ sec_stream_id(s)
  * Setup to handle new incoming connections
  */
 void
-sec_accept(driver, in, out, fn)
-    const security_driver_t *driver;
-    int in, out;
-    void (*fn) P((security_handle_t *, pkt_t *));
+sec_accept(
+    const security_driver_t *driver,
+    int		in,
+    int		out,
+    void	(*fn)(security_handle_t *, pkt_t *))
 {
     struct tcp_conn *rc;
 
@@ -128,8 +130,8 @@ sec_accept(driver, in, out, fn)
  * frees a handle allocated by the above
  */
 void
-sec_close(inst)
-    void *inst;
+sec_close(
+    void *	inst)
 {
     struct sec_handle *rh = inst;
 
@@ -153,8 +155,8 @@ sec_close(inst)
  * to be authenticated.
  */
 void
-sec_connect_callback(cookie)
-    void *cookie;
+sec_connect_callback(
+    void *	cookie)
 {
     struct sec_handle *rh = cookie;
 
@@ -170,8 +172,8 @@ sec_connect_callback(cookie)
  * Called if a connection times out before completion.
  */
 void
-sec_connect_timeout(cookie)
-    void *cookie;
+sec_connect_timeout(
+    void *	cookie)
 {
     struct sec_handle *rh = cookie;
 
@@ -186,10 +188,10 @@ sec_connect_timeout(cookie)
 /*
  * Transmit a packet.
  */
-int
-stream_sendpkt(cookie, pkt)
-    void *cookie;
-    pkt_t *pkt;
+ssize_t
+stream_sendpkt(
+    void *	cookie,
+    pkt_t *	pkt)
 {
     char *buf;
     struct sec_handle *rh = cookie;
@@ -199,21 +201,22 @@ stream_sendpkt(cookie, pkt)
     assert(rh != NULL);
     assert(pkt != NULL);
 
-    secprintf(("%s: sec: sendpkt: enter\n", debug_prefix_time(NULL)));
+    secprintf(("%s: sec: stream_sendpkt: enter\n", debug_prefix_time(NULL)));
 
-    if(rh->rc->prefix_packet)
+    if (rh->rc->prefix_packet)
 	s = rh->rc->prefix_packet(rh, pkt);
     else
 	s = "";
     len = strlen(pkt->body) + strlen(s) + 2;
     buf = alloc(len);
     buf[0] = (char)pkt->type;
-    strcpy(&buf[1], s);
-    strcpy(&buf[1+strlen(s)], pkt->body);
-    if(strlen(s)>0) amfree(s);
+    strncpy(&buf[1], s, len - 1);
+    strncpy(&buf[1 + strlen(s)], pkt->body, (len - strlen(s) - 1));
+    if (strlen(s) > 0)
+	amfree(s);
 
     secprintf((
-	    "%s: sec: sendpkt: %s (%d) pkt_t (len %d) contains:\n\n\"%s\"\n\n",
+	    "%s: sec: stream_sendpkt: %s (%d) pkt_t (len %d) contains:\n\n\"%s\"\n\n",
 	    debug_prefix_time(NULL), pkt_type2str(pkt->type), pkt->type,
 	    strlen(pkt->body), pkt->body));
 
@@ -230,10 +233,11 @@ stream_sendpkt(cookie, pkt)
  * it has been read.
  */
 void
-stream_recvpkt(cookie, fn, arg, timeout)
-    void *cookie, *arg;
-    void (*fn) P((void *, pkt_t *, security_status_t));
-    int timeout;
+stream_recvpkt(
+    void *	cookie,
+    void	(*fn)(void *, pkt_t *, security_status_t),
+    void *	arg,
+    int		timeout)
 {
     struct sec_handle *rh = cookie;
 
@@ -251,11 +255,12 @@ stream_recvpkt(cookie, fn, arg, timeout)
     /*
      * Negative timeouts mean no timeout
      */
-    if (timeout < 0)
+    if (timeout < 0) {
 	rh->ev_timeout = NULL;
-    else
-	rh->ev_timeout = event_register(timeout, EV_TIME, stream_recvpkt_timeout, rh);
-
+    } else {
+	rh->ev_timeout = event_register((event_id_t)timeout, EV_TIME,
+		stream_recvpkt_timeout, rh);
+    }
     rh->fn.recvpkt = fn;
     rh->arg = arg;
     security_stream_read(&rh->rs->secstr, recvpkt_callback, rh);
@@ -265,8 +270,8 @@ stream_recvpkt(cookie, fn, arg, timeout)
  * This is called when a handle times out before receiving a packet.
  */
 void
-stream_recvpkt_timeout(cookie)
-    void *cookie;
+stream_recvpkt_timeout(
+    void *	cookie)
 {
     struct sec_handle *rh = cookie;
 
@@ -283,8 +288,8 @@ stream_recvpkt_timeout(cookie)
  * Remove a async receive request from the queue
  */
 void
-stream_recvpkt_cancel(cookie)
-    void *cookie;
+stream_recvpkt_cancel(
+    void *	cookie)
 {
     struct sec_handle *rh = cookie;
 
@@ -304,10 +309,10 @@ stream_recvpkt_cancel(cookie)
  * Write a chunk of data to a stream.  Blocks until completion.
  */
 int
-tcpm_stream_write(s, buf, size)
-    void *s;
-    const void *buf;
-    size_t size;
+tcpm_stream_write(
+    void *	s,
+    const void *buf,
+    size_t	size)
 {
     struct sec_stream *rs = s;
 
@@ -331,9 +336,10 @@ tcpm_stream_write(s, buf, size)
  * function and arg when completed.
  */
 void
-tcpm_stream_read(s, fn, arg)
-    void *s, *arg;
-    void (*fn) P((void *, void *, ssize_t));
+tcpm_stream_read(
+    void *	s,
+    void	(*fn)(void *, void *, ssize_t),
+    void *	arg)
 {
     struct sec_stream *rs = s;
 
@@ -354,10 +360,10 @@ tcpm_stream_read(s, fn, arg)
 /*
  * Write a chunk of data to a stream.  Blocks until completion.
  */
-int
-tcpm_stream_read_sync(s, buf)
-    void *s;
-    void **buf;
+ssize_t
+tcpm_stream_read_sync(
+    void *	s,
+    void **	buf)
 {
     struct sec_stream *rs = s;
 
@@ -366,7 +372,7 @@ tcpm_stream_read_sync(s, buf)
     /*
      * Only one read request can be active per stream.
      */
-    if(rs->ev_read != NULL) {
+    if (rs->ev_read != NULL) {
 	return -1;
     }
     rs->ev_read = event_register((event_id_t)rs->rc, EV_WAIT,
@@ -382,8 +388,8 @@ tcpm_stream_read_sync(s, buf)
  * scheduled.
  */
 void
-tcpm_stream_read_cancel(s)
-    void *s;
+tcpm_stream_read_cancel(
+    void *	s)
 {
     struct sec_stream *rs = s;
 
@@ -400,18 +406,19 @@ tcpm_stream_read_cancel(s)
  * Transmits a chunk of data over a rsh_handle, adding
  * the necessary headers to allow the remote end to decode it.
  */
-int
-tcpm_send_token(fd, handle, errmsg, buf, len)
-    int  fd;
-    int  handle;
-    char **errmsg;
-    const void *buf;
-    int  len;
+ssize_t
+tcpm_send_token(
+    int		fd,
+    int		handle,
+    char **	errmsg,
+    const void *buf,
+    size_t	len)
 {
-    unsigned int netlength, nethandle;
-    struct iovec iov[3];
+    uint32_t		nethandle;
+    size_t		netlength;
+    struct iovec	iov[3];
 
-    assert(sizeof(netlength) == 4);
+    assert(SIZEOF(netlength) == 4);
 
     /*
      * Format is:
@@ -419,19 +426,19 @@ tcpm_send_token(fd, handle, errmsg, buf, len)
      *   32 bit handle (network byte order)
      *   data
      */
-    netlength = htonl(len);
+    netlength = (size_t)htonl(len);
     iov[0].iov_base = (void *)&netlength;
-    iov[0].iov_len = sizeof(netlength);
+    iov[0].iov_len = SIZEOF(netlength);
 
-    nethandle = htonl(handle);
+    nethandle = htonl((uint32_t)handle);
     iov[1].iov_base = (void *)&nethandle;
-    iov[1].iov_len = sizeof(nethandle);
+    iov[1].iov_len = SIZEOF(nethandle);
 
     iov[2].iov_base = (void *)buf;
     iov[2].iov_len = len;
 
     if (net_writev(fd, iov, 3) < 0) {
-	if(errmsg)
+	if (errmsg)
             *errmsg = newvstralloc(*errmsg, "write error to ",
 				   ": ", strerror(errno), NULL);
         return (-1);
@@ -439,22 +446,22 @@ tcpm_send_token(fd, handle, errmsg, buf, len)
     return (0);
 }
 
-int
-tcpm_recv_token(fd, handle, errmsg, buf, size, timeout)
-    int  fd;
-    int  *handle;
-    char **errmsg;
-    char **buf;
-    unsigned long *size;
-    int  timeout;
+ssize_t
+tcpm_recv_token(
+    int		fd,
+    int *	handle,
+    char **	errmsg,
+    char **	buf,
+    ssize_t *	size,
+    int		timeout)
 {
     unsigned int netint[2];
 
-    assert(sizeof(netint) == 8);
+    assert(SIZEOF(netint) == 8);
 
-    switch (net_read(fd, &netint, sizeof(netint), timeout)) {
+    switch (net_read(fd, &netint, SIZEOF(netint), timeout)) {
     case -1:
-	if(errmsg)
+	if (errmsg)
 	    *errmsg = newvstralloc(*errmsg, "recv error: ", strerror(errno),
 				   NULL);
 	secprintf(("%s: tcpm_recv_token: A return(-1)\n",
@@ -469,14 +476,14 @@ tcpm_recv_token(fd, handle, errmsg, buf, size, timeout)
 	break;
     }
 
-    *size = ntohl(netint[0]);
+    *size = (ssize_t)ntohl(netint[0]);
     amfree(*buf);
-    *buf = alloc(*size);
-    *handle = ntohl(netint[1]);
+    *buf = alloc((size_t)*size);
+    *handle = (int)ntohl(netint[1]);
 
-    switch (net_read(fd, *buf, *size, timeout)) {
+    switch (net_read(fd, *buf, (size_t)*size, timeout)) {
     case -1:
-	if(errmsg)
+	if (errmsg)
 	    *errmsg = newvstralloc(*errmsg, "recv error: ", strerror(errno),
 				   NULL);
 	secprintf(("%s: tcpm_recv_token: B return(-1)\n",
@@ -493,7 +500,7 @@ tcpm_recv_token(fd, handle, errmsg, buf, size, timeout)
 
     secprintf(("%s: tcpm_recv_token: read %ld bytes\n",
 	       debug_prefix_time(NULL), *size));
-    return(*size);
+    return((*size));
 }
 
 /*
@@ -501,9 +508,10 @@ tcpm_recv_token(fd, handle, errmsg, buf, size, timeout)
  * Nothing needed for tcpma.
  */
 int
-tcpma_stream_accept(s)
-    void *s;
+tcpma_stream_accept(
+    void *	s)
 {
+    (void)s;	/* Quiet unused parameter warning */
 
     return (0);
 }
@@ -513,9 +521,9 @@ tcpma_stream_accept(s)
  * with the supplied handle.
  */
 void *
-tcpma_stream_client(h, id)
-    void *h;
-    int id;
+tcpma_stream_client(
+    void *	h,
+    int		id)
 {
     struct sec_handle *rh = h;
     struct sec_stream *rs;
@@ -524,15 +532,15 @@ tcpma_stream_client(h, id)
 
     if (id <= 0) {
 	security_seterror(&rh->sech,
-	    "%d: invalid security stream id", id);
+	    "%hd: invalid security stream id", id);
 	return (NULL);
     }
 
-    rs = alloc(sizeof(*rs));
+    rs = alloc(SIZEOF(*rs));
     security_streaminit(&rs->secstr, rh->sech.driver);
     rs->handle = id;
     rs->ev_read = NULL;
-    if(rh->rc) {
+    if (rh->rc) {
 	rs->rc = rh->rc;
 	rh->rc->refcnt++;
     }
@@ -543,7 +551,7 @@ tcpma_stream_client(h, id)
 	rh->rc = rs->rc;
     }
 
-    secprintf(("%s: sec: stream_client: connected to stream %d\n",
+    secprintf(("%s: sec: stream_client: connected to stream %hd\n",
 	       debug_prefix_time(NULL), id));
 
     return (rs);
@@ -554,17 +562,17 @@ tcpma_stream_client(h, id)
  * object and allocate a new handle for it.
  */
 void *
-tcpma_stream_server(h)
-    void *h;
+tcpma_stream_server(
+    void *	h)
 {
     struct sec_handle *rh = h;
     struct sec_stream *rs;
 
     assert(rh != NULL);
 
-    rs = alloc(sizeof(*rs));
+    rs = alloc(SIZEOF(*rs));
     security_streaminit(&rs->secstr, rh->sech.driver);
-    if(rh->rc) {
+    if (rh->rc) {
 	rs->rc = rh->rc;
 	rs->rc->refcnt++;
     }
@@ -599,8 +607,8 @@ tcpma_stream_server(h)
  * Close and unallocate resources for a stream.
  */
 void
-tcpma_stream_close(s)
-    void *s;
+tcpma_stream_close(
+    void *	s)
 {
     struct sec_stream *rs = s;
 
@@ -619,17 +627,17 @@ tcpma_stream_close(s)
  * socket for receiving a connection.
  */
 void *
-tcp1_stream_server(h)
-    void *h;
+tcp1_stream_server(
+    void *	h)
 {
     struct sec_stream *rs = NULL;
     struct sec_handle *rh = h;
 
     assert(rh != NULL);
 
-    rs = alloc(sizeof(*rs));
+    rs = alloc(SIZEOF(*rs));
     security_streaminit(&rs->secstr, rh->sech.driver);
-    if(rh->rc) {
+    if (rh->rc) {
 	rs->rc = rh->rc;
 	rs->handle = 500000 - newhandle++;
 	rs->rc->refcnt++;
@@ -647,7 +655,7 @@ tcp1_stream_server(h)
 	}
 	rh->rc->read = rs->socket;
 	rh->rc->write = rs->socket;
-	rs->handle = rs->port;
+	rs->handle = (int)rs->port;
     }
     rs->fd = -1;
     rs->ev_read = NULL;
@@ -659,8 +667,8 @@ tcp1_stream_server(h)
  * block on accept()
  */
 int
-tcp1_stream_accept(s)
-    void *s;
+tcp1_stream_accept(
+    void *	s)
 {
     struct sec_stream *bs = s;
 
@@ -668,7 +676,7 @@ tcp1_stream_accept(s)
     assert(bs->socket != -1);
     assert(bs->fd < 0);
 
-    if(bs->socket > 0) {
+    if (bs->socket > 0) {
 	bs->fd = stream_accept(bs->socket, 30, -1, -1);
 	if (bs->fd < 0) {
 	    security_stream_seterror(&bs->secstr,
@@ -686,33 +694,28 @@ tcp1_stream_accept(s)
  * Return a connected stream
  */
 void *
-tcp1_stream_client(h, id)
-    void *h;
-    int id;
+tcp1_stream_client(
+    void *	h,
+    int		id)
 {
     struct sec_stream *rs = NULL;
     struct sec_handle *rh = h;
 
     assert(rh != NULL);
-    if (id < 0) {
-	security_seterror(&rh->sech,
-	    "%d: invalid security stream id", id);
-	return (NULL);
-    }
 
-    rs = alloc(sizeof(*rs));
+    rs = alloc(SIZEOF(*rs));
     security_streaminit(&rs->secstr, rh->sech.driver);
     rs->handle = id;
     rs->ev_read = NULL;
-    if(rh->rc) {
+    if (rh->rc) {
 	rs->rc = rh->rc;
 	rh->rc->refcnt++;
     }
     else {
 	rh->rc = sec_tcp_conn_get(rh->hostname, 1);
 	rs->rc = rh->rc;
-	rh->rc->read = stream_client(rh->hostname, id, STREAM_BUFSIZE,
-				     STREAM_BUFSIZE, &rs->port, 0);
+	rh->rc->read = stream_client(rh->hostname, (in_port_t)id,
+			STREAM_BUFSIZE, STREAM_BUFSIZE, &rs->port, 0);
 	if (rh->rc->read < 0) {
 	    security_seterror(&rh->sech,
 			      "can't connect stream to %s port %d: %s",
@@ -728,10 +731,10 @@ tcp1_stream_client(h, id)
 }
 
 int
-tcp_stream_write(s, buf, size)
-    void *s;
-    const void *buf;
-    size_t size;
+tcp_stream_write(
+    void *	s,
+    const void *buf,
+    size_t	size)
 {
     struct sec_stream *rs = s;
 
@@ -746,15 +749,15 @@ tcp_stream_write(s, buf, size)
 }
 
 char *
-bsd_prefix_packet(h, pkt)
-    void *h;
-    pkt_t *pkt;
+bsd_prefix_packet(
+    void *	h,
+    pkt_t *	pkt)
 {
     struct sec_handle *rh = h;
     struct passwd *pwd;
     char *buf;
 
-    if(pkt->type != P_REQ)
+    if (pkt->type != P_REQ)
 	return "";
 
     if ((pwd = getpwuid(geteuid())) == NULL) {
@@ -764,8 +767,8 @@ bsd_prefix_packet(h, pkt)
 	return(NULL);
     }
     buf = alloc(16+strlen(pwd->pw_name));
-    strcpy(buf,"SECURITY USER ");
-    strcpy(&buf[14],pwd->pw_name);
+    strncpy(buf, "SECURITY USER ", (16 + strlen(pwd->pw_name)));
+    strncpy(&buf[14], pwd->pw_name, (16 + strlen(pwd->pw_name - 14)));
     buf[14 + strlen(pwd->pw_name)] = '\n';
     buf[15 + strlen(pwd->pw_name)] = '\0';
 
@@ -778,9 +781,9 @@ bsd_prefix_packet(h, pkt)
  * violation, or returns 0 if ok.  Removes the security info from the pkt_t.
  */
 int
-bsd_recv_security_ok(rh, pkt)
-    struct sec_handle *rh;
-    pkt_t *pkt;
+bsd_recv_security_ok(
+    struct sec_handle *	rh,
+    pkt_t *		pkt)
 {
     char *tok, *security, *body, *result;
     char *service = NULL, *serviceX;
@@ -795,7 +798,7 @@ bsd_recv_security_ok(rh, pkt)
      * Now, find the SECURITY line in the body, and parse it out
      * into an argv.
      */
-    if (strncmp(pkt->body, "SECURITY", sizeof("SECURITY") - 1) == 0) {
+    if (strncmp(pkt->body, "SECURITY", SIZEOF("SECURITY") - 1) == 0) {
 	tok = strtok(pkt->body, " ");
 	assert(strcmp(tok, "SECURITY") == 0);
 	/* security info goes until the newline */
@@ -819,7 +822,7 @@ bsd_recv_security_ok(rh, pkt)
      * Now, find the SERVICE line in the body, and parse it out
      * into an argv.
      */
-    if (strncmp(body, "SERVICE", sizeof("SERVICE") - 1) == 0) {
+    if (strncmp(body, "SERVICE", SIZEOF("SERVICE") - 1) == 0) {
 	serviceX = stralloc(body + strlen("SERVICE "));
 	service  = stralloc(strtok(serviceX, "\n"));
 	amfree(serviceX);
@@ -897,10 +900,10 @@ bsd_recv_security_ok(rh, pkt)
 /*
  * Transmit a packet.  Add security information first.
  */
-int
-udpbsd_sendpkt(cookie, pkt)
-    void *cookie;
-    pkt_t *pkt;
+ssize_t
+udpbsd_sendpkt(
+    void *	cookie,
+    pkt_t *	pkt)
 {
     struct sec_handle *rh = cookie;
     struct passwd *pwd;
@@ -908,7 +911,7 @@ udpbsd_sendpkt(cookie, pkt)
     assert(rh != NULL);
     assert(pkt != NULL);
 
-    secprintf(("udp_sendpkt\n"));
+    secprintf(("%s: udpbsd_sendpkt: enter\n", get_pname()));
     /*
      * Initialize this datagram, and add the header
      */
@@ -940,6 +943,12 @@ udpbsd_sendpkt(cookie, pkt)
      * Add the body, and send it
      */
     dgram_cat(&rh->udp->dgram, pkt->body);
+
+    secprintf((
+	    "%s: sec: udpbsd_sendpkt: %s (%d) pkt_t (len %d) contains:\n\n\"%s\"\n\n",
+	    debug_prefix_time(NULL), pkt_type2str(pkt->type), pkt->type,
+	    strlen(pkt->body), pkt->body));
+
     if (dgram_send_addr(rh->peer, &rh->udp->dgram) != 0) {
 	security_seterror(&rh->sech,
 	    "send %s to %s failed: %s", pkt_type2str(pkt->type),
@@ -950,12 +959,12 @@ udpbsd_sendpkt(cookie, pkt)
 }
 
 void
-udp_close(cookie)
-    void *cookie;
+udp_close(
+    void *	cookie)
 {
     struct sec_handle *rh = cookie;
 
-    if(rh->proto_handle == NULL) {
+    if (rh->proto_handle == NULL) {
 	return;
     }
 
@@ -963,13 +972,13 @@ udp_close(cookie)
 	       debug_prefix_time(NULL), rh->proto_handle));
 
     udp_recvpkt_cancel(rh);
-    if(rh->next) {
+    if (rh->next) {
 	rh->next->prev = rh->prev;
     }
     else {
 	rh->udp->bh_last = rh->prev;
     }
-    if(rh->prev) {
+    if (rh->prev) {
 	rh->prev->next = rh->next;
     }
     else {
@@ -985,13 +994,16 @@ udp_close(cookie)
  * been read.
  */
 void
-udp_recvpkt(cookie, fn, arg, timeout)
-    void *cookie, *arg;
-    void (*fn) P((void *, pkt_t *, security_status_t));
-    int timeout;
+udp_recvpkt(
+    void *	cookie,
+    void	(*fn)(void *, pkt_t *, security_status_t),
+    void *	arg,
+    int		timeout)
 {
     struct sec_handle *rh = cookie;
 
+    secprintf(("%s: udp_recvpkt(cookie=%p, fn=%p, arg=%p, timeout=%u)\n",
+	debug_prefix(NULL), cookie, fn, arg, timeout));
     assert(rh != NULL);
     assert(fn != NULL);
 
@@ -1009,7 +1021,7 @@ udp_recvpkt(cookie, fn, arg, timeout)
     if (timeout < 0)
 	rh->ev_timeout = NULL;
     else
-	rh->ev_timeout = event_register(timeout, EV_TIME,
+	rh->ev_timeout = event_register((event_id_t)timeout, EV_TIME,
 					udp_recvpkt_timeout, rh);
     rh->fn.recvpkt = fn;
     rh->arg = arg;
@@ -1021,8 +1033,8 @@ udp_recvpkt(cookie, fn, arg, timeout)
  * handler for our network fd
  */
 void
-udp_recvpkt_cancel(cookie)
-    void *cookie;
+udp_recvpkt_cancel(
+    void *	cookie)
 {
     struct sec_handle *rh = cookie;
 
@@ -1045,21 +1057,21 @@ udp_recvpkt_cancel(cookie)
  * net is for it.
  */
 void
-udp_recvpkt_callback(cookie)
-    void *cookie;
+udp_recvpkt_callback(
+    void *	cookie)
 {
     struct sec_handle *rh = cookie;
-    void (*fn) P((void *, pkt_t *, security_status_t));
+    void (*fn)(void *, pkt_t *, security_status_t);
     void *arg;
 
-    assert(rh != NULL);
     secprintf(("%s: udp: receive handle '%s' netfd '%s'\n",
 	       debug_prefix_time(NULL), rh->proto_handle, rh->udp->handle));
+    assert(rh != NULL);
 
-    if(strcmp(rh->proto_handle, rh->udp->handle) != 0) assert(1);
+    if (strcmp(rh->proto_handle, rh->udp->handle) != 0) assert(1);
     /* if it didn't come from the same host/port, forget it */
     if (memcmp(&rh->peer.sin_addr, &rh->udp->peer.sin_addr,
-	sizeof(rh->udp->peer.sin_addr)) != 0 ||
+	SIZEOF(rh->udp->peer.sin_addr)) != 0 ||
 	rh->peer.sin_port != rh->udp->peer.sin_port) {
 	/*amfree(rh->udp->handle);*/
 	rh->udp->handle = NULL;
@@ -1089,11 +1101,11 @@ udp_recvpkt_callback(cookie)
  * This is called when a handle times out before receiving a packet.
  */
 void
-udp_recvpkt_timeout(cookie)
-    void *cookie;
+udp_recvpkt_timeout(
+    void *	cookie)
 {
     struct sec_handle *rh = cookie;
-    void (*fn) P((void *, pkt_t *, security_status_t));
+    void (*fn)(void *, pkt_t *, security_status_t);
     void *arg;
 
     assert(rh != NULL);
@@ -1109,30 +1121,28 @@ udp_recvpkt_timeout(cookie)
  * Given a hostname and a port, setup a udp_handle
  */
 int
-udp_inithandle(udp, rh, he, port, handle, sequence)
-    udp_handle_t *udp;
-    struct sec_handle *rh;
-    struct hostent *he;
-    int port;
-    char *handle;
-    int sequence;
+udp_inithandle(
+    udp_handle_t *	udp,
+    struct sec_handle *	rh,
+    struct hostent *	he,
+    in_port_t		port,
+    char *		handle,
+    int			sequence)
 {
     int i;
-
-    assert(he != NULL);
-    assert(port > 0);
 
     /*
      * Save the hostname and port info
      */
-    secprintf(("%s: udp_inithandle port %d handle %s sequence %d\n",
+    secprintf(("%s: udp_inithandle port %hd handle %s sequence %d\n",
 	       debug_prefix_time(NULL), ntohs(port),
 	       handle, sequence));
+    assert(he != NULL);
 
     rh->hostname = stralloc(he->h_name);
-    rh->peer.sin_addr = *(struct in_addr *)he->h_addr;
+    memcpy(&rh->peer.sin_addr, he->h_addr, SIZEOF(rh->peer.sin_addr));
     rh->peer.sin_port = port;
-    rh->peer.sin_family = AF_INET;
+    rh->peer.sin_family = (sa_family_t)AF_INET;
 
     /*
      * Do a forward lookup of the hostname.  This is unnecessary if we
@@ -1163,7 +1173,7 @@ udp_inithandle(udp, rh, he, port, handle, sequence)
      */
     for (i = 0; he->h_addr_list[i] != NULL; i++) {
 	if (memcmp(&rh->peer.sin_addr, he->h_addr_list[i],
-	    sizeof(struct in_addr)) == 0) {
+	    SIZEOF(struct in_addr)) == 0) {
 	    break;
 	}
     }
@@ -1191,13 +1201,17 @@ udp_inithandle(udp, rh, he, port, handle, sequence)
     }
 
     rh->prev = udp->bh_last;
-    if(udp->bh_last) {rh->prev->next = rh;}
-    if(!udp->bh_first) {udp->bh_first = rh;}
+    if (udp->bh_last) {
+	rh->prev->next = rh;
+    }
+    if (!udp->bh_first) {
+	udp->bh_first = rh;
+    }
     rh->next = NULL;
     udp->bh_last = rh;
 
     rh->sequence = sequence;
-    rh->event_id = newevent++;
+    rh->event_id = (event_id_t)newevent++;
     rh->proto_handle = handle;
     rh->fn.connect = NULL;
     rh->arg = NULL;
@@ -1217,16 +1231,18 @@ udp_inithandle(udp, rh, he, port, handle, sequence)
  * realizes that data is waiting to be read on the network socket.
  */
 void
-udp_netfd_read_callback(cookie)
-    void *cookie;
+udp_netfd_read_callback(
+    void *	cookie)
 {
     struct udp_handle *udp = cookie;
     struct sec_handle *rh;
     struct hostent *he;
     int a;
 
+    secprintf(("%s: udp_netfd_read_callback(cookie=%p)\n",
+		debug_prefix(NULL), cookie));
     assert(udp != NULL);
-
+    
 #ifndef TEST							/* { */
     /*
      * Receive the packet.
@@ -1263,10 +1279,10 @@ udp_netfd_read_callback(cookie)
 	return;
 
     he = gethostbyaddr((void *)&udp->peer.sin_addr,
-	(int)sizeof(udp->peer.sin_addr), AF_INET);
+	(socklen_t)sizeof(udp->peer.sin_addr), AF_INET);
     if (he == NULL)
 	return;
-    rh = alloc(sizeof(*rh));
+    rh = alloc(SIZEOF(*rh));
     rh->proto_handle=NULL;
     rh->udp = udp;
     rh->rc = NULL;
@@ -1299,15 +1315,15 @@ udp_netfd_read_callback(cookie)
  * for the lack of a connection (rc->read == -1) and set one up.
  */
 struct tcp_conn *
-sec_tcp_conn_get(hostname, want_new)
-    const char *hostname;
-    int want_new;
+sec_tcp_conn_get(
+    const char *hostname,
+    int		want_new)
 {
     struct tcp_conn *rc;
 
     secprintf(("%s: sec_tcp_conn_get: %s\n", debug_prefix_time(NULL), hostname));
 
-    if(want_new == 0) {
+    if (want_new == 0) {
     for (rc = connq_first(); rc != NULL; rc = connq_next(rc)) {
 	if (strcasecmp(hostname, rc->hostname) == 0)
 	    break;
@@ -1327,13 +1343,13 @@ sec_tcp_conn_get(hostname, want_new)
     /*
      * We can't be creating a new handle if we are the client
      */
-    rc = alloc(sizeof(*rc));
+    rc = alloc(SIZEOF(*rc));
     rc->read = rc->write = -1;
     rc->driver = NULL;
     rc->pid = -1;
     rc->ev_read = NULL;
-    strncpy(rc->hostname, hostname, sizeof(rc->hostname) - 1);
-    rc->hostname[sizeof(rc->hostname) - 1] = '\0';
+    strncpy(rc->hostname, hostname, SIZEOF(rc->hostname) - 1);
+    rc->hostname[SIZEOF(rc->hostname) - 1] = '\0';
     rc->errmsg = NULL;
     rc->refcnt = 1;
     rc->handle = -1;
@@ -1350,8 +1366,8 @@ sec_tcp_conn_get(hostname, want_new)
  * reference.
  */
 void
-sec_tcp_conn_put(rc)
-    struct tcp_conn *rc;
+sec_tcp_conn_put(
+    struct tcp_conn *	rc)
 {
     amwait_t status;
 
@@ -1386,8 +1402,8 @@ sec_tcp_conn_put(rc)
  * already receiving read events.
  */
 void
-sec_tcp_conn_read(rc)
-    struct tcp_conn *rc;
+sec_tcp_conn_read(
+    struct tcp_conn *	rc)
 {
     assert (rc != NULL);
 
@@ -1400,13 +1416,14 @@ sec_tcp_conn_read(rc)
     }
     secprintf(("%s: sec: conn_read registering event handler for %s\n",
 	       debug_prefix_time(NULL), rc->hostname));
-    rc->ev_read = event_register(rc->read, EV_READFD, sec_tcp_conn_read_callback, rc);
+    rc->ev_read = event_register((event_id_t)rc->read, EV_READFD,
+		sec_tcp_conn_read_callback, rc);
     rc->ev_read_refcnt = 1;
 }
 
 static void
-sec_tcp_conn_read_cancel(rc)
-    struct tcp_conn *rc;
+sec_tcp_conn_read_cancel(
+    struct tcp_conn *	rc)
 {
 
     --rc->ev_read_refcnt;
@@ -1414,7 +1431,7 @@ sec_tcp_conn_read_cancel(rc)
 	"%s: sec: conn_read_cancel: decremented ev_read_refcnt to %d for %s\n",
 	debug_prefix_time(NULL),
 	rc->ev_read_refcnt, rc->hostname));
-    if(rc->ev_read_refcnt > 0) {
+    if (rc->ev_read_refcnt > 0) {
 	return;
     }
     secprintf(("%s: sec: conn_read_cancel: releasing event handler for %s\n",
@@ -1428,9 +1445,10 @@ sec_tcp_conn_read_cancel(rc)
  * net is for it.
  */
 static void
-recvpkt_callback(cookie, buf, bufsize)
-    void *cookie, *buf;
-    ssize_t bufsize;
+recvpkt_callback(
+    void *	cookie,
+    void *	buf,
+    ssize_t	bufsize)
 {
     pkt_t pkt;
     struct sec_handle *rh = cookie;
@@ -1457,12 +1475,12 @@ recvpkt_callback(cookie, buf, bufsize)
 	break;
     }
 
-    parse_pkt(&pkt, buf, bufsize);
+    parse_pkt(&pkt, buf, (size_t)bufsize);
     secprintf((
 	   "%s: sec: received %s packet (%d) from %s, contains:\n\n\"%s\"\n\n",
 	   debug_prefix_time(NULL), pkt_type2str(pkt.type), pkt.type,
 	   rh->hostname, pkt.body));
-    if(rh->rc->recv_security_ok && (rh->rc->recv_security_ok)(rh, &pkt) < 0)
+    if (rh->rc->recv_security_ok && (rh->rc->recv_security_ok)(rh, &pkt) < 0)
 	(*rh->fn.recvpkt)(rh->arg, NULL, S_ERROR);
     else
 	(*rh->fn.recvpkt)(rh->arg, &pkt, S_OK);
@@ -1473,8 +1491,8 @@ recvpkt_callback(cookie, buf, bufsize)
  * Callback for tcpm_stream_read_sync
  */
 static void
-stream_read_sync_callback(s)
-    void *s;
+stream_read_sync_callback(
+    void *	s)
 {
     struct sec_stream *rs = s;
     assert(rs != NULL);
@@ -1520,8 +1538,8 @@ stream_read_sync_callback(s)
  * Callback for tcpm_stream_read
  */
 static void
-stream_read_callback(arg)
-    void *arg;
+stream_read_callback(
+    void *	arg)
 {
     struct sec_stream *rs = arg;
     assert(rs != NULL);
@@ -1571,13 +1589,14 @@ stream_read_callback(arg)
  * and does the real callback if so.
  */
 static void
-sec_tcp_conn_read_callback(cookie)
-    void *cookie;
+sec_tcp_conn_read_callback(
+    void *	cookie)
 {
-    struct tcp_conn *rc = cookie;
-    struct sec_handle *rh;
-    pkt_t pkt;
-    int rval;
+    struct tcp_conn *	rc = cookie;
+    struct sec_handle *	rh;
+    pkt_t		pkt;
+    ssize_t		rval;
+    int			revent;
 
     assert(cookie != NULL);
 
@@ -1591,7 +1610,7 @@ sec_tcp_conn_read_callback(cookie)
     if (rval <= 0) {
 	rc->pktlen = 0;
 	rc->handle = H_EOF;
-	rval = event_wakeup((event_id_t)rc);
+	revent = event_wakeup((event_id_t)rc);
 	secprintf(("%s: sec: conn_read_callback: event_wakeup return %d\n",
 		   debug_prefix_time(NULL), rval));
 	/* delete our 'accept' reference */
@@ -1602,17 +1621,17 @@ sec_tcp_conn_read_callback(cookie)
     }
 
     /* If there are events waiting on this handle, we're done */
-    rval = event_wakeup((event_id_t)rc);
+    revent = event_wakeup((event_id_t)rc);
     secprintf(("%s: sec: conn_read_callback: event_wakeup return %d\n",
 	       debug_prefix_time(NULL), rval));
-    if (rval > 0)
+    if (revent > 0)
 	return;
 
     /* If there is no accept fn registered, then drop the packet */
     if (rc->accept_fn == NULL)
 	return;
 
-    rh = alloc(sizeof(*rh));
+    rh = alloc(SIZEOF(*rh));
     security_handleinit(&rh->sech, rc->driver);
     rh->hostname = rc->hostname;
     rh->ev_timeout = NULL;
@@ -1622,9 +1641,9 @@ sec_tcp_conn_read_callback(cookie)
 
     secprintf(("%s: sec: new connection\n", debug_prefix_time(NULL)));
     pkt.body = NULL;
-    parse_pkt(&pkt, rc->pkt, rc->pktlen);
+    parse_pkt(&pkt, rc->pkt, (size_t)rc->pktlen);
     secprintf(("%s: sec: calling accept_fn\n", debug_prefix_time(NULL)));
-    if(rh->rc->recv_security_ok && (rh->rc->recv_security_ok)(rh, &pkt) < 0)
+    if (rh->rc->recv_security_ok && (rh->rc->recv_security_ok)(rh, &pkt) < 0)
 	(*rc->accept_fn)(&rh->sech, NULL);
     else
 	(*rc->accept_fn)(&rh->sech, &pkt);
@@ -1632,10 +1651,10 @@ sec_tcp_conn_read_callback(cookie)
 }
 
 void
-parse_pkt(pkt, buf, bufsize)
-    pkt_t *pkt;
-    const void *buf;
-    size_t bufsize;
+parse_pkt(
+    pkt_t *	pkt,
+    const void *buf,
+    size_t	bufsize)
 {
     const unsigned char *bufp = buf;
 
@@ -1664,16 +1683,16 @@ parse_pkt(pkt, buf, bufsize)
  * Convert a packet header into a string
  */
 const char *
-pkthdr2str(rh, pkt)
-    const struct sec_handle *rh;
-    const pkt_t *pkt;
+pkthdr2str(
+    const struct sec_handle *	rh,
+    const pkt_t *		pkt)
 {
     static char retbuf[256];
 
     assert(rh != NULL);
     assert(pkt != NULL);
 
-    snprintf(retbuf, sizeof(retbuf), "Amanda %d.%d %s HANDLE %s SEQ %d\n",
+    snprintf(retbuf, SIZEOF(retbuf), "Amanda %d.%d %s HANDLE %s SEQ %d\n",
 	VERSION_MAJOR, VERSION_MINOR, pkt_type2str(pkt->type),
 	rh->proto_handle, rh->sequence);
 
@@ -1691,8 +1710,8 @@ pkthdr2str(rh, pkt)
  * Returns negative on parse error.
  */
 int
-str2pkthdr(udp)
-    udp_handle_t *udp;
+str2pkthdr(
+    udp_handle_t *	udp)
 {
     char *str;
     const char *tok;
@@ -1757,10 +1776,10 @@ parse_error:
 }
 
 char *
-check_user(rh, remoteuser, service)
-    struct sec_handle *rh;
-    const char *remoteuser;
-    const char *service;
+check_user(
+    struct sec_handle *	rh,
+    const char *	remoteuser,
+    const char *	service)
 {
     struct passwd *pwd;
     char *r;
@@ -1801,10 +1820,10 @@ check_user(rh, remoteuser, service)
  * Returns 0 on success, or negative on error.
  */
 char *
-check_user_ruserok(host, pwd, remoteuser)
-    const char *host;
-    struct passwd *pwd;
-    const char *remoteuser;
+check_user_ruserok(
+    const char *	host,
+    struct passwd *	pwd,
+    const char *	remoteuser)
 {
     int saved_stderr;
     int fd[2];
@@ -1851,13 +1870,13 @@ check_user_ruserok(host, pwd, remoteuser)
 	{
 	char *dir = stralloc(pwd->pw_dir);
 
-	bsdprintf(("%s: bsd: calling ruserok(%s, %d, %s, %s)\n",
+	secprintf(("%s: bsd: calling ruserok(%s, %d, %s, %s)\n",
 		   debug_prefix_time(NULL),
 	           host, myuid == 0, remoteuser, pwd->pw_name));
 	if (myuid == 0) {
-	    bsdprintf(("%s: bsd: because you are running as root, ",
+	    secprintf(("%s: bsd: because you are running as root, ",
 		       debug_prefix(NULL)));
-	    bsdprintf(("/etc/hosts.equiv will not be used\n"));
+	    secprintf(("/etc/hosts.equiv will not be used\n"));
 	} else {
 	    show_stat_info("/etc/hosts.equiv", NULL);
 	}
@@ -1869,8 +1888,8 @@ check_user_ruserok(host, pwd, remoteuser)
 	saved_stderr = dup(2);
 	close(2);
 	if (open("/dev/null", O_RDWR) == -1) {
-            dbprintf(("Could not open /dev/null: %s\n",
-	              strerror(errno)));
+            secprintf(("%s: Could not open /dev/null: %s\n",
+	              debug_prefix(NULL), strerror(errno)));
 	    ec = 1;
 	} else {
 	    ok = ruserok(host, myuid == 0, remoteuser, CLIENT_LOGIN);
@@ -1889,6 +1908,10 @@ check_user_ruserok(host, pwd, remoteuser)
 
     result = NULL;
     while ((es = agets(fError)) != NULL) {
+	if (*es == 0) {
+	    amfree(es);
+	    continue;
+	}
 	if (result == NULL) {
 	    result = stralloc("");
 	} else {
@@ -1898,21 +1921,17 @@ check_user_ruserok(host, pwd, remoteuser)
     }
     close(fd[0]);
 
-    while (1) {
-	if ((pid = wait(&exitcode)) == (pid_t) -1) {
-	    if (errno == EINTR) {
-		continue;
-	    }
+    pid = wait(&exitcode);
+    while (pid != ruserok_pid) {
+	if ((pid == (pid_t) -1) && (errno != EINTR)) {
 	    amfree(result);
 	    return stralloc2("ruserok wait failed: %s", strerror(errno));
 	}
-	if (pid == ruserok_pid) {
-	    break;
-	}
+	pid = wait(&exitcode);
     }
     if (WIFSIGNALED(exitcode)) {
 	amfree(result);
-	snprintf(number, sizeof(number), "%d", WTERMSIG(exitcode));
+	snprintf(number, SIZEOF(number), "%d", WTERMSIG(exitcode));
 	return stralloc2("ruserok child got signal ", number);
     }
     if (WEXITSTATUS(exitcode) == 0) {
@@ -1929,11 +1948,11 @@ check_user_ruserok(host, pwd, remoteuser)
  * Returns -1 on failure, or 0 on success.
  */
 char *
-check_user_amandahosts(host, pwd, remoteuser, service)
-    const char *host;
-    struct passwd *pwd;
-    const char *remoteuser;
-    const char *service;
+check_user_amandahosts(
+    const char *	host,
+    struct passwd *	pwd,
+    const char *	remoteuser,
+    const char *	service)
 {
     char *line = NULL;
     char *filehost;
@@ -1947,16 +1966,11 @@ check_user_amandahosts(host, pwd, remoteuser, service)
     char n2[NUM_STR_SIZE];
     int hostmatch;
     int usermatch;
-    uid_t localuid;
-    char *localuser = NULL;
     char *aservice = NULL;
 
-    /*
-     * Save copies of what we need from the passwd structure in case
-     * any other code calls getpw*.
-     */
-    localuid = pwd->pw_uid;
-    localuser = stralloc(pwd->pw_name);
+    secprintf(("check_user_amandahosts(host=%s, pwd=%p, "
+		"remoteuser=%s, service=%s)\n",
+		host, pwd, remoteuser, service));
 
     ptmp = stralloc2(pwd->pw_dir, "/.amandahosts");
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
@@ -1965,7 +1979,6 @@ check_user_amandahosts(host, pwd, remoteuser, service)
     if ((fp = fopen(ptmp, "r")) == NULL) {
 	result = vstralloc("cannot open ", ptmp, ": ", strerror(errno), NULL);
 	amfree(ptmp);
-	amfree(localuser);
 	return result;
     }
 
@@ -1977,9 +1990,9 @@ check_user_amandahosts(host, pwd, remoteuser, service)
 	result = vstralloc("cannot fstat ", ptmp, ": ", strerror(errno), NULL);
 	goto common_exit;
     }
-    if (sbuf.st_uid != localuid) {
-	snprintf(n1, sizeof(n1), "%ld", (long)sbuf.st_uid);
-	snprintf(n2, sizeof(n2), "%ld", (long)localuid);
+    if (sbuf.st_uid != pwd->pw_uid) {
+	snprintf(n1, SIZEOF(n1), "%ld", (long)sbuf.st_uid);
+	snprintf(n2, SIZEOF(n2), "%ld", (long)pwd->pw_uid);
 	result = vstralloc(ptmp, ": ",
 			   "owned by id ", n1,
 			   ", should be ", n2,
@@ -1997,8 +2010,13 @@ check_user_amandahosts(host, pwd, remoteuser, service)
      */
     found = 0;
     while ((line = agets(fp)) != NULL) {
+	if (*line == 0) {
+	    amfree(line);
+	    continue;
+	}
+
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
-	bsdprintf(("%s: bsd: processing line: <%s>\n", debug_prefix(NULL), line));
+	secprintf(("%s: bsd: processing line: <%s>\n", debug_prefix(NULL), line));
 #endif								/* } */
 	/* get the host out of the file */
 	if ((filehost = strtok(line, " \t")) == NULL) {
@@ -2008,17 +2026,17 @@ check_user_amandahosts(host, pwd, remoteuser, service)
 
 	/* get the username.  If no user specified, then use the local user */
 	if ((fileuser = strtok(NULL, " \t")) == NULL) {
-	    fileuser = localuser;
+	    fileuser = pwd->pw_name;
 	}
 
 	hostmatch = (strcasecmp(filehost, host) == 0);
 	usermatch = (strcasecmp(fileuser, remoteuser) == 0);
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
-	bsdprintf(("%s: bsd: comparing \"%s\" with\n", debug_prefix(NULL), filehost));
-	bsdprintf(("%s: bsd:           \"%s\" (%s)\n", host,
+	secprintf(("%s: bsd: comparing \"%s\" with\n", debug_prefix(NULL), filehost));
+	secprintf(("%s: bsd:           \"%s\" (%s)\n", host,
 		  debug_prefix(NULL), hostmatch ? "match" : "no match"));
-	bsdprintf(("%s: bsd:       and \"%s\" with\n", fileuser, debug_prefix(NULL)));
-	bsdprintf(("%s: bsd:           \"%s\" (%s)\n", remoteuser,
+	secprintf(("%s: bsd:       and \"%s\" with\n", fileuser, debug_prefix(NULL)));
+	secprintf(("%s: bsd:           \"%s\" (%s)\n", remoteuser,
 		  debug_prefix(NULL), usermatch ? "match" : "no match"));
 #endif								/* } */
 	/* compare */
@@ -2027,18 +2045,19 @@ check_user_amandahosts(host, pwd, remoteuser, service)
 	    continue;
 	}
 
-        if(!service) {
+        if (!service) {
 	    /* success */
 	    amfree(line);
 	    found = 1;
 	    break;
 	}
+
 	/* get the services.  If no service specified, then use
 	 * noop/selfcheck/sendsize/sendbackup
          */
 	aservice = strtok(NULL, " \t,");
-	if(!aservice) {
-	    if(strcmp(service,"noop") == 0 ||
+	if (!aservice) {
+	    if (strcmp(service,"noop") == 0 ||
 	       strcmp(service,"selfcheck") == 0 ||
 	       strcmp(service,"sendsize") == 0 ||
 	       strcmp(service,"sendbackup") == 0) {
@@ -2054,22 +2073,22 @@ check_user_amandahosts(host, pwd, remoteuser, service)
 	}
 
 	do {
-	    if(strcmp(aservice,service) == 0) {
+	    if (strcmp(aservice,service) == 0) {
 		found = 1;
 		break;
 	    }
-	    if(strcmp(aservice,"amdump") == 0 && 
-	       (strcmp(service,"noop") == 0 ||
-		strcmp(service,"selfcheck") == 0 ||
-		strcmp(service,"sendsize") == 0 ||
-		strcmp(service,"sendbackup") == 0)) {
+	    if (strcmp(aservice, "amdump") == 0 && 
+	       (strcmp(service, "noop") == 0 ||
+		strcmp(service, "selfcheck") == 0 ||
+		strcmp(service, "sendsize") == 0 ||
+		strcmp(service, "sendbackup") == 0)) {
 		found = 1;
 		break;
 	    }
 	} while((aservice = strtok(NULL, " \t,")) != NULL);
-
 	amfree(line);
-	if(aservice && strcmp(aservice,service) == 0) {
+
+	if (aservice && strcmp(aservice, service) == 0) {
 	    /* success */
 	    found = 1;
 	    break;
@@ -2086,35 +2105,42 @@ common_exit:
 
     afclose(fp);
     amfree(ptmp);
-    amfree(line);
-    amfree(localuser);
 
     return result;
 }
 
 /* return 1 on success, 0 on failure */
 int
-check_security(addr, str, cksum, errstr)
-struct sockaddr_in *addr;
-char *str;
-unsigned long cksum;
-char **errstr;
+check_security(
+    struct sockaddr_in *addr,
+    char *		str,
+    unsigned long	cksum,
+    char **		errstr)
 {
-    char *remotehost = NULL, *remoteuser = NULL;
-    char *bad_bsd = NULL;
-    struct hostent *hp;
-    struct passwd *pwptr;
-    int myuid, i, j;
-    char *s, *fp;
-    int ch;
+    char *		remotehost = NULL, *remoteuser = NULL;
+    char *		bad_bsd = NULL;
+    struct hostent *	hp;
+    struct passwd *	pwptr;
+    uid_t		myuid;
+    int			i;
+    int			j;
+    char *		s;
+    char *		fp;
+    int			ch;
+
+    (void)cksum;	/* Quiet unused parameter warning */
+
+    secprintf(("%s: check_security(addr=%p, str='%s', cksum=%ul, errstr=%p\n",
+		debug_prefix(NULL), addr, str, cksum, errstr));
+    dump_sockaddr(addr);
 
     *errstr = NULL;
 
     /* what host is making the request? */
 
-    hp = gethostbyaddr((char *)&addr->sin_addr, sizeof(addr->sin_addr),
+    hp = gethostbyaddr((char *)&addr->sin_addr, SIZEOF(addr->sin_addr),
 		       AF_INET);
-    if(hp == NULL) {
+    if (hp == NULL) {
 	/* XXX include remote address in message */
 	*errstr = vstralloc("[",
 			    "addr ", inet_ntoa(addr->sin_addr), ": ",
@@ -2126,7 +2152,7 @@ char **errstr;
 
     /* Now let's get the hostent for that hostname */
     hp = gethostbyname( remotehost );
-    if(hp == NULL) {
+    if (hp == NULL) {
 	/* XXX include remote hostname in message */
 	*errstr = vstralloc("[",
 			    "host ", remotehost, ": ",
@@ -2137,7 +2163,7 @@ char **errstr;
     }
 
     /* Verify that the hostnames match -- they should theoretically */
-    if( strncasecmp( remotehost, hp->h_name, strlen(remotehost)+1 ) != 0 ) {
+    if (strncasecmp( remotehost, hp->h_name, strlen(remotehost)+1 ) != 0 ) {
 	*errstr = vstralloc("[",
 			    "hostnames do not match: ",
 			    remotehost, " ", hp->h_name,
@@ -2152,7 +2178,7 @@ char **errstr;
      */
     for (i = 0; hp->h_addr_list[i]; i++) {
 	if (memcmp(hp->h_addr_list[i],
-		   (char *) &addr->sin_addr, sizeof(addr->sin_addr)) == 0)
+		   (char *) &addr->sin_addr, SIZEOF(addr->sin_addr)) == 0)
 	    break;                     /* name is good, keep it */
     }
 
@@ -2162,12 +2188,12 @@ char **errstr;
 
    /*   Check even the aliases list. Work around for Solaris if dns goes over NIS */
 
-    if( !hp->h_addr_list[i] ) {
+    if (!hp->h_addr_list[i] ) {
         for (j = 0; hp->h_aliases[j] !=0 ; j++) {
-	     if ( strcmp(hp->h_aliases[j],inet_ntoa(addr->sin_addr)) == 0)
+	     if (strcmp(hp->h_aliases[j],inet_ntoa(addr->sin_addr)) == 0)
 	         break;                          /* name is good, keep it */
         }
-	if( !hp->h_aliases[j] ) {
+	if (!hp->h_aliases[j] ) {
 	    *errstr = vstralloc("[",
 			        "ip address ", inet_ntoa(addr->sin_addr),
 			        " is not in the ip list for ", remotehost,
@@ -2180,10 +2206,10 @@ char **errstr;
 
     /* next, make sure the remote port is a "reserved" one */
 
-    if(ntohs(addr->sin_port) >= IPPORT_RESERVED) {
+    if (ntohs(addr->sin_port) >= IPPORT_RESERVED) {
 	char number[NUM_STR_SIZE];
 
-	snprintf(number, sizeof(number), "%d", ntohs(addr->sin_port));
+	snprintf(number, SIZEOF(number), "%hd", (short)ntohs(addr->sin_port));
 	*errstr = vstralloc("[",
 			    "hostY ", remotehost, ": ",
 			    "port ", number, " not secure",
@@ -2203,18 +2229,18 @@ char **errstr;
 			"]", NULL);
 
 #define sc "USER "
-    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+    if (strncmp(s - 1, sc, SIZEOF(sc)-1) != 0) {
 	*errstr = bad_bsd;
 	bad_bsd = NULL;
 	amfree(remotehost);
 	return 0;
     }
-    s += sizeof(sc)-1;
+    s += SIZEOF(sc)-1;
     ch = s[-1];
 #undef sc
 
     skip_whitespace(s, ch);
-    if(ch == '\0') {
+    if (ch == '\0') {
 	*errstr = bad_bsd;
 	bad_bsd = NULL;
 	amfree(remotehost);
@@ -2224,17 +2250,17 @@ char **errstr;
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
     remoteuser = stralloc(fp);
-    s[-1] = ch;
+    s[-1] = (char)ch;
     amfree(bad_bsd);
 
     /* lookup our local user name */
 
     myuid = getuid();
-    if((pwptr = getpwuid(myuid)) == NULL)
+    if ((pwptr = getpwuid(myuid)) == NULL)
         error("error [getpwuid(%d) fails]", myuid);
 
-    dbprintf(("bsd security: remote host %s user %s local user %s\n",
-	      remotehost, remoteuser, pwptr->pw_name));
+    secprintf(("%s: bsd security: remote host %s user %s local user %s\n",
+	      debug_prefix(NULL), remotehost, remoteuser, pwptr->pw_name));
 
 #ifndef USE_AMANDAHOSTS
     s = check_user_ruserok(remotehost, pwptr, remoteuser);
@@ -2257,12 +2283,13 @@ char **errstr;
 /*
  * Writes out the entire iovec
  */
-int
-net_writev(fd, iov, iovcnt)
-    int fd, iovcnt;
-    struct iovec *iov;
+ssize_t
+net_writev(
+    int			fd,
+    struct iovec *	iov,
+    int			iovcnt)
 {
-    int delta, n, total;
+    ssize_t delta, n, total;
 
     assert(iov != NULL);
 
@@ -2284,7 +2311,7 @@ net_writev(fd, iov, iovcnt)
 	 */
 	for (; n > 0; iovcnt--, iov++) {
 	    /* 'delta' is the bytes written from this iovec */
-	    delta = n < iov->iov_len ? n : iov->iov_len;
+	    delta = ((size_t)n < iov->iov_len) ? n : (ssize_t)iov->iov_len;
 	    /* subtract from the total num bytes written */
 	    n -= delta;
 	    assert(n >= 0);
@@ -2303,14 +2330,14 @@ net_writev(fd, iov, iovcnt)
  * Like read(), but waits until the entire buffer has been filled.
  */
 ssize_t
-net_read(fd, vbuf, origsize, timeout)
-    int fd;
-    void *vbuf;
-    size_t origsize;
-    int timeout;
+net_read(
+    int		fd,
+    void *	vbuf,
+    size_t	origsize,
+    int		timeout)
 {
     char *buf = vbuf;	/* ptr arith */
-    int nread;
+    ssize_t nread;
     size_t size = origsize;
 
     secprintf(("%s: net_read: begin %d\n", debug_prefix_time(NULL), origsize));
@@ -2340,16 +2367,16 @@ net_read(fd, vbuf, origsize, timeout)
 /*
  * net_read likes to do a lot of little reads.  Buffer it.
  */
-int
-net_read_fillbuf(fd, timeout, buf, size)
-    int fd;
-    int timeout;
-    void *buf;
-    int size;
+ssize_t
+net_read_fillbuf(
+    int		fd,
+    int		timeout,
+    void *	buf,
+    size_t	size)
 {
     fd_set readfds;
     struct timeval tv;
-    int nread;
+    ssize_t nread;
 
     secprintf(("%s: net_read_fillbuf: begin\n", debug_prefix_time(NULL)));
     FD_ZERO(&readfds);
@@ -2383,3 +2410,45 @@ net_read_fillbuf(fd, timeout, buf, size)
     return (nread);
 }
 
+
+/*
+ * Display stat() information about a file.
+ */
+
+void
+show_stat_info(
+    char *	a,
+    char *	b)
+{
+    char *name = vstralloc(a, b, NULL);
+    struct stat sbuf;
+    struct passwd *pwptr;
+    char *owner;
+    struct group *grptr;
+    char *group;
+
+    if (stat(name, &sbuf) != 0) {
+	secprintf(("%s: bsd: cannot stat %s: %s\n",
+		   debug_prefix_time(NULL), name, strerror(errno)));
+	amfree(name);
+	return;
+    }
+    if ((pwptr = getpwuid(sbuf.st_uid)) == NULL) {
+	owner = alloc(NUM_STR_SIZE + 1);
+	snprintf(owner, NUM_STR_SIZE, "%ld", (long)sbuf.st_uid);
+    } else {
+	owner = stralloc(pwptr->pw_name);
+    }
+    if ((grptr = getgrgid(sbuf.st_gid)) == NULL) {
+	group = alloc(NUM_STR_SIZE + 1);
+	snprintf(owner, NUM_STR_SIZE, "%ld", (long)sbuf.st_gid);
+    } else {
+	group = stralloc(grptr->gr_name);
+    }
+    secprintf(("%s: bsd: processing file: %s\n", debug_prefix(NULL), name));
+    secprintf(("%s: bsd:                  owner=%s group=%s mode=%03o\n",
+	       debug_prefix(NULL), owner, group, (int) (sbuf.st_mode & 0777)));
+    amfree(name);
+    amfree(owner);
+    amfree(group);
+}

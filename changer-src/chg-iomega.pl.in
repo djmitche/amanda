@@ -92,7 +92,7 @@ die "changerdev not found in amanda.conf"
 #
 
 $current_label = "";
-$current_slot = 0;
+#$current_slot = 0;
 $max_slot = 1;
 
 @dow = ("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat");

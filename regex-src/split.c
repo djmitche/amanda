@@ -1,3 +1,4 @@
+#include <amanda.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -6,11 +7,11 @@
  = int split(char *string, char *fields[], int nfields, char *sep);
  */
 int				/* number of fields, including overflow */
-split(string, fields, nfields, sep)
-char *string;
-char *fields[];			/* list is not NULL-terminated */
-int nfields;			/* number of entries available in fields[] */
-char *sep;			/* "" white, "c" single char, "ab" [ab]+ */
+split(
+    char *	string,
+    char *	fields[],	/* list is not NULL-terminated */
+    int		nfields,	/* number of entries available in fields[] */
+    char *	sep)		/* "" white, "c" single char, "ab" [ab]+ */
 {
 	register char *p = string;
 	register char c;			/* latest character */
@@ -148,9 +149,9 @@ char *sep;			/* "" white, "c" single char, "ab" [ab]+ */
  * pgm str sep n	splits str by sep n times
  */
 int
-main(argc, argv)
-int argc;
-char *argv[];
+main(
+    int		argc,
+    char *	argv[])
 {
 	char buf[512];
 	register int n;
@@ -159,19 +160,19 @@ char *argv[];
 
 	if (argc > 4)
 		for (n = atoi(argv[3]); n > 0; n--) {
-			strncpy(buf, argv[1], sizeof(buf)-1);
-			buf[sizeof(buf)-1] = '\0';
+			strncpy(buf, argv[1], SIZEOF(buf)-1);
+			buf[SIZEOF(buf)-1] = '\0';
 		}
 	else if (argc > 3)
 		for (n = atoi(argv[3]); n > 0; n--) {
-			strncpy(buf, argv[1], sizeof(buf)-1);
-			buf[sizeof(buf)-1] = '\0';
+			strncpy(buf, argv[1], SIZEOF(buf)-1);
+			buf[SIZEOF(buf)-1] = '\0';
 			(void) split(buf, fields, MNF, argv[2]);
 		}
 	else if (argc > 2)
 		dosplit(argv[1], argv[2]);
 	else if (argc > 1)
-		while (fgets(buf, sizeof(buf), stdin) != NULL) {
+		while (fgets(buf, (int)sizeof(buf), stdin) != NULL) {
 			buf[strlen(buf)-1] = '\0';	/* stomp newline */
 			dosplit(buf, argv[1]);
 		}
@@ -181,9 +182,10 @@ char *argv[];
 	exit(0);
 }
 
-dosplit(string, seps)
-char *string;
-char *seps;
+int
+dosplit(
+    char *	string,
+    char *	seps)
 {
 #	define	NF	5
 	char *fields[NF];
@@ -193,10 +195,11 @@ char *seps;
 	print(nf, NF, fields);
 }
 
-print(nf, nfp, fields)
-int nf;
-int nfp;
-char *fields[];
+int
+print(
+    int nf,
+    int nfp,
+    char *fields[])
 {
 	register int fn;
 	register int bound;
@@ -276,7 +279,8 @@ struct {
 	NULL,		NULL,	0,	{ NULL },
 };
 
-regress()
+int
+regress(void)
 {
 	char buf[512];
 	register int n;
@@ -287,8 +291,8 @@ regress()
 	register char *f;
 
 	for (n = 0; tests[n].str != NULL; n++) {
-		strncpy(buf, tests[n].str, sizeof(buf)-1);
-		buf[sizeof(buf)-1] = '\0';
+		strncpy(buf, tests[n].str, SIZEOF(buf)-1);
+		buf[SIZEOF(buf)-1] = '\0';
 		fields[RNF] = NULL;
 		nf = split(buf, fields, RNF, tests[n].seps);
 		printit = 0;

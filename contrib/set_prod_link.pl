@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 # ========================================================================
-# @(#) $Id: set_prod_link.pl,v 1.2 1999/11/02 21:30:10 oliva Exp $
+# @(#) $Id: set_prod_link.pl,v 1.3 2006/05/25 01:47:13 johnfranks Exp $
 # ------------------------------------------------------------------------
 # $Source: /home/dustin/code/amanda/svn/cvs-conversion/sf-rsync/amanda/contrib/set_prod_link.pl,v $
 # ------------------------------------------------------------------------
@@ -23,6 +23,21 @@
 # History:
 #
 # $Log: set_prod_link.pl,v $
+# Revision 1.3  2006/05/25 01:47:13  johnfranks
+# Allow spaces and arbitrary binary characters in file names
+# and configuration files.
+#
+# 64-bit / type portability clean code.
+#
+# Add 'make lint' options to appropriate Makefiles.
+#
+# Fully lint clean code using Sun's lint, and splint code checkers.
+#
+# Various bug fixes that have not been pushed.
+#
+# Modified Files:
+# 	Modified most of the files...
+#
 # Revision 1.2  1999/11/02 21:30:10  oliva
 # * contrib/set_prod_link.pl: Create the links for a configuration
 # with --with-suffix.

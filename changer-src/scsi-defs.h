@@ -2,6 +2,9 @@
 /*
  * Copyright (c) 1998 T.Hepper
  */
+#ifndef SCSIDEFS_H
+#define SCSIDEFS_H
+
 #ifndef WORDS_BIGENDIAN
 #define LITTLE_ENDIAN_BITFIELDS
 #endif
@@ -53,7 +56,7 @@ typedef unsigned char PackedBit;
 
 #define MAX_RETRIES 100
 
-#define INQUIRY_SIZE sizeof(SCSIInquiry_T)
+#define INQUIRY_SIZE SIZEOF(SCSIInquiry_T)
 
 /*
  * Return values from the OS dependent part
@@ -134,10 +137,10 @@ typedef unsigned char PackedBit;
 
 /* macros for building scsi msb array parameter lists */
 #ifndef B
-#define B(s,i) ((unsigned char)((s) >> i))
+#define B(s,i) ((unsigned char)(((s) >> (i)) & 0xff))
 #endif
 #ifndef B1
-#define B1(s)                           ((unsigned char)(s))
+#define B1(s)  ((unsigned char)((s) & 0xff))
 #endif
 #define B2(s)                       B((s),8),   B1(s)
 #define B3(s)            B((s),16), B((s),8),   B1(s)
@@ -152,10 +155,10 @@ typedef unsigned char PackedBit;
 #define V6(s) (((((((((((s)[0] << 8) | (s)[1]) << 8) | (s)[2]) << 8) | (s)[3]) << 8) | (s)[4]) << 8) | (s)[5])
 
 /* macros for converting binary into scsi msb array */
-#define MSB1(s,v)                                               *(s)=B1(v)
-#define MSB2(s,v)                                *(s)=B(v,8), (s)[1]=B1(v)
-#define MSB3(s,v)               *(s)=B(v,16),  (s)[1]=B(v,8), (s)[2]=B1(v)
-#define MSB4(s,v) *(s)=B(v,24),(s)[1]=B(v,16), (s)[2]=B(v,8), (s)[3]=B1(v)
+#define MSB1(s,v)                                                (s)[0]=B1(v)
+#define MSB2(s,v)                                 (s)[0]=B(v,8), (s)[1]=B1(v)
+#define MSB3(s,v)                 (s)[0]=B(v,16), (s)[1]=B(v,8), (s)[2]=B1(v)
+#define MSB4(s,v) (s)[0]=B(v,24), (s)[1]=B(v,16), (s)[2]=B(v,8), (s)[3]=B1(v)
 
 #define LABEL_DB_VERSION 2
 
@@ -174,17 +177,17 @@ typedef unsigned char PackedBit;
 /*----------------------------------------------------------------------------*/
 /* Some stuff for our own configurationfile */
 typedef struct {  /* The information we can get for any drive (configuration) */
-  int drivenum;      /* Which drive to use in the library */
-  int start;         /* Which is the first slot we may use */
-  int end;           /* The last slot we are allowed to use */
-  int cleanslot;     /* Where the cleaningcartridge stays */
+  int	drivenum;    /* Which drive to use in the library */
+  int	start;       /* Which is the first slot we may use */
+  int	end;         /* The last slot we are allowed to use */
+  int	cleanslot;   /* Where the cleaningcartridge stays */
   char *scsitapedev; /* Where can we send raw SCSI commands to the tape */
   char *device;      /* Which device is associated to the drivenum */
   char *slotfile;    /* Where we should have our memory */   
   char *cleanfile;   /* Where we count how many cleanings we did */
   char *timefile;    /* Where we count the time the tape was used*/
   char *tapestatfile;/* Where can we place some drive stats */
-  char *changerident;/* Config to use foe changer control, ovverride result from inquiry */
+  char *changerident;/* Config to use for changer control, ovverride result from inquiry */
   char *tapeident;   /* Same as above for the tape device */
 }config_t; 
 
@@ -195,7 +198,7 @@ typedef struct {
   int havebarcode;       /* Do we have an barcode reader installed */
   char *debuglevel;      /* How many debug info to print */
   unsigned char emubarcode;	/* Emulate the barcode feature,  used for keeping an inventory of the lib */
-  int sleep;             /* How many seconds to wait for the drive to get ready */
+  time_t sleep;          /* How many seconds to wait for the drive to get ready */
   int cleanmax;          /* How many runs could be done with one cleaning tape */
   char *device;          /* Which device is our changer */
   char *labelfile;       /* Mapping from Barcode labels to volume labels */
@@ -211,10 +214,10 @@ typedef struct {
 typedef struct {
   char voltag[128];              /* Tape volume label */
   char barcode[TAG_SIZE];        /* Barcode of the tape */
-  unsigned int slot;             /* in which slot is the tape */
-  unsigned int from;      	 /* from where it comes, needed to move
-				 * a tape back to the right slot from the drive
-				 */
+  int slot;                      /* in which slot is the tape */
+  int from;                      /* from where it comes, needed to move a tape
+				  * back to the right slot from the drive
+				  */
 
   unsigned int LoadCount;	/* How many times has the tape been loaded */
   unsigned int RecovError;	/* How many recovered errors */
@@ -1053,8 +1056,8 @@ typedef struct ElementInfo
     int from;       /* From where did it come */
     char status;    /* F -> Full, E -> Empty */
     char VolTag[TAG_SIZE+1]; /* Label Info if Barcode reader exsist */
-    int ASC;        /* Additional Sense Code from read element status */
-    int ASCQ;      /* */
+    unsigned char ASC;  /* Additional Sense Code from read element status */
+    unsigned char ASCQ; /* */
     unsigned char scsi; /* if DTE, which scsi address */
 
   PackedBit svalid : 1;
@@ -1076,13 +1079,13 @@ typedef struct {
     int (*function_move)(int, int, int);
     int (*function_status)(int, int);
     int (*function_reset_status)(int);
-    int (*function_free)();
+    int (*function_free)(void);
     int (*function_eject)(char *, int);
     int (*function_clean)(char *);
     int (*function_rewind)(int);
     int (*function_barcode)(int);
-    int (*function_search)();
-    int (*function_error)(int, int, unsigned char, unsigned char, unsigned char, char *);
+    int (*function_search)(void);
+    int (*function_error)(int, unsigned char, unsigned char, unsigned char, unsigned char, RequestSense_T *);
 } ChangerCMD_T ;
 
 typedef struct {
@@ -1112,71 +1115,90 @@ typedef struct OpenFiles {
 typedef struct LogPageDecode {
     int LogPage;
     char *ident;
-    void (*decode)(LogParameter_T *, int);
+    void (*decode)(LogParameter_T *, size_t);
 } LogPageDecode_T;
 
 typedef struct {
-   char *ident;      /* Ident as returned from the inquiry */
-   char *vendor;     /* Vendor as returned from the inquiry */
-   int type;         /* removable .... */
-   int sense;        /* Sense key as returned from the device */
-   int asc;          /* ASC as set in the sense struct */
-   int ascq;         /* ASCQ as set in the sense struct */
-   int  ret;         /* What we think that we should return on this conditon */
-   char text[80];    /* A short text describing this condition */
+   char *ident;        /* Ident as returned from the inquiry */
+   char *vendor;       /* Vendor as returned from the inquiry */
+   unsigned char type; /* removable .... */
+   unsigned char sense;/* Sense key as returned from the device */
+   unsigned char asc;  /* ASC as set in the sense struct */
+   unsigned char ascq; /* ASCQ as set in the sense struct */
+   int  ret;           /* What we think that we should return on this conditon */
+   char text[80];      /* A short text describing this condition */
 } SenseType_T;                                                                                    
 
 /* ======================================================= */
-/* Funktion-Declaration */
+/* Function-Declaration */
 /* ======================================================= */
-int SCSI_OpenDevice(int );
-int OpenDevice(int ,char *DeviceName, char *ConfigName, char *ident);
+int SCSI_OpenDevice(int);
+int OpenDevice(int, char *DeviceName, char *ConfigName, char *ident);
 
 int SCSI_CloseDevice(int DeviceFD); 
-int CloseDevice(int ); 
+int CloseDevice(char *, int); 
 int Tape_Eject(int);
 int Tape_Status(int);
-void DumpSense();
-int Sense2Action(char *ident, unsigned char type, unsigned char ignsense, unsigned char sense, unsigned
-char asc, unsigned char ascq, char **text) ;
+void DumpSense(void);
+int Sense2Action(char *ident,
+			unsigned char type,
+			unsigned char ignsense,
+			unsigned char sense,
+			unsigned char asc,
+			unsigned char ascq,
+			char **text);
 
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
                         CDB_T CDB,
-                        int CDB_Length,
+                        size_t CDB_Length,
                         void *DataBuffer,
-                        int DataBufferLength,
-                        char *RequestSense,
-                        int RequestSenseLength);
+                        size_t DataBufferLength,
+                        RequestSense_T *RequestSense,
+                        size_t RequestSenseLength);
 
-int Tape_Ioctl( int DeviceFD, int command);
-void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
+int Tape_Ioctl(int DeviceFD, int command);
+void ChangerStatus(char * option,
+			char * labelfile,
+			int HasBarCode,
+			char *changer_file,
+			char *changer_dev,
+			char *tape_device);
 
-int SCSI_Inquiry(int, SCSIInquiry_T *, unsigned char);
+int SCSI_Inquiry(int, SCSIInquiry_T *, size_t);
 int PrintInquiry(SCSIInquiry_T *);
 int DecodeSCSI(CDB_T CDB, char *string);
 
-int RequestSense P((int fd, ExtendedRequestSense_T *s, int ClearErrorCounters));
-int DecodeSense P((RequestSense_T *sense, char *pstring, FILE *out));
-int DecodeExtSense P((ExtendedRequestSense_T *sense, char *pstring, FILE *out));
+int RequestSense(int fd, ExtendedRequestSense_T *s, int ClearErrorCounters);
+int DecodeSense(RequestSense_T *sense, char *pstring, FILE *out);
+int DecodeExtSense(ExtendedRequestSense_T *sense, char *pstring, FILE *out);
 
 void ChgExit(char *, char *, int);
 
 void ChangerReplay(char *option);
-void ChangerStatus(char * option, char * labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
+void ChangerStatus(char *option, char *labelfile, int HasBarCode, char *changer_file, char *changer_dev, char *tape_device);
 int BarCode(int fd);
 int MapBarCode(char *labelfile, MBC_T *);
 
-int Tape_Ready(int fd, int wait_time);
+int Tape_Ready(int fd, time_t wait_time);
 
 void Inventory(char *labelfile, int drive, int eject, int start, int stop, int clean);
-void ChangerDriverVersion();
-void PrintConf();
+void ChangerDriverVersion(void);
+void PrintConf(void);
 int LogSense(int fd);
 int ScanBus(int print);
 void DebugPrint(int level, int section, char * fmt, ...);
 int DecodeSense(RequestSense_T *sense, char *pstring, FILE *out);
-void SCSI_OS_Version();
+void SCSI_OS_Version(void);
+int get_clean_state(char *tapedev);
+int find_empty(int fd, int start, int count);
+int get_slot_count(int fd);
+int get_drive_count(int fd);
+int GetCurrentSlot(int fd, int drive);
+void DumpDev(OpenFiles_T *p, char *device);
+int isempty(int fd, int slot);
+
+#endif	/* !SCSIDEFS_H */
 /*
  * Local variables:
  * indent-tabs-mode: nil

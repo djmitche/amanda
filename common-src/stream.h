@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.h,v 1.10 2001/08/14 22:38:26 jrjackson Exp $
+ * $Id: stream.h,v 1.11 2006/05/25 01:47:12 johnfranks Exp $
  *
  * interface to stream module
  */
@@ -37,19 +37,19 @@
 #define NETWORK_BLOCK_BYTES	DISK_BLOCK_BYTES
 #define STREAM_BUFSIZE		(NETWORK_BLOCK_BYTES * 2)
 
-int stream_server P((int *port, int sendsize, int recvsize));
-int stream_accept P((int sock, int timeout, int sendsize, int recvsize));
-int stream_client_privileged P((const char *hostname,
-				int port,
-				int sendsize,
-				int recvsize,
-				int *localport,
-				int nonblock));
-int stream_client P((const char *hostname,
-		     int port,
-		     int sendsize,
-		     int recvsize,
-		     int *localport,
-		     int nonblock));
+int stream_server(in_port_t *port, size_t sendsize, size_t recvsize);
+int stream_accept(int sock, int timeout, size_t sendsize, size_t recvsize);
+int stream_client_privileged(const char *hostname,
+				in_port_t port,
+				size_t sendsize,
+				size_t recvsize,
+				in_port_t *localport,
+				int nonblock);
+int stream_client(const char *hostname,
+		     in_port_t port,
+		     size_t sendsize,
+		     size_t recvsize,
+		     in_port_t *localport,
+		     int nonblock);
 
 #endif

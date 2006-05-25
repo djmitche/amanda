@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.35 2005/12/21 19:07:49 paddy_s Exp $
+ * $Id: alloc.c,v 1.36 2006/05/25 01:47:11 johnfranks Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * errordump() is called, relieving the caller from checking the return
@@ -34,7 +34,7 @@
 #include "arglist.h"
 #include "queue.h"
 
-static char *internal_vstralloc P((const char *, va_list));
+static char *internal_vstralloc(const char *, va_list);
 
 /*
  *=====================================================================
@@ -63,10 +63,11 @@ static char *internal_vstralloc P((const char *, va_list));
  */
 
 const char *
-debug_caller_loc(file, line)
-    const char *file;
-    int line;
+debug_caller_loc(
+    const char *file,
+    int line)
 {
+    /*@keep@*/
     struct loc_str {
 	char *str;
 	LIST_ENTRY(loc_str) le;
@@ -78,7 +79,7 @@ debug_caller_loc(file, line)
     if ((p = strrchr(file, '/')) != NULL)
 	file = p + 1;				/* just the last path element */
 
-    snprintf(loc, sizeof(loc), "%s@%d", file, line);
+    snprintf(loc, SIZEOF(loc), "%s@%d", file, line);
 
     for (ls = LIST_FIRST(&root); ls != NULL; ls = LIST_NEXT(ls, le)) {
 	if (strcmp(loc, ls->str) == 0) {
@@ -97,7 +98,7 @@ debug_caller_loc(file, line)
     /*
      * This is a new entry.  Put it at the head of the list.
      */
-    ls = malloc(sizeof(*ls));
+    ls = malloc(SIZEOF(*ls));
     if (ls == NULL)
 	return ("??");			/* not much better than abort */
     ls->str = malloc(strlen(loc) + 1);
@@ -138,9 +139,9 @@ static char		*saved_file;
 static int		saved_line;
 
 int
-debug_alloc_push (s, l)
-    char *s;
-    int l;
+debug_alloc_push(
+    char *s,
+    int l)
 {
     debug_alloc_loc_info[debug_alloc_ptr].file = s;
     debug_alloc_loc_info[debug_alloc_ptr].line = l;
@@ -162,7 +163,7 @@ debug_alloc_push (s, l)
  */
 
 void
-debug_alloc_pop ()
+debug_alloc_pop(void)
 {
     debug_alloc_ptr =
       (debug_alloc_ptr + DEBUG_ALLOC_SAVE_MAX - 1) % DEBUG_ALLOC_SAVE_MAX;
@@ -174,20 +175,21 @@ debug_alloc_pop ()
  * alloc - a wrapper for malloc.
  */
 void *
-debug_alloc(s, l, size)
-    const char *s;
-    int l;
-    size_t size;
+debug_alloc(
+    const char *s,
+    int l,
+    size_t size)
 {
     void *addr;
 
     malloc_enter(debug_caller_loc(s, l));
     addr = (void *)malloc(max(size, 1));
     if (addr == NULL) {
-	errordump("%s@%d: memory allocation failed (%u bytes requested)",
+	errordump("%s@%d: memory allocation failed (" SIZE_T_FMT " bytes requested)",
 		  s ? s : "(unknown)",
 		  s ? l : -1,
-		  size);
+		  (SIZE_T_FMT_TYPE)size);
+	/*NOTREACHED*/
     }
     malloc_leave(debug_caller_loc(s, l));
     return addr;
@@ -198,11 +200,11 @@ debug_alloc(s, l, size)
  * newalloc - free existing buffer and then alloc a new one.
  */
 void *
-debug_newalloc(s, l, old, size)
-    const char *s;
-    int l;
-    void *old;
-    size_t size;
+debug_newalloc(
+    const char *s,
+    int l,
+    void *old,
+    size_t size)
 {
     char *addr;
 
@@ -219,10 +221,10 @@ debug_newalloc(s, l, old, size)
  *            Just like strdup()!
  */
 char *
-debug_stralloc(s, l, str)
-    const char *s;
-    int l;
-    const char *str;
+debug_stralloc(
+    const char *s,
+    int l,
+    const char *str)
 {
     char *addr;
 
@@ -235,9 +237,10 @@ debug_stralloc(s, l, str)
 
 /* vstrextend -- Extends the existing string by appending the other 
  * arguments. */
-arglist_function(char *vstrextend,
-		  char **,
-                 oldstr)
+/*@ignore@*/
+arglist_function(
+    char *vstrextend,
+    char **, oldstr)
 {
 	char *keep = *oldstr;
 	va_list ap;
@@ -252,6 +255,7 @@ arglist_function(char *vstrextend,
 	arglist_end(ap);
         return *oldstr;
 }
+/*@end@*/
 
 /*
  * internal_vstralloc - copies up to MAX_STR_ARGS strings into newly
@@ -264,18 +268,17 @@ arglist_function(char *vstrextend,
 #define	MAX_VSTRALLOC_ARGS	32
 
 static char *
-internal_vstralloc(str, argp)
-    const char *str;
-    va_list argp;
+internal_vstralloc(
+    const char *str,
+    va_list argp)
 {
     char *next;
     char *result;
-    int a;
+    int a, b;
     size_t total_len;
     const char *arg[MAX_VSTRALLOC_ARGS+1];
     size_t len[MAX_VSTRALLOC_ARGS+1];
     size_t l;
-    const char *s;
 
     if (str == NULL) {
 	return NULL;				/* probably will not happen */
@@ -292,24 +295,24 @@ internal_vstralloc(str, argp)
 	    continue;				/* minor optimisation */
 	}
 	if (a >= MAX_VSTRALLOC_ARGS) {
-	    errordump("%s@%d: more than %d arg%s to vstralloc",
+	    errordump("%s@%d: more than %d args to vstralloc",
 		      saved_file ? saved_file : "(unknown)",
 		      saved_file ? saved_line : -1,
-		      MAX_VSTRALLOC_ARGS,
-		      (MAX_VSTRALLOC_ARGS == 1) ? "" : "s");
+		      MAX_VSTRALLOC_ARGS);
+	    /*NOTREACHED*/
 	}
 	arg[a] = next;
 	len[a] = l;
 	total_len += l;
 	a++;
     }
-    arg[a] = NULL;
-    len[a] = 0;
 
-    next = result = debug_alloc(saved_file, saved_line, total_len+1);
-    for (a = 0; (s = arg[a]) != NULL; a++) {
-	memcpy(next, s, len[a]);
-	next += len[a];
+    result = debug_alloc(saved_file, saved_line, total_len+1);
+
+    next = result;
+    for (b = 0; b < a; b++) {
+	memcpy(next, arg[b], len[b]);
+	next += len[b];
     }
     *next = '\0';
 
@@ -320,7 +323,9 @@ internal_vstralloc(str, argp)
 /*
  * vstralloc - copies multiple strings into newly allocated memory.
  */
-arglist_function(char *debug_vstralloc, const char *, str)
+arglist_function(
+    char *debug_vstralloc,
+    const char *, str)
 {
     va_list argp;
     char *result;
@@ -339,11 +344,11 @@ arglist_function(char *debug_vstralloc, const char *, str)
  * newstralloc - free existing string and then stralloc a new one.
  */
 char *
-debug_newstralloc(s, l, oldstr, newstr)
-    const char *s;
-    int l;
-    char *oldstr;
-    const char *newstr;
+debug_newstralloc(
+    const char *s,
+    int l,
+    char *oldstr,
+    const char *newstr)
 {
     char *addr;
 
@@ -358,11 +363,10 @@ debug_newstralloc(s, l, oldstr, newstr)
 /*
  * newvstralloc - free existing string and then vstralloc a new one.
  */
-arglist_function1(char *debug_newvstralloc,
-		  char *,
-		  oldstr,
-		  const char *,
-		  newstr)
+arglist_function1(
+    char *debug_newvstralloc,
+    char *, oldstr,
+    const char *, newstr)
 {
     va_list argp;
     char *result;
@@ -382,7 +386,7 @@ arglist_function1(char *debug_newvstralloc,
  * safe_env - build a "safe" environment list.
  */
 char **
-safe_env()
+safe_env(void)
 {
     static char *safe_env_list[] = {
 	"TZ",
@@ -402,7 +406,7 @@ safe_env()
      * safe_env_list so our result is always a valid, although possibly
      * empty, environment list.
      */
-#define SAFE_ENV_CNT	(sizeof(safe_env_list) / sizeof(*safe_env_list))
+#define SAFE_ENV_CNT	(size_t)(sizeof(safe_env_list) / sizeof(*safe_env_list))
     char **envp = safe_env_list + SAFE_ENV_CNT - 1;
 
     char **p;
@@ -411,7 +415,7 @@ safe_env()
     char *v;
     size_t l1, l2;
 
-    if ((q = (char **)malloc(sizeof(safe_env_list))) != NULL) {
+    if ((q = (char **)malloc(SIZEOF(safe_env_list))) != NULL) {
 	envp = q;
 	for (p = safe_env_list; *p != NULL; p++) {
 	    if ((v = getenv(*p)) == NULL) {
@@ -447,19 +451,19 @@ safe_env()
  */
 
 int
-debug_amtable_alloc(s, l, table, current, elsize, count, bump, init_func)
-    const char *s;
-    int l;
-    void **table;
-    int *current;
-    size_t elsize;
-    int count;
-    int bump;
-    void (*init_func)(void *);
+debug_amtable_alloc(
+    const char *s,
+    int l,
+    void **table,
+    size_t *current,
+    size_t elsize,
+    size_t count,
+    int bump,
+    void (*init_func)(void *))
 {
     void *table_new;
-    int table_count_new;
-    int i;
+    size_t table_count_new;
+    size_t i;
 
     if (count >= *current) {
 	table_count_new = ((count + bump) / bump) * bump;
@@ -492,9 +496,9 @@ debug_amtable_alloc(s, l, table, current, elsize, count, bump, init_func)
  */
 
 void
-amtable_free(table, current)
-    void **table;
-    int *current;
+amtable_free(
+    void **table,
+    size_t *current)
 {
     amfree(*table);
     *current = 0;

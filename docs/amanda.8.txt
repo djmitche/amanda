@@ -189,9 +189,9 @@ following meanings:
       e.g. sd0a, or a mount point such as /usr.
       It may also refer to a PC share by starting the name with two (forward)
       slashes, e.g. //some-pc/home. In this case, the program option in the
-      associated dumptype must be entered as GNUTAR. It is the combination of
-      the double slash disk name and program GNUTAR in the dumptype that
-      triggers the use of Samba.
+      associated dumptype must be entered as GNUTAR. It is the
+      combination of the double slash disk name and program GNUTAR
+      in the dumptype that triggers the use of Samba.
 
   dumptype
       Refers to a dumptype defined in the amanda.conf file. Dumptypes specify

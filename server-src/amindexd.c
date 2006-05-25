@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.92 2006/05/12 19:36:04 martinea Exp $
+ * $Id: amindexd.c,v 1.93 2006/05/25 01:47:19 johnfranks Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -53,15 +53,8 @@
 #include "token.h"
 #include "find.h"
 #include "tapefile.h"
+#include "util.h"
 #include "amandad.h"
-
-#ifdef HAVE_NETINET_IN_SYSTM_H
-#include <netinet/in_systm.h>
-#endif
-
-#ifdef HAVE_NETINET_IP_H
-#include <netinet/ip.h>
-#endif
 
 #include <grp.h>
 
@@ -77,6 +70,7 @@ static char local_hostname[MAX_HOSTNAME_LENGTH+1];	/* me! */
 static char *remote_hostname = NULL;			/* the client */
 static char *dump_hostname = NULL;		/* machine we are restoring */
 static char *disk_name;				/* disk we are restoring */
+char *qdisk_name = NULL;			/* disk we are restoring */
 static char *target_date = NULL;
 static disklist_t disk_list;			/* all disks in cur config */
 static find_result_t *output_find = NULL;
@@ -91,36 +85,37 @@ static REMOVE_ITEM *uncompress_remove = NULL;
 static am_feature_t *our_features = NULL;
 static am_feature_t *their_features = NULL;
 
-static REMOVE_ITEM *remove_files P((REMOVE_ITEM *));
-static char *uncompress_file P((char *, char **));
-static int process_ls_dump P((char *, DUMP_ITEM *, int, char **));
+static REMOVE_ITEM *remove_files(REMOVE_ITEM *);
+static char *uncompress_file(char *, char **);
+static int process_ls_dump(char *, DUMP_ITEM *, int, char **);
 
-static int reply_buffer_size = STR_SIZE;
+static size_t reply_buffer_size = STR_SIZE;
 static char *reply_buffer = NULL;
 
-static void reply P((int, char *, ...))
+static void reply(int, char *, ...)
     __attribute__ ((format (printf, 2, 3)));
-static void lreply P((int, char *, ...))
+static void lreply(int, char *, ...)
     __attribute__ ((format (printf, 2, 3)));
-static void fast_lreply P((int, char *, ...))
+static void fast_lreply(int, char *, ...)
     __attribute__ ((format (printf, 2, 3)));
-static int is_dump_host_valid P((char *));
-static int is_disk_valid P((char *));
-static int is_config_valid P((char *));
-static int build_disk_table P((void));
-static int disk_history_list P((void));
-static int is_dir_valid_opaque P((char *));
-static int opaque_ls P((char *, int));
-static void opaque_ls_one P((DIR_ITEM *dir_item, am_feature_e marshall_feature,
-			     int recursive));
-static int tapedev_is P((void));
-static int are_dumps_compressed P((void));
-static char *amindexd_nicedate P((char *datestamp));
-static int cmp_date P((const char *date1, const char *date2));
-int main P((int, char **));
+static int is_dump_host_valid(char *);
+static int is_disk_valid(char *);
+static int is_config_valid(char *);
+static int build_disk_table(void);
+static int disk_history_list(void);
+static int is_dir_valid_opaque(char *);
+static int opaque_ls(char *, int);
+static void opaque_ls_one (DIR_ITEM *dir_item, am_feature_e marshall_feature,
+			     int recursive);
+static int tapedev_is(void);
+static int are_dumps_compressed(void);
+static char *amindexd_nicedate (char *datestamp);
+static int cmp_date (const char *date1, const char *date2);
+int main(int, char **);
 
-static REMOVE_ITEM *remove_files(remove)
-REMOVE_ITEM *remove;
+static REMOVE_ITEM *
+remove_files(
+    REMOVE_ITEM *remove)
 {
     REMOVE_ITEM *prev;
 
@@ -136,15 +131,16 @@ REMOVE_ITEM *remove;
     return remove;
 }
 
-static char *uncompress_file(filename_gz, emsg)
-char *filename_gz;
-char **emsg;
+static char *
+uncompress_file(
+    char *	filename_gz,
+    char **	emsg)
 {
     char *cmd = NULL;
     char *filename = NULL;
     struct stat stat_filename;
     int result;
-    int len;
+    size_t len;
 
     filename = stralloc(filename_gz);
     len = strlen(filename);
@@ -157,7 +153,23 @@ char **emsg;
     /* uncompress the file */
     result=stat(filename,&stat_filename);
     if(result==-1 && errno==ENOENT) {		/* file does not exist */
+	struct stat statbuf;
 	REMOVE_ITEM *remove_file;
+
+	/*
+	 * Check that compressed file exists manually.
+	 */
+	if (stat(filename_gz, &statbuf) < 0) {
+	    *emsg = newvstralloc(*emsg, "Compressed file '",
+				filename_gz,
+				"' is inaccessable: ",
+				strerror(errno),
+				NULL);
+	    dbprintf((*emsg));
+	    amfree(filename);
+	    return NULL;
+ 	}
+
 	cmd = vstralloc(UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 			" ", UNCOMPRESS_OPT,
@@ -169,9 +181,8 @@ char **emsg;
 			NULL);
 	dbprintf(("%s: uncompress command: %s\n",
 		  debug_prefix_time(NULL), cmd));
-	if (system(cmd)!=0) {
-	    amfree(*emsg);
-	    *emsg = vstralloc("\"", cmd, "\" failed", NULL);
+	if (system(cmd) != 0) {
+	    *emsg = newvstralloc(*emsg, "\"", cmd, "\" failed", NULL);
 	    unlink(filename);
 	    errno = -1;
 	    amfree(filename);
@@ -180,7 +191,7 @@ char **emsg;
 	}
 
 	/* add at beginning */
-	remove_file = (REMOVE_ITEM *)alloc(sizeof(REMOVE_ITEM));
+	remove_file = (REMOVE_ITEM *)alloc(SIZEOF(REMOVE_ITEM));
 	remove_file->filename = stralloc(filename);
 	remove_file->next = uncompress_remove;
 	uncompress_remove = remove_file;
@@ -191,8 +202,6 @@ char **emsg;
 	    amfree(filename);
 	    amfree(cmd);
 	    return NULL;
-    } else {
-	/* already uncompressed */
     }
     amfree(cmd);
     return filename;
@@ -200,11 +209,12 @@ char **emsg;
 
 /* find all matching entries in a dump listing */
 /* return -1 if error */
-static int process_ls_dump(dir, dump_item, recursive, emsg)
-char *dir;
-DUMP_ITEM *dump_item;
-int  recursive;
-char **emsg;
+static int
+process_ls_dump(
+    char *	dir,
+    DUMP_ITEM *	dump_item,
+    int		recursive,
+    char **	emsg)
 {
     char *line = NULL;
     char *old_line = NULL;
@@ -214,7 +224,7 @@ char **emsg;
     FILE *fp;
     char *s;
     int ch;
-    int len_dir_slash;
+    size_t len_dir_slash;
 
     if (strcmp(dir, "/") == 0) {
 	dir_slash = stralloc(dir);
@@ -240,28 +250,29 @@ char **emsg;
 
     len_dir_slash=strlen(dir_slash);
 
-    for(; (line = agets(fp)) != NULL; free(line)) {
-	if(strncmp(dir_slash, line, len_dir_slash) == 0) {
-	    if(!recursive) {
-		s = line + len_dir_slash;
-		ch = *s++;
-		while(ch && ch != '/') ch = *s++;/* find end of the file name */
-		if(ch == '/') {
+    while ((line = agets(fp)) != NULL) {
+	if (line[0] != '\0') {
+	    if(strncmp(dir_slash, line, len_dir_slash) == 0) {
+		if(!recursive) {
+		    s = line + len_dir_slash;
 		    ch = *s++;
+		    while(ch && ch != '/')
+			ch = *s++;/* find end of the file name */
+		    if(ch == '/') {
+			ch = *s++;
+		    }
+		    s[-1] = '\0';
 		}
-		s[-1] = '\0';
-	    }
-	    if(old_line == NULL || strcmp(line, old_line) != 0) {
-		add_dir_list_item(dump_item, line);
-		amfree(old_line);
-		old_line = line;
-		line = NULL;
+		if(old_line == NULL || strcmp(line, old_line) != 0) {
+		    add_dir_list_item(dump_item, line);
+		    old_line = newstralloc(old_line, line);
+		}
 	    }
 	}
+	/*@i@*/ amfree(line);
     }
     afclose(fp);
     amfree(old_line);
-    amfree(line);
     amfree(filename);
     amfree(dir_slash);
     return 0;
@@ -272,12 +283,13 @@ printf_arglist_function1(static void reply, int, n, char *, fmt)
 {
     va_list args;
 
-    if(!reply_buffer) reply_buffer = alloc(reply_buffer_size);
+    if(!reply_buffer)
+	reply_buffer = alloc(reply_buffer_size);
 
     arglist_start(args, fmt);
     snprintf(reply_buffer, reply_buffer_size, "%03d ", n);
-    while (vsnprintf(reply_buffer+4, reply_buffer_size-4, fmt, args)
-						 >= reply_buffer_size-4) {
+    while ((size_t)vsnprintf(reply_buffer+4, reply_buffer_size-4, fmt, args)
+						 >= (reply_buffer_size-4)) {
 	amfree(reply_buffer);
 	reply_buffer_size *= 2;
 	reply_buffer = alloc(reply_buffer_size);
@@ -302,13 +314,18 @@ printf_arglist_function1(static void reply, int, n, char *, fmt)
     dbprintf(("%s: < %s\n", debug_prefix_time(NULL), reply_buffer));
 }
 
-static void lreply_backend(int flush, int n, char *fmt, va_list args)
+static void
+lreply_backend(
+    int		flush,
+    int		n,
+    char *	fmt,
+    va_list	args)
 {
     if(!reply_buffer) reply_buffer = alloc(reply_buffer_size);
 
     snprintf(reply_buffer, reply_buffer_size, "%03d-", n);
-    while (vsnprintf(reply_buffer+4, reply_buffer_size-4, fmt, args)
-						 >= reply_buffer_size-4) {
+    while ((size_t)vsnprintf(reply_buffer+4, reply_buffer_size-4, fmt, args)
+						 >= (reply_buffer_size-4)) {
 	amfree(reply_buffer);
 	reply_buffer_size *= 2;
 	reply_buffer = alloc(reply_buffer_size);
@@ -360,8 +377,9 @@ printf_arglist_function1(static void fast_lreply, int, n, char *, fmt)
 /* also do a security check on the requested dump hostname */
 /* to restrict access to index records if required */
 /* return -1 if not okay */
-static int is_dump_host_valid(host)
-char *host;
+static int
+is_dump_host_valid(
+    char *	host)
 {
     struct stat dir_stat;
     char *fn;
@@ -405,12 +423,14 @@ char *host;
 }
 
 
-static int is_disk_valid(disk)
-char *disk;
+static int
+is_disk_valid(
+    char *disk)
 {
     char *fn;
     struct stat dir_stat;
     disk_t *idisk;
+    char *qdisk;
 
     if (config_name == NULL || dump_hostname == NULL) {
 	reply(501, "Must set config,host before setting disk.");
@@ -420,14 +440,17 @@ char *disk;
     /* check that the config actually handles that disk */
     idisk = lookup_disk(dump_hostname, disk);
     if(idisk == NULL) {
-	reply(501, "Disk %s:%s is not in your disklist.", dump_hostname, disk);
+	qdisk = quote_string(disk);
+	reply(501, "Disk %s:%s is not in your disklist.", dump_hostname, qdisk);
+	amfree(qdisk);
 	return -1;
     }
 
     /* assume an index dir already */
     fn = getindexfname(dump_hostname, disk, NULL, 0);
     if (stat (fn, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode)) {
-	reply(501, "No index records for disk: %s. Invalid?", disk);
+	qdisk = quote_string(disk);
+	reply(501, "No index records for disk: %s. Invalid?", qdisk);
 	amfree(fn);
 	return -1;
     }
@@ -437,8 +460,9 @@ char *disk;
 }
 
 
-static int is_config_valid(config)
-char *config;
+static int
+is_config_valid(
+    char *	config)
 {
     char *conffile;
     char *conf_diskfile;
@@ -507,11 +531,12 @@ char *config;
 }
 
 
-static int build_disk_table()
+static int
+build_disk_table(void)
 {
     char *date;
     char *last_timestamp;
-    int last_filenum;
+    off_t last_filenum;
     int last_level;
     int last_partnum;
     find_result_t *find_output;
@@ -523,7 +548,7 @@ static int build_disk_table()
 
     clear_list();
     last_timestamp = NULL;
-    last_filenum = -1;
+    last_filenum = (off_t)-1;
     last_level = -1;
     last_partnum = -1;
     for(find_output = output_find;
@@ -555,16 +580,19 @@ static int build_disk_table()
 	    date = amindexd_nicedate(find_output->timestamp);
 	    add_dump(date, find_output->level, find_output->label, 
 		     find_output->filenum, partnum);
-	    dbprintf(("%s: - %s %d %s %d %d\n",
+	    dbprintf(("%s: - %s %d %s " OFF_T_FMT " %d\n",
 		     debug_prefix_time(NULL), date, find_output->level, 
-		     find_output->label, find_output->filenum, partnum));
+		     find_output->label,
+		     (OFF_T_FMT_TYPE)find_output->filenum,
+		     partnum));
 	}
     }
     return 0;
 }
 
 
-static int disk_history_list()
+static int
+disk_history_list(void)
 {
     DUMP_ITEM *item;
     char date[20];
@@ -574,8 +602,8 @@ static int disk_history_list()
 	return -1;
     }
 
-    lreply(200, " Dump history for config \"%s\" host \"%s\" disk \"%s\"",
-	  config_name, dump_hostname, disk_name);
+    lreply(200, " Dump history for config \"%s\" host \"%s\" disk %s",
+	  config_name, dump_hostname, qdisk_name);
 
     for (item=first_dump(); item!=NULL; item=next_dump(item)){
         char *tapelist_str = marshal_tapelist(item->tapes, 1);
@@ -589,24 +617,27 @@ static int disk_history_list()
 	    lreply(201, " %s %d %s", date, item->level, tapelist_str);
 	}
 	else{
-	    lreply(201, " %s %d %s %d", date, item->level, tapelist_str,
-	       item->file);
+	    lreply(201, " %s %d %s " OFF_T_FMT, date, item->level,
+		tapelist_str, (OFF_T_FMT_TYPE)item->file);
 	}
 	amfree(tapelist_str);
     }
 
-    reply(200, "Dump history for config \"%s\" host \"%s\" disk \"%s\"",
-	  config_name, dump_hostname, disk_name);
+    reply(200, "Dump history for config \"%s\" host \"%s\" disk %s",
+	  config_name, dump_hostname, qdisk_name);
 
     return 0;
 }
 
 
-/* is the directory dir backed up - dir assumed complete relative to
-   disk mount point */
+/*
+ * is the directory dir backed up - dir assumed complete relative to
+ * disk mount point
+ */
 /* opaque version of command */
-static int is_dir_valid_opaque(dir)
-char *dir;
+static int
+is_dir_valid_opaque(
+    char *dir)
 {
     DUMP_ITEM *item;
     char *line = NULL;
@@ -615,7 +646,7 @@ char *dir;
     char *ldir = NULL;
     char *filename_gz = NULL;
     char *filename = NULL;
-    int ldir_len;
+    size_t ldir_len;
     static char *emsg = NULL;
 
     if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
@@ -668,6 +699,8 @@ char *dir;
 	    return -1;
 	}
 	for(; (line = agets(fp)) != NULL; free(line)) {
+	    if (line[0] == '\0')
+		continue;
 	    if (strncmp(line, ldir, ldir_len) != 0) {
 		continue;			/* not found yet */
 	    }
@@ -692,9 +725,10 @@ char *dir;
     return -1;
 }
 
-static int opaque_ls(dir,recursive)
-char *dir;
-int  recursive;
+static int
+opaque_ls(
+    char *	dir,
+    int		recursive)
 {
     DUMP_ITEM *dump_item;
     DIR_ITEM *dir_item;
@@ -755,7 +789,6 @@ int  recursive;
 
     /* return the information to the caller */
     lreply(200, " Opaque list of %s", dir);
-
     for(level=0; level<=9; level++) {
 	for (dir_item = get_dir_list(); dir_item != NULL; 
 	     dir_item = dir_item->next) {
@@ -780,13 +813,14 @@ int  recursive;
     return 0;
 }
 
-void opaque_ls_one(dir_item, marshall_feature, recursive)
-DIR_ITEM *dir_item;
-am_feature_e marshall_feature;
-int recursive;
+void opaque_ls_one(
+    DIR_ITEM *	 dir_item,
+    am_feature_e marshall_feature,
+    int		 recursive)
 {
    char date[20];
    char *tapelist_str;
+    char *qpath;
 
     if (am_has_feature(their_features, marshall_feature)) {
 	tapelist_str = marshal_tapelist(dir_item->dump->tapes, 1);
@@ -799,28 +833,37 @@ int recursive;
     if(!am_has_feature(their_features,fe_amrecover_timestamp))
 	date[10] = '\0';
 
+    qpath = quote_string(dir_item->path);
     if((!recursive && am_has_feature(their_features,
 				     fe_amindexd_fileno_in_OLSD)) ||
        (recursive && am_has_feature(their_features,
 				    fe_amindexd_fileno_in_ORLD))) {
-	fast_lreply(201, " %s %d %s %d %s",
-		    date, dir_item->dump->level,
-		    tapelist_str, dir_item->dump->file,
-		    dir_item->path);
+	fast_lreply(201, " %s %d %s " OFF_T_FMT " %s",
+		    date,
+		    dir_item->dump->level,
+		    tapelist_str,
+		    (OFF_T_FMT_TYPE)dir_item->dump->file,
+		    qpath);
     }
     else {
+
 	fast_lreply(201, " %s %d %s %s",
 		    date, dir_item->dump->level,
-		    tapelist_str, dir_item->path);
+		    tapelist_str, qpath);
     }
+    amfree(qpath);
     if(am_has_feature(their_features, marshall_feature)) {
 	amfree(tapelist_str);
     }
 }
 
-/* returns the value of changer or tapedev from the amanda.conf file if set,
-   otherwise reports an error */
-static int tapedev_is()
+/*
+ * returns the value of changer or tapedev from the amanda.conf file if set,
+ * otherwise reports an error
+ */
+
+static int
+tapedev_is(void)
 {
     char *result;
 
@@ -863,7 +906,8 @@ static int tapedev_is()
 
 
 /* returns YES if dumps for disk are compressed, NO if not */
-static int are_dumps_compressed()
+static int
+are_dumps_compressed(void)
 {
     disk_t *diskp;
 
@@ -874,13 +918,14 @@ static int are_dumps_compressed()
     }
 
     /* now go through the list of disks and find which have indexes */
-    for (diskp = disk_list.head; diskp != NULL; diskp = diskp->next)
+    for (diskp = disk_list.head; diskp != NULL; diskp = diskp->next) {
 	if ((strcasecmp(diskp->host->hostname, dump_hostname) == 0)
-	    && (strcmp(diskp->name, disk_name) == 0))
+		&& (strcmp(diskp->name, disk_name) == 0)) {
 	    break;
+	}
+    }
 
-    if (diskp == NULL)
-    {
+    if (diskp == NULL) {
 	reply(501, "Couldn't find host/disk in disk file.");
 	return -1;
     }
@@ -894,9 +939,10 @@ static int are_dumps_compressed()
     return 0;
 }
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
     char *line = NULL, *part = NULL;
     char *s, *fp;
@@ -905,9 +951,9 @@ char **argv;
     socklen_t socklen;
     struct sockaddr_in his_addr;
     struct hostent *his_name;
-    char *arg;
+    char *arg = NULL;
     char *cmd;
-    int len;
+    size_t len;
     int user_validated = 0;
     char *errstr = NULL;
     char *pgm = "amindexd";		/* in case argv[0] is not set */
@@ -941,9 +987,12 @@ char **argv;
     if(geteuid() == 0) {
 	if(client_uid == (uid_t) -1) {
 	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	    /*NOTREACHED*/
 	}
 
+	/*@ignore@*/
 	initgroups(CLIENT_LOGIN, client_gid);
+	/*@end@*/
 	setgid(client_gid);
 	setuid(client_uid);
     }
@@ -997,15 +1046,18 @@ char **argv;
 	argv++;
     }
 
-    if(gethostname(local_hostname, sizeof(local_hostname)-1) == -1)
+    if(gethostname(local_hostname, SIZEOF(local_hostname)-1) == -1) {
 	error("gethostname: %s", strerror(errno));
-    local_hostname[sizeof(local_hostname)-1] = '\0';
+	/*NOTREACHED*/
+    }
+    local_hostname[SIZEOF(local_hostname)-1] = '\0';
 
     /* now trim domain off name */
     s = local_hostname;
     ch = *s++;
     while(ch && ch != '.') ch = *s++;
     s[-1] = '\0';
+
 
     if(from_amandad == 0) {
 	if(amindexd_debug) {
@@ -1016,36 +1068,40 @@ char **argv;
 	    his_name = gethostbyname(local_hostname);
 	    if(his_name == NULL) {
 		error("gethostbyname(%s) failed\n", local_hostname);
+                /*NOTREACHED*/
 	    }
-	    assert(his_name->h_addrtype == AF_INET);
-	    his_addr.sin_family = his_name->h_addrtype;
-	    his_addr.sin_port = htons(0);
-	    memcpy((char *)&his_addr.sin_addr.s_addr,
-		   (char *)his_name->h_addr_list[0], his_name->h_length);
+	    assert((sa_family_t)his_name->h_addrtype == (sa_family_t)AF_INET);
+	    his_addr.sin_family = (sa_family_t)his_name->h_addrtype;
+	    his_addr.sin_port = (in_port_t)htons(0);
+	    memcpy((void *)&his_addr.sin_addr.s_addr,
+		   (void *)his_name->h_addr_list[0], 
+                   (size_t)his_name->h_length);
 	} else {
 	    /* who are we talking to? */
 	    socklen = sizeof (his_addr);
 	    if (getpeername(0, (struct sockaddr *)&his_addr, &socklen) == -1)
 		error("getpeername: %s", strerror(errno));
 	}
-	if (his_addr.sin_family != AF_INET || ntohs(his_addr.sin_port) == 20)
-	{
+	if ((his_addr.sin_family != (sa_family_t)AF_INET)
+		|| (ntohs(his_addr.sin_port) == 20)) {
 	    error("connection rejected from %s family %d port %d",
 		  inet_ntoa(his_addr.sin_addr), his_addr.sin_family,
 		  htons(his_addr.sin_port));
+	    /*NOTREACHED*/
 	}
 	if ((his_name = gethostbyaddr((char *)&(his_addr.sin_addr),
 				      sizeof(his_addr.sin_addr),
 				      AF_INET)) == NULL) {
 	    error("gethostbyaddr(%s): hostname lookup failed",
 		  inet_ntoa(his_addr.sin_addr));
+	    /*NOTREACHED*/
 	}
 	fp = s = his_name->h_name;
 	ch = *s++;
 	while(ch && ch != '.') ch = *s++;
 	s[-1] = '\0';
 	remote_hostname = newstralloc(remote_hostname, fp);
-	s[-1] = ch;
+	s[-1] = (char)ch;
     }
     else {
 	cmdfdout  = DATA_FD_OFFSET + 0;
@@ -1069,18 +1125,18 @@ char **argv;
 	/* send the REP packet */
 	printf("CONNECT MESG %d\n", DATA_FD_OFFSET);
 	printf("\n");
+	fflush(stdin);
 	fflush(stdout);
-	fclose(stdout);
-	close(1);
-	fclose(stdin);
-	close(0);
-
-	stdout = fdopen(cmdfdout,"w");
-	stdin  = fdopen(cmdfdin,"r");
+	if ((dup2(cmdfdout, fileno(stdout)) < 0)
+		 || (dup2(cmdfdin, fileno(stdin)) < 0)) {
+	    error("amandad: Failed to setup stdin or stdout");
+	    /*NOTREACHED*/
+	}
     }
 
     /* clear these so we can detect when the have not been set by the client */
     amfree(dump_hostname);
+    amfree(qdisk_name);
     amfree(disk_name);
     amfree(target_date);
 
@@ -1100,7 +1156,6 @@ char **argv;
     while (1)
     {
 	/* get a line from the client */
-	amfree(line);
 	while(1) {
 	    if((part = agets(stdin)) == NULL) {
 		if(errno != 0) {
@@ -1123,13 +1178,9 @@ char **argv;
 		dbclose();
 		return 1;		/* they hung up? */
 	    }
-	    if(line) {
-		strappend(line, part);
-		amfree(part);
-	    } else {
-		line = part;
-		part = NULL;
-	    }
+	    strappend(line, part);	/* Macro: line can be null */
+	    amfree(part);
+
 	    if(amindexd_debug) {
 		break;			/* we have a whole line */
 	    }
@@ -1147,13 +1198,15 @@ char **argv;
 
 	dbprintf(("%s: > %s\n", debug_prefix_time(NULL), line));
 
-	arg = NULL;
+	if (arg != NULL)
+	    amfree(arg);
 	s = line;
 	ch = *s++;
 
 	skip_whitespace(s, ch);
 	if(ch == '\0') {
 	    reply(500, "Command not recognised/incorrect: %s", line);
+	    amfree(line);
 	    continue;
 	}
 	cmd = s - 1;
@@ -1166,7 +1219,8 @@ char **argv;
 	    skip_whitespace(s, ch);		/* find the argument */
 	    if (ch) {
 		arg = s-1;
-		skip_non_whitespace(s, ch);
+		skip_quoted_string(s, ch);
+		arg = unquote_string(arg);
 	    }
 	}
 
@@ -1175,6 +1229,7 @@ char **argv;
 	    user_validated = check_security(&his_addr, arg, 0, &errstr);
 	    if(user_validated) {
 		reply(200, "Access OK");
+		amfree(line);
 		continue;
 	    }
 	}
@@ -1195,9 +1250,10 @@ char **argv;
 	    {
 		dump_hostname = newstralloc(dump_hostname, arg);
 		reply(200, "Dump host set to %s.", dump_hostname);
+		amfree(qdisk_name);		/* invalidate any value */
 		amfree(disk_name);		/* invalidate any value */
 	    }
-	    s[-1] = ch;
+	    s[-1] = (char)ch;
 	} else if (strcmp(cmd, "LISTHOST") == 0) {
 	    disk_t *disk, 
                    *diskdup;
@@ -1229,17 +1285,19 @@ char **argv;
 		    reply(200, "No hosts for config %s", config_name);
 		}
 	    }
-	    s[-1] = ch;
+	    s[-1] = (char)ch;
 	} else if (strcmp(cmd, "DISK") == 0 && arg) {
 	    s[-1] = '\0';
 	    if (is_disk_valid(arg) != -1) {
 		disk_name = newstralloc(disk_name, arg);
+		qdisk_name = quote_string(disk_name);
 		if (build_disk_table() != -1) {
-		    reply(200, "Disk set to %s.", disk_name);
+		    reply(200, "Disk set to %s.", qdisk_name);
 		}
 	    }
-	    s[-1] = ch;
+	    s[-1] = (char)ch;
 	} else if (strcmp(cmd, "LISTDISK") == 0) {
+	    char *qname;
 	    disk_t *disk;
 	    int nbdisk = 0;
 	    s[-1] = '\0';
@@ -1250,10 +1308,13 @@ char **argv;
 		lreply(200, " List of disk for device %s on host %s", arg,
 		       dump_hostname);
 		for (disk = disk_list.head; disk!=NULL; disk = disk->next) {
-		    if(strcmp(disk->host->hostname, dump_hostname) == 0 &&
-		       ((disk->device && strcmp(disk->device, arg) == 0) ||
-			(!disk->device && strcmp(disk->name, arg) == 0))) {
-			fast_lreply(201, " %s", disk->name);
+
+		    if (strcmp(disk->host->hostname, dump_hostname) == 0 &&
+		      ((disk->device && strcmp(disk->device, arg) == 0) ||
+		      (!disk->device && strcmp(disk->name, arg) == 0))) {
+			qname = quote_string(disk->name);
+			fast_lreply(201, " %s", qname);
+			amfree(qname);
 			nbdisk++;
 		    }
 		}
@@ -1270,7 +1331,9 @@ char **argv;
 		lreply(200, " List of disk for host %s", dump_hostname);
 		for (disk = disk_list.head; disk!=NULL; disk = disk->next) {
 		    if(strcmp(disk->host->hostname, dump_hostname) == 0) {
-			fast_lreply(201, " %s", disk->name);
+			qname = quote_string(disk->name);
+			fast_lreply(201, " %s", qname);
+			amfree(qname);
 			nbdisk++;
 		    }
 		}
@@ -1281,7 +1344,7 @@ char **argv;
 		    reply(200, "No disk for host %s", dump_hostname);
 		}
 	    }
-	    s[-1] = ch;
+	    s[-1] = (char)ch;
 	} else if (strcmp(cmd, "SCNF") == 0 && arg) {
 	    s[-1] = '\0';
 	    amfree(config_name);
@@ -1290,13 +1353,14 @@ char **argv;
 	    config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
 	    if (is_config_valid(arg) != -1) {
 		amfree(dump_hostname);		/* invalidate any value */
+		amfree(qdisk_name);		/* invalidate any value */
 		amfree(disk_name);		/* invalidate any value */
 		reply(200, "Config set to %s.", config_name);
 	    } else {
 		amfree(config_name);
 		amfree(config_dir);
 	    }
-	    s[-1] = ch;
+	    s[-1] = (char)ch;
 	} else if (strcmp(cmd, "FEATURES") == 0 && arg) {
 	    char *our_feature_string = NULL;
 	    char *their_feature_string = NULL;
@@ -1310,12 +1374,12 @@ char **argv;
 	    reply(200, "FEATURES %s", our_feature_string);
 	    amfree(our_feature_string);
 	    amfree(their_feature_string);
-	    s[-1] = ch;
+	    s[-1] = (char)ch;
 	} else if (strcmp(cmd, "DATE") == 0 && arg) {
 	    s[-1] = '\0';
 	    target_date = newstralloc(target_date, arg);
 	    reply(200, "Working date set to %s.", target_date);
-	    s[-1] = ch;
+	    s[-1] = (char)ch;
 	} else if (strcmp(cmd, "DHST") == 0) {
 	    (void)disk_history_list();
 	} else if (strcmp(cmd, "OISD") == 0 && arg) {
@@ -1325,7 +1389,7 @@ char **argv;
 	} else if (strcmp(cmd, "OLSD") == 0 && arg) {
 	    (void)opaque_ls(arg,0);
 	} else if (strcmp(cmd, "ORLD") == 0 && arg) {
-	    (void)opaque_ls(arg,1);
+	    (void)opaque_ls(arg, 1);
 	} else if (strcmp(cmd, "TAPE") == 0) {
 	    (void)tapedev_is();
 	} else if (strcmp(cmd, "DCMP") == 0) {
@@ -1334,9 +1398,10 @@ char **argv;
 	    *cmd_undo = cmd_undo_ch;	/* restore the command line */
 	    reply(500, "Command not recognised/incorrect: %s", cmd);
 	}
+	amfree(line);
     }
-    amfree(line);
-
+    amfree(arg);
+    
     uncompress_remove = remove_files(uncompress_remove);
     free_find_result(&output_find);
     reply(200, "Good bye.");
@@ -1344,8 +1409,9 @@ char **argv;
     return 0;
 }
 
-static char *amindexd_nicedate(datestamp)
-char *datestamp;
+static char *
+amindexd_nicedate(
+    char *	datestamp)
 {
     static char nice[20];
     int year, month, day;
@@ -1361,7 +1427,8 @@ char *datestamp;
     day   = numdate % 100;
 
     if(strlen(datestamp) <= 8) {
-	snprintf(nice, sizeof(nice), "%4d-%02d-%02d", year, month, day);
+	snprintf(nice, SIZEOF(nice), "%4d-%02d-%02d",
+		year, month, day);
     }
     else {
 	strncpy(atime, &(datestamp[8]), 6);
@@ -1371,14 +1438,17 @@ char *datestamp;
 	minutes = (numtime / 100) % 100;
 	seconds = numtime % 100;
 
-	snprintf(nice, sizeof(nice), "%4d-%02d-%02d-%02d-%02d-%02d", year, month, day, hours, minutes, seconds);
+	snprintf(nice, SIZEOF(nice), "%4d-%02d-%02d-%02d-%02d-%02d",
+		year, month, day, hours, minutes, seconds);
     }
 
     return nice;
 }
 
-static int cmp_date(date1, date2)
-const char *date1, *date2;
+static int
+cmp_date(
+    const char *	date1,
+    const char *	date2)
 {
     return strncmp(date1, date2, strlen(date2));
 }

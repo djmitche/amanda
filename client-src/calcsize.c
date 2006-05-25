@@ -24,28 +24,36 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.37 2006/03/29 15:45:08 martinea Exp $
+ * $Id: calcsize.c,v 1.38 2006/05/25 01:47:11 johnfranks Exp $
  *
  * traverse directory tree to get backup size estimates
  */
 #include "amanda.h"
 #include "statfs.h"
 #include "sl.h"
+#include "util.h"
 
 #define ROUND(n,x)	((x) + (n) - 1 - (((x) + (n) - 1) % (n)))
 
 /*
-static unsigned long round_function(n, x)
-unsigned long n, x;
+static off_t
+round_function(n, x)
+    off_t	n,
+    off_t	x)
 {
   unsigned long remainder = x % n;
   if (remainder)
-    x += n-remainder;
+    x += n - remainder;
   return x;
 }
 */
 
-#define ST_BLOCKS(s)	((((s).st_blocks * 512) <= (s).st_size) ? (s).st_blocks+1 : ((s).st_size / 512 + (((s).st_size % 512) ? 1 : 0)))
+#define ST_BLOCKS(s)							       \
+	    (((((off_t)(s).st_blocks * (off_t)512) <= (s).st_size)) ?	       \
+	      ((off_t)(s).st_blocks + (off_t)1) :			       \
+	      ((s).st_size / (off_t)512 +				       \
+		(off_t)((((s).st_size % (off_t)512) != (off_t)0) ?	       \
+		(off_t)1 : (off_t)0)))
 
 #define	FILETYPES	(S_IFREG|S_IFLNK|S_IFDIR)
 
@@ -62,56 +70,65 @@ struct {
     int max_inode;
     int total_dirs;
     int total_files;
-    long total_size;
-    long total_size_name;
+    off_t total_size;
+    off_t total_size_name;
 } dumpstats[MAXDUMPS];
 
 time_t dumpdate[MAXDUMPS];
 int  dumplevel[MAXDUMPS];
 int ndumps;
 
-void (*add_file_name) P((int, char *));
-void (*add_file) P((int, struct stat *));
-long (*final_size) P((int, char *));
+void (*add_file_name)(int, char *);
+void (*add_file)(int, struct stat *);
+off_t (*final_size)(int, char *);
 
 
-int main P((int, char **));
-void traverse_dirs P((char *, char *));
+int main(int, char **);
+void traverse_dirs(char *, char *);
 
 
-void add_file_name_dump P((int, char *));
-void add_file_dump P((int, struct stat *));
-long final_size_dump P((int, char *));
+void add_file_name_dump(int, char *);
+void add_file_dump(int, struct stat *);
+off_t final_size_dump(int, char *);
 
-void add_file_name_gnutar P((int, char *));
-void add_file_gnutar P((int, struct stat *));
-long final_size_gnutar P((int, char *));
+void add_file_name_star(int, char *);
+void add_file_star(int, struct stat *);
+off_t final_size_star(int, char *);
 
-void add_file_name_unknown P((int, char *));
-void add_file_unknown P((int, struct stat *));
-long final_size_unknown P((int, char *));
+void add_file_name_gnutar(int, char *);
+void add_file_gnutar(int, struct stat *);
+off_t final_size_gnutar(int, char *);
 
-sl_t *calc_load_file P((char *filename));
-int calc_check_exclude P((char *filename));
+void add_file_name_unknown(int, char *);
+void add_file_unknown(int, struct stat *);
+off_t final_size_unknown(int, char *);
 
+sl_t *calc_load_file(char *filename);
+int calc_check_exclude(char *filename);
+
+int use_star_excl = 0;
 int use_gtar_excl = 0;
 sl_t *include_sl=NULL, *exclude_sl=NULL;
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
 #ifdef TEST
 /* standalone test to ckeck wether the calculated file size is ok */
     struct stat finfo;
     int i;
-    unsigned long dump_total=0, gtar_total=0;
+    off_t dump_total = (off_t)0;
+    off_t gtar_total = (off_t)0;
     char *d;
     int l, w;
 
     safe_fd(-1, 0);
 
     set_pname("calcsize");
+
+    dbopen();
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
@@ -126,16 +143,16 @@ char **argv;
 	    continue;
 	}
 	printf("%s: st_size=%lu", argv[i],(unsigned long)finfo.st_size);
-	printf(": blocks=%lu\n", (unsigned long)ST_BLOCKS(finfo));
-	dump_total += (ST_BLOCKS(finfo) + 1)/2 + 1;
-	gtar_total += ROUND(4,(ST_BLOCKS(finfo) + 1));
+	printf(": blocks=%llu\n", ST_BLOCKS(finfo));
+	dump_total += (ST_BLOCKS(finfo) + (off_t)1) / (off_t)2 + (off_t)1;
+	gtar_total += ROUND(4,(ST_BLOCKS(finfo) + (off_t)1));
     }
     printf("           gtar           dump\n");
     printf("total      %-9lu         %-9lu\n",gtar_total,dump_total);
     return 0;
 #else
     int i;
-    char *dirname=NULL, *amname=NULL, *filename=NULL;
+    char *dirname=NULL, *amname=NULL, *filename=NULL, *qfilename = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
 
@@ -143,6 +160,8 @@ char **argv;
     safe_cd();
 
     set_pname("calcsize");
+
+    dbopen();
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -157,7 +176,7 @@ char **argv;
     if(argc < 3) {
 	error("Usage: %s [DUMP|GNUTAR] name dir [-X exclude-file] [-I include-file] [level date]*",
 	      get_pname());
-	return 1;
+        /*NOTREACHED*/
     }
 
     /* parse backup program name */
@@ -165,7 +184,7 @@ char **argv;
     if(strcmp(*argv, "DUMP") == 0) {
 #if !defined(DUMP) && !defined(XFSDUMP)
 	error("dump not available on this system");
-	return 1;
+	/*NOTREACHED*/
 #else
 	add_file_name = add_file_name_dump;
 	add_file = add_file_dump;
@@ -175,7 +194,7 @@ char **argv;
     else if(strcmp(*argv, "GNUTAR") == 0) {
 #ifndef GNUTAR
 	error("gnutar not available on this system");
-	return 1;
+	/*NOTREACHED*/
 #else
 	add_file_name = add_file_name_gnutar;
 	add_file = add_file_gnutar;
@@ -195,47 +214,56 @@ char **argv;
     if (argc > 0) {
 	amname = *argv;
 	argc--, argv++;
-    } else
+    } else {
 	error("missing <name>");
+	/*NOTREACHED*/
+    }
 
     /* the toplevel directory name to search from */
     if (argc > 0) {
 	dirname = *argv;
 	argc--, argv++;
-    } else
+    } else {
 	error("missing <dir>");
+	/*NOTREACHED*/
+    }
 
     if ((argc > 1) && strcmp(*argv,"-X") == 0) {
 	argv++;
 
-	if (!use_gtar_excl) {
+	if (!(use_gtar_excl || use_star_excl)) {
 	  error("exclusion specification not supported");
-	  return 1;
+	  /*NOTREACHED*/
 	}
 	
 	filename = stralloc(*argv);
+	qfilename = quote_string(filename);
 	if (access(filename, R_OK) != 0) {
-	    fprintf(stderr,"Cannot open exclude file %s\n",filename);
-	    use_gtar_excl = 0;
+	    fprintf(stderr,"Cannot open exclude file %s\n", qfilename);
+	    use_gtar_excl = use_star_excl = 0;
 	} else {
-	  exclude_sl = calc_load_file(filename);
+	    exclude_sl = calc_load_file(filename);
 	}
+	amfree(qfilename);
 	amfree(filename);
 	argc -= 2;
 	argv++;
-    } else
-	use_gtar_excl = 0;
+    } else {
+	use_gtar_excl = use_star_excl = 0;
+    }
 
     if ((argc > 1) && strcmp(*argv,"-I") == 0) {
 	argv++;
 	
 	filename = stralloc(*argv);
+	qfilename = quote_string(filename);
 	if (access(filename, R_OK) != 0) {
-	    fprintf(stderr,"Cannot open include file %s\n",filename);
-	    use_gtar_excl = 0;
+	    fprintf(stderr,"Cannot open include file %s\n", qfilename);
+	    use_gtar_excl = use_star_excl = 0;
 	} else {
-	  include_sl = calc_load_file(filename);
+	    include_sl = calc_load_file(filename);
 	}
+	amfree(qfilename);
 	amfree(filename);
 	argc -= 2;
 	argv++;
@@ -253,8 +281,10 @@ char **argv;
 	}
     }
 
-    if(argc)
+    if(argc) {
 	error("leftover arg \"%s\", expected <level> and <date>", *argv);
+	/*NOTREACHED*/
+    }
 
     if(is_empty_sl(include_sl)) {
 	traverse_dirs(dirname,".");
@@ -275,11 +305,18 @@ char **argv;
 
 	amflock(1, "size");
 
-	lseek(1, (off_t)0, SEEK_END);
+	if (fseek(stderr, 0L, SEEK_END) < 0) {
+	    dbprintf(("calcsize: warning - seek failed: %s\n",
+		      strerror(errno)));
+	}
 
-	fprintf(stderr, "%s %d SIZE %ld\n",
-	       amname, dumplevel[i], final_size(i, dirname));
-	fflush(stdout);
+	dbprintf(("calcsize: %s %d SIZE " OFF_T_FMT "\n",
+	       amname, dumplevel[i],
+	       (OFF_T_FMT_TYPE)final_size(i, dirname)));
+	fprintf(stderr, "%s %d SIZE " OFF_T_FMT "\n",
+	       amname, dumplevel[i],
+	       (OFF_T_FMT_TYPE)final_size(i, dirname));
+	fflush(stderr);
 
 	amfunlock(1, "size");
     }
@@ -299,10 +336,10 @@ char **argv;
  */
 
 #if !defined(HAVE_BASENAME) && defined(BUILTIN_EXCLUDE_SUPPORT)
-static char *basename P((char *));
 
-static char *basename(file)
-char *file;
+static char *
+basename(
+    char *	file)
 {
     char *cp;
 
@@ -312,27 +349,30 @@ char *file;
 }
 #endif
 
-void push_name P((char *str));
-char *pop_name P((void));
+void push_name(char *str);
+char *pop_name(void);
 
-void traverse_dirs(parent_dir, include)
-char *parent_dir;
-char *include;
+void
+traverse_dirs(
+    char *	parent_dir,
+    char *	include)
 {
     DIR *d;
     struct dirent *f;
     struct stat finfo;
     char *dirname, *newname = NULL;
     char *newbase = NULL;
-    dev_t parent_dev = 0;
+    dev_t parent_dev = (dev_t)0;
     int i;
-    int l;
-    int parent_len;
-    int has_exclude = !is_empty_sl(exclude_sl) && use_gtar_excl;
+    size_t l;
+    size_t parent_len;
+    int has_exclude;
     char *aparent;
 
-    if(parent_dir == NULL || include == NULL) return;
+    if(parent_dir == NULL || include == NULL)
+	return;
 
+    has_exclude = !is_empty_sl(exclude_sl) && (use_gtar_excl || use_star_excl);
     aparent = vstralloc(parent_dir, "/", include, NULL);
 
     if(stat(parent_dir, &finfo) != -1)
@@ -342,7 +382,7 @@ char *include;
 
     push_name(aparent);
 
-    for(dirname = pop_name(); dirname; free(dirname), dirname = pop_name()) {
+    for(; (dirname = pop_name()) != NULL; free(dirname)) {
 	if(has_exclude && calc_check_exclude(dirname+parent_len+1)) {
 	    continue;
 	}
@@ -390,7 +430,7 @@ char *include;
 		int is_excluded = -1;
 		for(i = 0; i < ndumps; i++) {
 		    add_file_name(i, newname);
-		    if(is_file && finfo.st_ctime >= dumpdate[i]) {
+		    if(is_file && (time_t)finfo.st_ctime >= dumpdate[i]) {
 
 			if(has_exclude) {
 			    if(is_excluded == -1)
@@ -424,19 +464,21 @@ char *include;
     amfree(aparent);
 }
 
-void push_name(str)
-char *str;
+void
+push_name(
+    char *	str)
 {
     Name *newp;
 
-    newp = alloc(sizeof(*newp));
+    newp = alloc(SIZEOF(*newp));
     newp->str = stralloc(str);
 
     newp->next = name_stack;
     name_stack = newp;
 }
 
-char *pop_name()
+char *
+pop_name(void)
 {
     Name *newp = name_stack;
     char *str;
@@ -466,28 +508,35 @@ char *pop_name()
  * requirements for files with holes, nor the dumping of directories that
  * are not themselves modified.
  */
-void add_file_name_dump(level, name)
-int level;
-char *name;
+void
+add_file_name_dump(
+    int		level,
+    char *	name)
 {
+    (void)level;	/* Quiet unused parameter warning */
+    (void)name;		/* Quiet unused parameter warning */
+
     return;
 }
 
-void add_file_dump(level, sp)
-int level;
-struct stat *sp;
+void
+add_file_dump(
+    int			level,
+    struct stat *	sp)
 {
     /* keep the size in kbytes, rounded up, plus a 1k header block */
     if((sp->st_mode & S_IFMT) == S_IFREG || (sp->st_mode & S_IFMT) == S_IFDIR)
-    	dumpstats[level].total_size += (ST_BLOCKS(*sp) + 1)/2 + 1;
+    	dumpstats[level].total_size +=
+			(ST_BLOCKS(*sp) + (off_t)1) / (off_t)2 + (off_t)1;
 }
 
-long final_size_dump(level, topdir)
-int level;
-char *topdir;
+off_t
+final_size_dump(
+    int		level,
+    char *	topdir)
 {
     generic_fs_stats_t stats;
-    int mapsize;
+    off_t mapsize;
     char *s;
 
     /* calculate the map sizes */
@@ -495,15 +544,16 @@ char *topdir;
     s = stralloc2(topdir, "/.");
     if(get_fs_stats(s, &stats) == -1) {
 	error("statfs %s: %s", s, strerror(errno));
+	/*NOTREACHED*/
     }
     amfree(s);
 
-    mapsize = (stats.files + 7) / 8;	/* in bytes */
-    mapsize = (mapsize + 1023) / 1024;  /* in kbytes */
+    mapsize = (stats.files + (off_t)7) / (off_t)8;    /* in bytes */
+    mapsize = (mapsize + (off_t)1023) / (off_t)1024;  /* in kbytes */
 
     /* the dump contains three maps plus the files */
 
-    return 3*mapsize + dumpstats[level].total_size;
+    return (mapsize * (off_t)3) + dumpstats[level].total_size;
 }
 
 /*
@@ -517,29 +567,37 @@ char *topdir;
  *
  * As with DUMP, we only need a reasonable estimate, not an exact figure.
  */
-void add_file_name_gnutar(level, name)
-int level;
-char *name;
+void
+add_file_name_gnutar(
+    int		level,
+    char *	name)
 {
-/*    dumpstats[level].total_size_name += strlen(name) + 64;*/
-      dumpstats[level].total_size += 1;
+    (void)name;	/* Quiet unused parameter warning */
+
+/*  dumpstats[level].total_size_name += strlen(name) + 64;*/
+    dumpstats[level].total_size += (off_t)1;
 }
 
-void add_file_gnutar(level, sp)
-int level;
-struct stat *sp;
+void
+add_file_gnutar(
+    int			level,
+    struct stat *	sp)
 {
     /* the header takes one additional block */
     dumpstats[level].total_size += ST_BLOCKS(*sp);
 }
 
-long final_size_gnutar(level, topdir)
-int level;
-char *topdir;
+off_t
+final_size_gnutar(
+    int		level,
+    char *	topdir)
 {
+    (void)topdir;	/* Quiet unused parameter warning */
+
     /* divide by two to get kbytes, rounded up */
     /* + 4 blocks for security */
-    return (dumpstats[level].total_size + 5 + (dumpstats[level].total_size_name/512)) / 2;
+    return (dumpstats[level].total_size + (off_t)5 +
+		(dumpstats[level].total_size_name/(off_t)512)) / (off_t)2;
 }
 
 /*
@@ -549,35 +607,44 @@ char *topdir;
  * Here we'll just add up the file sizes and output that.
  */
 
-void add_file_name_unknown(level, name)
-int level;
-char *name;
+void
+add_file_name_unknown(
+    int		level,
+    char *	name)
 {
+    (void)level;	/* Quiet unused parameter warning */
+    (void)name;		/* Quiet unused parameter warning */
+
     return;
 }
 
-void add_file_unknown(level, sp)
-int level;
-struct stat *sp;
+void
+add_file_unknown(
+    int			level,
+    struct stat *	sp)
 {
     /* just add up the block counts */
     if((sp->st_mode & S_IFMT) == S_IFREG || (sp->st_mode & S_IFMT) == S_IFDIR)
     	dumpstats[level].total_size += ST_BLOCKS(*sp);
 }
 
-long final_size_unknown(level, topdir)
-int level;
-char *topdir;
+off_t
+final_size_unknown(
+    int		level,
+    char *	topdir)
 {
+    (void)topdir;	/* Quiet unused parameter warning */
+
     /* divide by two to get kbytes, rounded up */
-    return (dumpstats[level].total_size + 1) / 2;
+    return (dumpstats[level].total_size + (off_t)1) / (off_t)2;
 }
 
 /*
  * =========================================================================
  */
-sl_t *calc_load_file(filename)
-char *filename;
+sl_t *
+calc_load_file(
+    char *	filename)
 {
     char pattern[1025];
 
@@ -595,8 +662,9 @@ char *filename;
     return sl_list;
 }
 
-int calc_check_exclude(filename)
-char *filename;
+int
+calc_check_exclude(
+    char *	filename)
 {
     sle_t *an_exclude;
     if(is_empty_sl(exclude_sl)) return 0;

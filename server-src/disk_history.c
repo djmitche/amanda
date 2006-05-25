@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: disk_history.c,v 1.12 2006/01/16 00:07:01 martinea Exp $
+/* $Id: disk_history.c,v 1.13 2006/05/25 01:47:19 johnfranks Exp $
  *
  * functions for obtaining backup history
  */
@@ -33,7 +33,8 @@
 
 static DUMP_ITEM *disk_hist = NULL;
 
-void clear_list P((void))
+void
+clear_list(void)
 {
     DUMP_ITEM *item, *this;
 
@@ -55,28 +56,31 @@ void clear_list P((void))
 }
 
 /* add item, maintain list ordered by oldest date last */
-void add_dump(date, level, tape, file, partnum)
-char *date;
-int level;
-char *tape;
-int file;
-int partnum;
+
+void
+add_dump(
+    char *	date,
+    int		level,
+    char *	tape,
+    off_t	file,
+    int		partnum)
 {
     DUMP_ITEM *new, *item, *before;
     int isafile = 0;
 
-    new = (DUMP_ITEM *)alloc(sizeof(DUMP_ITEM));
-    strncpy(new->date, date, sizeof(new->date)-1);
-    new->date[sizeof(new->date)-1] = '\0';
+    new = (DUMP_ITEM *)alloc(SIZEOF(DUMP_ITEM));
+    strncpy(new->date, date, SIZEOF(new->date)-1);
+    new->date[SIZEOF(new->date)-1] = '\0';
     new->level = level;
-    strncpy(new->tape, tape, sizeof(new->tape)-1);
-    new->tape[sizeof(new->tape)-1] = '\0';
+    strncpy(new->tape, tape, SIZEOF(new->tape)-1);
+    new->tape[SIZEOF(new->tape)-1] = '\0';
     new->file = file;
     if(partnum == -1) new->is_split = 0;
     else new->is_split = 1;
     new->tapes = NULL;
 
-   if(new->tape[0] == '/') isafile = 1; /* XXX kludgey, like this whole thing */
+    if(new->tape[0] == '/')
+	isafile = 1; /* XXX kludgey, like this whole thing */
 
     if (disk_hist == NULL)
     {
@@ -123,13 +127,8 @@ int partnum;
 }
 
 
-DUMP_ITEM *first_dump P((void))
+DUMP_ITEM *
+first_dump(void)
 {
     return disk_hist;
-}
-
-DUMP_ITEM *next_dump(item)
-DUMP_ITEM *item;
-{
-    return item->next;
 }

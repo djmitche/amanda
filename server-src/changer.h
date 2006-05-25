@@ -24,31 +24,34 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.h,v 1.12 2005/12/21 19:07:50 paddy_s Exp $
+ * $Id: changer.h,v 1.13 2006/05/25 01:47:19 johnfranks Exp $
  *
  * interface routines for tape changers
  */
+#ifndef CHANGER_H
+#define CHANGER_H
+
 #include "amanda.h"
 
 extern int changer_debug;
 extern char *changer_resultstr;
 
-int changer_init P((void));
-int changer_reset P((char **slotstr));
-int changer_clean P((char **slotstr));
-int changer_eject P((char **slotstr));
-int changer_label P((char *slotsp, char *labelstr));
-int changer_info P((int *nslotsp, char **curslotstr, int *backwards));
-int changer_query P((int *nslotsp, char **curslotstr, int *backwards,
-		     int *searchable));
-int changer_search P((char *searchlabel, char **outslotstr, char **devicename));
-int changer_loadslot P((char *inslotstr, char **outslotstr, char **devicename));
-void changer_current P((void *user_data,
+int changer_init(void);
+int changer_reset(char **slotstr);
+int changer_clean(char **slotstr);
+int changer_eject(char **slotstr);
+int changer_label(char *slotsp, char *labelstr);
+int changer_info(int *nslotsp, char **curslotstr, int *backwards);
+int changer_query(int *nslotsp, char **curslotstr, int *backwards,
+		     int *searchable);
+int changer_search(char *searchlabel, char **outslotstr, char **devicename);
+int changer_loadslot(char *inslotstr, char **outslotstr, char **devicename);
+void changer_current(void *user_data,
                         int (*user_init)(void *user_data,
                                          int rc, int nslots, int backwards,
                                          int searchable),
 		     int (*user_slot)(void *user_data,
-                                      int rc, char *slotstr, char *device)));
+                                      int rc, char *slotstr, char *device));
 
 
 /* USAGE: changer_find(user_data, init_fxn, slot_fxn, searchlabel)
@@ -88,10 +91,12 @@ void changer_current P((void *user_data,
 
 
 
-void changer_find P((void *user_data,
+void changer_find(void *user_data,
                      int (*user_init)(void *user_data, int rc,
                                       int nslots, int backwards,
                                       int searchable),
 		     int (*user_slot)(void *user_data, int rc,
                                       char *slotstr, char *device),
-                     char *searchlabel));
+                     char *searchlabel);
+
+#endif	/* !CHANGER_H */

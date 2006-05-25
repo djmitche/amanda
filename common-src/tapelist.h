@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapelist.h,v 1.1 2005/10/11 01:17:00 vectro Exp $
+ * $Id: tapelist.h,v 1.2 2006/05/25 01:47:12 johnfranks Exp $
  *
  */
 
@@ -44,17 +44,18 @@ typedef struct tapelist_s {
     struct tapelist_s *next;
     char *label;
     int isafile; /* set to 1 and make *label the path to the file */
-    int *files;
+    off_t *files;
     int numfiles;
 } tapelist_t;
 
-extern int num_entries P((tapelist_t *tapelist));
-extern tapelist_t *append_to_tapelist P((tapelist_t *tapelist, char *label,
-					int file, int isafile));
-extern char *marshal_tapelist P((tapelist_t *tapelist, int escape));
-extern tapelist_t *unmarshal_tapelist_str P((char *tapelist_str));
-extern char *escape_label P((char *label));
-extern char *unescape_label P((char *label));
-extern void free_tapelist P((tapelist_t *tapelist));
-
+int num_entries(tapelist_t *tapelist);
+tapelist_t *append_to_tapelist(tapelist_t *tapelist, char *label,
+					off_t file, int isafile);
+char *marshal_tapelist(tapelist_t *tapelist, int escape);
+tapelist_t *unmarshal_tapelist_str(char *tapelist_str);
+char *escape_label(char *label);
+char *unescape_label(char *label);
+void free_tapelist(tapelist_t *tapelist);
+void dump_tapelist(tapelist_t *);
+ 
 #endif /* !TAPELIST_H */

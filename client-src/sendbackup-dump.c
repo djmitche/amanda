@@ -24,11 +24,12 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.88 2006/03/09 20:06:11 johnfranks Exp $
+ * $Id: sendbackup-dump.c,v 1.89 2006/05/25 01:47:11 johnfranks Exp $
  *
  * send backup data using BSD dump
  */
 
+#include "amanda.h"
 #include "sendbackup.h"
 #include "getfsent.h"
 #include "clock.h"
@@ -36,7 +37,7 @@
 
 #define LEAF_AND_DIRS "sed -e \'\ns/^leaf[ \t]*[0-9]*[ \t]*\\.//\nt\n/^dir[ \t]/ {\ns/^dir[ \t]*[0-9]*[ \t]*\\.//\ns%$%/%\nt\n}\nd\n\'"
 
-static regex_t re_table[] = {
+static amregex_t re_table[] = {
   /* the various encodings of dump size */
   /* this should also match BSDI pre-3.0's buggy dump program, that
      produced doubled DUMP: DUMP: messages */
@@ -111,15 +112,24 @@ static regex_t re_table[] = {
   AM_STRANGE_RE(NULL)
 };
 
+static void start_backup(char *host, char *disk, char *amdevice, int level,
+		char *dumpdate, int dataf, int mesgf, int indexf);
+static void end_backup(int status);
+
 /*
  *  doing similar to $ dump | compression | encryption
  */
 
-static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, indexf)
-    char *host;
-    char *disk, *amdevice;
-    int level, dataf, mesgf, indexf;
-    char *dumpdate;
+static void
+start_backup(
+    char *	host,
+    char *	disk,
+    char *	amdevice,
+    int		level,
+    char *	dumpdate,
+    int		dataf,
+    int		mesgf,
+    int		indexf)
 {
     int dumpin, dumpout, compout;
     char *dumpkeys = NULL;
@@ -130,25 +140,32 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
     char level_str[NUM_STR_SIZE];
     char *compopt  = NULL;
     char *encryptopt = skip_argument;
+    char *qdisk;
 
+    (void)dumpdate;	/* Quiet unused parameter warning */
 
-    snprintf(level_str, sizeof(level_str), "%d", level);
+    snprintf(level_str, SIZEOF(level_str), "%d", level);
+
+    qdisk = quote_string(disk);
+    dbprintf(("%s: start: %s:%s lev %d\n",
+	      get_pname(), host, qdisk, level));
 
     fprintf(stderr, "%s: start [%s:%s level %d]\n",
-	    get_pname(), host, disk, level);
+	    get_pname(), host, qdisk, level);
+    amfree(qdisk);
 
-      /*  apply client-side encryption here */
-      if ( options->encrypt == ENCRYPT_CUST ) {
-       encpid = pipespawn(options->clnt_encrypt, STDIN_PIPE,
+    /*  apply client-side encryption here */
+    if ( options->encrypt == ENCRYPT_CUST ) {
+        encpid = pipespawn(options->clnt_encrypt, STDIN_PIPE,
                        &compout, &dataf, &mesgf,
                        options->clnt_encrypt, encryptopt, NULL);
-       dbprintf(("%s: pid %ld: %s\n",
+        dbprintf(("%s: pid %ld: %s\n",
                  debug_prefix_time("-gnutar"), (long)encpid, options->clnt_encrypt));
-     } else {
+    } else {
         compout = dataf;
         encpid = -1;
-     }
-      /*  now do the client-side compression */
+    }
+    /*  now do the client-side compression */
 
 
     if(options->compress == COMPR_FAST || options->compress == COMPR_BEST) {
@@ -405,9 +422,12 @@ static void start_backup(host, disk, amdevice, level, dumpdate, dataf, mesgf, in
 	aclose(indexf);
 }
 
-static void end_backup(status)
-int status;
+static void
+end_backup(
+    int		status)
 {
+    (void)status;	/* Quiet unused parameter warning */
+
     /* don't need to do anything for dump */
 }
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-hpux_new.c,v 1.18 2005/10/15 13:20:47 martinea Exp $
+ * $Id: scsi-hpux_new.c,v 1.19 2006/05/25 01:47:08 johnfranks Exp $
  *
  * Interface to execute SCSI commands on an HP-UX Workstation
  *
@@ -49,10 +49,8 @@
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
-#ifdef HAVE_SYS_SCSI_H
-#include <sys/scsi.h>
-#endif
 
+#include <sys/scsi.h>
 #include <sys/mtio.h>
 
 #include <scsi-defs.h>
@@ -60,7 +58,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-    static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.18 2005/10/15 13:20:47 martinea Exp $";
+    static char rcsid[] = "$Id: scsi-hpux_new.c,v 1.19 2006/05/25 01:47:08 johnfranks Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -111,13 +109,11 @@ int SCSI_OpenDevice(int ip)
                   free(pDev[ip].inquiry);
                   return(0);
               }
-            } else {
-              close(DeviceFD);
-              free(pDev[ip].inquiry);
-              pDev[ip].inquiry = NULL;
-              return(1);
             }
-          return(1);
+            close(DeviceFD);
+            free(pDev[ip].inquiry);
+            pDev[ip].inquiry = NULL;
+            return(1);
         }
     } else {
       if ((DeviceFD = open(pDev[ip].dev, O_RDWR| O_NDELAY)) >= 0)
@@ -144,25 +140,31 @@ int SCSI_CloseDevice(int DeviceFD)
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
                         CDB_T CDB,
-                        int CDB_Length,
+                        size_t CDB_Length,
                         void *DataBuffer,
-                        int DataBufferLength,
-                        char *RequestSense,
-                        int RequestSenseLength)
+                        size_t DataBufferLength,
+                        RequestSense_T *RequestSenseBuf,
+                        size_t RequestSenseLength)
 {
   extern OpenFiles_T *pDev;
   struct sctl_io sctl_io;
-  extern int errno;
   int Retries = 3;
   int Zero = 0, Result;
   
+  /* Basic sanity checks */
+  assert(CDB_Length <= UCHAR_MAX);
+  assert(RequestSenseLength <= UCHAR_MAX);
+
+  /* Clear buffer for cases where sense is not returned */
+  memset(RequestSenseBuf, 0, RequestSenseLength);
+
   if (pDev[DeviceFD].avail == 0)
     {
       return(SCSI_ERROR);
     }
 
 
-  memset(&sctl_io, '\0', sizeof(struct sctl_io));
+  memset(&sctl_io, '\0', SIZEOF(struct sctl_io));
 
   sctl_io.flags = 0;  
   sctl_io.max_msecs = 240000;
@@ -206,18 +208,18 @@ int SCSI_ExecuteCommand(int DeviceFD,
     
     SCSI_CloseDevice(DeviceFD);
 
-    memcpy(RequestSense, sctl_io.sense, RequestSenseLength);
+    memcpy(RequestSenseBuf, sctl_io.sense, RequestSenseLength);
     
     switch(sctl_io.cdb_status)
       {
       case S_GOOD:
         return(SCSI_OK);
+
       case S_CHECK_CONDITION:
         return(SCSI_CHECK);
-        break;
+
       default:
         return(SCSI_ERROR);
-        break;
       }
   }
   return(SCSI_ERROR);
@@ -242,13 +244,14 @@ int Tape_Ioctl( int DeviceFD, int command)
       mtop.mt_op = MTOFFL;
       mtop.mt_count = 1;
       break;
+
     default:
       break;
     }
 
   if (ioctl(pDev[DeviceFD].fd , MTIOCTOP, &mtop) != 0)
     {
-      dbprintf(("Tape_Ioctl error ioctl %d\n",errno));
+      dbprintf(("Tape_Ioctl error ioctl %s\n", strerror(errno)));
       SCSI_CloseDevice(DeviceFD);
       return(-1);
     }
@@ -271,7 +274,7 @@ int Tape_Status( int DeviceFD)
 
   if (ioctl(pDev[DeviceFD].fd, MTIOCGET, &mtget) != 0)
   {
-     dbprintf(("Tape_Status error ioctl %d\n",errno));
+     dbprintf(("Tape_Status error ioctl %s\n", strerror(errno)));
      SCSI_CloseDevice(DeviceFD);
      return(-1);
   }

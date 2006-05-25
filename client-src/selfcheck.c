@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.77 2006/04/26 15:53:36 martinea Exp $
+ * $Id: selfcheck.c,v 1.78 2006/05/25 01:47:11 johnfranks Exp $
  *
  * do self-check and send back any error messages
  */
@@ -67,34 +67,42 @@ static char *our_feature_string = NULL;
 static g_option_t *g_options = NULL;
 
 /* local functions */
-int main P((int argc, char **argv));
+int main(int argc, char **argv);
 
-static void check_options P((char *program, char *calcprog, char *disk, char *amdevice, option_t *options));
-static void check_disk P((char *program, char *calcprog, char *disk, char *amdevice, int level, char *optstr));
-static void check_overall P((void));
-static void check_access P((char *filename, int mode));
-static void check_file P((char *filename, int mode));
-static void check_dir P((char *dirname, int mode));
-static void check_suid P((char *filename));
-static void check_space P((char *dir, long kbytes));
+static void check_options(char *program, char *calcprog, char *disk, char *amdevice, option_t *options);
+static void check_disk(char *program, char *calcprog, char *disk, char *amdevice, int level, char *optstr);
+static void check_overall(void);
+static void check_access(char *filename, int mode);
+static void check_file(char *filename, int mode);
+static void check_dir(char *dirname, int mode);
+static void check_suid(char *filename);
+static void check_space(char *dir, off_t kbytes);
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
     int level;
     char *line = NULL;
     char *program = NULL;
     char *calcprog = NULL;
     char *disk = NULL;
+    char *qdisk = NULL;
     char *amdevice = NULL;
+    char *qamdevice = NULL;
     char *optstr = NULL;
     char *err_extra = NULL;
     char *s, *fp;
+    option_t *options;
     int ch;
+#if defined(USE_DBMALLOC)
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
-    option_t *options;
+#endif
+
+    (void)argc;	/* Quiet unused parameter warning */
+    (void)argv;	/* Quiet unused parameter warning */
 
     /* initialize */
 
@@ -106,7 +114,9 @@ char **argv;
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
+#if defined(USE_DBMALLOC)
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
+#endif
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
     dbopen();
@@ -118,9 +128,14 @@ char **argv;
 
     /* handle all service requests */
 
+    /*@ignore@*/
     for(; (line = agets(stdin)) != NULL; free(line)) {
+    /*@end@*/
+	if (line[0] == '\0')
+	    continue;
+
 #define sc "OPTIONS "
-	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+	if(strncmp(line, sc, SIZEOF(sc)-1) == 0) {
 #undef sc
 	    g_options = parse_g_options(line+8, 1);
 	    if(!g_options->hostname) {
@@ -181,9 +196,10 @@ char **argv;
 	if (ch == '\0') {
 	    goto err;				/* no disk */
 	}
-	disk = s - 1;
-	skip_non_whitespace(s, ch);
+	qdisk = s - 1;
+	skip_quoted_string(s, ch);
 	s[-1] = '\0';				/* terminate the disk name */
+	disk = unquote_string(qdisk);
 
 	skip_whitespace(s, ch);                 /* find the device or level */
 	if (ch == '\0') {
@@ -191,9 +207,10 @@ char **argv;
 	}
 	if(!isdigit((int)s[-1])) {
 	    fp = s - 1;
-	    skip_non_whitespace(s, ch);
+	    skip_quoted_string(s, ch);
 	     s[-1] = '\0';			/* terminate the device */
-	    amdevice = stralloc(fp);
+	    qamdevice = stralloc(fp);
+	    amdevice = unquote_string(qamdevice);
 	    skip_whitespace(s, ch);		/* find level number */
 	}
 	else {
@@ -208,8 +225,8 @@ char **argv;
 
 	skip_whitespace(s, ch);
 #define sc "OPTIONS "
-	if (ch && strncmp (s - 1, sc, sizeof(sc)-1) == 0) {
-	    s += sizeof(sc)-1;
+	if (ch && strncmp (s - 1, sc, SIZEOF(sc)-1) == 0) {
+	    s += SIZEOF(sc)-1;
 	    ch = s[-1];
 #undef sc
 	    skip_whitespace(s, ch);		/* find the option string */
@@ -217,11 +234,13 @@ char **argv;
 		goto err;			/* bad options string */
 	    }
 	    optstr = s - 1;
-	    skip_non_whitespace(s, ch);
+	    skip_quoted_string(s, ch);
 	    s[-1] = '\0';			/* terminate the options */
 	    options = parse_options(optstr, disk, amdevice, g_options->features, 1);
+	    /*@ignore@*/
 	    check_options(program, calcprog, disk, amdevice, options);
 	    check_disk(program, calcprog, disk, amdevice, level, &optstr[2]);
+	    /*@end@*/
 	    free_sl(options->exclude_file);
 	    free_sl(options->exclude_list);
 	    free_sl(options->include_file);
@@ -245,10 +264,13 @@ char **argv;
 	    need_gnutar=1;
 	    need_compress_path=1;
 	    need_calcsize=1;
+	    /*@ignore@*/
 	    check_disk(program, calcprog, disk, amdevice, level, "");
+	    /*@end@*/
 	} else {
 	    goto err;				/* bad syntax */
 	}
+	amfree(disk);
 	amfree(amdevice);
     }
 
@@ -264,15 +286,15 @@ char **argv;
     amfree(g_options->hostname);
     amfree(g_options);
 
+#if defined(USE_DBMALLOC)
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
     if(malloc_size_1 != malloc_size_2) {
-#if defined(USE_DBMALLOC)
 	extern int dbfd;
 
 	malloc_list(dbfd(), malloc_hist_1, malloc_hist_2);
-#endif
     }
+#endif
 
     dbclose();
     return 0;
@@ -289,9 +311,12 @@ char **argv;
 
 
 static void
-check_options(program, calcprog, disk, amdevice, options)
-    char *program, *calcprog, *disk, *amdevice;
-    option_t *options;
+check_options(
+    char *	program,
+    char *	calcprog,
+    char *	disk,
+    char *	amdevice,
+    option_t *	options)
 {
     char *myprogram = program;
 
@@ -426,27 +451,37 @@ check_options(program, calcprog, disk, amdevice, options)
 	    need_restore=1;
 #endif
     }
-    if(program_is_wrapper==1) {
-    }
-    if(options->compress == COMPR_BEST || options->compress == COMPR_FAST || options->compress == COMPR_CUST)
+    if ((options->compress == COMPR_BEST) || (options->compress == COMPR_FAST) 
+		|| (options->compress == COMPR_CUST)) {
 	need_compress_path=1;
+   }
 }
 
-static void check_disk(program, calcprog, disk, amdevice, level, optstr)
-char *program, *calcprog, *disk, *amdevice;
-int level;
-char *optstr;
+static void
+check_disk(
+    char *	program,
+    char *	calcprog,
+    char *	disk,
+    char *	amdevice,
+    int		level,
+    char *	optstr)
 {
-    char *device = NULL;
+    char *device = "nodevice";
     char *err = NULL;
-    char *user_and_password = NULL, *domain = NULL;
+    char *user_and_password = NULL;
+    char *domain = NULL;
     char *share = NULL, *subdir = NULL;
-    int lpass = 0;
+    size_t lpass = 0;
     int amode;
     int access_result;
     char *access_type;
     char *extra_info = NULL;
     char *myprogram = program;
+    char *qdisk = quote_string(disk);
+    char *qamdevice = quote_string(amdevice);
+    char *qdevice = NULL;
+
+    (void)level;	/* Quiet unused parameter warning */
 
     if(strcmp(myprogram,"CALCSIZE") == 0) {
 	if(amdevice[0] == '/' && amdevice[1] == '/') {
@@ -459,19 +494,19 @@ char *optstr;
 	myprogram = calcprog;
     }
 
-    dbprintf(("%s: checking disk %s\n", debug_prefix_time(NULL), disk));
+    dbprintf(("%s: checking disk %s\n", debug_prefix_time(NULL), qdisk));
 
-    if (strcmp(myprogram, "GNUTAR") == 0) {
+    if (strcmp(myprogram, "GNUTAR")==0) {
         if(amdevice[0] == '/' && amdevice[1] == '/') {
 #ifdef SAMBA_CLIENT
 	    int nullfd, checkerr;
 	    int passwdfd;
 	    char *pwtext;
-	    int pwtext_len;
-	    int checkpid;
+	    size_t pwtext_len;
+	    pid_t checkpid;
 	    amwait_t retstat;
 	    char number[NUM_STR_SIZE];
-	    int wpid;
+	    pid_t wpid;
 	    int ret, sig, rc;
 	    char *line;
 	    char *sep;
@@ -501,7 +536,7 @@ char *optstr;
 		goto common_exit;
 	    }
 	    *pwtext++ = '\0';
-	    pwtext_len = strlen(pwtext);
+	    pwtext_len = (size_t)strlen(pwtext);
 	    if ((device = makesharename(share, 0)) == NULL) {
 		err = stralloc2("cannot make share name of ", share);
 		goto common_exit;
@@ -533,12 +568,11 @@ char *optstr;
 #endif
 				 "-c", "quit",
 				 NULL);
-	    if (domain) {
-		memset(domain, '\0', strlen(domain));
-		amfree(domain);
-	    }
+	    amfree(domain);
 	    aclose(nullfd);
-	    if (pwtext_len > 0 && fullwrite(passwdfd, pwtext, pwtext_len) < 0) {
+	    /*@ignore@*/
+	    if ((pwtext_len > 0)
+	      && fullwrite(passwdfd, pwtext, (size_t)pwtext_len) < 0) {
 		err = vstralloc("password write failed: ",
 				amdevice,
 				": ",
@@ -547,13 +581,16 @@ char *optstr;
 		aclose(passwdfd);
 		goto common_exit;
 	    }
-	    memset(user_and_password, '\0', lpass);
+	    /*@end@*/
+	    memset(user_and_password, '\0', (size_t)lpass);
 	    amfree(user_and_password);
 	    aclose(passwdfd);
 	    ferr = fdopen(checkerr, "r");
 	    sep = "";
 	    errdos = 0;
 	    for(sep = ""; (line = agets(ferr)) != NULL; free(line)) {
+		if (line[0] == '\0')
+		    continue;
 		strappend(extra_info, sep);
 		strappend(extra_info, line);
 		sep = ": ";
@@ -580,7 +617,7 @@ char *optstr;
 		    } else {
 			strappend(err, "returned ");
 		    }
-		    snprintf(number, sizeof(number), "%d", ret);
+		    snprintf(number, (size_t)sizeof(number), "%d", ret);
 		    strappend(err, number);
 		}
 	    }
@@ -595,7 +632,7 @@ char *optstr;
 		amfree(extra_info);
 	    }
 #else
-	    err = stralloc2("This client is not configured for samba: ", disk);
+	    err = stralloc2("This client is not configured for samba: ", qdisk);
 #endif
 	    goto common_exit;
 	}
@@ -605,7 +642,7 @@ char *optstr;
 	if(amdevice[0] == '/' && amdevice[1] == '/') {
 	    err = vstralloc("The DUMP program cannot handle samba shares,",
 			    " use GNUTAR: ",
-			    disk,
+			    qdisk,
 			    NULL);
 	    goto common_exit;
 	}
@@ -630,10 +667,13 @@ char *optstr;
 	}
     }
     else { /* program_is_wrapper==1 */
-	int pid_wrapper;
+	pid_t pid_wrapper;
 	fflush(stdout);fflush(stdin);
 	switch (pid_wrapper = fork()) {
-	case -1: error("fork: %s", strerror(errno));
+	case -1:
+	    error("fork: %s", strerror(errno));
+	    /*NOTREACHED*/
+
 	case 0: /* child */
 	    {
 		char *argvchild[6];
@@ -657,7 +697,8 @@ char *optstr;
 	return;
     }
 
-    dbprintf(("%s: device %s\n", debug_prefix_time(NULL), device));
+    qdevice = quote_string(device);
+    dbprintf(("%s: device %s\n", debug_prefix_time(NULL), qdevice));
 
     /* skip accessability test if this is an AFS entry */
     if(strncmp(device, "afs:", 4) != 0) {
@@ -669,8 +710,8 @@ char *optstr;
 	access_type = "access";
 #endif
 	if(access_result == -1) {
-	    err = vstralloc("could not ", access_type, " ", device,
-			" (", disk, "): ", strerror(errno), NULL);
+	    err = vstralloc("could not ", access_type, " ", qdevice,
+			" (", qdisk, "): ", strerror(errno), NULL);
 	}
 #ifdef CHECK_FOR_ACCESS_WITH_OPEN
 	aclose(access_result);
@@ -682,37 +723,38 @@ common_exit:
     amfree(share);
     amfree(subdir);
     if(user_and_password) {
-	memset(user_and_password, '\0', lpass);
+	memset(user_and_password, '\0', (size_t)lpass);
 	amfree(user_and_password);
     }
-    if(domain) {
-	memset(domain, '\0', strlen(domain));
-	amfree(domain);
-    }
+    amfree(domain);
 
     if(err) {
 	printf("ERROR [%s]\n", err);
 	dbprintf(("%s: %s\n", debug_prefix_time(NULL), err));
 	amfree(err);
     } else {
-	printf("OK %s\n", disk);
-	dbprintf(("%s: disk \"%s\" OK\n", debug_prefix_time(NULL), disk));
-	printf("OK %s\n", amdevice);
-	dbprintf(("%s: amdevice \"%s\" OK\n",
-		  debug_prefix_time(NULL), amdevice));
-	printf("OK %s\n", device);
-	dbprintf(("%s: device \"%s\" OK\n", debug_prefix_time(NULL), device));
+	printf("OK %s\n", qdisk);
+	dbprintf(("%s: disk %s OK\n", debug_prefix_time(NULL), qdisk));
+	printf("OK %s\n", qamdevice);
+	dbprintf(("%s: amdevice %s OK\n",
+		  debug_prefix_time(NULL), qamdevice));
+	printf("OK %s\n", qdevice);
+	dbprintf(("%s: device %s OK\n", debug_prefix_time(NULL), qdevice));
     }
     if(extra_info) {
 	dbprintf(("%s: extra info: %s\n", debug_prefix_time(NULL), extra_info));
 	amfree(extra_info);
     }
+    amfree(qdisk);
+    amfree(qdevice);
+    amfree(qamdevice);
     amfree(device);
 
     /* XXX perhaps do something with level: read dumpdates and sanity check */
 }
 
-static void check_overall()
+static void
+check_overall(void)
 {
     char *cmd;
     struct stat buf;
@@ -863,35 +905,44 @@ static void check_overall()
         check_file("/etc/vdumpdates", F_OK);
 
     check_access("/dev/null", R_OK|W_OK);
-    check_space(AMANDA_TMPDIR, 64);	/* for amandad i/o */
+    check_space(AMANDA_TMPDIR, (off_t)64);	/* for amandad i/o */
 
 #ifdef AMANDA_DBGDIR
-    check_space(AMANDA_DBGDIR, 64);	/* for amandad i/o */
+    check_space(AMANDA_DBGDIR, (off_t)64);	/* for amandad i/o */
 #endif
 
-    check_space("/etc", 64);		/* for /etc/dumpdates writing */
+    check_space("/etc", (off_t)64);		/* for /etc/dumpdates writing */
 }
 
-static void check_space(dir, kbytes)
-char *dir;
-long kbytes;
+static void
+check_space(
+    char *	dir,
+    off_t	kbytes)
 {
     generic_fs_stats_t statp;
+    char *quoted = quote_string(dir);
 
-    if(get_fs_stats(dir, &statp) == -1)
-	printf("ERROR [cannot statfs %s: %s]\n", dir, strerror(errno));
-    else if(statp.avail < kbytes)
-	printf("ERROR [dir %s needs %ldKB, only has %ldKB available.]\n",
-	       dir, kbytes, statp.avail);
-    else
-	printf("OK %s has more than %ld KB available.\n", dir, kbytes);
+    if(get_fs_stats(dir, &statp) == -1) {
+	printf("ERROR [cannot statfs %s: %s]\n", quoted, strerror(errno));
+    } else if(statp.avail < kbytes) {
+	printf("ERROR [dir %s needs " OFF_T_FMT "KB, only has "
+		OFF_T_FMT "KB available.]\n", quoted,
+		(OFF_T_FMT_TYPE)kbytes,
+		(OFF_T_FMT_TYPE)statp.avail);
+    } else {
+	printf("OK %s has more than " OFF_T_FMT " KB available.\n",
+		quoted, (OFF_T_FMT_TYPE)kbytes);
+    }
+    amfree(quoted);
 }
 
-static void check_access(filename, mode)
-char *filename;
-int mode;
+static void
+check_access(
+    char *	filename,
+    int		mode)
 {
     char *noun, *adjective;
+    char *quoted = quote_string(filename);
 
     if(mode == F_OK)
         noun = "find", adjective = "exists";
@@ -903,34 +954,44 @@ int mode;
 	noun = "access", adjective = "accessible";
 
     if(access(filename, mode) == -1)
-	printf("ERROR [can not %s %s: %s]\n", noun, filename, strerror(errno));
+	printf("ERROR [can not %s %s: %s]\n", noun, quoted, strerror(errno));
     else
-	printf("OK %s %s\n", filename, adjective);
+	printf("OK %s %s\n", quoted, adjective);
+    amfree(quoted);
 }
 
-static void check_file(filename, mode)
-char *filename;
-int mode;
+static void
+check_file(
+    char *	filename,
+    int		mode)
 {
     struct stat stat_buf;
+    char *quoted;
+
     if(!stat(filename, &stat_buf)) {
 	if(!S_ISREG(stat_buf.st_mode)) {
-	    printf("ERROR [%s is not a file]\n", filename);
+	    quoted = quote_string(filename);
+	    printf("ERROR [%s is not a file]\n", quoted);
+	    amfree(quoted);
 	}
     }
     check_access(filename, mode);
 }
 
-static void check_dir(dirname, mode)
-char *dirname;
-int mode;
+static void
+check_dir(
+    char *	dirname,
+    int		mode)
 {
     struct stat stat_buf;
+    char *quoted;
     char *dir;
 
     if(!stat(dirname, &stat_buf)) {
 	if(!S_ISDIR(stat_buf.st_mode)) {
-	    printf("ERROR [%s is not a directory]\n", dirname);
+	    quoted = quote_string(dirname);
+	    printf("ERROR [%s is not a directory]\n", quoted);
+	    amfree(quoted);
 	}
     }
     dir = stralloc2(dirname, "/.");
@@ -938,22 +999,25 @@ int mode;
     amfree(dir);
 }
 
-static void check_suid(filename)
-char *filename;
+static void
+check_suid(
+    char *	filename)
 {
 /* The following is only valid for real Unixs */
 #ifndef IGNORE_UID_CHECK
     struct stat stat_buf;
+    char *quoted = quote_string(filename);
+
     if(!stat(filename, &stat_buf)) {
 	if(stat_buf.st_uid != 0 ) {
-	    printf("ERROR [%s is not owned by root]\n",filename);
+	    printf("ERROR [%s is not owned by root]\n", quoted);
 	}
 	if((stat_buf.st_mode & S_ISUID) != S_ISUID) {
-	    printf("ERROR [%s is not SUID root]\n",filename);
+	    printf("ERROR [%s is not SUID root]\n", quoted);
 	}
     }
     else {
-	printf("ERROR [can not stat %s]\n",filename);
+	printf("ERROR [can not stat %s]\n", quoted);
     }
 #endif
 }

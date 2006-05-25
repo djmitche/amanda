@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.63 2006/05/12 23:11:30 martinea Exp $
+ * $Id: conffile.h,v 1.64 2006/05/25 01:47:19 johnfranks Exp $
  *
  * interface for config file reading code
  */
@@ -37,7 +37,7 @@
 
 #define CONFFILE_NAME "amanda.conf"
 
-typedef enum conf_e {
+typedef enum {
     CNF_ORG,
     CNF_MAILTO,
     CNF_DUMPUSER,
@@ -96,9 +96,9 @@ typedef struct tapetype_s {
 
     char *comment;
     char *lbl_templ;
-    long blocksize;
-    unsigned long length;
-    unsigned long filemark;
+    ssize_t blocksize;
+    off_t length;
+    ssize_t filemark;
     int speed;
     int file_pad;
 
@@ -180,7 +180,7 @@ typedef struct dumptype_s {
     int maxdumps;
     int maxpromoteday;
     int bumppercent;
-    int bumpsize;
+    off_t bumpsize;
     int bumpdays;
     double bumpmult;
     time_t start_t;
@@ -190,10 +190,10 @@ typedef struct dumptype_s {
     encrypt_t encrypt;
     char *srv_decrypt_opt;
     char *clnt_decrypt_opt;
-    float comprate[2]; /* first is full, second is incremental */
-    long tape_splitsize;
+    double comprate[2]; /* first is full, second is incremental */
+    off_t tape_splitsize;
     char *split_diskbuffer;
-    long fallback_splitsize;
+    off_t fallback_splitsize;
     /* flag options */
     unsigned int record:1;
     unsigned int skip_incr:1;
@@ -257,13 +257,13 @@ typedef struct interface_s {
     char *name;
 
     char *comment;
-    int maxusage;		/* bandwidth we can consume [kb/s] */
+    unsigned long maxusage;		/* bandwidth we can consume [kb/s] */
 
     /* seen flags */
     int s_comment;
     int s_maxusage;
 
-    int curusage;		/* current usage */
+    unsigned long curusage;		/* current usage */
 } interface_t;
 
 /* A holding disk */
@@ -274,8 +274,8 @@ typedef struct holdingdisk_s {
 
     char *comment;
     char *diskdir;
-    long disksize;
-    long chunksize;
+    off_t disksize;
+    off_t chunksize;
 
     int s_comment;
     int s_disk;
@@ -294,9 +294,9 @@ typedef struct {
    			 * column. It is used to get the space
 			 * between the colums
 			 */
-    char Width;		/* the widht of the column itself */
+    int Width;		/* the width of the column itself */
     char Precision;	/* the precision if its a float */
-    char MaxWidth;	/* if set, Width will be recalculated
+    int MaxWidth;	/* if set, Width will be recalculated
     			 * to the space needed */
     char *Format;	/* the printf format string for this
    			 * column element
@@ -315,27 +315,30 @@ extern char *config_dir;
 extern holdingdisk_t *holdingdisks;
 extern int num_holdingdisks;
 
-int read_conffile P((char *filename));
-int getconf_seen P((confparm_t parameter));
-int getconf_int P((confparm_t parameter));
-am64_t getconf_am64 P((confparm_t parameter));
-double getconf_real P((confparm_t parameter));
-char *getconf_str P((confparm_t parameter));
-char *getconf_byname P((char *confname));
-dumptype_t *lookup_dumptype P((char *identifier));
-dumptype_t *read_dumptype P((char *name, FILE *from, char *fname, int *linenum));
-tapetype_t *lookup_tapetype P((char *identifier));
-interface_t *lookup_interface P((char *identifier));
-holdingdisk_t *getconf_holdingdisks P((void));
-long int getconf_unit_divisor P((void));
+int read_conffile(char *filename);
+int getconf_seen(confparm_t parameter);
+int getconf_int(confparm_t parameter);
+long getconf_long(confparm_t parameter);
+ssize_t getconf_size(confparm_t parameter);
+time_t getconf_time(confparm_t parameter);
+am64_t getconf_am64(confparm_t parameter);
+double getconf_real(confparm_t parameter);
+char *getconf_str(confparm_t parameter);
+char *getconf_byname(char *confname);
+dumptype_t *lookup_dumptype(char *identifier);
+dumptype_t *read_dumptype(char *name, FILE *from, char *fname, int *linenum);
+tapetype_t *lookup_tapetype(char *identifier);
+interface_t *lookup_interface(char *identifier);
+holdingdisk_t *getconf_holdingdisks(void);
+long int getconf_unit_divisor(void);
 
-int ColumnDataCount P((void));
-int StringToColumn P((char *s));
-char LastChar P((char *s));
-int SetColumDataFromString P((ColumnInfo* ci, char *s, char **errstr));
+int ColumnDataCount(void);
+int StringToColumn(char *s);
+char LastChar(char *s);
+int SetColumDataFromString(ColumnInfo* ci, char *s, char **errstr);
 
-char *taperalgo2str P((int taperalgo));
+char *taperalgo2str(int taperalgo);
 
 /* this is in securityconf.h */
-char *generic_get_security_conf P((char *, void *));
+char *generic_get_security_conf(char *, void *);
 #endif /* ! CONFFILE_H */

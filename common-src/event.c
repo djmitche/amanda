@@ -24,14 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.21 2006/04/26 14:42:29 martinea Exp $
+ * $Id: event.c,v 1.22 2006/05/25 01:47:11 johnfranks Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
  * interdependency logic.
  */
 
-/*#define	EVENT_DEBUG*/
+#define	EVENT_DEBUG
 
 #ifdef EVENT_DEBUG
 #define eventprintf(x)    dbprintf(x)
@@ -86,54 +86,52 @@ static struct {
 static struct sigtabent {
     event_handle_t *handle;	/* handle for this signal */
     int score;			/* number of signals recvd since last checked */
-    void (*oldhandler) P((int));/* old handler (for unsetting) */
+    void (*oldhandler)(int);/* old handler (for unsetting) */
 } sigtable[NSIG];
 
 #ifdef EVENT_DEBUG
-static const char *event_type2str P((event_type_t));
+static const char *event_type2str(event_type_t);
 #endif
 #define	fire(eh)	(*(eh)->fn)((eh)->arg)
-static void signal_handler P((int));
-static event_handle_t *gethandle P((void));
-static void puthandle P((event_handle_t *));
-static int event_loop_wait P((event_id_t, const int));
+static void signal_handler(int);
+static event_handle_t *gethandle(void);
+static void puthandle(event_handle_t *);
+static int event_loop_wait (event_id_t, const int);
 
 /*
  * Add a new event.  See the comment in event.h for what the arguments
  * mean.
  */
 event_handle_t *
-event_register(data, type, fn, arg)
-    event_id_t data;
-    event_type_t type;
-    event_fn_t fn;
-    void *arg;
+event_register(
+    event_id_t data,
+    event_type_t type,
+    event_fn_t fn,
+    void *arg)
 {
     event_handle_t *handle;
 
-    switch (type) {
-    case EV_READFD:
-    case EV_WRITEFD:
+    if ((type == EV_READFD) || (type == EV_WRITEFD)) {
 	/* make sure we aren't given a high fd that will overflow a fd_set */
-	assert(data < FD_SETSIZE);
-	break;
-
-    case EV_SIG:
+	if (data >= FD_SETSIZE) {
+	    error("event_register: Invalid file descriptor %d", data);
+	    /*NOTREACHED*/
+	}
+#if !defined(__lint) /* Global checking knows that these are never called */
+    } else if (type == EV_SIG) {
 	/* make sure signals are within range */
-	assert(data < NSIG);
-	/* make sure we don't double-register a signal */
-	assert(sigtable[data].handle == NULL);
-	break;
-
-    case EV_TIME:
-    case EV_WAIT:
-	break;
-
-    case EV_DEAD:
-    default:
-	/* callers can't register EV_DEAD */
-	assert(0);
-	break;
+	if (data >= NSIG) {
+	    error("event_register: Invalid signal %d", data);
+	    /*NOTREACHED*/
+	}
+	if (sigtable[data].handle != NULL) { 
+	    error("event_register: signal %d already registered", data);
+	    /*NOTREACHED*/
+	}
+    } else if (type >= EV_DEAD) {
+	error("event_register: Invalid event type %d", type);
+	/*NOTREACHED*/
+#endif
     }
 
     handle = gethandle();
@@ -145,9 +143,9 @@ event_register(data, type, fn, arg)
     eventq_add(eventq, handle);
     eventq.qlength++;
 
-    eventprintf(("%s: event: register: %p data=%lu, type=%s\n",
-		 debug_prefix_time(NULL), handle,
-		 handle->data, event_type2str(handle->type)));
+    eventprintf(("%s: event: register: %p->data=%lu, type=%s\n",
+		debug_prefix_time(NULL), handle, handle->data,
+		event_type2str(handle->type)));
     return (handle);
 }
 
@@ -157,8 +155,8 @@ event_register(data, type, fn, arg)
  * the event.
  */
 void
-event_release(handle)
-    event_handle_t *handle;
+event_release(
+    event_handle_t *handle)
 {
 
     assert(handle != NULL);
@@ -176,7 +174,7 @@ event_release(handle)
 	struct sigtabent *se = &sigtable[handle->data];
 
 	assert(se->handle == handle);
-	signal(handle->data, se->oldhandler);
+	signal((int)handle->data, se->oldhandler);
 	se->handle = NULL;
 	se->score = 0;
     }
@@ -197,16 +195,14 @@ event_release(handle)
  * Fire all EV_WAIT events waiting on the specified id.
  */
 int
-event_wakeup(id)
-    event_id_t id;
+event_wakeup(
+    event_id_t id)
 {
     event_handle_t *eh;
     int nwaken = 0;
 
     eventprintf(("%s: event: wakeup: enter (%lu)\n",
 		 debug_prefix_time(NULL), id));
-
-    assert(id >= 0);
 
     for (eh = eventq_first(eventq); eh != NULL; eh = eventq_next(eh)) {
 
@@ -227,16 +223,17 @@ event_wakeup(id)
  * we need to make sure we don't end up referencing a dead event handle.
  */
 void
-event_loop(dontblock)
-    const int dontblock;
+event_loop(
+    const int dontblock)
 {
     event_loop_wait((event_id_t)-1, dontblock);
 }
 
 
 
-int event_wait(id)
-    event_id_t id;
+int
+event_wait(
+    event_id_t	id)
 {
     return event_loop_wait(id, 0);
 }
@@ -247,21 +244,22 @@ int event_wait(id)
  * we need to make sure we don't end up referencing a dead event handle.
  */
 static int
-event_loop_wait(id, dontblock)
-    event_id_t id;
-    const int dontblock;
+event_loop_wait(
+    event_id_t	id,
+    const int	dontblock)
 {
 #ifdef ASSERTIONS
     static int entry = 0;
 #endif
     fd_set readfds, writefds, errfds, werrfds;
     struct timeval timeout, *tvptr;
-    int ntries, maxfd, rc, interval;
+    int ntries, maxfd, rc;
+    long interval;
     time_t curtime;
     event_handle_t *eh, *nexteh;
     struct sigtabent *se;
     int event_wait_fired = 0;
-    int see_event = 1;
+    int see_event;
 
     eventprintf(("%s: event: loop: enter: dontblock=%d, qlength=%d\n",
 		 debug_prefix_time(NULL),
@@ -291,7 +289,7 @@ event_loop_wait(id, dontblock)
 	eventprintf(("%s: event: loop: dontblock=%d, qlength=%d\n",
 		     debug_prefix_time(NULL), dontblock, eventq.qlength));
 	for (eh = eventq_first(eventq); eh != NULL; eh = eventq_next(eh)) {
-	    eventprintf(("%s: %p): %s data=%lu fn=0x%p arg=0x%p\n",
+	    eventprintf(("%s: %p): %s data=%lu fn=%p arg=%p\n",
 			 debug_prefix_time(NULL), eh,
 			 event_type2str(eh->type), eh->data, eh->fn,
 			 eh->arg));
@@ -325,7 +323,7 @@ event_loop_wait(id, dontblock)
 	FD_ZERO(&errfds);
 	maxfd = 0;
 
-	see_event = id == (event_id_t)-1;
+	see_event = (id == (event_id_t)-1);
 	/*
 	 * Run through each event handle and setup the events.
 	 * We save our next pointer early in case we GC some dead
@@ -340,20 +338,20 @@ event_loop_wait(id, dontblock)
 	     * Read fds just get set into the select bitmask
 	     */
 	    case EV_READFD:
-		FD_SET(eh->data, &readfds);
-		FD_SET(eh->data, &errfds);
-		maxfd = max(maxfd, eh->data);
-		see_event |= eh->data == id;
+		FD_SET((int)eh->data, &readfds);
+		FD_SET((int)eh->data, &errfds);
+		maxfd = max(maxfd, (int)eh->data);
+		see_event |= (eh->data == id);
 		break;
 
 	    /*
 	     * Likewise with write fds
 	     */
 	    case EV_WRITEFD:
-		FD_SET(eh->data, &writefds);
-		FD_SET(eh->data, &errfds);
-		maxfd = max(maxfd, eh->data);
-		see_event |= eh->data == id;
+		FD_SET((int)eh->data, &writefds);
+		FD_SET((int)eh->data, &errfds);
+		maxfd = max(maxfd, (int)eh->data);
+		see_event |= (eh->data == id);
 		break;
 
 	    /*
@@ -362,7 +360,7 @@ event_loop_wait(id, dontblock)
 	     */
 	    case EV_SIG:
 		se = &sigtable[eh->data];
-		see_event |= eh->data == id;
+		see_event |= (eh->data == id);
 
 		if (se->handle == eh)
 		    break;
@@ -371,7 +369,9 @@ event_loop_wait(id, dontblock)
 		assert(se->handle == NULL);
 		se->handle = eh;
 		se->score = 0;
-		se->oldhandler = signal(eh->data, signal_handler);
+		/*@ignore@*/
+		se->oldhandler = signal((int)eh->data, signal_handler);
+		/*@end@*/
 		break;
 
 	    /*
@@ -385,7 +385,7 @@ event_loop_wait(id, dontblock)
 		if (eh->lastfired == -1)
 		    eh->lastfired = curtime;
 
-		interval = eh->data - (curtime - eh->lastfired);
+		interval = (long)(eh->data - (curtime - eh->lastfired));
 		if (interval < 0)
 		    interval = 0;
 
@@ -396,14 +396,14 @@ event_loop_wait(id, dontblock)
 		    tvptr = &timeout;
 		    timeout.tv_sec = interval;
 		}
-		see_event |= eh->data == id;
+		see_event |= (eh->data == id);
 		break;
 
 	    /*
 	     * Wait events are processed immediately by event_wakeup()
 	     */
 	    case EV_WAIT:
-		see_event |= eh->data == id;
+		see_event |= (eh->data == id);
 		break;
 
 	    /*
@@ -443,8 +443,10 @@ event_loop_wait(id, dontblock)
 	 */
 	if (rc < 0) {
 	    if (errno != EINTR) {
-		if (++ntries > 5)
+		if (++ntries > 5) {
 		    error("select failed: %s", strerror(errno));
+		    /*NOTREACHED*/
+		}
 		continue;
 	    }
 	    /* proceed if errno == EINTR, we may have caught a signal */
@@ -465,7 +467,7 @@ event_loop_wait(id, dontblock)
 	 * that are being polled for both reading and writing have
 	 * both of their poll events 'see' the error.
 	 */
-	memcpy(&werrfds, &errfds, sizeof(werrfds));
+	memcpy(&werrfds, &errfds, SIZEOF(werrfds));
 
 	/*
 	 * Now run through the events and fire the ones that are ready.
@@ -479,10 +481,10 @@ event_loop_wait(id, dontblock)
 	     * Read fds: just fire the event if set in the bitmask
 	     */
 	    case EV_READFD:
-		if (FD_ISSET(eh->data, &readfds) ||
-		    FD_ISSET(eh->data, &errfds)) {
-		    FD_CLR(eh->data, &readfds);
-		    FD_CLR(eh->data, &errfds);
+		if (FD_ISSET((int)eh->data, &readfds) ||
+		    FD_ISSET((int)eh->data, &errfds)) {
+		    FD_CLR((int)eh->data, &readfds);
+		    FD_CLR((int)eh->data, &errfds);
 		    fire(eh);
 		    if(eh->data == id) event_wait_fired = 1;
 		}
@@ -492,10 +494,10 @@ event_loop_wait(id, dontblock)
 	     * Write fds: same as Read fds
 	     */
 	    case EV_WRITEFD:
-		if (FD_ISSET(eh->data, &writefds) ||
-		    FD_ISSET(eh->data, &werrfds)) {
-		    FD_CLR(eh->data, &writefds);
-		    FD_CLR(eh->data, &werrfds);
+		if (FD_ISSET((int)eh->data, &writefds) ||
+		    FD_ISSET((int)eh->data, &werrfds)) {
+		    FD_CLR((int)eh->data, &writefds);
+		    FD_CLR((int)eh->data, &werrfds);
 		    fire(eh);
 		    if(eh->data == id) event_wait_fired = 1;
 		}
@@ -522,7 +524,7 @@ event_loop_wait(id, dontblock)
 	    case EV_TIME:
 		if (eh->lastfired == -1)
 		    eh->lastfired = curtime;
-		if (curtime - eh->lastfired >= eh->data) {
+		if ((curtime - eh->lastfired) >= (time_t)eh->data) {
 		    eh->lastfired = curtime;
 		    fire(eh);
 		    if(eh->data == id) event_wait_fired = 1;
@@ -554,11 +556,11 @@ event_loop_wait(id, dontblock)
  * loop.
  */
 static void
-signal_handler(signo)
-    int signo;
+signal_handler(
+    int	signo)
 {
 
-    assert(signo >= 0 && signo < sizeof(sigtable) / sizeof(sigtable[0]));
+    assert((signo >= 0) && ((size_t)signo < (size_t)(sizeof(sigtable) / sizeof(sigtable[0]))));
     sigtable[signo].score++;
 }
 
@@ -567,7 +569,7 @@ signal_handler(signo)
  * alloc a new one.
  */
 static event_handle_t *
-gethandle()
+gethandle(void)
 {
     event_handle_t *eh;
 
@@ -578,7 +580,7 @@ gethandle()
 	return (eh);
     }
     assert(cache.qlength == 0);
-    return (alloc(sizeof(*eh)));
+    return (alloc(SIZEOF(*eh)));
 }
 
 /*
@@ -586,8 +588,8 @@ gethandle()
  * Otherwise, free it.
  */
 static void
-puthandle(eh)
-    event_handle_t *eh;
+puthandle(
+    event_handle_t *eh)
 {
 
     if (cache.qlength > CACHEDEPTH) {
@@ -603,8 +605,8 @@ puthandle(eh)
  * Convert an event type into a string
  */
 static const char *
-event_type2str(type)
-    event_type_t type;
+event_type2str(
+    event_type_t type)
 {
     static const struct {
 	event_type_t type;
@@ -619,9 +621,9 @@ event_type2str(type)
 	X(EV_DEAD),
 #undef X
     };
-    int i;
+    size_t i;
 
-    for (i = 0; i < sizeof(event_types) / sizeof(event_types[0]); i++)
+    for (i = 0; i < (size_t)(sizeof(event_types) / sizeof(event_types[0])); i++)
 	if (type == event_types[i].type)
 	    return (event_types[i].name);
     return ("BOGUS EVENT TYPE");

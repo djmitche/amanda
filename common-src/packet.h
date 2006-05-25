@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.h,v 1.7 2006/05/12 19:36:04 martinea Exp $
+ * $Id: packet.h,v 1.8 2006/05/25 01:47:12 johnfranks Exp $
  *
  * interfaces for modifying amanda protocol packet type
  */
@@ -33,28 +33,28 @@
 
 typedef enum { P_REQ = 0, P_REP = 1, P_PREP = 2, P_ACK = 3, P_NAK = 4 } pktype_t;
 typedef struct {
-    pktype_t type;				/* type of packet */
-    char *body;					/* body of packet */
-    int size;
-    int packet_size;
+    pktype_t	type;			/* type of packet */
+    char *	body;			/* body of packet */
+    size_t	size;
+    size_t	packet_size;
 } pkt_t;
 
 /*
  * Initialize a packet
  */
-void pkt_init P((pkt_t *, pktype_t, const char *, ...))
+void pkt_init(pkt_t *, pktype_t, const char *, ...)
     __attribute__ ((format (printf, 3, 4)));
 
 /*
  * Append data to a packet
  */
-void pkt_cat P((pkt_t *, const char *, ...))
+void pkt_cat(pkt_t *, const char *, ...)
     __attribute__ ((format (printf, 2, 3)));
 
 /*
  * Convert the packet type to and from a string
  */
-const char *pkt_type2str P((pktype_t));
-pktype_t pkt_str2type P((const char *));
+const char *pkt_type2str(pktype_t);
+pktype_t pkt_str2type(const char *);
 
 #endif /* PACKET_H */

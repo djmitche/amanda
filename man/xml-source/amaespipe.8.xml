@@ -25,7 +25,7 @@
 
 <refsect1><title>DESCRIPTION</title>
 <para>&amaespipe;
-requires <emphasis remap='B'>aespipe</emphasis> and <emphasis remap='B'>gpg</emphasis> to work.
+requires <emphasis remap='B'>aespipe</emphasis>, <emphasis remap='B'>uuencode</emphasis> and <emphasis remap='B'>gpg</emphasis> to work.
 Aespipe is available from <ulink url="http://loop-aes.sourceforge.net"/></para>
 <para>&amaespipe; will search for the aespipe program in the following directories:
 /usr/bin:/usr/local/bin:/sbin:/usr/sbin. </para>

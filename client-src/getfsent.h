@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.h,v 1.7 2002/10/27 22:58:33 martinea Exp $
+ * $Id: getfsent.h,v 1.8 2006/05/25 01:47:11 johnfranks Exp $
  *
  * interfaces for obtaining filesystem information
  */
@@ -50,16 +50,16 @@ typedef struct generic_fsent_s {
     int passno;
 } generic_fsent_t;
 
-int open_fstab P((void));
-void close_fstab P((void));
+int open_fstab(void);
+void close_fstab(void);
 
-int get_fstab_nextentry P((generic_fsent_t *fsent));
-int search_fstab P((char *name, generic_fsent_t *fsent, int check_dev));
-int is_local_fstype P((generic_fsent_t *fsent));
+int get_fstab_nextentry(generic_fsent_t *fsent);
+int search_fstab(char *name, generic_fsent_t *fsent, int check_dev);
+int is_local_fstype(generic_fsent_t *fsent);
 
-char *amname_to_devname P((char *str));
-char *amname_to_dirname P((char *str));
+char *amname_to_devname(char *str);
+char *amname_to_dirname(char *str);
 
-char *amname_to_fstype P((char *str));
+char *amname_to_fstype(char *str);
 
 #endif /* ! GETFSENT_H */

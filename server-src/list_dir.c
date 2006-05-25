@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: list_dir.c,v 1.17 2002/03/24 19:25:51 jrjackson Exp $
+/* $Id: list_dir.c,v 1.18 2006/05/25 01:47:20 johnfranks Exp $
  *
  * manage directory listings from index files
  */
@@ -36,13 +36,15 @@ DIR_ITEM *dir_list = NULL; /* first dir entry */
 DIR_ITEM *dir_last = NULL; /* last dir entry  */
 DIR_ITEM *cur_list = NULL; /* current dir entry,for speeding up search */
 
-DIR_ITEM *get_dir_list()
+DIR_ITEM *
+get_dir_list(void)
 {
     return dir_list;
 }
 
 
-void clear_dir_list P((void))
+void
+clear_dir_list(void)
 {
     DIR_ITEM *this;
 
@@ -68,15 +70,17 @@ void clear_dir_list P((void))
 /* It's true because the output of the index file is sorted         */
 /* Maybe it could be more efficient if the index was sorted when    */
 /* it is generated                                                  */
-int add_dir_list_item(dump, path)
-DUMP_ITEM *dump;
-char *path;
+
+int
+add_dir_list_item(
+    DUMP_ITEM *	dump,
+    const char *path)
 {
     DIR_ITEM *cur;
 
     if (dir_list == NULL)
     {
-	dir_list = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
+	dir_list = (DIR_ITEM *)alloc(SIZEOF(DIR_ITEM));
 	dir_list->next = NULL;
 	dir_list->dump = dump;
 	dir_list->path = stralloc(path);
@@ -91,7 +95,7 @@ char *path;
     /* add at head of list */
     if(strcmp(path,dir_list->path) < 0)
     {
-	cur_list = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
+	cur_list = (DIR_ITEM *)alloc(SIZEOF(DIR_ITEM));
 	cur_list->next = dir_list;
 	cur_list->dump = dump;
 	cur_list->path = stralloc(path);
@@ -124,7 +128,7 @@ char *path;
 	}
 
 	/* add at cur_list */
-	cur = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
+	cur = (DIR_ITEM *)alloc(SIZEOF(DIR_ITEM));
 	cur->next = cur_list->next;
 	cur->dump = dump;
 	cur->path = stralloc(path);
@@ -134,7 +138,7 @@ char *path;
     }
     else /* add at end of list */
     {
-	dir_last->next = (DIR_ITEM *)alloc(sizeof(DIR_ITEM));
+	dir_last->next = (DIR_ITEM *)alloc(SIZEOF(DIR_ITEM));
 	dir_last=dir_last->next;
 	dir_last->next = NULL;
 	dir_last->dump = dump;

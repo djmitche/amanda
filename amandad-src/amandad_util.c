@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: amandad_util.c,v 1.2 2006/04/27 12:17:59 martinea Exp $
+ * $Id: amandad_util.c,v 1.3 2006/05/25 01:47:07 johnfranks Exp $
  *
  */
 
@@ -33,8 +33,9 @@
 
 #define MAXMAXDUMPS 16
 
-void init_g_options(g_options)
-g_option_t *g_options;
+void
+init_g_options(
+    g_option_t *	g_options)
 {
     g_options->str      = NULL;
     g_options->features = NULL;
@@ -43,9 +44,10 @@ g_option_t *g_options;
 }
 
 
-g_option_t *parse_g_options(str, verbose)
-char *str;
-int verbose;
+g_option_t *
+parse_g_options(
+    char *	str,
+    int		verbose)
 {
     g_option_t *g_options;
     char *p, *tok;
@@ -136,8 +138,9 @@ int verbose;
     return g_options;
 }
 
-void free_g_options(g_options)
-g_option_t *g_options;
+void
+free_g_options(
+    g_option_t *	g_options)
 {
     amfree(g_options->str);
     am_release_feature_set(g_options->features);

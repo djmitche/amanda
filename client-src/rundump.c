@@ -24,14 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.28 2006/01/14 04:37:18 paddy_s Exp $
+ * $Id: rundump.c,v 1.29 2006/05/25 01:47:11 johnfranks Exp $
  *
  * runs DUMP program as root
  */
 #include "amanda.h"
 #include "version.h"
 
-int main P((int argc, char **argv));
+int main(int argc, char **argv);
 
 #if defined(VDUMP) || defined(XFSDUMP)
 #  undef USE_RUNDUMP
@@ -48,15 +48,18 @@ int main P((int argc, char **argv));
 #  endif
 #endif
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
 #ifndef ERRMSG
     char *dump_program;
     int i;
     char *e;
 #endif /* ERRMSG */
+
+    (void)argc;	/* Quiet unused parameter warning */
 
     safe_fd(-1, 0);
     safe_cd();
@@ -80,14 +83,19 @@ char **argv;
 
     if(client_uid == (uid_t) -1) {
 	error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	/*NOTREACHED*/
     }
 
 #ifdef FORCE_USERID
-    if (getuid() != client_uid)
+    if (getuid() != client_uid) {
 	error("error [must be invoked by %s]\n", CLIENT_LOGIN);
+	/*NOTREACHED*/
+    }
 
-    if (geteuid() != 0)
+    if (geteuid() != 0) {
 	error("error [must be setuid root]\n");
+	/*NOTREACHED*/
+    }
 #endif	/* FORCE_USERID */
 
 #if !defined (DONT_SUID_ROOT)

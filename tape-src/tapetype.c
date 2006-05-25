@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.24 2006/03/10 11:56:06 martinea Exp $
+ * $Id: tapetype.c,v 1.25 2006/05/25 01:47:27 johnfranks Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -41,11 +41,10 @@ static char *sProgName;
 static char *tapedev;
 static int fd;
 
-static int blockkb = 32;
-static int blocksize;
+static size_t blockkb = 32;
+static size_t blocksize;
 
 static char *randombytes = (char *) NULL;
-static char *prandombytes = (char *) NULL;
 
 #if USE_RAND
 /* If the C library does not define random(), try to use rand() by
@@ -56,43 +55,65 @@ static char *prandombytes = (char *) NULL;
 #define srandom(seed) srand(seed)
 #endif
 
-static void allocrandombytes() {
-  int i, j, page_size;
-  char *p;
+static char *getrandombytes(void);
+static int writeblock(int fd);
+static off_t writeblocks(int fd, off_t nblks);
+static void allocrandombytes(void);
+static void do_pass0(off_t size, time_t *seconds, int dorewind);
+static void do_pass(off_t size, off_t *blocks, off_t *files, time_t *seconds);
+static void help(void);
+static void initnotrandombytes(void);
+static void initrandombytes(void);
+static void show_progress(off_t *blocks, off_t *files);
+static void usage(void);
+
+int main(int argc, char **argv);
+
+static void
+allocrandombytes(void)
+{
+  size_t i;
+  size_t j;
+  size_t page_size;
+  char   *p;
 
   if (randombytes == (char *)NULL) {
 #if defined(HAVE_GETPAGESIZE)
-    page_size = getpagesize();
+    page_size = (size_t)getpagesize();
 #else
-    page_size = 1024;
+    page_size = (size_t)1024;
 #endif
     j = (NBLOCKS * blocksize) + page_size;	/* buffer space plus one page */
     j = am_round(j, page_size);			/* even number of pages */
-    p = alloc(j);
-    i = (p - (char *)0) & (page_size - 1);	/* page boundary offset */
+    p = (char *)alloc(j);
+    i = (size_t)(p - (char *)0) & (page_size - 1);/* page boundary offset */
     if(i != 0) {
-      randombytes = p + page_size - i;		/* round up to page boundary */
+      randombytes = p + (page_size - i);	/* round up to page boundary */
     } else {
       randombytes = p;				/* alloc already on boundary */
     }
-    prandombytes = p;
   }
 }
 
-static void initnotrandombytes() {
-  int i, j;
+static void
+initnotrandombytes(void)
+{
+  unsigned long i;
+  unsigned long j;
   char *p;
 
   allocrandombytes();
-  j =NBLOCKS * blocksize;
+  j = NBLOCKS * blocksize;
   p = randombytes;
   for(i=0; i < j; ++i) {
     *p++ = (char) (i % 256);
   }
 }
 
-static void initrandombytes() {
-  int i, j;
+static void
+initrandombytes(void)
+{
+  unsigned long i, j;
   char *p;
 
   allocrandombytes();
@@ -103,20 +124,23 @@ static void initrandombytes() {
   }
 }
 
-static char *getrandombytes() {
-  static int counter = 0;
+static char *
+getrandombytes(void)
+{
+  static unsigned long counter = 0;
 
   return randombytes + ((counter++ % NBLOCKS) * blocksize);
 }
 
 static int short_write;
 
-int writeblock(fd)
-     int fd;
+static int
+writeblock(
+    int		fd)
 {
-  size_t w;
+  ssize_t w;
 
-  if ((w = tapefd_write(fd, getrandombytes(), blocksize)) == blocksize) {
+  if ((w = tapefd_write(fd, getrandombytes(), blocksize)) == (ssize_t)blocksize) {
     return 1;
   }
   if (w >= 0) {
@@ -129,22 +153,26 @@ int writeblock(fd)
 
 
 /* returns number of blocks actually written */
-size_t writeblocks(int fd, size_t nblks)
+static off_t
+writeblocks(
+    int		fd,
+    off_t	nblks)
 {
-  size_t blks = 0;
+  off_t blks = (off_t)0;
 
   while (blks < nblks) {
     if (! writeblock(fd)) {
-      return 0;
+      return (off_t)0;
     }
-    blks++;
+    blks += (off_t)1;
   }
 
   return blks;
 }
 
 
-void usage()
+static void
+usage(void)
 {
   fputs("usage: ", stderr);
   fputs(sProgName, stderr);
@@ -158,39 +186,45 @@ void usage()
   fputc('\n', stderr);
 }
 
-void help()
+static void
+help(void)
 {
   usage();
-  fputs("\
-  -h			display this message\n\
-  -c			run hardware compression detection test only\n\
-  -o			overwrite amanda tape\n\
-  -b blocksize		record block size (default: 32k)\n\
-  -e estsize		estimated tape size (default: 1g == 1024m)\n\
-  -f tapedev		tape device name (default: $TAPE)\n\
-  -t typename		tapetype name (default: unknown-tapetype)\n\
-\n\
-Note: disable hardware compression when running this program.\n\
-", stderr);
+  fputs("-h			display this message\n"
+  	"-c			run hardware compression detection test only\n"
+  	"-o			overwrite amanda tape\n"
+  	"-b blocksize		record block size (default: 32k)\n"
+  	"-e estsize		estimated tape size (default: 1g == 1024m)\n"
+  	"-f tapedev		tape device name (default: $TAPE)\n"
+  	"-t typename		tapetype name (default: unknown-tapetype)\n"
+  	"\n"
+	"Note: disable hardware compression when running this program.\n",
+	stderr);
 }
 
 
 int do_tty;
 
-void show_progress(blocks, files)
-  size_t *blocks, *files;
+static void
+show_progress(
+    off_t *	blocks,
+    off_t *	files)
 {
-  fprintf(stderr, "wrote %ld %dKb block%s in %ld file%s",
-	  (long)*blocks, blockkb, (*blocks == 1) ? "" : "s",
-	  (long)*files, (*files == 1) ? "" : "s");
+  fprintf(stderr, "wrote " OFF_T_FMT " " SIZE_T_FMT "Kb block%s in " OFF_T_FMT " file%s",
+	  (OFF_T_FMT_TYPE)*blocks,
+	  (SIZE_T_FMT_TYPE)blockkb, (*blocks == (off_t)1) ? "" : "s",
+	  (OFF_T_FMT_TYPE)*files, (*files == (off_t)1) ? "" : "s");
 }
 
 
-void do_pass(size, blocks, files, seconds)
-  size_t size, *blocks, *files;
-  time_t *seconds;
+static void
+do_pass(
+    off_t	size,
+    off_t *	blocks,
+    off_t *	files,
+    time_t *	seconds)
 {
-  size_t blks;
+  off_t blks;
   time_t start, end;
   int save_errno;
 
@@ -204,10 +238,10 @@ void do_pass(size, blocks, files, seconds)
 
   while(1) {
 
-    if ((blks = writeblocks(fd, size)) <= 0 || tapefd_weof(fd, 1) != 0)
+    if ((blks = writeblocks(fd, size)) <= (off_t)0 || tapefd_weof(fd, (off_t)1) != 0)
       break;
     *blocks += blks;
-    (*files)++;
+    *files += (off_t)1;
     if(do_tty) {
       putc('\r', stderr);
       show_progress(blocks, files);
@@ -217,7 +251,7 @@ void do_pass(size, blocks, files, seconds)
 
   time(&end);
 
-  if (*blocks == 0) {
+  if (*blocks == (off_t)0) {
     fprintf(stderr, "%s: could not write any data in this pass: %s\n",
 	    sProgName, short_write ? "short write" : strerror(save_errno));
     exit(1);
@@ -236,18 +270,19 @@ void do_pass(size, blocks, files, seconds)
     putc('\r', stderr);
   }
   show_progress(blocks, files);
-  fprintf(stderr, " in %ld second%s (%s)\n",
-	  (long)*seconds, ((long)*seconds == 1) ? "" : "s",
+  fprintf(stderr, " in " TIME_T_FMT " second%s (%s)\n",
+	  (TIME_T_FMT_TYPE)*seconds, (*seconds == 1) ? "" : "s",
 	  short_write ? "short write" : strerror(save_errno));
 }
 
 
-void do_pass0(size, seconds, dorewind)
-  size_t size;
-  time_t *seconds;
-  int dorewind;
+static void
+do_pass0(
+    off_t	size,
+    time_t *	seconds,
+    int		dorewind)
 {
-  size_t blks;
+  off_t blks;
   time_t start, end;
   int save_errno;
 
@@ -260,13 +295,13 @@ void do_pass0(size, seconds, dorewind)
   time(&start);
 
   blks = writeblocks(fd, size);
-  tapefd_weof(fd, 1);
+  tapefd_weof(fd, (off_t)1);
 
   save_errno = errno;
 
   time(&end);
 
-  if (blks <= 0) {
+  if (blks <= (off_t)0) {
     fprintf(stderr, "%s: could not write any data in this pass: %s\n",
 	    sProgName, short_write ? "short write" : strerror(save_errno));
     exit(1);
@@ -284,29 +319,30 @@ void do_pass0(size, seconds, dorewind)
 }
 
 
-int main(argc, argv)
-     int argc;
-     char *argv[];
+int
+main(
+    int		argc,
+    char **	argv)
 {
-  size_t pass1blocks = 0;
-  size_t pass2blocks = 0;
+  off_t pass1blocks = (off_t)0;
+  off_t pass2blocks = (off_t)0;
   time_t pass1time;
   time_t pass2time;
   time_t timediff;
-  size_t pass1files = 0;
-  size_t pass2files = 0;
-  size_t estsize;
-  size_t pass0size;
-  size_t pass1size;
-  size_t pass2size;
-  size_t blockdiff;
-  size_t filediff;
-  long filemark;
-  long speed;
-  size_t size;
+  off_t pass1files = (off_t)0;
+  off_t pass2files = (off_t)0;
+  off_t estsize;
+  off_t pass0size;
+  off_t pass1size;
+  off_t pass2size;
+  off_t blockdiff;
+  off_t filediff;
+  size_t filemark;
+  unsigned long speed;
+  off_t size;
   char *sizeunits;
   int ch;
-  char *suffix;
+  char *suffix = NULL;
   char *typename;
   time_t now;
   int hwcompr = 0;
@@ -327,59 +363,68 @@ int main(argc, argv)
   /* Don't die when child closes pipe */
   signal(SIGPIPE, SIG_IGN);
 
-  estsize = 1024 * 1024;			/* assume 1 GByte for now */
+  estsize = (off_t)(1024 * 1024);		/* assume 1 GByte for now */
   tapedev = getenv("TAPE");
   typename = "unknown-tapetype";
 
   while ((ch = getopt(argc, argv, "b:e:f:t:hco")) != EOF) {
     switch (ch) {
     case 'b':
-      blockkb = strtol(optarg, &suffix, 0);
-      if (*suffix == '\0' || *suffix == 'k' || *suffix == 'K') {
-      } else if (*suffix == 'm' || *suffix == 'M') {
-	blockkb *= 1024;
-      } else if (*suffix == 'g' || *suffix == 'G') {
-	blockkb *= 1024 * 1024;
-      } else {
-	fprintf(stderr, "%s: unknown size suffix \'%c\'\n", sProgName, *suffix);
-	return 1;
+      blockkb = (size_t)strtol(optarg, &suffix, 0);
+      if (!(*suffix == '\0' || *suffix == 'k' || *suffix == 'K')) {
+	if (*suffix == 'm' || *suffix == 'M') {
+	  blockkb *= 1024;
+	} else if (*suffix == 'g' || *suffix == 'G') {
+	  blockkb *= (1024 * 1024);
+	} else {
+	  fprintf(stderr, "%s: unknown size suffix \'%c\'\n",
+		  sProgName, *suffix);
+	  return 1;
+	}
       }
       break;
     case 'e':
-      estsize = strtol(optarg, &suffix, 0);
-      if (*suffix == '\0' || *suffix == 'k' || *suffix == 'K') {
-      } else if (*suffix == 'm' || *suffix == 'M') {
-	estsize *= 1024;
-      } else if (*suffix == 'g' || *suffix == 'G') {
-	estsize *= 1024 * 1024;
-      } else {
-	fprintf(stderr, "%s: unknown size suffix \'%c\'\n", sProgName, *suffix);
-	return 1;
+      estsize = OFF_T_STRTOL(optarg, &suffix, 0);
+      if (!(*suffix == '\0' || *suffix == 'k' || *suffix == 'K')) {
+	if (*suffix == 'm' || *suffix == 'M') {
+	  estsize *= (off_t)1024;
+	} else if (*suffix == 'g' || *suffix == 'G') {
+	  estsize *= (off_t)(1024 * 1024);
+	} else {
+	  fprintf(stderr, "%s: unknown size suffix \'%c\'\n",
+		  sProgName, *suffix);
+	  return 1;
+	}
       }
       break;
+
     case 'f':
       tapedev = stralloc(optarg);
       break;
+
     case 't':
       typename = stralloc(optarg);
       break;
+
     case 'c':
       comprtstonly = 1;
       break;
+
     case 'h':
       help();
       return 1;
-      break;
+
     case 'o':
       overwrite_label=1;
       break;
+
     default:
       fprintf(stderr, "%s: unknown option \'%c\'\n", sProgName, ch);
-      /* fall through to ... */
+      /*FALLTHROUGH*/
+
     case '?':
       usage();
       return 1;
-      break;
     }
   }
   blocksize = blockkb * 1024;
@@ -392,7 +437,7 @@ int main(argc, argv)
 /* verifier tape */
 
 
-  fd = tape_open(tapedev, O_RDONLY);
+  fd = tape_open(tapedev, O_RDONLY, 0);
   if (fd == -1) {
     fprintf(stderr, "%s: could not open %s: %s\n",
 	    sProgName, tapedev, strerror(errno));
@@ -426,7 +471,7 @@ int main(argc, argv)
     return 1;
   }
 
-  fd = tape_open(tapedev, O_RDWR);
+  fd = tape_open(tapedev, O_RDWR, 0);
   if (fd == -1) {
     fprintf(stderr, "%s: could not open %s: %s\n",
 	    sProgName, tapedev, strerror(errno));
@@ -446,7 +491,7 @@ int main(argc, argv)
   initnotrandombytes();
 
   fprintf(stderr, "Estimate phase 1...");
-  pass0size = 8 * 1024 / blockkb;
+  pass0size = (off_t)(8 * 1024 / blockkb);
   pass1time = 0;
   pass2time = 0;
   /*
@@ -459,11 +504,11 @@ int main(argc, argv)
    */ 
   while (pass1time < 25 || ((100*(pass2time-pass1time)/pass2time) >= 10) ) {
     if (pass1time != 0) {
-      int i = pass1time;
+      time_t t = pass1time;
       do {
-	  pass0size *= 2;
-	  i *= 2;
-      } while (i < 25);
+	  pass0size *= (off_t)2;
+	  t *= 2;
+      } while (t < 25);
     }
     /*
      * first a dummy pass to rewind, stop, start and
@@ -471,27 +516,32 @@ int main(argc, argv)
      */
     do_pass0(pass0size, &pass2time, 1);
     do_pass0(pass0size, &pass1time, 0);
-    if (pass0size >= 10 * 1024 * 1024) {
+    if (pass0size >= (off_t)(10 * 1024 * 1024)) {
       fprintf(stderr,
 	"\rTape device is too fast to detect hardware compression...\n");
       break;	/* avoid loops if tape is superfast or broken */
     }
   }
-  fprintf(stderr, "\rWriting %d Mbyte   compresseable data:  %d sec\n",
-	(int)(blockkb * pass0size / 1024), (int)pass1time);
+  fprintf(stderr,
+	"\rWriting " OFF_T_FMT " Mbyte   compresseable data:  "
+	TIME_T_FMT " sec\n",
+	(OFF_T_FMT_TYPE)((off_t)blockkb * pass0size / (off_t)1024),
+	(TIME_T_FMT_TYPE)pass1time);
 
   /*
    * now generate uncompressable data and try again
    */
   time(&now);
-  srandom(now);
+  srandom((unsigned)now);
   initrandombytes();
 
   fprintf(stderr, "Estimate phase 2...");
   do_pass0(pass0size, &pass2time, 1);	/* rewind and get drive streaming */
   do_pass0(pass0size, &pass2time, 0);
-  fprintf(stderr, "\rWriting %d Mbyte uncompresseable data:  %d sec\n",
-	(int)(blockkb * pass0size / 1024), (int)pass2time);
+  fprintf(stderr, "\rWriting " OFF_T_FMT
+	" Mbyte uncompresseable data:  " TIME_T_FMT " sec\n",
+	(OFF_T_FMT_TYPE)((off_t)blockkb * pass0size / (off_t)1024),
+	(TIME_T_FMT_TYPE)pass2time);
 
   /*
    * Compute the time difference between writing the compressable and
@@ -515,11 +565,15 @@ int main(argc, argv)
   /*
    * Inform about estimated time needed to run the remaining of this program
    */
-  fprintf(stderr, "Estimated time to write 2 * %lu Mbyte: ", (unsigned long) (estsize / 1024));
-  pass1time = (time_t)(2.0 * pass2time * estsize / (1.0 * pass0size * blockkb));
+  fprintf(stderr, "Estimated time to write 2 * %lu Mbyte: ", (unsigned long) (estsize / (off_t)1024));
+  pass1time = (time_t)(2.0 * (double)pass2time * (double)estsize /
+		(1.0 * (double)pass0size * (double)blockkb));
 	/* avoid overflow and underflow by doing math in floating point */
-  fprintf(stderr, "%ld sec = ", pass1time);
-  fprintf(stderr, "%ld h %ld min\n", (pass1time/3600), ((pass1time%3600) / 60));
+  fprintf(stderr, TIME_T_FMT " sec = ",
+	  (TIME_T_FMT_TYPE)pass1time);
+  fprintf(stderr, TIME_T_FMT " h " TIME_T_FMT " min\n",
+	  (TIME_T_FMT_TYPE)(pass1time/(time_t)3600),
+	  (TIME_T_FMT_TYPE)((pass1time%(time_t)3600) / (time_t)60));
 
   if (comprtstonly) {
 	exit(hwcompr);
@@ -529,16 +583,16 @@ int main(argc, argv)
   /*
    * Do pass 1 -- write files that are 1% of the estimated size until error.
    */
-  pass1size = (estsize * 0.01) / blockkb;	/* 1% of estimate */
-  if(pass1size <= 0) {
-    pass1size = 2;				/* strange end case */
+  pass1size = (off_t)(((double)estsize * 0.01) / (double)blockkb); /* 1% of estimate */
+  if(pass1size <= (off_t)0) {
+    pass1size = (off_t)2;				/* strange end case */
   }
   do_pass(pass1size, &pass1blocks, &pass1files, &pass1time);
 
   /*
    * Do pass 2 -- write smaller files until error.
    */
-  pass2size = pass1size / 2;
+  pass2size = pass1size / (off_t)2;
   do_pass(pass2size, &pass2blocks, &pass2files, &pass2time);
 
   /*
@@ -554,7 +608,7 @@ int main(argc, argv)
      * 2 than in pass 1 since we wrote twice as many tape marks.  But
      * odd things happen, so make sure the result does not go negative.
      */
-    blockdiff = 0;
+    blockdiff = (off_t)0;
   } else {
     blockdiff = pass1blocks - pass2blocks;
   }
@@ -562,23 +616,24 @@ int main(argc, argv)
     /*
      * This should not happen, but just in case ...
      */
-    filediff = 1;
+    filediff = (off_t)1;
   } else {
     filediff = pass2files - pass1files;
   }
-  filemark = blockdiff * blockkb / filediff;
+  filemark = (size_t)((blockdiff * (off_t)blockkb) / filediff);
 
   /*
    * Compute the length as the average of the two pass sizes including
    * tape marks.
    */
-  size = ((pass1blocks * blockkb + filemark * pass1files)
-           + (pass2blocks * blockkb + filemark * pass2files)) / 2;
-  if (size >= 1024 * 1024 * 1000) {
-    size /= 1024 * 1024;
+  size = ((pass1blocks * (off_t)blockkb + (off_t)filemark * pass1files)
+           + (pass2blocks * (off_t)blockkb + (off_t)filemark * pass2files))
+	   / (off_t)2;
+  if (size >= (off_t)(1024 * 1024 * 1000)) {
+    size /= (off_t)(1024 * 1024);
     sizeunits = "gbytes";
-  } else if (size >= 1024 * 1000) {
-    size /= 1024;
+  } else if (size >= (off_t)(1024 * 1000)) {
+    size /= (off_t)1024;
     sizeunits = "mbytes";
   } else {
     sizeunits = "kbytes";
@@ -587,8 +642,9 @@ int main(argc, argv)
   /*
    * Compute the speed as the average of the two passes.
    */
-  speed = (((double)pass1blocks * blockkb / pass1time)
-           + ((double)pass2blocks * blockkb / pass2time)) / 2;
+  speed = (unsigned long)((((double)pass1blocks
+	   * (double)blockkb / (double)pass1time)
+           + ((double)pass2blocks * (double)blockkb / (double)pass2time)) / 2.0);
 
   /*
    * Dump the tapetype.
@@ -596,9 +652,9 @@ int main(argc, argv)
   printf("define tapetype %s {\n", typename);
   printf("    comment \"just produced by tapetype prog (hardware compression %s)\"\n",
 	hwcompr ? "on" : "off");
-  printf("    length %ld %s\n", (long)size, sizeunits);
-  printf("    filemark %ld kbytes\n", filemark);
-  printf("    speed %ld kps\n", speed);
+  printf("    length " OFF_T_FMT " %s\n", (OFF_T_FMT_TYPE)size, sizeunits);
+  printf("    filemark " SIZE_T_FMT " kbytes\n", (SIZE_T_FMT_TYPE)filemark);
+  printf("    speed %lu kps\n", speed);
   printf("}\n");
 
   if (tapefd_rewind(fd) == -1) {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.153 2006/04/26 15:53:36 martinea Exp $
+ * $Id: sendsize.c,v 1.154 2006/05/25 01:47:11 johnfranks Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -77,8 +77,11 @@ typedef struct level_estimates_s {
 typedef struct disk_estimates_s {
     struct disk_estimates_s *next;
     char *amname;
+    char *qamname;
     char *amdevice;
+    char *qamdevice;
     char *dirname;
+    char *qdirname;
     char *program;
     char *calcprog;
     int program_is_wrapper;
@@ -96,25 +99,27 @@ static char *our_feature_string = NULL;
 static g_option_t *g_options = NULL;
 
 /* local functions */
-int main P((int argc, char **argv));
-void add_diskest P((char *disk, char *amdevice, int level, int spindle, 
+int main(int argc, char **argv);
+void add_diskest(char *disk, char *amdevice, int level, int spindle, 
 		    int program_is_wrapper, char *prog, char *calcprog,
-		    option_t *options));
-void calc_estimates P((disk_estimates_t *est));
-void free_estimates P((disk_estimates_t *est));
-void dump_calc_estimates P((disk_estimates_t *));
-void smbtar_calc_estimates P((disk_estimates_t *));
-void gnutar_calc_estimates P((disk_estimates_t *));
-void wrapper_calc_estimates P((disk_estimates_t *));
-void generic_calc_estimates P((disk_estimates_t *));
+		    option_t *options);
+void calc_estimates(disk_estimates_t *est);
+void free_estimates(disk_estimates_t *est);
+void dump_calc_estimates(disk_estimates_t *);
+void star_calc_estimates(disk_estimates_t *);
+void smbtar_calc_estimates(disk_estimates_t *);
+void gnutar_calc_estimates(disk_estimates_t *);
+void wrapper_calc_estimates(disk_estimates_t *);
+void generic_calc_estimates(disk_estimates_t *);
 
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
     int level, spindle;
-    char *prog, *calcprog, *disk, *amdevice, *dumpdate;
+    char *prog, *calcprog, *dumpdate;
     option_t *options = NULL;
     int program_is_wrapper;
     disk_estimates_t *est;
@@ -124,12 +129,21 @@ char **argv;
     char *s, *fp;
     int ch;
     char *err_extra = NULL;
-    unsigned long malloc_hist_1, malloc_size_1;
-    unsigned long malloc_hist_2, malloc_size_2;
     int done;
     int need_wait;
     int dumpsrunning;
+    char *disk = NULL;
+    char *qdisk = NULL;
+    char *qlist = NULL;
+    char *amdevice = NULL;
+    char *qamdevice = NULL;
+#if defined(USE_DBMALLOC)
+    unsigned long malloc_hist_1, malloc_size_1;
+    unsigned long malloc_hist_2, malloc_size_2;
+#endif
 
+    (void)argc;	/* Quiet unused parameter warning */
+    (void)argv;	/* Quiet unused parameter warning */
 
     /* initialize */
 
@@ -141,7 +155,9 @@ char **argv;
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
+#if defined(USE_DBMALLOC)
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
+#endif
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
     dbopen();
@@ -155,11 +171,14 @@ char **argv;
 
     /* handle all service requests */
 
-    start_amandates(0);
+    if(!start_amandates(0))
+        error("error [opening %s: %s]", AMANDATES_FILE, strerror(errno));
 
     for(; (line = agets(stdin)) != NULL; free(line)) {
+	if (line[0] == '\0')
+	    continue;
 #define sc "OPTIONS "
-	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+	if(strncmp(line, sc, SIZEOF(sc)-1) == 0) {
 #undef sc
 	    g_options = parse_g_options(line+8, 1);
 	    if(!g_options->hostname) {
@@ -188,7 +207,7 @@ char **argv;
 
 	skip_whitespace(s, ch);			/* find the program name */
 	if(ch == '\0') {
-	    err_extra = "no program name";
+	    err_extra = stralloc("no program name");
 	    goto err;				/* no program name */
 	}
 	prog = s - 1;
@@ -210,7 +229,7 @@ char **argv;
 	if(strncmp(prog, "CALCSIZE", 8) == 0) {
 	    skip_whitespace(s, ch);		/* find the program name */
 	    if(ch == '\0') {
-		err_extra = "no program name";
+		err_extra = stralloc("no program name");
 		goto err;
 	    }
 	    calcprog = s - 1;
@@ -223,56 +242,67 @@ char **argv;
 
 	skip_whitespace(s, ch);			/* find the disk name */
 	if(ch == '\0') {
-	    err_extra = "no disk name";
+	    err_extra = stralloc("no disk name");
 	    goto err;				/* no disk name */
 	}
-	disk = s - 1;
-	skip_non_whitespace(s, ch);
-	s[-1] = '\0';
+
+	if (qdisk != NULL)
+	    amfree(qdisk);
+	if (disk != NULL)
+	    amfree(disk);
+
+	fp = s - 1;
+	skip_quoted_string(s, ch);
+	s[-1] = '\0';				/* terminate the disk name */
+	qdisk = stralloc(fp);
+	disk = unquote_string(qdisk);
 
 	skip_whitespace(s, ch);			/* find the device or level */
 	if (ch == '\0') {
-	    err_extra = "bad level";
+	    err_extra = stralloc("bad level");
 	    goto err;
 	}
 	if(!isdigit((int)s[-1])) {
 	    fp = s - 1;
-	    skip_non_whitespace(s, ch);
+	    skip_quoted_string(s, ch);
 	    s[-1] = '\0';
-	    amdevice = stralloc(fp);
+	    qamdevice = stralloc(fp);
+	    amdevice = unquote_string(qamdevice);
 	    skip_whitespace(s, ch);		/* find level number */
 	}
 	else {
 	    amdevice = stralloc(disk);
+	    qamdevice = stralloc(qdisk);
 	}
 
 						/* find the level number */
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
-	    err_extra = "bad level";
+	    err_extra = stralloc("bad level");
 	    goto err;				/* bad level */
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);			/* find the dump date */
 	if(ch == '\0') {
-	    err_extra = "no dumpdate";
+	    err_extra = stralloc("no dumpdate");
 	    goto err;				/* no dumpdate */
 	}
 	dumpdate = s - 1;
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
+	(void)dumpdate;				/* XXX: Set but not used */
 
 	spindle = 0;				/* default spindle */
 
 	skip_whitespace(s, ch);			/* find the spindle */
 	if(ch != '\0') {
 	    if(sscanf(s - 1, "%d", &spindle) != 1) {
-		err_extra = "bad spindle";
+		err_extra = stralloc("bad spindle");
 		goto err;			/* bad spindle */
 	    }
 	    skip_integer(s, ch);
 
-	    skip_whitespace(s, ch);		/* find the exclusion list */
+	    skip_whitespace(s, ch);		/* find the parameters */
 	    if(ch != '\0') {
 		if(strncmp(s-1, "OPTIONS |;",10) == 0) {
 		    options = parse_options(s + 8,
@@ -282,32 +312,55 @@ char **argv;
 					    0);
 		}
 		else {
-		    options = alloc(sizeof(option_t));
+		    options = alloc(SIZEOF(option_t));
 		    init_options(options);
-		    if(strncmp(s-1, "exclude-file=", 13) == 0) {
-			options->exclude_file =
-				append_sl(options->exclude_file, s+12);
-		    }
-		    if(strncmp(s-1, "exclude-list=", 13) == 0) {
-			options->exclude_list =
-				append_sl(options->exclude_list, s+12);
-		    }
-
-		    skip_non_whitespace(s, ch);
-		    if(ch) {
-			err_extra = "extra text at end";
-			goto err;		/* should have gotten to end */
+		    while (ch != '\0') {
+			if(strncmp(s-1, "exclude-file=", 13) == 0) {
+			    qlist = unquote_string(s+12);
+			    options->exclude_file =
+				append_sl(options->exclude_file, qlist);
+			    amfree(qlist);
+			} else if(strncmp(s-1, "exclude-list=", 13) == 0) {
+			    options->exclude_list =
+				append_sl(options->exclude_list, qlist);
+			    qlist = unquote_string(s+12);
+			    amfree(qlist);
+			} else if(strncmp(s-1, "include-file=", 13) == 0) {
+			    options->include_file =
+				append_sl(options->include_file, qlist);
+			    qlist = unquote_string(s+12);
+			    amfree(qlist);
+			} else if(strncmp(s-1, "include-list=", 13) == 0) {
+			    options->include_list =
+				append_sl(options->include_list, qlist);
+			    qlist = unquote_string(s+12);
+			    amfree(qlist);
+			} else {
+			    err_extra = vstralloc("Invalid parameter (",
+				s-1, ")", NULL);
+			    goto err;		/* should have gotten to end */
+			}
+			skip_quoted_string(s, ch);
+			skip_whitespace(s, ch);	/* find the inclusion list */
+			amfree(qlist);
 		    }
 		}
 	    }
 	    else {
-		options = alloc(sizeof(option_t));
+		options = alloc(SIZEOF(option_t));
 		init_options(options);
 	    }
 	}
 
+	/*@ignore@*/
 	add_diskest(disk, amdevice, level, spindle, program_is_wrapper, prog, calcprog, options);
+	/*@end@*/
 	amfree(amdevice);
+	amfree(qamdevice);
+    }
+    if (g_options == NULL) {
+	error("Missing OPTIONS line in sendsize input\n");
+	/*NOTREACHED*/
     }
     amfree(line);
 
@@ -334,6 +387,7 @@ char **argv;
 	    child_pid = wait(&child_status);
 	    if(child_pid == -1) {
 		error("wait failed: %s", strerror(errno));
+		/*NOTREACHED*/
 	    }
 	    if(WIFSIGNALED(child_status)) {
 		dbprintf(("%s: child %ld terminated with signal %d\n",
@@ -420,6 +474,7 @@ char **argv;
 		exit(0);
 	    } else if(est->child == -1) {
 		error("calc_estimates fork failed: %s", strerror(errno));
+		/*NOTREACHED*/
 	    }
 	    dumpsrunning++;			/* parent */
 	}
@@ -441,13 +496,13 @@ char **argv;
     amfree(g_options->str);
     amfree(g_options);
 
+#if defined(USE_DBMALLOC)
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 
     if(malloc_size_1 != malloc_size_2) {
-#if defined(USE_DBMALLOC)
 	malloc_list(dbfd(), malloc_hist_1, malloc_hist_2);
-#endif
     }
+#endif
 
     dbclose();
     return 0;
@@ -457,15 +512,22 @@ char **argv;
 	      debug_prefix_time(NULL),
 	      err_extra ? ": " : "",
 	      err_extra ? err_extra : ""));
+    amfree(err_extra);
     dbclose();
     return 1;
 }
 
 
-void add_diskest(disk, amdevice, level, spindle, program_is_wrapper, prog, calcprog, options)
-char *disk, *amdevice, *prog, *calcprog;
-int level, spindle, program_is_wrapper;
-option_t *options;
+void
+add_diskest(
+    char *	disk,
+    char *	amdevice,
+    int		level,
+    int		spindle,
+    int		program_is_wrapper,
+    char *	prog,
+    char *	calcprog,
+    option_t *	options)
 {
     disk_estimates_t *newp, *curp;
     amandates_t *amdp;
@@ -489,13 +551,16 @@ option_t *options;
 	}
     }
 
-    newp = (disk_estimates_t *) alloc(sizeof(disk_estimates_t));
-    memset(newp, 0, sizeof(*newp));
+    newp = (disk_estimates_t *) alloc(SIZEOF(disk_estimates_t));
+    memset(newp, 0, SIZEOF(*newp));
     newp->next = est_list;
     est_list = newp;
     newp->amname = stralloc(disk);
+    newp->qamname = quote_string(disk);
     newp->amdevice = stralloc(amdevice);
+    newp->qamdevice = quote_string(amdevice);
     newp->dirname = amname_to_dirname(newp->amdevice);
+    newp->qdirname = quote_string(newp->dirname);
     newp->program = stralloc(prog);
     if(calcprog != NULL)
 	newp->calcprog = stralloc(calcprog);
@@ -521,12 +586,16 @@ option_t *options;
 }
 
 
-void free_estimates(est)
-disk_estimates_t *est;
+void
+free_estimates(
+    disk_estimates_t *	est)
 {
     amfree(est->amname);
+    amfree(est->qamname);
     amfree(est->amdevice);
+    amfree(est->qamdevice);
     amfree(est->dirname);
+    amfree(est->qdirname);
     amfree(est->program);
     if(est->options) {
 	free_sl(est->options->exclude_file);
@@ -544,13 +613,14 @@ disk_estimates_t *est;
  *
  */
 
-void calc_estimates(est)
-disk_estimates_t *est;
+void
+calc_estimates(
+    disk_estimates_t *	est)
 {
-    dbprintf(("%s: calculating for amname '%s', dirname '%s', spindle %d\n",
+    dbprintf(("%s: calculating for amname %s, dirname %s, spindle %d\n",
 	      debug_prefix_time(NULL),
-	      est->amname, est->dirname, est->spindle));
-
+	      est->qamname, est->qdirname, est->spindle));
+	
     if(est->program_is_wrapper ==  1)
 	wrapper_calc_estimates(est);
     else
@@ -574,14 +644,14 @@ disk_estimates_t *est;
 	  if (est->amdevice[0] == '/' && est->amdevice[1] == '/')
 	    dbprintf(("%s: Can't use CALCSIZE for samba estimate: %s %s\n",
 		      debug_prefix_time(NULL),
-		      est->amname, est->dirname));
+		      est->qamname, est->qdirname));
 	  else
 #endif
 	    generic_calc_estimates(est);
 
-    dbprintf(("%s: done with amname '%s', dirname '%s', spindle %d\n",
+    dbprintf(("%s: done with amname %s dirname %s spindle %d\n",
 	      debug_prefix_time(NULL),
-	      est->amname, est->dirname, est->spindle));
+	      est->qamname, est->qdirname, est->spindle));
 }
 
 /*
@@ -590,33 +660,40 @@ disk_estimates_t *est;
  */
 
 /* local functions */
-long getsize_dump P((char *disk, char *amdevice, int level, option_t *options));
-long getsize_smbtar P((char *disk, char *amdevice, int level, option_t *options));
-long getsize_gnutar P((char *disk, char *amdevice, int level,
-		       option_t *options, time_t dumpsince));
-long getsize_wrapper P((char *program, char *disk, char *amdevice, int level,
-			option_t *options, time_t dumpsince));
-long handle_dumpline P((char *str));
-double first_num P((char *str));
+off_t getsize_dump(char *disk, char *amdevice, int level, option_t *options);
+off_t getsize_star(char *disk, char *amdevice, int level,
+		       option_t *options, time_t dumpsince);
+off_t getsize_smbtar(char *disk, char *amdevice, int level, option_t *options);
+off_t getsize_gnutar(char *disk, char *amdevice, int level,
+		       option_t *options, time_t dumpsince);
+off_t getsize_wrapper(char *program, char *disk, char *amdevice, int level,
+			option_t *options, time_t dumpsince);
+off_t handle_dumpline(char *str);
+double first_num(char *str);
 
-void wrapper_calc_estimates(est)
-disk_estimates_t *est;
+void
+wrapper_calc_estimates(
+    disk_estimates_t *	est)
 {
   int level;
-  long size;
+  off_t size;
 
   for(level = 0; level < DUMP_LEVELS; level++) {
       if (est->est[level].needestimate) {
 	  dbprintf(("%s: getting size via wrapper for %s level %d\n",
-		    debug_prefix_time(NULL), est->amname, level));
-	  size = getsize_wrapper(est->program, est->amname, est->amdevice, level, est->options,
-				 est->est[level].dumpsince);
+		    debug_prefix_time(NULL), est->qamname, level));
+	  size = getsize_wrapper(est->program, est->amname, est->amdevice,
+			level, est->options, est->est[level].dumpsince);
 
 	  amflock(1, "size");
 
-	  fseek(stdout, (off_t)0, SEEK_SET);
+	  if (fseek(stdout, 0L, SEEK_END) < 0) {
+	      dbprintf(("wrapper_calc_estimates: warning - seek failed: %s\n",
+			strerror(errno)));
+	  }
 
-	  printf("%s %d SIZE %ld\n", est->amname, level, size);
+	  printf("%s %d SIZE " OFF_T_FMT "\n", est->qamname, level,
+		 (OFF_T_FMT_TYPE)size);
 	  fflush(stdout);
 
 	  amfunlock(1, "size");
@@ -625,21 +702,23 @@ disk_estimates_t *est;
 }
 
 
-void generic_calc_estimates(est)
-disk_estimates_t *est;
+void
+generic_calc_estimates(
+    disk_estimates_t *	est)
 {
     int pipefd = -1, nullfd = -1;
     char *cmd;
     char *my_argv[DUMP_LEVELS*2+20];
     char number[NUM_STR_SIZE];
-    int i, level, my_argc, calcpid;
+    int i, level, my_argc, status;
+    pid_t calcpid;
     int nb_exclude = 0;
     int nb_include = 0;
     char *file_exclude = NULL;
     char *file_include = NULL;
     times_t start_time;
     FILE *dumpout = NULL;
-    long size = 1;
+    off_t size = (off_t)1;
     char *line = NULL;
     char *match_expr;
 
@@ -663,9 +742,11 @@ disk_estimates_t *est;
 	nb_include += est->options->include_list->nb_element;
 
     if(nb_exclude > 0)
-	file_exclude = build_exclude(est->amname, est->amdevice,est->options,0);
+	file_exclude = build_exclude(est->amname,
+		est->amdevice, est->options, 0);
     if(nb_include > 0)
-	file_include = build_include(est->amname, est->amdevice,est->options,0);
+	file_include = build_include(est->amname,
+		est->amdevice, est->options, 0);
 
     if(file_exclude) {
 	my_argv[my_argc++] = stralloc("-X");
@@ -684,10 +765,10 @@ disk_estimates_t *est;
 
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
-	    snprintf(number, sizeof(number), "%d", level);
+	    snprintf(number, SIZEOF(number), "%d", level);
 	    my_argv[my_argc++] = stralloc(number); 
 	    dbprintf((" %s", number));
-	    snprintf(number, sizeof(number),
+	    snprintf(number, SIZEOF(number),
 			"%ld", (long)est->est[level].dumpsince);
 	    my_argv[my_argc++] = stralloc(number); 
 	    dbprintf((" %s", number));
@@ -707,29 +788,32 @@ disk_estimates_t *est;
     amfree(cmd);
 
     dumpout = fdopen(pipefd,"r");
-    match_expr = vstralloc(est->amname," %d SIZE %ld", NULL);
-    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+    match_expr = vstralloc(est->qamname," %d SIZE " OFF_T_FMT, NULL);
+    for(size = (off_t)-1; (line = agets(dumpout)) != NULL; free(line)) {
+	if (line[0] == '\0')
+	    continue;
 	if(sscanf(line, match_expr, &level, &size) == 2) {
 	    printf("%s\n", line); /* write to amandad */
-	    dbprintf(("%s: estimate size for %s level %d: %ld KB\n",
+	    dbprintf(("%s: estimate size for %s level %d: " OFF_T_FMT " KB\n",
 		      debug_prefix(NULL),
-		      est->amname,
+		      est->qamname,
 		      level,
 		      size));
 	}
     }
     amfree(match_expr);
 
-    dbprintf(("%s: waiting for %s \"%s\" child\n",
-	      debug_prefix_time(NULL), my_argv[0], est->amdevice));
-    wait(NULL);
-    dbprintf(("%s: after %s \"%s\" wait\n",
-	      debug_prefix_time(NULL), my_argv[0], est->amdevice));
+    dbprintf(("%s: waiting for %s %s child (pid=%d)\n",
+	      debug_prefix_time(NULL), my_argv[0], est->qamdevice, calcpid));
+    wait(&status);
+    dbprintf(("%s: after %s %s wait: child pid=%d status=%d\n",
+	      debug_prefix_time(NULL), my_argv[0], est->qamdevice,
+	      calcpid, WEXITSTATUS(status)));
 
     dbprintf(("%s: .....\n", debug_prefix_time(NULL)));
     dbprintf(("%s: estimate time for %s: %s\n",
 	      debug_prefix(NULL),
-	      est->amname,
+	      est->qamname,
 	      walltime_str(timessub(curclock(), start_time))));
 
 common_exit:
@@ -740,23 +824,29 @@ common_exit:
 }
 
 
-void dump_calc_estimates(est)
-disk_estimates_t *est;
+void
+dump_calc_estimates(
+    disk_estimates_t *	est)
 {
     int level;
-    long size;
+    off_t size;
 
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via dump for %s level %d\n",
-		      debug_prefix_time(NULL), est->amname, level));
-	    size = getsize_dump(est->amname, est->amdevice,level, est->options);
+		      debug_prefix_time(NULL), est->qamname, level));
+	    size = getsize_dump(est->amname, est->amdevice,
+			level, est->options);
 
 	    amflock(1, "size");
 
-	    fseek(stdout, (off_t)0, SEEK_SET);
+	    if (fseek(stdout, 0L, SEEK_END) < 0) {
+		dbprintf(("dump_calc_estimates: warning - seek failed: %s\n",
+				strerror(errno)));
+	    }
 
-	    printf("%s %d SIZE %ld\n", est->amname, level, size);
+	    printf("%s %d SIZE " OFF_T_FMT "\n",
+		   est->qamname, level, (OFF_T_FMT_TYPE)size);
 	    fflush(stdout);
 
 	    amfunlock(1, "size");
@@ -765,23 +855,28 @@ disk_estimates_t *est;
 }
 
 #ifdef SAMBA_CLIENT
-void smbtar_calc_estimates(est)
-disk_estimates_t *est;
+void
+smbtar_calc_estimates(
+    disk_estimates_t *	est)
 {
     int level;
-    long size;
+    off_t size;
 
     for(level = 0; level < DUMP_LEVELS; level++) {
 	if(est->est[level].needestimate) {
 	    dbprintf(("%s: getting size via smbclient for %s level %d\n",
-		      debug_prefix_time(NULL), est->amname, level));
+		      debug_prefix_time(NULL), est->qamname, level));
 	    size = getsize_smbtar(est->amname, est->amdevice, level, est->options);
 
 	    amflock(1, "size");
 
-	    fseek(stdout, (off_t)0, SEEK_SET);
+	    if (fseek(stdout, 0L, SEEK_END) < 0) {
+		dbprintf(("smbtar_calc_estimates: warning - seek failed: %s\n",
+				strerror(errno)));
+	    }
 
-	    printf("%s %d SIZE %ld\n", est->amname, level, size);
+	    printf("%s %d SIZE " OFF_T_FMT "\n",
+		   est->qamname, level, (OFF_T_FMT_TYPE)size);
 	    fflush(stdout);
 
 	    amfunlock(1, "size");
@@ -791,24 +886,29 @@ disk_estimates_t *est;
 #endif
 
 #ifdef GNUTAR
-void gnutar_calc_estimates(est)
-disk_estimates_t *est;
+void
+gnutar_calc_estimates(
+    disk_estimates_t *	est)
 {
   int level;
-  long size;
+  off_t size;
 
   for(level = 0; level < DUMP_LEVELS; level++) {
       if (est->est[level].needestimate) {
 	  dbprintf(("%s: getting size via gnutar for %s level %d\n",
-		    debug_prefix_time(NULL), est->amname, level));
+		    debug_prefix_time(NULL), est->qamname, level));
 	  size = getsize_gnutar(est->amname, est->amdevice, level,
 				est->options, est->est[level].dumpsince);
 
 	  amflock(1, "size");
 
-	  fseek(stdout, (off_t)0, SEEK_SET);
+	  if (fseek(stdout, 0L, SEEK_END) < 0) {
+	      dbprintf(("gnutar_calc_estimates: warning - seek failed: %s\n",
+				strerror(errno)));
+	  }
 
-	  printf("%s %d SIZE %ld\n", est->amname, level, size);
+	  printf("%s %d SIZE " OFF_T_FMT "\n",
+		 est->qamname, level, (OFF_T_FMT_TYPE)size);
 	  fflush(stdout);
 
 	  amfunlock(1, "size");
@@ -822,12 +922,13 @@ typedef struct regex_s {
     int scale;
 } regex_t;
 
+/*@ignore@*/
 regex_t re_size[] = {
 #ifdef DUMP
     {"  DUMP: estimated -*[0-9][0-9]* tape blocks", 1024},
     {"  DUMP: [Ee]stimated [0-9][0-9]* blocks", 512},
-    {"  DUMP: [Ee]stimated [0-9][0-9]* bytes", 1},	       /* Ultrix 4.4 */
-    {" UFSDUMP: estimated [0-9][0-9]* blocks", 512},           /* NEC EWS-UX */
+    {"  DUMP: [Ee]stimated [0-9][0-9]* bytes", 1},		/* Ultrix 4.4 */
+    {" UFSDUMP: estimated [0-9][0-9]* blocks", 512},		/* NEC EWS-UX */
     {"dump: Estimate: [0-9][0-9]* tape blocks", 1024},		    /* OSF/1 */
     {"backup: There are an estimated [0-9][0-9]* tape blocks.",1024}, /* AIX */
     {"backup: estimated [0-9][0-9]* 1k blocks", 1024},		      /* AIX */
@@ -835,27 +936,27 @@ regex_t re_size[] = {
     {"backup: [0-9][0-9]* tape blocks on [0-9][0-9]* tape(s)",1024},  /* AIX */
     {"backup: [0-9][0-9]* 1k blocks on [0-9][0-9]* volume(s)",1024},  /* AIX */
     {"dump: Estimate: [0-9][0-9]* blocks being output to pipe",1024},
-                                                              /* DU 4.0 dump */
-    {"dump: Dumping [0-9][0-9]* bytes, ", 1},                /* DU 4.0 vdump */
-    {"DUMP: estimated [0-9][0-9]* KB output", 1024},                 /* HPUX */
-    {"DUMP: estimated [0-9][0-9]* KB\\.", 1024},                 /* NetApp */
-    {"  UFSDUMP: estimated [0-9][0-9]* blocks", 512},               /* Sinix */
+							      /* DU 4.0 dump  */
+    {"dump: Dumping [0-9][0-9]* bytes, ", 1},		      /* DU 4.0 vdump */
+    {"DUMP: estimated [0-9][0-9]* KB output", 1024},		      /* HPUX */
+    {"DUMP: estimated [0-9][0-9]* KB\\.", 1024},		    /* NetApp */
+    {"  UFSDUMP: estimated [0-9][0-9]* blocks", 512},		     /* Sinix */
 
 #ifdef HAVE_DUMP_ESTIMATE
     {"[0-9][0-9]* blocks, [0-9][0-9]*.[0-9][0-9]* volumes", 1024},
-                                                          /* DU 3.2g dump -E */
-    {"^[0-9][0-9]* blocks$", 1024},			  /* DU 4.0 dump  -E */
-    {"^[0-9][0-9]*$", 1},			       /* Solaris ufsdump -S */
+							   /* DU 3.2g dump -E */
+    {"^[0-9][0-9]* blocks$", 1024},			   /* DU 4.0 dump  -E */
+    {"^[0-9][0-9]*$", 1},				/* Solaris ufsdump -S */
 #endif
 #endif
 
 #ifdef VDUMP
-    {"vdump: Dumping [0-9][0-9]* bytes, ", 1},		      /* OSF/1 vdump */
+    {"vdump: Dumping [0-9][0-9]* bytes, ", 1},		       /* OSF/1 vdump */
 #endif
     
 #ifdef VXDUMP
-    {"vxdump: estimated [0-9][0-9]* blocks", 512},          /* HPUX's vxdump */
-    {"  VXDUMP: estimated [0-9][0-9]* blocks", 512},                /* Sinix */
+    {"vxdump: estimated [0-9][0-9]* blocks", 512},	     /* HPUX's vxdump */
+    {"  VXDUMP: estimated [0-9][0-9]* blocks", 512},		     /* Sinix */
 #endif
 
 #ifdef XFSDUMP
@@ -878,16 +979,18 @@ regex_t re_size[] = {
 
     { NULL, 0 }
 };
+/*@end@*/
 
-
-long getsize_dump(disk, amdevice, level, options)
-    char *disk, *amdevice;
-    int level;
-    option_t *options;
+off_t
+getsize_dump(
+    char	*disk,
+    char	*amdevice,
+    int		level,
+    option_t *	options)
 {
     int pipefd[2], nullfd, stdoutfd, killctl[2];
     pid_t dumppid;
-    long size;
+    off_t size;
     FILE *dumpout;
     char *dumpkeys = NULL;
     char *device = NULL;
@@ -899,29 +1002,46 @@ long getsize_dump(disk, amdevice, level, options)
     char level_str[NUM_STR_SIZE];
     int s;
     times_t start_time;
+    char *qdisk = quote_string(disk);
+    char *qdevice;
 
-    snprintf(level_str, sizeof(level_str), "%d", level);
+    (void)options;	/* Quiet unused parameter warning */
+
+    (void)getsize_smbtar;	/* Quiet unused parameter warning */
+
+    snprintf(level_str, SIZEOF(level_str), "%d", level);
 
     device = amname_to_devname(amdevice);
+    qdevice = quote_string(device);
     fstype = amname_to_fstype(amdevice);
 
-    dbprintf(("%s: calculating for device '%s' with '%s'\n",
-	      debug_prefix_time(NULL), device, fstype));
+    dbprintf(("%s: calculating for device %s with %s\n",
+	      debug_prefix_time(NULL), qdevice, fstype));
 
     cmd = vstralloc(libexecdir, "/rundump", versionsuffix(), NULL);
     rundump_cmd = stralloc(cmd);
 
     if ((stdoutfd = nullfd = open("/dev/null", O_RDWR)) == -1) {
 	dbprintf(("getsize_dump could not open /dev/null: %s\n",
-	          strerror(errno)));
+		  strerror(errno)));
 	amfree(cmd);
 	amfree(rundump_cmd);
 	amfree(fstype);
 	amfree(device);
+	amfree(qdevice);
 	return(-1);
     }
     pipefd[0] = pipefd[1] = killctl[0] = killctl[1] = -1;
-    pipe(pipefd);
+    if (pipe(pipefd) < 0) {
+	dbprintf(("getsize_dump could create data pipes: %s\n",
+		  strerror(errno)));
+	amfree(cmd);
+	amfree(rundump_cmd);
+	amfree(fstype);
+	amfree(device);
+	amfree(qdevice);
+	return(-1);
+    }
 
 #ifdef XFSDUMP						/* { */
 #ifdef DUMP						/* { */
@@ -930,9 +1050,9 @@ long getsize_dump(disk, amdevice, level, options)
     if (1)
 #endif							/* } */
     {
-        name = stralloc(" (xfsdump)");
+	name = stralloc(" (xfsdump)");
 	dbprintf(("%s: running \"%s%s -F -J -l %s - %s\"\n",
-		  debug_prefix_time(NULL), cmd, name, level_str, device));
+		  debug_prefix_time(NULL), cmd, name, level_str, qdevice));
     }
     else
 #endif							/* } */
@@ -944,14 +1064,14 @@ long getsize_dump(disk, amdevice, level, options)
 #endif							/* } */
     {
 #ifdef USE_RUNDUMP
-        name = stralloc(" (vxdump)");
+	name = stralloc(" (vxdump)");
 #else
 	name = stralloc("");
 	cmd = newstralloc(cmd, VXDUMP);
 #endif
 	dumpkeys = vstralloc(level_str, "s", "f", NULL);
-        dbprintf(("%s: running \"%s%s %s 1048576 - %s\"\n",
-		  debug_prefix_time(NULL), cmd, name, dumpkeys, device));
+	dbprintf(("%s: running \"%s%s %s 1048576 - %s\"\n",
+		  debug_prefix_time(NULL), cmd, name, dumpkeys, qdevice));
     }
     else
 #endif							/* } */
@@ -964,10 +1084,12 @@ long getsize_dump(disk, amdevice, level, options)
     {
 	name = stralloc(" (vdump)");
 	amfree(device);
+	amfree(qdevice);
 	device = amname_to_dirname(amdevice);
+	qdevice = quote_string(device);
 	dumpkeys = vstralloc(level_str, "b", "f", NULL);
 	dbprintf(("%s: running \"%s%s %s 60 - %s\"\n",
-		  debug_prefix_time(NULL), cmd, name, dumpkeys, device));
+		  debug_prefix_time(NULL), cmd, name, dumpkeys, qdevice));
     }
     else
 #endif							/* } */
@@ -987,7 +1109,7 @@ long getsize_dump(disk, amdevice, level, options)
 # ifdef AIX_BACKUP					/* { */
 	dumpkeys = vstralloc("-", level_str, "f", NULL);
 	dbprintf(("%s: running \"%s%s %s - %s\"\n",
-		  debug_prefix_time(NULL), cmd, name, dumpkeys, device));
+		  debug_prefix_time(NULL), cmd, name, dumpkeys, qdevice));
 # else							/* } { */
 	dumpkeys = vstralloc(level_str,
 #  ifdef HAVE_DUMP_ESTIMATE				/* { */
@@ -1004,10 +1126,10 @@ long getsize_dump(disk, amdevice, level, options)
 
 #  ifdef HAVE_HONOR_NODUMP				/* { */
 	dbprintf(("%s: running \"%s%s %s 0 1048576 - %s\"\n",
-		  debug_prefix_time(NULL), cmd, name, dumpkeys, device));
+		  debug_prefix_time(NULL), cmd, name, dumpkeys, qdevice));
 #  else							/* } { */
 	dbprintf(("%s: running \"%s%s %s 1048576 - %s\"\n",
-		  debug_prefix_time(NULL), cmd, name, dumpkeys, device));
+		  debug_prefix_time(NULL), cmd, name, dumpkeys, qdevice));
 #  endif						/* } */
 # endif							/* } */
     }
@@ -1015,9 +1137,15 @@ long getsize_dump(disk, amdevice, level, options)
 #endif							/* } */
     {
 	error("no dump program available");
+	/*NOTREACHED*/
     }
 
-    pipe(killctl);
+    if (pipe(killctl) < 0) {
+	dbprintf(("%s: Could not create pipe: %s\n",
+		debug_prefix(NULL), strerror(errno)));
+	/* Message will be printed later... */
+	killctl[0] = killctl[1] = -1;
+    }
 
     start_time = curclock();
     switch(dumppid = fork()) {
@@ -1028,6 +1156,7 @@ long getsize_dump(disk, amdevice, level, options)
 	amfree(cmd);
 	amfree(rundump_cmd);
 	amfree(device);
+	amfree(qdevice);
 	amfree(name);
 	amfree(fstype);
 	return -1;
@@ -1037,8 +1166,7 @@ long getsize_dump(disk, amdevice, level, options)
 	if(SETPGRP == -1)
 	    SETPGRP_FAILED();
 	else if (killctl[0] == -1 || killctl[1] == -1)
-	    dbprintf(("%s: pipe for killpgrp failed, trying without killpgrp\n",
-		      debug_prefix(NULL)));
+	    dbprintf(("%s: Trying without killpgrp\n", debug_prefix(NULL)));
 	else {
 	    switch(fork()) {
 	    case -1:
@@ -1123,6 +1251,7 @@ long getsize_dump(disk, amdevice, level, options)
 	{
 	    error("exec %s failed or no dump program available: %s",
 		  cmd, strerror(errno));
+	    /*NOTREACHED*/
 	}
     }
 
@@ -1134,12 +1263,19 @@ long getsize_dump(disk, amdevice, level, options)
 	aclose(killctl[0]);
     dumpout = fdopen(pipefd[0],"r");
 
-    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+    for(size = (off_t)-1; (line = agets(dumpout)) != NULL; free(line)) {
+	if (line[0] == '\0')
+	    continue;
 	dbprintf(("%s: %s\n", debug_prefix_time(NULL), line));
 	size = handle_dumpline(line);
-	if(size > -1) {
+	if(size > (off_t)-1) {
 	    amfree(line);
-	    if((line = agets(dumpout)) != NULL) {
+	    while ((line = agets(dumpout)) != NULL) {
+	        if (line[0] != '\0')
+		    break;
+		amfree(line);
+	    }
+	    if (line != NULL) {
 		dbprintf(("%s: %s\n", debug_prefix_time(NULL), line));
 	    }
 	    break;
@@ -1150,23 +1286,23 @@ long getsize_dump(disk, amdevice, level, options)
     dbprintf(("%s: .....\n", debug_prefix_time(NULL)));
     dbprintf(("%s: estimate time for %s level %d: %s\n",
 	      debug_prefix(NULL),
-	      disk,
+	      qdisk,
 	      level,
 	      walltime_str(timessub(curclock(), start_time))));
-    if(size == -1) {
+    if(size == (off_t)-1) {
 	dbprintf(("%s: no size line match in %s%s output for \"%s\"\n",
 		  debug_prefix(NULL), cmd, name, disk));
 	dbprintf(("%s: .....\n", debug_prefix(NULL)));
 	dbprintf(("%s: Run %s%s manually to check for errors\n",
 		    debug_prefix(NULL), cmd, name));
-    } else if(size == 0 && level == 0) {
+    } else if(size == (off_t)0 && level == 0) {
 	dbprintf(("%s: possible %s%s problem -- is \"%s\" really empty?\n",
 		  debug_prefix(NULL), cmd, name, disk));
 	dbprintf(("%s: .....\n", debug_prefix(NULL)));
     } else {
 	    dbprintf(("%s: estimate size for %s level %d: %ld KB\n",
 	      debug_prefix(NULL),
-	      disk,
+	      qdisk,
 	      level,
 	      size));
     }
@@ -1212,10 +1348,10 @@ long getsize_dump(disk, amdevice, level, options)
     }
 
     dbprintf(("%s: waiting for %s%s \"%s\" child\n",
-	      debug_prefix_time(NULL), cmd, name, disk));
+	      debug_prefix_time(NULL), cmd, name, qdisk));
     wait(NULL);
-    dbprintf(("%s: after %s%s \"%s\" wait\n",
-	      debug_prefix_time(NULL), cmd, name, disk));
+    dbprintf(("%s: after %s%s %s wait\n",
+	      debug_prefix_time(NULL), cmd, name, qdisk));
 
  terminated:
 
@@ -1223,6 +1359,7 @@ long getsize_dump(disk, amdevice, level, options)
     afclose(dumpout);
 
     amfree(device);
+    amfree(qdevice);
     amfree(fstype);
 
     amfree(cmd);
@@ -1232,24 +1369,29 @@ long getsize_dump(disk, amdevice, level, options)
 }
 
 #ifdef SAMBA_CLIENT
-long getsize_smbtar(disk, amdevice, level, optionns)
-    char *disk, *amdevice;
-    int level;
-    option_t *optionns;
+off_t
+getsize_smbtar(
+    char	*disk,
+    char	*amdevice,
+    int		level,
+    option_t *	options)
 {
     int pipefd = -1, nullfd = -1, passwdfd = -1;
-    int dumppid;
-    long size;
+    pid_t dumppid;
+    off_t size;
     FILE *dumpout;
     char *tarkeys, *sharename, *user_and_password = NULL, *domain = NULL;
     char *share = NULL, *subdir = NULL;
-    int lpass;
+    size_t lpass;
     char *pwtext;
-    int pwtext_len;
+    size_t pwtext_len;
     char *line;
     char *pw_fd_env;
     times_t start_time;
     char *error_pn = NULL;
+    char *qdisk = quote_string(disk);
+
+    (void)options;	/* Quiet unused parameter warning */
 
     error_pn = stralloc2(get_pname(), "-smbclient");
 
@@ -1259,14 +1401,16 @@ long getsize_smbtar(disk, amdevice, level, optionns)
 	amfree(subdir);
 	set_pname(error_pn);
 	amfree(error_pn);
-	error("cannot parse disk entry '%s' for share/subdir", disk);
+	error("cannot parse disk entry %s for share/subdir", qdisk);
+	/*NOTREACHED*/
     }
     if ((subdir) && (SAMBA_VERSION < 2)) {
 	amfree(share);
 	amfree(subdir);
 	set_pname(error_pn);
 	amfree(error_pn);
-	error("subdirectory specified for share '%s' but samba not v2 or better", disk);
+	error("subdirectory specified for share %s but samba not v2 or better", qdisk);
+	/*NOTREACHED*/
     }
     if ((user_and_password = findpass(share, &domain)) == NULL) {
 
@@ -1277,10 +1421,11 @@ long getsize_smbtar(disk, amdevice, level, optionns)
 	set_pname(error_pn);
 	amfree(error_pn);
 	error("cannot find password for %s", disk);
+	/*NOTREACHED*/
     }
     lpass = strlen(user_and_password);
     if ((pwtext = strchr(user_and_password, '%')) == NULL) {
-	memset(user_and_password, '\0', lpass);
+	memset(user_and_password, '\0', (size_t)lpass);
 	amfree(user_and_password);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
@@ -1289,11 +1434,12 @@ long getsize_smbtar(disk, amdevice, level, optionns)
 	set_pname(error_pn);
 	amfree(error_pn);
 	error("password field not \'user%%pass\' for %s", disk);
+	/*NOTREACHED*/
     }
     *pwtext++ = '\0';
     pwtext_len = strlen(pwtext);
     if ((sharename = makesharename(share, 0)) == NULL) {
-	memset(user_and_password, '\0', lpass);
+	memset(user_and_password, '\0', (size_t)lpass);
 	amfree(user_and_password);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
@@ -1302,9 +1448,10 @@ long getsize_smbtar(disk, amdevice, level, optionns)
 	set_pname(error_pn);
 	amfree(error_pn);
 	error("cannot make share name of %s", share);
+	/*NOTREACHED*/
     }
     if ((nullfd = open("/dev/null", O_RDWR)) == -1) {
-	memset(user_and_password, '\0', lpass);
+	memset(user_and_password, '\0', (size_t)lpass);
 	amfree(user_and_password);
 	if(domain) {
 	    memset(domain, '\0', strlen(domain));
@@ -1315,6 +1462,7 @@ long getsize_smbtar(disk, amdevice, level, optionns)
 	amfree(sharename);
 	error("could not open /dev/null: %s\n",
 	      strerror(errno));
+	/*NOTREACHED*/
     }
 
 #if SAMBA_VERSION >= 2
@@ -1358,17 +1506,18 @@ long getsize_smbtar(disk, amdevice, level, optionns)
 	amfree(domain);
     }
     aclose(nullfd);
-    if(pwtext_len > 0 && fullwrite(passwdfd, pwtext, pwtext_len) < 0) {
+    if(pwtext_len > 0 && fullwrite(passwdfd, pwtext, (size_t)pwtext_len) < 0) {
 	int save_errno = errno;
 
-	memset(user_and_password, '\0', lpass);
+	memset(user_and_password, '\0', (size_t)lpass);
 	amfree(user_and_password);
 	aclose(passwdfd);
 	set_pname(error_pn);
 	amfree(error_pn);
 	error("password write failed: %s", strerror(save_errno));
+	/*NOTREACHED*/
     }
-    memset(user_and_password, '\0', lpass);
+    memset(user_and_password, '\0', (size_t)lpass);
     amfree(user_and_password);
     aclose(passwdfd);
     amfree(sharename);
@@ -1377,12 +1526,19 @@ long getsize_smbtar(disk, amdevice, level, optionns)
     amfree(error_pn);
     dumpout = fdopen(pipefd,"r");
 
-    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+    for(size = (off_t)-1; (line = agets(dumpout)) != NULL; free(line)) {
+	if (line[0] == '\0')
+	    continue;
 	dbprintf(("%s: %s\n", debug_prefix_time(NULL), line));
 	size = handle_dumpline(line);
 	if(size > -1) {
 	    amfree(line);
-	    if((line = agets(dumpout)) != NULL) {
+	    while ((line = agets(dumpout)) != NULL) {
+	        if (line[0] != '\0')
+		    break;
+		amfree(line);
+	    }
+	    if(line != NULL) {
 		dbprintf(("%s: %s\n", debug_prefix_time(NULL), line));
 	    }
 	    break;
@@ -1393,50 +1549,54 @@ long getsize_smbtar(disk, amdevice, level, optionns)
     dbprintf(("%s: .....\n", debug_prefix_time(NULL)));
     dbprintf(("%s: estimate time for %s level %d: %s\n",
 	      debug_prefix(NULL),
-	      disk,
+	      qdisk,
 	      level,
 	      walltime_str(timessub(curclock(), start_time))));
-    if(size == -1) {
+    if(size == (off_t)-1) {
 	dbprintf(("%s: no size line match in %s output for \"%s\"\n",
 		  debug_prefix(NULL), SAMBA_CLIENT, disk));
 	dbprintf(("%s: .....\n", debug_prefix(NULL)));
-    } else if(size == 0 && level == 0) {
+    } else if(size == (off_t)0 && level == 0) {
 	dbprintf(("%s: possible %s problem -- is \"%s\" really empty?\n",
 		  debug_prefix(NULL), SAMBA_CLIENT, disk));
 	dbprintf(("%s: .....\n", debug_prefix(NULL)));
     }
     dbprintf(("%s: estimate size for %s level %d: %ld KB\n",
 	      debug_prefix(NULL),
-	      disk,
+	      qdisk,
 	      level,
 	      size));
 
     kill(-dumppid, SIGTERM);
 
     dbprintf(("%s: waiting for %s \"%s\" child\n",
-	      debug_prefix_time(NULL), SAMBA_CLIENT, disk));
+	      debug_prefix_time(NULL), SAMBA_CLIENT, qdisk));
     wait(NULL);
-    dbprintf(("%s: after %s \"%s\" wait\n",
-	      debug_prefix_time(NULL), SAMBA_CLIENT, disk));
+    dbprintf(("%s: after %s %s wait\n",
+	      debug_prefix_time(NULL), SAMBA_CLIENT, qdisk));
 
     afclose(dumpout);
     pipefd = -1;
 
     amfree(error_pn);
+    amfree(qdisk);
 
     return size;
 }
 #endif
 
 #ifdef GNUTAR
-long getsize_gnutar(disk, amdevice, level, options, dumpsince)
-char *disk, *amdevice;
-int level;
-option_t *options;
-time_t dumpsince;
+off_t
+getsize_gnutar(
+    char	*disk,
+    char	*amdevice,
+    int		level,
+    option_t *	options,
+    time_t	dumpsince)
 {
-    int pipefd = -1, nullfd = -1, dumppid;
-    long size = -1;
+    int pipefd = -1, nullfd = -1;
+    pid_t dumppid;
+    off_t size = (off_t)-1;
     FILE *dumpout = NULL;
     char *incrname = NULL;
     char *basename = NULL;
@@ -1455,6 +1615,7 @@ time_t dumpsince;
     char *file_exclude = NULL;
     char *file_include = NULL;
     times_t start_time;
+    char *qdisk = quote_string(disk);;
 
     if(options->exclude_file) nb_exclude += options->exclude_file->nb_element;
     if(options->exclude_list) nb_exclude += options->exclude_list->nb_element;
@@ -1464,7 +1625,7 @@ time_t dumpsince;
     if(nb_exclude > 0) file_exclude = build_exclude(disk, amdevice, options, 0);
     if(nb_include > 0) file_include = build_include(disk, amdevice, options, 0);
 
-    my_argv = alloc(sizeof(char *) * 21);
+    my_argv = alloc(SIZEOF(char *) * 21);
     i = 0;
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
@@ -1483,12 +1644,12 @@ time_t dumpsince;
 	 * The loop starts at the first character of the host name,
 	 * not the '/'.
 	 */
-	s = basename + sizeof(GNUTAR_LISTED_INCREMENTAL_DIR);
+	s = basename + SIZEOF(GNUTAR_LISTED_INCREMENTAL_DIR);
 	while((ch = *s++) != '\0') {
 	    if(ch == '/' || isspace(ch)) s[-1] = '_';
 	}
 
-	snprintf(number, sizeof(number), "%d", level);
+	snprintf(number, SIZEOF(number), "%d", level);
 	incrname = vstralloc(basename, "_", number, ".new", NULL);
 	unlink(incrname);
 
@@ -1500,7 +1661,7 @@ time_t dumpsince;
 	baselevel = level;
 	while (in == NULL) {
 	    if (--baselevel >= 0) {
-		snprintf(number, sizeof(number), "%d", baselevel);
+		snprintf(number, SIZEOF(number), "%d", baselevel);
 		inputname = newvstralloc(inputname,
 					 basename, "_", number, NULL);
 	    } else {
@@ -1527,6 +1688,8 @@ time_t dumpsince;
 	}
 
 	for (; (line = agets(in)) != NULL; free(line)) {
+	    if (line[0] == '\0')
+		continue;
 	    if (fputs(line, out) == EOF || putc('\n', out) == EOF) {
 		dbprintf(("%s: writing to %s: %s\n",
 			   debug_prefix(NULL), incrname, strerror(errno)));
@@ -1561,7 +1724,7 @@ time_t dumpsince;
 #endif
 
     gmtm = gmtime(&dumpsince);
-    snprintf(dumptimestr, sizeof(dumptimestr),
+    snprintf(dumptimestr, SIZEOF(dumptimestr),
 		"%04d-%02d-%02d %2d:%02d:%02d GMT",
 		gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
 		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
@@ -1619,21 +1782,35 @@ time_t dumpsince;
 
     start_time = curclock();
 
-    nullfd = open("/dev/null", O_RDWR);
+    if ((nullfd = open("/dev/null", O_RDWR)) == -1) {
+	dbprintf(("Cannot access /dev/null : %s\n", strerror(errno)));
+	goto common_exit;
+    }
+
     dumppid = pipespawnv(cmd, STDERR_PIPE, &nullfd, &nullfd, &pipefd, my_argv);
+
     amfree(cmd);
     amfree(file_exclude);
     amfree(file_include);
 
     dumpout = fdopen(pipefd,"r");
 
-    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+    for(size = (off_t)-1; (line = agets(dumpout)) != NULL; free(line)) {
+	if (line[0] == '\0')
+	    continue;
 	dbprintf(("%s: %s\n", debug_prefix_time(NULL), line));
 	size = handle_dumpline(line);
-	if(size > -1) {
+	if(size > (off_t)-1) {
 	    amfree(line);
-	    if((line = agets(dumpout)) != NULL) {
+	    while ((line = agets(dumpout)) != NULL) {
+		if (line[0] != '\0') {
+		    break;
+		}
+		amfree(line);
+	    }
+	    if (line != NULL) {
 		dbprintf(("%s: %s\n", debug_prefix_time(NULL), line));
+		break;
 	    }
 	    break;
 	}
@@ -1643,31 +1820,31 @@ time_t dumpsince;
     dbprintf(("%s: .....\n", debug_prefix_time(NULL)));
     dbprintf(("%s: estimate time for %s level %d: %s\n",
 	      debug_prefix(NULL),
-	      disk,
+	      qdisk,
 	      level,
 	      walltime_str(timessub(curclock(), start_time))));
-    if(size == -1) {
+    if(size == (off_t)-1) {
 	dbprintf(("%s: no size line match in %s output for \"%s\"\n",
 		  debug_prefix(NULL), my_argv[0], disk));
 	dbprintf(("%s: .....\n", debug_prefix(NULL)));
-    } else if(size == 0 && level == 0) {
+    } else if(size == (off_t)0 && level == 0) {
 	dbprintf(("%s: possible %s problem -- is \"%s\" really empty?\n",
 		  debug_prefix(NULL), my_argv[0], disk));
 	dbprintf(("%s: .....\n", debug_prefix(NULL)));
     }
     dbprintf(("%s: estimate size for %s level %d: %ld KB\n",
 	      debug_prefix(NULL),
-	      disk,
+	      qdisk,
 	      level,
 	      size));
 
     kill(-dumppid, SIGTERM);
 
     dbprintf(("%s: waiting for %s \"%s\" child\n",
-	      debug_prefix_time(NULL), my_argv[0], disk));
+	      debug_prefix_time(NULL), my_argv[0], qdisk));
     wait(NULL);
-    dbprintf(("%s: after %s \"%s\" wait\n",
-	      debug_prefix_time(NULL), my_argv[0], disk));
+    dbprintf(("%s: after %s %s wait\n",
+	      debug_prefix_time(NULL), my_argv[0], qdisk));
 
 common_exit:
 
@@ -1679,6 +1856,7 @@ common_exit:
     amfree(dirname);
     amfree(inputname);
     amfree(my_argv);
+    amfree(qdisk);
 
     aclose(nullfd);
     afclose(dumpout);
@@ -1689,14 +1867,18 @@ common_exit:
 }
 #endif
 
-long getsize_wrapper(program, disk, amdevice, level, options, dumpsince)
-char *program, *disk, *amdevice;
-int level;
-option_t *options;
-time_t dumpsince;
+off_t
+getsize_wrapper(
+    char	*program,
+    char	*disk,
+    char	*amdevice,
+    int		level,
+    option_t *	options,
+    time_t	dumpsince)
 {
-    int pipefd[2], nullfd, dumppid;
-    long size;
+    int pipefd[2], nullfd;
+    pid_t dumppid;
+    off_t size = (off_t)-1;
     FILE *dumpout;
     char *line = NULL;
     char *cmd = NULL;
@@ -1705,11 +1887,13 @@ time_t dumpsince;
     int  i, j;
     char *argvchild[10];
     char *newoptstr = NULL;
-    long size1, size2;
+    off_t size1, size2;
     times_t start_time;
+    char *qdisk = quote_string(disk);
+    char *qamdevice = quote_string(amdevice);
 
     gmtm = gmtime(&dumpsince);
-    snprintf(dumptimestr, sizeof(dumptimestr),
+    snprintf(dumptimestr, SIZEOF(dumptimestr),
 		"%04d-%02d-%02d %2d:%02d:%02d GMT",
 		gmtm->tm_year + 1900, gmtm->tm_mon+1, gmtm->tm_mday,
 		gmtm->tm_hour, gmtm->tm_min, gmtm->tm_sec);
@@ -1723,7 +1907,7 @@ time_t dumpsince;
 	argvchild[i++] = "full";
     else {
 	char levelstr[NUM_STR_SIZE];
-	snprintf(levelstr,sizeof(levelstr),"%d",level);
+	snprintf(levelstr,SIZEOF(levelstr),"%d",level);
 	argvchild[i++] = "level";
 	argvchild[i++] = levelstr;
     }
@@ -1737,14 +1921,23 @@ time_t dumpsince;
 	dbprintf((" %s", argvchild[j]));
     }
     dbprintf(("\n"));
-    nullfd = open("/dev/null", O_RDWR);
-    pipe(pipefd);
+
+    if ((nullfd = open("/dev/null", O_RDWR)) == -1) {
+	dbprintf(("Cannot access /dev/null : %s\n", strerror(errno)));
+	goto common_exit;
+    }
+
+    if (pipe(pipefd) < 0) {
+	dbprintf(("getsize_wrapper could create data pipes: %s\n",
+		  strerror(errno)));
+	goto common_exit;
+    }
 
     start_time = curclock();
 
     switch(dumppid = fork()) {
     case -1:
-      size = -1;
+      size = (off_t)-1;
       goto common_exit;
     default:
       break; /* parent */
@@ -1756,21 +1949,31 @@ time_t dumpsince;
 
       execve(cmd, argvchild, safe_env());
       error("exec %s failed: %s", cmd, strerror(errno));
+      /*NOTREACHED*/
     }
     amfree(newoptstr);
 
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
 
-    for(size = -1; (line = agets(dumpout)) != NULL; free(line)) {
+    for(size = (off_t)-1; (line = agets(dumpout)) != NULL; free(line)) {
+	if (line[0] == '\0')
+	    continue;
 	dbprintf(("%s: %s\n", debug_prefix_time(NULL), line));
-	i = sscanf(line,"%ld %ld",&size1, &size2);
+	i = sscanf(line, OFF_T_FMT " " OFF_T_FMT,
+		(OFF_T_FMT_TYPE *)&size1, 
+		(OFF_T_FMT_TYPE *)&size2);
 	if(i == 2) {
 	    size = size1 * size2;
 	}
 	if(size > -1) {
 	    amfree(line);
-	    if((line = agets(dumpout)) != NULL) {
+	    while ((line = agets(dumpout)) != NULL) {
+	        if (line[0] != '\0')
+		    break;
+		amfree(line);
+	    }
+	    if(line != NULL) {
 		dbprintf(("%s: %s\n", debug_prefix_time(NULL), line));
 	    }
 	    break;
@@ -1781,31 +1984,31 @@ time_t dumpsince;
     dbprintf(("%s: .....\n", debug_prefix_time(NULL)));
     dbprintf(("%s: estimate time for %s level %d: %s\n",
 	      debug_prefix(NULL),
-	      amdevice,
+	      qamdevice,
 	      level,
 	      walltime_str(timessub(curclock(), start_time))));
-    if(size == -1) {
+    if(size == (off_t)-1) {
 	dbprintf(("%s: no size line match in %s output for \"%s\"\n",
-		  debug_prefix(NULL), cmd, disk));
+		  debug_prefix(NULL), cmd, qdisk));
 	dbprintf(("%s: .....\n", debug_prefix(NULL)));
-    } else if(size == 0 && level == 0) {
+    } else if(size == (off_t)0 && level == 0) {
 	dbprintf(("%s: possible %s problem -- is \"%s\" really empty?\n",
-		  debug_prefix(NULL), cmd, disk));
+		  debug_prefix(NULL), cmd, qdisk));
 	dbprintf(("%s: .....\n", debug_prefix(NULL)));
     }
-    dbprintf(("%s: estimate size for %s level %d: %ld KB\n",
+    dbprintf(("%s: estimate size for %s level %d: " OFF_T_FMT " KB\n",
 	      debug_prefix(NULL),
-	      amdevice,
+	      qamdevice,
 	      level,
 	      size));
 
     kill(-dumppid, SIGTERM);
 
     dbprintf(("%s: waiting for %s \"%s\" child\n",
-	      debug_prefix_time(NULL), cmd, disk));
+	      debug_prefix_time(NULL), cmd, qdisk));
     wait(NULL);
-    dbprintf(("%s: after %s \"%s\" wait\n",
-	      debug_prefix_time(NULL), cmd, disk));
+    dbprintf(("%s: after %s %s wait\n",
+	      debug_prefix_time(NULL), cmd, qdisk));
 
     aclose(nullfd);
     afclose(dumpout);
@@ -1814,15 +2017,19 @@ common_exit:
 
     amfree(cmd);
     amfree(newoptstr);
+    amfree(qdisk);
+    amfree(qamdevice);
     return size;
 }
 
 
-double first_num(str)
-char *str;
 /*
  * Returns the value of the first integer in a string.
  */
+
+double
+first_num(
+    char *	str)
 {
     char *start;
     int ch;
@@ -1834,27 +2041,32 @@ char *str;
     while(isdigit(ch) || (ch == '.')) ch = *str++;
     str[-1] = '\0';
     d = atof(start);
-    str[-1] = ch;
+    str[-1] = (char)ch;
     return d;
 }
 
 
-long handle_dumpline(str)
-char *str;
 /*
  * Checks the dump output line against the error and size regex tables.
  */
+
+off_t
+handle_dumpline(
+    char *	str)
 {
     regex_t *rp;
     double size;
 
     /* check for size match */
+    /*@ignore@*/
     for(rp = re_size; rp->regex != NULL; rp++) {
 	if(match(rp->regex, str)) {
 	    size = ((first_num(str)*rp->scale+1023.0)/1024.0);
-	    if(size < 0) size = 1;		/* found on NeXT -- sigh */
-	    return (long) size;
+	    if(size < 0.0)
+		size = 1.0;		/* found on NeXT -- sigh */
+	    return (off_t)size;
 	}
     }
-    return -1;
+    /*@end@*/
+    return (off_t)-1;
 }

@@ -5,17 +5,16 @@
 typedef struct {
     int nopen;
     int nfds;
-    int fd_count;
+    size_t fd_count;
     int *fds;
-    int *readres;
-    int xorbuflen;
+    ssize_t *readres;
+    size_t xorbuflen;
     char *xorbuf;
 } RAIT;
 
 #ifdef NO_AMANDA
 
 #define stralloc strdup
-#define P(x)	x			/* for function prototypes */
 
 /*
  * Tape drive status structure.  This abstracts the things we are
@@ -39,8 +38,8 @@ struct am_mt_status {
     char eot;				/* true if tape is at end of medium */
     char protected;			/* true if tape is write protected */
     long flags;				/* device flags, whatever that is */
-    long fileno;			/* tape file number */
-    long blkno;				/* block within file */
+    off_t fileno;			/* tape file number */
+    off_t blkno;			/* block within file */
     int device_status_size;		/* size of orig device status field */
     unsigned long device_status;	/* "device status", whatever that is */
     int error_status_size;		/* size of orig error status field */
@@ -48,33 +47,25 @@ struct am_mt_status {
 };
 #endif
 
-extern int rait_open ();
-extern int rait_access P((char *, int));
-extern int rait_stat P((char *, struct stat *));
-extern int rait_close P((int ));
-extern int rait_lseek P((int , long, int));
-extern ssize_t rait_write P((int , const void *, size_t));
-extern ssize_t rait_read P((int , void *, size_t));
-extern int rait_ioctl P((int , int, void *));
-extern int rait_copy P((char *f1, char *f2, int buflen));
-
-extern char *rait_init_namelist P((char * dev,
-				   char **dev_left,
-				   char **dev_right,
-				   char **dev_next));
-extern int rait_next_name P((char * dev_left,
-       			     char * dev_right,
-       			     char **dev_next,
-       			     char * dev_real));
-
-extern int  rait_tape_open ();
-extern int  rait_tapefd_fsf P((int rait_tapefd, int count));
-extern int  rait_tapefd_rewind P((int rait_tapefd));
-extern void rait_tapefd_resetofs P((int rait_tapefd));
-extern int  rait_tapefd_unload P((int rait_tapefd));
-extern int  rait_tapefd_status P((int rait_tapefd, struct am_mt_status *stat));
-extern int  rait_tapefd_weof P((int rait_tapefd, int count));
-extern int  rait_tapefd_can_fork P((int));
+int rait_open(char *dev, int flags, mode_t mask);
+int rait_access(char *, int);
+int rait_stat(char *, struct stat *);
+int rait_close(int);
+off_t rait_lseek(int, off_t, int);
+ssize_t rait_write(int, const void *, size_t);
+ssize_t rait_read(int, void *, size_t);
+int rait_ioctl(int, int, void *);
+int rait_copy(char *f1, char *f2, size_t buflen);
+char *rait_init_namelist(char * dev, char **dev_left, char **dev_right, char **dev_next);
+int rait_next_name(char * dev_left, char * dev_right, char **dev_next, char * dev_real);
+int  rait_tape_open(char *, int, mode_t);
+int  rait_tapefd_fsf(int rait_tapefd, off_t count);
+int  rait_tapefd_rewind(int rait_tapefd);
+void rait_tapefd_resetofs(int rait_tapefd);
+int  rait_tapefd_unload(int rait_tapefd);
+int  rait_tapefd_status(int rait_tapefd, struct am_mt_status *stat);
+int  rait_tapefd_weof(int rait_tapefd, off_t count);
+int  rait_tapefd_can_fork(int);
 
 #ifdef RAIT_REDIRECT
 

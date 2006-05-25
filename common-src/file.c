@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.35 2006/03/09 16:51:41 martinea Exp $
+ * $Id: file.c,v 1.36 2006/05/25 01:47:11 johnfranks Exp $
  *
  * file and directory bashing routines
  */
@@ -31,7 +31,9 @@
 #include "amanda.h"
 #include "util.h"
 
-static int mk1dir P((const char *, int, uid_t, gid_t));
+void amanda_setup(int argc, char **argv, int setup_flags);
+static int mk1dir(const char *, mode_t, uid_t, gid_t);
+static void areads_getbuf(const char *s, int l, int fd);
 
 uid_t client_uid = (uid_t) -1;
 gid_t client_gid = (gid_t) -1;
@@ -42,24 +44,25 @@ gid_t client_gid = (gid_t) -1;
 **       it will do nothing - only root is permitted to change the owner
 **       of a file.
 */
-static int mk1dir(dir, mode, uid, gid)
-const char *dir; /* directory to create */
-int mode;	/* mode for new directory */
-uid_t uid;	/* uid for new directory */
-gid_t gid;	/* gid for new directory */
+static int
+mk1dir(
+    const char *dir, /* directory to create */
+    mode_t	mode,	/* mode for new directory */
+    uid_t	uid,	/* uid for new directory */
+    gid_t	gid)	/* gid for new directory */
 {
     int rc;	/* return code */
 
-    rc = 0;	/* assume the best */
-
-    if(mkdir(dir, mode) == 0) {
-	chmod(dir, mode);	/* mkdir() is affected by the umask */
-	chown(dir, uid, gid);	/* XXX - no-op on most systems? */
+    if((rc = mkdir(dir, mode)) == 0) {
+	if ((rc = chmod(dir, mode)) == 0) { /* mkdir() affected by the umask */
+	    rc = chown(dir, uid, gid);
+	}
     } else {			/* maybe someone beat us to it */
 	int serrno;
 
 	serrno = errno;
-	if(access(dir, F_OK) != 0) rc = -1;
+	if(access(dir, F_OK) != 0)
+	    rc = -1;
 	errno = serrno;	/* pass back the real error */
     }
 
@@ -73,19 +76,20 @@ gid_t gid;	/* gid for new directory */
  * the last element, but not the last element.  So a (potential) file name
  * may be passed to mkpdir and all the parents of that file will be created.
  */
-int mkpdir(file, mode, uid, gid)
-char *file;	/* file to create parent directories for */
-int mode;	/* mode for new directories */
-uid_t uid;	/* uid for new directories */
-gid_t gid;	/* gid for new directories */
+int
+mkpdir(
+    char *	file,	/* file to create parent directories for */
+    mode_t	mode,	/* mode for new directories */
+    uid_t	uid,	/* uid for new directories */
+    gid_t	gid)	/* gid for new directories */
 {
-    char *dir = NULL, *p;
+    char *dir;
+    char *p;
     int rc;	/* return code */
 
     rc = 0;
 
     dir = stralloc(file);	/* make a copy we can play with */
-
     p = strrchr(dir, '/');
     if(p != dir && p != NULL) {	/* got a '/' or a simple name */
 	*p = '\0';
@@ -107,12 +111,13 @@ gid_t gid;	/* gid for new directories */
 **  - stops deleting before topdir, ie: topdir will not be removed
 **  - if file is not under topdir this routine will not notice
 */
-int rmpdir(file, topdir)
-char *file;	/* directory hierarchy to remove */
-char *topdir;	/* where to stop removing */
+int
+rmpdir(
+    char *	file,	/* directory hierarchy to remove */
+    char *	topdir)	/* where to stop removing */
 {
     int rc;
-    char *p, *dir = NULL;
+    char *p, *dir;
 
     if(strcmp(file, topdir) == 0) return 0; /* all done */
 
@@ -163,11 +168,14 @@ char *topdir;	/* where to stop removing */
  */
 
 void
-amanda_setup (argc, argv, setup_flags)
-    int			argc;
-    char		**argv;
-    int			setup_flags;
+amanda_setup (
+    int		argc,
+    char **	argv,
+    int		setup_flags)
 {
+    (void)argc;		/* Quiet unused parameter warning */
+    (void)argv;		/* Quiet unused parameter warning */
+    (void)setup_flags;	/* Quiet unused parameter warning */
 }
 
 /*
@@ -197,7 +205,7 @@ amanda_setup (argc, argv, setup_flags)
  */
 
 void
-safe_cd()
+safe_cd(void)
 {
     int			cd_ok = 0;
     struct stat		sbuf;
@@ -215,11 +223,11 @@ safe_cd()
     if (client_uid != (uid_t) -1) {
 #if defined(AMANDA_DBGDIR)
 	d = stralloc2(AMANDA_DBGDIR, "/.");
-	(void) mkpdir(d, 02700, client_uid, client_gid);
+	(void) mkpdir(d, (mode_t)02700, client_uid, client_gid);
 	amfree(d);
 #endif
 	d = stralloc2(AMANDA_TMPDIR, "/.");
-	(void) mkpdir(d, 02700, client_uid, client_gid);
+	(void) mkpdir(d, (mode_t)02700, client_uid, client_gid);
 	amfree(d);
     }
 
@@ -241,7 +249,9 @@ safe_cd()
     if(cd_ok) {
 	save_core();				/* save any old core file */
     } else {
-	(void) chdir("/");			/* assume this works */
+	if ((cd_ok = chdir("/")) == -1) {
+	    (void)cd_ok;	/* Quiet compiler warning if DEBUG disabled */
+	}
     }
 }
 
@@ -263,9 +273,9 @@ safe_cd()
  */
 
 void
-safe_fd(fd_start, fd_count)
-    int			fd_start;
-    int			fd_count;
+safe_fd(
+    int		fd_start,
+    int		fd_count)
 {
     int			fd;
 
@@ -299,7 +309,6 @@ safe_fd(fd_start, fd_count)
 	    }
 	}
     }
-
 }
 
 /*
@@ -324,7 +333,7 @@ safe_fd(fd_start, fd_count)
  */
 
 void
-save_core()
+save_core(void)
 {
     struct stat sbuf;
 
@@ -360,41 +369,30 @@ save_core()
 /*
 ** Sanitise a file name.
 ** 
-** Convert all funny characters to '_' so that we can use,
+** Convert all '/' characters to '_' so that we can use,
 ** for example, disk names as part of file names.
 ** Notes: 
 **  - there is a many-to-one mapping between input and output
-** XXX - We only look for '/' and ' ' at the moment.  May
-** XXX - be we should also do all unprintables.
+**  - Only / and '\0' are disallowed in filenames by POSIX...
 */
-char *sanitise_filename(inp)
-char *inp;
+char *
+sanitise_filename(
+    char *	inp)
 {
     char *buf;
-    int buf_size;
+    size_t buf_size;
     char *s, *d;
     int ch;
 
-    buf_size = 2 * strlen(inp) + 1;		/* worst case */
+    buf_size = strlen(inp) + 1;		/* worst case */
     buf = alloc(buf_size);
     d = buf;
     s = inp;
     while((ch = *s++) != '\0') {
-	if(ch == '_') {
-	    if(d >= buf + buf_size) {
-		amfree(buf);
-		return NULL;			/* cannot happen */
-	    }
-	    *d++ = '_';				/* convert _ to __ to try */
-						/* and ensure unique output */
-	} else if(ch == '/' || isspace(ch)) {
+	if(ch == '/') {
 	    ch = '_';	/* convert "bad" to "_" */
 	}
-	if(d >= buf + buf_size) {
-	    amfree(buf);
-	    return NULL;			/* cannot happen */
-	}
-	*d++ = ch;
+	*d++ = (char)ch;
     }
     if(d >= buf + buf_size) {
 	amfree(buf);
@@ -409,84 +407,100 @@ char *inp;
  *=====================================================================
  * Get the next line of input from a stdio file.
  *
- * char *agets (FILE *f)
+ * char *agets (FILE *stream)
  *
- * entry:	f = stdio stream to read
- * exit:	returns a pointer to an alloc'd string or NULL at EOF
- *		or error (errno will be zero on EOF).
+ * entry:	stream  -  stream to read
+ * exit:	returns a pointer to an alloc'd string or NULL
+ *		at EOF or error.  The functions ferror(stream) and
+ *		feof(stream) should be checked by caller to determine
+ *		stream status.
  *
- * Notes:	the newline, if read, is removed from the string
+ * Notes:	the newline at the end of a line, if read, is removed from
+ *		the string. Quoted newlines are left intact.
  *		the caller is responsible for free'ing the string
+ *
  *=====================================================================
  */
 
-char *
-debug_agets(s, l, file)
-    const char *s;
-    int l;
-    FILE *file;
-{
-    char *line = NULL, *line_ptr;
-    size_t line_size, size_save;
-    int line_free, line_len;
-    char *cp;
-    char *f;
-
-    malloc_enter(dbmalloc_caller_loc(s, l));
-
 #define	AGETS_LINE_INCR	128
 
-    line_size = AGETS_LINE_INCR;
-    line = debug_alloc (s, l, line_size);
-    line_free = line_size;
-    line_ptr = line;
-    line_len = 0;
+char *
+debug_agets(
+    const char *sourcefile,
+    int		lineno,
+    FILE *	stream)
+{
+    int	ch;
+    char *line = alloc(AGETS_LINE_INCR);
+    size_t line_size = 0;
+    size_t loffset = 0;
+    int	inquote = 0;
+    int	escape = 0;
 
-    while ((f = fgets(line_ptr, line_free, file)) != NULL) {
-	/*
-	 * Note that we only have to search what we just read, not
-	 * the whole buffer.
-	 */
-	if ((cp = strchr (line_ptr, '\n')) != NULL) {
-	    line_len += cp - line_ptr;
-	    *cp = '\0';				/* zap the newline */
-	    break;				/* got to end of line */
+    (void)sourcefile;	/* Quiet unused parameter warning if not debugging */
+    (void)lineno;	/* Quiet unused parameter warning if not debugging */
+
+    while ((ch = fgetc(stream)) != EOF) {
+	if (ch == '\n') {
+	    if (!inquote) {
+		if (escape) {
+		    escape = 0;
+		    loffset--;	/* Consume escape in buffer */
+		    continue;
+		}
+		/* Reached end of line so exit without passing on LF */
+		break;
+	    }
 	}
-	line_len += line_free - 1;		/* bytes read minus '\0' */
-	size_save = line_size;
-	if (line_size < 256 * AGETS_LINE_INCR) {
-	    line_size *= 2;
+
+	if (ch == '\\') {
+	    escape = 1;
 	} else {
-	    line_size += 256 * AGETS_LINE_INCR;
+	    if (ch == '"') {
+		if (!escape) 
+		    inquote = !inquote;
+	    }
+	    escape = 0;
 	}
-	cp = debug_alloc (s, l, line_size);	/* get more space */
-	memcpy (cp, line, size_save);		/* copy old to new */
-	free (line);				/* and release the old */
-	line = cp;
-	line_ptr = line + size_save - 1;	/* start at the null byte */
-	line_free = line_size - line_len;	/* and we get to use it */
+
+	if ((loffset + 1) >= line_size) {
+	    char *tmpline;
+
+	    /*
+	     * Reallocate input line.
+	     * alloc() never return NULL pointer.
+	     */
+	    tmpline = alloc(line_size + AGETS_LINE_INCR);
+	    memcpy(tmpline, line, line_size);
+	    amfree(line);
+	    line = tmpline;
+	    line_size = line_size + AGETS_LINE_INCR;
+	}
+	line[loffset++] = (char)ch;
     }
+
+    if ((ch == EOF) && (loffset == 0)) {
+	amfree(line); /* amfree zeros line... */
+    } else {
+	line[loffset] = '\0';
+    }
+
     /*
-     * Return what we got even if there was not a newline.  Only
-     * report done (NULL) when no data was processed.
+     * Return what we got even if there was not a newline.
+     * Only report done (NULL) when no data was processed.
      */
-    if (f == NULL && line_len == 0) {
-	amfree (line);
-	line = NULL;				/* redundant, but clear */
-	if(!ferror(file)) {
-	    errno = 0;				/* flag EOF vs error */
-	}
-    }
-    malloc_leave(dbmalloc_caller_loc(s, l));
+    dbprintf(("%s: agets(fd=%d) returns <%s>\n", debug_prefix(NULL),
+		fileno(stream), ((line == NULL) ? "NULL" : line)));
     return line;
 }
+
 
 /*
  *=====================================================================
  * Find/create a buffer for a particular file descriptor for use with
  * areads().
  *
- * void areads_getbuf (const char *file, int line, int fd)
+ * void areads_getbuf (const char *file, size_t line, int fd)
  *
  * entry:	file, line = caller source location
  *		fd = file descriptor to look up
@@ -497,27 +511,27 @@ debug_agets(s, l, file)
 static struct areads_buffer {
     char *buffer;
     char *endptr;
-    ssize_t bufsize;
+    size_t bufsize;
 } *areads_buffer = NULL;
 static int areads_bufcount = 0;
-static ssize_t areads_bufsize = BUFSIZ;		/* for the test program */
+static size_t areads_bufsize = BUFSIZ;		/* for the test program */
 
 static void
-areads_getbuf(s, l, fd)
-    const char *s;
-    int l;
-    int fd;
+areads_getbuf(
+    const char *s,
+    int		l,
+    int		fd)
 {
     struct areads_buffer *new;
-    ssize_t size;
+    size_t size;
 
     assert(fd >= 0);
     if(fd >= areads_bufcount) {
-	size = (fd + 1) * sizeof(*areads_buffer);
+	size = (size_t)(fd + 1) * SIZEOF(*areads_buffer);
 	new = (struct areads_buffer *) debug_alloc(s, l, size);
 	memset((char *)new, 0, size);
 	if(areads_buffer) {
-	    size = areads_bufcount * sizeof(*areads_buffer);
+	    size = areads_bufcount * SIZEOF(*areads_buffer);
 	    memcpy(new, areads_buffer, size);
 	}
 	amfree(areads_buffer);
@@ -545,8 +559,8 @@ areads_getbuf(s, l, fd)
  */
 
 ssize_t
-areads_dataready(fd)
-    int fd;
+areads_dataready(
+    int	fd)
 {
     ssize_t r = 0;
 
@@ -568,8 +582,8 @@ areads_dataready(fd)
  */
 
 void
-areads_relbuf(fd)
-    int fd;
+areads_relbuf(
+    int fd)
 {
     if(fd >= 0 && fd < areads_bufcount) {
 	amfree(areads_buffer[fd].buffer);
@@ -594,18 +608,18 @@ areads_relbuf(fd)
  */
 
 char *
-debug_areads (s, l, fd)
-    const char *s;
-    int l;
-    int fd;
+debug_areads (
+    const char *s,
+    int		l,
+    int		fd)
 {
     char *nl;
     char *line;
     char *buffer;
     char *endptr;
     char *newbuf;
-    ssize_t buflen;
-    ssize_t size;
+    size_t buflen;
+    size_t size;
     ssize_t r;
 
     malloc_enter(dbmalloc_caller_loc(s, l));
@@ -617,7 +631,7 @@ debug_areads (s, l, fd)
     areads_getbuf(s, l, fd);
     buffer = areads_buffer[fd].buffer;
     endptr = areads_buffer[fd].endptr;
-    buflen = areads_buffer[fd].bufsize - (endptr - buffer);
+    buflen = areads_buffer[fd].bufsize - (size_t)(endptr - buffer);
     while((nl = strchr(buffer, '\n')) == NULL) {
 	/*
 	 * No newline yet, so get more data.
@@ -631,13 +645,12 @@ debug_areads (s, l, fd)
 	    newbuf = debug_alloc(s, l, size + 1);
 	    memcpy (newbuf, buffer, areads_buffer[fd].bufsize + 1);
 	    amfree(areads_buffer[fd].buffer);
-	    buffer = NULL;
 	    areads_buffer[fd].buffer = newbuf;
 	    areads_buffer[fd].endptr = newbuf + areads_buffer[fd].bufsize;
 	    areads_buffer[fd].bufsize = size;
 	    buffer = areads_buffer[fd].buffer;
 	    endptr = areads_buffer[fd].endptr;
-	    buflen = areads_buffer[fd].bufsize - (endptr - buffer);
+	    buflen = areads_buffer[fd].bufsize - (size_t)(endptr - buffer);
 	}
 	if ((r = read(fd, endptr, buflen)) <= 0) {
 	    if(r == 0) {
@@ -652,7 +665,7 @@ debug_areads (s, l, fd)
     }
     *nl++ = '\0';
     line = stralloc(buffer);
-    size = endptr - nl;			/* data still left in buffer */
+    size = (size_t)(endptr - nl);	/* data still left in buffer */
     memmove(buffer, nl, size);
     areads_buffer[fd].endptr = buffer + size;
     areads_buffer[fd].endptr[0] = '\0';
@@ -662,9 +675,10 @@ debug_areads (s, l, fd)
 
 #ifdef TEST
 
-int main(argc, argv)
-	int argc;
-	char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
 	int rc;
 	int fd;
@@ -676,6 +690,8 @@ int main(argc, argv)
 	safe_fd(-1, 0);
 
 	set_pname("file test");
+
+	dbopen();
 
 	/* Don't die when child closes pipe */
 	signal(SIGPIPE, SIG_IGN);
@@ -694,7 +710,7 @@ int main(argc, argv)
 	}
 
 	fprintf(stderr, "Create parent directories of %s ...", name);
-	rc = mkpdir(name, 02777, (uid_t)-1, (gid_t)-1);
+	rc = mkpdir(name, (mode_t)02777, (uid_t)-1, (gid_t)-1);
 	if (rc == 0)
 		fprintf(stderr, " done\n");
 	else {

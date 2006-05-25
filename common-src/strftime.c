@@ -21,10 +21,8 @@
 static char sccsid[] = "@(#)strftime.c	5.8 (Berkeley) 6/1/90";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
-#include <sys/time.h>
+#include "amanda.h"
 #include <tzfile.h>
-#include <string.h>
 
 static char *afmt[] = {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
@@ -235,7 +233,7 @@ _conv(n, digits, pad)
 	static char buf[10];
 	register char *p;
 
-	for (p = buf + sizeof(buf) - 2; n > 0 && p > buf; n /= 10, --digits)
+	for (p = buf + SIZEOF(buf) - 2; n > 0 && p > buf; n /= 10, --digits)
 		*p-- = n % 10 + '0';
 	while (p > buf && digits-- > 0)
 		*p-- = pad;

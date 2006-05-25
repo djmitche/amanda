@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.h,v 1.1 2006/05/12 19:36:04 martinea Exp $
+ * $Id: amrecover.h,v 1.2 2006/05/25 01:47:13 johnfranks Exp $
  *
  * data structures and declarations for amrecover
  */
@@ -38,7 +38,7 @@ typedef struct DIR_ITEM
     int  level;
     char *tape;
     char *path;
-    int  fileno;
+    off_t  fileno;
 
     struct DIR_ITEM *next;
 }
@@ -60,55 +60,55 @@ extern am_feature_t *indexsrv_features;
 extern am_feature_t *tapesrv_features;
 extern pid_t extract_restore_child_pid;
 
-extern void free_dir_item P((DIR_ITEM *item));
+extern void free_dir_item(DIR_ITEM *item);
 
-extern int converse P((char *cmd));
-extern int exchange P((char *cmd));
-extern int server_happy P((void));
-extern int send_command P((char *cmd));
-extern int get_reply_line P((void));
-extern char *reply_line P((void));
+extern int converse(char *cmd);
+extern int exchange(char *cmd);
+extern int server_happy(void);
+extern int send_command(char *cmd);
+extern int get_reply_line(void);
+extern char *reply_line(void);
 
-extern void quit P((void));
+extern void quit(void);
 
-extern void help_list P((void));		/* list commands */
+extern void help_list(void);		/* list commands */
 
-extern void set_disk P((char *dsk, char *mtpt));
-extern void list_disk P((char *amdevice));
-extern void set_host P((char *host));
-extern void list_host P((void));
-extern int set_date P((char *date));
-extern void set_directory P((char *dir));
-extern void cd_glob P((char *dir));
-extern void cd_regex P((char *dir));
-extern void cd_dir P((char *dir, char *default_dir));
-extern void set_tape P((char *tape));
-extern void show_directory P((void));
-extern void set_mode P((int mode));
-extern void show_mode P((void));
+extern void set_disk(char *dsk, char *mtpt);
+extern void list_disk(char *amdevice);
+extern void list_host(void);
+extern void set_host(const char *host);
+extern int set_date(char *date);
+extern void set_directory(char *dir);
+extern void cd_glob(char *dir);
+extern void cd_regex(char *dir);
+extern void cd_dir(char *dir, char *default_dir);
+extern void set_tape(char *tape);
+extern void show_directory(void);
+extern void set_mode(int mode);
+extern void show_mode(void);
 
-extern void list_disk_history P((void));
-extern void list_directory P((void));
-extern DIR_ITEM *get_dir_list P((void));
-extern DIR_ITEM *get_next_dir_item P((DIR_ITEM *this));
-extern void suck_dir_list_from_server P((void));
-extern void clear_dir_list P((void));
-extern void clean_pathname P((char *s));
-extern void display_extract_list P((char *file));
-extern void clear_extract_list P((void));
-extern int is_extract_list_nonempty P((void));
-extern void add_glob P((char *glob));
-extern void add_regex P((char *regex));
-extern void add_file P((char *path, char *regex));
-extern void delete_glob P((char *glob));
-extern void delete_regex P((char *regex));
-extern void delete_file P((char *path, char *regex));
+extern void list_disk_history(void);
+extern void list_directory(void);
+extern DIR_ITEM *get_dir_list(void);
+extern DIR_ITEM *get_next_dir_item(DIR_ITEM *this);
+extern void suck_dir_list_from_server(void);
+extern void clear_dir_list(void);
+extern void clean_pathname(char *s);
+extern void display_extract_list(char *file);
+extern void clear_extract_list(void);
+extern int is_extract_list_nonempty(void);
+extern void add_glob(char *glob);
+extern void add_regex(char *regex);
+extern void add_file(char *path, char *regex);
+extern void delete_glob(char *glob);
+extern void delete_regex(char *regex);
+extern void delete_file(char *path, char *regex);
 
-extern void extract_files P((void));
+extern void extract_files(void);
 
 #ifdef SAMBA_CLIENT
 #define SAMBA_SMBCLIENT 0
 #define SAMBA_TAR       1
 #endif
 
-extern char *get_security P((void));
+extern char *get_security(void);

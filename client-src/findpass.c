@@ -24,12 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: findpass.c,v 1.12 2001/08/01 22:37:32 jrjackson Exp $
+ * $Id: findpass.c,v 1.13 2006/05/25 01:47:11 johnfranks Exp $
  *
  * Support routines for Amanda SAMBA support
  */
 
+#include "amanda.h"
 #include "findpass.h"
+#include "util.h"
 
 /*
  * Find the Samba password and optional domain for a given disk.
@@ -37,28 +39,34 @@
  * as soon as reasonable.
  */
 
-char *findpass(disk, domain)
-char *disk, **domain;
+char *
+findpass(
+    char *	disk,
+    char **	domain)
 {
   FILE *fp;
   static char *buffer = NULL;
   char *s, *d, *pw = NULL;
   int ch;
+  char *qname;
 
   *domain = NULL;				/* just to be sure */
   if ( (fp = fopen("/etc/amandapass", "r")) ) {
     amfree(buffer);
     for (; (buffer = agets(fp)) != NULL; free(buffer)) {
+      if (buffer[0] == '\0')
+	continue;
       s = buffer;
       ch = *s++;
       skip_whitespace(s, ch);			/* find start of disk name */
       if (!ch || ch == '#') {
 	continue;
       }
-      d = s-1;					/* start of disk name */
-      skip_non_whitespace_cs(s, ch);
+      qname = s-1;				/* start of disk name */
+      skip_quoted_string(s, ch);
       if (ch && ch != '#') {
 	s[-1] = '\0';				/* terminate disk name */
+	d = unquote_string(qname);
 	if ((strcmp(d,"*") == 0) || (strcmp(disk, d) == 0)) {
 	  skip_whitespace(s, ch);		/* find start of password */
 	  if (ch && ch != '#') {
@@ -74,8 +82,10 @@ char *disk, **domain;
 	      *domain = stralloc(*domain);
 	    }
 	  }
+	  amfree(d);
 	  break;
 	}
+	amfree(d);
       }
     }
     afclose(fp);
@@ -89,12 +99,13 @@ char *disk, **domain;
  * Returns a new name alloc-d that the caller is responsible
  * for free-ing.
  */
-char *makesharename(disk, shell)
-char *disk;
-int shell;
+char *
+makesharename(
+    char *	disk,
+    int		shell)
 {
   char *buffer;
-  int buffer_size;
+  size_t buffer_size;
   char *s;
   int ch;
   
@@ -125,10 +136,11 @@ int shell;
  *
  * the caller is expected to release share & subdir
  */
-void parsesharename (disk, share, subdir)
-char *disk;
-char **share;
-char **subdir;
+void
+parsesharename(
+    char *	disk,
+    char **	share,
+    char **	subdir)
 {
     char *ch=NULL;
     int slashcnt=0;

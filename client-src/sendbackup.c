@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.78 2006/04/26 15:06:41 martinea Exp $
+ * $Id: sendbackup.c,v 1.79 2006/05/25 01:47:11 johnfranks Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -41,11 +41,11 @@
 
 #define TIMEOUT 30
 
-int comppid = -1;
-int dumppid = -1;
-int tarpid = -1;
-int encpid = -1;
-int indexpid = -1;
+pid_t comppid = (pid_t)-1;
+pid_t dumppid = (pid_t)-1;
+pid_t tarpid = (pid_t)-1;
+pid_t encpid = (pid_t)-1;
+pid_t indexpid = (pid_t)-1;
 char *errorstr = NULL;
 
 int datafd;
@@ -63,19 +63,24 @@ static char *our_feature_string = NULL;
 static g_option_t *g_options = NULL;
 
 /* local functions */
-int main P((int argc, char **argv));
-char *optionstr P((option_t *options));
-char *childstr P((int pid));
-int check_status P((int pid, amwait_t w));
+int main(int argc, char **argv);
+char *optionstr(option_t *options);
+char *childstr(pid_t pid);
+int check_status(pid_t pid, amwait_t w);
 
-int pipefork P((void (*func) P((void)), char *fname, int *stdinfd,
-		int stdoutfd, int stderrfd));
-void parse_backup_messages P((int mesgin));
-static void process_dumpline P((char *str));
-static void save_fd P((int *, int));
+pid_t pipefork(void (*func)(void), char *fname, int *stdinfd,
+		int stdoutfd, int stderrfd);
+void parse_backup_messages(int mesgin);
+static void process_dumpline(char *str);
+static void save_fd(int *, int);
 
-char *optionstr(options)
-option_t *options;
+double first_num(char *str);
+
+
+
+char *
+optionstr(
+    option_t *	options)
 {
     static char *optstr = NULL;
     char *compress_opt;
@@ -162,13 +167,19 @@ option_t *options;
 }
 
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
     int interactive = 0;
-    int level, mesgpipe[2];
-    char *prog, *disk, *amdevice, *dumpdate, *stroptions;
+    int level = 0;
+    int mesgpipe[2];
+    char *prog, *dumpdate, *stroptions;
+    char *disk = NULL;
+    char *qdisk = NULL;
+    char *amdevice = NULL;
+    char *qamdevice = NULL;
     char *line = NULL;
     char *err_extra = NULL;
     char *s;
@@ -180,16 +191,16 @@ char **argv;
     /* initialize */
 
     safe_fd(DATA_FD_OFFSET, DATA_FD_COUNT*2);
-    /* close writer side of pipe */
-    close(DATA_FD_OFFSET+1);
-    close(DATA_FD_OFFSET+3);
-    close(DATA_FD_OFFSET+5);
+
     safe_cd();
 
     set_pname("sendbackup");
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
+
+    /* Don't die when interrupt received */
+    signal(SIGINT, SIG_IGN);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -215,17 +226,20 @@ char **argv;
 
     prog = NULL;
     disk = NULL;
+    qdisk = NULL;
     amdevice = NULL;
     dumpdate = NULL;
     stroptions = NULL;
 
     for(; (line = agets(stdin)) != NULL; free(line)) {
+	if (line[0] == '\0')
+	    continue;
 	if(interactive) {
 	    fprintf(stderr, "%s> ", get_pname());
 	    fflush(stderr);
 	}
 #define sc "OPTIONS "
-	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+	if(strncmp(line, sc, SIZEOF(sc)-1) == 0) {
 #undef sc
 	    g_options = parse_g_options(line+8, 1);
 	    if(!g_options->hostname) {
@@ -241,6 +255,7 @@ char **argv;
 	    goto err;
 	}
 
+	dbprintf(("  sendbackup req: <%s>\n", line));
 	s = line;
 	ch = *s++;
 
@@ -259,11 +274,15 @@ char **argv;
 	    err_extra = "no disk name";
 	    goto err;				/* no disk name */
 	}
+
 	amfree(disk);
-	disk = s - 1;
-	skip_non_whitespace(s, ch);
+	amfree(qdisk);
+	qdisk = s - 1;
+	ch = *qdisk;
+	skip_quoted_string(s, ch);
 	s[-1] = '\0';
-	disk = stralloc(disk);
+	qdisk = stralloc(qdisk);
+	disk = unquote_string(qdisk);
 
 	skip_whitespace(s, ch);			/* find the device or level */
 	if (ch == '\0') {
@@ -273,6 +292,7 @@ char **argv;
 
 	if(!isdigit((int)s[-1])) {
 	    amfree(amdevice);
+	    amfree(qamdevice);
 	    amdevice = s - 1;
 	    skip_non_whitespace(s, ch);
 	    s[-1] = '\0';
@@ -282,7 +302,7 @@ char **argv;
 	else {
 	    amdevice = stralloc(disk);
 	}
-
+	qamdevice = quote_string(amdevice);
 						/* find the level number */
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
 	    err_extra = "bad level";
@@ -307,11 +327,11 @@ char **argv;
 	    goto err;				/* no options */
 	}
 #define sc "OPTIONS "
-	if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	if(strncmp(s - 1, sc, SIZEOF(sc)-1) != 0) {
 	    err_extra = "no OPTIONS keyword";
 	    goto err;				/* no options */
 	}
-	s += sizeof(sc)-1;
+	s += SIZEOF(sc)-1;
 	ch = s[-1];
 #undef sc
 	skip_whitespace(s, ch);			/* find the options string */
@@ -325,8 +345,8 @@ char **argv;
     amfree(line);
 
     dbprintf(("  parsed request as: program `%s'\n", prog));
-    dbprintf(("                     disk `%s'\n", disk));
-    dbprintf(("                     device `%s'\n", amdevice));
+    dbprintf(("                     disk `%s'\n", qdisk));
+    dbprintf(("                     device `%s'\n", qamdevice));
     dbprintf(("                     level %d\n", level));
     dbprintf(("                     since %s\n", dumpdate));
     dbprintf(("                     options `%s'\n", stroptions));
@@ -338,6 +358,7 @@ char **argv;
     }
     if (programs[i] == NULL) {
 	error("ERROR [%s: unknown program %s]", get_pname(), prog);
+	/*NOTREACHED*/
     }
     program = programs[i];
 
@@ -377,6 +398,7 @@ char **argv;
 	s = strerror(errno);
 	error("ERROR [%s: open of /dev/null for debug data stream: %s]\n",
 		  get_pname(), s);
+	/*NOTREACHED*/
       }
       mesgfd = 2;
       indexfd = 1;
@@ -401,6 +423,7 @@ char **argv;
 
     if(pipe(mesgpipe) == -1) {
       error("error [opening mesg pipe: %s]", strerror(errno));
+      /*NOTREACHED*/
     }
 
     program->start_backup(g_options->hostname, disk, amdevice, level, dumpdate, datafd, mesgpipe[1],
@@ -411,7 +434,9 @@ char **argv;
 
     amfree(prog);
     amfree(disk);
+    amfree(qdisk);
     amfree(amdevice);
+    amfree(qamdevice);
     amfree(dumpdate);
     amfree(stroptions);
     amfree(our_feature_string);
@@ -443,12 +468,15 @@ char **argv;
     return 1;
 }
 
-char *childstr(pid)
-int pid;
+
 /*
  * Returns a string for a child process.  Checks the saved dump and
  * compress pids to see which it is.
  */
+
+char *
+childstr(
+    pid_t pid)
 {
     if(pid == dumppid) return program->backup_name;
     if(pid == comppid) return "compress";
@@ -458,14 +486,16 @@ int pid;
 }
 
 
-int check_status(pid, w)
-int pid;
-amwait_t w;
 /*
  * Determine if the child return status really indicates an error.
  * If so, add the error message to the error string; more than one
  * child can have an error.
  */
+
+int
+check_status(
+    pid_t	pid,
+    amwait_t	w)
 {
     char *thiserr = NULL;
     char *str;
@@ -532,10 +562,10 @@ amwait_t w;
     }
 
     if(ret == 0) {
-	snprintf(number, sizeof(number), "%d", sig);
+	snprintf(number, SIZEOF(number), "%d", sig);
 	thiserr = vstralloc(str, " got signal ", number, NULL);
     } else {
-	snprintf(number, sizeof(number), "%d", ret);
+	snprintf(number, SIZEOF(number), "%d", ret);
 	thiserr = vstralloc(str, " returned ", number, NULL);
     }
 
@@ -551,9 +581,11 @@ amwait_t w;
 }
 
 
-/* Send header info to the message file.
-*/
-void info_tapeheader()
+/*
+ *Send header info to the message file.
+ */
+void
+info_tapeheader(void)
 {
     fprintf(stderr, "%s: info BACKUP=%s\n", get_pname(), program->backup_name);
 
@@ -567,7 +599,7 @@ void info_tapeheader()
 #endif
 		);
 
-    fprintf(stderr, "%s -f... -\n", program->restore_name);
+    fprintf(stderr, "%s -f - ...\n", program->restore_name);
 
     if (options->compress == COMPR_FAST || options->compress == COMPR_BEST)
 	fprintf(stderr, "%s: info COMPRESS_SUFFIX=%s\n",
@@ -576,24 +608,29 @@ void info_tapeheader()
     fprintf(stderr, "%s: info end\n", get_pname());
 }
 
-int pipefork(func, fname, stdinfd, stdoutfd, stderrfd)
-void (*func) P((void));
-char *fname;
-int *stdinfd;
-int stdoutfd, stderrfd;
+pid_t
+pipefork(
+    void	(*func)(void),
+    char *	fname,
+    int *	stdinfd,
+    int		stdoutfd,
+    int		stderrfd)
 {
-    int pid, inpipe[2];
+    int inpipe[2];
+    pid_t pid;
 
     dbprintf(("%s: forking function %s in pipeline\n",
 	debug_prefix_time(NULL), fname));
 
     if(pipe(inpipe) == -1) {
 	error("error [open pipe to %s: %s]", fname, strerror(errno));
+	/*NOTREACHED*/
     }
 
     switch(pid = fork()) {
     case -1:
 	error("error [fork %s: %s]", fname, strerror(errno));
+	/*NOTREACHED*/
     default:	/* parent process */
 	aclose(inpipe[0]);	/* close input side of pipe */
 	*stdinfd = inpipe[1];
@@ -604,27 +641,32 @@ int stdoutfd, stderrfd;
 	if(dup2(inpipe[0], 0) == -1) {
 	    error("error [fork %s: dup2(%d, in): %s]",
 		  fname, inpipe[0], strerror(errno));
+	    /*NOTRACHED*/
 	}
 	if(dup2(stdoutfd, 1) == -1) {
 	    error("error [fork %s: dup2(%d, out): %s]",
 		  fname, stdoutfd, strerror(errno));
+	    /*NOTRACHED*/
 	}
 	if(dup2(stderrfd, 2) == -1) {
 	    error("error [fork %s: dup2(%d, err): %s]",
 		  fname, stderrfd, strerror(errno));
+	    /*NOTRACHED*/
 	}
 
 	func();
 	exit(0);
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
     return pid;
 }
 
-void parse_backup_messages(mesgin)
-int mesgin;
+void
+parse_backup_messages(
+    int		mesgin)
 {
-    int goterror, wpid;
+    int goterror;
+    pid_t wpid;
     amwait_t retstat;
     char *line;
 
@@ -637,6 +679,7 @@ int mesgin;
 
     if(errno) {
 	error("error [read mesg pipe: %s]", strerror(errno));
+	/*NOTREACHED*/
     }
 
     while((wpid = wait(&retstat)) != -1) {
@@ -645,8 +688,10 @@ int mesgin;
 
     if(errorstr) {
 	error("error [%s]", errorstr);
+	/*NOTREACHED*/
     } else if(dump_size == -1) {
 	error("error [no backup size line]");
+	/*NOTREACHED*/
     }
 
     program->end_backup(goterror);
@@ -656,13 +701,13 @@ int mesgin;
 }
 
 
-double first_num P((char *str));
-
-double first_num(str)
-char *str;
 /*
  * Returns the value of the first integer in a string.
  */
+
+double
+first_num(
+    char *	str)
 {
     char *num;
     int ch;
@@ -674,15 +719,16 @@ char *str;
     while(isdigit(ch) || ch == '.') ch = *str++;
     str[-1] = '\0';
     d = atof(num);
-    str[-1] = ch;
+    str[-1] = (char)ch;
     return d;
 }
 
 
-static void process_dumpline(str)
-char *str;
+static void
+process_dumpline(
+    char *	str)
 {
-    regex_t *rp;
+    amregex_t *rp;
     char *type;
     char startchr;
 
@@ -729,30 +775,30 @@ char *str;
 }
 
 
-/* start_index.  Creates an index file from the output of dump/tar.
-   It arranges that input is the fd to be written by the dump process.
-   If createindex is not enabled, it does nothing.  If it is not, a
-   new process will be created that tees input both to a pipe whose
-   read fd is dup2'ed input and to a program that outputs an index
-   file to `index'.
+/*
+ * start_index.  Creates an index file from the output of dump/tar.
+ * It arranges that input is the fd to be written by the dump process.
+ * If createindex is not enabled, it does nothing.  If it is not, a
+ * new process will be created that tees input both to a pipe whose
+ * read fd is dup2'ed input and to a program that outputs an index
+ * file to `index'.
+ *
+ * make sure that the chat from restore doesn't go to stderr cause
+ * this goes back to amanda which doesn't expect to see it
+ * (2>/dev/null should do it)
+ *
+ * Originally by Alan M. McIvor, 13 April 1996
+ *
+ * Adapted by Alexandre Oliva, 1 May 1997
+ *
+ * This program owes a lot to tee.c from GNU sh-utils and dumptee.c
+ * from the DeeJay backup package.
+ */
 
-   make sure that the chat from restore doesn't go to stderr cause
-   this goes back to amanda which doesn't expect to see it
-   (2>/dev/null should do it)
-
-   Originally by Alan M. McIvor, 13 April 1996
-
-   Adapted by Alexandre Oliva, 1 May 1997
-
-   This program owes a lot to tee.c from GNU sh-utils and dumptee.c
-   from the DeeJay backup package.
-
-*/
-
-static volatile int index_finished = 0;
-
-static void save_fd(fd, min)
-int *fd, min;
+static void
+save_fd(
+    int *	fd,
+    int		min)
 {
   int origfd = *fd;
 
@@ -768,9 +814,13 @@ int *fd, min;
       debug_prefix_time(NULL), origfd, *fd));
 }
 
-void start_index(createindex, input, mesg, index, cmd)
-int createindex, input, mesg, index;
-char *cmd;
+void
+start_index(
+    int		createindex,
+    int		input,
+    int		mesg,
+    int		index,
+    char *	cmd)
 {
   int pipefd[2];
   FILE *pipe_fp;
@@ -781,16 +831,19 @@ char *cmd;
 
   if (pipe(pipefd) != 0) {
     error("creating index pipe: %s", strerror(errno));
+    /*NOTREACHED*/
   }
 
   switch(indexpid = fork()) {
   case -1:
     error("forking index tee process: %s", strerror(errno));
+    /*NOTREACHED*/
 
   default:
     aclose(pipefd[0]);
     if (dup2(pipefd[1], input) == -1) {
       error("dup'ping index tee output: %s", strerror(errno));
+      /*NOTREACHED*/
     }
     aclose(pipefd[1]);
     return;
@@ -816,22 +869,24 @@ char *cmd;
 
   if ((pipe_fp = popen(cmd, "w")) == NULL) {
     error("couldn't start index creator [%s]", strerror(errno));
+    /*NOTREACHED*/
   }
 
   dbprintf(("%s: started index creator: \"%s\"\n",
     debug_prefix_time(NULL), cmd));
   while(1) {
     char buffer[BUFSIZ], *ptr;
-    int bytes_read;
-    int bytes_written;
-    int just_written;
+    ssize_t bytes_read;
+    size_t bytes_written;
+    ssize_t just_written;
 
     do {
-	bytes_read = read(0, buffer, sizeof(buffer));
+	bytes_read = read(0, buffer, SIZEOF(buffer));
     } while ((bytes_read < 0) && ((errno == EINTR) || (errno == EAGAIN)));
 
     if (bytes_read < 0) {
       error("index tee cannot read [%s]", strerror(errno));
+      /*NOTREACHED*/
     }
 
     if (bytes_read == 0)
@@ -840,9 +895,9 @@ char *cmd;
     /* write the stuff to the subprocess */
     ptr = buffer;
     bytes_written = 0;
-    just_written = fullwrite(fileno(pipe_fp), ptr, bytes_read);
+    just_written = fullwrite(fileno(pipe_fp), ptr, (size_t)bytes_read);
     if (just_written < 0) {
-	/* the signal handler may have assigned to index_finished
+	/* 
 	 * just as we waited for write() to complete.
 	 */
 	if (errno != EPIPE) {
@@ -858,10 +913,10 @@ char *cmd;
        occurs */
     ptr = buffer;
     bytes_written = 0;
-    just_written = fullwrite(3, ptr, bytes_read);
+    just_written = fullwrite(3, ptr, (size_t)bytes_read);
     if (just_written < 0) {
 	error("index tee cannot write [%s]", strerror(errno));
-	/* NOTREACHED */
+	/*NOTREACHED*/
     } else {
 	bytes_written += just_written;
 	ptr += just_written;

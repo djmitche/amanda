@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.h,v 1.5 2003/03/06 21:43:58 martinea Exp $
+ * $Id: output-tape.h,v 1.6 2006/05/25 01:47:27 johnfranks Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -40,18 +40,18 @@
 #include "amanda.h"
 #endif
 
-extern int tape_tape_access P((char *, int));
-extern int tape_tape_open ();
-extern int tape_tape_stat P((char *, struct stat *));
-extern int tape_tapefd_close P((int));
-extern int tape_tapefd_fsf P((int, int));
-extern ssize_t tape_tapefd_read P((int, void *, size_t));
-extern int tape_tapefd_rewind P((int));
-extern void tape_tapefd_resetofs P((int));
-extern int tape_tapefd_unload P((int));
-extern int tape_tapefd_status P((int, struct am_mt_status *));
-extern int tape_tapefd_weof P((int, int));
-extern ssize_t tape_tapefd_write P((int, const void *, size_t));
-extern int tape_tapefd_can_fork P((int));
+int tape_tape_access(char *, int);
+int tape_tape_open(char *, int, mode_t);
+int tape_tape_stat(char *, struct stat *);
+int tape_tapefd_close(int);
+int tape_tapefd_fsf(int, off_t);
+ssize_t tape_tapefd_read(int, void *, size_t);
+int tape_tapefd_rewind(int);
+void tape_tapefd_resetofs(int);
+int tape_tapefd_unload(int);
+int tape_tapefd_status(int, struct am_mt_status *);
+int tape_tapefd_weof(int, off_t);
+ssize_t tape_tapefd_write(int, const void *, size_t);
+int tape_tapefd_can_fork(int);
 
 #endif /* OUTPUT_TAPE_H */

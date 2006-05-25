@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: dgram.h,v 1.14 2006/05/12 19:36:04 martinea Exp $
+ * $Id: dgram.h,v 1.15 2006/05/25 01:47:11 johnfranks Exp $
  *
  * interface for datagram module
  */
@@ -44,18 +44,18 @@
 typedef struct dgram_s {
     char *cur;
     int socket;
-    int len;
+    size_t len;
     char data[MAX_DGRAM+1];
 } dgram_t;
 
-int dgram_bind P((dgram_t *dgram, int *portp));
-void dgram_socket P((dgram_t *dgram, int sock));
-int dgram_send P((char *hostname, int port, dgram_t *dgram));
-int dgram_send_addr P((struct sockaddr_in addr, dgram_t *dgram));
-int dgram_recv P((dgram_t *dgram, int timeout, struct sockaddr_in *fromaddr));
-void dgram_zero P((dgram_t *dgram));
-int dgram_cat P((dgram_t *dgram, const char *fmt, ...))
+int	dgram_bind(dgram_t *dgram, in_port_t *portp);
+void	dgram_socket(dgram_t *dgram, int sock);
+int	dgram_send(char *hostname, in_port_t port, dgram_t *dgram);
+int	dgram_send_addr(struct sockaddr_in addr, dgram_t *dgram);
+ssize_t	dgram_recv(dgram_t *dgram, int timeout, struct sockaddr_in *fromaddr);
+void	dgram_zero(dgram_t *dgram);
+int	dgram_cat(dgram_t *dgram, const char *fmt, ...)
     __attribute__ ((format (printf, 2, 3)));
-void dgram_eatline P((dgram_t *dgram));
+void dgram_eatline(dgram_t *dgram);
 
 #endif /* ! DGRAM_H */

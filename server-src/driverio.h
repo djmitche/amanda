@@ -25,10 +25,12 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.34 2006/05/12 19:36:04 martinea Exp $
+ * $Id: driverio.h,v 1.35 2006/05/25 01:47:19 johnfranks Exp $
  *
  * driver-related helper functions
  */
+#ifndef DRIVERIO_H
+#define DRIVERIO_H
 
 #include "event.h"
 
@@ -45,7 +47,7 @@
 
 typedef struct chunker_s {
     char *name;			/* name of this chunker */
-    int pid;			/* its pid */
+    pid_t pid;			/* its pid */
     int down;			/* state */
     int fd;			/* read/write */
     int result;
@@ -57,7 +59,7 @@ typedef struct chunker_s {
 
 typedef struct dumper_s {
     char *name;			/* name of this dumper */
-    int pid;			/* its pid */
+    pid_t pid;			/* its pid */
     int busy, down;		/* state */
     int fd;			/* read/write */
     int result;
@@ -69,8 +71,8 @@ typedef struct dumper_s {
 
 typedef struct assignedhd_s {
     holdingdisk_t	*disk;
-    long		used;
-    long		reserved;
+    off_t		used;
+    off_t		reserved;
     char		*destname;
 } assignedhd_t;
 
@@ -79,13 +81,13 @@ typedef struct assignedhd_s {
 typedef struct sched_s {
     int attempted, priority;
     int level, degr_level;
-    long est_time, degr_time;
-    unsigned long est_nsize, est_csize, est_size;
-    unsigned long degr_nsize, degr_csize, act_size;
-    unsigned long origsize, dumpsize;
-    unsigned long dumptime, tapetime;
+    unsigned long est_time, degr_time;
+    off_t est_nsize, est_csize, est_size;
+    off_t degr_nsize, degr_csize, act_size;
+    off_t origsize, dumpsize;
+    time_t dumptime, tapetime;
     char *dumpdate, *degr_dumpdate;
-    int est_kps, degr_kps;
+    unsigned long est_kps, degr_kps;
     char *destname;				/* file/port name */
     dumper_t *dumper;
     assignedhd_t **holdp;
@@ -102,7 +104,7 @@ typedef struct sched_s {
 
 typedef struct holdalloc_s {
     int allocated_dumpers;
-    long allocated_space;
+    off_t allocated_space;
 } holdalloc_t;
 
 #define holdalloc(hp)	((holdalloc_t *) (hp)->up)
@@ -112,25 +114,22 @@ GLOBAL chunker_t chktable[MAX_DUMPERS];
 
 /* command/result tokens */
 
-GLOBAL int taper, taper_busy, taper_pid;
+GLOBAL int taper, taper_busy;
+GLOBAL pid_t taper_pid;
 GLOBAL event_handle_t *taper_ev_read;
 
-void init_driverio P((void));
-void startup_tape_process P((char *taper_program));
-void startup_dump_process P((dumper_t *dumper, char *dumper_program));
-void startup_dump_processes P((char *dumper_program, int inparallel,
-			       char *timestamp));
-void startup_chunk_process P((chunker_t *chunker, char *chunker_program));
+void init_driverio(void);
+void startup_tape_process(char *taper_program);
+void startup_dump_process(dumper_t *dumper, char *dumper_program);
+void startup_dump_processes(char *dumper_program, int inparallel, char *timestamp);
+void startup_chunk_process(chunker_t *chunker, char *chunker_program);
 
-cmd_t getresult P((int fd, int show, int *result_argc, char **result_argv, int max_arg));
-int taper_cmd P((cmd_t cmd, void *ptr, char *destname, int level, char *datestamp));
-int dumper_cmd P((dumper_t *dumper, cmd_t cmd, disk_t *dp));
-int chunker_cmd P((chunker_t *chunker, cmd_t cmd, disk_t *dp));
-disk_t *serial2disk P((char *str));
-void free_serial P((char *str));
-void free_serial_dp P((disk_t *dp));
-void check_unfree_serial P(());
-char *disk2serial P((disk_t *dp));
-void update_info_dumper P((disk_t *dp, long origsize, long dumpsize, long dumptime));
-void update_info_taper P((disk_t *dp, char *label, int filenum, int level));
-void free_assignedhd P((assignedhd_t **holdp));
+disk_t *serial2disk(char *str);
+void free_serial(char *str);
+void free_serial_dp(disk_t *dp);
+void check_unfree_serial(void);
+char *disk2serial(disk_t *dp);
+void update_info_dumper(disk_t *dp, off_t origsize, off_t dumpsize, time_t dumptime);
+void update_info_taper(disk_t *dp, char *label, off_t filenum, int level);
+void free_assignedhd(assignedhd_t **holdp);
+#endif	/* !DRIVERIO_H */

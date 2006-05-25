@@ -1,9 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <sys/types.h>
+#include "amanda.h"
 #include <regex.h>
 
 #include "utils.h"
@@ -235,8 +230,8 @@ int ch;
 	static char buf[10];
 
 	if (isprint(ch) || ch == ' ')
-		snprintf(buf, sizeof(buf), "%c", ch);
+		snprintf(buf, SIZEOF(buf), "%c", ch);
 	else
-		snprintf(buf, sizeof(buf), "\\%o", ch);
+		snprintf(buf, SIZEOF(buf), "\\%o", ch);
 	return(buf);
 }

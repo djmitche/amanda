@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.19 2006/04/05 13:00:25 martinea Exp $
+ * $Id: amfeatures.c,v 1.20 2006/05/25 01:47:11 johnfranks Exp $
  *
  * Feature test related code.
  */
@@ -45,9 +45,9 @@
  */
 
 am_feature_t *
-am_init_feature_set()
+am_init_feature_set(void)
 {
-    am_feature_t		*f = NULL;
+    am_feature_t		*f;
 
     if ((f = am_allocate_feature_set()) != NULL) {
 	/*
@@ -109,13 +109,11 @@ am_init_feature_set()
 	am_add_feature(f, fe_amidxtaped_nargs);
 	am_add_feature(f, fe_amidxtaped_config);
 
-        am_add_feature(f, fe_recover_splits);
-        am_add_feature(f, fe_amidxtaped_exchange_features);
-
+	am_add_feature(f, fe_recover_splits);
+	am_add_feature(f, fe_amidxtaped_exchange_features);
 	am_add_feature(f, fe_partial_estimate);
 	am_add_feature(f, fe_calcsize_estimate);
 	am_add_feature(f, fe_selfcheck_calcsize);
-
 	am_add_feature(f, fe_options_compress_cust);
 	am_add_feature(f, fe_options_srvcomp_cust);
 	am_add_feature(f, fe_options_encrypt_cust);
@@ -123,12 +121,16 @@ am_init_feature_set()
 	am_add_feature(f, fe_options_client_decrypt_option);
 	am_add_feature(f, fe_options_server_decrypt_option);
 
-        am_add_feature(f, fe_amindexd_marshall_in_OLSD);
-        am_add_feature(f, fe_amindexd_marshall_in_ORLD);
-        am_add_feature(f, fe_amindexd_marshall_in_DHST);
+	am_add_feature(f, fe_amindexd_marshall_in_OLSD);
+	am_add_feature(f, fe_amindexd_marshall_in_ORLD);
+	am_add_feature(f, fe_amindexd_marshall_in_DHST);
 
         am_add_feature(f, fe_amrecover_FEEDME);
         am_add_feature(f, fe_amrecover_timestamp);
+
+        am_add_feature(f, fe_interface_quoted_text);
+
+	am_add_feature(f, fe_program_star);
     }
     return f;
 }
@@ -193,13 +195,13 @@ am_set_default_feature_set(void)
  */
 
 am_feature_t *
-am_allocate_feature_set()
+am_allocate_feature_set(void)
 {
     size_t			nbytes;
     am_feature_t		*result;
 
-    result = (am_feature_t *)alloc(sizeof(*result));
-    memset(result, 0, sizeof(*result));
+    result = (am_feature_t *)alloc(SIZEOF(*result));
+    memset(result, 0, SIZEOF(*result));
     nbytes = (((size_t)last_feature) + 8) >> 3;
     result->size = nbytes;
     result->bytes = (unsigned char *)alloc(nbytes);
@@ -219,8 +221,8 @@ am_allocate_feature_set()
  */
 
 void
-am_release_feature_set(f)
-    am_feature_t		*f;
+am_release_feature_set(
+    am_feature_t	*f)
 {
     if (f != NULL) {
 	amfree(f->bytes);
@@ -243,9 +245,9 @@ am_release_feature_set(f)
  */
 
 int
-am_add_feature(f, n)
-    am_feature_t		*f;
-    am_feature_e		n;
+am_add_feature(
+    am_feature_t	*f,
+    am_feature_e	n)
 {
     size_t			byte;
     int				bit;
@@ -255,7 +257,7 @@ am_add_feature(f, n)
 	byte = ((size_t)n) >> 3;
 	if (byte < f->size) {
 	    bit = ((int)n) & 0x7;
-	    f->bytes[byte] |= (1 << bit);
+	    f->bytes[byte] = (unsigned char)((int)f->bytes[byte] | (unsigned char)(1 << bit));
 	    result = 1;
 	}
     }
@@ -276,9 +278,9 @@ am_add_feature(f, n)
  */
 
 int
-am_remove_feature(f, n)
-    am_feature_t		*f;
-    am_feature_e		n;
+am_remove_feature(
+    am_feature_t	*f,
+    am_feature_e	n)
 {
     size_t			byte;
     int				bit;
@@ -288,7 +290,7 @@ am_remove_feature(f, n)
 	byte = ((size_t)n) >> 3;
 	if (byte < f->size) {
 	    bit = ((int)n) & 0x7;
-	    f->bytes[byte] &= ~(1 << bit);
+	    f->bytes[byte] = (unsigned char)((int)f->bytes[byte] & (unsigned char)~(1 << bit));
 	    result = 1;
 	}
     }
@@ -308,9 +310,9 @@ am_remove_feature(f, n)
  */
 
 int
-am_has_feature(f, n)
-    am_feature_t		*f;
-    am_feature_e		n;
+am_has_feature(
+    am_feature_t	*f,
+    am_feature_e	n)
 {
     size_t			byte;
     int				bit;
@@ -338,8 +340,8 @@ am_has_feature(f, n)
  */
 
 char *
-am_feature_to_string(f)
-    am_feature_t		*f;
+am_feature_to_string(
+    am_feature_t	*f)
 {
     char			*result;
     size_t			i;
@@ -377,8 +379,8 @@ am_feature_to_string(f)
  */
 
 am_feature_t *
-am_string_to_feature(s)
-    char			*s;
+am_string_to_feature(
+    char		*s)
 {
     am_feature_t		*f = NULL;
     size_t			i;
@@ -411,7 +413,7 @@ am_string_to_feature(s)
 		amfree(f);				/* bad conversion */
 		break;
 	    }
-	    f->bytes[i] = (ch1 << 4) | ch2;
+	    f->bytes[i] = (unsigned char)((ch1 << 4) | ch2);
 	}
     }
     return f;
@@ -419,9 +421,9 @@ am_string_to_feature(s)
 
 #if defined(TEST)
 int
-main(argc, argv)
-    int				argc;
-    char			**argv;
+main(
+    int		argc,
+    char	**argv)
 {
     am_feature_t		*f;
     am_feature_t		*f1;

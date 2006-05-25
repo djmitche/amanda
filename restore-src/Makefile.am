@@ -6,6 +6,9 @@ INCLUDES =	-I$(top_builddir)/common-src \
 		-I$(top_srcdir)/server-src   \
 		-I$(top_srcdir)/amandad-src
 
+LINT=@AMLINT@
+LINTFLAGS=@AMLINTFLAGS@
+
 lib_LTLIBRARIES =	librestore.la
 LIB_EXTENSION = la
 
@@ -20,8 +23,9 @@ libexec_PROGRAMS = 	amidxtaped
 # routines, and second to pick up any references in the other libraries.
 ###
 
-LDADD = librestore.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION)
+LDADD = librestore.$(LIB_EXTENSION)              \
+      ../common-src/libamanda.$(LIB_EXTENSION) \
+      $(READLINE_LIBS)
 
 amidxtaped_LDADD = $(LDADD) ../amandad-src/libamandad.$(LIB_EXTENSION)
 amidxtaped_SOURCES = 	amidxtaped.c
@@ -53,3 +57,19 @@ install-exec-hook:
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done
+
+lint:
+	@ for p in $(libexec_PROGRAMS) $(sbin_PROGRAMS); do			\
+		f="$$p.c $(librestore_la_SOURCES)";				\
+		f="$$f "`(cd ../common-src; make listlibsrc 2>&1 > /dev/null)`;	\
+		f="$$f "`(cd ../server-src; make listlibsrc 2>&1 > /dev/null)`;	\
+		f="$$f "`(cd ../tape-src; make listlibsrc 2>&1 > /dev/null)`;	\
+		echo $(LINT) $$f;						\
+		$(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config	\
+		    $(INCLUDES) $$f;						\
+		if [ $$? -ne 0 ]; then						\
+		    exit 1;							\
+		fi;								\
+	done;									\
+        exit 0
+

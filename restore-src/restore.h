@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.h,v 1.5 2006/03/14 13:12:01 martinea Exp $
+ * $Id: restore.h,v 1.6 2006/05/25 01:47:15 johnfranks Exp $
  *
  * 
  */
@@ -58,8 +58,8 @@ typedef struct rst_flags_s {
     unsigned int amidxtaped:1; /* for client-daemon use */
     unsigned int check_labels:1;
     unsigned int mask_splits:1;
-    unsigned int fsf;
-    long blocksize;
+    off_t fsf;
+    ssize_t blocksize;
     int pipe_to_fd;
     char *restore_dir;
     char *comp_type;
@@ -67,23 +67,23 @@ typedef struct rst_flags_s {
     char *inventory_log;
 } rst_flags_t;
 
-char *make_filename P((dumpfile_t *file));
-int disk_match P((dumpfile_t *file, char *datestamp,
-		    char *hostname, char *diskname, char *level));
-void read_file_header P((dumpfile_t *file, int tapefd, int isafile,
-			 rst_flags_t *flags));
-ssize_t restore P((dumpfile_t *file, char *filename, int tapefd, int isafile,
-			rst_flags_t *flags));
-void flush_open_outputs P((int reassemble, dumpfile_t *only_file));
-void search_tapes P((FILE *prompt_out, int use_changer, tapelist_t *tapelist,
+char *make_filename(dumpfile_t *file);
+int disk_match(dumpfile_t *file, char *datestamp,
+		    char *hostname, char *diskname, char *level);
+void read_file_header(dumpfile_t *file, int tapefd, int isafile,
+			 rst_flags_t *flags);
+ssize_t restore(dumpfile_t *file, char *filename, int tapefd, int isafile,
+			rst_flags_t *flags);
+void flush_open_outputs(int reassemble, dumpfile_t *only_file);
+void search_tapes(FILE *prompt_out, int use_changer, tapelist_t *tapelist,
                         match_list_t *restorethese, rst_flags_t *flags, 
-			am_feature_t *their_features));
-int have_all_parts P((dumpfile_t *file, int upto));
-rst_flags_t *new_rst_flags P((void));
-int check_rst_flags P((rst_flags_t *flags));
-void free_rst_flags P((rst_flags_t *flags));
-void free_match_list P((match_list_t *match_list));
-int lock_logfile P(());
+			am_feature_t *their_features);
+int have_all_parts(dumpfile_t *file, int upto);
+rst_flags_t *new_rst_flags(void);
+int check_rst_flags(rst_flags_t *flags);
+void free_rst_flags(rst_flags_t *flags);
+void free_match_list(match_list_t *match_list);
+int lock_logfile(void);
 
 #endif /* RESTORE_H */
 

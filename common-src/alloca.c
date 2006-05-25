@@ -21,9 +21,7 @@
    allocating any.  It is a good idea to use alloca(0) in
    your main control loop, etc. to force garbage collection.  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "amanda.h"
 
 #ifndef HAVE_ALLOCA
 
@@ -131,7 +129,7 @@ find_stack_direction ()
    alignment chunk size.  The following default should work okay.  */
 
 #ifndef	ALIGN_SIZE
-#define	ALIGN_SIZE	sizeof(double)
+#define	ALIGN_SIZE	SIZEOF(double)
 #endif
 
 typedef union hdr
@@ -193,7 +191,7 @@ alloca (size)
   /* Allocate combined header + user data storage.  */
 
   {
-    register pointer new = malloc (sizeof (header) + size);
+    register pointer new = malloc (SIZEOF (header) + size);
     /* Address of header.  */
 
     ((header *) new)->h.next = last_alloca_header;
@@ -203,7 +201,7 @@ alloca (size)
 
     /* User storage begins just after header.  */
 
-    return (pointer) ((char *) new + sizeof (header));
+    return (pointer) ((char *) new + SIZEOF (header));
   }
 }
 

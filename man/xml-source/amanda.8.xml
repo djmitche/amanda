@@ -908,10 +908,11 @@ For instance:</para>
 
 <programlisting>
   //some-pc/home normalpw
-  //another-pc/disk otheruser%otherpw</programlisting>
+  //another-pc/disk otheruser%otherpw
+</programlisting>
 
-<para>With clear text passwords, this file should obviously be tightly protected.
-It only needs to be readable by the &A;-user on the Samba server.</para>
+With clear text passwords, this file should obviously be tightly protected.
+It only needs to be readable by the &A;-user on the Samba server.
 
 <para>You can find further information in the
 <emphasis remap='B'>docs/SAMBA</emphasis>

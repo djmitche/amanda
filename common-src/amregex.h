@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amregex.h,v 1.10 1999/04/10 06:18:44 kashmir Exp $
+ * $Id: amregex.h,v 1.11 2006/05/25 01:47:11 johnfranks Exp $
  *
  * compatibility header file for Henry Spencer's regex library.
  */
@@ -61,12 +61,6 @@
 #define CHAR_BIT 8
 #endif
 
-#if STDC_HEADERS
-#  define P(parms)	parms
-#else
-#  define P(parms)	()
-#endif
-
 /*
  * So that we can use GNUC attributes (such as to get -Wall warnings
  * for printf-like functions).  Only do this in gcc 2.7 or later ...
@@ -77,15 +71,15 @@
 #endif
 
 #ifndef HAVE_BCOPY_DECL
-extern void bcopy P((const void *from, void *to, size_t n));
+extern void bcopy(const void *from, void *to, size_t n);
 #endif
 
 #ifndef HAVE_MEMMOVE_DECL
-extern char *memmove P((char *to, char *from, size_t n));
+extern char *memmove(char *to, char *from, size_t n);
 #endif
 
 #ifndef HAVE_MEMSET_DECL
-extern void *memset P((void *s, int c, size_t n));
+extern void *memset(void *s, int c, size_t n);
 #endif
 
 #if !defined(HAVE_MEMMOVE) && defined(HAVE_BCOPY)
@@ -94,12 +88,12 @@ extern void *memset P((void *s, int c, size_t n));
 
 #ifndef HAVE_SNPRINTF_DECL
 #include "arglist.h"
-int snprintf  P((char *buf, size_t len, const char *format,...))
+int snprintf (char *buf, size_t len, const char *format,...)
 		    __attribute__((format(printf,3,4)));
 #endif
 #ifndef HAVE_VSNPRINTF_DECL
 #include "arglist.h"
-int vsnprintf P((char *buf, size_t len, const char *format, va_list ap));
+int vsnprintf(char *buf, size_t len, const char *format, va_list ap);
 #endif
 
 #define POSIX_MISTAKE

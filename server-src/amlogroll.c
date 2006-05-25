@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.7 2005/09/20 21:32:26 jrjackson Exp $
+ * $Id: amlogroll.c,v 1.8 2006/05/25 01:47:19 johnfranks Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -37,11 +37,10 @@
 
 char *datestamp;
 
-void handle_start P((void));
+void handle_start(void);
+int main(int argc, char **argv);
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     char *conffile;
     char *logfname;
@@ -55,14 +54,17 @@ char **argv;
 
     set_pname("amlogroll");
 
+    dbopen();
+
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     /* Process options */
     
     erroutput_type = ERR_INTERACTIVE;
 
-    if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+    if (getcwd(my_cwd, SIZEOF(my_cwd)) == NULL) {
 	error("cannot determine current working directory");
+	/*NOTREACHED*/
     }
 
     if (argc < 2) {
@@ -82,6 +84,7 @@ char **argv;
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
         error("errors processing config file \"%s\"", conffile);
+	/*NOTREACHED*/
     }
     amfree(conffile);
 
@@ -96,6 +99,7 @@ char **argv;
 
     if((logfile = fopen(logfname, "r")) == NULL) {
 	error("could not open log %s: %s", logfname, strerror(errno));
+	/*NOTREACHED*/
     }
     amfree(logfname);
 
@@ -127,7 +131,7 @@ char **argv;
     return 0;
 }
 
-void handle_start()
+void handle_start(void)
 {
     static int started = 0;
     char *s, *fp;
@@ -139,10 +143,10 @@ void handle_start()
 
 	skip_whitespace(s, ch);
 #define sc "date"
-	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	if(ch == '\0' || strncmp(s - 1, sc, SIZEOF(sc)-1) != 0) {
 	    return;				/* ignore bogus line */
 	}
-	s += sizeof(sc)-1;
+	s += SIZEOF(sc) - 1;
 	ch = s[-1];
 #undef sc
 	skip_whitespace(s, ch);
@@ -153,7 +157,7 @@ void handle_start()
 	skip_non_whitespace(s, ch);
 	s[-1] = '\0';
 	datestamp = newstralloc(datestamp, fp);
-	s[-1] = ch;
+	s[-1] = (char)ch;
 
 	started = 1;
     }

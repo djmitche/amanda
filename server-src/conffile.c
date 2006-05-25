@@ -25,12 +25,11 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.132 2006/05/16 23:43:55 paddy_s Exp $
+ * $Id: conffile.c,v 1.133 2006/05/25 01:47:19 johnfranks Exp $
  *
  * read configuration file
  */
 /*
- *
  * XXX - I'm not happy *at all* with this implementation, but I don't
  * think YACC would be any easier.  A more table based implementation
  * would be better.  Also clean up memory leaks.
@@ -42,29 +41,23 @@
 #include "diskfile.h"
 #include "driverio.h"
 #include "clock.h"
-
-#ifdef HAVE_LIMITS_H
 #include <limits.h>
-#endif
 
-#ifndef INT_MAX
-#define INT_MAX 2147483647
-#endif
-
-/* this corresponds to the normal output of amanda, but may
+/*
+ * this corresponds to the normal output of amanda, but may
  * be adapted to any spacing as you like.
  */
 ColumnInfo ColumnData[] = {
     { "HostName",   0, 12, 12, 0, "%-*.*s", "HOSTNAME" },
     { "Disk",       1, 11, 11, 0, "%-*.*s", "DISK" },
     { "Level",      1, 1,  1,  0, "%*.*d",  "L" },
-    { "OrigKB",     1, 7,  0,  0, "%*.*f",  "ORIG-KB" },
-    { "OutKB",      1, 7,  0,  0, "%*.*f",  "OUT-KB" },
-    { "Compress",   1, 6,  1,  0, "%*.*f",  "COMP%" },
+    { "OrigKB",     1, 7,  0,  0, "%*.*lf",  "ORIG-KB" },
+    { "OutKB",      1, 7,  0,  0, "%*.*lf",  "OUT-KB" },
+    { "Compress",   1, 6,  1,  0, "%*.*lf",  "COMP%" },
     { "DumpTime",   1, 7,  7,  0, "%*.*s",  "MMM:SS" },
-    { "DumpRate",   1, 6,  1,  0, "%*.*f",  "KB/s" },
+    { "DumpRate",   1, 6,  1,  0, "%*.*lf",  "KB/s" },
     { "TapeTime",   1, 6,  6,  0, "%*.*s",  "MMM:SS" },
-    { "TapeRate",   1, 6,  1,  0, "%*.*f",  "KB/s" },
+    { "TapeRate",   1, 6,  1,  0, "%*.*lf",  "KB/s" },
     { NULL,         0, 0,  0,  0, NULL,     NULL }
 };
 
@@ -103,37 +96,45 @@ static val_t conf_dumporder;
 static val_t conf_amrecover_changer;
 
 /* ints */
-static val_t conf_dumpcycle;
-static val_t conf_runspercycle;
-static val_t conf_maxcycle;
-static val_t conf_tapecycle;
-static val_t conf_runtapes;
-static val_t conf_disksize;
-static val_t conf_netusage;
-static val_t conf_inparallel;
-static val_t conf_timeout;
-static val_t conf_maxdumps;
+static val_t conf_amrecover_check_label;
+static val_t conf_amrecover_do_fsf;
+static val_t conf_autoflush;
+static val_t conf_bumpdays;
 static val_t conf_bumppercent;
 static val_t conf_bumpsize;
-static val_t conf_bumpdays;
-static val_t conf_etimeout;
-static val_t conf_dtimeout;
-static val_t conf_ctimeout;
-static val_t conf_tapebufs;
-static val_t conf_autoflush;
-static val_t conf_reserve;
-static val_t conf_maxdumpsize;
-static val_t conf_amrecover_do_fsf;
-static val_t conf_amrecover_check_label;
-static val_t conf_taperalgo;
 static val_t conf_displayunit;
+static val_t conf_dumpcycle;
+static val_t conf_inparallel;
 static val_t conf_krb5keytab;
 static val_t conf_krb5principal;
 static val_t conf_label_new_tapes;
+static val_t conf_maxcycle;
+static val_t conf_maxdumps;
+static val_t conf_maxdumpsize;
+static val_t conf_netusage;
+static val_t conf_reserve;
+static val_t conf_runspercycle;
+static val_t conf_runtapes;
+static val_t conf_tapebufs;
+static val_t conf_tapecycle;
+static val_t conf_taperalgo;
 static val_t conf_usetimestamps;
+
+/* longs */
+
+/* sizes */
+
+/* times */
+static val_t conf_ctimeout;
+static val_t conf_dtimeout;
+static val_t conf_etimeout;
+static val_t conf_timeout;
 
 /* reals */
 static val_t conf_bumpmult;
+
+/* am64s */
+static val_t conf_disksize;
 
 /* other internal variables */
 static holdingdisk_t hdcur;
@@ -144,54 +145,54 @@ static dumptype_t dpcur;
 
 static interface_t ifcur;
 
-static int seen_org;
-static int seen_mailto;
-static int seen_dumpuser;
-static int seen_rawtapedev;
-static int seen_printer;
-static int seen_tapedev;
-static int seen_tpchanger;
-static int seen_chngrdev;
-static int seen_chngrfile;
-static int seen_labelstr;
-static int seen_runtapes;
-static int seen_maxdumps;
-static int seen_tapelist;
-static int seen_infofile;
-static int seen_diskfile;
-static int seen_diskdir;
-static int seen_logdir;
+static int seen_amrecover_changer;
+static int seen_amrecover_check_label;
+static int seen_amrecover_do_fsf;
+static int seen_autoflush;
+static int seen_bumpdays;
+static int seen_bumpmult;
 static int seen_bumppercent;
 static int seen_bumpsize;
-static int seen_bumpmult;
-static int seen_bumpdays;
-static int seen_tapetype;
-static int seen_dumpcycle;
-static int seen_runspercycle;
-static int seen_maxcycle;
-static int seen_tapecycle;
-static int seen_disksize;
-static int seen_netusage;
-static int seen_inparallel;
-static int seen_dumporder;
-static int seen_timeout;
-static int seen_indexdir;
-static int seen_etimeout;
-static int seen_dtimeout;
-static int seen_ctimeout;
-static int seen_tapebufs;
-static int seen_autoflush;
-static int seen_reserve;
-static int seen_maxdumpsize;
+static int seen_chngrdev;
+static int seen_chngrfile;
 static int seen_columnspec;
-static int seen_amrecover_do_fsf;
-static int seen_amrecover_check_label;
-static int seen_amrecover_changer;
-static int seen_taperalgo;
+static int seen_ctimeout;
+static int seen_diskdir;
+static int seen_diskfile;
+static int seen_disksize;
 static int seen_displayunit;
+static int seen_dtimeout;
+static int seen_dumpcycle;
+static int seen_dumporder;
+static int seen_dumpuser;
+static int seen_etimeout;
+static int seen_indexdir;
+static int seen_infofile;
+static int seen_inparallel;
 static int seen_krb5keytab;
 static int seen_krb5principal;
 static int seen_label_new_tapes;
+static int seen_labelstr;
+static int seen_logdir;
+static int seen_mailto;
+static int seen_maxcycle;
+static int seen_maxdumps;
+static int seen_maxdumpsize;
+static int seen_netusage;
+static int seen_org;
+static int seen_printer;
+static int seen_rawtapedev;
+static int seen_reserve;
+static int seen_runspercycle;
+static int seen_runtapes;
+static int seen_tapebufs;
+static int seen_tapecycle;
+static int seen_tapedev;
+static int seen_tapelist;
+static int seen_taperalgo;
+static int seen_tapetype;
+static int seen_timeout;
+static int seen_tpchanger;
 static int seen_usetimestamps;
 
 static dumptype_t *dumplist = NULL;
@@ -200,35 +201,40 @@ static interface_t *interface_list = NULL;
 
 /* predeclare local functions */
 
-static void init_defaults P((void));
-static void read_conffile_recursively P((char *filename));
+static int read_confline(void);
 
-static int read_confline P((void));
-static void get_holdingdisk P((void));
-static void init_holdingdisk_defaults P((void));
-static void save_holdingdisk P((void));
-static void get_dumptype P((void));
-static void init_dumptype_defaults P((void));
-static void save_dumptype P((void));
-static void copy_dumptype P((void));
-static void get_tapetype P((void));
-static void init_tapetype_defaults P((void));
-static void save_tapetype P((void));
-static void copy_tapetype P((void));
-static void get_interface P((void));
-static void init_interface_defaults P((void));
-static void save_interface P((void));
-static void copy_interface P((void));
-static void get_dumpopts P((void));
-static void get_comprate P((void));
-static void get_compress P((void));
-static void get_encrypt P((void));
-static void get_priority P((void));
-static void get_strategy P((void));
-static void get_estimate P((void));
-static void get_exclude P((void));
-static void get_include P((void));
-static void get_taperalgo P((val_t *c_taperalgo, int *s_taperalgo));
+static void copy_dumptype(void);
+static void copy_interface(void);
+static void copy_tapetype(void);
+
+static void get_comprate(void);
+static void get_compress(void);
+static void get_dumpopts(void);
+static void get_dumptype(void);
+static void get_encrypt(void);
+static void get_estimate(void);
+static void get_exclude(void);
+static void get_holdingdisk(void);
+static void get_include(void);
+static void get_interface(void);
+static void get_priority(void);
+static void get_strategy(void);
+static void get_taperalgo(val_t *c_taperalgo, int *s_taperalgo);
+static void get_tapetype(void);
+
+static void init_defaults(void);
+static void init_dumptype_defaults(void);
+static void init_holdingdisk_defaults(void);
+static void init_interface_defaults(void);
+static void init_tapetype_defaults(void);
+
+static void read_conffile_recursively(char *filename);
+static void read_conffile_recursively(char *filename);
+
+static void save_dumptype(void);
+static void save_holdingdisk(void);
+static void save_interface(void);
+static void save_tapetype(void);
 
 /*
 ** ------------------------
@@ -236,8 +242,9 @@ static void get_taperalgo P((val_t *c_taperalgo, int *s_taperalgo));
 ** ------------------------
 */
 
-int read_conffile(filename)
-char *filename;
+int
+read_conffile(
+    char *filename)
 {
     interface_t *ip;
 
@@ -261,12 +268,12 @@ char *filename;
 	}
     }
 
-    ip = alloc(sizeof(interface_t));
+    ip = alloc(SIZEOF(interface_t));
     malloc_mark(ip);
     ip->name = "";
     ip->seen = seen_netusage;
     ip->comment = "implicit from NETUSAGE";
-    ip->maxusage = conf_netusage.i;
+    ip->maxusage = (unsigned long)conf_netusage.l;
     ip->curusage = 0;
     ip->next = interface_list;
     interface_list = ip;
@@ -279,61 +286,59 @@ struct byname {
     confparm_t parm;
     tok_t typ;
 } byname_table [] = {
-    { "ORG", CNF_ORG, CONF_STRING },
-    { "MAILTO", CNF_MAILTO, CONF_STRING },
-    { "DUMPUSER", CNF_DUMPUSER, CONF_STRING },
-    { "PRINTER", CNF_PRINTER, CONF_STRING },
-    { "TAPEDEV", CNF_TAPEDEV, CONF_STRING },
-    { "TPCHANGER", CNF_TPCHANGER, CONF_STRING },
-    { "CHANGERDEV", CNF_CHNGRDEV, CONF_STRING },
-    { "CHANGERFILE", CNF_CHNGRFILE, CONF_STRING },
-    { "LABELSTR", CNF_LABELSTR, CONF_STRING },
-    { "TAPELIST", CNF_TAPELIST, CONF_STRING },
-    { "DISKFILE", CNF_DISKFILE, CONF_STRING },
-    { "INFOFILE", CNF_INFOFILE, CONF_STRING },
-    { "LOGDIR", CNF_LOGDIR, CONF_STRING },
-    /*{ "LOGFILE", CNF_LOGFILE, CONF_STRING },*/
-    /*{ "DISKDIR", CNF_DISKDIR, CONF_STRING },*/
-    { "INDEXDIR", CNF_INDEXDIR, CONF_STRING },
-    { "TAPETYPE", CNF_TAPETYPE, CONF_STRING },
-    { "DUMPCYCLE", CNF_DUMPCYCLE, CONF_INT },
-    { "RUNSPERCYCLE", CNF_RUNSPERCYCLE, CONF_INT },
-    { "MINCYCLE",  CNF_DUMPCYCLE, CONF_INT },
-    { "RUNTAPES",   CNF_RUNTAPES, CONF_INT },
-    { "TAPECYCLE", CNF_TAPECYCLE, CONF_INT },
-    /*{ "DISKSIZE", CNF_DISKSIZE, CONF_INT },*/
-    { "BUMPDAYS", CNF_BUMPDAYS, CONF_INT },
-    { "BUMPSIZE", CNF_BUMPSIZE, CONF_INT },
-    { "BUMPPERCENT", CNF_BUMPPERCENT, CONF_INT },
-    { "BUMPMULT", CNF_BUMPMULT, CONF_REAL },
-    { "NETUSAGE", CNF_NETUSAGE, CONF_INT },
-    { "INPARALLEL", CNF_INPARALLEL, CONF_INT },
-    { "DUMPORDER", CNF_DUMPORDER, CONF_STRING },
-    /*{ "TIMEOUT", CNF_TIMEOUT, CONF_INT },*/
-    { "MAXDUMPS", CNF_MAXDUMPS, CONF_INT },
-    { "ETIMEOUT", CNF_ETIMEOUT, CONF_INT },
-    { "DTIMEOUT", CNF_DTIMEOUT, CONF_INT },
-    { "CTIMEOUT", CNF_CTIMEOUT, CONF_INT },
-    { "TAPEBUFS", CNF_TAPEBUFS, CONF_INT },
-    { "RAWTAPEDEV", CNF_RAWTAPEDEV, CONF_STRING },
-    { "COLUMNSPEC", CNF_COLUMNSPEC, CONF_STRING },
-    { "AMRECOVER_DO_FSF", CNF_AMRECOVER_DO_FSF, CONF_BOOL },
-    { "AMRECOVER_CHECK_LABEL", CNF_AMRECOVER_CHECK_LABEL, CONF_BOOL },
-    { "AMRECOVER_CHANGER", CNF_AMRECOVER_CHANGER, CONF_STRING },
-    { "TAPERALGO", CNF_TAPERALGO, CONF_INT },
-    { "DISPLAYUNIT", CNF_DISPLAYUNIT, CONF_STRING },
-    { "AUTOFLUSH", CNF_AUTOFLUSH, CONF_BOOL },
-    { "RESERVE", CNF_RESERVE, CONF_INT },
-    { "MAXDUMPSIZE", CNF_MAXDUMPSIZE, CONF_AM64 },
-    { "KRB5KEYTAB", CNF_KRB5KEYTAB, CONF_STRING },
-    { "KRB5PRINCIPAL", CNF_KRB5PRINCIPAL, CONF_STRING },
-    { "LABEL_NEW_TAPES", CNF_LABEL_NEW_TAPES, CONF_STRING },
-    { "USETIMESTAMPS", CNF_USETIMESTAMPS, CONF_BOOL },
-    { NULL }
+    { "ORG",			CNF_ORG,			CONF_STRING },
+    { "MAILTO",			CNF_MAILTO,			CONF_STRING },
+    { "DUMPUSER",		CNF_DUMPUSER,			CONF_STRING },
+    { "PRINTER",		CNF_PRINTER,			CONF_STRING },
+    { "TAPEDEV",		CNF_TAPEDEV,			CONF_STRING },
+    { "TPCHANGER",		CNF_TPCHANGER,			CONF_STRING },
+    { "CHANGERDEV",		CNF_CHNGRDEV,			CONF_STRING },
+    { "CHANGERFILE",		CNF_CHNGRFILE,			CONF_STRING },
+    { "LABELSTR",		CNF_LABELSTR,			CONF_STRING },
+    { "TAPELIST",		CNF_TAPELIST,			CONF_STRING },
+    { "DISKFILE",		CNF_DISKFILE,			CONF_STRING },
+    { "INFOFILE",		CNF_INFOFILE,			CONF_STRING },
+    { "LOGDIR",			CNF_LOGDIR,			CONF_STRING },
+    { "INDEXDIR",		CNF_INDEXDIR,			CONF_STRING },
+    { "TAPETYPE",		CNF_TAPETYPE,			CONF_STRING },
+    { "DUMPCYCLE",		CNF_DUMPCYCLE,			CONF_INT },
+    { "RUNSPERCYCLE",		CNF_RUNSPERCYCLE,		CONF_INT },
+    { "MINCYCLE", 		CNF_DUMPCYCLE,			CONF_INT },
+    { "RUNTAPES",  		CNF_RUNTAPES,			CONF_INT },
+    { "TAPECYCLE",		CNF_TAPECYCLE,			CONF_INT },
+    { "BUMPDAYS",		CNF_BUMPDAYS,			CONF_INT },
+    { "BUMPSIZE",		CNF_BUMPSIZE,			CONF_INT },
+    { "BUMPPERCENT",		CNF_BUMPPERCENT,		CONF_INT },
+    { "BUMPMULT",		CNF_BUMPMULT,			CONF_REAL },
+    { "NETUSAGE",		CNF_NETUSAGE,			CONF_LONG },
+    { "INPARALLEL",		CNF_INPARALLEL,			CONF_INT },
+    { "DUMPORDER",		CNF_DUMPORDER,			CONF_STRING },
+    /*{ "TIMEOUT",		CNF_TIMEOUT,			CONF_TIME },*/
+    { "MAXDUMPS",		CNF_MAXDUMPS,			CONF_INT },
+    { "ETIMEOUT",		CNF_ETIMEOUT,			CONF_TIME },
+    { "DTIMEOUT",		CNF_DTIMEOUT,			CONF_TIME },
+    { "CTIMEOUT",		CNF_CTIMEOUT,			CONF_TIME },
+    { "TAPEBUFS",		CNF_TAPEBUFS,			CONF_INT },
+    { "RAWTAPEDEV",		CNF_RAWTAPEDEV,			CONF_STRING },
+    { "COLUMNSPEC",		CNF_COLUMNSPEC,			CONF_STRING },
+    { "AMRECOVER_DO_FSF",	CNF_AMRECOVER_DO_FSF,		CONF_BOOL },
+    { "AMRECOVER_CHECK_LABEL",	CNF_AMRECOVER_CHECK_LABEL,	CONF_BOOL },
+    { "AMRECOVER_CHANGER",	CNF_AMRECOVER_CHANGER,		CONF_STRING },
+    { "TAPERALGO",		CNF_TAPERALGO,			CONF_INT },
+    { "DISPLAYUNIT",		CNF_DISPLAYUNIT,		CONF_STRING },
+    { "AUTOFLUSH",		CNF_AUTOFLUSH,			CONF_BOOL },
+    { "RESERVE",		CNF_RESERVE,			CONF_INT },
+    { "MAXDUMPSIZE",		CNF_MAXDUMPSIZE,		CONF_AM64 },
+    { "KRB5KEYTAB",		CNF_KRB5KEYTAB,			CONF_STRING },
+    { "KRB5PRINCIPAL",		CNF_KRB5PRINCIPAL,		CONF_STRING },
+    { "LABEL_NEW_TAPES",	CNF_LABEL_NEW_TAPES,		CONF_STRING },
+    { "USETIMESTAMPS",		CNF_USETIMESTAMPS,		CONF_BOOL },
+    { NULL, 0, 0 }
 };
 
-char *getconf_byname(str)
-char *str;
+char *
+getconf_byname(
+    char *str)
 {
     static char *tmpstr;
     char number[NUM_STR_SIZE];
@@ -344,7 +349,8 @@ char *str;
     tmpstr = stralloc(str);
     s = tmpstr;
     while((ch = *s++) != '\0') {
-	if(islower((int)ch)) s[-1] = toupper(ch);
+	if(islower((int)ch))
+	    s[-1] = (char)toupper(ch);
     }
 
     for(np = byname_table; np->name != NULL; np++)
@@ -353,7 +359,20 @@ char *str;
     if(np->name == NULL) return NULL;
 
     if(np->typ == CONF_INT) {
-	snprintf(number, sizeof(number), "%d", getconf_int(np->parm));
+	snprintf(number, SIZEOF(number), "%d",
+		getconf_int(np->parm));
+	tmpstr = newstralloc(tmpstr, number);
+    } else if(np->typ == CONF_LONG) {
+	snprintf(number, SIZEOF(number), "%ld",
+		getconf_long(np->parm));
+	tmpstr = newstralloc(tmpstr, number);
+    } else if(np->typ == CONF_TIME) {
+	snprintf(number, SIZEOF(number), TIME_T_FMT,
+		(TIME_T_FMT_TYPE)getconf_time(np->parm));
+	tmpstr = newstralloc(tmpstr, number);
+    } else if(np->typ == CONF_SIZE) {
+	snprintf(number, SIZEOF(number), SIZE_T_FMT,
+		(SIZE_T_FMT_TYPE)getconf_size(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else if(np->typ == CONF_BOOL) {
 	if(getconf_int(np->parm) == 0) {
@@ -363,10 +382,11 @@ char *str;
 	    tmpstr = newstralloc(tmpstr, "on");
 	}
     } else if(np->typ == CONF_REAL) {
-	snprintf(number, sizeof(number), "%f", getconf_real(np->parm));
+	snprintf(number, SIZEOF(number), "%lf", getconf_real(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else if(np->typ == CONF_AM64){
-	snprintf(number, sizeof(number), "%ld", getconf_am64(np->parm));
+	snprintf(number, sizeof(number), OFF_T_FMT,
+		(OFF_T_FMT_TYPE)getconf_am64(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else {
 	tmpstr = newstralloc(tmpstr, getconf_str(np->parm));
@@ -375,8 +395,9 @@ char *str;
     return tmpstr;
 }
 
-int getconf_seen(parm)
-confparm_t parm;
+int
+getconf_seen(
+    confparm_t parm)
 {
     switch(parm) {
     case CNF_ORG: return seen_org;
@@ -393,9 +414,7 @@ confparm_t parm;
     case CNF_TAPELIST: return seen_tapelist;
     case CNF_INFOFILE: return seen_infofile;
     case CNF_DISKFILE: return seen_diskfile;
-    /*case CNF_DISKDIR: return seen_diskdir;*/
     case CNF_LOGDIR: return seen_logdir;
-    /*case CNF_LOGFILE: return seen_logfile;*/
     case CNF_BUMPPERCENT: return seen_bumppercent;
     case CNF_BUMPSIZE: return seen_bumpsize;
     case CNF_BUMPMULT: return seen_bumpmult;
@@ -403,9 +422,7 @@ confparm_t parm;
     case CNF_TAPETYPE: return seen_tapetype;
     case CNF_DUMPCYCLE: return seen_dumpcycle;
     case CNF_RUNSPERCYCLE: return seen_runspercycle;
-    /*case CNF_MAXCYCLE: return seen_maxcycle;*/
     case CNF_TAPECYCLE: return seen_tapecycle;
-    /*case CNF_DISKSIZE: return seen_disksize;*/
     case CNF_NETUSAGE: return seen_netusage;
     case CNF_INPARALLEL: return seen_inparallel;
     case CNF_DUMPORDER: return seen_dumporder;
@@ -432,8 +449,39 @@ confparm_t parm;
     }
 }
 
-int getconf_int(parm)
-confparm_t parm;
+long
+getconf_long(
+    confparm_t parm)
+{
+    long r = 0;
+
+    switch(parm) {
+    case CNF_NETUSAGE: r = conf_netusage.l; break;
+
+    default:
+	error("error [unknown getconf_int parm: %d]", parm);
+	/*NOTREACHED*/
+    }
+    return r;
+}
+
+ssize_t
+getconf_size(
+    confparm_t parm)
+{
+    ssize_t r = 0;
+
+    switch(parm) {
+    default:
+	error("error [unknown getconf_size parm: %d]", parm);
+	/*NOTREACHED*/
+    }
+    return r;
+}
+
+int
+getconf_int(
+    confparm_t parm)
 {
     int r = 0;
 
@@ -443,17 +491,10 @@ confparm_t parm;
     case CNF_RUNSPERCYCLE: r = conf_runspercycle.i; break;
     case CNF_TAPECYCLE: r = conf_tapecycle.i; break;
     case CNF_RUNTAPES: r = conf_runtapes.i; break;
-    /*case CNF_DISKSIZE: r = conf_disksize.i; break;*/
     case CNF_BUMPPERCENT: r = conf_bumppercent.i; break;
-    case CNF_BUMPSIZE: r = conf_bumpsize.i; break;
     case CNF_BUMPDAYS: r = conf_bumpdays.i; break;
-    case CNF_NETUSAGE: r = conf_netusage.i; break;
     case CNF_INPARALLEL: r = conf_inparallel.i; break;
-    /*case CNF_TIMEOUT: r = conf_timeout.i; break;*/
     case CNF_MAXDUMPS: r = conf_maxdumps.i; break;
-    case CNF_ETIMEOUT: r = conf_etimeout.i; break;
-    case CNF_DTIMEOUT: r = conf_dtimeout.i; break;
-    case CNF_CTIMEOUT: r = conf_ctimeout.i; break;
     case CNF_TAPEBUFS: r = conf_tapebufs.i; break;
     case CNF_AUTOFLUSH: r = conf_autoflush.i; break;
     case CNF_RESERVE: r = conf_reserve.i; break;
@@ -464,44 +505,72 @@ confparm_t parm;
 
     default:
 	error("error [unknown getconf_int parm: %d]", parm);
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
     return r;
 }
 
-am64_t getconf_am64(parm)
-confparm_t parm;
+time_t
+getconf_time(
+    confparm_t parm)
+{
+    time_t r = 0;
+
+    switch(parm) {
+    /*case CNF_TIMEOUT:	r = conf_timeout.t;	break;*/
+    case CNF_ETIMEOUT:	r = conf_etimeout.t;	break;
+    case CNF_DTIMEOUT:	r = conf_dtimeout.t;	break;
+    case CNF_CTIMEOUT:	r = conf_ctimeout.t;	break;
+    default:
+	error("error [unknown getconf_time parm: %d]", parm);
+	/*NOTREACHED*/
+    }
+    return r;
+}
+
+am64_t
+getconf_am64(
+    confparm_t parm)
 {
     am64_t r = 0;
 
     switch(parm) {
-    case CNF_MAXDUMPSIZE: r = conf_maxdumpsize.am64; break;
+    case CNF_MAXDUMPSIZE:
+	r = conf_maxdumpsize.am64;
+	break;
+
+    case CNF_BUMPSIZE:
+	r = conf_bumpsize.am64;
+	break;
 
     default:
 	error("error [unknown getconf_am64 parm: %d]", parm);
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
     return r;
 }
 
-double getconf_real(parm)
-confparm_t parm;
+double
+getconf_real(
+    confparm_t parm)
 {
     double r = 0;
 
     switch(parm) {
-
-    case CNF_BUMPMULT: r = conf_bumpmult.r; break;
+    case CNF_BUMPMULT:
+	r = conf_bumpmult.r;
+	break;
 
     default:
 	error("error [unknown getconf_real parm: %d]", parm);
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
     return r;
 }
 
-char *getconf_str(parm)
-confparm_t parm;
+char *
+getconf_str(
+    confparm_t parm)
 {
     char *r = 0;
 
@@ -520,9 +589,7 @@ confparm_t parm;
     case CNF_INFOFILE: r = conf_infofile.s; break;
     case CNF_DUMPORDER: r = conf_dumporder.s; break;
     case CNF_LOGDIR: r = conf_logdir.s; break;
-    /*case CNF_LOGFILE: r = conf_logfile.s; break;*/
     case CNF_DISKFILE: r = conf_diskfile.s; break;
-    /*case CNF_DISKDIR: r = conf_diskdir.s; break;*/
     case CNF_TAPETYPE: r = conf_tapetype.s; break;
     case CNF_INDEXDIR: r = conf_indexdir.s; break;
     case CNF_RAWTAPEDEV: r = conf_rawtapedev.s; break;
@@ -535,29 +602,33 @@ confparm_t parm;
 
     default:
 	error("error [unknown getconf_str parm: %d]", parm);
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
     return r;
 }
 
-holdingdisk_t *getconf_holdingdisks()
+holdingdisk_t *
+getconf_holdingdisks(void)
 {
     return holdingdisks;
 }
 
-dumptype_t *lookup_dumptype(str)
-char *str;
+dumptype_t *
+lookup_dumptype(
+    char *str)
 {
     dumptype_t *p;
 
     for(p = dumplist; p != NULL; p = p->next) {
-	if(strcmp(p->name, str) == 0) return p;
+	if(strcasecmp(p->name, str) == 0)
+	    return p;
     }
     return NULL;
 }
 
-tapetype_t *lookup_tapetype(str)
-char *str;
+tapetype_t *
+lookup_tapetype(
+    char *str)
 {
     tapetype_t *p;
 
@@ -567,8 +638,9 @@ char *str;
     return NULL;
 }
 
-interface_t *lookup_interface(str)
-char *str;
+interface_t *
+lookup_interface(
+    char *str)
 {
     interface_t *p;
 
@@ -587,7 +659,8 @@ char *str;
 */
 
 
-static void init_defaults()
+static void
+init_defaults(void)
 {
     char *s;
 
@@ -661,22 +734,22 @@ static void init_defaults()
     conf_runspercycle.i	= 0;
     conf_tapecycle.i	= 15;
     conf_runtapes.i	= 1;
-    conf_disksize.i	= 0;
-    conf_netusage.i	= 300;
+    conf_disksize.am64	= (am64_t)0;
+    conf_netusage.l	= 300;
     conf_inparallel.i	= 10;
     conf_maxdumps.i	= 1;
-    conf_timeout.i	= 2;
+    conf_timeout.t	= 2;
     conf_bumppercent.i	= 0;
-    conf_bumpsize.i	= 10*1024;
+    conf_bumpsize.am64	= (am64_t)(10*1024);
     conf_bumpdays.i	= 2;
     conf_bumpmult.r	= 1.5;
-    conf_etimeout.i     = 300;
-    conf_dtimeout.i     = 1800;
-    conf_ctimeout.i     = 30;
+    conf_etimeout.t     = 300;
+    conf_dtimeout.t     = 1800;
+    conf_ctimeout.t     = 30;
     conf_tapebufs.i     = 20;
     conf_autoflush.i	= 0;
     conf_reserve.i	= 100;
-    conf_maxdumpsize.am64	= -1;
+    conf_maxdumpsize.am64 = (am64_t)-1;
     conf_amrecover_do_fsf.i = 1;
     conf_amrecover_check_label.i = 1;
     conf_taperalgo.i    = 0;
@@ -815,8 +888,10 @@ static void init_defaults()
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = "NO-HOLD"; dpcur.seen = -1;
-    dpcur.no_hold = 1; dpcur.s_no_hold = -1;
+    dpcur.name = "NO-HOLD";
+    dpcur.seen = -1;
+    dpcur.no_hold = 1;
+    dpcur.s_no_hold = -1;
     save_dumptype();
 
     init_dumptype_defaults();
@@ -825,15 +900,15 @@ static void init_defaults()
     save_dumptype();
 }
 
-static void read_conffile_recursively(filename)
-char *filename;
+static void
+read_conffile_recursively(
+    char *filename)
 {
-    extern int errno;
-
     /* Save globals used in read_confline(), elsewhere. */
-    int  save_line_num  = conf_line_num;
-    FILE *save_conf     = conf_conf;
-    char *save_confname = conf_confname;
+    int		rc;
+    int		save_line_num = conf_line_num;
+    FILE *	save_conf     = conf_conf;
+    char *	save_confname = conf_confname;
 
     if (*filename == '/' || config_dir == NULL) {
 	conf_confname = stralloc(filename);
@@ -852,7 +927,10 @@ char *filename;
     conf_line_num = 0;
 
     /* read_confline() can invoke us recursively via "includefile" */
-    while(read_confline());
+    do {
+	rc = read_confline();
+    } while (rc != 0);
+
     afclose(conf_conf);
 
     amfree(conf_confname);
@@ -927,158 +1005,279 @@ keytab_t main_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static int read_confline()
+static int
+read_confline(void)
 {
     keytable = main_keytable;
 
     conf_line_num += 1;
     get_conftoken(CONF_ANY);
     switch(tok) {
-    case CONF_INCLUDEFILE:
-	{
+    case CONF_INCLUDEFILE: {
 	    char *fn;
+	    char *cname;
 
 	    get_conftoken(CONF_STRING);
 	    fn = tokenval.s;
-	    read_conffile_recursively(fn);
+	    if (*fn == '/' || config_dir == NULL) {
+	      cname = stralloc(fn);
+	    } else {
+	      cname = stralloc2(config_dir, fn);
+	    }
+	    if ( cname != NULL &&  (access(cname, R_OK) == 0)) {
+	      read_conffile_recursively(cname);
+	      amfree(cname);
+	    }
+	    else {
+	      amfree(cname);
+	      conf_parserror("cannot open %s: %s\n", fn, strerror(errno));
+	    }
 	}
 	break;
 
-    case CONF_ORG:       get_simple(&conf_org,       &seen_org,       CONF_STRING); break;
-    case CONF_MAILTO:    get_simple(&conf_mailto,    &seen_mailto,    CONF_STRING); break;
-    case CONF_DUMPUSER:  get_simple(&conf_dumpuser,  &seen_dumpuser,  CONF_STRING); break;
-    case CONF_PRINTER:   get_simple(&conf_printer,   &seen_printer,   CONF_STRING); break;
-    case CONF_DUMPCYCLE: get_simple(&conf_dumpcycle, &seen_dumpcycle, CONF_INT);
-		    if(conf_dumpcycle.i < 0) {
-			conf_parserror("dumpcycle must be positive");
-		    }
-		    break;
-    case CONF_RUNSPERCYCLE: get_simple(&conf_runspercycle, &seen_runspercycle, CONF_INT);
-		    if(conf_runspercycle.i < -1) {
-			conf_parserror("runspercycle must be >= -1");
-		    }
-		    break;
-    case CONF_MAXCYCLE:  get_simple(&conf_maxcycle,  &seen_maxcycle,  CONF_INT);    break;
-    case CONF_TAPECYCLE: get_simple(&conf_tapecycle, &seen_tapecycle, CONF_INT);
-		    if(conf_tapecycle.i < 1) {
-			conf_parserror("tapecycle must be positive");
-		    }
-		    break;
-    case CONF_RUNTAPES:  get_simple(&conf_runtapes,  &seen_runtapes,  CONF_INT);
-		    if(conf_runtapes.i < 0) {
-			conf_parserror("runtapes must be positive");
-		    }
-		    break;
-    case CONF_TAPEDEV:   get_simple(&conf_tapedev,   &seen_tapedev,   CONF_STRING); break;
-    case CONF_RAWTAPEDEV:get_simple(&conf_rawtapedev,&seen_rawtapedev,CONF_STRING); break;
-    case CONF_TPCHANGER: get_simple(&conf_tpchanger, &seen_tpchanger, CONF_STRING); break;
-    case CONF_CHNGRDEV:  get_simple(&conf_chngrdev,  &seen_chngrdev,  CONF_STRING); break;
-    case CONF_CHNGRFILE: get_simple(&conf_chngrfile, &seen_chngrfile, CONF_STRING); break;
-    case CONF_LABELSTR:  get_simple(&conf_labelstr,  &seen_labelstr,  CONF_STRING); break;
-    case CONF_TAPELIST:  get_simple(&conf_tapelist,  &seen_tapelist,  CONF_STRING); break;
-    case CONF_INFOFILE:  get_simple(&conf_infofile,  &seen_infofile,  CONF_STRING); break;
-    case CONF_LOGDIR:    get_simple(&conf_logdir,    &seen_logdir,    CONF_STRING); break;
-    case CONF_DISKFILE:  get_simple(&conf_diskfile,  &seen_diskfile,  CONF_STRING); break;
-    case CONF_BUMPMULT:  get_simple(&conf_bumpmult,  &seen_bumpmult,  CONF_REAL);
-		    if(conf_bumpmult.r < 0.999) {
-			conf_parserror("bumpmult must be positive");
-		    }
-		    break;
-    case CONF_BUMPPERCENT:  get_simple(&conf_bumppercent,  &seen_bumppercent,  CONF_INT);
-		    if(conf_bumppercent.i < 0 || conf_bumppercent.i > 100) {
-			conf_parserror("bumppercent must be between 0 and 100");
-		    }
-		    break;
-    case CONF_BUMPSIZE:  get_simple(&conf_bumpsize,  &seen_bumpsize,  CONF_INT);
-		    if(conf_bumpsize.i < 1) {
-			conf_parserror("bumpsize must be positive");
-		    }
-		    break;
-    case CONF_BUMPDAYS:  get_simple(&conf_bumpdays,  &seen_bumpdays,  CONF_INT);
-		    if(conf_bumpdays.i < 1) {
-			conf_parserror("bumpdays must be positive");
-		    }
-		    break;
-    case CONF_NETUSAGE:  get_simple(&conf_netusage,  &seen_netusage,  CONF_INT);
-		    if(conf_netusage.i < 1) {
-			conf_parserror("netusage must be positive");
-		    }
-		    break;
-    case CONF_INPARALLEL:get_simple(&conf_inparallel,&seen_inparallel,CONF_INT);
-		    if(conf_inparallel.i < 1 || conf_inparallel.i >MAX_DUMPERS){
-			conf_parserror(
-			    "inparallel must be between 1 and MAX_DUMPERS (%d)",
-			    MAX_DUMPERS);
-		    }
-		    break;
-    case CONF_DUMPORDER: get_simple(&conf_dumporder, &seen_dumporder, CONF_STRING); break;
-    case CONF_TIMEOUT:   get_simple(&conf_timeout,   &seen_timeout,   CONF_INT);    break;
-    case CONF_MAXDUMPS:  get_simple(&conf_maxdumps,  &seen_maxdumps,  CONF_INT);
-		    if(conf_maxdumps.i < 1) {
-			conf_parserror("maxdumps must be positive");
-		    }
-		    break;
-    case CONF_TAPETYPE:  get_simple(&conf_tapetype,  &seen_tapetype,  CONF_IDENT);  break;
-    case CONF_INDEXDIR:  get_simple(&conf_indexdir,  &seen_indexdir,  CONF_STRING); break;
-    case CONF_ETIMEOUT:  get_simple(&conf_etimeout,  &seen_etimeout,  CONF_INT);    break;
-    case CONF_DTIMEOUT:  get_simple(&conf_dtimeout,  &seen_dtimeout,  CONF_INT);
-		    if(conf_dtimeout.i < 1) {
-			conf_parserror("dtimeout must be positive");
-		    }
-		    break;
-    case CONF_CTIMEOUT:  get_simple(&conf_ctimeout,  &seen_ctimeout,  CONF_INT);
-		    if(conf_ctimeout.i < 1) {
-			conf_parserror("ctimeout must be positive");
-		    }
-		    break;
-    case CONF_TAPEBUFS:  get_simple(&conf_tapebufs,  &seen_tapebufs,  CONF_INT);
-		    if(conf_tapebufs.i < 1) {
-			conf_parserror("tapebufs must be positive");
-		    }
-		    break;
-    case CONF_AUTOFLUSH: get_simple(&conf_autoflush, &seen_autoflush, CONF_BOOL);   break;
-    case CONF_RESERVE:   get_simple(&conf_reserve,   &seen_reserve,	 CONF_INT);
-		    if(conf_reserve.i < 0 || conf_reserve.i > 100) {
-			conf_parserror("reserve must be between 0 and 100");
-		    }
-		    break;
-    case CONF_MAXDUMPSIZE:get_simple(&conf_maxdumpsize,&seen_maxdumpsize,CONF_AM64); break;
-    case CONF_COLUMNSPEC:get_simple(&conf_columnspec,&seen_columnspec,CONF_STRING); break;
+    case CONF_ORG:
+	get_simple(&conf_org, &seen_org, CONF_STRING);
+	break;
 
-    case CONF_AMRECOVER_DO_FSF: get_simple(&conf_amrecover_do_fsf,&seen_amrecover_do_fsf, CONF_BOOL); break;
-    case CONF_AMRECOVER_CHECK_LABEL: get_simple(&conf_amrecover_check_label,&seen_amrecover_check_label, CONF_BOOL); break;
-    case CONF_AMRECOVER_CHANGER: get_simple(&conf_amrecover_changer,&seen_amrecover_changer, CONF_STRING); break;
+    case CONF_MAILTO:
+	get_simple(&conf_mailto, &seen_mailto, CONF_STRING);
+	break;
 
-    case CONF_TAPERALGO: get_taperalgo(&conf_taperalgo,&seen_taperalgo); break;
-    case CONF_DISPLAYUNIT: get_simple(&conf_displayunit,&seen_displayunit, CONF_STRING);
-		      if(strcmp(conf_displayunit.s,"k") == 0 ||
-			 strcmp(conf_displayunit.s,"K") == 0) {
-			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
-			  unit_divisor=1;
-		      }
-		      else if(strcmp(conf_displayunit.s,"m") == 0 ||
-			 strcmp(conf_displayunit.s,"M") == 0) {
-			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
-			  unit_divisor=1024;
-		      }
-		      else if(strcmp(conf_displayunit.s,"g") == 0 ||
-			 strcmp(conf_displayunit.s,"G") == 0) {
-			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
-			  unit_divisor=1024*1024;
-		      }
-		      else if(strcmp(conf_displayunit.s,"t") == 0 ||
-			 strcmp(conf_displayunit.s,"T") == 0) {
-			  conf_displayunit.s[0] = toupper(conf_displayunit.s[0]);
-			  unit_divisor=1024*1024*1024;
-		      }
-		      else {
-			  conf_parserror("displayunit must be k,m,g or t.");
-		      }
-		      break;
+    case CONF_DUMPUSER:
+	get_simple(&conf_dumpuser, &seen_dumpuser, CONF_STRING);
+	break;
+
+    case CONF_PRINTER:
+	get_simple(&conf_printer, &seen_printer, CONF_STRING);
+	break;
+
+    case CONF_DUMPCYCLE:
+	get_simple(&conf_dumpcycle, &seen_dumpcycle, CONF_INT);
+	if(conf_dumpcycle.i < 0) {
+	    conf_parserror("dumpcycle must be positive");
+	}
+	break;
+
+    case CONF_RUNSPERCYCLE:
+	get_simple(&conf_runspercycle, &seen_runspercycle, CONF_INT);
+	if(conf_runspercycle.i < -1) {
+	    conf_parserror("runspercycle must be >= -1");
+	}
+	break;
+
+    case CONF_MAXCYCLE:
+	get_simple(&conf_maxcycle, &seen_maxcycle, CONF_INT);
+	break;
+
+    case CONF_TAPECYCLE:
+	get_simple(&conf_tapecycle, &seen_tapecycle, CONF_INT);
+	if(conf_tapecycle.i < 1) {
+	    conf_parserror("tapecycle must be positive");
+	}
+	break;
+
+    case CONF_RUNTAPES:
+	get_simple(&conf_runtapes, &seen_runtapes, CONF_INT);
+	if(conf_runtapes.i < 0) {
+	    conf_parserror("runtapes must be positive");
+	}
+	break;
+
+    case CONF_TAPEDEV:
+	get_simple(&conf_tapedev, &seen_tapedev, CONF_STRING);
+	break;
+
+    case CONF_RAWTAPEDEV:
+	get_simple(&conf_rawtapedev,&seen_rawtapedev,CONF_STRING);
+	break;
+
+    case CONF_TPCHANGER:
+	get_simple(&conf_tpchanger, &seen_tpchanger, CONF_STRING);
+	break;
+
+    case CONF_CHNGRDEV:
+	get_simple(&conf_chngrdev, &seen_chngrdev, CONF_STRING);
+	break;
+
+    case CONF_CHNGRFILE:
+	get_simple(&conf_chngrfile, &seen_chngrfile, CONF_STRING);
+	break;
+
+    case CONF_LABELSTR:
+	get_simple(&conf_labelstr, &seen_labelstr, CONF_STRING);
+	break;
+
+    case CONF_TAPELIST:
+	get_simple(&conf_tapelist, &seen_tapelist, CONF_STRING);
+	break;
+
+    case CONF_INFOFILE:
+	get_simple(&conf_infofile, &seen_infofile, CONF_STRING);
+	break;
+
+    case CONF_LOGDIR:
+	get_simple(&conf_logdir, &seen_logdir, CONF_STRING);
+	break;
+
+    case CONF_DISKFILE:
+	get_simple(&conf_diskfile, &seen_diskfile, CONF_STRING);
+	break;
+
+    case CONF_BUMPMULT:
+	get_simple(&conf_bumpmult, &seen_bumpmult, CONF_REAL);
+	if(conf_bumpmult.r < 0.999) {
+	     conf_parserror("bumpmult must be positive");
+	}
+	break;
+
+    case CONF_BUMPPERCENT:
+	get_simple(&conf_bumppercent, &seen_bumppercent, CONF_INT);
+	if(conf_bumppercent.i < 0 || conf_bumppercent.i > 100) {
+	    conf_parserror("bumppercent must be between 0 and 100");
+	}
+	break;
+
+    case CONF_BUMPSIZE:
+	get_simple(&conf_bumpsize, &seen_bumpsize, CONF_AM64);
+	if(conf_bumpsize.am64 < 1) {
+	    conf_parserror("bumpsize must be positive");
+	}
+	break;
+
+    case CONF_BUMPDAYS:
+	get_simple(&conf_bumpdays, &seen_bumpdays, CONF_INT);
+	if(conf_bumpdays.i < 1) {
+	    conf_parserror("bumpdays must be positive");
+	}
+	break;
+
+    case CONF_NETUSAGE:
+	get_simple(&conf_netusage, &seen_netusage, CONF_LONG);
+	if(conf_netusage.l < 1) {
+	    conf_parserror("netusage must be positive");
+	}
+	break;
+
+    case CONF_INPARALLEL:
+	get_simple(&conf_inparallel,&seen_inparallel,CONF_INT);
+	if(conf_inparallel.i < 1 || conf_inparallel.i >MAX_DUMPERS){
+	    conf_parserror("inparallel must be between 1 and MAX_DUMPERS (%d)",
+		      MAX_DUMPERS);
+	}
+	break;
+
+    case CONF_DUMPORDER:
+	get_simple(&conf_dumporder, &seen_dumporder, CONF_STRING);
+	break;
+
+    case CONF_TIMEOUT:
+	get_simple(&conf_timeout, &seen_timeout, CONF_TIME);
+	break;
+
+    case CONF_MAXDUMPS:
+	get_simple(&conf_maxdumps, &seen_maxdumps, CONF_INT);
+	if(conf_maxdumps.i < 1) {
+	    conf_parserror("maxdumps must be positive");
+	}
+	break;
+
+    case CONF_TAPETYPE:
+	get_simple(&conf_tapetype, &seen_tapetype, CONF_IDENT);
+	break;
+
+    case CONF_INDEXDIR:
+	get_simple(&conf_indexdir, &seen_indexdir, CONF_STRING);
+	break;
+
+    case CONF_ETIMEOUT:
+	get_simple(&conf_etimeout, &seen_etimeout, CONF_TIME);
+	break;
+
+    case CONF_DTIMEOUT:
+	get_simple(&conf_dtimeout, &seen_dtimeout, CONF_TIME);
+	if(conf_dtimeout.t < 1) {
+	    conf_parserror("dtimeout must be positive");
+	}
+	break;
+
+    case CONF_CTIMEOUT:
+	get_simple(&conf_ctimeout, &seen_ctimeout, CONF_TIME);
+	if(conf_ctimeout.t < 1) {
+	    conf_parserror("ctimeout must be positive");
+	}
+	break;
+
+    case CONF_TAPEBUFS:
+	get_simple(&conf_tapebufs, &seen_tapebufs, CONF_INT);
+	if(conf_tapebufs.i < 1) {
+	    conf_parserror("tapebufs must be positive");
+	}
+	break;
+
+    case CONF_AUTOFLUSH:
+	get_simple(&conf_autoflush, &seen_autoflush, CONF_BOOL);
+	break;
+
+    case CONF_RESERVE:
+	get_simple(&conf_reserve, &seen_reserve, CONF_INT);
+	if(conf_reserve.i < 0 || conf_reserve.i > 100) {
+	    conf_parserror("reserve must be between 0 and 100");
+	}
+	break;
+
+    case CONF_MAXDUMPSIZE:
+	get_simple(&conf_maxdumpsize, &seen_maxdumpsize, CONF_AM64);
+	break;
+
+    case CONF_COLUMNSPEC:
+	get_simple(&conf_columnspec, &seen_columnspec, CONF_STRING);
+	break;
+
+    case CONF_AMRECOVER_DO_FSF:
+	get_simple(&conf_amrecover_do_fsf, &seen_amrecover_do_fsf, CONF_BOOL);
+	break;
+    case CONF_AMRECOVER_CHECK_LABEL:
+	get_simple(&conf_amrecover_check_label, &seen_amrecover_check_label, CONF_BOOL);
+	break;
+    case CONF_AMRECOVER_CHANGER:
+	get_simple(&conf_amrecover_changer, &seen_amrecover_changer, CONF_STRING);
+	break;
+
+    case CONF_TAPERALGO:
+	 get_taperalgo(&conf_taperalgo, &seen_taperalgo);
+	 break;
+
+    case CONF_DISPLAYUNIT:
+	get_simple(&conf_displayunit,&seen_displayunit, CONF_STRING);
+	if(strcmp(conf_displayunit.s,"k") == 0 ||
+		strcmp(conf_displayunit.s,"K") == 0) {
+	    conf_displayunit.s[0] = (char)toupper(conf_displayunit.s[0]);
+	    unit_divisor=1;
+	} else if(strcmp(conf_displayunit.s,"m") == 0 ||
+		strcmp(conf_displayunit.s,"M") == 0) {
+	    conf_displayunit.s[0] = (char)toupper(conf_displayunit.s[0]);
+	    unit_divisor=1024;
+	} else if(strcmp(conf_displayunit.s,"g") == 0 ||
+		strcmp(conf_displayunit.s,"G") == 0) {
+	    conf_displayunit.s[0] = (char)toupper(conf_displayunit.s[0]);
+	    unit_divisor=1024*1024;
+	} else if(strcmp(conf_displayunit.s,"t") == 0 ||
+		strcmp(conf_displayunit.s,"T") == 0) {
+	    conf_displayunit.s[0] = (char)toupper(conf_displayunit.s[0]);
+	    unit_divisor=1024*1024*1024;
+	} else {
+	    conf_parserror("displayunit must be k,m,g or t.");
+	}
+	break;
 
     /* kerberos 5 bits.  only useful when kerberos 5 built in... */
-    case CONF_KRB5KEYTAB:    get_simple(&conf_krb5keytab,   &seen_krb5keytab,   CONF_STRING); break;
-    case CONF_KRB5PRINCIPAL: get_simple(&conf_krb5principal,&seen_krb5principal,CONF_STRING); break;
+    case CONF_KRB5KEYTAB:
+	get_simple(&conf_krb5keytab, &seen_krb5keytab, CONF_STRING);
+	break;
+
+    case CONF_KRB5PRINCIPAL:
+	get_simple(&conf_krb5principal, &seen_krb5principal, CONF_STRING);
+	break;
 
     case CONF_LOGFILE: /* XXX - historical */
 	/* truncate the filename part and pretend he said "logdir" */
@@ -1109,7 +1308,7 @@ static int read_confline()
 	    hdcur.seen = conf_line_num;
 	    hdcur.diskdir = stralloc(s);
 	    hdcur.s_disk = conf_line_num;
-	    hdcur.disksize = conf_disksize.i;
+	    hdcur.disksize = (off_t)conf_disksize.am64;
 	    hdcur.s_size = seen_disksize;
 	    save_holdingdisk();
 	}
@@ -1117,20 +1316,19 @@ static int read_confline()
 
     case CONF_DISKSIZE:
 	{
-	    int i;
+	    am64_t i;
 
-	    i = get_int();
-	    i = (i / DISK_BLOCK_KB) * DISK_BLOCK_KB;
+	    i = (am64_t)get_am64_t();
+	    i = (i / (am64_t)DISK_BLOCK_KB) * (am64_t)DISK_BLOCK_KB;
 
 	    if(!seen_disksize) {
-		conf_disksize.i = i;
+		conf_disksize.am64 = i;
 		seen_disksize = conf_line_num;
 	    }
 
 	    if(holdingdisks != NULL)
-		holdingdisks->disksize = i;
+		holdingdisks->disksize = (off_t)i;
 	}
-
 	break;
 
     case CONF_HOLDING:
@@ -1139,22 +1337,29 @@ static int read_confline()
 
     case CONF_DEFINE:
 	get_conftoken(CONF_ANY);
-	if(tok == CONF_DUMPTYPE) get_dumptype();
-	else if(tok == CONF_TAPETYPE) get_tapetype();
-	else if(tok == CONF_INTERFACE) get_interface();
-	else conf_parserror("DUMPTYPE, INTERFACE or TAPETYPE expected");
+	if(tok == CONF_DUMPTYPE)
+	    get_dumptype();
+	else if(tok == CONF_TAPETYPE)
+	    get_tapetype();
+	else if(tok == CONF_INTERFACE)
+	    get_interface();
+	else
+	    conf_parserror("DUMPTYPE, INTERFACE or TAPETYPE expected");
 	break;
+
     case CONF_LABEL_NEW_TAPES:
-        get_simple(&conf_label_new_tapes, &seen_label_new_tapes, CONF_STRING);
-        break;
+	get_simple(&conf_label_new_tapes, &seen_label_new_tapes, CONF_STRING);
+	break;
 
     case CONF_USETIMESTAMPS:
         get_simple(&conf_usetimestamps, &seen_usetimestamps, CONF_BOOL); break;
 
     case CONF_NL:	/* empty line */
 	break;
+
     case CONF_END:	/* end of file */
 	return 0;
+
     default:
 	conf_parserror("configuration keyword expected");
     }
@@ -1170,11 +1375,13 @@ keytab_t holding_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static void get_holdingdisk()
+static void
+get_holdingdisk(void)
 {
     int done;
     int save_overwrites;
     keytab_t *save_kt;
+    val_t tmpval;
 
     save_overwrites = allow_overwrites;
     allow_overwrites = 1;
@@ -1194,41 +1401,56 @@ static void get_holdingdisk()
 
     done = 0;
     do {
+	/* Clear out any bogus string pointers */
+	memset(&tmpval, 0, SIZEOF(tmpval));
 	conf_line_num += 1;
 	get_conftoken(CONF_ANY);
 	switch(tok) {
-
 	case CONF_COMMENT:
-	    get_simple((val_t *)&hdcur.comment, &hdcur.s_comment, CONF_STRING);
+	    amfree(hdcur.comment);
+	    get_simple(&tmpval, &hdcur.s_comment, CONF_STRING);
+	    hdcur.comment = tmpval.s;
 	    break;
+
 	case CONF_DIRECTORY:
-	    get_simple((val_t *)&hdcur.diskdir, &hdcur.s_disk, CONF_STRING);
+	    amfree(hdcur.diskdir);
+	    get_simple(&tmpval, &hdcur.s_disk, CONF_STRING);
+	    hdcur.diskdir = tmpval.s;
 	    break;
+
 	case CONF_USE:
-	    get_simple((val_t *)&hdcur.disksize, &hdcur.s_size, CONF_LONG);
-	    hdcur.disksize = am_floor(hdcur.disksize, DISK_BLOCK_KB);
+	    get_simple(&tmpval, &hdcur.s_size, CONF_AM64);
+	    hdcur.disksize = am_floor((off_t)tmpval.am64, (off_t)DISK_BLOCK_KB);
 	    break;
+
 	case CONF_CHUNKSIZE:
-	    get_simple((val_t *)&hdcur.chunksize, &hdcur.s_csize, CONF_LONG);
-	    if(hdcur.chunksize == 0) {
-	        hdcur.chunksize =  ((INT_MAX / 1024) - (2 * DISK_BLOCK_KB));
-	    } else if(hdcur.chunksize < 0) {
-		conf_parserror("Negative chunksize (%ld) is no longer supported",
-			  hdcur.chunksize);
+	    get_simple(&tmpval, &hdcur.s_csize, CONF_AM64);
+	    hdcur.chunksize = (off_t)tmpval.am64;
+	    if(hdcur.chunksize == (off_t)0) {
+	        hdcur.chunksize = (off_t)((INT_MAX / 1024)-(2 * DISK_BLOCK_KB));
+	    } else if(hdcur.chunksize < (off_t)0) {
+		conf_parserror("Negative chunksize (" OFF_T_FMT ") is no longer supported",
+			  (OFF_T_FMT_TYPE)hdcur.chunksize);
 	    }
-	    hdcur.chunksize = am_floor(hdcur.chunksize, DISK_BLOCK_KB);
+	    hdcur.chunksize = am_floor(hdcur.chunksize, (off_t)DISK_BLOCK_KB);
 	    break;
+
 	case CONF_RBRACE:
 	    done = 1;
 	    break;
+
 	case CONF_NL:	/* empty line */
 	    break;
+
 	case CONF_END:	/* end of file */
 	    done = 1;
+	    /*FALLTHROUGH*/
+
 	default:
 	    conf_parserror("holding disk parameter expected");
 	}
-	if(tok != CONF_NL && tok != CONF_END) get_conftoken(CONF_NL);
+	if(tok != (tok_t)CONF_NL && tok != (tok_t)CONF_END)
+	    get_conftoken(CONF_NL);
     } while(!done);
 
     save_holdingdisk();
@@ -1237,13 +1459,14 @@ static void get_holdingdisk()
     keytable = save_kt;
 }
 
-static void init_holdingdisk_defaults()
+static void
+init_holdingdisk_defaults(void)
 {
     hdcur.comment = stralloc("");
     hdcur.diskdir = stralloc(conf_diskdir.s);
     malloc_mark(hdcur.diskdir);
-    hdcur.disksize = 0;
-    hdcur.chunksize = 1024*1024/**1024*/; /* 1 Gb = 1M counted in 1Kb blocks */
+    hdcur.disksize = (off_t)0;
+    hdcur.chunksize = (off_t)(1024*1024); /* 1 Gb = 1M counted in 1Kb blocks */
 
     hdcur.s_comment = 0;
     hdcur.s_disk = 0;
@@ -1253,11 +1476,12 @@ static void init_holdingdisk_defaults()
     hdcur.up = (void *)0;
 }
 
-static void save_holdingdisk()
+static void
+save_holdingdisk(void)
 {
     holdingdisk_t *hp;
 
-    hp = alloc(sizeof(holdingdisk_t));
+    hp = alloc(SIZEOF(holdingdisk_t));
     malloc_mark(hp);
     *hp = hdcur;
     hp->next = holdingdisks;
@@ -1312,11 +1536,12 @@ keytab_t dumptype_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-dumptype_t *read_dumptype(name, from, fname, linenum)
-     char *name;
-     FILE *from;
-     char *fname;
-     int *linenum;
+dumptype_t *
+read_dumptype(
+    char *name,
+    FILE *from,
+    char *fname,
+    int *linenum)
 {
     int done;
     int save_overwrites;
@@ -1363,185 +1588,286 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
 
     done = 0;
     do {
+	/* Clear out any bogus string pointers */
+	memset(&tmpval, 0, SIZEOF(tmpval));
+
 	conf_line_num += 1;
 	get_conftoken(CONF_ANY);
 	switch(tok) {
-
 	case CONF_AUTH:
-	    get_simple((val_t *)&dpcur.security_driver,
-		&dpcur.s_security_driver, CONF_STRING);
+	    amfree(dpcur.security_driver);
+	    get_simple(&tmpval, &dpcur.s_security_driver, CONF_STRING);
+	    dpcur.security_driver = tmpval.s;
 	    break;
+
 	case CONF_COMMENT:
-	    get_simple((val_t *)&dpcur.comment, &dpcur.s_comment, CONF_STRING);
+	    amfree(dpcur.comment);
+	    get_simple(&tmpval, &dpcur.s_comment, CONF_STRING);
+	    dpcur.comment = tmpval.s;
 	    break;
+
 	case CONF_COMPRATE:
 	    get_comprate();
 	    break;
+
 	case CONF_COMPRESS:
 	    get_compress();
 	    break;
+
 	case CONF_ENCRYPT:
 	    get_encrypt();
 	    break;
+
 	case CONF_SRV_DECRYPT_OPT:
-	    get_simple((val_t *)&dpcur.srv_decrypt_opt, &dpcur.s_srv_decrypt_opt, CONF_STRING);
+	    amfree(dpcur.srv_decrypt_opt);
+	    get_simple(&tmpval, &dpcur.s_srv_decrypt_opt, CONF_STRING);
+	    dpcur.srv_decrypt_opt = tmpval.s;
 	    break;
+
 	case CONF_CLNT_DECRYPT_OPT:
-	    get_simple((val_t *)&dpcur.clnt_decrypt_opt, &dpcur.s_clnt_decrypt_opt, CONF_STRING);
+	    amfree(dpcur.clnt_decrypt_opt);
+	    get_simple(&tmpval, &dpcur.s_clnt_decrypt_opt, CONF_STRING);
+	    dpcur.clnt_decrypt_opt = tmpval.s;
 	    break;
+
 	case CONF_DUMPCYCLE:
-	    get_simple((val_t *)&dpcur.dumpcycle, &dpcur.s_dumpcycle, CONF_INT);
+	    get_simple(&tmpval, &dpcur.s_dumpcycle, CONF_INT);
+	    dpcur.dumpcycle = tmpval.i;
 	    if(dpcur.dumpcycle < 0) {
 		conf_parserror("dumpcycle must be positive");
 	    }
 	    break;
+
 	case CONF_EXCLUDE:
 	    get_exclude();
 	    break;
+
 	case CONF_FREQUENCY:
-	    get_simple((val_t *)&dpcur.frequency, &dpcur.s_frequency, CONF_INT);
+	    get_simple(&tmpval, &dpcur.s_frequency, CONF_INT);
+	    dpcur.frequency = tmpval.i;
 	    break;
+
 	case CONF_HOLDING:
 	    get_simple(&tmpval, &dpcur.s_no_hold, CONF_BOOL);
-	    dpcur.no_hold = (tmpval.i == 0);
+	    if (tmpval.i != 0)
+		dpcur.no_hold = 1;
+	    else
+		dpcur.no_hold = 0;
 	    break;
+
 	case CONF_IGNORE:
 	    get_simple(&tmpval, &dpcur.s_ignore, CONF_BOOL);
-	    dpcur.ignore = (tmpval.i != 0);
+	    if (tmpval.i != 0)
+		dpcur.ignore = 1;
+	    else
+		dpcur.ignore = 0;
 	    break;
+
 	case CONF_INCLUDE:
 	    get_include();
 	    break;
+
 	case CONF_INDEX:
 	    get_simple(&tmpval, &dpcur.s_index, CONF_BOOL);
-	    dpcur.index = (tmpval.i != 0);
+	    if (tmpval.i != 0)
+		dpcur.index = 1;
+	    else
+		dpcur.index = 0;
 	    break;
+
 	case CONF_KENCRYPT:
 	    get_simple(&tmpval, &dpcur.s_kencrypt, CONF_BOOL);
-	    dpcur.kencrypt = (tmpval.i != 0);
+	    if (tmpval.i != 0)
+		dpcur.kencrypt = 1;
+	    else
+		dpcur.kencrypt = 0;
 	    break;
+
 	case CONF_MAXCYCLE:
-	    get_simple((val_t *)&conf_maxcycle, &dpcur.s_maxcycle, CONF_INT);
+	    get_simple(&tmpval, &dpcur.s_maxcycle, CONF_INT);
+	    dpcur.maxcycle = tmpval.i;
 	    break;
+
 	case CONF_MAXDUMPS:
-	    get_simple((val_t *)&dpcur.maxdumps, &dpcur.s_maxdumps, CONF_INT);
+	    get_simple(&tmpval, &dpcur.s_maxdumps, CONF_INT);
+	    dpcur.maxdumps = tmpval.i;
 	    if(dpcur.maxdumps < 1) {
 		conf_parserror("maxdumps must be positive");
 	    }
 	    break;
+
 	case CONF_MAXPROMOTEDAY:
-	    get_simple((val_t *)&dpcur.maxpromoteday, &dpcur.s_maxpromoteday, CONF_INT);
+	    get_simple(&tmpval, &dpcur.s_maxpromoteday, CONF_INT);
+	    dpcur.maxpromoteday = tmpval.i;
 	    if(dpcur.maxpromoteday < 0) {
 		conf_parserror("dpcur.maxpromoteday must be >= 0");
 	    }
 	    break;
+
 	case CONF_BUMPPERCENT:
-	    get_simple((val_t *)&dpcur.bumppercent,  &dpcur.s_bumppercent,  CONF_INT);
+	    get_simple(&tmpval,  &dpcur.s_bumppercent,  CONF_INT);
+	    dpcur.bumppercent = tmpval.i;
 	    if(dpcur.bumppercent < 0 || dpcur.bumppercent > 100) {
 		conf_parserror("bumppercent must be between 0 and 100");
 	    }
 	    break;
+
 	case CONF_BUMPSIZE:
-	    get_simple((val_t *)&dpcur.bumpsize,  &dpcur.s_bumpsize,  CONF_INT);
-	    if(dpcur.bumpsize < 1) {
+	    get_simple(&tmpval,  &dpcur.s_bumpsize,  CONF_AM64);
+	    dpcur.bumpsize = (off_t)tmpval.am64;
+	    if(dpcur.bumpsize < (off_t)1) {
 		conf_parserror("bumpsize must be positive");
 	    }
 	    break;
+
 	case CONF_BUMPDAYS:
-	    get_simple((val_t *)&dpcur.bumpdays,  &dpcur.s_bumpdays,  CONF_INT);
+	    get_simple(&tmpval,  &dpcur.s_bumpdays,  CONF_INT);
+	    dpcur.bumpdays = tmpval.i;
 	    if(dpcur.bumpdays < 1) {
 		conf_parserror("bumpdays must be positive");
 	    }
 	    break;
+
 	case CONF_BUMPMULT:
-	    get_simple((val_t *)&dpcur.bumpmult,  &dpcur.s_bumpmult,  CONF_REAL);
+	    get_simple(&tmpval,  &dpcur.s_bumpmult,  CONF_REAL);
+	    dpcur.bumpmult = tmpval.r;
 	    if(dpcur.bumpmult < 0.999) {
-		conf_parserror("bumpmult must be positive (%f)",dpcur.bumpmult);
+		conf_parserror("bumpmult must be positive (%lf)",dpcur.bumpmult);
 	    }
 	    break;
+
 	case CONF_OPTIONS:
 	    get_dumpopts();
 	    break;
+
 	case CONF_PRIORITY:
 	    get_priority();
 	    break;
+
 	case CONF_PROGRAM:
-	    get_simple((val_t *)&dpcur.program, &dpcur.s_program, CONF_STRING);
+	    amfree(dpcur.program);
+	    get_simple(&tmpval,  &dpcur.s_program,  CONF_STRING);
+	    dpcur.program = tmpval.s;
 	    break;
+
 	case CONF_RECORD:
 	    get_simple(&tmpval, &dpcur.s_record, CONF_BOOL);
-	    dpcur.record = (tmpval.i != 0);
+	    if (tmpval.i != 0)
+		dpcur.record = 1;
+	    else
+		dpcur.record = 0;
 	    break;
+
 	case CONF_SKIP_FULL:
 	    get_simple(&tmpval, &dpcur.s_skip_full, CONF_BOOL);
-	    dpcur.skip_full = (tmpval.i != 0);
+	    if (tmpval.i != 0)
+		dpcur.skip_full = 1;
+	    else
+		dpcur.skip_full = 0;
 	    break;
+
 	case CONF_SKIP_INCR:
 	    get_simple(&tmpval, &dpcur.s_skip_incr, CONF_BOOL);
-	    dpcur.skip_incr = (tmpval.i != 0);
+	    if (tmpval.i != 0)
+		dpcur.skip_incr = 1;
+	    else
+		dpcur.skip_incr = 0;
 	    break;
+
 	case CONF_STARTTIME:
-	    get_simple((val_t *)&dpcur.start_t, &dpcur.s_start_t, CONF_TIME);
+	    get_simple(&tmpval,  &dpcur.s_start_t,  CONF_TIME);
+	    dpcur.start_t = tmpval.t;
 	    break;
+
 	case CONF_STRATEGY:
 	    get_strategy();
 	    break;
+
 	case CONF_ESTIMATE:
 	    get_estimate();
 	    break;
+
 	case CONF_IDENT:
+	case CONF_STRING:
 	    copy_dumptype();
 	    break;
+
 	case CONF_TAPE_SPLITSIZE:
-	    get_simple((val_t *)&dpcur.tape_splitsize,  &dpcur.s_tape_splitsize,  CONF_INT);
-	    if(dpcur.tape_splitsize < 0) {
+	    get_simple(&tmpval,  &dpcur.s_tape_splitsize,  CONF_AM64);
+	    dpcur.tape_splitsize = (off_t)tmpval.am64;
+	    if(dpcur.tape_splitsize < (off_t)0) {
 	      conf_parserror("tape_splitsize must be >= 0");
 	    }
 	    break;
+
 	case CONF_SPLIT_DISKBUFFER:
-	    get_simple((val_t *)&dpcur.split_diskbuffer, &dpcur.s_split_diskbuffer, CONF_STRING);
+	    amfree(dpcur.split_diskbuffer);
+	    get_simple(&tmpval,  &dpcur.s_split_diskbuffer,  CONF_STRING);
+	    dpcur.split_diskbuffer = tmpval.s;
 	    break;
+
 	case CONF_FALLBACK_SPLITSIZE:
-	    get_simple((val_t *)&dpcur.fallback_splitsize,  &dpcur.s_fallback_splitsize,  CONF_INT);
-	    if(dpcur.fallback_splitsize < 0) {
-	      conf_parserror("fallback_splitsize must be >= 0");
+	    get_simple(&tmpval,  &dpcur.s_fallback_splitsize,  CONF_AM64);
+	    dpcur.fallback_splitsize = (off_t)tmpval.am64;
+	    if(dpcur.fallback_splitsize < (off_t)0) {
+		conf_parserror("fallback_splitsize must be >= 0");
 	    }
 	    break;
+
 	case CONF_SRVCOMPPROG:
-	    get_simple((val_t *)&dpcur.srvcompprog, &dpcur.s_srvcompprog, CONF_STRING);
+	    amfree(dpcur.srvcompprog);
+	    get_simple(&tmpval,  &dpcur.s_srvcompprog,  CONF_STRING);
+	    dpcur.srvcompprog = tmpval.s;
 	    break;
-        case CONF_CLNTCOMPPROG:
-	    get_simple((val_t *)&dpcur.clntcompprog, &dpcur.s_clntcompprog, CONF_STRING);
+
+	case CONF_CLNTCOMPPROG:
+	    amfree(dpcur.clntcompprog);
+	    get_simple(&tmpval,  &dpcur.s_clntcompprog,  CONF_STRING);
+	    dpcur.clntcompprog = tmpval.s;
 	    break;
+
 	case CONF_SRV_ENCRYPT:
-	    get_simple((val_t *)&dpcur.srv_encrypt, &dpcur.s_srv_encrypt, CONF_STRING);
+	    amfree(dpcur.srv_encrypt);
+	    get_simple(&tmpval,  &dpcur.s_srv_encrypt,  CONF_STRING);
+	    dpcur.srv_encrypt = tmpval.s;
 	    break;
-        case CONF_CLNT_ENCRYPT:
-	    get_simple((val_t *)&dpcur.clnt_encrypt, &dpcur.s_clnt_encrypt, CONF_STRING);
+
+	case CONF_CLNT_ENCRYPT:
+	    amfree(dpcur.clnt_encrypt);
+	    get_simple(&tmpval,  &dpcur.s_clnt_encrypt,  CONF_STRING);
+	    dpcur.clnt_encrypt = tmpval.s;
 	    break;
+
         case CONF_AMANDAD_PATH:
-	    get_simple((val_t *)&dpcur.amandad_path, &dpcur.s_amandad_path, CONF_STRING);
+	    amfree(dpcur.amandad_path);
+	    get_simple(&tmpval, &dpcur.s_amandad_path, CONF_STRING);
+	    dpcur.amandad_path = tmpval.s;
 	    break;
+
         case CONF_CLIENT_USERNAME:
-	    get_simple((val_t *)&dpcur.client_username, &dpcur.s_client_username, CONF_STRING);
+	    amfree(dpcur.client_username);
+	    get_simple(&tmpval, &dpcur.s_client_username, CONF_STRING);
+	    dpcur.client_username = tmpval.s;
 	    break;
-        case CONF_SSH_KEYS:
-	    get_simple((val_t *)&dpcur.ssh_keys, &dpcur.s_ssh_keys, CONF_STRING);
-	    break;
+
 	case CONF_RBRACE:
 	    done = 1;
 	    break;
+
 	case CONF_NL:	/* empty line */
 	    break;
+
 	case CONF_END:	/* end of file */
 	    done = 1;
+	    /*FALLTHROUGH*/
+
 	default:
-	    conf_parserror("dump type parameter expected");
+	    conf_parserror("dumptype parameter expected");
 	}
-	if(tok != CONF_NL && tok != CONF_END &&
+	if(tok != (tok_t)CONF_NL && tok != (tok_t)CONF_END &&
 	   /* When a name is specified, we shouldn't consume the CONF_NL
 	      after the CONF_RBRACE.  */
-	   (tok != CONF_RBRACE || name == 0))
+	   (tok != (tok_t)CONF_RBRACE || name == 0))
 	    get_conftoken(CONF_NL);
     } while(!done);
 
@@ -1565,12 +1891,14 @@ dumptype_t *read_dumptype(name, from, fname, linenum)
     return lookup_dumptype(dpcur.name);
 }
 
-static void get_dumptype()
+static void
+get_dumptype(void)
 {
     read_dumptype(NULL, NULL, NULL, NULL);
 }
 
-static void init_dumptype_defaults()
+static void
+init_dumptype_defaults(void)
 {
     dpcur.comment = stralloc("");
     dpcur.program = stralloc("DUMP");
@@ -1592,7 +1920,7 @@ static void init_dumptype_defaults()
     dpcur.maxdumps = conf_maxdumps.i;
     dpcur.maxpromoteday = 10000;
     dpcur.bumppercent = conf_bumppercent.i;
-    dpcur.bumpsize = conf_bumpsize.i;
+    dpcur.bumpsize = (off_t)conf_bumpsize.am64;
     dpcur.bumpdays = conf_bumpdays.i;
     dpcur.bumpmult = conf_bumpmult.r;
     dpcur.start_t = 0;
@@ -1607,14 +1935,15 @@ static void init_dumptype_defaults()
     dpcur.srv_decrypt_opt = stralloc("-d");
     dpcur.clnt_decrypt_opt = stralloc("-d");
     dpcur.comprate[0] = dpcur.comprate[1] = 0.50;
-    dpcur.skip_incr = dpcur.skip_full = 0;
+    dpcur.skip_incr = 0;
+    dpcur.skip_full = 0;
     dpcur.no_hold = 0;
     dpcur.kencrypt = 0;
     dpcur.ignore = 0;
     dpcur.index = 0;
-    dpcur.tape_splitsize = 0;
+    dpcur.tape_splitsize = (off_t)0;
     dpcur.split_diskbuffer = NULL;
-    dpcur.fallback_splitsize = 10 * 1024;
+    dpcur.fallback_splitsize = (off_t)(10 * 1024);
 
     dpcur.s_comment = 0;
     dpcur.s_program = 0;
@@ -1661,7 +1990,8 @@ static void init_dumptype_defaults()
     dpcur.s_fallback_splitsize = 0;
 }
 
-static void save_dumptype()
+static void
+save_dumptype(void)
 {
     dumptype_t *dp;
 
@@ -1672,21 +2002,21 @@ static void save_dumptype()
 	return;
     }
 
-    dp = alloc(sizeof(dumptype_t));
+    dp = alloc(SIZEOF(dumptype_t));
     malloc_mark(dp);
     *dp = dpcur;
     dp->next = dumplist;
     dumplist = dp;
 }
 
-static void copy_dumptype()
+static void
+copy_dumptype(void)
 {
     dumptype_t *dt;
 
     dt = lookup_dumptype(tokenval.s);
-
     if(dt == NULL) {
-	conf_parserror("dump type parameter expected");
+	conf_parserror("dumptype parameter expected");
 	return;
     }
 
@@ -1729,7 +2059,6 @@ static void copy_dumptype()
 	dpcur.clnt_decrypt_opt = newstralloc(dpcur.clnt_decrypt_opt, dt->clnt_decrypt_opt);
 	dpcur.s_clnt_decrypt_opt = dt->s_clnt_decrypt_opt;
     }
-
     if(dt->s_amandad_path) {
 	dpcur.amandad_path = newstralloc(dpcur.amandad_path, dt->amandad_path);
 	dpcur.s_amandad_path = dt->s_amandad_path;
@@ -1790,20 +2119,21 @@ static void copy_dumptype()
 
 keytab_t tapetype_keytable[] = {
     { "COMMENT", CONF_COMMENT },
-    { "LBL-TEMPL", CONF_LBL_TEMPL },
-    { "BLOCKSIZE", CONF_BLOCKSIZE },
-    { "FILE-PAD", CONF_FILE_PAD },
-    { "FILEMARK", CONF_FILEMARK },
-    { "LENGTH", CONF_LENGTH },
-    { "SPEED", CONF_SPEED },
-    { NULL, CONF_IDENT }
+    { "LBL-TEMPL",	CONF_LBL_TEMPL },
+    { "BLOCKSIZE",	CONF_BLOCKSIZE },
+    { "FILE-PAD",	CONF_FILE_PAD },
+    { "FILEMARK",	CONF_FILEMARK },
+    { "LENGTH",		CONF_LENGTH },
+    { "SPEED",		CONF_SPEED },
+    { NULL,		CONF_IDENT }
 };
 
-static void get_tapetype()
+static void
+get_tapetype(void)
 {
     int done;
     int save_overwrites;
-    val_t value;
+    val_t tmpval;
 
     keytab_t *save_kt;
 
@@ -1825,21 +2155,31 @@ static void get_tapetype()
 
     done = 0;
     do {
+	/* Clear out any bogus string pointers */
+	memset(&tmpval, 0, SIZEOF(tmpval));
+
 	conf_line_num += 1;
 	get_conftoken(CONF_ANY);
 	switch(tok) {
-
 	case CONF_RBRACE:
 	    done = 1;
 	    break;
+
 	case CONF_COMMENT:
-	    get_simple((val_t *)&tpcur.comment, &tpcur.s_comment, CONF_STRING);
+	    amfree(tpcur.comment);
+	    get_simple(&tmpval,  &tpcur.s_comment,  CONF_STRING);
+	    tpcur.comment = tmpval.s;
 	    break;
+
 	case CONF_LBL_TEMPL:
-	    get_simple((val_t *)&tpcur.lbl_templ, &tpcur.s_lbl_templ, CONF_STRING);
+	    amfree(tpcur.lbl_templ);
+	    get_simple(&tmpval,  &tpcur.s_lbl_templ,  CONF_STRING);
+	    tpcur.lbl_templ = tmpval.s;
 	    break;
+
 	case CONF_BLOCKSIZE:
-	    get_simple((val_t *)&tpcur.blocksize, &tpcur.s_blocksize, CONF_LONG);
+	    get_simple(&tmpval,  &tpcur.s_blocksize,  CONF_SIZE);
+	    tpcur.blocksize = tmpval.size;
 	    if(tpcur.blocksize < DISK_BLOCK_KB) {
 		conf_parserror("Tape blocksize must be at least %d KBytes",
 			  DISK_BLOCK_KB);
@@ -1848,45 +2188,55 @@ static void get_tapetype()
 			  MAX_TAPE_BLOCK_KB);
 	    }
 	    break;
+
 	case CONF_FILE_PAD:
-	    get_simple(&value, &tpcur.s_file_pad, CONF_BOOL);
-	    tpcur.file_pad = (value.i != 0);
+	    get_simple(&tmpval, &tpcur.s_file_pad, CONF_BOOL);
+	    if (tmpval.i != 0)
+		tpcur.file_pad = 1;
+	    else
+		tpcur.file_pad = 0;
 	    break;
+
 	case CONF_LENGTH:
-	    get_simple(&value, &tpcur.s_length, CONF_LONG);
-	    if(value.l < 0) {
+	    get_simple(&tmpval,  &tpcur.s_length, CONF_AM64);
+	    if(tpcur.length < 0) {
 		conf_parserror("Tape length must be positive");
 	    }
-	    else {
-		tpcur.length = (unsigned long) value.l;
-	    }
+	    tpcur.length = (off_t)tmpval.am64;
 	    break;
+
 	case CONF_FILEMARK:
-	    get_simple(&value, &tpcur.s_filemark, CONF_LONG);
-	    if(value.l < 0) {
+	    get_simple(&tmpval, &tpcur.s_filemark, CONF_SIZE);
+	    if(tmpval.size < 0) {
 		conf_parserror("Tape file mark size must be positive");
 	    }
-	    else {
-		tpcur.filemark = (unsigned long) value.l;
-	    }
+	    tpcur.filemark = tmpval.size;
 	    break;
+
 	case CONF_SPEED:
-	    get_simple((val_t *)&tpcur.speed, &tpcur.s_speed, CONF_INT);
+	    get_simple(&tmpval,  &tpcur.s_speed, CONF_INT);
+	    tpcur.speed = tmpval.i;
 	    if(tpcur.speed < 0) {
 		conf_parserror("Speed must be positive");
 	    }
 	    break;
+
 	case CONF_IDENT:
+	case CONF_STRING:
 	    copy_tapetype();
 	    break;
+
 	case CONF_NL:	/* empty line */
 	    break;
+
 	case CONF_END:	/* end of file */
 	    done = 1;
+
 	default:
 	    conf_parserror("tape type parameter expected");
 	}
-	if(tok != CONF_NL && tok != CONF_END) get_conftoken(CONF_NL);
+	if(tok != (tok_t)CONF_NL && tok != (tok_t)CONF_END)
+	    get_conftoken(CONF_NL);
     } while(!done);
 
     save_tapetype();
@@ -1895,13 +2245,14 @@ static void get_tapetype()
     keytable = save_kt;
 }
 
-static void init_tapetype_defaults()
+static void
+init_tapetype_defaults(void)
 {
     tpcur.comment = stralloc("");
     tpcur.lbl_templ = stralloc("");
-    tpcur.blocksize = (DISK_BLOCK_KB);
+    tpcur.blocksize = (ssize_t)DISK_BLOCK_KB;
     tpcur.file_pad = 1;
-    tpcur.length = 2000 * 1024;
+    tpcur.length = (off_t)(2000 * 1024);
     tpcur.filemark = 1000;
     tpcur.speed = 200;
 
@@ -1914,7 +2265,8 @@ static void init_tapetype_defaults()
     tpcur.s_speed = 0;
 }
 
-static void save_tapetype()
+static void
+save_tapetype(void)
 {
     tapetype_t *tp;
 
@@ -1926,14 +2278,15 @@ static void save_tapetype()
 	return;
     }
 
-    tp = alloc(sizeof(tapetype_t));
+    tp = alloc(SIZEOF(tapetype_t));
     malloc_mark(tp);
     *tp = tpcur;
     tp->next = tapelist;
     tapelist = tp;
 }
 
-static void copy_tapetype()
+static void
+copy_tapetype(void)
 {
     tapetype_t *tp;
 
@@ -1967,11 +2320,13 @@ keytab_t interface_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static void get_interface()
+static void
+get_interface(void)
 {
     int done;
     int save_overwrites;
     keytab_t *save_kt;
+    val_t tmpval;
 
     save_overwrites = allow_overwrites;
     allow_overwrites = 1;
@@ -1991,33 +2346,46 @@ static void get_interface()
 
     done = 0;
     do {
+	/* Clear out any bogus string pointers */
+	memset(&tmpval, 0, SIZEOF(tmpval));
+
 	conf_line_num += 1;
 	get_conftoken(CONF_ANY);
 	switch(tok) {
-
 	case CONF_RBRACE:
 	    done = 1;
 	    break;
+
 	case CONF_COMMENT:
-	    get_simple((val_t *)&ifcur.comment, &ifcur.s_comment, CONF_STRING);
+	    amfree(ifcur.comment);
+	    get_simple(&tmpval,  &ifcur.s_comment,  CONF_STRING);
+	    ifcur.comment = tmpval.s;
 	    break;
+
 	case CONF_USE:
-	    get_simple((val_t *)&ifcur.maxusage, &ifcur.s_maxusage, CONF_INT);
-	    if(ifcur.maxusage <1) {
+	    get_simple(&tmpval,  &ifcur.s_maxusage, CONF_LONG);
+	    ifcur.maxusage = (unsigned long)tmpval.l;
+	    if(ifcur.maxusage < 1) {
 		conf_parserror("use must be positive");
 	    }
 	    break;
+
 	case CONF_IDENT:
+	case CONF_STRING:
 	    copy_interface();
 	    break;
+
 	case CONF_NL:	/* empty line */
 	    break;
+
 	case CONF_END:	/* end of file */
 	    done = 1;
+
 	default:
 	    conf_parserror("interface parameter expected");
 	}
-	if(tok != CONF_NL && tok != CONF_END) get_conftoken(CONF_NL);
+	if(tok != (tok_t)CONF_NL && tok != (tok_t)CONF_END)
+	    get_conftoken(CONF_NL);
     } while(!done);
 
     save_interface();
@@ -2028,10 +2396,11 @@ static void get_interface()
     return;
 }
 
-static void init_interface_defaults()
+static void
+init_interface_defaults(void)
 {
     ifcur.comment = stralloc("");
-    ifcur.maxusage = 300;
+    ifcur.maxusage = 300L;
 
     ifcur.s_comment = 0;
     ifcur.s_maxusage = 0;
@@ -2039,25 +2408,28 @@ static void init_interface_defaults()
     ifcur.curusage = 0;
 }
 
-static void save_interface()
+static void
+save_interface(void)
 {
     interface_t *ip;
 
     ip = lookup_interface(ifcur.name);
 
     if(ip != (interface_t *)0) {
-	conf_parserror("interface %s already defined on line %d", ip->name, ip->seen);
+	conf_parserror("interface %s already defined on line %d",
+			ip->name, ip->seen);
 	return;
     }
 
-    ip = alloc(sizeof(interface_t));
+    ip = alloc(SIZEOF(interface_t));
     malloc_mark(ip);
     *ip = ifcur;
     ip->next = interface_list;
     interface_list = ip;
 }
 
-static void copy_interface()
+static void
+copy_interface(void)
 {
     interface_t *ip;
 
@@ -2089,7 +2461,9 @@ keytab_t dumpopts_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static void get_dumpopts() /* XXX - for historical compatability */
+/* XXX - for historical compatability */
+static void
+get_dumpopts(void)
 {
     int done;
     keytab_t *save_kt;
@@ -2132,7 +2506,8 @@ static void get_dumpopts() /* XXX - for historical compatability */
     keytable = save_kt;
 }
 
-static void get_comprate()
+static void
+get_comprate(void)
 {
     val_t var;
 
@@ -2169,7 +2544,8 @@ keytab_t compress_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static void get_compress()
+static void
+get_compress(void)
 {
     keytab_t *save_kt;
     int serv, clie, none, fast, best, custom;
@@ -2236,7 +2612,8 @@ keytab_t encrypt_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static void get_encrypt()
+static void
+get_encrypt(void)
 {
    keytab_t *save_kt;
    int encrypt;
@@ -2276,9 +2653,10 @@ keytab_t taperalgo_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static void get_taperalgo(c_taperalgo, s_taperalgo)
-val_t *c_taperalgo;
-int *s_taperalgo;
+static void
+get_taperalgo(
+    val_t *c_taperalgo,
+    int *s_taperalgo)
 {
     keytab_t *save_kt;
 
@@ -2309,7 +2687,8 @@ keytab_t priority_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static void get_priority()
+static void
+get_priority(void)
 {
     int pri;
     keytab_t *save_kt;
@@ -2344,7 +2723,8 @@ keytab_t strategy_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static void get_strategy()
+static void
+get_strategy(void)
 {
     int strat;
     keytab_t *save_kt;
@@ -2389,7 +2769,8 @@ keytab_t estimate_keytable[] = {
     { "CALCSIZE", CONF_CALCSIZE }
 };
 
-static void get_estimate()
+static void
+get_estimate(void)
 {
     int estime;
     keytab_t *save_kt;
@@ -2427,13 +2808,14 @@ keytab_t exclude_keytable[] = {
     { NULL, CONF_IDENT }
 };
 
-static void get_exclude()
+static void
+get_exclude(void)
 {
     int list, got_one = 0;
     keytab_t *save_kt;
     sl_t *exclude;
     int optional = 0;
-    int append = 0;
+    int append;
 
     save_kt = keytable;
     keytable = exclude_keytable;
@@ -2488,13 +2870,14 @@ static void get_exclude()
 }
 
 
-static void get_include()
+static void
+get_include(void)
 {
     int list, got_one = 0;
     keytab_t *save_kt;
     sl_t *include;
     int optional = 0;
-    int append = 0;
+    int append;
 
     save_kt = keytable;
     keytable = exclude_keytable;
@@ -2551,16 +2934,18 @@ static void get_include()
 
 /* ------------------------ */
 
-int ColumnDataCount()
+
+int
+ColumnDataCount(void)
 {
-    return sizeof(ColumnData) / sizeof(ColumnData[0]);
+    return (int)(sizeof(ColumnData) / sizeof(ColumnData[0]));
 }
 
 /* conversion from string to table index
  */
 int
-StringToColumn(s)
-    char *s;
+StringToColumn(
+    char *s)
 {
     int cn;
 
@@ -2573,17 +2958,17 @@ StringToColumn(s)
 }
 
 char
-LastChar(s)
-    char *s;
+LastChar(
+    char *s)
 {
     return s[strlen(s)-1];
 }
 
 int
-SetColumDataFromString(ci, s, errstr)
-    ColumnInfo* ci;
-    char *s;
-    char **errstr;
+SetColumDataFromString(
+    ColumnInfo* ci,
+    char *s,
+    char **errstr)
 {
     /* Convert from a Columspec string to our internal format
      * of columspec. The purpose is to provide this string
@@ -2614,6 +2999,8 @@ SetColumDataFromString(ci, s, errstr)
     char *myname= "SetColumDataFromString";
 #endif
 
+    (void)ci;	/* Quiet unused parameter warning */
+
     while (s && *s) {
 	int Space, Width;
 	int cn;
@@ -2643,16 +3030,16 @@ SetColumDataFromString(ci, s, errstr)
 	    return -1;
 	}
 	ColumnData[cn].Width= Width;
-	ColumnData[cn].PrefixSpace= Space;
+	ColumnData[cn].PrefixSpace = (char)Space;
 	if (LastChar(ColumnData[cn].Format) == 's') {
 	    if (Width < 0)
-		ColumnData[cn].MaxWidth= 1;
+		ColumnData[cn].MaxWidth = 1;
 	    else
 		if (Width > ColumnData[cn].Precision)
-		    ColumnData[cn].Precision= Width;
+		    ColumnData[cn].Precision = (char)Width;
 	}
 	else if (Width < ColumnData[cn].Precision)
-	    ColumnData[cn].Precision= Width;
+	    ColumnData[cn].Precision = (char)Width;
 	s= strchr(eon+1, ',');
 	if (s != NULL)
 	    s++;
@@ -2661,8 +3048,9 @@ SetColumDataFromString(ci, s, errstr)
 }
 
 
-char *taperalgo2str(taperalgo)
-int taperalgo;
+char *
+taperalgo2str(
+    int taperalgo)
 {
     if(taperalgo == ALGO_FIRST) return "FIRST";
     if(taperalgo == ALGO_FIRSTFIT) return "FIRSTFIT";
@@ -2673,7 +3061,8 @@ int taperalgo;
     return "UNKNOWN";
 }
 
-long int getconf_unit_divisor()
+long
+getconf_unit_divisor(void)
 {
     return unit_divisor;
 }
@@ -2684,8 +3073,8 @@ long int getconf_unit_divisor()
 #ifdef TEST
 
 void
-dump_configuration(filename)
-    char *filename;
+dump_configuration(
+    char *filename)
 {
     tapetype_t *tp;
     dumptype_t *dp;
@@ -2717,29 +3106,34 @@ dump_configuration(filename)
     printf("conf_runtapes = %d\n", getconf_int(CNF_RUNTAPES));
     printf("conf_tapecycle = %d\n", getconf_int(CNF_TAPECYCLE));
     printf("conf_bumppercent = %d\n", getconf_int(CNF_BUMPPERCENT));
-    printf("conf_bumpsize = %d\n", getconf_int(CNF_BUMPSIZE));
+    printf("conf_bumpsize = " OFF_T_FMT "\n",
+		(OFF_T_FMT_TYPE)getconf_int(CNF_BUMPSIZE));
     printf("conf_bumpdays = %d\n", getconf_int(CNF_BUMPDAYS));
-    printf("conf_bumpmult = %f\n", getconf_real(CNF_BUMPMULT));
-    printf("conf_netusage = %d\n", getconf_int(CNF_NETUSAGE));
+    printf("conf_bumpmult = %lf\n", getconf_real(CNF_BUMPMULT));
+    printf("conf_netusage = %l\n", getconf_long(CNF_NETUSAGE));
     printf("conf_inparallel = %d\n", getconf_int(CNF_INPARALLEL));
     printf("conf_dumporder = \"%s\"\n", getconf_str(CNF_DUMPORDER));
-    /*printf("conf_timeout = %d\n", getconf_int(CNF_TIMEOUT));*/
+    /*printf("conf_timeout = " TIME_T_FMT "\n",
+			(TIME_T_FMT_TYPE)getconf_time(CNF_TIMEOUT));*/
     printf("conf_maxdumps = %d\n", getconf_int(CNF_MAXDUMPS));
-    printf("conf_etimeout = %d\n", getconf_int(CNF_ETIMEOUT));
-    printf("conf_dtimeout = %d\n", getconf_int(CNF_DTIMEOUT));
-    printf("conf_ctimeout = %d\n", getconf_int(CNF_CTIMEOUT));
+    printf("conf_etimeout = " TIME_T_FMT "\n",
+			(TIME_T_FMT_TYPE)getconf_time(CNF_ETIMEOUT));
+    printf("conf_dtimeout = " TIME_T_FMT "\n",
+			(TIME_T_FMT_TYPE)getconf_time(CNF_DTIMEOUT));
+    printf("conf_ctimeout = " TIME_T_FMT "\n",
+			(TIME_T_FMT_TYPE)getconf_time(CNF_CTIMEOUT));
     printf("conf_tapebufs = %d\n", getconf_int(CNF_TAPEBUFS));
     printf("conf_autoflush  = %d\n", getconf_int(CNF_AUTOFLUSH));
     printf("conf_reserve  = %d\n", getconf_int(CNF_RESERVE));
-    printf("conf_maxdumpsize  = " AM64_FMT "\n", getconf_am64(CNF_MAXDUMPSIZE));
-    printf("conf_amrecover_do_fsf  = %d\n", getconf_int(CNF_AMRECOVER_DO_FSF));
+    printf("conf_maxdumpsize  = " OFF_T_FMT "\n",
+		(OFF_T_FMT_TYPE)getconf_am64_t(CNF_MAXDUMPSIZE));
+    printf("conf_amrecover_do_fsf  = " OFF_T_FMT "\n",
+		(OFF_T_FMT_TYPE)getconf_am64_t(CNF_AMRECOVER_DO_FSF));
     printf("conf_amrecover_check_label  = %d\n", getconf_int(CNF_AMRECOVER_CHECK_LABEL));
     printf("conf_amrecover_changer = \"%s\"\n", getconf_str(CNF_AMRECOVER_CHANGER));
     printf("conf_taperalgo  = %s\n", taperalgo2str(getconf_int(CNF_TAPERALGO)));
     printf("conf_displayunit  = %s\n", getconf_str(CNF_DISPLAYUNIT));
 
-    /*printf("conf_diskdir = \"%s\"\n", getconf_str(CNF_DISKDIR));*/
-    /*printf("conf_disksize = %d\n", getconf_int(CNF_DISKSIZE));*/
     printf("conf_columnspec = \"%s\"\n", getconf_str(CNF_COLUMNSPEC));
     printf("conf_indexdir = \"%s\"\n", getconf_str(CNF_INDEXDIR));
     printf("num_holdingdisks = %d\n", num_holdingdisks);
@@ -2751,18 +3145,18 @@ dump_configuration(filename)
 	printf("\nHOLDINGDISK %s:\n", hp->name);
 	printf("	COMMENT \"%s\"\n", hp->comment);
 	printf("	DISKDIR \"%s\"\n", hp->diskdir);
-	printf("	SIZE %ld\n", (long)hp->disksize);
-	printf("	CHUNKSIZE %ld\n", (long)hp->chunksize);
+	printf("	SIZE " OFF_T_FMT "\n", (OFF_T_FMT_TYPE)hp->disksize);
+	printf("	CHUNKSIZE " OFF_T_FMT "\n", (OFF_T_FMT_TYPE)hp->chunksize);
     }
 
     for(tp = tapelist; tp != NULL; tp = tp->next) {
 	printf("\nTAPETYPE %s:\n", tp->name);
 	printf("	COMMENT \"%s\"\n", tp->comment);
 	printf("	LBL_TEMPL %s\n", tp->lbl_templ);
-	printf("	BLOCKSIZE %ld\n", (long)tp->blocksize);
+	printf("	BLOCKSIZE " SSIZE_T_FMT "\n", tp->blocksize);
 	printf("	FILE_PAD %s\n", (tp->file_pad) ? "YES" : "NO");
-	printf("	LENGTH %lu\n", (unsigned long)tp->length);
-	printf("	FILEMARK %lu\n", (unsigned long)tp->filemark);
+	printf("	LENGTH " OFF_T_FMT "\n", (OFF_T_FMT_SIZE)tp->length);
+	printf("	FILEMARK " SSIZE_T_FMT "\n", tp->filemark);
 	printf("	SPEED %ld\n", (long)tp->speed);
     }
 
@@ -2827,18 +3221,23 @@ dump_configuration(filename)
 	case DS_SKIP:
 	    printf("SKIP");
 	    break;
+
 	case DS_STANDARD:
 	    printf("STANDARD");
 	    break;
+
 	case DS_NOFULL:
 	    printf("NOFULL");
 	    break;
+
 	case DS_NOINC:
 	    printf("NOINC");
 	    break;
+
 	case DS_HANOI:
 	    printf("HANOI");
 	    break;
+
 	case DS_INCRONLY:
 	    printf("INCRONLY");
 	    break;
@@ -2849,15 +3248,17 @@ dump_configuration(filename)
 	case ES_CLIENT:
 	    printf("CLIENT");
 	    break;
+
 	case ES_SERVER:
 	    printf("SERVER");
 	    break;
+
 	case ES_CALCSIZE:
 	    printf("CALCSIZE");
 	    break;
 	}
 	putchar('\n');
-	printf("	COMPRATE %f, %f\n", dp->comprate[0], dp->comprate[1]);
+	printf("	COMPRATE %lf, %lf\n", dp->comprate[0], dp->comprate[1]);
 
 	printf("	OPTIONS: ");
 
@@ -2865,21 +3266,27 @@ dump_configuration(filename)
 	case COMP_NONE:
 	    printf("NO-COMPRESS ");
 	    break;
+
 	case COMP_FAST:
 	    printf("COMPRESS-FAST ");
 	    break;
+
 	case COMP_BEST:
 	    printf("COMPRESS-BEST ");
 	    break;
+
 	case COMP_CUST:
 	    printf("COMPRESS-CUST ");
 	    break;
+
 	case COMP_SERV_FAST:
 	    printf("SRVCOMP-FAST ");
 	    break;
+
 	case COMP_SERV_BEST:
 	    printf("SRVCOMP-BEST ");
 	    break;
+
 	case COMP_SERV_CUST:
 	    printf("SRVCOMP-CUST ");
 	    break;
@@ -2889,9 +3296,11 @@ dump_configuration(filename)
 	case ENCRYPT_NONE:
 	    printf("ENCRYPT-NONE ");
 	    break;
+
 	case ENCRYPT_CUST:
 	    printf("ENCRYPT-CUST ");
 	    break;
+
 	case ENCRYPT_SERV_CUST:
 	    printf("ENCRYPT-SERV-CUST ");
 	    break;
@@ -2913,14 +3322,14 @@ dump_configuration(filename)
     for(ip = interface_list; ip != NULL; ip = ip->next) {
 	printf("\nINTERFACE %s:\n", ip->name);
 	printf("	COMMENT \"%s\"\n", ip->comment);
-	printf("	USE %d\n", ip->maxusage);
+	printf("	USE %ld\n", ip->maxusage);
     }
 }
 
 int
-main(argc, argv)
-    int argc;
-    char *argv[];
+main(
+    int argc,
+    char *argv[])
 {
   char *conffile;
   char *diskfile;
@@ -2932,6 +3341,8 @@ main(argc, argv)
   safe_fd(-1, 0);
 
   set_pname("conffile");
+
+  dbopen();
 
   /* Don't die when child closes pipe */
   signal(SIGPIPE, SIG_IGN);
@@ -2953,8 +3364,9 @@ main(argc, argv)
   } else {
     char my_cwd[STR_SIZE];
 
-    if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+    if (getcwd(my_cwd, SIZEOF(my_cwd)) == NULL) {
       error("cannot determine current working directory");
+      /*NOTREACHED*/
     }
     config_dir = stralloc2(my_cwd, "/");
     if ((config_name = strrchr(my_cwd, '/')) != NULL) {
@@ -2985,10 +3397,12 @@ main(argc, argv)
 #endif /* TEST */
 
 char *
-generic_get_security_conf(string, arg)
-	char *string;
-	void *arg;
+generic_get_security_conf(
+    char *string,
+    void *arg)
 {
+	(void)arg;	/* Quiet unused parameter warning */
+
 	if(!string || !*string)
 		return(NULL);
 

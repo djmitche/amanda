@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.c,v 1.29 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: token.c,v 1.30 2006/05/25 01:47:12 johnfranks Exp $
  *
  * token bashing routines
  */
@@ -47,11 +47,12 @@
 ** Inspired by awk and a routine called splitter() that I snarfed from
 ** the net ages ago (original author long forgotten).
 */
-int split(str, token, toklen, sep)
-char *str;	/* String to split */
-char **token;	/* Array of token pointers */
-int toklen;	/* Size of token[] */
-char *sep;	/* Token separators - usually " " */
+int
+split(
+    char *	str,	/* String to split */
+    char **	token,	/* Array of token pointers */
+    int		toklen,	/* Size of token[] */
+    char *	sep)	/* Token separators - usually " " */
 {
     register char *pi, *po;
     register int fld;
@@ -70,21 +71,7 @@ char *sep;	/* Token separators - usually " " */
     if (*sep == '\0' || *str == '\0' || toklen == 1) return fld;
 
     /* Calculate the length of the unquoted string. */
-
-    len = 0;
-    for (pi = str; *pi && *pi != '\n'; pi++) {
-	switch(*pi) {
-	case '\\':	/* had better not be trailing... */
-	    pi++;
-	    if (*pi >= '0' && *pi <= '3') pi = pi + 2;
-	    len++;
-	    break;
-	case '"':	/* just ignore "'s */
-	    break;
-	default:
-	    len++;
-	}
-    }
+    len = strlen(str);;
 
     /* Allocate some space */
 
@@ -95,29 +82,36 @@ char *sep;	/* Token separators - usually " " */
     in_quotes = 0;
     po = buf;
     token[++fld] = po;
-    for (pi = str; *pi && *pi != '\n'; pi++) {
-	if (*pi == '\\') {	/* escape */
-	    pi++;
-	    if (*pi >= '0' && *pi <= '3') {
-		*po =       ((*pi++ - '0') << 6);
-		*po = *po + ((*pi++ - '0') << 3);
-		*po = *po + ((*pi   - '0')     );
-	    }
-	    else *po = *pi;
-	    po++;
-	}
-	else if (*pi == '"') {	/* quotes */
-	    in_quotes = !in_quotes;
-	}
-	else if (!in_quotes && strchr(sep, *pi)) {	/* separator */
+    for (pi = str; *pi && *pi != '\0'; pi++) {
+	if (*pi == '\n' && !in_quotes)
+	    break;
+
+	if (!in_quotes && strchr(sep, *pi)) {
+	    /*
+	     * separator
+	     * Advance to next field.
+	     */
 	    *po = '\0';	/* end of token */
 	    if (fld+1 >= toklen) return fld; /* too many tokens */
 	    token[++fld] = po + 1;
 	    po++;
+	    continue;
 	}
-	else {
-	    *po++ = *pi;	/* normal */
+
+	if (*pi == '"') {
+	    /*
+	     * Start or end of quote
+	     * Emit quote in either case
+	     */
+	    in_quotes = !in_quotes;
+	} else if (in_quotes && *pi == '\\' && (*(pi + 1) == '"')) {
+	    /*
+	     * Quoted quote.
+	     * emit '/' - default will pick up '"'
+	     */
+	    *po++ = *pi++;
 	}
+	*po++ = *pi;	/* Emit character */
     }
     *po = '\0';
 
@@ -141,7 +135,7 @@ printf_arglist_function(char *squotef, char *, format)
 	/* Format the token */
 
 	arglist_start(argp, format);
-	vsnprintf(linebuf, sizeof(linebuf), format, argp);
+	vsnprintf(linebuf, SIZEOF(linebuf), format, argp);
 	arglist_end(argp);
 
 	return quote(" ", linebuf);
@@ -155,21 +149,22 @@ printf_arglist_function1(char *quotef, char *, sep, char *, format)
 	/* Format the token */
 
 	arglist_start(argp, format);
-	vsnprintf(linebuf, sizeof(linebuf), format, argp);
+	vsnprintf(linebuf, SIZEOF(linebuf), format, argp);
 	arglist_end(argp);
 
 	return quote(sep, linebuf);
 }
 
-char *squote(str)
-char *str;	/* the string to quote */
+char *squote(
+    char *	str)	/* the string to quote */
 {
 	return quote(" ", str);
 }
 
-char *quote(sepchr, str)
-char *sepchr;	/* separators that also need quoting */
-char *str;	/* the string to quote */
+char *
+quote(
+    char *	sepchr,	/* separators that also need quoting */
+    char *	str)	/* the string to quote */
 {
     register char *pi, *po;
     register size_t len;
@@ -178,7 +173,8 @@ char *str;	/* the string to quote */
 
     /* Calculate the length of the quoted token. */
 
-    len = sep = 0;
+    sep = 0;
+    len = 0;
     for (pi = str; *pi; pi++) {
 	if (*pi < ' ' || *pi > '~')
 	    len = len + 4;
@@ -209,9 +205,9 @@ char *str;	/* the string to quote */
     for (pi = str; *pi; pi++) {
 	if (*pi < ' ' || *pi > '~') {
 	    *po++ = '\\';
-	    *po++ = ((*pi >> 6) & 07) + '0';
-	    *po++ = ((*pi >> 3) & 07) + '0';
-	    *po++ = ((*pi     ) & 07) + '0';
+	    *po++ = (char)(((*pi >> 6) & 07) + '0');
+	    *po++ = (char)(((*pi >> 3) & 07) + '0');
+	    *po++ = (char)(((*pi     ) & 07) + '0');
 	}
 	else if (*pi == '\\' || *pi == '"') {
 	    *po++ = '\\';
@@ -224,14 +220,15 @@ char *str;	/* the string to quote */
 
     *po = '\0';
 
-    assert(po - buf == len);	/* Just checking! */
+    assert(po == (buf + len));	/* Just checking! */
 
     return buf;
 }
 
 /* Quote a string so that it can be used as a regular expression */
-char *rxquote(str)
-char *str;	/* the string to quote */
+char *
+rxquote(
+    char *	str)	/* the string to quote */
 {
     char *pi, *po;
     size_t len;
@@ -289,15 +286,16 @@ char *str;	/* the string to quote */
 
     *po = '\0';
 
-    assert(po - buf == len);	/* Just checking! */
+    assert(po == (buf + len));	/* Just checking! */
 
     return buf;
 }
 
 #ifndef HAVE_SHQUOTE
 /* Quote a string so that it can be safely passed to a shell */
-char *shquote(str)
-char *str;	/* the string to quote */
+char *
+shquote(
+    char *	str)	/* the string to quote */
 {
     char *pi, *po;
     size_t len;
@@ -364,7 +362,7 @@ char *str;	/* the string to quote */
 
     *po = '\0';
 
-    assert(po - buf == len);	/* Just checking! */
+    assert(po == (buf + len));	/* Just checking! */
 
     return buf;
 }
@@ -372,13 +370,15 @@ char *str;	/* the string to quote */
 
 /* Table lookup.
 */
-int table_lookup(table, str)
-table_t *table;
-char *str;
+int
+table_lookup(
+    table_t *	table,
+    char *	str)
 {
 	while(table->word != (char *)0) {
-		if (*table->word == *str &&
-		    strcmp(table->word, str) == 0) return table->value;
+		if (*table->word == *str && strcmp(table->word, str) == 0) {
+			return table->value;
+		}
 		table++;
 	}
 
@@ -387,12 +387,15 @@ char *str;
 
 /* Reverse table lookup.
 */
-char *table_lookup_r(table, val)
-table_t *table;
-int val;
+char *
+table_lookup_r(
+    /*@keep@*/	table_t *	table,
+		int		val)
 {
 	while(table->word != (char *)0) {
-		if (table->value == val) return table->word;
+		if (table->value == val) {
+			return table->word;
+		}
 		table++;
 	}
 
@@ -401,7 +404,10 @@ int val;
 
 #ifdef TEST
 
-int main()
+int
+main(
+    int		argc,
+    char **	argv)
 {
 	char *str = NULL;
 	char *t[20];
@@ -412,6 +418,8 @@ int main()
 	safe_fd(-1, 0);
 
 	set_pname("token test");
+
+	dbopen();
 
 	/* Don't die when child closes pipe */
 	signal(SIGPIPE, SIG_IGN);
@@ -443,8 +451,8 @@ int main()
 		}
 		sr = squote(str);
 		printf("Quoted   = \"%s\"\n", sr);
-		strncpy(str,sr,sizeof(str)-1);
-		str[sizeof(str)-1] = '\0';
+		strncpy(str,sr,SIZEOF(str)-1);
+		str[SIZEOF(str)-1] = '\0';
 		r = split(str, t, 20, " ");
 		if (r != 1) printf("split()=%d!\n", r);
 		printf("Unquoted = \"%s\"\n", t[1]);

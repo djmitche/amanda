@@ -25,7 +25,7 @@
  *                         University of Maryland at College Park
  */
 /*
- * $Id: sl.h,v 1.3 2004/04/23 11:44:46 martinea Exp $
+ * $Id: sl.h,v 1.4 2006/05/25 01:47:12 johnfranks Exp $
  *
  * A doubly linked list of string (char *)
  */
@@ -51,14 +51,14 @@ typedef struct sl_s {
     int nb_element;
 } sl_t;
 
-void init_sl P((sl_t *sl));
-sl_t *new_sl P(());
-sl_t *insert_sl P((sl_t *sl, char *name));
-sl_t *append_sl P((sl_t *sl, char *name));
-sl_t *insert_sort_sl P((sl_t *sl, char *name));
-void free_sl P((sl_t *sl));
-void remove_sl P((sl_t *sl,sle_t *elem));
-sl_t *duplicate_sl P((sl_t *sl));
-int  is_empty_sl P((sl_t *sl));
+void init_sl(sl_t *sl);
+sl_t *new_sl(void);
+sl_t *insert_sl(sl_t *sl, char *name);
+sl_t *append_sl(sl_t *sl, char *name);
+sl_t *insert_sort_sl(sl_t *sl, char *name);
+void free_sl(sl_t *sl);
+void remove_sl(sl_t *sl,sle_t *elem);
+sl_t *duplicate_sl(sl_t *sl);
+int  is_empty_sl(sl_t *sl);
 
 #endif

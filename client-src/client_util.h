@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.h,v 1.13 2006/04/26 15:53:36 martinea Exp $
+ * $Id: client_util.h,v 1.14 2006/05/25 01:47:11 johnfranks Exp $
  *
  */
 
@@ -69,13 +69,15 @@ typedef struct option_s {
 #define ENCRYPT_CUST         1	/* client-side custom encryption */
 #define ENCRYPT_SERV_CUST    2	/* server-side custom encryption */
 
-char *build_exclude P((char *disk, char *device, option_t *options, int verbose));
-char *build_include P((char *disk, char *device, option_t *options, int verbose));
-void init_options P((option_t *options));
-option_t *parse_options P((char *str,
+char *build_exclude(char *disk, char *device, option_t *options, int verbose);
+char *build_include(char *disk, char *device, option_t *options, int verbose);
+void init_options(option_t *options);
+option_t *parse_options(char *str,
 			   char *disk,
 			   char *device,
 			   am_feature_t *features,
-			   int verbose));
+			   int verbose);
+
+char *fixup_relative(char *name, char *device);
 
 #endif

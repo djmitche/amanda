@@ -4,6 +4,9 @@ INCLUDES =	-I$(top_builddir)/common-src \
 		-I$(top_srcdir)/common-src \
 		-I$(top_srcdir)/amandad-src
 
+LINT=@AMLINT@
+LINTFLAGS=@AMLINTFLAGS@
+
 lib_LTLIBRARIES =	libamclient.la
 LIB_EXTENSION = la
 
@@ -66,7 +69,7 @@ DISTCLEANFILES = 	$(EXTRA_SCRIPTS)
 
 EXTRA_DIST =		amhpfixdevs.sh		amsinixfixdevs.sh
 
-sendbackup_SOURCES = 	sendbackup.c		sendbackup.h	\
+sendbackup_SOURCES = 	sendbackup.c		sendbackup.h	  \
 			sendbackup-dump.c	sendbackup-gnutar.c
 
 noinst_HEADERS	= 	amandates.h	getfsent.h	\
@@ -103,6 +106,19 @@ if WANT_SETUID_CLIENT
 		fi; \
 	done
 endif
+
+lint:
+	@ for p in $(libexec_PROGRAMS); do					\
+		f="$$p.c $(libamclient_la_SOURCES)";				\
+		f="$$f "`(cd ../common-src; make listlibsrc 2>&1 > /dev/null)`;	\
+		echo $(LINT) $$f;						\
+		$(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config	\
+		    $(INCLUDES) $$f;						\
+		if [ $$? -ne 0 ]; then						\
+		    exit 1;							\
+		fi;								\
+	done;									\
+        exit 0
 
 getfsent_SOURCES = getfsent.test.c
 

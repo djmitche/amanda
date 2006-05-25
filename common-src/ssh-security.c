@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.17 2006/05/12 23:39:09 martinea Exp $
+ * $Id: ssh-security.c,v 1.18 2006/05/25 01:47:12 johnfranks Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -48,10 +48,17 @@
 #define	SSH_DEBUG
 
 #ifdef SSH_DEBUG
-#define	sshprintf(x)	dbprintf(x)
+int	ssh_debug = 1; 
 #else
-#define	sshprintf(x)
+int	ssh_debug = 0; 
 #endif
+
+#define	sshprintf(x)				\
+	    do {				\
+		if (ssh_debug) {		\
+		    dbprintf(x);		\
+		}				\
+	    } while (0)
 
 /*
  * Path to the ssh binary.  This should be configurable.
@@ -61,7 +68,7 @@
 /*
  * Arguments to ssh.  This should also be configurable
  */
-#define	SSH_ARGS	"-x", "-o", "PasswordAuthentication=no"
+#define	SSH_ARGS	"-x", "-o", "BatchMode=yes", "-o", "PreferredAuthentications=publickey"
 
 /*
  * Number of seconds ssh has to start up
@@ -77,9 +84,9 @@
 /*
  * Interface functions
  */
-static void ssh_connect P((const char *,
-    char *(*)(char *, void *), 
-    void (*)(void *, security_handle_t *, security_status_t), void *, void *));
+static void	ssh_connect(const char *, char *(*)(char *, void *),
+			void (*)(void *, security_handle_t *, security_status_t),
+			void *, void *);
 
 /*
  * This is our interface to the outside world.
@@ -109,21 +116,19 @@ static int newhandle = 1;
 /*
  * Local functions
  */
-static int runssh P((struct tcp_conn *, const char *, const char *,
-		     const char *));
-
+static int runssh(struct tcp_conn *, const char *, const char *, const char *);
 
 /*
  * ssh version of a security handle allocator.  Logically sets
  * up a network "connection".
  */
 static void
-ssh_connect(hostname, conf_fn, fn, arg, datap)
-    const char *hostname;
-    char *(*conf_fn) P((char *, void *));
-    void (*fn) P((void *, security_handle_t *, security_status_t));
-    void *arg;
-    void *datap;
+ssh_connect(
+    const char *	hostname,
+    char *		(*conf_fn)(char *, void *),
+    void		(*fn)(void *, security_handle_t *, security_status_t),
+    void *		arg,
+    void *		datap)
 {
     struct sec_handle *rh;
     struct hostent *he;
@@ -132,10 +137,12 @@ ssh_connect(hostname, conf_fn, fn, arg, datap)
     assert(fn != NULL);
     assert(hostname != NULL);
 
+    (void)conf_fn;	/* Quiet unused parameter warning */
+
     sshprintf(("%s: ssh: ssh_connect: %s\n", debug_prefix_time(NULL),
 	       hostname));
 
-    rh = alloc(sizeof(*rh));
+    rh = alloc(SIZEOF(*rh));
     security_handleinit(&rh->sech, &ssh_security_driver);
     rh->hostname = NULL;
     rh->rs = NULL;
@@ -143,7 +150,7 @@ ssh_connect(hostname, conf_fn, fn, arg, datap)
 
     if ((he = gethostbyname(hostname)) == NULL) {
 	security_seterror(&rh->sech,
-	    "%s: could not resolve hostname", hostname);
+	    "%s: ssh could not resolve hostname", hostname);
 	(*fn)(arg, &rh->sech, S_ERROR);
 	return;
     }
@@ -181,9 +188,9 @@ ssh_connect(hostname, conf_fn, fn, arg, datap)
      */
     rh->fn.connect = fn;
     rh->arg = arg;
-    rh->rs->ev_read = event_register(rh->rs->rc->write, EV_WRITEFD,
+    rh->rs->ev_read = event_register((event_id_t)rh->rs->rc->write, EV_WRITEFD,
 	sec_connect_callback, rh);
-    rh->ev_timeout = event_register(CONNECT_TIMEOUT, EV_TIME,
+    rh->ev_timeout = event_register((event_id_t)CONNECT_TIMEOUT, EV_TIME,
 	sec_connect_timeout, rh);
 
     return;
@@ -197,17 +204,19 @@ error:
  * Returns negative on error, with an errmsg in rc->errmsg.
  */
 static int
-runssh(rc, amandad_path, client_username, ssh_keys)
-    struct tcp_conn *rc;
-    const char *amandad_path;
-    const char *client_username;
-    const char *ssh_keys;
+runssh(
+    struct tcp_conn *	rc,
+    const char *	amandad_path,
+    const char *	client_username,
+    const char *	ssh_keys)
 {
     int rpipe[2], wpipe[2];
     char *xamandad_path = (char *)amandad_path;
     char *xclient_username = (char *)client_username;
     char *xssh_keys = (char *)ssh_keys;
 
+    memset(rpipe, -1, SIZEOF(rpipe));
+    memset(wpipe, -1, SIZEOF(wpipe));
     if (pipe(rpipe) < 0 || pipe(wpipe) < 0) {
 	rc->errmsg = newvstralloc("pipe: ", strerror(errno), NULL);
 	return (-1);

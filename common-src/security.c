@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.c,v 1.27 2006/05/12 22:42:48 martinea Exp $
+ * $Id: security.c,v 1.28 2006/05/25 01:47:12 johnfranks Exp $
  *
  * Security driver interface for the Amanda backup system.
  */
@@ -79,22 +79,27 @@ static const security_driver_t *drivers[] = {
     &bsdudp_security_driver,
 #endif
 };
-#define	NDRIVERS	(sizeof(drivers) / sizeof(drivers[0]))
+#define	NDRIVERS	(size_t)(sizeof(drivers) / sizeof(drivers[0]))
 
 /*
  * Given a name of a security type, returns the driver structure
  */
 const security_driver_t *
-security_getdriver(name)
-    const char *name;
+security_getdriver(
+    const char *	name)
 {
-    int i;
+    size_t i;
 
     assert(name != NULL);
 
-    for (i = 0; i < NDRIVERS; i++)
-	if (strcasecmp(name, drivers[i]->name) == 0)
+    for (i = 0; i < NDRIVERS; i++) {
+	if (strcasecmp(name, drivers[i]->name) == 0) {
+	    dbprintf(("security_getdriver(name=%s) returns %p\n",
+			name, drivers[i]));
 	    return (drivers[i]);
+	}
+    }
+    dbprintf(("security_getdriver(name=%s) returns NULL\n", name));
     return (NULL);
 }
 
@@ -102,11 +107,12 @@ security_getdriver(name)
  * For the drivers: initialize the common part of a security_handle_t
  */
 void
-security_handleinit(handle, driver)
-    security_handle_t *handle;
-    const security_driver_t *driver;
+security_handleinit(
+    security_handle_t *		handle,
+    const security_driver_t *	driver)
 {
-
+    dbprintf(("security_handleinit(handle=%p, driver=%p (%s))\n",
+		handle, driver, driver->name));
     handle->driver = driver;
     handle->error = stralloc("unknown protocol error");
 }
@@ -119,16 +125,19 @@ printf_arglist_function1(void security_seterror, security_handle_t *, handle,
 
     assert(handle->error != NULL);
     arglist_start(argp, fmt);
-    vsnprintf(buf, sizeof(buf), fmt, argp);
+    vsnprintf(buf, SIZEOF(buf), fmt, argp);
     arglist_end(argp);
     handle->error = newstralloc(handle->error, buf);
+    dbprintf(("security_seterror(handle=%p, driver=%p (%s) error=%s)\n",
+		handle, handle->driver, handle->driver->name, handle->error));
 }
 
 void
-security_close(handle)
-    security_handle_t *handle;
+security_close(
+    security_handle_t *	handle)
 {
-
+    dbprintf(("security_close(handle=%p, driver=%p (%s))\n",
+		handle, handle->driver, handle->driver->name));
     amfree(handle->error);
     (*handle->driver->close)(handle);
 }
@@ -137,11 +146,12 @@ security_close(handle)
  * For the drivers: initialize the common part of a security_stream_t
  */
 void
-security_streaminit(stream, driver)
-    security_stream_t *stream;
-    const security_driver_t *driver;
+security_streaminit(
+    security_stream_t *		stream,
+    const security_driver_t *	driver)
 {
-
+    dbprintf(("security_streaminit(stream=%p, driver=%p (%s))\n",
+		stream, driver, driver->name));
     stream->driver = driver;
     stream->error = stralloc("unknown stream error");
 }
@@ -153,18 +163,18 @@ printf_arglist_function1(void security_stream_seterror,
     static char buf[256];
     va_list argp;
 
-    assert(stream->error != NULL);
     arglist_start(argp, fmt);
-    vsnprintf(buf, sizeof(buf), fmt, argp);
+    vsnprintf(buf, SIZEOF(buf), fmt, argp);
     arglist_end(argp);
     stream->error = newstralloc(stream->error, buf);
+    dbprintf(("security_stream_seterr(%p, %s)\n", stream, stream->error));
 }
 
 void
-security_stream_close(stream)
-    security_stream_t *stream;
+security_stream_close(
+    security_stream_t *	stream)
 {
-
+    dbprintf(("security_stream_close(%p)\n", stream));
     amfree(stream->error);
     (*stream->driver->stream_close)(stream);
 }

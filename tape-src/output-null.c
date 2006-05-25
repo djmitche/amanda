@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-null.c,v 1.7 2003/03/06 21:43:57 martinea Exp $
+ * $Id: output-null.c,v 1.8 2006/05/25 01:47:27 johnfranks Exp $
  *
  * tapeio.c virtual tape interface for a null device.
  */
@@ -41,16 +41,18 @@
 #define W_OK 2
 #endif
 
-static long *amount_written = NULL;
-static int open_count = 0;
+static off_t *amount_written = NULL;
+static size_t open_count = 0;
 
 int
-null_tape_open(filename, flags, mask)
-    char *filename;
-    int flags;
-    int mask;
+null_tape_open(
+    char *	filename,
+    int		flags,
+    mode_t	mask)
 {
     int fd;
+
+    (void)filename;	/* Quiet unused parameter warning */
 
     if ((flags & 3) != O_RDONLY) {
 	flags &= ~3;
@@ -60,129 +62,146 @@ null_tape_open(filename, flags, mask)
 	tapefd_setinfo_fake_label(fd, 1);
 	amtable_alloc((void **)&amount_written,
 		      &open_count,
-		      sizeof(*amount_written),
-		      fd + 1,
+		      SIZEOF(*amount_written),
+		      (size_t)(fd + 1),
 		      10,
 		      NULL);
-	amount_written[fd] = 0;
+	amount_written[fd] = (off_t)0;
     }
     return fd;
 }
 
 ssize_t
-null_tapefd_read(fd, buffer, count)
-    int fd;
-    void *buffer;
-    size_t count;
+null_tapefd_read(
+    int		fd,
+    void *	buffer,
+    size_t	count)
 {
     return read(fd, buffer, count);
 }
 
 ssize_t
-null_tapefd_write(fd, buffer, count)
-    int fd;
-    const void *buffer;
-    size_t count;
+null_tapefd_write(
+    int		fd,
+    const void *buffer,
+    size_t	count)
 {
-    int write_count = count;
-    long length;
-    long kbytes_left;
-    int r;
+    ssize_t write_count = (ssize_t)count;
+    off_t length;
+    off_t kbytes_left;
+    ssize_t r;
 
     if (write_count <= 0) {
 	return 0;				/* special case */
     }
 
-    if ((length = tapefd_getinfo_length(fd)) > 0) {
+    if ((length = tapefd_getinfo_length(fd)) > (off_t)0) {
 	kbytes_left = length - amount_written[fd];
-	if (write_count / 1024 > kbytes_left) {
-	    write_count = kbytes_left * 1024;
+	if ((off_t)(write_count / 1024) > kbytes_left) {
+	    write_count = (ssize_t)kbytes_left * 1024;
 	}
     }
-    amount_written[fd] += (write_count + 1023) / 1024;
+    amount_written[fd] += (off_t)((write_count + 1023) / 1024);
     if (write_count <= 0) {
 	errno = ENOSPC;
 	r = -1;
     } else {
-	r = write(fd, buffer, write_count);
+	r = write(fd, buffer, (size_t)write_count);
     }
     return r;
 }
 
 int
-null_tapefd_close(fd)
-    int fd;
+null_tapefd_close(
+    int	fd)
 {
     return close(fd);
 }
 
 void
-null_tapefd_resetofs(fd)
-    int fd;
+null_tapefd_resetofs(
+    int	fd)
 {
+    (void)fd;	/* Quiet unused parameter warning */
 }
 
 int
-null_tapefd_status(fd, stat)
-    int fd;
-    struct am_mt_status *stat;
+null_tapefd_status(
+    int			 fd,
+    struct am_mt_status *stat)
 {
-    memset((void *)stat, 0, sizeof(*stat));
+    (void)fd;	/* Quiet unused parameter warning */
+
+    memset((void *)stat, 0, SIZEOF(*stat));
     stat->online_valid = 1;
     stat->online = 1;
     return 0;
 }
 
 int
-null_tape_stat(filename, buf)
-     char *filename;
-     struct stat *buf;
+null_tape_stat(
+     char *	  filename,
+     struct stat *buf)
 {
+    (void)filename;	/* Quiet unused parameter warning */
+
      return stat("/dev/null", buf);
 }
 
 int
-null_tape_access(filename, mode)
-     char *filename;
-     int mode;
+null_tape_access(
+     char *	filename,
+     int	mode)
 {
+    (void)filename;	/* Quiet unused parameter warning */
+
      return access("/dev/null", mode);
 }
 
 int
-null_tapefd_rewind(fd)
-    int fd;
+null_tapefd_rewind(
+    int	fd)
 {
-    amount_written[fd] = 0;
+    amount_written[fd] = (off_t)0;
     return 0;
 }
 
 int
-null_tapefd_unload(fd)
-    int fd;
+null_tapefd_unload(
+    int	fd)
 {
-    amount_written[fd] = 0;
+    amount_written[fd] = (off_t)0;
     return 0;
 }
 
 int
-null_tapefd_fsf(fd, count)
-    int fd, count;
+null_tapefd_fsf(
+    int		fd,
+    off_t	count)
 {
+    (void)fd;		/* Quiet unused parameter warning */
+    (void)count;	/* Quiet unused parameter warning */
+
     return 0;
 }
 
 int
-null_tapefd_weof(fd, count)
-    int fd, count;
+null_tapefd_weof(
+    int		fd,
+    off_t	count)
 {
+    (void)fd;		/* Quiet unused parameter warning */
+    (void)count;	/* Quiet unused parameter warning */
+
     return 0;
 }
 
 int 
-null_tapefd_can_fork(fd)
-    int fd;
+null_tapefd_can_fork(
+    int	fd)
 {
+    (void)fd;		/* Quiet unused parameter warning */
+
     return 0;
 }
 

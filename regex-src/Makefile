@@ -31,7 +31,7 @@ JUNKLINT=possible pointer alignment|null effect
 # arrangements to build forward-reference header files
 .SUFFIXES:	.ih .h
 .c.ih:
-	sh ./mkh $(MKHFLAGS) -p $< >$@
+	sh ./mkh -A $(MKHFLAGS) -p $< >$@
 
 default:	r
 
@@ -46,7 +46,7 @@ purge:
 REGEXH=regex.h
 REGEXHSRC=regex2.h $(REGSRC)
 $(REGEXH):	$(REGEXHSRC) mkh
-	sh ./mkh $(MKHFLAGS) -i _REGEX_H_ $(REGEXHSRC) >regex.tmp
+	sh ./mkh -A $(MKHFLAGS) -i _REGEX_H_ $(REGEXHSRC) >regex.tmp
 	cmp -s regex.tmp regex.h 2>/dev/null || cp regex.tmp regex.h
 	rm -f regex.tmp
 
@@ -128,3 +128,6 @@ clean:	tidy
 # don't do this one unless you know what you're doing
 spotless:	clean
 	rm -f mkh regex.h
+
+lint:
+

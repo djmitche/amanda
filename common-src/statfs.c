@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: statfs.c,v 1.13 2005/09/30 19:13:27 martinea Exp $
+ * $Id: statfs.c,v 1.14 2006/05/25 01:47:12 johnfranks Exp $
  *
  * a generic statfs-like routine
  */
@@ -98,7 +98,7 @@
 #    define STATFS_FAVAIL(buf)	(buf).f_ffree
 #    define STATFS_FFREE(buf)	(buf).f_ffree
 #    define STATFS_SCALE(buf)	(buf).f_bsize
-#    define STATFS(path, buffer)	statfs(path, &buffer, sizeof(STATFS_STRUCT), 0)
+#    define STATFS(path, buffer)	statfs(path, &buffer, SIZEOF(STATFS_STRUCT), 0)
 #   else
 #    if HAVE_SYS_MOUNT_H
 /*
@@ -119,7 +119,7 @@
 #     define STATFS_SCALE(buf)	(buf).f_bsize
 #     define STATFS(path, buffer)	statfs(path, &buffer)
 #     ifdef STATFS_OSF1
-#      define STATFS(path, buffer)	statfs(path, &buffer, sizeof(STATFS_STRUCT))
+#      define STATFS(path, buffer)	statfs(path, &buffer, SIZEOF(STATFS_STRUCT))
 #     endif
 #    endif
 #   endif
@@ -127,11 +127,12 @@
 # endif
 #endif
 
-#define scale(r,s)	( (r) == -1? -1 : (int)((r)*(double)(s)/1024.0) )
+#define scale(r,s)  (((unsigned long)(r) == ULONG_MAX) ? (off_t)-1 : ((off_t)(r)*((off_t)(s)/(off_t)1024)))
 
-int get_fs_stats(dir, sp)
-char *dir;
-generic_fs_stats_t *sp;
+int
+get_fs_stats(
+    char *		dir,
+    generic_fs_stats_t *sp)
 {
     STATFS_STRUCT statbuf;
 
@@ -146,9 +147,9 @@ generic_fs_stats_t *sp;
 
     /* inode stats */
 
-    sp->files  = STATFS_FILES(statbuf);
-    sp->favail = STATFS_FAVAIL(statbuf);
-    sp->ffree  = STATFS_FFREE(statbuf);
+    sp->files  = (off_t)STATFS_FILES(statbuf);
+    sp->favail = (off_t)STATFS_FAVAIL(statbuf);
+    sp->ffree  = (off_t)STATFS_FFREE(statbuf);
 
     return 0;
 }
@@ -156,15 +157,18 @@ generic_fs_stats_t *sp;
 #ifdef TEST
 /* ----- test scaffolding ----- */
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
     generic_fs_stats_t statbuf;
 
     safe_fd(-1, 0);
 
     set_pname(argv[0]);
+
+    dbopen();
 
     if(argc < 2) {
 	fprintf(stderr, "Usage: %s files ...\n", get_pname());

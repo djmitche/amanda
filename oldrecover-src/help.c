@@ -24,15 +24,17 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: help.c,v 1.1 2006/05/12 19:36:04 martinea Exp $
+ * $Id: help.c,v 1.2 2006/05/25 01:47:13 johnfranks Exp $
  *
  * implements the "help" command in amrecover
  */
 
+#include "amanda.h"
 #include "amrecover.h"
 
 /* print a list of valid commands */
-void help_list P((void))
+void
+help_list(void)
 {
     printf("valid commands are:\n\n");
 

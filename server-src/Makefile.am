@@ -6,6 +6,9 @@ INCLUDES =	-I$(top_builddir)/common-src \
 		-I$(top_srcdir)/tape-src     \
 		-I$(top_srcdir)/amandad-src
 
+LINT=@AMLINT@
+LINTFLAGS=@AMLINTFLAGS@
+
 lib_LTLIBRARIES = 	libamserver.la
 LIB_EXTENSION = la
 
@@ -39,11 +42,12 @@ libamserver_la_LDFLAGS= -release $(VERSION)
 ###
 
 LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
-	libamserver.$(LIB_EXTENSION) \
-	../tape-src/libamtape.$(LIB_EXTENSION) \
+	libamserver.$(LIB_EXTENSION)             \
+	../tape-src/libamtape.$(LIB_EXTENSION)   \
 	../common-src/libamanda.$(LIB_EXTENSION) \
-	../tape-src/libamtape.$(LIB_EXTENSION) \
-	../common-src/libamanda.$(LIB_EXTENSION)
+	../tape-src/libamtape.$(LIB_EXTENSION)   \
+	../common-src/libamanda.$(LIB_EXTENSION) \
+        $(READLINE_LIBS)
 
 amindexd_LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
 	libamserver.$(LIB_EXTENSION) \
@@ -71,9 +75,8 @@ EXTRA_PROGRAMS =	$(TEST_PROGS)
 
 CLEANFILES = *.test.c $(sbin_SCRIPTS)
 
-amindexd_SOURCES =	amindexd.c					\
-			disk_history.c			disk_history.h	\
-			list_dir.c			list_dir.h
+amindexd_CSRC =		amindexd.c	disk_history.c	list_dir.c
+amindexd_SOURCES =	disk_history.h	list_dir.h	$(amindexd_CSRC)
 
 amreport_SOURCES =	reporter.c
 
@@ -113,6 +116,10 @@ install-exec-hook:
 		else true; \
 		fi; \
 	done
+##						       ##
+## enterprise version will install dumper/planner suid ##
+##						       ##
+
 	@list="dumper planner"; \
 	for p in $$list; do \
 		if echo "$(libexec_PROGRAMS)" | grep $$p >/dev/null 2>&1; then \
@@ -124,6 +131,36 @@ install-exec-hook:
 		else true; \
 		fi; \
 	done
+
+lint:
+	@ for p in $(libexec_PROGRAMS) $(sbin_PROGRAMS); do			\
+		if [ $$p = "amindexd" ]; then					\
+			s="$(amindexd_CSRC)";					\
+		elif [ $$p = "amreport" ]; then					\
+			s="$(amreport_SOURCES)";				\
+		elif [ $$p = "amgetconf" ]; then				\
+			s="$(getconf_SOURCES)";					\
+		else								\
+			s=$$p.c;						\
+		fi; 								\
+		f="$$s $(libamserver_la_SOURCES)";				\
+		f="$$f "`(cd ../common-src; make listlibsrc 2>&1 > /dev/null)`;	\
+		f="$$f "`(cd ../tape-src; make listlibsrc 2>&1 > /dev/null)`;	\
+		echo $(LINT) $$f;						\
+		$(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config	\
+		    $(INCLUDES) $$f;						\
+		if [ $$? -ne 0 ]; then						\
+		    exit 1;							\
+		fi;								\
+	done;									\
+        exit 0
+
+listlibsrc:
+	@ for p in $(libamserver_la_SOURCES); do		\
+		listlibsrcs="$$listlibsrcs `pwd`/$$p";		\
+	done;							\
+	echo $$listlibsrcs 1>&2
+
 
 diskfile_SOURCES = diskfile.test.c
 conffile_SOURCES = conffile.test.c

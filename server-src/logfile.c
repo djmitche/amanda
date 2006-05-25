@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.29 2005/12/04 22:56:55 martinea Exp $
+ * $Id: logfile.c,v 1.30 2006/05/25 01:47:20 johnfranks Exp $
  *
  * common log file writing routine
  */
@@ -73,11 +73,12 @@ static int logfd = -1;
   */
 
 /* local functions */
-static void open_log P((void));
-static void close_log P((void));
+static void open_log(void);
+static void close_log(void);
 
-void logerror(msg)
-char *msg;
+void
+logerror(
+    char *	msg)
 {
     log_add(L_FATAL, "%s", msg);
 }
@@ -101,7 +102,7 @@ printf_arglist_function2(char *log_genstring, logtype_t, typ, char *, pname, cha
     }
 
     arglist_start(argp, format);
-    vsnprintf(linebuf, sizeof(linebuf)-1, format, argp);
+    vsnprintf(linebuf, SIZEOF(linebuf)-1, format, argp);
 						/* -1 to allow for '\n' */
     return(vstralloc(leader, linebuf, "\n", NULL));
 }
@@ -112,7 +113,7 @@ printf_arglist_function1(void log_add, logtype_t, typ, char *, format)
     int saved_errout;
     char *leader = NULL;
     char linebuf[STR_SIZE];
-    int n;
+    size_t n;
 
 
     /* format error message */
@@ -126,7 +127,7 @@ printf_arglist_function1(void log_add, logtype_t, typ, char *, format)
     }
 
     arglist_start(argp, format);
-    vsnprintf(linebuf, sizeof(linebuf)-1, format, argp);
+    vsnprintf(linebuf, SIZEOF(linebuf)-1, format, argp);
 						/* -1 to allow for '\n' */
     arglist_end(argp);
 
@@ -139,8 +140,10 @@ printf_arglist_function1(void log_add, logtype_t, typ, char *, format)
 
     if(multiline == -1) open_log();
 
-    if (fullwrite(logfd, leader, strlen(leader)) < 0)
+    if (fullwrite(logfd, leader, strlen(leader)) < 0) {
 	error("log file write error: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
 
     amfree(leader);
 
@@ -148,8 +151,10 @@ printf_arglist_function1(void log_add, logtype_t, typ, char *, format)
     if(n == 0 || linebuf[n-1] != '\n') linebuf[n++] = '\n';
     linebuf[n] = '\0';
 
-    if (fullwrite(logfd, linebuf, n) < 0)
+    if (fullwrite(logfd, linebuf, n) < 0) {
 	error("log file write error: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
 
     if(multiline != -1) multiline++;
     else close_log();
@@ -157,7 +162,8 @@ printf_arglist_function1(void log_add, logtype_t, typ, char *, format)
     erroutput_type = saved_errout;
 }
 
-void log_start_multiline()
+void
+log_start_multiline(void)
 {
     assert(multiline == -1);
 
@@ -166,7 +172,8 @@ void log_start_multiline()
 }
 
 
-void log_end_multiline()
+void
+log_end_multiline(void)
 {
     assert(multiline != -1);
     multiline = -1;
@@ -174,8 +181,9 @@ void log_end_multiline()
 }
 
 
-void log_rename(datestamp)
-char *datestamp;
+void
+log_rename(
+    char *	datestamp)
 {
     char *conf_logdir;
     char *logfile;
@@ -195,7 +203,7 @@ char *datestamp;
     logfile = vstralloc(conf_logdir, "/log", NULL);
 
     for(seq = 0; 1; seq++) {	/* if you've got MAXINT files in your dir... */
-	snprintf(seq_str, sizeof(seq_str), "%d", seq);
+	snprintf(seq_str, SIZEOF(seq_str), "%u", seq);
 	fname = newvstralloc(fname,
 			     logfile,
 			     ".", datestamp,
@@ -204,9 +212,11 @@ char *datestamp;
 	if(stat(fname, &statbuf) == -1 && errno == ENOENT) break;
     }
 
-    if(rename(logfile, fname) == -1)
+    if(rename(logfile, fname) == -1) {
 	error("could not rename \"%s\" to \"%s\": %s",
 	      logfile, fname, strerror(errno));
+	/*NOTREACHED*/
+    }
 
     amfree(fname);
     amfree(logfile);
@@ -214,7 +224,8 @@ char *datestamp;
 }
 
 
-static void open_log()
+static void
+open_log(void)
 {
     char *conf_logdir;
 
@@ -229,37 +240,51 @@ static void open_log()
 
     logfd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0600);
 
-    if(logfd == -1)
+    if(logfd == -1) {
 	error("could not open log file %s: %s", logfile, strerror(errno));
+	/*NOTREACHED*/
+    }
 
-    if(amflock(logfd, "log") == -1)
+    if(amflock(logfd, "log") == -1) {
 	error("could not lock log file %s: %s", logfile, strerror(errno));
+	/*NOTREACHED*/
+    }
 }
 
 
-static void close_log()
+static void
+close_log(void)
 {
-    if(amfunlock(logfd, "log") == -1)
+    if(amfunlock(logfd, "log") == -1) {
 	error("could not unlock log file %s: %s", logfile, strerror(errno));
+	/*NOTREACHED*/
+    }
 
-    if(close(logfd) == -1)
+    if(close(logfd) == -1) {
 	error("close log file: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
 
     logfd = -1;
     amfree(logfile);
 }
 
 
-int get_logline(logf)
-FILE *logf;
+int
+get_logline(
+    FILE *	logf)
 {
     static char *logline = NULL;
     char *logstr, *progstr;
     char *s;
     int ch;
 
-    amfree(logline);
-    if((logline = agets(logf)) == NULL) return 0;
+    while ((logline = agets(logf)) != NULL) {
+	if (logline[0] != '\0')
+	    break;
+	amfree(logline);
+    }
+    if (logline == NULL) return 0;
     curlinenum++;
     s = logline;
     ch = *s++;

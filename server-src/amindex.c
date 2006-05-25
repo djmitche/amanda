@@ -25,17 +25,21 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amindex.c,v 1.14 2006/04/05 12:53:46 martinea Exp $
+ * $Id: amindex.c,v 1.15 2006/05/25 01:47:19 johnfranks Exp $
  *
  * index control
  */
 
+#include "amanda.h"
 #include "conffile.h"
 #include "amindex.h"
 
-char *getindexfname(host, disk, date, level)
-char *host, *disk, *date;
-int level;
+char *
+getindexfname(
+    char *	host,
+    char *	disk,
+    char *	date,
+    int		level)
 {
   char *conf_indexdir;
   char *buf;
@@ -48,17 +52,19 @@ int level;
   if (date != NULL) {
     dc = date;
     pc = datebuf;
-    while (pc < datebuf + sizeof (datebuf)) {
-      if ((*pc++ = ch = *dc++) == '\0') {
+    while (pc < datebuf + SIZEOF(datebuf)) {
+      ch = *dc++;
+      *pc++ = (char)ch;
+      if (ch == '\0') {
         break;
       } else if (! isdigit (ch)) {
         pc--;
       }
     }
-    datebuf[sizeof(datebuf)-1] = '\0';
+    datebuf[SIZEOF(datebuf)-1] = '\0';
     dc = datebuf;
 
-    snprintf(level_str, sizeof(level_str), "%d", level);
+    snprintf(level_str, SIZEOF(level_str), "%d", level);
   }
 
   host = sanitise_filename(host);

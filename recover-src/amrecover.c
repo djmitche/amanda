@@ -24,20 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.56 2006/05/12 19:36:04 martinea Exp $
+ * $Id: amrecover.c,v 1.57 2006/05/25 01:47:13 johnfranks Exp $
  *
  * an interactive program for recovering backed-up files
  */
 
 #include "amanda.h"
 #include "version.h"
-#ifdef HAVE_NETINET_IN_SYSTM_H
-#include <netinet/in_systm.h>
-#endif
-#include <netinet/in.h>
-#ifdef HAVE_NETINET_IP_H
-#include <netinet/ip.h>
-#endif
 #include "stream.h"
 #include "amfeatures.h"
 #include "amrecover.h"
@@ -49,25 +42,11 @@
 #include "event.h"
 #include "security.h"
 
-#ifdef HAVE_LIBREADLINE
-#  ifdef HAVE_READLINE_READLINE_H
-#    include <readline/readline.h>
-#    ifdef HAVE_READLINE_HISTORY_H
-#      include <readline/history.h>
-#    endif
-#  else
-#    ifdef HAVE_READLINE_H
-#      include <readline.h>
-#      ifdef HAVE_HISTORY_H
-#        include <history.h>
-#      endif
-#    else
-#      undef HAVE_LIBREADLINE
-#    endif
-#  endif
-#endif
-
-extern int process_line P((char *line));
+extern int process_line(char *line);
+int get_line(void);
+int grab_reply(int show);
+void sigint_handler(int signum);
+int main(int argc, char **argv);
 
 #define USAGE "Usage: amrecover [[-C] <config>] [-s <index-server>] [-t <tape-server>] [-d <tape-device>]\n"
 
@@ -99,38 +78,21 @@ static struct {
 #define MESGFD  0
     { "MESG", NULL },
 };
-#define NSTREAMS        (sizeof(streams) / sizeof(streams[0]))
+#define NSTREAMS        (int)(sizeof(streams) / sizeof(streams[0]))
 
-static void amindexd_response P((void *, pkt_t *, security_handle_t *));
-void stop_amindexd P((void));
-char *amindexd_client_get_security_conf P((char *, void *));
-
-#ifndef HAVE_LIBREADLINE
-/*
- * simple readline() replacements
- */
-
-char *
-readline(prompt)
-char *prompt;
-{
-    printf("%s",prompt);
-    fflush(stdout); fflush(stderr);
-    return agets(stdin);
-}
-
-#define add_history(x)                /* add_history((x)) */
-
-#endif
+static void amindexd_response(void *, pkt_t *, security_handle_t *);
+void stop_amindexd(void);
+char *amindexd_client_get_security_conf(char *, void *);
 
 static char* mesg_buffer = NULL;
 /* gets a "line" from server and put in server_line */
 /* server_line is terminated with \0, \r\n is striped */
 /* returns -1 if error */
 
-int get_line ()
+int
+get_line(void)
 {
-    size_t size;
+    ssize_t size;
     char *buf, *newbuf, *s;
 
     if(!mesg_buffer) mesg_buffer = stralloc("");
@@ -144,8 +106,8 @@ int get_line ()
 	    return -1;
 	}
 	newbuf = alloc(strlen(mesg_buffer)+size+1);
-	strcpy(newbuf, mesg_buffer);
-	memcpy(newbuf+strlen(mesg_buffer), buf, size);
+	strncpy(newbuf, mesg_buffer, (size_t)(strlen(mesg_buffer) + size));
+	memcpy(newbuf+strlen(mesg_buffer), buf, (size_t)size);
 	newbuf[strlen(mesg_buffer)+size] = '\0';
 	amfree(mesg_buffer);
 	mesg_buffer = newbuf;
@@ -166,8 +128,9 @@ int get_line ()
 /* return -1 if error */
 /* return code returned by server always occupies first 3 bytes of global
    variable server_line */
-int grab_reply (show)
-int show;
+int
+grab_reply(
+    int show)
 {
     do {
 	if (get_line() == -1) {
@@ -183,7 +146,8 @@ int show;
 
 /* get 1 line of reply */
 /* returns -1 if error, 0 if last (or only) line, 1 if more to follow */
-int get_reply_line ()
+int
+get_reply_line(void)
 {
     if (get_line() == -1)
 	return -1;
@@ -192,7 +156,8 @@ int get_reply_line ()
 
 
 /* returns pointer to returned line */
-char *reply_line ()
+char *
+reply_line(void)
 {
     return server_line;
 }
@@ -201,14 +166,16 @@ char *reply_line ()
 
 /* returns 0 if server returned an error code (ie code starting with 5)
    and non-zero otherwise */
-int server_happy ()
+int
+server_happy(void)
 {
     return server_line[0] != '5';
 }
 
 
-int send_command(cmd)
-char *cmd;
+int
+send_command(
+    char *	cmd)
 {
     /*
      * NOTE: this routine is called from sigint_handler, so we must be
@@ -219,7 +186,7 @@ char *cmd;
     char *buffer;
 
     buffer = malloc(strlen(cmd)+3);
-    strcpy(buffer,cmd);
+    strncpy(buffer, cmd, strlen(cmd));
     buffer[strlen(cmd)] = '\r';
     buffer[strlen(cmd)+1] = '\n';
     buffer[strlen(cmd)+2] = '\0';
@@ -233,8 +200,9 @@ char *cmd;
 
 
 /* send a command to the server, get reply and print to screen */
-int converse(cmd)
-char *cmd;
+int
+converse(
+    char *	cmd)
 {
     if (send_command(cmd) == -1) return -1;
     if (grab_reply(1) == -1) return -1;
@@ -243,8 +211,9 @@ char *cmd;
 
 
 /* same as converse() but reply not echoed to stdout */
-int exchange(cmd)
-char *cmd;
+int
+exchange(
+    char *	cmd)
 {
     if (send_command(cmd) == -1) return -1;
     if (grab_reply(0) == -1) return -1;
@@ -254,8 +223,9 @@ char *cmd;
 
 /* basic interrupt handler for when user presses ^C */
 /* Bale out, letting server know before doing so */
-void sigint_handler(signum)
-int signum;
+void
+sigint_handler(
+    int	signum)
 {
     /*
      * NOTE: we must be **very** careful about what we do here since there
@@ -264,6 +234,8 @@ int signum;
      * routines.  Also, use _exit() instead of exit() to make sure stdio
      * buffer flushing is not attempted.
      */
+    (void)signum;	/* Quiet unused parameter warning */
+
     if (extract_restore_child_pid != -1)
 	(void)kill(extract_restore_child_pid, SIGKILL);
     extract_restore_child_pid = -1;
@@ -273,8 +245,9 @@ int signum;
 }
 
 
-void clean_pathname(s)
-char *s;
+void
+clean_pathname(
+    char *	s)
 {
     size_t length;
     length = strlen(s);
@@ -293,7 +266,8 @@ char *s;
 }
 
 
-void quit ()
+void
+quit(void)
 {
     quit_prog = 1;
     (void)converse("QUIT");
@@ -307,9 +281,10 @@ char *localhost = NULL;
 # define DEFAULT_TAPE_SERVER_FAILOVER (NULL)
 #endif
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
     int i;
     time_t timer;
@@ -336,12 +311,14 @@ char **argv;
     if (geteuid() != 0) {
 	erroutput_type |= ERR_SYSLOG;
 	error("amrecover must be run by root");
+	/*NOTREACHED*/
     }
 #endif
 
     localhost = alloc(MAX_HOSTNAME_LENGTH+1);
     if (gethostname(localhost, MAX_HOSTNAME_LENGTH) != 0) {
 	error("cannot determine local host name\n");
+	/*NOTREACHED*/
     }
     localhost[MAX_HOSTNAME_LENGTH] = '\0';
 
@@ -369,8 +346,7 @@ char **argv;
 
     authopt = stralloc(client_getconf_str(CLN_AUTH));
 
-    if (argc > 1 && argv[1][0] != '-')
-    {
+    if (argc > 1 && argv[1][0] != '-') {
 	/*
 	 * If the first argument is not an option flag, then we assume
 	 * it is a configuration name to match the syntax of the other
@@ -378,21 +354,18 @@ char **argv;
 	 */
 	char **new_argv;
 
-	new_argv = (char **) alloc ((argc + 1 + 1) * sizeof (*new_argv));
+	new_argv = (char **) alloc((size_t)((argc + 1 + 1) * sizeof(*new_argv)));
 	new_argv[0] = argv[0];
 	new_argv[1] = "-C";
-	for (i = 1; i < argc; i++)
-	{
+	for (i = 1; i < argc; i++) {
 	    new_argv[i + 1] = argv[i];
 	}
 	new_argv[i + 1] = NULL;
 	argc++;
 	argv = new_argv;
     }
-    while ((i = getopt(argc, argv, "C:s:t:d:U")) != EOF)
-    {
-	switch (i)
-	{
+    while ((i = getopt(argc, argv, "C:s:t:d:U")) != EOF) {
+	switch (i) {
 	    case 'C':
 		config = newstralloc(config, optarg);
 		break;
@@ -415,8 +388,7 @@ char **argv;
 		return 0;
 	}
     }
-    if (optind != argc)
-    {
+    if (optind != argc) {
 	(void)fprintf(stderr, USAGE);
 	exit(1);
     }
@@ -433,9 +405,9 @@ char **argv;
     act.sa_handler = sigint_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    if (sigaction(SIGINT, &act, &oact) != 0)
-    {
+    if (sigaction(SIGINT, &act, &oact) != 0) {
 	error("error setting signal handler: %s", strerror(errno));
+	/*NOTREACHED*/
     }
 
     protocol_init();
@@ -448,6 +420,7 @@ char **argv;
     if (secdrv == NULL) {
 	error("no '%s' security driver available for host '%s'",
 	    authopt, server_name);
+	/*NOTREACHED*/
     }
 
     protocol_sendreq(server_name, secdrv, amindexd_client_get_security_conf,
@@ -475,10 +448,11 @@ char **argv;
 #endif
 
     /* get server's banner */
-    if (grab_reply(1) == -1)
+    if (grab_reply(1) == -1) {
+        aclose(server_socket);
 	exit(1);
-    if (!server_happy())
-    {
+    }
+    if (!server_happy()) {
 	dbclose();
 	aclose(server_socket);
 	exit(1);
@@ -505,17 +479,20 @@ char **argv;
     strftime(dump_date, sizeof(dump_date), "%Y-%m-%d", localtime(&timer));
     printf("Setting restore date to today (%s)\n", dump_date);
     line = stralloc2("DATE ", dump_date);
-    if (converse(line) == -1)
+    if (converse(line) == -1) {
+        aclose(server_socket);
 	exit(1);
+    }
     amfree(line);
 
     line = stralloc2("SCNF ", config);
-    if (converse(line) == -1)
+    if (converse(line) == -1) {
+        aclose(server_socket);
 	exit(1);
+    }
     amfree(line);
 
-    if (server_happy())
-    {
+    if (server_happy()) {
 	/* set host we are restoring to this host by default */
 	amfree(dump_hostname);
 	set_host(localhost);
@@ -527,8 +504,7 @@ char **argv;
     }
 
     quit_prog = 0;
-    do
-    {
+    do {
 	if ((lineread = readline("amrecover> ")) == NULL) {
 	    clearerr(stdin);
 	    putchar('\n');
@@ -549,15 +525,14 @@ char **argv;
 }
 
 static void
-amindexd_response(datap, pkt, sech)
-    void *datap;
-    pkt_t *pkt;
-    security_handle_t *sech;
+amindexd_response(
+    void *datap,
+    pkt_t *pkt,
+    security_handle_t *sech)
 {
     int ports[NSTREAMS], *response_error = datap, i;
     char *p;
     char *tok;
-    char *tok_end;
     char *extra = NULL;
 
     assert(response_error != NULL);
@@ -667,8 +642,8 @@ bad_nak:
 		extra = stralloc("OPTIONS token is missing");
 		goto parse_error;
 	    }
-	    tok_end = tok + strlen(tok);
 /*
+	    tok_end = tok + strlen(tok);
 	    while((p = strchr(tok, ';')) != NULL) {
 		*p++ = '\0';
 #define sc "features="
@@ -702,7 +677,7 @@ bad_nak:
      * Connect the streams to their remote ports
      */
     for (i = 0; i < NSTREAMS; i++) {
-	if (ports[i] == -1)
+/*@i@*/	if (ports[i] == -1)
 	    continue;
 	streams[i].fd = security_stream_client(sech, ports[i]);
 	if (streams[i].fd == NULL) {
@@ -759,7 +734,7 @@ connect_error:
  * will exit.
  */
 void
-stop_amindexd()
+stop_amindexd(void)
 {
     int i;
     for (i = 0; i < NSTREAMS; i++) {
@@ -771,23 +746,17 @@ stop_amindexd()
 }
 
 char *
-amindexd_client_get_security_conf(string, arg)
-        char *string;
-        void *arg;
+amindexd_client_get_security_conf(
+    char *	string,
+    void *	arg)
 {
+    (void)arg;	/* Quiet unused parameter warning */
+
     if(!string || !*string)
 	return(NULL);
 
     if(strcmp(string, "auth")==0) {
 	return(client_getconf_str(CLN_AUTH));
     }
-/*
-    } else if(strcmp(string, "krb5principal")==0) {
-	return(client_getconf_str(CNF_KRB5PRINCIPAL));
-    } else if(strcmp(string, "krb5keytab")==0) {
-	return(client_getconf_str(CNF_KRB5KEYTAB));
-    }
-*/
     return(NULL);
 }
-

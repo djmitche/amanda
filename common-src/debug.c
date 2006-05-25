@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.36 2006/01/12 01:57:05 paddy_s Exp $
+ * $Id: debug.c,v 1.37 2006/05/25 01:47:11 johnfranks Exp $
  *
  * debug log subroutines
  */
@@ -50,6 +50,9 @@ static FILE *db_file = NULL;		/* stderr may not be a constant */
 static char *db_filename = NULL;
 
 static pid_t debug_prefix_pid = 0;
+static char *get_debug_name(time_t t, int n);
+static void debug_setup_1(void);
+static void debug_setup_2(char *s, int fd, char *notation);
 
 /*
  * Format and write a debug message to the process debug file.
@@ -57,7 +60,6 @@ static pid_t debug_prefix_pid = 0;
 printf_arglist_function(void debug_printf, const char *, format)
 {
     va_list argp;
-    int save_errno;
 
     /*
      * It is common in the code to call dbprintf to write out
@@ -65,19 +67,21 @@ printf_arglist_function(void debug_printf, const char *, format)
      * with errno (e.g. printf() or log()), so we make sure errno goes
      * back out with the same value it came in with.
      */
-    save_errno = errno;
+    if (debug != 0) {
+        int save_errno;
 
-    if(db_file == NULL && db_fd == 2) {
-	db_file = stderr;
+	save_errno = errno;
+	if(db_file == NULL && db_fd == 2) {
+	    db_file = stderr;
+	}
+	if(db_file != NULL) {
+	    arglist_start(argp, format);
+	    vfprintf(db_file, format, argp);
+	    fflush(db_file);
+	    arglist_end(argp);
+	}
+	errno = save_errno;
     }
-    if(db_file != NULL) {
-	arglist_start(argp, format);
-	vfprintf(db_file, format, argp);
-	fflush(db_file);
-	arglist_end(argp);
-    }
-
-    errno = save_errno;
 }
 
 /*
@@ -85,9 +89,9 @@ printf_arglist_function(void debug_printf, const char *, format)
  * followed by a timestamp, an optional sequence number, and ".debug".
  */
 static char *
-get_debug_name(t, n)
-    time_t t;
-    int n;
+get_debug_name(
+    time_t	t,
+    int		n)
 {
     char number[NUM_STR_SIZE];
     char *ts;
@@ -100,7 +104,7 @@ get_debug_name(t, n)
     if(n == 0) {
 	number[0] = '\0';
     } else {
-	snprintf(number, sizeof(number), "%03d", n - 1);
+	snprintf(number, SIZEOF(number), "%03d", n - 1);
     }
     result = vstralloc(get_pname(), ".", ts, number, ".debug", NULL);
     amfree(ts);
@@ -110,7 +114,8 @@ get_debug_name(t, n)
 static char *dbgdir = NULL;
 static time_t curtime;
 
-static void debug_setup_1()
+static void
+debug_setup_1(void)
 {
     struct passwd *pwent;
     char *pname;
@@ -120,13 +125,14 @@ static void debug_setup_1()
     DIR *d;
     struct dirent *entry;
     int do_rename;
-    char *test_name = NULL;
+    char *test_name;
     size_t test_name_len;
     size_t d_name_len;
     struct stat sbuf;
     char *dbfilename = NULL;
     int i;
 
+    memset(&sbuf, 0, SIZEOF(sbuf));
     if(client_uid == (uid_t) -1 && (pwent = getpwnam(CLIENT_LOGIN)) != NULL) {
 	client_uid = pwent->pw_uid;
 	client_gid = pwent->pw_gid;
@@ -144,6 +150,7 @@ static void debug_setup_1()
     if(mkpdir(dbgdir, 02700, client_uid, client_gid) == -1) {
         error("create debug directory \"%s\": %s",
 	      AMANDA_DBGDIR, strerror(errno));
+        /*NOTREACHED*/
     }
 
     /*
@@ -155,6 +162,7 @@ static void debug_setup_1()
     if((d = opendir(AMANDA_DBGDIR)) == NULL) {
         error("open debug directory \"%s\": %s",
 	      AMANDA_DBGDIR, strerror(errno));
+        /*NOTREACHED*/
     }
     time(&curtime);
     test_name = get_debug_name(curtime - (AMANDA_DEBUG_DAYS * 24 * 60 * 60), 0);
@@ -202,6 +210,7 @@ static void debug_setup_1()
 	    }
 	    if(dbfilename == NULL) {
 		error("cannot rename old debug file \"%s\"", entry->d_name);
+		/*NOTREACHED*/
 	    }
 	}
     }
@@ -212,19 +221,24 @@ static void debug_setup_1()
     closedir(d);
 }
 
-static void debug_setup_2(s, fd, notation)
-    char *s;
-    int fd;
-    char *notation;
+static void
+debug_setup_2(
+    char *	s,
+    int		fd,
+    char *	notation)
 {
     int saved_debug;
-    int i;
+    int i, rc;
     int fd_close[MIN_DB_FD+1];
 
     amfree(db_filename);
     db_filename = s;
     s = NULL;
-    (void) chown(db_filename, client_uid, client_gid);
+    if ((rc = chown(db_filename, client_uid, client_gid)) < 0) {
+	dbprintf(("chown(%s, %d, %d) failed. <%s>",
+		  db_filename, client_uid, client_gid, strerror(errno)));
+	(void)rc;
+    }
     amfree(dbgdir);
     /*
      * Move the file descriptor up high so it stays out of the way
@@ -254,9 +268,10 @@ static void debug_setup_2(s, fd, notation)
     }
 }
 
-void debug_open()
+void
+debug_open(void)
 {
-    char *dbfilename = NULL;
+    char *dbfilename;
     int fd = -1;
     int i;
     char *s = NULL;
@@ -270,16 +285,16 @@ void debug_open()
     /*
      * Create the new file with a unique sequence number.
      */
-    mask = umask(0037); /* Allow the group read bit through */
+    mask = (mode_t)umask((mode_t)0037); /* Allow the group read bit through */
     for(i = 0; fd < 0; i++) {
         if ((dbfilename = get_debug_name(curtime, i)) == NULL) {
 	    error("Cannot create %s debug file", get_pname());
-            /* NOTREACHED */
+            /*NOTREACHED*/
         }
 
         if ((s = newvstralloc(s, dbgdir, dbfilename, NULL)) == NULL) {
 	    error("Cannot allocate %s debug file name memory", get_pname());
-            /* NOTREACHED */
+            /*NOTREACHED*/
         }
         amfree(dbfilename);
 
@@ -287,7 +302,7 @@ void debug_open()
             if (errno != EEXIST) {
                 error("Cannot create %s debug file: %s",
                        get_pname(), strerror(errno));
-                /* NOTREACHED */
+                /*NOTREACHED*/
             }
             amfree(s);
         }
@@ -302,12 +317,13 @@ void debug_open()
     debug_setup_2(s, fd, "start");
 }
 
-void debug_reopen(dbfilename, notation)
-    char *dbfilename;
-    char *notation;
+void
+debug_reopen(
+    char *	dbfilename,
+    char *	notation)
 {
     char *s = NULL;
-    int fd = -1;
+    int fd;
 
     if (dbfilename == NULL) {
 	return;
@@ -328,6 +344,7 @@ void debug_reopen(dbfilename, notation)
     }
     if ((fd = open(s, O_RDWR|O_APPEND)) < 0) {
 	error("cannot reopen %s debug file %s", get_pname(), dbfilename);
+	/*NOTREACHED*/
     }
 
     /*
@@ -338,7 +355,8 @@ void debug_reopen(dbfilename, notation)
     debug_setup_2(s, fd, notation);
 }
 
-void debug_close()
+void
+debug_close(void)
 {
     time_t curtime;
     int save_debug;
@@ -360,24 +378,28 @@ void debug_close()
 	int save_errno = errno;
 
 	db_file = NULL;				/* prevent recursion */
-	error("close debug file: %s", strerror(save_errno));
+	fprintf(stderr, "close debug file: %s", strerror(save_errno));
+	/*NOTREACHED*/
     }
     db_fd = -1;
     db_file = NULL;
     amfree(db_filename);
 }
 
-int debug_fd()
+int
+debug_fd(void)
 {
     return db_fd;
 }
 
-FILE *debug_fp()
+FILE *
+debug_fp(void)
 {
     return db_file;
 }
 
-char *debug_fn()
+char *
+debug_fn(void)
 {
     return db_filename;
 }
@@ -389,14 +411,16 @@ char *debug_fn()
  * time indicator.
  */ 
 
-void set_debug_prefix_pid(p)
-    pid_t p;
+void
+set_debug_prefix_pid(
+    pid_t	p)
 {
     debug_prefix_pid = p;
 }
 
-char *debug_prefix(suffix)
-    char *suffix;
+char *
+debug_prefix(
+    char *	suffix)
 {
     int save_errno;
     static char *s = NULL;
@@ -405,7 +429,7 @@ char *debug_prefix(suffix)
     save_errno = errno;
     s = newvstralloc(s, get_pname(), suffix, NULL);
     if (debug_prefix_pid != (pid_t) 0) {
-	snprintf(debug_pid, sizeof(debug_pid),
+	snprintf(debug_pid, SIZEOF(debug_pid),
 		 "%ld",
 		 (long) debug_prefix_pid);
 	s = newvstralloc(s, s, "[", debug_pid, "]", NULL);
@@ -414,8 +438,9 @@ char *debug_prefix(suffix)
     return s;
 }
 
-char *debug_prefix_time(suffix)
-    char *suffix;
+char *
+debug_prefix_time(
+    char *	suffix)
 {
     int save_errno;
     static char *s = NULL;

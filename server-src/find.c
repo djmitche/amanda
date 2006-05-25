@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.26 2006/04/07 18:00:13 martinea Exp $
+ * $Id: find.c,v 1.27 2006/05/25 01:47:20 johnfranks Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -36,25 +36,27 @@
 #include "holding.h"
 #include "find.h"
 
-void find P((int argc, char **argv));
-int find_match P((char *host, char *disk));
-int search_logfile P((find_result_t **output_find, char *label, char *datestamp, char *logfile));
-void search_holding_disk P((find_result_t **output_find));
-void strip_failed_chunks P((find_result_t *output_find));
-char *find_nicedate P((char *datestamp));
-static int find_compare P((const void *, const void *));
-static int parse_taper_datestamp_log P((char *logline, char **datestamp, char **level));
+int find_match(char *host, char *disk);
+int search_logfile(find_result_t **output_find, char *label, char *datestamp, char *logfile);
+void search_holding_disk(find_result_t **output_find);
+void strip_failed_chunks(find_result_t *output_find);
+char *find_nicedate(char *datestamp);
+static int find_compare(const void *, const void *);
+static int parse_taper_datestamp_log(char *logline, char **datestamp, char **level);
+static int seen_chunk_of(find_result_t *output_find, char *date, char *host, char *disk, int level);
 
 static char *find_sort_order = NULL;
 int dynamic_disklist = 0;
 disklist_t* find_diskqp = NULL;
 
-find_result_t *find_dump(dyna_disklist, diskqp)
-int dyna_disklist;
-disklist_t* diskqp;
+find_result_t *
+find_dump(
+    int dyna_disklist,
+    disklist_t* diskqp)
 {
     char *conf_logdir, *logfile = NULL;
-    int tape, maxtape, seq, logs;
+    int tape, maxtape, logs;
+    unsigned seq;
     tape_t *tp;
     find_result_t *output_find = NULL;
 
@@ -82,7 +84,7 @@ disklist_t* diskqp;
 	for(seq = 0; 1; seq++) {
 	    char seq_str[NUM_STR_SIZE];
 
-	    snprintf(seq_str, sizeof(seq_str), "%d", seq);
+	    snprintf(seq_str, SIZEOF(seq_str), "%u", seq);
 	    logfile = newvstralloc(logfile,
 			conf_logdir, "/log.", tp->datestamp, ".", seq_str, NULL);
 	    if(access(logfile, R_OK) != 0) break;
@@ -117,10 +119,12 @@ disklist_t* diskqp;
     return(output_find);
 }
 
-char **find_log()
+char **
+find_log(void)
 {
     char *conf_logdir, *logfile = NULL;
-    int tape, maxtape, seq, logs;
+    int tape, maxtape, logs;
+    unsigned seq;
     tape_t *tp;
     char **output_find_log = NULL;
     char **current_log;
@@ -133,7 +137,7 @@ char **find_log()
     }
     maxtape = lookup_nb_tape();
 
-    output_find_log = alloc((maxtape*5+10) * sizeof(char *));
+    output_find_log = alloc((maxtape*5+10) * SIZEOF(char *));
     current_log = output_find_log;
 
     for(tape = 1; tape <= maxtape; tape++) {
@@ -150,7 +154,7 @@ char **find_log()
 	for(seq = 0; 1; seq++) {
 	    char seq_str[NUM_STR_SIZE];
 
-	    snprintf(seq_str, sizeof(seq_str), "%d", seq);
+	    snprintf(seq_str, SIZEOF(seq_str), "%u", seq);
 	    logfile = newvstralloc(logfile,
 			conf_logdir, "/log.", tp->datestamp, ".", seq_str, NULL);
 	    if(access(logfile, R_OK) != 0) break;
@@ -197,8 +201,8 @@ char **find_log()
 /*
  * Remove CHUNK entries from dumps that ultimately failed from our report.
  */
-void strip_failed_chunks(output_find)
-find_result_t *output_find;
+void strip_failed_chunks(
+    find_result_t *output_find)
 {
     find_result_t *cur, *prev = NULL, *failed = NULL, *failures = NULL;
 
@@ -207,8 +211,8 @@ find_result_t *output_find;
 	if(!cur->hostname || !cur->diskname) continue;
 
 	if(strcmp(cur->status, "OK")){
-	    failed = alloc(sizeof(find_result_t));
-	    memcpy(failed, cur, sizeof(find_result_t));
+	    failed = alloc(SIZEOF(find_result_t));
+	    memcpy(failed, cur, SIZEOF(find_result_t));
 	    failed->next = failures;
 	    failed->diskname = stralloc(cur->diskname);
 	    failed->hostname = stralloc(cur->hostname);
@@ -219,10 +223,12 @@ find_result_t *output_find;
     /* Now if a CHUNK matches the parameters of a failed dump, remove it */
     for(failed=failures; failed; failed=failed->next) {
 	prev = NULL;
-	for(cur=output_find; cur; cur=cur->next) {
+	cur = output_find;
+	while (cur != NULL) {
 	    if(!cur->hostname || !cur->diskname ||
 	          !strcmp(cur->partnum, "--") || strcmp(cur->status, "OK")){
 	        prev = cur;
+		cur = cur->next;
 		continue;
 	    }
 
@@ -237,11 +243,14 @@ find_result_t *output_find;
 		amfree(cur);
 		if(prev){
   		    prev->next = next;
-		    cur = prev;
+		    cur = next;
+		    continue;
 		}
 		else output_find = next;
 	    }
             else prev = cur;
+
+	    cur = cur->next;
 	}
     }
 
@@ -255,8 +264,9 @@ find_result_t *output_find;
     }
 }
 
-void search_holding_disk(output_find)
-find_result_t **output_find;
+void
+search_holding_disk(
+    find_result_t **output_find)
 {
     holdingdisk_t *hdisk;
     sl_t  *holding_list;
@@ -267,7 +277,7 @@ find_result_t **output_find;
     char *diskname = NULL;
     DIR *workdir;
     struct dirent *entry;
-    int level;
+    int level = 0;
     disk_t *dp;
 
     holding_list = pick_all_datestamp(1);
@@ -314,7 +324,7 @@ find_result_t **output_find;
 
 		if(find_match(hostname,diskname)) {
 		    find_result_t *new_output_find =
-			alloc(sizeof(find_result_t));
+			alloc(SIZEOF(find_result_t));
 		    new_output_find->next=*output_find;
 		    new_output_find->timestamp=stralloc(dir->name);
 		    new_output_find->hostname=hostname;
@@ -340,16 +350,17 @@ find_result_t **output_find;
     amfree(diskname);
 }
 
-static int find_compare(i1, j1)
-const void *i1;
-const void *j1;
+static int
+find_compare(
+    const void *i1,
+    const void *j1)
 {
     int compare=0;
     find_result_t **i = (find_result_t **)i1;
     find_result_t **j = (find_result_t **)j1;
 
-    int nb_compare=strlen(find_sort_order);
-    int k;
+    size_t nb_compare=strlen(find_sort_order);
+    size_t k;
 
     for(k=0;k<nb_compare;k++) {
 	switch (find_sort_order[k]) {
@@ -367,9 +378,11 @@ const void *j1;
 		   break;
 	case 'l' : compare=(*j)->level - (*i)->level;
 		   break;
-	case 'f' : compare=(*i)->filenum - (*j)->filenum;
+	case 'f' : compare=((*i)->filenum == (*j)->filenum) ? 0 :
+		           (((*i)->filenum < (*j)->filenum) ? -1 : 1);
 		   break;
-	case 'F' : compare=(*j)->filenum - (*i)->filenum;
+	case 'F' : compare=((*j)->filenum == (*i)->filenum) ? 0 :
+		           (((*j)->filenum < (*i)->filenum) ? -1 : 1);
 		   break;
 	case 'L' : compare=(*i)->level - (*j)->level;
 		   break;
@@ -398,14 +411,15 @@ const void *j1;
     return 0;
 }
 
-void sort_find_result(sort_order, output_find)
-char *sort_order;
-find_result_t **output_find;
+void
+sort_find_result(
+    char *sort_order,
+    find_result_t **output_find)
 {
     find_result_t *output_find_result;
     find_result_t **array_find_result = NULL;
-    int nb_result=0;
-    int no_result;
+    size_t nb_result=0;
+    size_t no_result;
 
     find_sort_order = sort_order;
     /* qsort core dump if nothing to sort */
@@ -420,7 +434,7 @@ find_result_t **output_find;
     }
 
     /* put the list in an array */
-    array_find_result=alloc(nb_result * sizeof(find_result_t *));
+    array_find_result=alloc(nb_result * SIZEOF(find_result_t *));
     for(output_find_result=*output_find,no_result=0;
 	output_find_result;
 	output_find_result=output_find_result->next,no_result++) {
@@ -428,7 +442,7 @@ find_result_t **output_find;
     }
 
     /* sort the array */
-    qsort(array_find_result,nb_result,sizeof(find_result_t *),
+    qsort(array_find_result,nb_result,SIZEOF(find_result_t *),
 	  find_compare);
 
     /* put the sorted result in the list */
@@ -441,8 +455,9 @@ find_result_t **output_find;
     amfree(array_find_result);
 }
 
-void print_find_result(output_find)
-find_result_t *output_find;
+void
+print_find_result(
+    find_result_t *output_find)
 {
     find_result_t *output_find_result;
     int max_len_datestamp = 4;
@@ -453,29 +468,35 @@ find_result_t *output_find;
     int max_len_filenum   = 4;
     int max_len_part      = 4;
     int max_len_status    = 6;
-    int len;
+    size_t len;
 
     for(output_find_result=output_find;
 	output_find_result;
 	output_find_result=output_find_result->next) {
 
 	len=strlen(find_nicedate(output_find_result->timestamp));
-	if(len>max_len_datestamp) max_len_datestamp=len;
+	if((int)len > max_len_datestamp)
+	    max_len_datestamp=(int)len;
 
 	len=strlen(output_find_result->hostname);
-	if(len>max_len_hostname) max_len_hostname=len;
+	if((int)len > max_len_hostname)
+	    max_len_hostname = (int)len;
 
 	len=strlen(output_find_result->diskname);
-	if(len>max_len_diskname) max_len_diskname=len;
+	if((int)len > max_len_diskname)
+	    max_len_diskname = (int)len;
 
 	len=strlen(output_find_result->label);
-	if(len>max_len_label) max_len_label=len;
+	if((int)len > max_len_label)
+	    max_len_label = (int)len;
 
 	len=strlen(output_find_result->status);
-	if(len>max_len_status) max_len_status=len;
+	if((int)len > max_len_status)
+	    max_len_status = (int)len;
 
 	len=strlen(output_find_result->partnum);
-	if(len>max_len_part) max_len_part=len;
+	if((int)len > max_len_part)
+	    max_len_part = (int)len;
     }
 
     /*
@@ -500,24 +521,30 @@ find_result_t *output_find;
         for(output_find_result=output_find;
 	        output_find_result;
 	        output_find_result=output_find_result->next) {
+	    char *qdiskname;
 
-	    printf("%-*s %-*s %-*s %*d %-*s %*d %*s %-*s\n",
+	    qdiskname = quote_string(output_find_result->diskname);
+	    /*@ignore@*/
+	    printf("%-*s %-*s %-*s %*d %-*s %*" OFF_T_RFMT " %*s %-*s\n",
 		    max_len_datestamp, 
 			find_nicedate(output_find_result->timestamp),
 		    max_len_hostname,  output_find_result->hostname,
-		    max_len_diskname,  output_find_result->diskname,
+		    max_len_diskname,  qdiskname,
 		    max_len_level,     output_find_result->level,
 		    max_len_label,     output_find_result->label,
-		    max_len_filenum,   output_find_result->filenum,
+		    max_len_filenum,   (OFF_T_FMT_TYPE)output_find_result->filenum,
 		    max_len_part,      output_find_result->partnum,
 		    max_len_status,    output_find_result->status
 		    );
+	    /*@end@*/
+	    amfree(qdiskname);
 	}
     }
 }
 
-void free_find_result(output_find)
-find_result_t **output_find;
+void
+free_find_result(
+    find_result_t **output_find)
 {
     find_result_t *output_find_result, *prev;
 
@@ -525,7 +552,7 @@ find_result_t **output_find;
     for(output_find_result=*output_find;
 	    output_find_result;
 	    output_find_result=output_find_result->next) {
-	if(prev != NULL) amfree(prev);
+	amfree(prev);
 	amfree(output_find_result->timestamp);
 	amfree(output_find_result->hostname);
 	amfree(output_find_result->diskname);
@@ -535,19 +562,22 @@ find_result_t **output_find;
 	amfree(output_find_result->timestamp);
 	prev = output_find_result;
     }
-    if(prev != NULL) amfree(prev);
-    output_find = NULL;
+    amfree(prev);
+    *output_find = NULL;
 }
 
-int find_match(host, disk)
-char *host, *disk;
+int
+find_match(
+    char *host,
+    char *disk)
 {
     disk_t *dp = lookup_disk(host,disk);
     return (dp && dp->todo);
 }
 
-char *find_nicedate(datestamp)
-char *datestamp;
+char *
+find_nicedate(
+    char *datestamp)
 {
     static char nice[20];
     int year, month, day;
@@ -563,7 +593,8 @@ char *datestamp;
     day   = numdate % 100;
 
     if(strlen(datestamp) <= 8) {
-	snprintf(nice, sizeof(nice), "%4d-%02d-%02d", year, month, day);
+	snprintf(nice, SIZEOF(nice), "%4d-%02d-%02d",
+		year, month, day);
     }
     else {
 	strncpy(atime, &(datestamp[8]), 6);
@@ -573,16 +604,18 @@ char *datestamp;
 	minutes = (numtime / 100) % 100;
 	seconds = numtime % 100;
 
-	snprintf(nice, sizeof(nice), "%4d-%02d-%02d %02d:%02d:%02d", year, month, day, hours, minutes, seconds);
+	snprintf(nice, SIZEOF(nice), "%4d-%02d-%02d %02d:%02d:%02d",
+		year, month, day, hours, minutes, seconds);
     }
 
     return nice;
 }
 
-static int parse_taper_datestamp_log(logline, datestamp, label)
-char *logline;
-char **datestamp;
-char **label;
+static int
+parse_taper_datestamp_log(
+    char *logline,
+    char **datestamp,
+    char **label)
 {
     char *s;
     int ch;
@@ -595,10 +628,10 @@ char **label;
 	return 0;
     }
 #define sc "datestamp"
-    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+    if(strncmp(s - 1, sc, SIZEOF(sc)-1) != 0) {
 	return 0;
     }
-    s += sizeof(sc)-1;
+    s += SIZEOF(sc)-1;
     ch = s[-1];
 #undef sc
 
@@ -615,10 +648,10 @@ char **label;
 	return 0;
     }
 #define sc "label"
-    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+    if(strncmp(s - 1, sc, SIZEOF(sc)-1) != 0) {
 	return 0;
     }
-    s += sizeof(sc)-1;
+    s += SIZEOF(sc)-1;
     ch = s[-1];
 #undef sc
 
@@ -638,11 +671,13 @@ char **label;
  * This is so we can interpret the final SUCCESS entry for a split dump as 
  * 'list its parts' instead.  Return 1 if we have, 0 if not.
  */
-int seen_chunk_of(output_find, date, host, disk, level)
-find_result_t *output_find;
-char *date;
-int level;
-char *host, *disk;
+int
+seen_chunk_of(
+    find_result_t *output_find,
+    char *date,
+    char *host,
+    char *disk,
+    int level)
 {
     find_result_t *cur;
 
@@ -665,27 +700,33 @@ char *host, *disk;
 /* else								*/
 /*	add to output_find all the dump for this label		*/
 /*	return the number of dump added.			*/
-int search_logfile(output_find, label, datestamp, logfile)
-find_result_t **output_find;
-char *label, *logfile;
-char *datestamp;
+int
+search_logfile(
+    find_result_t **output_find,
+    char *label,
+    char *datestamp,
+    char *logfile)
 {
     FILE *logf;
     char *host, *host_undo;
-    char *disk, *disk_undo;
+    char *disk, *qdisk, *disk_undo;
     char *date, *date_undo;
     char *partnum=NULL, *partnum_undo;
     char *rest;
-    char *ck_label;
-    int level, filenum, tapematch;
+    char *ck_label=NULL;
+    int level = 0; 
+    int tapematch;
+    off_t filenum;
     int passlabel;
     char *ck_datestamp, *ck_datestamp2;
     char *s;
     int ch;
     disk_t *dp;
 
-    if((logf = fopen(logfile, "r")) == NULL)
+    if((logf = fopen(logfile, "r")) == NULL) {
 	error("could not open logfile %s: %s", logfile, strerror(errno));
+	/*NOTREACHED*/
+    }
 
     /* check that this log file corresponds to the right tape */
     tapematch = 0;
@@ -693,7 +734,8 @@ char *datestamp;
 	if(curlog == L_START && curprog == P_TAPER) {
 	    if(parse_taper_datestamp_log(curstr,
 					 &ck_datestamp, &ck_label) == 0) {
-		printf("strange log line \"start taper %s\"\n", curstr);
+		printf("strange log line \"start taper %s\" curstr='%s'\n",
+		    logfile, curstr);
 	    } else if(strcmp(ck_datestamp, datestamp) == 0
 		      && strcmp(ck_label, label) == 0) {
 		tapematch = 1;
@@ -714,7 +756,7 @@ char *datestamp;
 	return 0;
     }
 
-    filenum = 0;
+    filenum = (off_t)0;
     passlabel = 1;
     while(get_logline(logf) && passlabel) {
 	if((curlog == L_SUCCESS || curlog == L_CHUNK) &&
@@ -724,7 +766,8 @@ char *datestamp;
 	if(curlog == L_START && curprog == P_TAPER) {
 	    if(parse_taper_datestamp_log(curstr,
 					 &ck_datestamp2, &ck_label) == 0) {
-		printf("strange log line \"start taper %s\"\n", curstr);
+		printf("strange log line in %s \"start taper %s\"\n",
+		    logfile, curstr);
 	    } else if (strcmp(ck_label, label)) {
 		passlabel = !passlabel;
 	    }
@@ -736,7 +779,8 @@ char *datestamp;
 
 	    skip_whitespace(s, ch);
 	    if(ch == '\0') {
-		printf("strange log line \"%s\"\n", curstr);
+		printf("strange log line in %s \"%s\"\n",
+		    logfile, curstr);
 		continue;
 	    }
 	    host = s - 1;
@@ -746,17 +790,20 @@ char *datestamp;
 
 	    skip_whitespace(s, ch);
 	    if(ch == '\0') {
-		printf("strange log line \"%s\"\n", curstr);
+		printf("strange log line in %s \"%s\"\n",
+		    logfile, curstr);
 		continue;
 	    }
-	    disk = s - 1;
-	    skip_non_whitespace(s, ch);
+	    qdisk = s - 1;
+	    skip_quoted_string(s, ch);
 	    disk_undo = s - 1;
 	    *disk_undo = '\0';
+	    disk = unquote_string(qdisk);
 
 	    skip_whitespace(s, ch);
 	    if(ch == '\0') {
-		printf("strange log line \"%s\"\n", curstr);
+		printf("strange log line in %s \"%s\"\n",
+		    logfile, curstr);
 		continue;
 	    }
 	    date = s - 1;
@@ -778,7 +825,8 @@ char *datestamp;
 		}
 		skip_whitespace(s, ch);
 		if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
-		    printf("strange log line \"%s\"\n", curstr);
+		    printf("strange log line in %s \"%s\"\n",
+		    logfile, curstr);
 		    continue;
 		}
 		skip_integer(s, ch);
@@ -786,7 +834,8 @@ char *datestamp;
 
 	    skip_whitespace(s, ch);
 	    if(ch == '\0') {
-		printf("strange log line \"%s\"\n", curstr);
+		printf("strange log line in %s \"%s\"\n",
+		    logfile, curstr);
 		continue;
 	    }
 	    rest = s - 1;
@@ -806,7 +855,7 @@ char *datestamp;
 		!seen_chunk_of(*output_find, date, host, disk, level))){
 		if(curprog == P_TAPER) {
 		    find_result_t *new_output_find =
-			(find_result_t *)alloc(sizeof(find_result_t));
+			(find_result_t *)alloc(SIZEOF(find_result_t));
 		    new_output_find->next=*output_find;
 		    new_output_find->timestamp = stralloc(date);
 		    new_output_find->hostname=stralloc(host);
@@ -823,7 +872,7 @@ char *datestamp;
 		}
 		else if(curlog == L_FAIL) {	/* print other failures too */
 		    find_result_t *new_output_find =
-			(find_result_t *)alloc(sizeof(find_result_t));
+			(find_result_t *)alloc(SIZEOF(find_result_t));
 		    new_output_find->next=*output_find;
 		    new_output_find->timestamp = stralloc(date);
 		    new_output_find->hostname=stralloc(host);
@@ -853,13 +902,14 @@ char *datestamp;
  * an empty pattern to match .*, though).  If 'ok' is true, will only match
  * dumps with SUCCESS status.
  */
-find_result_t *dumps_match(output_find,hostname,diskname,datestamp,level,ok)
-find_result_t *output_find;
-char *hostname;
-char *diskname;
-char *datestamp;
-char *level;
-int ok;
+find_result_t *
+dumps_match(
+    find_result_t *output_find,
+    char *hostname,
+    char *diskname,
+    char *datestamp,
+    char *level,
+    int ok)
 {
     find_result_t *cur_result;
     find_result_t *matches = NULL;
@@ -868,15 +918,15 @@ int ok;
 	cur_result;
 	cur_result=cur_result->next) {
 	char level_str[NUM_STR_SIZE];
-	snprintf(level_str, sizeof(level_str), "%d", cur_result->level);
+	snprintf(level_str, SIZEOF(level_str), "%d", cur_result->level);
 	if((*hostname == '\0' || match_host(hostname, cur_result->hostname)) &&
 	   (*diskname == '\0' || match_disk(diskname, cur_result->diskname)) &&
 	   (*datestamp== '\0' || match_datestamp(datestamp, cur_result->timestamp)) &&
 	   (*level== '\0' || match_level(level, level_str)) &&
 	   (!ok || !strcmp(cur_result->status, "OK"))){
 
-	    find_result_t *curmatch = alloc(sizeof(find_result_t));
-	    memcpy(curmatch, cur_result, sizeof(find_result_t));
+	    find_result_t *curmatch = alloc(SIZEOF(find_result_t));
+	    memcpy(curmatch, cur_result, SIZEOF(find_result_t));
 
 /*
 	    curmatch->hostname = stralloc(cur_result->hostname);
@@ -894,12 +944,13 @@ int ok;
     return(matches);
 }
 
-find_result_t *dump_exist(output_find, hostname, diskname, datestamp, level)
-find_result_t *output_find;
-char *hostname;
-char *diskname;
-char *datestamp;
-int level;
+find_result_t *
+dump_exist(
+    find_result_t *output_find,
+    char *hostname,
+    char *diskname,
+    char *datestamp,
+    int level)
 {
     find_result_t *output_find_result;
 

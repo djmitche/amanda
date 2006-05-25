@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-irix.c,v 1.22 2005/10/15 13:20:47 martinea Exp $
+ * $Id: scsi-irix.c,v 1.23 2006/05/25 01:47:08 johnfranks Exp $
  *
  * Interface to execute SCSI commands on an SGI Workstation
  *
@@ -62,7 +62,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-irix.c,v 1.22 2005/10/15 13:20:47 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-irix.c,v 1.23 2006/05/25 01:47:08 johnfranks Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -116,23 +116,13 @@ int SCSI_OpenDevice(int ip)
                   pDev[ip].avail = 0;
                   return(0);
                 }
-            } else { /* inquiry failed */
-              close(DeviceFD);
-              free(pDev[ip].inquiry);
-              pDev[ip].inquiry = NULL;
-              pDev[ip].avail = 0;
-              return(0);
             }
-
-          /*
-           * Open ok, but no SCSI communication available 
-           */
-
-          free(pDev[ip].inquiry);
-          pDev[ip].inquiry = NULL;
-          close(DeviceFD);
-          pDev[ip].avail = 0;
-          return(0);
+	    /* inquiry failed or no SCSI communication available */
+            close(DeviceFD);
+            free(pDev[ip].inquiry);
+            pDev[ip].inquiry = NULL;
+            pDev[ip].avail = 0;
+            return(0);
         }
     } else {
       if ((DeviceFD = open(pDev[ip].dev, O_RDWR | O_EXCL)) >= 0)
@@ -165,11 +155,11 @@ int SCSI_CloseDevice(int DeviceFD)
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
                         CDB_T CDB,
-                        int CDB_Length,
+                        size_t CDB_Length,
                         void *DataBuffer,
-                        int DataBufferLength,
-                        char *pRequestSense,
-                        int RequestSenseLength)
+                        size_t DataBufferLength,
+                        RequestSense_T *pRequestSense,
+                        size_t RequestSenseLength)
 {
   extern OpenFiles_T *pDev;
   ExtendedRequestSense_T ExtendedRequestSense;
@@ -177,14 +167,21 @@ int SCSI_ExecuteCommand(int DeviceFD,
   int Result;
   int retries = 5;
   
+  /* Basic sanity checks */
+  assert(CDB_Length <= UCHAR_MAX);
+  assert(RequestSenseLength <= UCHAR_MAX);
+
+  /* Clear buffer for cases where sense is not returned */
+  memset(pRequestSense, 0, RequestSenseLength);
+
   if (pDev[DeviceFD].avail == 0)
     {
       return(SCSI_ERROR);
     }
   
-  memset(&ds, 0, sizeof(struct dsreq));
+  memset(&ds, 0, SIZEOF(struct dsreq));
   memset(pRequestSense, 0, RequestSenseLength);
-  memset(&ExtendedRequestSense, 0 , sizeof(ExtendedRequestSense_T)); 
+  memset(&ExtendedRequestSense, 0 , SIZEOF(ExtendedRequestSense_T)); 
   
   ds.ds_flags = DSRQ_SENSE|DSRQ_TRACE|DSRQ_PRINT; 
   /* Timeout */
@@ -236,35 +233,28 @@ int SCSI_ExecuteCommand(int DeviceFD,
       {
       case ST_BUSY:                /*  BUSY */
         break;
+
       case STA_RESERV:             /*  RESERV CONFLICT */
         if (retries > 0)
           sleep(2);
         continue;
+
       case ST_GOOD:                /*  GOOD 0x00 */
         switch (RET(&ds))
           {
           case DSRT_SENSE:
             return(SCSI_SENSE);
-            break;
-          case DSRT_SHORT:
-            return(SCSI_OK);
-            break;
-          case DSRT_OK:
-          default:
-            return(SCSI_OK);
           }
+          return(SCSI_OK);
+
       case ST_CHECK:               /*  CHECK CONDITION 0x02 */ 
         switch (RET(&ds))
           {
           case DSRT_SENSE:
             return(SCSI_SENSE);
-            break;
-          default:
-            return(SCSI_CHECK);
-            break;
           }
         return(SCSI_CHECK);
-        break;
+
       case ST_COND_MET:            /*  INTERM/GOOD 0x10 */
       default:
         continue;
@@ -313,7 +303,7 @@ int Tape_Status( int DeviceFD)
 
   if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
     {
-      dbprintf(("Tape_Status error ioctl %d\n",errno));
+      dbprintf(("Tape_Status error ioctl %s\n",strerror(errno)));
       SCSI_CloseDevice(DeviceFD);
       return(-1);
     }

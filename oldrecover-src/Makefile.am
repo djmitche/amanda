@@ -5,6 +5,9 @@ INCLUDES =	-I$(top_builddir)/common-src \
 		-I$(top_srcdir)/client-src   \
 		-I$(top_srcdir)/tape-src
 
+LINT=@AMLINT@
+LINTFLAGS=@AMLINTFLAGS@
+
 LIB_EXTENSION = la
 
 sbin_PROGRAMS =		amoldrecover
@@ -29,14 +32,26 @@ endif
 LDADD += ../common-src/libamanda.$(LIB_EXTENSION) \
 	$(READLINE_LIBS)
 
-amoldrecover_SOURCES =	amrecover.c					\
+amoldrecover_CSRC =	amrecover.c					\
 			display_commands.c		extract_list.c	\
-			help.c				set_commands.c	\
-			uparse.y			uscan.l
+			help.c				set_commands.c
+
+amoldrecover_SOURCES =	$(amoldrecover_CSRC)	uparse.y	uscan.l
 
 noinst_HEADERS = 	amrecover.h uparse.h
 
 AM_YFLAGS =		-d
+
+# so that uscan.c is never generated before uparse.h
+# otherwise we might have makedepend problems
+$(srcdir)/uscan.c: $(srcdir)/uparse.h
+
+uscan.$(OBJEXT): $(srcdir)/uscan.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) $(AM_CFLAGS) -c $<
+
+uparse.$(OBJEXT): $(srcdir)/uparse.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) $(AM_CFLAGS) -c $<
+
 
 install-exec-hook:
 	@list="$(sbin_PROGRAMS)"; \
@@ -50,6 +65,15 @@ install-exec-hook:
 		chmod o-rwx $$pa; \
 	done
 
-# so that uscan.c is never generated before uparse.h
-# otherwise we might have makedepend problems
-uscan.c: uparse.h
+
+lint:
+	@ f="$(amoldrecover_CSRC)";					  	\
+	  f="$$f "`(cd ../common-src; make listlibsrc 2>&1 >  /dev/null)`;	\
+	  f="$$f "`(cd ../server-src; make listlibsrc 2>&1 >  /dev/null)`;	\
+	  f="$$f "`(cd ../tape-src; make listlibsrc 2>&1 >  /dev/null)`;  	\
+	  echo $(LINT) $$f;							\
+	  $(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config $(INCLUDES) $$f;\
+	  if [ $$? -ne 0 ]; then						\
+	      exit 1;								\
+	  fi;									\
+          exit 0

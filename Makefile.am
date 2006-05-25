@@ -108,6 +108,18 @@ $(CONFIG_STATUS): $(SNAPSHOT_STAMP)
 SNAPSHOT:
 	: SNAPSHOT file was removed, will reconfigure...
 
+lint:
+	(cd amandad-src; make lint)
+	(cd changer-src; make lint)
+	(cd client-src; make lint)
+	(cd common-src; make lint)
+	(cd oldrecover-src; make lint)
+	(cd recover-src; make lint)
+	(cd regex-src; make lint)
+	(cd restore-src; make lint)
+	(cd server-src; make lint)
+	(cd tape-src; make lint)
+
 ## Do not release the *.test.c sources.  They get built on the fly and
 ## would contain a path from the distribution machine, which will just
 ## confuse the target user.

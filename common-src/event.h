@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.h,v 1.7 2006/04/26 14:42:29 martinea Exp $
+ * $Id: event.h,v 1.8 2006/05/25 01:47:11 johnfranks Exp $
  */
 #ifndef EVENT_H
 #define EVENT_H
@@ -66,7 +66,7 @@ typedef enum {
  * The function signature for functions that get called when an event
  * fires.
  */
-typedef void (*event_fn_t) P((void *));
+typedef void (*event_fn_t)(void *);
 
 /*
  * Register an event handler.
@@ -82,28 +82,27 @@ typedef void (*event_fn_t) P((void *));
  * count on the time events being too accurate.  They depend on the
  * caller calling event_loop() often enough.
  */
-event_handle_t *event_register P((event_id_t, event_type_t,
-    event_fn_t, void *));
+event_handle_t *event_register(event_id_t, event_type_t, event_fn_t, void *);
 
 /*
  * Release an event handler.
  */
-void event_release P((event_handle_t *));
+void event_release(event_handle_t *);
 
 /*
  * Wake up all EV_WAIT events waiting on a specific id
  */
-int event_wakeup P((event_id_t));
+int event_wakeup(event_id_t);
 
 /*
  * Block until the event is terminated.
  */
-int event_wait P((event_id_t));
+int event_wait(event_id_t);
 
 /*
  * Process events.  If the argument is nonzero, then the loop does
  * not block.
  */
-void event_loop P((const int));
+void event_loop(const int);
 
 #endif	/* EVENT_H */

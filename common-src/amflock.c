@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflock.c,v 1.27 2005/10/06 17:26:21 martinea Exp $
+ * $Id: amflock.c,v 1.28 2006/05/25 01:47:11 johnfranks Exp $
  *
  * file locking routines, put here to hide the system dependant stuff
  * from the rest of the code
@@ -57,7 +57,7 @@
 #  endif
 
 #  if !defined(HAVE_FLOCK_DECL) && !defined(CONFIGURE_TEST)
-     extern int flock P((int fd, int operation));
+     extern int flock(int fd, int operation);
 #  endif
 #endif
 
@@ -74,9 +74,10 @@
 ** - returns errors for some non-files like pipes.
 ** - probably only works for files open for writing.
 */
-int use_lockf(fd, op)
-int fd; /* fd of file to operate on */
-int op;	/* true to lock; false to unlock */
+int
+use_lockf(
+    int fd,	/* fd of file to operate on */
+    int op)	/* true to lock; false to unlock */
 {
 	off_t pos;
 
@@ -109,8 +110,9 @@ int op;	/* true to lock; false to unlock */
 
 /* Delete a lock file.
 */
-int delete_lock(fn)
-char *fn;
+int
+delete_lock(
+    char *fn)
 {
 	int rc;
 
@@ -122,9 +124,10 @@ char *fn;
 
 /* Create a lock file.
 */
-int create_lock(fn, pid)
-char *fn;
-long pid;
+int
+create_lock(
+    char *fn,
+    pid_t pid)
 {
 	int fd;
 	FILE *f;
@@ -133,7 +136,7 @@ long pid;
 	(void)delete_lock(fn);			/* that's MY file! */
 
 	mask = umask(0027);
-	fd = open(fn, O_WRONLY|O_CREAT|O_EXCL, 0640);
+	fd = open(fn, O_WRONLY | O_CREAT | O_EXCL, 0640);
 	umask(mask);
 	if (fd == -1) return -1;
 
@@ -150,8 +153,9 @@ long pid;
 /* Read the pid out of a lock file.
 **   -1=error, otherwise pid.
 */
-long read_lock(fn)
-char *fn; /* name of lock file */
+long
+read_lock(
+    char *	fn) /* name of lock file */
 {
 	int save_errno;
 	FILE *f;
@@ -175,9 +179,10 @@ char *fn; /* name of lock file */
 /* Link a lock if we can.
 **   0=done, 1=already locked, -1=error.
 */
-int link_lock(lk, tlk)
-char *lk;	/* real lock file */
-char *tlk;	/* temp lock file */
+int
+link_lock(
+    char *	lk,	/* real lock file */
+    char *	tlk)	/* temp lock file */
 {
 	int rc;
 	int serrno;	/* saved errno */
@@ -205,10 +210,11 @@ char *tlk;	/* temp lock file */
 /* Steal a lock if we can.
 **   0=done; 1=still in use; -1 = error.
 */
-int steal_lock(fn, mypid, sres)
-char *fn;	/* name of lock file to steal */
-long mypid;	/* my process id */
-char *sres;	/* name of steal-resource to lock */
+int
+steal_lock(
+    char *	fn,	/* name of lock file to steal */
+    pid_t	mypid,	/* my process id */
+    char *	sres)	/* name of steal-resource to lock */
 {
 	int fd;
 	char buff[64];
@@ -258,9 +264,10 @@ error:
 
 /* Locking using existance of a file.
 */
-int ln_lock(res, op)
-char *res; /* name of resource to lock */
-int op;    /* true to lock; false to unlock */
+int
+ln_lock(
+    char *	res, /* name of resource to lock */
+    int		op)  /* true to lock; false to unlock */
 {
 	long mypid;
 	char *lockfile = NULL;
@@ -284,7 +291,7 @@ int op;    /* true to lock; false to unlock */
 
 	/* lock the resource */
 
-	snprintf(pid_str, sizeof(pid_str), "%ld", mypid);
+	snprintf(pid_str, SIZEOF(pid_str), "%ld", mypid);
 	tlockfile = vstralloc(AMANDA_TMPDIR, "am", res, ".", pid_str, NULL);
 
 	(void)create_lock(tlockfile, mypid);
@@ -313,19 +320,23 @@ int op;    /* true to lock; false to unlock */
 #endif
 
 
-/* Get a file lock (for read-only files).
-*/
-int amroflock(fd, resource)
-int fd;
-char *resource;
+/*
+ * Get a file lock (for read-only files).
+ */
+int
+amroflock(
+    int		fd,
+    char *	resource)
 {
 	int r;
 
 #ifdef USE_POSIX_FCNTL
+	(void)resource; /* Quiet unused paramater warning */
 	lock.l_type = F_RDLCK;
 	lock.l_whence = SEEK_SET;
 	r = fcntl(fd, F_SETLKW, &lock);
 #else
+	(void)fd; /* Quiet unused paramater warning */
 	r = amflock(fd, resource);
 #endif
 
@@ -335,26 +346,33 @@ char *resource;
 
 /* Get a file lock (for read/write files).
 */
-int amflock(fd, resource)
-int fd;
-char *resource;
+int
+amflock(
+    int		fd,
+    char *	resource)
 {
 	int r;
 
 #ifdef USE_POSIX_FCNTL
+	(void)resource; /* Quiet unused paramater warning */
 	lock.l_type = F_WRLCK;
 	lock.l_whence = SEEK_SET;
 	r = fcntl(fd, F_SETLKW, &lock);
 #else
 #ifdef USE_FLOCK
+	(void)resource; /* Quiet unused paramater warning */
 	r = flock(fd, LOCK_EX);
 #else
 #ifdef USE_LOCKF
+	(void)resource; /* Quiet unused paramater warning */
 	r = use_lockf(fd, 1);
 #else
 #ifdef USE_LNLOCK
+	(void)fd; /* Quiet unused paramater warning */
 	r = ln_lock(resource, 1);
 #else
+	(void)fd; /* Quiet unused paramater warning */
+	(void)resource; /* Quiet unused paramater warning */
 	r = 0;
 #endif
 #endif
@@ -367,26 +385,33 @@ char *resource;
 
 /* Release a file lock.
 */
-int amfunlock(fd, resource)
-int fd;
-char *resource;
+int
+amfunlock(
+    int		fd,
+    char *	resource)
 {
 	int r;
 
 #ifdef USE_POSIX_FCNTL
+	(void)resource; /* Quiet unused paramater warning */
 	lock.l_type = F_UNLCK;
 	lock.l_whence = SEEK_SET;
 	r = fcntl(fd, F_SETLK, &lock);
 #else
 #ifdef USE_FLOCK
+	(void)resource; /* Quiet unused paramater warning */
 	r = flock(fd, LOCK_UN);
 #else
 #ifdef USE_LOCKF
+	(void)fd; /* Quiet unused paramater warning */
 	r = use_lockf(fd, 0);
 #else
 #ifdef USE_LNLOCK
+	(void)fd; /* Quiet unused paramater warning */
 	r = ln_lock(resource, 0);
 #else
+	(void)fd; /* Quiet unused paramater warning */
+	(void)resource; /* Quiet unused paramater warning */
 	r = 0;
 #endif
 #endif
@@ -407,15 +432,21 @@ char *resource;
 **     for ever.
 */
 #ifdef CONFIGURE_TEST
-main()
+int
+main(
+    int argc,
+    char **argv)
 {
     int lockfd;
     char *filen = "/tmp/conftest.lock";
     char *resn = "test";
     int fd;
 
+    (void)argc;		/* Quiet compiler warning */
+    (void)argv;		/* Quiet compiler warning */
+
     unlink(filen);
-    if ((lockfd = open(filen, O_RDONLY|O_CREAT|O_EXCL, 0600)) == -1) {
+    if ((lockfd = open(filen, O_RDONLY | O_CREAT | O_EXCL, 0600)) == -1) {
 	perror (filen);
 	exit(10);
     }
@@ -437,7 +468,7 @@ main()
     close(lockfd);
 
     unlink(filen);
-    if ((lockfd = open(filen, O_WRONLY|O_CREAT|O_EXCL, 0600)) == -1) {
+    if ((lockfd = open(filen, O_WRONLY | O_CREAT | O_EXCL, 0600)) == -1) {
 	perror (filen);
 	exit(20);
     }

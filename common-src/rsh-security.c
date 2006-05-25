@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.25 2006/05/12 22:42:48 martinea Exp $
+ * $Id: rsh-security.c,v 1.26 2006/05/25 01:47:12 johnfranks Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -45,7 +45,7 @@
 
 #ifdef RSH_SECURITY
 
-/*#define	RSH_DEBUG*/
+#define	RSH_DEBUG
 
 #ifdef RSH_DEBUG
 #define	rshprintf(x)	dbprintf(x)
@@ -77,9 +77,9 @@
 /*
  * Interface functions
  */
-static void rsh_connect P((const char *,
-    char *(*)(char *, void *), 
-    void (*)(void *, security_handle_t *, security_status_t), void *, void *));
+static void rsh_connect(const char *, char *(*)(char *, void *),
+			void (*)(void *, security_handle_t *, security_status_t),
+			void *, void *);
 
 /*
  * This is our interface to the outside world.
@@ -109,7 +109,7 @@ static int newhandle = 1;
 /*
  * Local functions
  */
-static int runrsh P((struct tcp_conn *, const char *, const char *));
+static int runrsh(struct tcp_conn *, const char *, const char *);
 
 
 /*
@@ -117,12 +117,12 @@ static int runrsh P((struct tcp_conn *, const char *, const char *));
  * up a network "connection".
  */
 static void
-rsh_connect(hostname, conf_fn, fn, arg, datap)
-    const char *hostname;
-    char *(*conf_fn) P((char *, void *));
-    void (*fn) P((void *, security_handle_t *, security_status_t));
-    void *arg;
-    void *datap;
+rsh_connect(
+    const char *	hostname,
+    char *		(*conf_fn)(char *, void *),
+    void		(*fn)(void *, security_handle_t *, security_status_t),
+    void *		arg,
+    void *		datap)
 {
     struct sec_handle *rh;
     struct hostent *he;
@@ -134,7 +134,7 @@ rsh_connect(hostname, conf_fn, fn, arg, datap)
     rshprintf(("%s: rsh: rsh_connect: %s\n", debug_prefix_time(NULL),
 	       hostname));
 
-    rh = alloc(sizeof(*rh));
+    rh = alloc(SIZEOF(*rh));
     security_handleinit(&rh->sech, &rsh_security_driver);
     rh->hostname = NULL;
     rh->rs = NULL;
@@ -179,9 +179,9 @@ rsh_connect(hostname, conf_fn, fn, arg, datap)
      */
     rh->fn.connect = fn;
     rh->arg = arg;
-    rh->rs->ev_read = event_register(rh->rs->rc->write, EV_WRITEFD,
+    rh->rs->ev_read = event_register((event_id_t)rh->rs->rc->write, EV_WRITEFD,
 	sec_connect_callback, rh);
-    rh->ev_timeout = event_register(CONNECT_TIMEOUT, EV_TIME,
+    rh->ev_timeout = event_register((event_id_t)CONNECT_TIMEOUT, EV_TIME,
 	sec_connect_timeout, rh);
 
     return;
@@ -195,15 +195,17 @@ error:
  * Returns negative on error, with an errmsg in rc->errmsg.
  */
 static int
-runrsh(rc, amandad_path, client_username)
-    struct tcp_conn *rc;
-    const char *amandad_path;
-    const char *client_username;
+runrsh(
+    struct tcp_conn *	rc,
+    const char *	amandad_path,
+    const char *	client_username)
 {
     int rpipe[2], wpipe[2];
     char *xamandad_path = (char *)amandad_path;
     char *xclient_username = (char *)client_username;
 
+    memset(rpipe, -1, SIZEOF(rpipe));
+    memset(wpipe, -1, SIZEOF(wpipe));
     if (pipe(rpipe) < 0 || pipe(wpipe) < 0) {
 	rc->errmsg = newvstralloc("pipe: ", strerror(errno), NULL);
 	return (-1);

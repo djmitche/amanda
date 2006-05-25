@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.h,v 1.10 2003/04/26 02:02:18 kovert Exp $
+ * $Id: protocol.h,v 1.11 2006/05/25 01:47:12 johnfranks Exp $
  *
  * server-side interfaces for amanda protocol state machine
  */
@@ -33,14 +33,13 @@
 
 #include "security.h"
 
-void protocol_init P((void));
-typedef	void (*protocol_sendreq_callback) P((void *, pkt_t *,
-    security_handle_t *));
-void protocol_sendreq P((const char *, const security_driver_t *, 
-	char *(*) P((char *, void *)), 
-	const char *,
-    time_t, protocol_sendreq_callback, void *));
-void protocol_check P((void));
-void protocol_run P((void));
+void protocol_init(void);
+typedef	void (*protocol_sendreq_callback)(void *, pkt_t *,
+    security_handle_t *);
+void protocol_sendreq(const char *, const security_driver_t *,
+	char *(*)(char *, void *), const char *, time_t,
+	protocol_sendreq_callback, void *);
+void protocol_check(void);
+void protocol_run(void);
 
 #endif /* PROTOCOL_H */

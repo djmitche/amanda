@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsdudp-security.c,v 1.1 2006/05/12 23:11:50 martinea Exp $
+ * $Id: bsdudp-security.c,v 1.2 2006/05/25 01:47:11 johnfranks Exp $
  *
  * "BSD" security module
  */
@@ -42,7 +42,7 @@
 
 #ifdef BSDUDP_SECURITY
 
-/*#define       BSDUDP_DEBUG*/
+#define       BSDUDP_DEBUG
 
 #ifdef BSDUDP_DEBUG
 #define bsdudpprintf(x)    dbprintf(x)
@@ -69,11 +69,11 @@
 /*
  * Interface functions
  */
-static void bsdudp_connect P((const char *,
+static void bsdudp_connect(const char *,
     char *(*)(char *, void *), 
-    void (*)(void *, security_handle_t *, security_status_t), void *, void *));
-static void bsdudp_accept P((const struct security_driver *, int, int, void (*)(security_handle_t *, pkt_t *)));
-static void bsdudp_close P((void *));
+    void (*)(void *, security_handle_t *, security_status_t), void *, void *);
+static void bsdudp_accept(const struct security_driver *, int, int, void (*)(security_handle_t *, pkt_t *));
+static void bsdudp_close(void *);
 
 /*
  * This is our interface to the outside world
@@ -106,69 +106,30 @@ static udp_handle_t netfd;
 static int not_init = 1;
 
 /* generate new handles from here */
-static int newhandle = 0;
-
-#if defined(SHOW_SECURITY_DETAIL)				/* { */
-/*
- * Display stat() information about a file.
- */
-void show_stat_info(a, b)
-    char *a, *b;
-{
-    char *name = vstralloc(a, b, NULL);
-    struct stat sbuf;
-    struct passwd *pwptr;
-    char *owner;
-    struct group *grptr;
-    char *group;
-
-    if (stat(name, &sbuf) != 0) {
-	bsdudpprintf(("%s: bsdudp: cannot stat %s: %s\n",
-		   debug_prefix_time(NULL), name, strerror(errno)));
-	amfree(name);
-	return;
-    }
-    if ((pwptr = getpwuid(sbuf.st_uid)) == NULL) {
-	owner = alloc(NUM_STR_SIZE + 1);
-	snprintf(owner, NUM_STR_SIZE, "%ld", (long)sbuf.st_uid);
-    } else {
-	owner = stralloc(pwptr->pw_name);
-    }
-    if ((grptr = getgrgid(sbuf.st_gid)) == NULL) {
-	group = alloc(NUM_STR_SIZE + 1);
-	snprintf(owner, NUM_STR_SIZE, "%ld", (long)sbuf.st_gid);
-    } else {
-	group = stralloc(grptr->gr_name);
-    }
-    bsdudpprintf(("%s: bsdudp: processing file: %s\n", debug_prefix(NULL), name));
-    bsdudpprintf(("%s: bsdudp:                  owner=%s group=%s mode=%03o\n",
-	       debug_prefix(NULL), owner, group, (int) (sbuf.st_mode & 0777)));
-    amfree(name);
-    amfree(owner);
-    amfree(group);
-}
-#endif								/* } */
+static unsigned int newhandle = 0;
 
 /*
  * Setup and return a handle outgoing to a client
  */
 static void
-bsdudp_connect(hostname, conf_fn, fn, arg, datap)
-    const char *hostname;
-    char *(*conf_fn) P((char *, void *));
-    void (*fn) P((void *, security_handle_t *, security_status_t));
-    void *arg;
-    void *datap;
+bsdudp_connect(
+    const char *hostname,
+    char *	(*conf_fn)(char *, void *),
+    void	(*fn)(void *, security_handle_t *, security_status_t),
+    void *	arg,
+    void *	datap)
 {
     struct sec_handle *bh;
     struct servent *se;
     struct hostent *he;
-    int port;
+    in_port_t port;
     struct timeval sequence_time;
     amanda_timezone dontcare;
     int sequence;
     char *handle;
 
+    (void)conf_fn;	/* Quiet unused parameter warning */
+    (void)datap;	/* Quiet unused parameter warning */
     assert(hostname != NULL);
 
     bh = alloc(sizeof(*bh));
@@ -212,9 +173,9 @@ bsdudp_connect(hostname, conf_fn, fn, arg, datap)
 	return;
     }
     if ((se = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL)
-	port = htons(AMANDA_SERVICE_DEFAULT);
+	port = (in_port_t)htons(AMANDA_SERVICE_DEFAULT);
     else
-	port = se->s_port;
+	port = (in_port_t)se->s_port;
     amanda_gettimeofday(&sequence_time, &dontcare);
     sequence = (int)sequence_time.tv_sec ^ (int)sequence_time.tv_usec;
     handle=malloc(15);
@@ -222,20 +183,23 @@ bsdudp_connect(hostname, conf_fn, fn, arg, datap)
     if (udp_inithandle(&netfd, bh, he, port, handle, sequence) < 0) {
 	(*fn)(arg, &bh->sech, S_ERROR);
 	amfree(bh);
-    }
-    else
+    } else {
 	(*fn)(arg, &bh->sech, S_OK);
+    }
 }
 
 /*
  * Setup to accept new incoming connections
  */
 static void
-bsdudp_accept(driver, in, out, fn)
-    const struct security_driver *driver;
-    int in, out;
-    void (*fn) P((security_handle_t *, pkt_t *));
+bsdudp_accept(
+    const struct security_driver *driver,
+    int		in,
+    int		out,
+    void	(*fn)(security_handle_t *, pkt_t *))
 {
+    (void)driver;	/* Quiet unused parameter warning */
+    (void)out;		/* Quiet unused parameter warning */
 
     assert(in >= 0 && out >= 0);
     assert(fn != NULL);
@@ -264,8 +228,8 @@ bsdudp_accept(driver, in, out, fn)
  * Frees a handle allocated by the above
  */
 static void
-bsdudp_close(cookie)
-    void *cookie;
+bsdudp_close(
+    void *cookie)
 {
     struct sec_handle *bh = cookie;
 

@@ -1,3 +1,138 @@
+2006-05-24  John Franks <jrfranks@zmanda.com>
+	Add support for binary path names on disk and in configuration files.
+           (Allow spaces in filenames.)
+
+	Allow quoted strings for disklist entries.
+
+	Lint clean code using sun lint, splint and strict GCC warnings. 
+	Type / size clean, dead code removal, portibility checks, etc.
+	Many checks are still turned off.  See configure.in for lint flags used.
+
+	Increase debug output in /tmp/amanda/*debug files.
+
+	Set SO_REUSEADDR on sockets help avoid running out of ports.
+
+	* configure.in:
+		Added lint program discovery with specific targets for SUN lint and splint.
+		Check each compiler option to see if GCC supports it.
+		Enable more code quality warnings.
+		Change missing xsltproc to warning rather than error.
+		Define _GNU_SOURCES to build flags.
+		Make size_t and time_t printf format macros.
+		Check for isnormal() availability.
+		Don't install man pages if they are not built.
+		Fix man pages to not attempt build or install if
+			--without-built-manpages is set.
+
+	* Makefile.am amandad-src/Makefile.am changer-src/Makefile.am
+	  client-src/Makefile.am common-src/Makefile.am
+	  oldrecover-src/Makefile.am recover-src/Makefile.am
+	  restore-src/Makefile.am server-src/Makefile.am tape-src/Makefile.am:
+		Add lint target.
+
+	* common-src/amanda.h common-src/dgram.c common-src/stream.c
+	  common-src/util.c:
+		Keep checking for ports on all bind errors.
+		Delay and retry a few times if all ports are busy.
+		Retry bind failures after all methods fail.
+		increase bind checking timeout to 30 minutes.
+
+	* client-src/amandad.c
+		Issue wait when any child exits.  (Get rid of defunct processes)
+		Stat() index file before using system command.
+		  (shell is not reporting failure if index is not present)
+
+	* recover-src/extract_list.c:
+	  Fix problem of 'add *' not adding directories.
+	  Fix problem of freeing pointer not obtained through malloc.
+	  Touch up file addition to actually use the file names
+	     retrieved when adding a directory and not the directory itself.
+
+	* server-src/taper.c
+		Strenghten error recovery for broken syncpipes and writer errors.
+
+	* changer-src/chg-scsi-chio.c client-src/amandates.c
+	  client-src/client_util.c client-src/findpass.c client-src/getfsent.c
+	  client-src/selfcheck.c client-src/sendbackup-gnutar.c
+	  client-src/sendbackup-star.c client-src/sendbackup.c
+	  client-src/sendsize.c common-src/bsd-security.c common-src/file.c
+	  common-src/krb5-security.c server-src/amcheck.c server-src/amindexd.c
+	  server-src/diskfile.c server-src/driver.c server-src/dumper.c
+	  server-src/holding.c server-src/infofile.c server-src/logfile.c
+	  server-src/tapefile.c:
+		allow empty lines in input streams.
+
+	* recover-src/uparse.y
+		print message when input is garbage.
+
+	* server-src/getconf.c:
+		Define HOSTNAME_INSTANCE if it was not already defined
+		for Kerberos.
+
+	* configure.in: Make readline warning less specific.  Readline is
+	  used by all input from terminal now.
+
+2006-05-24  Kevin Till <ktill@@zmanda.com>
+	* client-src/sendbackup.c: ignore SIGINT
+	* common-src/ssh-security.c: add to total only when n > 0
+	* common-src/ssh-security.c: add ssh to error,
+	  retry writev when EINTR, EAGAIN is seen
+	  to STDOUT. exit when options is chosen in template mode.
+	* server-src/driver.c: make sure timestamp is not null
+	* amanda/configure.in: remove template.d/amanda.conf which is a dup 
+	  of amanda-harddisk.conf
+	* example/Makefile.am: add template.d/README
+	* amanda-harddisk.conf.in: set tapedev
+	* recover-src/amrecover.c: aclose socket before exit.
+	* recover-src/extract_list.c: ditto
+	* amanda_enterprise.spec: remove template.d/amanda.conf, add template.d/README
+	  in the failure cases. <> user input field.
+	* server-src/amcheck.c: no quoted text is a warning
+	* server-src/driver.c: no need to amfree qname
+	  argument. Search mtx in PATH too.
+	* example/template.d/advanced.conf.in: fix comment for autoflush
+	* example/template.d/advanced.conf.in: add usetimestamps
+	* server-src/diskfile.c: to catch unsupported compress-encryption
+	  combination and abort amdump gracefully.
+	* man/xml-source/amanda.conf.5.xml: fix syntax, add 
+	  dumptype references.	
+	* man/xml-source/amanda.8.xml: fix syntax
+	* configure.in:			ditto
+	* man/Makefile.am:		ditto
+	* example/amanda.conf.in:	tidy up
+        * man/xml-source/amaespipe.8.xml: add uuencode as requirement
+        * man/xml-source/amcrypt.8.xml:   add uuencode as requirement
+        * server-src/amcheck.c: catch dumptype misconfiguration
+        * server-src/diskfile.c: ditto
+        * server-src/driverio.c: ditto
+        * server-src/planner.c:  ditto
+        * server-src/conffile.c: check includefile before calling
+          read_conffile_recursively
+	* example/amanda.conf.in:	add public-key encryption dumptype example
+	* man/xml-source/amanda.8.xml:  fix some formatting	
+	* server-src/planner.c: adjust setuid() calling sequences so that ssh can work
+	* server-src/dumper.c:  ditto
+	* configure.in:		     add LOW_TCPPORTRANGE for amrecover
+	* common-src/stream.c:       use LOW_TCPPORTRANGE
+	* server-src/amdump.sh.in:   check if config is supplied
+	* man/xml-source/amrestore.8.xml: add notes on "-f" option
+
+2006-05-24  Ian Turner <ian@zmanda.com>
+	* configure.in: Properly document --without-xsltproc as itself, 
+	  and not the (nonexistant) option --without-built-manpages.
+
+2006-05-16  John Franks <jrfranks@zmanda.com>
+	* amandad-src/amandad.c client-src/clientconf.c common-src/bsd-security.c
+	  common-src/bsdudp-security.c common-src/dgram.c common-src/krb4-security.c
+	  common-src/krb5-security.c common-src/match.c common-src/packet.c
+	  common-src/security-util.c common-src/security-util.h
+	  common-src/security.h common-src/util.c oldrecover-src/Makefile.am
+	  oldrecover-src/set_commands.c recover-src/amrecover.c
+	  recover-src/extract_list.c server-src/conffile.c server-src/driver.c
+	  server-src/dumper.c server-src/planner.c server-src/reporter.c:
+		Minimal changes to get tree to compile along with some more
+		debugging output.
+
 2006-05-15  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amadmin.c (disklist_one): print spindle.
 
@@ -1047,18 +1182,18 @@
 	  syntax, in favor of xx/-1.
 
 2005-12-29  John Franks <jrfranks@zmanda.com>
-	* Index: recover-src/display_commands.c
+	* recover-src/display_commands.c
 	  Fix list deletion which did not update list root with NULL pointer.
 	  Make free_dir_item() a non-recursive function to prevent stack bloat.
 	  Fix list insertion code which inserts item in list initializes entry.
-	* Index: recover-src/extract_list.c
+	* recover-src/extract_list.c
 	  Fix to initialize lditem before using it...
 	  Prevent multiple frees of cmd string.
 	  Do not free err which is only initialized with static string pointers.
 	  Fix typo which caused newstralloc() to free the wrong memory.
-	* Index: server-src/amindexd.c
+	* server-src/amindexd.c
 	  Fix Compiler warning of unused variable.
-	* Index: server-src/taperscan.c
+	* server-src/taperscan.c
 	  Fix Compiler warning of bogus format specifier.
   
 2005-12-29  Kevin Till<ktill@zmanda.com>

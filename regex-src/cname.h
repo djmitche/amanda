@@ -1,3 +1,6 @@
+#ifndef CNAME_H
+#define CNAME_H
+
 /* character-name table */
 static struct cname {
 	char *name;
@@ -100,3 +103,5 @@ static struct cname {
 	{ "DEL",			'\177' },
 	{ NULL,				0 }
 };
+
+#endif	/* !CNAME_H */

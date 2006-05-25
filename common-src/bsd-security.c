@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.61 2006/05/13 01:19:08 martinea Exp $
+ * $Id: bsd-security.c,v 1.62 2006/05/25 01:47:11 johnfranks Exp $
  *
  * "BSD" security module
  */
@@ -40,7 +40,7 @@
 #include "stream.h"
 #include "version.h"
 
-/*#define       BSD_DEBUG*/
+#define       BSD_DEBUG
 
 #ifdef BSD_DEBUG
 #define bsdprintf(x)    dbprintf(x)
@@ -69,21 +69,21 @@
 /*
  * Interface functions
  */
-static void bsd_connect P((const char *,
-    char *(*)(char *, void *), 
-    void (*)(void *, security_handle_t *, security_status_t), void *, void *));
-static void bsd_accept P((const struct security_driver *, int, int, void (*)(security_handle_t *, pkt_t *)));
-static void bsd_close P((void *));
-static void *bsd_stream_server P((void *));
-static int bsd_stream_accept P((void *));
-static void *bsd_stream_client P((void *, int));
-static void bsd_stream_close P((void *));
-static int bsd_stream_auth P((void *));
-static int bsd_stream_id P((void *));
-static void bsd_stream_read P((void *, void (*)(void *, void *, ssize_t),
-    void *));
-static int bsd_stream_read_sync P((void *, void **));
-static void bsd_stream_read_cancel P((void *));
+static void	bsd_connect(const char *, char *(*)(char *, void *), 
+			void (*)(void *, security_handle_t *, security_status_t),
+			void *, void *);
+static void	bsd_accept(const struct security_driver *, int, int,
+			void (*)(security_handle_t *, pkt_t *));
+static void	bsd_close(void *);
+static void *	bsd_stream_server(void *);
+static int	bsd_stream_accept(void *);
+static void *	bsd_stream_client(void *, int);
+static void	bsd_stream_close(void *);
+static int	bsd_stream_auth(void *);
+static int	bsd_stream_id(void *);
+static void	bsd_stream_read(void *, void (*)(void *, void *, ssize_t), void *);
+static ssize_t	bsd_stream_read_sync(void *, void **);
+static void	bsd_stream_read_cancel(void *);
 
 /*
  * This is our interface to the outside world
@@ -121,65 +121,25 @@ static int newhandle = 0;
 /*
  * These are the internal helper functions
  */
-static void stream_read_callback P((void *));
-static void stream_read_sync_callback P((void *));
-
-#if defined(SHOW_SECURITY_DETAIL)				/* { */
-/*
- * Display stat() information about a file.
- */
-void show_stat_info(a, b)
-    char *a, *b;
-{
-    char *name = vstralloc(a, b, NULL);
-    struct stat sbuf;
-    struct passwd *pwptr;
-    char *owner;
-    struct group *grptr;
-    char *group;
-
-    if (stat(name, &sbuf) != 0) {
-	bsdprintf(("%s: bsd: cannot stat %s: %s\n",
-		   debug_prefix_time(NULL), name, strerror(errno)));
-	amfree(name);
-	return;
-    }
-    if ((pwptr = getpwuid(sbuf.st_uid)) == NULL) {
-	owner = alloc(NUM_STR_SIZE + 1);
-	snprintf(owner, NUM_STR_SIZE, "%ld", (long)sbuf.st_uid);
-    } else {
-	owner = stralloc(pwptr->pw_name);
-    }
-    if ((grptr = getgrgid(sbuf.st_gid)) == NULL) {
-	group = alloc(NUM_STR_SIZE + 1);
-	snprintf(owner, NUM_STR_SIZE, "%ld", (long)sbuf.st_gid);
-    } else {
-	group = stralloc(grptr->gr_name);
-    }
-    bsdprintf(("%s: bsd: processing file: %s\n", debug_prefix(NULL), name));
-    bsdprintf(("%s: bsd:                  owner=%s group=%s mode=%03o\n",
-	       debug_prefix(NULL), owner, group, (int) (sbuf.st_mode & 0777)));
-    amfree(name);
-    amfree(owner);
-    amfree(group);
-}
-#endif								/* } */
+static void	stream_read_callback(void *);
+static void	stream_read_sync_callback(void *);
 
 /*
  * Setup and return a handle outgoing to a client
  */
+
 static void
-bsd_connect(hostname, conf_fn, fn, arg, datap)
-    const char *hostname;
-    char *(*conf_fn) P((char *, void *));
-    void (*fn) P((void *, security_handle_t *, security_status_t));
-    void *arg;
-    void *datap;
+bsd_connect(
+    const char *	hostname,
+    char *		(*conf_fn)(char *, void *),
+    void		(*fn)(void *, security_handle_t *, security_status_t),
+    void *		arg,
+    void *		datap)
 {
     struct sec_handle *bh;
     struct servent *se;
     struct hostent *he;
-    int port;
+    in_port_t port = 0;
     struct timeval sequence_time;
     amanda_timezone dontcare;
     int sequence;
@@ -187,7 +147,10 @@ bsd_connect(hostname, conf_fn, fn, arg, datap)
 
     assert(hostname != NULL);
 
-    bh = alloc(sizeof(*bh));
+    (void)conf_fn;	/* Quiet unused parameter warning */
+    (void)datap;        /* Quiet unused parameter warning */
+
+    bh = alloc(SIZEOF(*bh));
     bh->proto_handle=NULL;
     bh->udp = &netfd;
     security_handleinit(&bh->sech, &bsd_security_driver);
@@ -198,9 +161,9 @@ bsd_connect(hostname, conf_fn, fn, arg, datap)
     if (not_init == 1) {
 	uid_t euid;
 	dgram_zero(&netfd.dgram);
-	
+
 	euid = geteuid();
-	seteuid(0);
+	seteuid((uid_t)0);
 	dgram_bind(&netfd.dgram, &port);
 	seteuid(euid);
 	netfd.handle = NULL;
@@ -212,7 +175,7 @@ bsd_connect(hostname, conf_fn, fn, arg, datap)
 	 */
 	if (port >= IPPORT_RESERVED) {
 	    security_seterror(&bh->sech,
-		"unable to bind to a reserved port (got port %d)",
+		"unable to bind to a reserved port (got port %hd)",
 		port);
 	    (*fn)(arg, &bh->sech, S_ERROR);
 	    return;
@@ -226,14 +189,15 @@ bsd_connect(hostname, conf_fn, fn, arg, datap)
 	(*fn)(arg, &bh->sech, S_ERROR);
 	return;
     }
+    bsdprintf(("Resolved hostname=%s\n", hostname));
     if ((se = getservbyname(AMANDA_SERVICE_NAME, "udp")) == NULL)
-	port = htons(AMANDA_SERVICE_DEFAULT);
+	port = (in_port_t)htons(AMANDA_SERVICE_DEFAULT);
     else
-	port = se->s_port;
+	port = (in_port_t)se->s_port;
     amanda_gettimeofday(&sequence_time, &dontcare);
     sequence = (int)sequence_time.tv_sec ^ (int)sequence_time.tv_usec;
     handle=malloc(15);
-    snprintf(handle,14,"000-%08x", newhandle++);
+    snprintf(handle, 14, "000-%08x",  (unsigned)newhandle++);
     if (udp_inithandle(&netfd, bh, he, port, handle, sequence) < 0) {
 	(*fn)(arg, &bh->sech, S_ERROR);
 	amfree(bh);
@@ -246,14 +210,18 @@ bsd_connect(hostname, conf_fn, fn, arg, datap)
  * Setup to accept new incoming connections
  */
 static void
-bsd_accept(driver, in, out, fn)
-    const struct security_driver *driver;
-    int in, out;
-    void (*fn) P((security_handle_t *, pkt_t *));
+bsd_accept(
+    const struct security_driver *	driver,
+    int		in,
+    int		out,
+    void	(*fn)(security_handle_t *, pkt_t *))
 {
 
     assert(in >= 0 && out >= 0);
     assert(fn != NULL);
+
+    (void)out;	/* Quiet unused parameter warning */
+    (void)driver; /* Quiet unused parameter warning */
 
     /*
      * We assume in and out point to the same socket, and just use
@@ -271,7 +239,6 @@ bsd_accept(driver, in, out, fn)
     netfd.prefix_packet = &bsd_prefix_packet;
     netfd.driver = &bsd_security_driver;
 
-
     udp_addref(&netfd, &udp_netfd_read_callback);
 }
 
@@ -279,8 +246,8 @@ bsd_accept(driver, in, out, fn)
  * Frees a handle allocated by the above
  */
 static void
-bsd_close(cookie)
-    void *cookie;
+bsd_close(
+    void *	cookie)
 {
     struct sec_handle *bh = cookie;
 
@@ -314,18 +281,19 @@ bsd_close(cookie)
  * socket for receiving a connection.
  */
 static void *
-bsd_stream_server(h)
-    void *h;
+bsd_stream_server(
+    void *	h)
 {
-    struct sec_stream *bs = NULL;
 #ifndef TEST							/* { */
+    struct sec_stream *bs = NULL;
     struct sec_handle *bh = h;
 
     assert(bh != NULL);
 
-    bs = alloc(sizeof(*bs));
+    bs = alloc(SIZEOF(*bs));
     security_streaminit(&bs->secstr, &bsd_security_driver);
-    bs->socket = stream_server(&bs->port, STREAM_BUFSIZE, STREAM_BUFSIZE);
+    bs->socket = stream_server(&bs->port, (size_t)STREAM_BUFSIZE, 
+			(size_t)STREAM_BUFSIZE);
     if (bs->socket < 0) {
 	security_seterror(&bh->sech,
 	    "can't create server stream: %s", strerror(errno));
@@ -334,8 +302,10 @@ bsd_stream_server(h)
     }
     bs->fd = -1;
     bs->ev_read = NULL;
-#endif /* !TEST */						/* } */
     return (bs);
+#else
+    return (NULL);
+#endif /* !TEST */						/* } */
 }
 
 /*
@@ -343,8 +313,8 @@ bsd_stream_server(h)
  * block on accept()
  */
 static int
-bsd_stream_accept(s)
-    void *s;
+bsd_stream_accept(
+    void *	s)
 {
 #ifndef TEST							/* { */
     struct sec_stream *bs = s;
@@ -367,32 +337,26 @@ bsd_stream_accept(s)
  * Return a connected stream
  */
 static void *
-bsd_stream_client(h, id)
-    void *h;
-    int id;
+bsd_stream_client(
+    void *	h,
+    int		id)
 {
     struct sec_stream *bs = NULL;
 #ifndef TEST							/* { */
     struct sec_handle *bh = h;
 #ifdef DUMPER_SOCKET_BUFFERING
-    int rcvbuf = sizeof(bs->databuf) * 2;
+    size_t rcvbuf = SIZEOF(bs->databuf) * 2;
 #endif
 
     assert(bh != NULL);
 
-    if (id < 0) {
-	security_seterror(&bh->sech,
-	    "%d: invalid security stream id", id);
-	return (NULL);
-    }
-
-    bs = alloc(sizeof(*bs));
+    bs = alloc(SIZEOF(*bs));
     security_streaminit(&bs->secstr, &bsd_security_driver);
-    bs->fd = stream_client(bh->hostname, id, STREAM_BUFSIZE, STREAM_BUFSIZE,
-	&bs->port, 0);
+    bs->fd = stream_client(bh->hostname, (in_port_t)id,
+	STREAM_BUFSIZE, STREAM_BUFSIZE, &bs->port, 0);
     if (bs->fd < 0) {
 	security_seterror(&bh->sech,
-	    "can't connect stream to %s port %d: %s", bh->hostname,
+	    "can't connect stream to %s port %hd: %s", bh->hostname,
 	    id, strerror(errno));
 	amfree(bs);
 	return (NULL);
@@ -400,7 +364,7 @@ bsd_stream_client(h, id)
     bs->socket = -1;	/* we're a client */
     bs->ev_read = NULL;
 #ifdef DUMPER_SOCKET_BUFFERING
-    setsockopt(bs->fd, SOL_SOCKET, SO_RCVBUF, (void *)&rcvbuf, sizeof(rcvbuf));
+    setsockopt(bs->fd, SOL_SOCKET, SO_RCVBUF, (void *)&rcvbuf, SIZEOF(rcvbuf));
 #endif
 #endif /* !TEST */						/* } */
     return (bs);
@@ -410,8 +374,8 @@ bsd_stream_client(h, id)
  * Close and unallocate resources for a stream
  */
 static void
-bsd_stream_close(s)
-    void *s;
+bsd_stream_close(
+    void *	s)
 {
     struct sec_stream *bs = s;
 
@@ -429,9 +393,10 @@ bsd_stream_close(s)
  * Authenticate a stream.  bsd streams have no authentication
  */
 static int
-bsd_stream_auth(s)
-    void *s;
+bsd_stream_auth(
+    void *	s)
 {
+    (void)s;		/* Quiet unused parameter warning */
 
     return (0);	/* success */
 }
@@ -440,14 +405,14 @@ bsd_stream_auth(s)
  * Returns the stream id for this stream.  This is just the local port.
  */
 static int
-bsd_stream_id(s)
-    void *s;
+bsd_stream_id(
+    void *	s)
 {
     struct sec_stream *bs = s;
 
     assert(bs != NULL);
 
-    return (bs->port);
+    return ((int)bs->port);
 }
 
 /*
@@ -455,9 +420,10 @@ bsd_stream_id(s)
  * and arg when completed.
  */
 static void
-bsd_stream_read(s, fn, arg)
-    void *s, *arg;
-    void (*fn) P((void *, void *, ssize_t));
+bsd_stream_read(
+    void *	s,
+    void	(*fn)(void *, void *, ssize_t),
+    void *	arg)
 {
     struct sec_stream *bs = s;
 
@@ -467,7 +433,7 @@ bsd_stream_read(s, fn, arg)
     if (bs->ev_read != NULL)
 	event_release(bs->ev_read);
 
-    bs->ev_read = event_register(bs->fd, EV_READFD, stream_read_callback, bs);
+    bs->ev_read = event_register((event_id_t)bs->fd, EV_READFD, stream_read_callback, bs);
     bs->fn = fn;
     bs->arg = arg;
 }
@@ -475,10 +441,10 @@ bsd_stream_read(s, fn, arg)
 /*
  * Read a chunk of data to a stream.  Blocks until completion.
  */
-static int
-bsd_stream_read_sync(s, buf)
-    void *s;
-    void **buf;
+static ssize_t
+bsd_stream_read_sync(
+    void *	s,
+    void **	buf)
 {
     struct sec_stream *bs = s;
 
@@ -490,11 +456,11 @@ bsd_stream_read_sync(s, buf)
     if(bs->ev_read != NULL) {
         return -1;
     }
-    bs->ev_read = event_register(bs->fd, EV_READFD, stream_read_sync_callback, bs);
+    bs->ev_read = event_register((event_id_t)bs->fd, EV_READFD,
+			stream_read_sync_callback, bs);
     event_wait((event_id_t)bs->fd);
     *buf = bs->databuf;
     return (bs->len);
-
 }
 
 
@@ -502,8 +468,8 @@ bsd_stream_read_sync(s, buf)
  * Callback for bsd_stream_read_sync
  */
 static void
-stream_read_sync_callback(s)
-    void *s;
+stream_read_sync_callback(
+    void *	s)
 {
     struct sec_stream *bs = s;
     ssize_t n;
@@ -530,8 +496,8 @@ stream_read_sync_callback(s)
  * have a read scheduled.
  */
 static void
-bsd_stream_read_cancel(s)
-    void *s;
+bsd_stream_read_cancel(
+    void *	s)
 {
     struct sec_stream *bs = s;
 
@@ -546,8 +512,8 @@ bsd_stream_read_cancel(s)
  * Callback for bsd_stream_read
  */
 static void
-stream_read_callback(arg)
-    void *arg;
+stream_read_callback(
+    void *	arg)
 {
     struct sec_stream *bs = arg;
     ssize_t n;
@@ -559,7 +525,7 @@ stream_read_callback(arg)
      */
     bsd_stream_read_cancel(bs);
     do {
-	n = read(bs->fd, bs->databuf, sizeof(bs->databuf));
+	n = read(bs->fd, bs->databuf, SIZEOF(bs->databuf));
     } while ((n < 0) && ((errno == EINTR) || (errno == EAGAIN)));
     if (n < 0)
 	security_stream_seterror(&bs->secstr, strerror(errno));
@@ -575,12 +541,19 @@ stream_read_callback(arg)
  * drag in util.o just for the test program.
  */
 int
-bind_portrange(s, addrp, first_port, last_port, proto)
-    int s;
-    struct sockaddr_in *addrp;
-    int first_port, last_port;
-    char *proto;
+bind_portrange(
+    int			s,
+    struct sockaddr_in *addrp,
+    int			first_port,
+    int			last_port,
+    char *		proto)
 {
+    (void)s;		/* Quiet unused parameter warning */
+    (void)addrp;	/* Quiet unused parameter warning */
+    (void)first_port;	/* Quiet unused parameter warning */
+    (void)last_port;	/* Quiet unused parameter warning */
+    (void)proto;	/* Quiet unused parameter warning */
+
     return 0;
 }
 
@@ -588,8 +561,8 @@ bind_portrange(s, addrp, first_port, last_port, proto)
  * Construct a datestamp (YYYYMMDD) from a time_t.
  */
 char *
-construct_datestamp(t)
-    time_t *t;
+construct_datestamp(
+    time_t *	t)
 {
     struct tm *tm;
     char datestamp[3*NUM_STR_SIZE];
@@ -601,7 +574,7 @@ construct_datestamp(t)
 	when = *t;
     }
     tm = localtime(&when);
-    snprintf(datestamp, sizeof(datestamp),
+    snprintf(datestamp, SIZEOF(datestamp),
              "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
     return stralloc(datestamp);
 }
@@ -610,8 +583,8 @@ construct_datestamp(t)
  * Construct a timestamp (YYYYMMDDHHMMSS) from a time_t.
  */
 char *
-construct_timestamp(t)
-    time_t *t;
+construct_timestamp(
+    time_t *	t)
 {
     struct tm *tm;
     char timestamp[6*NUM_STR_SIZE];
@@ -623,7 +596,7 @@ construct_timestamp(t)
 	when = *t;
     }
     tm = localtime(&when);
-    snprintf(timestamp, sizeof(timestamp),
+    snprintf(timestamp, SIZEOF(timestamp),
 	     "%04d%02d%02d%02d%02d%02d",
 	     tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
 	     tm->tm_hour, tm->tm_min, tm->tm_sec);
@@ -642,9 +615,9 @@ const security_driver_t rsh_security_driver = {};
  * This function will be called to accept the connection and is used
  * to report success or failure.
  */
-static void fake_accept_function(handle, pkt)
-    security_handle_t *handle;
-    pkt_t *pkt;
+static void fake_accept_function(
+    security_handle_t *	handle,
+    pkt_t *		pkt)
 {
     if (pkt == NULL) {
 	fputs(handle->error, stdout);
@@ -655,7 +628,9 @@ static void fake_accept_function(handle, pkt)
 }
 
 int
-main (argc, argv)
+main (
+    int		argc,
+    char **	argv)
 {
     char *remoteuser;
     char *remotehost;
@@ -682,6 +657,7 @@ main (argc, argv)
     if (geteuid() == 0) {
 	if(client_uid == (uid_t) -1) {
 	    error("error [cannot find user %s in passwd file]\n", CLIENT_LOGIN);
+	    /*NOTREACHED*/
 	}
 	initgroups(CLIENT_LOGIN, client_gid);
 	setgid(client_gid);
@@ -694,19 +670,28 @@ main (argc, argv)
 	fputs("Remote user: ", stdout);
 	fflush(stdout);
     }
-    if ((remoteuser = agets(stdin)) == NULL) {
-	return 0;
-    }
+    do {
+	amfree(remoteuser);
+	remoteuser = agets(stdin);
+	if (remoteuser == NULL)
+	    return 0;
+    } while (remoteuser[0] == '\0');
 
     if (isatty(0)) {
 	fputs("Remote host: ", stdout);
 	fflush(stdout);
     }
-    if ((remotehost = agets(stdin)) == NULL) {
-	return 0;
-    }
+
+    do {
+	amfree(remotehost);
+	remotehost = agets(stdin);
+	if (remotehost == NULL)
+	    return 0;
+    } while (remotehost[0] == '\0');
 
     set_pname("security");
+    dbopen();
+
     startclock();
 
     if ((hp = gethostbyname(remotehost)) == NULL) {
@@ -715,13 +700,13 @@ main (argc, argv)
     }
     memcpy((char *)&netfd.peer.sin_addr,
 	   (char *)hp->h_addr,
-	   sizeof(hp->h_addr));
+	   SIZEOF(hp->h_addr));
     /*
      * Fake that it is coming from a reserved port.
      */
     netfd.peer.sin_port = htons(IPPORT_RESERVED - 1);
 
-    bh = alloc(sizeof(*bh));
+    bh = alloc(SIZEOF(*bh));
     bh->proto_handle=NULL;
     bh->udp = &netfd;
     netfd.pkt.type = P_REQ;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: version.h,v 1.5 1999/04/16 04:58:58 kashmir Exp $
+ * $Id: version.h,v 1.6 2006/05/25 01:47:12 johnfranks Exp $
  *
  * interface to obtain the current amanda version
  */
@@ -51,9 +51,9 @@ extern const char * const VERSION_COMMENT;
 extern const char * const version_info[];
 
 /* versionsuffix returns an empty string or a string like -2.3.0.4b1.  */
-extern const char *versionsuffix P((void));
+extern const char *versionsuffix(void);
 
 /* version returns a string representing the version of Amanda.  */
-extern const char *version P((void));
+extern const char *version(void);
 
 #endif

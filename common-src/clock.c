@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.c,v 1.5 2002/04/08 00:16:18 jrjackson Exp $
+ * $Id: clock.c,v 1.6 2006/05/25 01:47:11 johnfranks Exp $
  *
  * timing functions
  */
@@ -34,19 +34,21 @@
 #include "clock.h"
 
 /* local functions */
-static struct timeval timesub P((struct timeval end, struct timeval start));
-static struct timeval timeadd P((struct timeval a, struct timeval b));
+static struct timeval timesub(struct timeval end, struct timeval start);
+static struct timeval timeadd(struct timeval a, struct timeval b);
 
-times_t times_zero = {{0,0}};
+times_t times_zero;
 times_t start_time;
 static int clock_running = 0;
 
-int clock_is_running()
+int
+clock_is_running(void)
 {
     return clock_running;
 }
 
-void startclock()
+void
+startclock(void)
 {
     amanda_timezone dontcare;
 
@@ -54,7 +56,8 @@ void startclock()
     amanda_gettimeofday(&start_time.r, &dontcare);
 }
 
-times_t stopclock()
+times_t
+stopclock(void)
 {
     times_t diff;
     struct timeval end_time;
@@ -70,7 +73,8 @@ times_t stopclock()
     return diff;
 }
 
-times_t curclock()
+times_t
+curclock(void)
 {
     times_t diff;
     struct timeval end_time;
@@ -85,8 +89,10 @@ times_t curclock()
     return diff;
 }
 
-times_t timesadd(a,b)
-times_t a,b;
+times_t
+timesadd(
+    times_t	a,
+    times_t	b)
 {
     times_t sum;
 
@@ -94,8 +100,10 @@ times_t a,b;
     return sum;
 }
 
-times_t timessub(a,b)
-times_t a,b;
+times_t
+timessub(
+    times_t	a,
+    times_t	b)
 {
     times_t dif;
 
@@ -103,38 +111,44 @@ times_t a,b;
     return dif;
 }
 
-char *times_str(t)
-times_t t;
+char *
+times_str(
+    times_t	t)
 {
     static char str[10][NUM_STR_SIZE+10];
-    static int n = 0;
+    static size_t n = 0;
     char *s;
 
     /* tv_sec/tv_usec are longs on some systems */
-    snprintf(str[n], sizeof(str[n]),
-		"rtime %d.%03d", (int)t.r.tv_sec, (int)t.r.tv_usec/1000);
+    snprintf(str[n], SIZEOF(str[n]), "rtime %lu.%03lu",
+	     (unsigned long)t.r.tv_sec,
+	     (unsigned long)t.r.tv_usec / 1000);
     s = str[n++];
     n %= am_countof(str);
     return s;
 }
 
-char *walltime_str(t)
-times_t t;
+char *
+walltime_str(
+    times_t	t)
 {
     static char str[10][NUM_STR_SIZE+10];
-    static int n = 0;
+    static size_t n = 0;
     char *s;
 
     /* tv_sec/tv_usec are longs on some systems */
-    snprintf(str[n], sizeof(str[n]),
-		"%d.%03d", (int)t.r.tv_sec, (int)t.r.tv_usec/1000);
+    snprintf(str[n], SIZEOF(str[n]), "%lu.%03lu",
+	     (unsigned long)t.r.tv_sec,
+	     (unsigned long)t.r.tv_usec/1000);
     s = str[n++];
     n %= am_countof(str);
     return s;
 }
 
-static struct timeval timesub(end,start)
-struct timeval end,start;
+static struct timeval
+timesub(
+    struct timeval	end,
+    struct timeval	start)
 {
     struct timeval diff;
 
@@ -147,8 +161,10 @@ struct timeval end,start;
     return diff;
 }
 
-static struct timeval timeadd(a,b)
-struct timeval a,b;
+static struct timeval
+timeadd(
+    struct timeval	a,
+    struct timeval	b)
 {
     struct timeval sum;
 

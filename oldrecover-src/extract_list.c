@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.1 2006/05/12 19:36:04 martinea Exp $
+ * $Id: extract_list.c,v 1.2 2006/05/25 01:47:13 johnfranks Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -41,21 +41,19 @@
 #endif
 #include "util.h"
 
-typedef struct EXTRACT_LIST_ITEM
-{
+typedef struct EXTRACT_LIST_ITEM {
     char *path;
 
     struct EXTRACT_LIST_ITEM *next;
 }
 EXTRACT_LIST_ITEM;
 
-typedef struct EXTRACT_LIST
-{
+typedef struct EXTRACT_LIST {
     char *date;			/* date tape created */
-    int  level;				/* level of dump */
+    int  level;			/* level of dump */
     char *tape;			/* tape label */
-    int fileno;				/* fileno on tape */
-    EXTRACT_LIST_ITEM *files;		/* files to get off tape */
+    off_t fileno;		/* fileno on tape */
+    EXTRACT_LIST_ITEM *files;	/* files to get off tape */
 
     struct EXTRACT_LIST *next;
 }
@@ -81,8 +79,41 @@ unsigned short samba_extract_method = SAMBA_TAR;
 
 #define READ_TIMEOUT	240*60
 
-static int okay_to_continue P((int, int,  int));
-void writer_intermediary P((int ctl_fd, int data_fd, EXTRACT_LIST *elist));
+EXTRACT_LIST *first_tape_list(void);
+EXTRACT_LIST *next_tape_list(EXTRACT_LIST *list);
+int is_extract_list_nonempty(void);
+int length_of_tape_list(EXTRACT_LIST *tape_list);
+void add_file(char *path, char *regex);
+void add_glob(char *glob);
+void add_regex(char *regex);
+void clear_extract_list(void);
+void delete_file(char *path, char *regex);
+void delete_glob(char *glob);
+void delete_regex(char *regex);
+void delete_tape_list(EXTRACT_LIST *tape_list);
+void display_extract_list(char *file);
+void extract_files(void);
+void read_file_header(char *buffer,
+			dumpfile_t *file,
+			size_t buflen,
+			int tapedev);
+void writer_intermediary(int ctl_fd, int data_fd, EXTRACT_LIST *elist);
+void writer_intermediary(int ctl_fd, int data_fd, EXTRACT_LIST *elist);
+
+static int add_extract_item(DIR_ITEM *ditem);
+static int delete_extract_item(DIR_ITEM *ditem);
+static int extract_files_setup(char *label, off_t fsf);
+static int okay_to_continue(int allow_tape,
+			int allow_skip,
+			int allow_retry);
+static int okay_to_continue(int, int,  int);
+static ssize_t read_buffer(int datafd,
+			char *buffer,
+			size_t buflen,
+			long timeout_s);
+static void clear_tape_list(EXTRACT_LIST *tape_list);
+static void extract_files_child(int in_fd, EXTRACT_LIST *elist);
+static void send_to_tape_server(int tss, char *cmd);
 
 
 /*
@@ -107,16 +138,17 @@ void writer_intermediary P((int ctl_fd, int data_fd, EXTRACT_LIST *elist));
  */
 
 static ssize_t
-read_buffer(datafd, buffer, buflen, timeout_s)
-int datafd;
-char *buffer;
-size_t buflen;
+read_buffer(
+    int		datafd,
+    char *	buffer,
+    size_t	buflen,
+    long	timeout_s)
 {
     ssize_t size = 0;
     fd_set readset;
     struct timeval timeout;
     char *dataptr;
-    size_t spaceleft;
+    ssize_t spaceleft;
     int nfound;
 
     if(datafd < 0 || datafd >= FD_SETSIZE) {
@@ -125,7 +157,7 @@ size_t buflen;
     }
 
     dataptr = buffer;
-    spaceleft = buflen;
+    spaceleft = (ssize_t)buflen;
 
     do {
         FD_ZERO(&readset);
@@ -156,7 +188,7 @@ size_t buflen;
 	    continue;
 
         /* Select says data is available, so read it.  */
-        size = read(datafd, dataptr, spaceleft);
+        size = read(datafd, dataptr, (size_t)spaceleft);
         if (size < 0) {
 	    if ((errno == EINTR) || (errno == EAGAIN)) {
 		continue;
@@ -172,25 +204,28 @@ size_t buflen;
         dataptr += size;
     } while ((size > 0) && (spaceleft > 0));
 
-    return (((buflen-spaceleft) > 0) ? (buflen-spaceleft) : size);
+    return ((((ssize_t)buflen-spaceleft) > 0) ? ((ssize_t)buflen-spaceleft) : size);
 }
 
 
-EXTRACT_LIST *first_tape_list P((void))
+EXTRACT_LIST *
+first_tape_list(void)
 {
     return extract_list;
 }
 
-EXTRACT_LIST *next_tape_list(list)
-EXTRACT_LIST *list;
+EXTRACT_LIST *
+next_tape_list(
+    /*@keep@*/ EXTRACT_LIST *list)
 {
     if (list == NULL)
 	return NULL;
     return list->next;
 }
 
-static void clear_tape_list(tape_list)
-EXTRACT_LIST *tape_list;
+static void
+clear_tape_list(
+    EXTRACT_LIST *	tape_list)
 {
     EXTRACT_LIST_ITEM *this, *next;
     
@@ -209,8 +244,9 @@ EXTRACT_LIST *tape_list;
 
 /* remove a tape list from the extract list, clearing the tape list
    beforehand if necessary */
-void delete_tape_list(tape_list)
-EXTRACT_LIST *tape_list;
+void
+delete_tape_list(
+    EXTRACT_LIST *	tape_list)
 {
     EXTRACT_LIST *this, *prev;
 
@@ -250,8 +286,9 @@ EXTRACT_LIST *tape_list;
 
 
 /* return the number of files on a tape's list */
-int length_of_tape_list(tape_list)
-EXTRACT_LIST *tape_list;
+int
+length_of_tape_list(
+    EXTRACT_LIST *	tape_list)
 {
     EXTRACT_LIST_ITEM *fn;
     int n;
@@ -264,7 +301,8 @@ EXTRACT_LIST *tape_list;
 }
 
 
-void clear_extract_list P((void))
+void
+clear_extract_list(void)
 {
     while (extract_list != NULL)
 	delete_tape_list(extract_list);
@@ -274,8 +312,9 @@ void clear_extract_list P((void))
 /* returns -1 if error */
 /* returns  0 on succes */
 /* returns  1 if already added */
-static int add_extract_item(ditem)
-DIR_ITEM *ditem;
+static int
+add_extract_item(
+    DIR_ITEM *	ditem)
 {
     EXTRACT_LIST *this, *this1;
     EXTRACT_LIST_ITEM *that, *curr;
@@ -293,7 +332,7 @@ DIR_ITEM *ditem;
 	    curr=this->files;
 	    while(curr!=NULL)
 	    {
-		if (strcmp(curr->path,ditem_path) == 0) {
+		if (strcmp(curr->path, ditem_path) == 0) {
 		    amfree(ditem_path);
 		    return 1;
 		}
@@ -351,8 +390,9 @@ DIR_ITEM *ditem;
 /* returns -1 if error */
 /* returns  0 on deletion */
 /* returns  1 if not there */
-static int delete_extract_item(ditem)
-DIR_ITEM *ditem;
+static int
+delete_extract_item(
+    DIR_ITEM *	ditem)
 {
     EXTRACT_LIST *this;
     EXTRACT_LIST_ITEM *that, *prev;
@@ -404,52 +444,57 @@ DIR_ITEM *ditem;
     return 1;
 }
 
-
-void add_glob(glob)
-char *glob;
+void
+add_glob(
+    char *	glob)
 {
     char *regex;
     char *regex_path;
     char *s;
+    char *uqglob = unquote_string(glob);
 
-    regex = glob_to_regex(glob);
-    dbprintf(("add_glob (%s) -> %s\n", glob, regex));
+    regex = glob_to_regex(uqglob);
+    dbprintf(("add_glob (%s) -> %s\n", uqglob, regex));
     if ((s = validate_regexp(regex)) != NULL) {
-	printf("\"%s\" is not a valid shell wildcard pattern: ", glob);
+	printf("%s is not a valid shell wildcard pattern: ", glob);
 	puts(s);
-	return;
+    } else {
+        /*
+         * glob_to_regex() anchors the beginning of the pattern with ^,
+         * but we will be tacking it onto the end of the current directory
+         * in add_file, so strip that off.  Also, it anchors the end with
+         * $, but we need to match an optional trailing /, so tack that on
+         * the end.
+         */
+        regex_path = stralloc(regex + 1);
+        regex_path[strlen(regex_path) - 1] = '\0';
+        strappend(regex_path, "[/]*$");
+        add_file(uqglob, regex_path);
+        amfree(regex_path);
     }
-    /*
-     * glob_to_regex() anchors the beginning of the pattern with ^,
-     * but we will be tacking it onto the end of the current directory
-     * in add_file, so strip that off.  Also, it anchors the end with
-     * $, but we need to match an optional trailing /, so tack that on
-     * the end.
-     */
-    regex_path = stralloc(regex + 1);
     amfree(regex);
-    regex_path[strlen(regex_path) - 1] = '\0';
-    strappend(regex_path, "[/]*$");
-    add_file(glob, regex_path);
-    amfree(regex_path);
+    amfree(uqglob);
 }
 
-void add_regex(regex)
-char *regex;
+void
+add_regex(
+    char *	regex)
 {
     char *s;
+    char *uqregex = unquote_string(regex);
 
-    if ((s = validate_regexp(regex)) != NULL) {
-	printf("\"%s\" is not a valid regular expression: ", regex);
+    if ((s = validate_regexp(uqregex)) != NULL) {
+	printf("%s is not a valid regular expression: ", regex);
 	puts(s);
-	return;
+    } else {
+        add_file(uqregex, regex);
     }
-    add_file(regex, regex);
+    amfree(uqregex);
 }
 
-void add_file(path, regex)
-char *path;
-char *regex;
+void add_file(
+    char *	path,
+    char *	regex)
 {
     DIR_ITEM *ditem, lditem;
     char *path_on_disk = NULL;
@@ -457,14 +502,16 @@ char *regex;
     char *cmd = NULL;
     char *err = NULL;
     int i;
-    int j;
+    ssize_t j;
     char *dir, *dir_undo, dir_undo_ch = '\0';
     char *ditem_path = NULL;
     char *l = NULL;
     int  added;
-    char *s, *fp;
+    char *s, *fp, *quoted;
     int ch;
     int found_one;
+    int dir_entries;
+    int subdir_entries;
 
     if (disk_path == NULL) {
 	printf("Must select directory before adding files\n");
@@ -474,20 +521,23 @@ char *regex;
 
     dbprintf(("add_file: Looking for \"%s\"\n", regex));
 
-    /* remove "/" at end of path */
-    j = strlen(regex)-1;
-    while(j >= 0 && regex[j] == '/') regex[j--] = '\0';
+    if ((strcmp(regex, "[^/]*[/]*$") == 0)  		/* "*" */
+	    || (strcmp(regex, "\\.[/]*$") == 0)  	/* "." */
+	    || (strcmp(regex, "/[/]*$") == 0)) {  	/* "/" */
+	/* Looking for * . or / find everything but single . */
+	regex = "([^/.]|\\.[^/]+|[^/.][^/]*)[/]*$";
+    } else {
+	/* remove "/" at end of path */
+	j = (ssize_t)(strlen(regex) - 1);
+	while(j >= 0 && regex[j] == '/')
+	    regex[j--] = '\0';
+    }
 
     /* convert path (assumed in cwd) to one on disk */
     if (strcmp(disk_path, "/") == 0) {
         if (*regex == '/') {
-	    if (strcmp(regex, "/[/]*$") == 0) {
-		/* We want '/' to match everything in directory... */
-		path_on_disk = stralloc("/[^/]*[/]*$");
-	    } else {
-		/* No mods needed if already starts with '/' */
-		path_on_disk = stralloc(regex);
-	    }
+	    /* No mods needed if already starts with '/' */
+	    path_on_disk = stralloc(regex);
 	} else {
 	    /* Prepend '/' */
 	    path_on_disk = stralloc2("/", regex);
@@ -504,18 +554,21 @@ char *regex;
 	      regex, path_on_disk));
 
     found_one = 0;
+    dir_entries = 0;
     for (ditem=get_dir_list(); ditem!=NULL; ditem=get_next_dir_item(ditem))
     {
-	dbprintf(("add_file: Pondering ditem->path=\"%s\"\n", ditem->path));
+	dir_entries++;
+	quoted = quote_string(ditem->path);
+	dbprintf(("add_file: Pondering ditem->path=%s\n", quoted));
+	amfree(quoted);
 	if (match(path_on_disk, ditem->path)
 	    || match(path_on_disk_slash, ditem->path))
 	{
 	    found_one = 1;
-	    j = strlen(ditem->path);
+	    j = (ssize_t)strlen(ditem->path);
 	    if((j > 0 && ditem->path[j-1] == '/')
 	       || (j > 1 && ditem->path[j-2] == '/' && ditem->path[j-1] == '.'))
 	    {	/* It is a directory */
-
 		ditem_path = newstralloc(ditem_path, ditem->path);
 		clean_pathname(ditem_path);
 
@@ -536,8 +589,7 @@ char *regex;
 		    amfree(path_on_disk_slash);
 		    exit(1);
 		}
-		if(i==0)		/* assume something wrong */
-		{
+		if(i==0) {		/* assume something wrong */
 		    amfree(ditem_path);
 		    amfree(path_on_disk);
 		    amfree(path_on_disk_slash);
@@ -549,8 +601,9 @@ char *regex;
 		added=0;
                 lditem.path = newstralloc(lditem.path, ditem->path);
 		/* skip the last line -- duplicate of the preamble */
-		while ((i = get_reply_line()) != 0)
-		{
+
+		subdir_entries = 0;
+		while ((i = get_reply_line()) != 0) {
 		    if (i == -1) {
 			amfree(ditem_path);
 		        amfree(path_on_disk);
@@ -588,7 +641,7 @@ char *regex;
                     skip_non_whitespace(s, ch);
                     s[-1] = '\0';
                     lditem.date = newstralloc(lditem.date, fp);
-                    s[-1] = ch;
+                    s[-1] = (char)ch;
 
 		    skip_whitespace(s, ch);
 		    if(ch == '\0' || sscanf(s - 1, "%d", &lditem.level) != 1) {
@@ -606,11 +659,12 @@ char *regex;
                     skip_non_whitespace(s, ch);
                     s[-1] = '\0';
                     lditem.tape = newstralloc(lditem.tape, fp);
-                    s[-1] = ch;
+                    s[-1] = (char)ch;
 
 		    if(am_has_feature(indexsrv_features, fe_amindexd_fileno_in_ORLD)) {
 			skip_whitespace(s, ch);
-			if(ch == '\0' || sscanf(s - 1, "%d", &lditem.fileno) != 1) {
+			if(ch == '\0' || sscanf(s - 1, OFF_T_FMT,
+				(OFF_T_FMT_TYPE *)&lditem.fileno) != 1) {
 			    err = "bad reply: cannot parse fileno field";
 			    continue;
 			}
@@ -623,23 +677,63 @@ char *regex;
 			continue;
 		    }
 		    dir = s - 1;
-		    skip_non_whitespace(s, ch);
+		    skip_quoted_string(s, ch);
 		    dir_undo = s - 1;
 		    dir_undo_ch = *dir_undo;
 		    *dir_undo = '\0';
+
+		    if (strcmp(ditem->path, dir) == 0) {
+			/* Don't add the directory itself */
+		        dbprintf(("Reject subdir entry=%s ditem->path='%s'\n",
+				  dir, ditem->path));
+			continue;
+		    }
+		    dbprintf(("Adding subdir entry=%s\n", dir));
+		    lditem.path = newstralloc(lditem.path, dir);
+		    subdir_entries++;
 
 		    switch(add_extract_item(&lditem)) {
 		    case -1:
 			printf("System error\n");
 			dbprintf(("add_file: (Failed) System error\n"));
 			break;
+
 		    case  0:
+			quoted = quote_string(dir);
 			printf("Added dir %s at date %s\n",
-			       ditem_path, lditem.date);
+			       quoted, lditem.date);
 			dbprintf(("add_file: (Successful) Added dir %s at date %s\n",
-				  ditem_path,lditem.date));
+				  quoted, lditem.date));
+			amfree(quoted);
 			added=1;
 			break;
+
+		    case  1:
+			break;
+		    }
+		}
+		if (subdir_entries == 0) {
+		    /*
+		     * Directory was empty * so we need to
+		     * add the directory itself...
+		     */
+		    lditem.path = ditem->path;
+		    switch(add_extract_item(&lditem)) {
+		    case -1:
+			printf("System error\n");
+			dbprintf(("add_file: (Failed) System error\n"));
+			break;
+
+		    case  0:
+			quoted = quote_string(lditem.path);
+			printf("Added dir %s at date %s\n",
+			       quoted, lditem.date);
+			dbprintf(("add_file: (Successful) Added dir %s at date %s\n",
+				  quoted, lditem.date));
+			amfree(quoted);
+			added=1;
+			break;
+
 		    case  1:
 			break;
 		    }
@@ -650,8 +744,10 @@ char *regex;
 		    puts(err);
 		    puts(cmd);
 		} else if(added == 0) {
-		    printf("dir %s already added\n", ditem_path);
-		    dbprintf(("add_file: dir %s already added\n", ditem_path));
+		    quoted = quote_string(ditem_path);
+		    printf("dir %s already added\n", quoted);
+		    dbprintf(("add_file: dir %s already added\n", quoted));
+		    amfree(quoted);
 		}
 	    }
 	    else /* It is a file */
@@ -661,15 +757,19 @@ char *regex;
 		    printf("System error\n");
 		    dbprintf(("add_file: (Failed) System error\n"));
 		    break;
+
 		case  0:
-		    printf("Added %s\n", ditem->path);
-		    dbprintf(("add_file: (Successful) Added %s\n",
-			      ditem->path));
+		    quoted = quote_string(ditem->path);
+		    printf("Added file %s\n", quoted);
+		    dbprintf(("add_file: (Successful) Added %s\n", quoted));
+		    amfree(quoted);
 		    break;
+
 		case  1:
-		    printf("File %s already added\n", ditem->path);
-		    dbprintf(("add_file: file %s already added\n",
-			      ditem->path));
+		    quoted = quote_string(ditem->path);
+		    printf("File %s already added\n", quoted);
+		    dbprintf(("add_file: file %s already added\n", quoted));
+		    amfree(quoted);
 		    break;
 		}
 	    }
@@ -682,58 +782,67 @@ char *regex;
     amfree(path_on_disk_slash);
 
     if(! found_one) {
-	printf("File %s doesn't exist in directory\n", path);
+	quoted = quote_string(path);
+	printf("File %s doesn't exist in directory\n", quoted);
 	dbprintf(("add_file: (Failed) File %s doesn't exist in directory\n",
-	          path));
+	          quoted));
+	amfree(quoted);
     }
 }
 
 
-void delete_glob(glob)
-char *glob;
+void
+delete_glob(
+    char *	glob)
 {
     char *regex;
     char *regex_path;
     char *s;
+    char *uqglob = unquote_string(glob);
 
-    regex = glob_to_regex(glob);
-    dbprintf(("delete_glob (%s) -> %s\n", glob, regex));
+    regex = glob_to_regex(uqglob);
+    dbprintf(("delete_glob (%s) -> %s\n", uqglob, regex));
     if ((s = validate_regexp(regex)) != NULL) {
 	printf("\"%s\" is not a valid shell wildcard pattern: ", glob);
 	puts(s);
-	return;
+    } else {
+        /*
+         * glob_to_regex() anchors the beginning of the pattern with ^,
+         * but we will be tacking it onto the end of the current directory
+         * in add_file, so strip that off.  Also, it anchors the end with
+         * $, but we need to match an optional trailing /, so tack that on
+         * the end.
+         */
+        regex_path = stralloc(regex + 1);
+        regex_path[strlen(regex_path) - 1] = '\0';
+        strappend(regex_path, "[/]*$");
+        delete_file(uqglob, regex_path);
+        amfree(regex_path);
     }
-    /*
-     * glob_to_regex() anchors the beginning of the pattern with ^,
-     * but we will be tacking it onto the end of the current directory
-     * in add_file, so strip that off.  Also, it anchors the end with
-     * $, but we need to match an optional trailing /, so tack that on
-     * the end.
-     */
-    regex_path = stralloc(regex + 1);
     amfree(regex);
-    regex_path[strlen(regex_path) - 1] = '\0';
-    strappend(regex_path, "[/]*$");
-    delete_file(glob, regex_path);
-    amfree(regex_path);
+    amfree(uqglob);
 }
 
-void delete_regex(regex)
-char *regex;
+void
+delete_regex(
+    char *	regex)
 {
     char *s;
+    char *uqregex = unquote_string(regex);
 
     if ((s = validate_regexp(regex)) != NULL) {
 	printf("\"%s\" is not a valid regular expression: ", regex);
 	puts(s);
-	return;
+    } else {
+	delete_file(uqregex, uqregex);
     }
-    delete_file(regex, regex);
+    amfree(uqregex);
 }
 
-void delete_file(path, regex)
-char *path;
-char *regex;
+void
+delete_file(
+    char *	path,
+    char *	regex)
 {
     DIR_ITEM *ditem, lditem;
     char *path_on_disk = NULL;
@@ -741,17 +850,19 @@ char *regex;
     char *cmd = NULL;
     char *err = NULL;
     int i;
-    int j;
-    char *date, *date_undo, date_undo_ch = '\0';
+    ssize_t j;
+    char *date;
     char *tape, *tape_undo, tape_undo_ch = '\0';
-    char *dir, *dir_undo, dir_undo_ch = '\0';
-    int  level, fileno;
+    char *dir_undo, dir_undo_ch = '\0';
+    int  level = 0;
+    off_t fileno;
     char *ditem_path = NULL;
     char *l = NULL;
     int  deleted;
     char *s;
     int ch;
     int found_one;
+    char *quoted;
 
     if (disk_path == NULL) {
 	printf("Must select directory before deleting files\n");
@@ -760,14 +871,31 @@ char *regex;
     memset(&lditem, 0, sizeof(lditem)); /* Prevent use of bogus data... */
 
     dbprintf(("delete_file: Looking for \"%s\"\n", path));
-    /* remove "/" at the end of the path */
-    j = strlen(regex)-1;
-    while(j >= 0 && regex[j] == '/') regex[j--] = '\0';
+
+    if (strcmp(regex, "[^/]*[/]*$") == 0) {
+	/* Looking for * find everything but single . */
+	regex = "([^/.]|\\.[^/]+|[^/.][^/]*)[/]*$";
+    } else {
+	/* remove "/" at end of path */
+	j = (ssize_t)(strlen(regex) - 1);
+	while(j >= 0 && regex[j] == '/') regex[j--] = '\0';
+    }
 
     /* convert path (assumed in cwd) to one on disk */
-    if (strcmp(disk_path, "/") == 0)
-	path_on_disk = stralloc2("/", regex);
-    else {
+    if (strcmp(disk_path, "/") == 0) {
+        if (*regex == '/') {
+	    if (strcmp(regex, "/[/]*$") == 0) {
+		/* We want "/" to match the directory itself: "/." */
+		path_on_disk = stralloc("/\\.[/]*$");
+	    } else {
+		/* No mods needed if already starts with '/' */
+		path_on_disk = stralloc(regex);
+	    }
+	} else {
+	    /* Prepend '/' */
+	    path_on_disk = stralloc2("/", regex);
+	}
+    } else {
 	char *clean_disk_path = clean_regex(disk_path);
 	path_on_disk = vstralloc(clean_disk_path, "/", regex, NULL);
 	amfree(clean_disk_path);
@@ -780,12 +908,14 @@ char *regex;
     found_one = 0;
     for (ditem=get_dir_list(); ditem!=NULL; ditem=get_next_dir_item(ditem))
     {
-	dbprintf(("delete_file: Pondering ditem->path=\"%s\"\n", ditem->path));
+	quoted = quote_string(ditem->path);
+	dbprintf(("delete_file: Pondering ditem->path=%s\n", quoted));
+	amfree(quoted);
 	if (match(path_on_disk, ditem->path)
 	    || match(path_on_disk_slash, ditem->path))
 	{
 	    found_one = 1;
-	    j = strlen(ditem->path);
+	    j = (ssize_t)strlen(ditem->path);
 	    if((j > 0 && ditem->path[j-1] == '/')
 	       || (j > 1 && ditem->path[j-2] == '/' && ditem->path[j-1] == '.'))
 	    {	/* It is a directory */
@@ -820,7 +950,7 @@ char *regex;
 		deleted=0;
                 lditem.path = newstralloc(lditem.path, ditem->path);
 		amfree(cmd);
-		date_undo = tape_undo = dir_undo = NULL;
+		tape_undo = dir_undo = NULL;
 		/* skip the last line -- duplicate of the preamble */
 		while ((i = get_reply_line()) != 0)
 		{
@@ -834,7 +964,7 @@ char *regex;
 			if(cmd == NULL) {
 			    if(tape_undo) *tape_undo = tape_undo_ch;
 			    if(dir_undo) *dir_undo = dir_undo_ch;
-			    date_undo = tape_undo = dir_undo = NULL;
+			    tape_undo = dir_undo = NULL;
 			    cmd = stralloc(l);	/* save for the error report */
 			}
 			continue;	/* throw the rest of the lines away */
@@ -859,9 +989,7 @@ char *regex;
 		    }
 		    date = s - 1;
 		    skip_non_whitespace(s, ch);
-		    date_undo = s - 1;
-		    date_undo_ch = *date_undo;
-		    *date_undo = '\0';
+		    *(s - 1) = '\0';
 
 		    skip_whitespace(s, ch);
 		    if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
@@ -883,7 +1011,8 @@ char *regex;
 
 		    if(am_has_feature(indexsrv_features, fe_amindexd_fileno_in_ORLD)) {
 			skip_whitespace(s, ch);
-			if(ch == '\0' || sscanf(s - 1, "%d", &fileno) != 1) {
+			if(ch == '\0' || sscanf(s - 1, OFF_T_FMT,
+				(OFF_T_FMT_TYPE *)&fileno) != 1) {
 			    err = "bad reply: cannot parse fileno field";
 			    continue;
 			}
@@ -895,7 +1024,6 @@ char *regex;
 			err = "bad reply: missing directory field";
 			continue;
 		    }
-		    dir = s - 1;
 		    skip_non_whitespace(s, ch);
 		    dir_undo = s - 1;
 		    dir_undo_ch = *dir_undo;
@@ -969,14 +1097,16 @@ char *regex;
 
 
 /* print extract list into file. If NULL ptr passed print to screen */
-void display_extract_list(file)
-char *file;
+void
+display_extract_list(
+    char *	file)
 {
     EXTRACT_LIST *this;
     EXTRACT_LIST_ITEM *that;
     FILE *fp;
     char *pager;
     char *pager_command;
+    char *uqfile;
 
     if (file == NULL)
     {
@@ -998,11 +1128,14 @@ char *file;
     }
     else
     {
-	if ((fp = fopen(file, "w")) == NULL)
+	uqfile = unquote_string(file);
+	if ((fp = fopen(uqfile, "w")) == NULL)
 	{
-	    printf("Can't open file '%s' to print extract list into\n", file);
+	    printf("Can't open file %s to print extract list into\n", file);
+	    amfree(uqfile);
 	    return;
 	}
+	amfree(uqfile);
     }
 
     for (this = extract_list; this != NULL; this = this->next)
@@ -1023,7 +1156,8 @@ char *file;
 
 
 /* returns 0 if extract list empty and 1 if it isn't */
-int is_extract_list_nonempty P((void))
+int
+is_extract_list_nonempty(void)
 {
     return (extract_list != NULL);
 }
@@ -1031,10 +1165,11 @@ int is_extract_list_nonempty P((void))
 
 /* prints continue prompt and waits for response,
    returns 0 if don't, non-0 if do */
-static int okay_to_continue(allow_tape, allow_skip, allow_retry)
-    int allow_tape;
-    int allow_skip;
-    int allow_retry;
+static int
+okay_to_continue(
+    int		allow_tape,
+    int		allow_skip,
+    int		allow_retry)
 {
     int ch;
     int ret = -1;
@@ -1070,7 +1205,9 @@ static int okay_to_continue(allow_tape, allow_skip, allow_retry)
 	    break;
 	}
 	s = line;
-	while ((ch = *s++) != '\0' && isspace(ch)) {}
+	while ((ch = *s++) != '\0' && isspace(ch)) {
+	    (void)ch;  /* Quiet empty loop body warning */
+	}
 	if (ch == '?') {
 	    if (get_tape) {
 		printf("Enter a new device ([host:]device) or \"default\"\n");
@@ -1102,20 +1239,23 @@ static int okay_to_continue(allow_tape, allow_skip, allow_retry)
 	    ret = SKIP_TAPE;
 	}
     }
+    /*@ignore@*/
     amfree(line);
+    /*@end@*/
     return ret;
 }
 
-static void send_to_tape_server(tss, cmd)
-int tss;
-char *cmd;
+static void
+send_to_tape_server(
+    int		tss,
+    char *	cmd)
 {
     char *msg = stralloc2(cmd, "\r\n");
 
     if (fullwrite(tss, msg, strlen(msg)) < 0)
     {
 	error("Error writing to tape server");
-	exit(101);
+	/*NOTREACHED*/
     }
     amfree(msg);
 }
@@ -1124,12 +1264,13 @@ char *cmd;
 /* start up connection to tape server and set commands to initiate
    transfer of dump image.
    Return tape server socket on success, -1 on error. */
-static int extract_files_setup(label, fsf)
-char *label;
-int fsf;
+static int
+extract_files_setup(
+    char *	label,
+    off_t	fsf)
 {
     struct servent *sp;
-    int my_port, my_data_port;
+    in_port_t my_port, my_data_port;
     char *disk_regex = NULL;
     char *host_regex = NULL;
     char *service_name = NULL;
@@ -1151,8 +1292,8 @@ int fsf;
     seteuid(0);					/* it either works ... */
     setegid(0);
     tape_control_sock = stream_client_privileged(tape_server_name,
-						  ntohs(sp->s_port),
-						  -1,
+						  (in_port_t)ntohs((in_port_t)sp->s_port),
+						  0,
 						  STREAM_BUFSIZE,
 						  &my_port,
 						  0);
@@ -1163,7 +1304,7 @@ int fsf;
     }
     if (my_port >= IPPORT_RESERVED) {
 	aclose(tape_control_sock);
-	printf("did not get a reserved port: %d\n", my_port);
+	printf("did not get a reserved port: %u\n", (unsigned)my_port);
 	return -1;
     }
  
@@ -1243,9 +1384,8 @@ int fsf;
 	send_to_tape_server(tape_control_sock, tt);
 	if (read(tape_control_sock, buffer, sizeof(buffer)) <= 0) {
 	    error("Could not read features from control socket\n");
-	    /* NOTREACHED */
+	    /*NOTREACHED*/
 	}
-	
 	tapesrv_features = am_string_to_feature(buffer);
 	amfree(our_feature_string);
     }
@@ -1268,7 +1408,7 @@ int fsf;
 	}
 	if(am_has_feature(indexsrv_features, fe_amidxtaped_fsf)) {
 	    char v_fsf[100];
-	    snprintf(v_fsf, 99, "%d", fsf);
+	    snprintf(v_fsf, 99, OFF_T_FMT, (OFF_T_FMT_TYPE)fsf);
 	    tt = newstralloc2(tt, "FSF=",v_fsf);
 	    send_to_tape_server(tape_control_sock, tt);
 	}
@@ -1314,34 +1454,35 @@ int fsf;
 
     if(am_has_feature(tapesrv_features, fe_recover_splits)){
 	char buffer[32768];
-	int data_port = -1;
-        int nread;
+	in_port_t data_port = (in_port_t)-1;
+        ssize_t nread;
 
         nread = read(tape_control_sock, buffer, sizeof(buffer));
 
 	if (nread <= 0) {
 	    error("Could not read from control socket: %s\n", 
                   strerror(errno));
-	    /* NOTREACHED */
+	    /*NOTREACHED*/
         }
 
 	buffer[nread] = '\0';
-        if (sscanf(buffer, "CONNECT %d\n", &data_port) != 1) {
+        if (sscanf(buffer, "CONNECT %hu\n",
+		(unsigned short *)&data_port) != 1) {
 	    error("Recieved invalid port number message from control socket: %s\n",
                   buffer);
-	    /* NOTREACHED */
+	    /*NOTREACHED*/
         }	
 
 	tape_data_sock = stream_client_privileged(server_name,
 						  data_port,
-						  -1,
+						  0,
 						  STREAM_BUFSIZE,
 						  &my_data_port,
 						  0);
 	if(tape_data_sock == -1){
 	    error("Unable to make data connection to server: %s\n",
 		      strerror(errno));
-	    /* NOTREACHED */
+	    /*NOTREACHED*/
 	}
 
 	amfree(our_feature_string);
@@ -1361,14 +1502,16 @@ int fsf;
 }
 
 
-void read_file_header(buffer, file, buflen, tapedev)
-char *buffer;
-dumpfile_t *file;
-size_t buflen;
-int tapedev;
 /*
  * Reads the first block of a tape file.
  */
+
+void
+read_file_header(
+    char *	buffer,
+    dumpfile_t *file,
+    size_t	buflen,
+    int		tapedev)
 {
     ssize_t bytes_read;
 
@@ -1376,7 +1519,7 @@ int tapedev;
     if(bytes_read < 0) {
 	error("error reading header (%s), check amidxtaped.*.debug on server",
 	      strerror(errno));
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
 
     if((size_t)bytes_read < buflen) {
@@ -1384,18 +1527,26 @@ int tapedev;
 		get_pname(), (int)bytes_read, (bytes_read == 1) ? "" : "s");
 	print_header(stdout, file);
 	error("Can't read file header");
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
 
     /* bytes_read == buflen */
-    parse_file_header(buffer, file, bytes_read);
+    parse_file_header(buffer, file, (size_t)bytes_read);
 }
 
-enum dumptypes {IS_UNKNOWN, IS_DUMP, IS_GNUTAR, IS_TAR, IS_SAMBA, IS_SAMBA_TAR};
+enum dumptypes {
+	IS_UNKNOWN,
+	IS_DUMP,
+	IS_GNUTAR,
+	IS_TAR,
+	IS_SAMBA,
+	IS_SAMBA_TAR
+};
 
-static void extract_files_child(in_fd, elist)
-    int in_fd;
-    EXTRACT_LIST *elist;
+static void
+extract_files_child(
+    int			in_fd,
+    EXTRACT_LIST *	elist)
 {
     int save_errno;
     int extra_params = 0;
@@ -1420,7 +1571,7 @@ static void extract_files_child(in_fd, elist)
     if (dup2(in_fd, STDIN_FILENO) == -1)
     {
 	error("dup2 failed in extract_files_child: %s", strerror(errno));
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
 
     /* read the file header */
@@ -1430,7 +1581,7 @@ static void extract_files_child(in_fd, elist)
     if(file.type != F_DUMPFILE) {
 	print_header(stdout, &file);
 	error("bad header");
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
 
     if (file.program != NULL) {
@@ -1488,8 +1639,8 @@ static void extract_files_child(in_fd, elist)
     	break;
     }
 
-    restore_args = (char **)alloc((extra_params + files_off_tape + 1)
-				  * sizeof(char *));
+    restore_args = (char **)alloc((size_t)((extra_params + files_off_tape + 1)
+				  * sizeof(char *)));
     switch(dumptype) {
     case IS_SAMBA:
 #ifdef SAMBA_CLIENT
@@ -1663,18 +1814,19 @@ static void extract_files_child(in_fd, elist)
  * some extraction program, really) and the socket from which we're reading, so
  * that we can do things like prompt for human interaction for multiple tapes.
  */
-void writer_intermediary(ctl_fd, data_fd, elist)
-    int ctl_fd, data_fd;
-    EXTRACT_LIST *elist;
+void
+writer_intermediary(
+    int			ctl_fd,
+    int			data_fd,
+    EXTRACT_LIST *	elist)
 {
     int child_pipe[2];
     pid_t pid;
     char buffer[DISK_BLOCK_BYTES];
-    ssize_t s;
     ssize_t bytes_read;
     amwait_t extractor_status;
     int max_fd, nfound;
-    fd_set readset, selectset;
+    SELECT_ARG_TYPE readset, selectset;
     struct timeval timeout;
 
     /*
@@ -1684,13 +1836,13 @@ void writer_intermediary(ctl_fd, data_fd, elist)
      */
     if(data_fd == -1){
 	extract_files_child(ctl_fd, elist);
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
 
     if(pipe(child_pipe) == -1) {
 	error("extract_list - error setting up pipe to extractor: %s\n",
 	    strerror(errno));
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
 
     /* okay, ready to extract. fork a child to do the actual work */
@@ -1699,13 +1851,13 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 	/* never gets out of this clause */
 	aclose(child_pipe[1]);
         extract_files_child(child_pipe[0], elist);
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
 
     /* This is the parent */
     if (pid == -1) {
 	error("writer_intermediary - error forking child");
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
 
     aclose(child_pipe[0]);
@@ -1721,7 +1873,7 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 	timeout.tv_usec = 0;
 	FD_COPY(&readset, &selectset);
         
-	nfound = select(max_fd, (SELECT_ARG_TYPE *)(&selectset), NULL, NULL,
+	nfound = select(max_fd, &selectset, NULL, NULL,
 			&timeout);
 	if(nfound < 0) {
 	    fprintf(stderr,"select error: %s\n", strerror(errno));
@@ -1757,7 +1909,7 @@ void writer_intermediary(ctl_fd, data_fd, elist)
                 
                 buffer[bytes_read] = '\0';
                 /* if prompted for a tape, relay said prompt to the user */
-                if(sscanf(buffer, "FEEDME %s\n", desired_tape) == 1) {
+                if(sscanf(buffer, "FEEDME %132s\n", desired_tape) == 1) {
                     int done = 0;
                     while (!done) {
                         char *input = NULL;
@@ -1782,13 +1934,12 @@ void writer_intermediary(ctl_fd, data_fd, elist)
                     }
                 } else {
                     fprintf(stderr, "Strange message from tape server: %s", buffer);
-                    
 		    break;
-		}
-	    }
+                }    
+	      }
             }
         }
-            
+
         /* now read some dump data */
         if(FD_ISSET(data_fd, &selectset)) {
             bytes_read = read(data_fd, buffer, sizeof(buffer)-1);
@@ -1812,7 +1963,7 @@ void writer_intermediary(ctl_fd, data_fd, elist)
                  * spit what we got from the server to the child
                  *  process handling actual dumpfile extraction
                  */
-                if((s = fullwrite(child_pipe[1], buffer, bytes_read)) < 0){
+                if(fullwrite(child_pipe[1], buffer, (size_t)bytes_read) < 0) {
                     if(errno == EPIPE) {
                         error("%s: pipe data reader has quit: %s\n",
                               get_pname(), strerror(errno));
@@ -1834,7 +1985,7 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 	int ret = WEXITSTATUS(extractor_status);
         if(ret == 255) ret = -1;
 	error("Extractor child exited with status %d\n", ret);
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
 
     exit(0);
@@ -1843,21 +1994,24 @@ void writer_intermediary(ctl_fd, data_fd, elist)
 /* exec restore to do the actual restoration */
 
 /* does the actual extraction of files */
-/* The original design had the dump image being returned exactly as it
-   appears on the tape, and this routine getting from the index server
-   whether or not it is compressed, on the assumption that the tape
-   server may not know how to uncompress it. But
-   - Amrestore can't do that. It returns either compressed or uncompressed
-   (always). Amrestore assumes it can uncompress files. It is thus a good
-   idea to run the tape server on a machine with gzip.
-   - The information about compression in the disklist is really only
-   for future dumps. It is possible to change compression on a drive
-   so the information in the disklist may not necessarily relate to
-   the dump image on the tape.
-     Consequently the design was changed to assuming that amrestore can
-   uncompress any dump image and have it return an uncompressed file
-   always. */
-void extract_files P((void))
+/*
+ * The original design had the dump image being returned exactly as it
+ * appears on the tape, and this routine getting from the index server
+ * whether or not it is compressed, on the assumption that the tape
+ * server may not know how to uncompress it. But
+ * - Amrestore can't do that. It returns either compressed or uncompressed
+ * (always). Amrestore assumes it can uncompress files. It is thus a good
+ * idea to run the tape server on a machine with gzip.
+ * - The information about compression in the disklist is really only
+ * for future dumps. It is possible to change compression on a drive
+ * so the information in the disklist may not necessarily relate to
+ * the dump image on the tape.
+ *   Consequently the design was changed to assuming that amrestore can
+ * uncompress any dump image and have it return an uncompressed file
+ * always.
+ */
+void
+extract_files(void)
 {
     EXTRACT_LIST *elist;
     pid_t pid;
@@ -1918,6 +2072,7 @@ void extract_files P((void))
 	}
     first=1;
     for (elist = first_tape_list(); elist != NULL; elist = next_tape_list(elist))
+    {
 	if(elist->tape[0]=='/') {
 	    if(first) {
 		printf("\nExtracting files from holding disk on host %s.\n",
@@ -1933,8 +2088,14 @@ void extract_files P((void))
 	    printf("\n");
 	    amfree(tlist);
 	}
+    }
     printf("\n");
-    getcwd(buf, sizeof(buf));
+
+    if (getcwd(buf, sizeof(buf)) == NULL) {
+	perror("extract_list: Current working directory unavailable");
+	exit(1);
+    }
+
     printf("Restoring files into directory %s\n", buf);
 #ifdef SAMBA_CLIENT
     if (samba_extract_method == SAMBA_SMBCLIENT)
@@ -1991,6 +2152,7 @@ void extract_files P((void))
 	if (pid == -1)
 	{
 	    perror("extract_list - error forking child");
+	    aclose(tape_control_sock);
 	    exit(1);
 	}
 
@@ -2025,10 +2187,9 @@ void extract_files P((void))
 	    otc = okay_to_continue(0,0,1);
 	    if(otc == 0)
 		return;
-	    else if(otc == 1) {
+
+	    if(otc == 1) {
 		delete_tape_list(elist); /* tape failed so delete from list */
-	    }
-	    else { /* RETRY_TAPE */
 	    }
 	}
 	else {

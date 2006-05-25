@@ -1,3 +1,5 @@
+#ifndef AMTAPE_H
+#define AMTAPE_H
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
  * Copyright (c) 1991-1998 University of Maryland at College Park
@@ -25,7 +27,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amtape.h,v 1.1 2005/10/11 01:17:00 vectro Exp $
+ * $Id: amtape.h,v 1.2 2006/05/25 01:47:19 johnfranks Exp $
  *
  * driver-related helper functions
  */
@@ -43,7 +45,7 @@
 
 typedef struct dumper_s {
     char *name;		/* name of this dumper */
-    int pid;		/* its pid */
+    pid_t pid;		/* its pid */
     int busy, down;
     int infd, outfd;
     disk_t *dp;
@@ -51,8 +53,8 @@ typedef struct dumper_s {
 
 typedef struct assignedhd_s {
     holdingdisk_t	*disk;
-    long		used;
-    long		reserved;
+    off_t		used;
+    off_t		reserved;
     char		*destname;
 } assignedhd_t;
 
@@ -61,10 +63,10 @@ typedef struct assignedhd_s {
 typedef struct sched_s {
     int attempted, priority;
     int level, degr_level;
-    long est_time, degr_time;
-    unsigned long est_size, degr_size, act_size;
+    unsigned long est_time, degr_time;
+    off_t est_size, degr_size, act_size;
     char *dumpdate, *degr_dumpdate;
-    int est_kps, degr_kps;
+    unsigned long est_kps, degr_kps;
     char *destname;				/* file/port name */
     dumper_t *dumper;
     assignedhd_t **holdp;
@@ -81,7 +83,7 @@ typedef struct sched_s {
 
 typedef struct holdalloc_s {
     int allocated_dumpers;
-    long allocated_space;
+    off_t allocated_space;
 } holdalloc_t;
 
 #define holdalloc(hp)	((holdalloc_t *) (hp)->up)
@@ -90,18 +92,18 @@ GLOBAL dumper_t dmptable[MAX_DUMPERS];
 
 GLOBAL int maxfd;
 GLOBAL fd_set readset;
-GLOBAL int taper, taper_busy, taper_pid;
+GLOBAL int taper, taper_busy;
+GLOBAL pid_t taper_pid;
 
-void init_driverio();
-void startup_tape_process P((char *taper_program));
-void startup_dump_process P((dumper_t *dumper, char *dumper_program));
-void startup_dump_processes P((char *dumper_program, int inparallel));
-cmd_t getresult P((int fd, int show, int *result_argc, char **result_argv, int max_arg));
-int taper_cmd P((cmd_t cmd, void *ptr, char *destname, int level, char *datestamp));
-int dumper_cmd P((dumper_t *dumper, cmd_t cmd, disk_t *dp));
-disk_t *serial2disk P((char *str));
-void free_serial P((char *str));
-char *disk2serial P((disk_t *dp));
-void update_info_dumper P((disk_t *dp, long origsize, long dumpsize, long dumptime));
-void update_info_taper P((disk_t *dp, char *label, int filenum, int level));
-void free_assignedhd P((assignedhd_t **holdp));
+void init_driverio(void);
+void startup_tape_process(char *taper_program);
+void startup_dump_process(dumper_t *dumper, char *dumper_program);
+void startup_dump_processes(char *dumper_program, int inparallel);
+disk_t *serial2disk(char *str);
+void free_serial(char *str);
+char *disk2serial(disk_t *dp);
+void update_info_dumper(disk_t *dp, off_t origsize, off_t dumpsize, time_t dumptime);
+void update_info_taper(disk_t *dp, char *label, int filenum, int level);
+void free_assignedhd(assignedhd_t **holdp);
+
+#endif	/* !AMTAPE_H */

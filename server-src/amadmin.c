@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.109 2006/05/15 15:42:47 martinea Exp $
+ * $Id: amadmin.c,v 1.110 2006/05/25 01:47:19 johnfranks Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -41,41 +41,40 @@
 
 disklist_t diskq;
 
-int main P((int argc, char **argv));
-void usage P((void));
-void force P((int argc, char **argv));
-void force_one P((disk_t *dp));
-void unforce P((int argc, char **argv));
-void unforce_one P((disk_t *dp));
-void force_bump P((int argc, char **argv));
-void force_bump_one P((disk_t *dp));
-void force_no_bump P((int argc, char **argv));
-void force_no_bump_one P((disk_t *dp));
-void unforce_bump P((int argc, char **argv));
-void unforce_bump_one P((disk_t *dp));
-void reuse P((int argc, char **argv));
-void noreuse P((int argc, char **argv));
-void info P((int argc, char **argv));
-void info_one P((disk_t *dp));
-void due P((int argc, char **argv));
-void due_one P((disk_t *dp));
-void find P((int argc, char **argv));
-void delete P((int argc, char **argv));
-void delete_one P((disk_t *dp));
-void balance P((int argc, char **argv));
-void tape P((int argc, char **argv));
-void bumpsize P((int argc, char **argv));
-void diskloop P((int argc, char **argv, char *cmdname,
-		 void (*func) P((disk_t *dp))));
-char *seqdatestr P((int seq));
-static int next_level0 P((disk_t *dp, info_t *info));
-int bump_thresh P((int level));
-void export_db P((int argc, char **argv));
-void import_db P((int argc, char **argv));
-void disklist P((int argc, char **argv));
-void disklist_one P((disk_t *dp));
-void show_version P((int argc, char **argv));
-static void check_dumpuser P((void));
+int main(int argc, char **argv);
+void usage(void);
+void force(int argc, char **argv);
+void force_one(disk_t *dp);
+void unforce(int argc, char **argv);
+void unforce_one(disk_t *dp);
+void force_bump(int argc, char **argv);
+void force_bump_one(disk_t *dp);
+void force_no_bump(int argc, char **argv);
+void force_no_bump_one(disk_t *dp);
+void unforce_bump(int argc, char **argv);
+void unforce_bump_one(disk_t *dp);
+void reuse(int argc, char **argv);
+void noreuse(int argc, char **argv);
+void info(int argc, char **argv);
+void info_one(disk_t *dp);
+void due(int argc, char **argv);
+void due_one(disk_t *dp);
+void find(int argc, char **argv);
+void delete(int argc, char **argv);
+void delete_one(disk_t *dp);
+void balance(int argc, char **argv);
+void tape(int argc, char **argv);
+void bumpsize(int argc, char **argv);
+void diskloop(int argc, char **argv, char *cmdname, void (*func)(disk_t *dp));
+char *seqdatestr(int seq);
+static int next_level0(disk_t *dp, info_t *info);
+int bump_thresh(int level);
+void export_db(int argc, char **argv);
+void import_db(int argc, char **argv);
+void disklist(int argc, char **argv);
+void disklist_one(disk_t *dp);
+void show_version(int argc, char **argv);
+static void check_dumpuser(void);
 
 static char *conf_tapelist = NULL;
 static char *displayunit;
@@ -83,7 +82,7 @@ static long int unitdivisor;
 
 static const struct {
     const char *name;
-    void (*fn) P((int, char **));
+    void (*fn)(int, char **);
     const char *usage;
 } cmdtab[] = {
     { "version", show_version,
@@ -123,11 +122,12 @@ static const struct {
     { "disklist", disklist,
 	" [<hostname> [<disks>]* ]*\t# Debug disklist entries." },
 };
-#define	NCMDS	(sizeof(cmdtab) / sizeof(cmdtab[0]))
+#define	NCMDS	(int)(sizeof(cmdtab) / sizeof(cmdtab[0]))
 
-int main(argc, argv)
-     int argc;
-     char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
     int i;
     char *conf_diskfile;
@@ -140,6 +140,8 @@ int main(argc, argv)
     safe_cd();
 
     set_pname("amadmin");
+
+    dbopen();
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
@@ -159,8 +161,10 @@ int main(argc, argv)
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
 
-    if(read_conffile(conffile))
+    if(read_conffile(conffile)) {
 	error("errors processing config file \"%s\"", conffile);
+	/*NOTREACHED*/
+    }
     amfree(conffile);
 
     check_dumpuser();
@@ -171,8 +175,10 @@ int main(argc, argv)
     } else {
 	conf_diskfile = stralloc2(config_dir, conf_diskfile);
     }
-    if (read_diskfile(conf_diskfile, &diskq) < 0)
+    if (read_diskfile(conf_diskfile, &diskq) < 0) {
 	error("could not load disklist \"%s\"", conf_diskfile);
+	/*NOTREACHED*/
+    }
     amfree(conf_diskfile);
 
     conf_tapelist = getconf_str(CNF_TAPELIST);
@@ -181,17 +187,20 @@ int main(argc, argv)
     } else {
 	conf_tapelist = stralloc2(config_dir, conf_tapelist);
     }
-    if(read_tapelist(conf_tapelist))
+    if(read_tapelist(conf_tapelist)) {
 	error("could not load tapelist \"%s\"", conf_tapelist);
-
+	/*NOTREACHED*/
+    }
     conf_infofile = getconf_str(CNF_INFOFILE);
     if (*conf_infofile == '/') {
 	conf_infofile = stralloc(conf_infofile);
     } else {
 	conf_infofile = stralloc2(config_dir, conf_infofile);
     }
-    if(open_infofile(conf_infofile))
+    if(open_infofile(conf_infofile)) {
 	error("could not open info db \"%s\"", conf_infofile);
+	/*NOTREACHED*/
+    }
     amfree(conf_infofile);
 
     displayunit = getconf_str(CNF_DISPLAYUNIT);
@@ -224,7 +233,8 @@ done:
 }
 
 
-void usage P((void))
+void
+usage(void)
 {
     int i;
 
@@ -242,8 +252,9 @@ void usage P((void))
 #define SECS_PER_DAY (24*60*60)
 time_t today;
 
-char *seqdatestr(seq)
-int seq;
+char *
+seqdatestr(
+    int		seq)
 {
     static char str[16];
     static char *dow[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
@@ -252,18 +263,19 @@ int seq;
 
     tm = localtime(&t);
 
-    snprintf(str, sizeof(str),
+    snprintf(str, SIZEOF(str),
 		"%2d/%02d %3s", tm->tm_mon+1, tm->tm_mday, dow[tm->tm_wday]);
     return str;
 }
 
 #undef days_diff
-#define days_diff(a, b)        (((b) - (a) + SECS_PER_DAY) / SECS_PER_DAY)
+#define days_diff(a, b)        (int)(((b) - (a) + SECS_PER_DAY) / SECS_PER_DAY)
 
 /* when is next level 0 due? 0 = tonight, 1 = tommorrow, etc*/
-static int next_level0(dp, info)
-disk_t *dp;
-info_t *info;
+static int
+next_level0(
+    disk_t *	dp,
+    info_t *	info)
 {
     if(dp->strategy == DS_NOFULL)
 	return 1;	/* fake it */
@@ -273,7 +285,8 @@ info_t *info;
 	return dp->dumpcycle - days_diff(info->inf[0].date, today);
 }
 
-static void check_dumpuser()
+static void
+check_dumpuser(void)
 {
     static int been_here = 0;
     uid_t uid_me;
@@ -290,16 +303,17 @@ static void check_dumpuser()
 
     if ((pw = getpwnam(dumpuser)) == NULL) {
 	error("cannot look up dump user \"%s\"", dumpuser);
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
     uid_dumpuser = pw->pw_uid;
     if ((pw = getpwuid(uid_me)) == NULL) {
 	error("cannot look up my own uid %ld", (long)uid_me);
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
     if (uid_me != uid_dumpuser) {
 	error("ERROR: running as user \"%s\" instead of \"%s\"",
 	      pw->pw_name, dumpuser);
+        /*NOTREACHED*/
     }
     been_here = 1;
     return;
@@ -307,11 +321,12 @@ static void check_dumpuser()
 
 /* ----------------------------------------------- */
 
-void diskloop(argc, argv, cmdname, func)
-int argc;
-char **argv;
-char *cmdname;
-void (*func) P((disk_t *dp));
+void
+diskloop(
+    int		argc,
+    char **	argv,
+    char *	cmdname,
+    void	(*func)(disk_t *dp))
 {
     disk_t *dp;
     int count = 0;
@@ -338,8 +353,9 @@ void (*func) P((disk_t *dp));
 /* ----------------------------------------------- */
 
 
-void force_one(dp)
-disk_t *dp;
+void
+force_one(
+    disk_t *	dp)
 {
     char *hostname = dp->host->hostname;
     char *diskname = dp->name;
@@ -365,9 +381,10 @@ disk_t *dp;
 }
 
 
-void force(argc, argv)
-int argc;
-char **argv;
+void
+force(
+    int		argc,
+    char **	argv)
 {
     diskloop(argc, argv, "force", force_one);
 }
@@ -376,8 +393,9 @@ char **argv;
 /* ----------------------------------------------- */
 
 
-void unforce_one(dp)
-disk_t *dp;
+void
+unforce_one(
+    disk_t *	dp)
 {
     char *hostname = dp->host->hostname;
     char *diskname = dp->name;
@@ -404,9 +422,10 @@ disk_t *dp;
     }
 }
 
-void unforce(argc, argv)
-int argc;
-char **argv;
+void
+unforce(
+    int		argc,
+    char **	argv)
 {
     diskloop(argc, argv, "unforce", unforce_one);
 }
@@ -415,8 +434,9 @@ char **argv;
 /* ----------------------------------------------- */
 
 
-void force_bump_one(dp)
-disk_t *dp;
+void
+force_bump_one(
+    disk_t *	dp)
 {
     char *hostname = dp->host->hostname;
     char *diskname = dp->name;
@@ -447,9 +467,10 @@ disk_t *dp;
 }
 
 
-void force_bump(argc, argv)
-int argc;
-char **argv;
+void
+force_bump(
+    int		argc,
+    char **	argv)
 {
     diskloop(argc, argv, "force-bump", force_bump_one);
 }
@@ -458,8 +479,9 @@ char **argv;
 /* ----------------------------------------------- */
 
 
-void force_no_bump_one(dp)
-disk_t *dp;
+void
+force_no_bump_one(
+    disk_t *	dp)
 {
     char *hostname = dp->host->hostname;
     char *diskname = dp->name;
@@ -485,9 +507,10 @@ disk_t *dp;
 }
 
 
-void force_no_bump(argc, argv)
-int argc;
-char **argv;
+void
+force_no_bump(
+    int		argc,
+    char **	argv)
 {
     diskloop(argc, argv, "force-no-bump", force_no_bump_one);
 }
@@ -496,8 +519,9 @@ char **argv;
 /* ----------------------------------------------- */
 
 
-void unforce_bump_one(dp)
-disk_t *dp;
+void
+unforce_bump_one(
+    disk_t *	dp)
 {
     char *hostname = dp->host->hostname;
     char *diskname = dp->name;
@@ -524,9 +548,10 @@ disk_t *dp;
 }
 
 
-void unforce_bump(argc, argv)
-int argc;
-char **argv;
+void
+unforce_bump(
+    int		argc,
+    char **	argv)
 {
     diskloop(argc, argv, "unforce-bump", unforce_bump_one);
 }
@@ -534,9 +559,10 @@ char **argv;
 
 /* ----------------------------------------------- */
 
-void reuse(argc, argv)
-int argc;
-char **argv;
+void
+reuse(
+    int		argc,
+    char **	argv)
 {
     tape_t *tp;
     int count;
@@ -567,12 +593,14 @@ char **argv;
 
     if(write_tapelist(conf_tapelist)) {
 	error("could not write tapelist \"%s\"", conf_tapelist);
+	/*NOTREACHED*/
     }
 }
 
-void noreuse(argc, argv)
-int argc;
-char **argv;
+void
+noreuse(
+    int		argc,
+    char **	argv)
 {
     tape_t *tp;
     int count;
@@ -603,6 +631,7 @@ char **argv;
 
     if(write_tapelist(conf_tapelist)) {
 	error("could not write tapelist \"%s\"", conf_tapelist);
+	/*NOTREACHED*/
     }
 }
 
@@ -611,8 +640,9 @@ char **argv;
 
 static int deleted;
 
-void delete_one(dp)
-disk_t *dp;
+void
+delete_one(
+    disk_t *	dp)
 {
     char *hostname = dp->host->hostname;
     char *diskname = dp->name;
@@ -625,17 +655,20 @@ disk_t *dp;
     }
 
     deleted++;
-    if(del_info(hostname, diskname))
+    if(del_info(hostname, diskname)) {
 	error("couldn't delete %s:%s from database: %s",
 	      hostname, diskname, strerror(errno));
-    else
+        /*NOTREACHED*/
+    } else {
 	printf("%s: %s:%s deleted from curinfo database.\n",
 	       get_pname(), hostname, diskname);
+    }
 }
 
-void delete(argc, argv)
-int argc;
-char **argv;
+void
+delete(
+    int		argc,
+    char **	argv)
 {
     deleted = 0;
     diskloop(argc, argv, "delete", delete_one);
@@ -648,8 +681,9 @@ char **argv;
 
 /* ----------------------------------------------- */
 
-void info_one(dp)
-disk_t *dp;
+void
+info_one(
+    disk_t *	dp)
 {
     info_t info;
     int lev;
@@ -665,29 +699,35 @@ disk_t *dp;
 	printf("  (Forcing bump at next run)\n");
     if (ISSET(info.command, FORCE_NO_BUMP))
 	printf("  (Forcing no-bump at next run)\n");
-    printf("  Stats: dump rates (kps), Full:  %5.1f, %5.1f, %5.1f\n",
+    printf("  Stats: dump rates (kps), Full:  %5.1lf, %5.1lf, %5.1lf\n",
 	   info.full.rate[0], info.full.rate[1], info.full.rate[2]);
-    printf("                    Incremental:  %5.1f, %5.1f, %5.1f\n",
+    printf("                    Incremental:  %5.1lf, %5.1lf, %5.1lf\n",
 	   info.incr.rate[0], info.incr.rate[1], info.incr.rate[2]);
-    printf("          compressed size, Full: %5.1f%%,%5.1f%%,%5.1f%%\n",
+    printf("          compressed size, Full: %5.1lf%%,%5.1lf%%,%5.1lf%%\n",
 	   info.full.comp[0]*100, info.full.comp[1]*100, info.full.comp[2]*100);
-    printf("                    Incremental: %5.1f%%,%5.1f%%,%5.1f%%\n",
+    printf("                    Incremental: %5.1lf%%,%5.1lf%%,%5.1lf%%\n",
 	   info.incr.comp[0]*100, info.incr.comp[1]*100, info.incr.comp[2]*100);
 
     printf("  Dumps: lev datestmp  tape             file   origK   compK secs\n");
     for(lev = 0, sp = &info.inf[0]; lev < 9; lev++, sp++) {
 	if(sp->date < (time_t)0 && sp->label[0] == '\0') continue;
 	tm = localtime(&sp->date);
-	printf("          %d  %04d%02d%02d  %-15s  %4d %7ld %7ld %4ld\n",
+	printf("          %d  %04d%02d%02d  %-15s  "
+	       OFF_T_FMT " " OFF_T_FMT " " OFF_T_FMT " " TIME_T_FMT "\n",
 	       lev, tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
-	       sp->label, sp->filenum, sp->size, sp->csize, sp->secs);
+	       sp->label,
+	       (OFF_T_FMT_TYPE)sp->filenum,
+	       (OFF_T_FMT_TYPE)sp->size,
+	       (OFF_T_FMT_TYPE)sp->csize,
+	       (TIME_T_FMT_TYPE)sp->secs);
     }
 }
 
 
-void info(argc, argv)
-int argc;
-char **argv;
+void
+info(
+    int		argc,
+    char **	argv)
 {
     disk_t *dp;
 
@@ -700,8 +740,9 @@ char **argv;
 
 /* ----------------------------------------------- */
 
-void due_one(dp)
-disk_t *dp;
+void
+due_one(
+    disk_t *	dp)
 {
     am_host_t *hp;
     int days;
@@ -729,9 +770,10 @@ disk_t *dp;
     }
 }
 
-void due(argc, argv)
-int argc;
-char **argv;
+void
+due(
+    int		argc,
+    char **	argv)
 {
     disk_t *dp;
 
@@ -745,9 +787,10 @@ char **argv;
 
 /* ----------------------------------------------- */
 
-void tape(argc, argv)
-int argc;
-char **argv;
+void
+tape(
+    int		argc,
+    char **	argv)
 {
     tape_t *tp, *lasttp;
     int runtapes, i, j;
@@ -809,21 +852,22 @@ char **argv;
 
 /* ----------------------------------------------- */
 
-void balance(argc, argv)
-int argc;
-char **argv;
+void
+balance(
+    int		argc,
+    char **	argv)
 {
     disk_t *dp;
     struct balance_stats {
 	int disks;
-	long origsize, outsize;
+	off_t origsize, outsize;
     } *sp;
     int conf_runspercycle, conf_dumpcycle;
     int seq, runs_per_cycle, overdue, max_overdue;
     int later, total, balance, distinct;
-    float fseq, disk_dumpcycle;
+    double fseq, disk_dumpcycle;
     info_t info;
-    long int total_balanced, balanced;
+    off_t total_balanced, balanced;
     int empty_day;
 
     time(&today);
@@ -855,10 +899,12 @@ char **argv;
     distinct = later + 3;
 
     sp = (struct balance_stats *)
-	alloc(sizeof(struct balance_stats) * (distinct+1));
+	alloc(SIZEOF(struct balance_stats) * (distinct+1));
 
-    for(seq=0; seq <= distinct; seq++)
-	sp[seq].disks = sp[seq].origsize = sp[seq].outsize = 0;
+    for(seq=0; seq <= distinct; seq++) {
+	sp[seq].disks = 0;
+	sp[seq].origsize = sp[seq].outsize = (off_t)0;
+    }
 
     for(dp = diskq.head; dp != NULL; dp = dp->next) {
 	if(get_info(dp->host->hostname, dp->name, &info)) {
@@ -869,24 +915,24 @@ char **argv;
 	    continue;
 	}
 	sp[distinct].disks++;
-	sp[distinct].origsize += info.inf[0].size/unitdivisor;
-	sp[distinct].outsize += info.inf[0].csize/unitdivisor;
+	sp[distinct].origsize += info.inf[0].size/(off_t)unitdivisor;
+	sp[distinct].outsize += info.inf[0].csize/(off_t)unitdivisor;
 
 	sp[balance].disks++;
 	if(dp->dumpcycle == 0) {
-	    sp[balance].origsize += (info.inf[0].size/unitdivisor) * runs_per_cycle;
-	    sp[balance].outsize += (info.inf[0].csize/unitdivisor) * runs_per_cycle;
+	    sp[balance].origsize += (info.inf[0].size/(off_t)unitdivisor) * (off_t)runs_per_cycle;
+	    sp[balance].outsize += (info.inf[0].csize/(off_t)unitdivisor) * (off_t)runs_per_cycle;
 	}
 	else {
-	    sp[balance].origsize += (info.inf[0].size/unitdivisor) *
-				    (conf_dumpcycle / dp->dumpcycle);
-	    sp[balance].outsize += (info.inf[0].csize/unitdivisor) *
-				   (conf_dumpcycle / dp->dumpcycle);
+	    sp[balance].origsize += (info.inf[0].size/(off_t)unitdivisor) *
+				    (off_t)(conf_dumpcycle / dp->dumpcycle);
+	    sp[balance].outsize += (info.inf[0].csize/(off_t)unitdivisor) *
+				   (off_t)(conf_dumpcycle / dp->dumpcycle);
 	}
 
-	disk_dumpcycle = dp->dumpcycle;
+	disk_dumpcycle = (double)dp->dumpcycle;
 	if(dp->dumpcycle <= 0)
-	    disk_dumpcycle = ((float)conf_dumpcycle) / ((float)runs_per_cycle);
+	    disk_dumpcycle = ((double)conf_dumpcycle) / ((double)runs_per_cycle);
 
 	seq = next_level0(dp, &info);
 	fseq = seq + 0.0001;
@@ -903,34 +949,34 @@ char **argv;
 	    }
 	    
 	    sp[seq].disks++;
-	    sp[seq].origsize += info.inf[0].size/unitdivisor;
-	    sp[seq].outsize += info.inf[0].csize/unitdivisor;
+	    sp[seq].origsize += info.inf[0].size/(off_t)unitdivisor;
+	    sp[seq].outsize += info.inf[0].csize/(off_t)unitdivisor;
 
 	    if(seq < later) {
 		sp[total].disks++;
-		sp[total].origsize += info.inf[0].size/unitdivisor;
-		sp[total].outsize += info.inf[0].csize/unitdivisor;
+		sp[total].origsize += info.inf[0].size/(off_t)unitdivisor;
+		sp[total].outsize += info.inf[0].csize/(off_t)unitdivisor;
 	    }
 	    
 	    /* See, if there's another run in this dumpcycle */
 	    fseq += disk_dumpcycle;
-	    seq = fseq;
+	    seq = (int)fseq;
 	} while (seq < later);
     }
 
-    if(sp[total].outsize == 0 && sp[later].outsize == 0) {
+    if(sp[total].outsize == (off_t)0 && sp[later].outsize == (off_t)0) {
 	printf("\nNo data to report on yet.\n");
 	amfree(sp);
 	return;
     }
 
-    balanced = sp[balance].outsize / runs_per_cycle;
+    balanced = sp[balance].outsize / (off_t)runs_per_cycle;
     if(conf_dumpcycle == later) {
-	total_balanced = sp[total].outsize / runs_per_cycle;
+	total_balanced = sp[total].outsize / (off_t)runs_per_cycle;
     }
     else {
-	total_balanced = 1024*(((sp[total].outsize/1024) * conf_dumpcycle)
-			    / (runs_per_cycle * later));
+	total_balanced = (((sp[total].outsize/(off_t)1024) * (off_t)conf_dumpcycle)
+			    / (off_t)(runs_per_cycle * later)) * (off_t)1024;
     }
 
     empty_day = 0;
@@ -948,35 +994,46 @@ char **argv;
 		printf("\n");
 		empty_day = 0;
 	    }
-	    printf("%-9.9s  %3d %10ld %10ld ",
+	    printf("%-9.9s  %3d " OFF_T_FMT " " OFF_T_FMT " ",
 		   seqdatestr(seq), sp[seq].disks,
-		   sp[seq].origsize, sp[seq].outsize);
+		   (OFF_T_FMT_TYPE)sp[seq].origsize,
+		   (OFF_T_FMT_TYPE)sp[seq].outsize);
 	    if(!sp[seq].outsize) printf("     --- \n");
-	    else printf("%+8.1f%%\n",
-			(sp[seq].outsize-balanced)*100.0/(double)balanced);
+	    else printf("%+8.1lf%%\n",
+			(((double)sp[seq].outsize - (double)balanced) * 100.0 /
+			(double)balanced));
 	}
     }
 
     if(sp[later].disks != 0) {
-	printf("later      %3d %10ld %10ld ",
+	printf("later      %3d " OFF_T_FMT " " OFF_T_FMT " ",
 	       sp[later].disks,
-	       sp[later].origsize, sp[later].outsize);
+	       (OFF_T_FMT_TYPE)sp[later].origsize,
+	       (OFF_T_FMT_TYPE)sp[later].outsize);
 	if(!sp[later].outsize) printf("     --- \n");
-	else printf("%+8.1f%%\n",
-		    (sp[later].outsize-balanced)*100.0/(double)balanced);
+	else printf("%+8.1lf%%\n",
+		    (((double)sp[later].outsize - (double)balanced) * 100.0 /
+		    (double)balanced));
     }
     printf("----------------------------------------------\n");
-    printf("TOTAL      %3d %10ld %10ld %9ld\n", sp[total].disks,
-	   sp[total].origsize, sp[total].outsize, total_balanced);
+    printf("TOTAL      %3d " OFF_T_FMT " " OFF_T_FMT " " OFF_T_FMT "\n",
+	   sp[total].disks,
+	   (OFF_T_FMT_TYPE)sp[total].origsize,
+	   (OFF_T_FMT_TYPE)sp[total].outsize,
+	   (OFF_T_FMT_TYPE)total_balanced);
     if (sp[balance].origsize != sp[total].origsize ||
         sp[balance].outsize != sp[total].outsize ||
 	balanced != total_balanced) {
-	printf("BALANCED       %10ld %10ld %9ld\n",
-	       sp[balance].origsize, sp[balance].outsize, balanced);
+	printf("BALANCED       " OFF_T_FMT " " OFF_T_FMT " " OFF_T_FMT "\n",
+	       (OFF_T_FMT_TYPE)sp[balance].origsize,
+	       (OFF_T_FMT_TYPE)sp[balance].outsize,
+	       (OFF_T_FMT_TYPE)balanced);
     }
     if (sp[distinct].disks != sp[total].disks) {
-	printf("DISTINCT   %3d %10ld %10ld\n", sp[distinct].disks,
-	       sp[distinct].origsize, sp[distinct].outsize);
+	printf("DISTINCT   %3d " OFF_T_FMT " " OFF_T_FMT "\n",
+	       sp[distinct].disks,
+	       (OFF_T_FMT_TYPE)sp[distinct].origsize,
+	       (OFF_T_FMT_TYPE)sp[distinct].outsize);
     }
     printf("  (estimated %d run%s per dumpcycle)\n",
 	   runs_per_cycle, (runs_per_cycle == 1) ? "" : "s");
@@ -991,9 +1048,10 @@ char **argv;
 
 /* ----------------------------------------------- */
 
-void find(argc, argv)
-int argc;
-char **argv;
+void
+find(
+    int		argc,
+    char **	argv)
 {
     int start_argc;
     char *sort_order = NULL;
@@ -1009,10 +1067,10 @@ char **argv;
 
     sort_order = newstralloc(sort_order, DEFAULT_SORT_ORDER);
     if(argc > 4 && strcmp(argv[3],"--sort") == 0) {
-	int i, valid_sort=1;
+	size_t i, valid_sort=1;
 
-	for(i=strlen(argv[4])-1;i>=0;i--) {
-	    switch (argv[4][i]) {
+	for(i = strlen(argv[4]); i > 0; i--) {
+	    switch (argv[4][i - 1]) {
 	    case 'h':
 	    case 'H':
 	    case 'k':
@@ -1058,23 +1116,29 @@ char **argv;
 
 /* shared code with planner.c */
 
-int bump_thresh(level)
-int level;
+int
+bump_thresh(
+    int		level)
 {
     int bump = getconf_int(CNF_BUMPSIZE);
     double mult = getconf_real(CNF_BUMPMULT);
 
-    while(--level) bump = (int) bump * mult;
+    while(--level)
+	bump = (int)((double)bump * mult);
     return bump;
 }
 
-void bumpsize(argc, argv)
-int argc;
-char **argv;
+void
+bumpsize(
+    int		argc,
+    char **	argv)
 {
     int l;
     int conf_bumppercent = getconf_int(CNF_BUMPPERCENT);
     double conf_bumpmult = getconf_real(CNF_BUMPMULT);
+
+    (void)argc;	/* Quiet unused parameter warning */
+    (void)argv;	/* Quiet unused parameter warning */
 
     printf("Current bump parameters:\n");
     if(conf_bumppercent == 0) {
@@ -1082,7 +1146,7 @@ char **argv;
 	       getconf_int(CNF_BUMPSIZE));
 	printf("  bumpdays %5d\t- minimum days at each level\n",
 	       getconf_int(CNF_BUMPDAYS));
-	printf("  bumpmult %5.5g\t- threshold = bumpsize * bumpmult**(level-1)\n\n",
+	printf("  bumpmult %5.5lg\t- threshold = bumpsize * bumpmult**(level-1)\n\n",
 	       conf_bumpmult);
 
 	printf("      Bump -> To  Threshold\n");
@@ -1091,17 +1155,17 @@ char **argv;
 	putchar('\n');
     }
     else {
-	double bumppercent = conf_bumppercent;
+	double bumppercent = (double)conf_bumppercent;
 
 	printf("  bumppercent %3d %%\t- minimum savings (threshold) to bump level 1 -> 2\n",
 	       conf_bumppercent);
 	printf("  bumpdays %5d\t- minimum days at each level\n",
 	       getconf_int(CNF_BUMPDAYS));
-	printf("  bumpmult %5.5g\t- threshold = disk_size * bumppercent * bumpmult**(level-1)\n\n",
+	printf("  bumpmult %5.5lg\t- threshold = disk_size * bumppercent * bumpmult**(level-1)\n\n",
 	       conf_bumpmult);
 	printf("      Bump -> To  Threshold\n");
 	for(l = 1; l < 9; l++) {
-	    printf("\t%d  ->  %d  %7.2f %%\n", l, l+1, bumppercent);
+	    printf("\t%d  ->  %d  %7.2lf %%\n", l, l+1, bumppercent);
 	    bumppercent *= conf_bumpmult;
 	    if(bumppercent >= 100.000) { bumppercent = 100.0;}
 	}
@@ -1111,11 +1175,12 @@ char **argv;
 
 /* ----------------------------------------------- */
 
-void export_one P((disk_t *dp));
+void export_one(disk_t *dp);
 
-void export_db(argc, argv)
-int argc;
-char **argv;
+void
+export_db(
+    int		argc,
+    char **	argv)
 {
     disk_t *dp;
     time_t curtime;
@@ -1125,9 +1190,11 @@ char **argv;
     printf("CURINFO Version %s CONF %s\n", version(), getconf_str(CNF_ORG));
 
     curtime = time(0);
-    if(gethostname(hostname, sizeof(hostname)-1) == -1)
+    if(gethostname(hostname, SIZEOF(hostname)-1) == -1) {
 	error("could not determine host name: %s\n", strerror(errno));
-    hostname[sizeof(hostname)-1] = '\0';
+	/*NOTREACHED*/
+    }
+    hostname[SIZEOF(hostname)-1] = '\0';
     printf("# Generated by:\n#    host: %s\n#    date: %s",
 	   hostname, ctime(&curtime));
 
@@ -1144,8 +1211,9 @@ char **argv;
 	export_one(dp);
 }
 
-void export_one(dp)
-disk_t *dp;
+void
+export_one(
+    disk_t *	dp)
 {
     info_t info;
     int i,l;
@@ -1156,49 +1224,62 @@ disk_t *dp;
 	return;
     }
     printf("host: %s\ndisk: %s\n", dp->host->hostname, dp->name);
-    printf("command: %d\n", info.command);
+    printf("command: %u\n", info.command);
     printf("last_level: %d\n",info.last_level);
     printf("consecutive_runs: %d\n",info.consecutive_runs);
     printf("full-rate:");
-    for(i=0;i<AVG_COUNT;i++) printf(" %f", info.full.rate[i]);
+    for(i=0;i<AVG_COUNT;i++) printf(" %lf", info.full.rate[i]);
     printf("\nfull-comp:");
-    for(i=0;i<AVG_COUNT;i++) printf(" %f", info.full.comp[i]);
+    for(i=0;i<AVG_COUNT;i++) printf(" %lf", info.full.comp[i]);
 
     printf("\nincr-rate:");
-    for(i=0;i<AVG_COUNT;i++) printf(" %f", info.incr.rate[i]);
+    for(i=0;i<AVG_COUNT;i++) printf(" %lf", info.incr.rate[i]);
     printf("\nincr-comp:");
-    for(i=0;i<AVG_COUNT;i++) printf(" %f", info.incr.comp[i]);
+    for(i=0;i<AVG_COUNT;i++) printf(" %lf", info.incr.comp[i]);
     printf("\n");
     for(l=0;l<DUMP_LEVELS;l++) {
 	if(info.inf[l].date < (time_t)0 && info.inf[l].label[0] == '\0') continue;
-	printf("stats: %d %ld %ld %ld %ld %d %s\n", l,
-	       info.inf[l].size, info.inf[l].csize, info.inf[l].secs,
-	       (long)info.inf[l].date, info.inf[l].filenum,
+	printf("stats: %d " OFF_T_FMT " " OFF_T_FMT " " TIME_T_FMT " " TIME_T_FMT " " OFF_T_FMT " %s\n", l,
+	       (OFF_T_FMT_TYPE)info.inf[l].size,
+	       (OFF_T_FMT_TYPE)info.inf[l].csize,
+	       (TIME_T_FMT_TYPE)info.inf[l].secs,
+	       (TIME_T_FMT_TYPE)info.inf[l].date,
+	       (OFF_T_FMT_TYPE)info.inf[l].filenum,
 	       info.inf[l].label);
     }
     for(l=0;info.history[l].level > -1;l++) {
-	printf("history: %d %ld %ld %ld\n",info.history[l].level,
-	       info.history[l].size, info.history[l].csize,
-	       info.history[l].date);
+	printf("history: %d " OFF_T_FMT " " OFF_T_FMT " " TIME_T_FMT "\n",
+	       info.history[l].level,
+	       (OFF_T_FMT_TYPE)info.history[l].size,
+	       (OFF_T_FMT_TYPE)info.history[l].csize,
+	       (TIME_T_FMT_TYPE)info.history[l].date);
     }
     printf("//\n");
 }
 
 /* ----------------------------------------------- */
 
-int import_one P((void));
-char *impget_line P((void));
+int import_one(void);
+char *impget_line(void);
 
-void import_db(argc, argv)
-int argc;
-char **argv;
+void
+import_db(
+    int		argc,
+    char **	argv)
 {
-    int vers_maj, vers_min, vers_patch, newer;
+    int vers_maj;
+    int vers_min;
+    int vers_patch;
+    int newer;
     char *org;
     char *line = NULL;
     char *hdr;
     char *s;
+    int rc;
     int ch;
+
+    (void)argc;	/* Quiet unused parameter warning */
+    (void)argv;	/* Quiet unused parameter warning */
 
     /* process header line */
 
@@ -1212,10 +1293,10 @@ char **argv;
 
     hdr = "version";
 #define sc "CURINFO Version"
-    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+    if(strncmp(s - 1, sc, SIZEOF(sc)-1) != 0) {
 	goto bad_header;
     }
-    s += sizeof(sc)-1;
+    s += SIZEOF(sc)-1;
     ch = *s++;
 #undef sc
     skip_whitespace(s, ch);
@@ -1246,10 +1327,10 @@ char **argv;
     hdr = "CONF";
     skip_whitespace(s, ch);			/* find the org keyword */
 #define sc "CONF"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+    if(ch == '\0' || strncmp(s - 1, sc, SIZEOF(sc)-1) != 0) {
 	goto bad_header;
     }
-    s += sizeof(sc)-1;
+    s += SIZEOF(sc)-1;
     ch = *s++;
 #undef sc
 
@@ -1260,6 +1341,7 @@ char **argv;
     }
     org = s - 1;
 
+    /*@ignore@*/
     newer = (vers_maj != VERSION_MAJOR)? vers_maj > VERSION_MAJOR :
 	    (vers_min != VERSION_MINOR)? vers_min > VERSION_MINOR :
 					 vers_patch > VERSION_PATCH;
@@ -1267,20 +1349,23 @@ char **argv;
 	fprintf(stderr,
 	     "%s: WARNING: input is from newer Amanda version: %d.%d.%d.\n",
 		get_pname(), vers_maj, vers_min, vers_patch);
+    /*@end@*/
 
     if(strcmp(org, getconf_str(CNF_ORG)) != 0) {
 	fprintf(stderr, "%s: WARNING: input is from different org: %s\n",
 		get_pname(), org);
     }
 
-    while(import_one());
+    do {
+    	rc = import_one();
+    } while (rc);
 
     amfree(line);
     return;
 
  bad_header:
 
-    amfree(line);
+    /*@i@*/ amfree(line);
     fprintf(stderr, "%s: bad CURINFO header line in input: %s.\n",
 	    get_pname(), hdr);
     fprintf(stderr, "    Was the input in \"amadmin export\" format?\n");
@@ -1288,12 +1373,13 @@ char **argv;
 }
 
 
-int import_one P((void))
+int
+import_one(void)
 {
     info_t info;
     stats_t onestat;
     int rc, level;
-    long onedate;
+    time_t onedate;
     char *line = NULL;
     char *s, *fp;
     int ch;
@@ -1305,7 +1391,7 @@ int import_one P((void))
     check_dumpuser();
 #endif
 
-    memset(&info, 0, sizeof(info_t));
+    memset(&info, 0, SIZEOF(info_t));
 
     for(level = 0; level < DUMP_LEVELS; level++) {
         info.inf[level].date = (time_t)-1;
@@ -1321,8 +1407,8 @@ int import_one P((void))
 
     skip_whitespace(s, ch);
 #define sc "host:"
-    if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) goto parse_err;
-    s += sizeof(sc)-1;
+    if(ch == '\0' || strncmp(s - 1, sc, SIZEOF(sc)-1) != 0) goto parse_err;
+    s += SIZEOF(sc)-1;
     ch = s[-1];
 #undef sc
     skip_whitespace(s, ch);
@@ -1331,7 +1417,7 @@ int import_one P((void))
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
     hostname = stralloc(fp);
-    s[-1] = ch;
+    s[-1] = (char)ch;
 
     skip_whitespace(s, ch);
     while (ch == 0) {
@@ -1342,8 +1428,8 @@ int import_one P((void))
       skip_whitespace(s, ch);
     }
 #define sc "disk:"
-    if(strncmp(s - 1, sc, sizeof(sc)-1) != 0) goto parse_err;
-    s += sizeof(sc)-1;
+    if(strncmp(s - 1, sc, SIZEOF(sc)-1) != 0) goto parse_err;
+    s += SIZEOF(sc)-1;
     ch = s[-1];
 #undef sc
     skip_whitespace(s, ch);
@@ -1352,11 +1438,11 @@ int import_one P((void))
     skip_non_whitespace(s, ch);
     s[-1] = '\0';
     diskname = stralloc(fp);
-    s[-1] = ch;
+    s[-1] = (char)ch;
 
     amfree(line);
     if((line = impget_line()) == NULL) goto shortfile_err;
-    if(sscanf(line, "command: %d", &info.command) != 1) goto parse_err;
+    if(sscanf(line, "command: %u", &info.command) != 1) goto parse_err;
 
     /* get last_level and consecutive_runs */
 
@@ -1373,13 +1459,13 @@ int import_one P((void))
 
     /* get rate: and comp: lines for full dumps */
 
-    rc = sscanf(line, "full-rate: %f %f %f",
+    rc = sscanf(line, "full-rate: %lf %lf %lf",
 		&info.full.rate[0], &info.full.rate[1], &info.full.rate[2]);
     if(rc != 3) goto parse_err;
 
     amfree(line);
     if((line = impget_line()) == NULL) goto shortfile_err;
-    rc = sscanf(line, "full-comp: %f %f %f",
+    rc = sscanf(line, "full-comp: %lf %lf %lf",
 		&info.full.comp[0], &info.full.comp[1], &info.full.comp[2]);
     if(rc != 3) goto parse_err;
 
@@ -1387,13 +1473,13 @@ int import_one P((void))
 
     amfree(line);
     if((line = impget_line()) == NULL) goto shortfile_err;
-    rc = sscanf(line, "incr-rate: %f %f %f",
+    rc = sscanf(line, "incr-rate: %lf %lf %lf",
 		&info.incr.rate[0], &info.incr.rate[1], &info.incr.rate[2]);
     if(rc != 3) goto parse_err;
 
     amfree(line);
     if((line = impget_line()) == NULL) goto shortfile_err;
-    rc = sscanf(line, "incr-comp: %f %f %f",
+    rc = sscanf(line, "incr-comp: %lf %lf %lf",
 		&info.incr.comp[0], &info.incr.comp[1], &info.incr.comp[2]);
     if(rc != 3) goto parse_err;
 
@@ -1410,17 +1496,17 @@ int import_one P((void))
 	    /* end of record */
 	    break;
 	}
-	memset(&onestat, 0, sizeof(onestat));
+	memset(&onestat, 0, SIZEOF(onestat));
 
 	s = line;
 	ch = *s++;
 
 	skip_whitespace(s, ch);
 #define sc "stats:"
-	if(ch == '\0' || strncmp(s - 1, sc, sizeof(sc)-1) != 0) {
+	if(ch == '\0' || strncmp(s - 1, sc, SIZEOF(sc)-1) != 0) {
 	    goto parse_err;
 	}
-	s += sizeof(sc)-1;
+	s += SIZEOF(sc)-1;
 	ch = s[-1];
 #undef sc
 
@@ -1431,32 +1517,36 @@ int import_one P((void))
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
-	if(ch == '\0' || sscanf(s - 1, "%ld", &onestat.size) != 1) {
+	if(ch == '\0' || sscanf(s - 1, OFF_T_FMT,
+				(OFF_T_FMT_TYPE *)&onestat.size) != 1) {
 	    goto parse_err;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
-	if(ch == '\0' || sscanf(s - 1, "%ld", &onestat.csize) != 1) {
+	if(ch == '\0' || sscanf(s - 1, OFF_T_FMT,
+				(OFF_T_FMT_TYPE *)&onestat.csize) != 1) {
 	    goto parse_err;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
-	if(ch == '\0' || sscanf(s - 1, "%ld", &onestat.secs) != 1) {
+	if(ch == '\0' || sscanf(s - 1, TIME_T_FMT,
+				(TIME_T_FMT_TYPE *)&onestat.secs) != 1) {
 	    goto parse_err;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
-	if(ch == '\0' || sscanf(s - 1, "%ld", &onedate) != 1) {
+	if(ch == '\0' || sscanf(s - 1, TIME_T_FMT,
+				(TIME_T_FMT_TYPE *)&onedate) != 1) {
 	    goto parse_err;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
 	if(ch != '\0') {
-	    if(sscanf(s - 1, "%d", &onestat.filenum) != 1) {
+	    if(sscanf(s - 1, OFF_T_FMT, (OFF_T_FMT_TYPE *)&onestat.filenum) != 1) {
 		goto parse_err;
 	    }
 	    skip_integer(s, ch);
@@ -1467,13 +1557,13 @@ int import_one P((void))
 		    goto parse_err;
 		onestat.label[0] = '\0';
 	    } else {
-		strncpy(onestat.label, s - 1, sizeof(onestat.label)-1);
-		onestat.label[sizeof(onestat.label)-1] = '\0';
+		strncpy(onestat.label, s - 1, SIZEOF(onestat.label)-1);
+		onestat.label[SIZEOF(onestat.label)-1] = '\0';
 	    }
 	}
 
 	/* time_t not guarranteed to be long */
-	onestat.date = onedate;
+	/*@i1@*/ onestat.date = onedate;
 	if(level < 0 || level > 9) goto parse_err;
 
 	info.inf[level] = onestat;
@@ -1484,21 +1574,21 @@ int import_one P((void))
     }
     while(1) {
 	history_t onehistory;
-	long date;
+	time_t date;
 
 	if(line[0] == '/' && line[1] == '/') {
 	    info.history[nb_history].level = -2;
 	    rc = 0;
 	    break;
 	}
-	memset(&onehistory, 0, sizeof(onehistory));
+	memset(&onehistory, 0, SIZEOF(onehistory));
 	s = line;
 	ch = *s++;
 #define sc "history:"
-	if(strncmp(line, sc, sizeof(sc)-1) != 0) {
+	if(strncmp(line, sc, SIZEOF(sc)-1) != 0) {
 	    break;
 	}
-	s += sizeof(sc)-1;
+	s += SIZEOF(sc)-1;
 	ch = s[-1];
 #undef sc
 	skip_whitespace(s, ch);
@@ -1508,29 +1598,32 @@ int import_one P((void))
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
-	if(ch == '\0' || sscanf((s - 1), "%ld", &onehistory.size) != 1) {
+	if(ch == '\0' || sscanf((s - 1), OFF_T_FMT,
+				(OFF_T_FMT_TYPE *)&onehistory.size) != 1) {
 	    break;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
-	if(ch == '\0' || sscanf((s - 1), "%ld", &onehistory.csize) != 1) {
+	if(ch == '\0' || sscanf((s - 1), OFF_T_FMT,
+				(OFF_T_FMT_TYPE *)&onehistory.csize) != 1) {
 	    break;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
-	if(ch == '\0' || sscanf((s - 1), "%ld", &date) != 1) {
+	if((ch == '\0') || (sscanf((s - 1), TIME_T_FMT,
+				(TIME_T_FMT_TYPE *)&date) != 1)) {
 	    break;
 	}
 	skip_integer(s, ch);
-	onehistory.date = date; /* time_t not guarranteed to be long */
+	/*@i1@*/onehistory.date = date; /* time_t not guarranteed to be long */
 
 	info.history[nb_history++] = onehistory;
 	amfree(line);
 	if((line = impget_line()) == NULL) goto shortfile_err;
     }
-    amfree(line);
+    /*@i@*/ amfree(line);
 
     /* got a full record, now write it out to the database */
 
@@ -1543,14 +1636,14 @@ int import_one P((void))
     return 1;
 
  parse_err:
-    amfree(line);
+    /*@i@*/ amfree(line);
     amfree(hostname);
     amfree(diskname);
     fprintf(stderr, "%s: parse error reading import record.\n", get_pname());
     return 0;
 
  shortfile_err:
-    amfree(line);
+    /*@i@*/ amfree(line);
     amfree(hostname);
     amfree(diskname);
     fprintf(stderr, "%s: short file reading import record.\n", get_pname());
@@ -1558,7 +1651,7 @@ int import_one P((void))
 }
 
 char *
-impget_line ()
+impget_line(void)
 {
     char *line;
     char *s;
@@ -1587,8 +1680,9 @@ impget_line ()
 
 /* ----------------------------------------------- */
 
-void disklist_one(dp)
-disk_t *dp;
+void
+disklist_one(
+    disk_t *	dp)
 {
     am_host_t *hp;
     interface_t *ip;
@@ -1639,18 +1733,19 @@ disk_t *dp;
 	}
 	printf("\n");
     }
-    printf("        priority %ld\n", dp->priority);
-    printf("        dumpcycle %ld\n", dp->dumpcycle);
+    printf("        priority %d\n", dp->priority);
+    printf("        dumpcycle %d\n", dp->dumpcycle);
     printf("        maxdumps %d\n", dp->maxdumps);
     printf("        maxpromoteday %d\n", dp->maxpromoteday);
     if(dp->bumppercent > 0) {
 	printf("        bumppercent %d\n", dp->bumppercent);
     }
     else {
-	printf("        bumpsize %d\n", dp->bumpsize);
+	printf("        bumpsize " OFF_T_FMT "\n",
+		(OFF_T_FMT_TYPE)dp->bumpsize);
     }
     printf("        bumpdays %d\n", dp->bumpdays);
-    printf("        bumpmult %f\n", dp->bumpmult);
+    printf("        bumpmult %lf\n", dp->bumpmult);
 
     printf("        strategy ");
     switch(dp->strategy) {
@@ -1706,7 +1801,7 @@ disk_t *dp;
 	break;
     }
     if(dp->compress != COMP_NONE) {
-	printf("        comprate %.2f %.2f\n",
+	printf("        comprate %.2lf %.2lf\n",
 	       dp->comprate[0], dp->comprate[1]);
     }
 
@@ -1738,14 +1833,16 @@ disk_t *dp;
               stm->tm_hour, stm->tm_min, stm->tm_sec);
         }
    
-    if(dp->tape_splitsize > 0) {
-	printf("        tape_splitsize %ld\n", dp->tape_splitsize);
+    if(dp->tape_splitsize > (off_t)0) {
+	printf("        tape_splitsize " OFF_T_FMT "\n",
+	       (OFF_T_FMT_TYPE)dp->tape_splitsize);
     }
     if(dp->split_diskbuffer) {
 	printf("        split_diskbuffer %s\n", dp->split_diskbuffer);
     }
-    if(dp->fallback_splitsize > 0) {
-	printf("        fallback_splitsize %ldMb\n", (dp->fallback_splitsize / 1024));
+    if(dp->fallback_splitsize > (off_t)0) {
+	printf("        fallback_splitsize " OFF_T_FMT "Mb\n",
+	       (OFF_T_FMT_TYPE)(dp->fallback_splitsize / (off_t)1024));
     }
     printf("        skip-incr %s\n", (dp->skip_incr? "YES" : "NO"));
     printf("        skip-full %s\n", (dp->skip_full? "YES" : "NO"));
@@ -1754,9 +1851,10 @@ disk_t *dp;
     printf("\n");
 }
 
-void disklist(argc, argv)
-int argc;
-char **argv;
+void
+disklist(
+    int		argc,
+    char **	argv)
 {
     disk_t *dp;
 
@@ -1767,11 +1865,15 @@ char **argv;
 	    disklist_one(dp);
 }
 
-void show_version(argc, argv)
-int argc;
-char **argv;
+void
+show_version(
+    int		argc,
+    char **	argv)
 {
     int i;
+
+    (void)argc;	/* Quiet unused parameter warning */
+    (void)argv;	/* Quiet unused parameter warning */
 
     for(i = 0; version_info[i] != NULL; i++)
 	printf("%s", version_info[i]);

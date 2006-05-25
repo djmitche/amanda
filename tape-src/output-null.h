@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-null.h,v 1.5 2003/03/06 21:43:57 martinea Exp $
+ * $Id: output-null.h,v 1.6 2006/05/25 01:47:27 johnfranks Exp $
  *
  * tapeio.c virtual tape interface for a null device.
  */
@@ -36,18 +36,18 @@
 
 #include "amanda.h"
 
-extern int null_tape_access P((char *, int));
-extern int null_tape_open ();
-extern int null_tape_stat P((char *, struct stat *));
-extern int null_tapefd_close P((int));
-extern int null_tapefd_fsf P((int, int));
-extern ssize_t null_tapefd_read P((int, void *, size_t));
-extern int null_tapefd_rewind P((int));
-extern void null_tapefd_resetofs P((int));
-extern int null_tapefd_unload P((int));
-extern int null_tapefd_status P((int, struct am_mt_status *));
-extern int null_tapefd_weof P((int, int));
-extern ssize_t null_tapefd_write P((int, const void *, size_t));
-extern int null_tapefd_can_fork P((int));
+int null_tape_access(char *, int);
+int null_tape_open(char *, int, mode_t);
+int null_tape_stat(char *, struct stat *);
+int null_tapefd_close(int);
+int null_tapefd_fsf(int, off_t);
+ssize_t null_tapefd_read(int, void *, size_t);
+int null_tapefd_rewind(int);
+void null_tapefd_resetofs(int);
+int null_tapefd_unload(int);
+int null_tapefd_status(int, struct am_mt_status *);
+int null_tapefd_weof(int, off_t);
+ssize_t null_tapefd_write(int, const void *, size_t);
+int null_tapefd_can_fork(int);
 
 #endif /* OUTPUT_NULL_H */

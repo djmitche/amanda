@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-proto.c,v 1.3 1998/06/13 06:13:25 oliva Exp $
+ *	$Id: scsi-proto.c,v 1.4 2006/05/25 01:47:10 johnfranks Exp $
  *
  *	scsi-proto.c -- library routines to handle the changer
  *			Prototype file for customization
@@ -55,7 +55,7 @@ void eject_tape(char *tape)
 /*
  * find the first empty slot 
  */
-int find_empty(int fd)
+int find_empty( int fd, int start, int end)
 {
     /*
      * find an empty slot to insert a tape into (if required)

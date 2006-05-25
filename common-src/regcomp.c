@@ -23,10 +23,11 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: regcomp.c,v 1.3 1998/07/04 00:18:51 oliva Exp $
+/* $Id: regcomp.c,v 1.4 2006/05/25 01:47:12 johnfranks Exp $
  *
  * wrapper file for Henry Spencer's regcomp.c
  */
 
+#include "amanda.h"
 #include "amregex.h"
 #include "../regex-src/regcomp.c"

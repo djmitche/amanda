@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-bsd.c,v 1.17 2005/10/15 13:20:47 martinea Exp $
+ * $Id: scsi-bsd.c,v 1.18 2006/05/25 01:47:07 johnfranks Exp $
  *
  * Interface to execute SCSI commands on an BSD System (FreeBSD)
  *
@@ -61,7 +61,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-bsd.c,v 1.17 2005/10/15 13:20:47 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-bsd.c,v 1.18 2006/05/25 01:47:07 johnfranks Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -163,11 +163,11 @@ int SCSI_CloseDevice(int DeviceFD)
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
                         CDB_T CDB,
-                        int CDB_Length,
+                        size_t CDB_Length,
                         void *DataBuffer,
-                        int DataBufferLength,
-                        char *pRequestSense,
-                        int RequestSenseLength)
+                        size_t DataBufferLength,
+                        RequestSense_T *pRequestSense,
+                        size_t RequestSenseLength)
 {
   extern OpenFiles_T *pDev;
   ExtendedRequestSense_T ExtendedRequestSense;
@@ -176,14 +176,21 @@ int SCSI_ExecuteCommand(int DeviceFD,
   int retries = 5;
   extern int errno;
   
+  /* Basic sanity checks */
+  assert(CDB_Length <= UCHAR_MAX);
+  assert(RequestSenseLength <= UCHAR_MAX);
+
+  /* Clear buffer for cases where sense is not returned */
+  memset(pRequestSense, 0, RequestSenseLength);
+
   if (pDev[DeviceFD].avail == 0)
     {
       return(SCSI_ERROR);
     }
 
-  memset(&ds, 0, sizeof(scsireq_t));
+  memset(&ds, 0, SIZEOF(scsireq_t));
   memset(pRequestSense, 0, RequestSenseLength);
-  memset(&ExtendedRequestSense, 0 , sizeof(ExtendedRequestSense_T)); 
+  memset(&ExtendedRequestSense, 0 , SIZEOF(ExtendedRequestSense_T)); 
   
   ds.flags = SCCMD_ESCAPE; 
   /* Timeout */
@@ -224,7 +231,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
     memcpy(pRequestSense, ds.sense, RequestSenseLength);
     if (Result < 0)
       {
-        dbprintf(("errno : %d\n",errno));
+        dbprintf(("errno : %s\n",strerror(errno)));
         return (SCSI_ERROR);
       }
     dbprintf(("SCSI_ExecuteCommand(BSD) %02X STATUS(%02X) \n", CDB[0], ds.retsts));
@@ -232,12 +239,13 @@ int SCSI_ExecuteCommand(int DeviceFD,
       {
       case SCCMD_BUSY:                /*  BUSY */
         break;
+
       case SCCMD_OK:                /*  GOOD */
         return(SCSI_OK);
-        break;
+
       case SCCMD_SENSE:               /*  CHECK CONDITION */
         return(SCSI_SENSE);
-        break;
+
       default:
         continue;
       }
@@ -271,7 +279,7 @@ int Tape_Ioctl( int DeviceFD, int command)
 
   if (ioctl(pDev[DeviceFD].fd , MTIOCTOP, &mtop) != 0)
     {
-      dbprintf(("Tape_Ioctl error ioctl %d\n",errno));
+      dbprintf(("Tape_Ioctl error ioctl %s\n",strerror(errno)));
       SCSI_CloseDevice(DeviceFD);
       return(-1);
     }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.127 2006/05/12 19:36:04 martinea Exp $
+ * $Id: amcheck.c,v 1.128 2006/05/25 01:47:19 johnfranks Exp $
  *
  * checks for common problems in server and clients
  */
@@ -50,7 +50,7 @@
 
 #define BUFFER_SIZE	32768
 
-static int conf_ctimeout;
+static time_t conf_ctimeout;
 static int overwrite;
 
 static disklist_t origq;
@@ -59,16 +59,17 @@ static uid_t uid_dumpuser;
 
 /* local functions */
 
-void usage P((void));
-int start_client_checks P((int fd));
-int start_server_check P((int fd, int do_localchk, int do_tapechk));
-int main P((int argc, char **argv));
-int test_server_pgm P((FILE *outf, char *dir, char *pgm,
-		       int suid, uid_t dumpuid));
+void usage(void);
+pid_t start_client_checks(int fd);
+pid_t start_server_check(int fd, int do_localchk, int do_tapechk);
+int main(int argc, char **argv);
+int test_server_pgm(FILE *outf, char *dir, char *pgm, int suid, uid_t dumpuid);
 
-void usage()
+void
+usage(void)
 {
-    error("Usage: amcheck%s [-M <username>] [-mawsclt] <conf> [host [disk]* ]*", versionsuffix());
+    error("Usage: amcheck%s [-[Mm] <username>] [-awsclt] <conf> [host [disk]* ]*", versionsuffix());
+    /*NOTREACHED*/
 }
 
 static unsigned long malloc_hist_1, malloc_size_1;
@@ -79,18 +80,20 @@ static char *our_feature_string = NULL;
 static char *displayunit;
 static long int unitdivisor;
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
     char buffer[BUFFER_SIZE];
     char *version_string;
     char *mainfname = NULL;
     char pid_str[NUM_STR_SIZE];
-    int do_clientchk, clientchk_pid, client_probs;
-    int do_localchk, do_tapechk, serverchk_pid, server_probs;
-    int chk_flag;
-    int opt, size, tempfd, mainfd;
+    int do_clientchk, client_probs;
+    int do_localchk, do_tapechk, server_probs;
+    pid_t clientchk_pid, serverchk_pid;
+    int opt, tempfd, mainfd;
+    ssize_t size;
     amwait_t retstat;
     pid_t pid;
     extern int optind;
@@ -117,7 +120,7 @@ char **argv;
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    snprintf(pid_str, sizeof(pid_str), "%ld", (long)getpid());
+    snprintf(pid_str, SIZEOF(pid_str), "%ld", (long)getpid());
 
     erroutput_type = ERR_INTERACTIVE;
 
@@ -131,7 +134,6 @@ char **argv;
 
     alwaysmail = mailout = overwrite = 0;
     do_localchk = do_tapechk = do_clientchk = 0;
-    chk_flag = 0;
     server_probs = client_probs = 0;
     tempfd = mainfd = -1;
 
@@ -144,6 +146,7 @@ char **argv;
 			   printf("Invalid characters in mail address\n");
 			   exit(1);
 			}
+			/*FALLTHROUGH*/
 	case 'm':	
 #ifdef MAILER
 			mailout = 1;
@@ -163,20 +166,15 @@ char **argv;
 			exit(1);
 #endif
 			break;
-	case 's':	do_localchk = 1; do_tapechk = 1;
-			chk_flag = 1;
+	case 's':	do_localchk = do_clientchk = do_tapechk = 1;
 			break;
 	case 'c':	do_clientchk = 1;
-			chk_flag = 1;
 			break;
 	case 'l':	do_localchk = 1;
-			chk_flag = 1;
 			break;
-	case 'w':	do_tapechk = 1; overwrite = 1;
-			chk_flag = 1;
+	case 'w':	overwrite =  do_localchk = do_clientchk = do_tapechk = 1;
 			break;
 	case 't':	do_tapechk = 1;
-			chk_flag = 1;
 			break;
 	case '?':
 	default:
@@ -184,11 +182,13 @@ char **argv;
 	}
     }
     argc -= optind, argv += optind;
-    if(! chk_flag) {
+    if(argc < 1) usage();
+
+
+    if ((do_localchk | do_clientchk | do_tapechk) == 0) {
+	/* Check everything if individual checks were not asked for */
 	do_localchk = do_clientchk = do_tapechk = 1;
     }
-
-    if(argc < 1) usage();
 
     config_name = stralloc(*argv);
 
@@ -196,6 +196,7 @@ char **argv;
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
 	error("errors processing config file \"%s\"", conffile);
+	/*NOTREACHED*/
     }
     amfree(conffile);
     if(mailout && !mailto && 
@@ -227,7 +228,7 @@ char **argv;
       }
     }
 
-    conf_ctimeout = getconf_int(CNF_CTIMEOUT);
+    conf_ctimeout = getconf_time(CNF_CTIMEOUT);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {
@@ -237,6 +238,7 @@ char **argv;
     }
     if(read_diskfile(conf_diskfile, &origq) < 0) {
 	error("could not load disklist %s", conf_diskfile);
+	/*NOTREACHED*/
     }
     match_disklist(&origq, argc-1, argv+1);
     amfree(conf_diskfile);
@@ -247,15 +249,17 @@ char **argv;
     dumpuser = getconf_str(CNF_DUMPUSER);
     if ((pw = getpwnam(dumpuser)) == NULL) {
 	error("cannot look up dump user \"%s\"", dumpuser);
+	/*NOTREACHED*/
     }
     uid_dumpuser = pw->pw_uid;
     if ((pw = getpwuid(uid_me)) == NULL) {
 	error("cannot look up my own uid (%ld)", (long)uid_me);
+	/*NOTREACHED*/
     }
     if (uid_me != uid_dumpuser) {
 	error("running as user \"%s\" instead of \"%s\"",
-	      pw->pw_name,
-	      dumpuser);
+	      pw->pw_name, dumpuser);
+        /*NOTREACHED*/
     }
 
     displayunit = getconf_str(CNF_DISPLAYUNIT);
@@ -272,8 +276,10 @@ char **argv;
     if(do_clientchk && (do_localchk || do_tapechk)) {
 	/* we need the temp file */
 	tempfname = vstralloc(AMANDA_TMPDIR, "/amcheck.temp.", pid_str, NULL);
-	if((tempfd = open(tempfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
+	if((tempfd = open(tempfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1) {
 	    error("could not open %s: %s", tempfname, strerror(errno));
+	    /*NOTREACHED*/
+	}
 	unlink(tempfname);			/* so it goes away on close */
 	amfree(tempfname);
     }
@@ -281,8 +287,10 @@ char **argv;
     if(mailout) {
 	/* the main fd is a file too */
 	mainfname = vstralloc(AMANDA_TMPDIR, "/amcheck.main.", pid_str, NULL);
-	if((mainfd = open(mainfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1)
+	if((mainfd = open(mainfname, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1) {
 	    error("could not open %s: %s", mainfname, strerror(errno));
+	    /*NOTREACHED*/
+	}
 	unlink(mainfname);			/* so it goes away on close */
 	amfree(mainfname);
     }
@@ -321,11 +329,13 @@ char **argv;
 	    char number[NUM_STR_SIZE];
 	    char *wait_msg = NULL;
 
-	    snprintf(number, sizeof(number), "%ld", (long)pid);
+	    snprintf(number, SIZEOF(number), "%ld", (long)pid);
 	    wait_msg = vstralloc("parent: reaped bogus pid ", number, "\n",
 				 NULL);
-	    if (fullwrite(mainfd, wait_msg, strlen(wait_msg)) < 0)
+	    if (fullwrite(mainfd, wait_msg, strlen(wait_msg)) < 0) {
 		error("write main file: %s", strerror(errno));
+		/*NOTREACHED*/
+	    }
 	    amfree(wait_msg);
 	}
     }
@@ -333,23 +343,31 @@ char **argv;
     /* copy temp output to main output and write tagline */
 
     if(do_clientchk && (do_localchk || do_tapechk)) {
-	if(lseek(tempfd, 0, 0) == -1)
+	if(lseek(tempfd, (off_t)0, 0) == (off_t)-1) {
 	    error("seek temp file: %s", strerror(errno));
-
-	while((size=fullread(tempfd, buffer, sizeof(buffer))) > 0) {
-	    if (fullwrite(mainfd, buffer, size) < 0)
-		error("write main file: %s", strerror(errno));
+	    /*NOTREACHED*/
 	}
-	if(size < 0)
+
+	while((size = fullread(tempfd, buffer, SIZEOF(buffer))) > 0) {
+	    if (fullwrite(mainfd, buffer, (size_t)size) < 0) {
+		error("write main file: %s", strerror(errno));
+		/*NOTREACHED*/
+	    }
+	}
+	if(size < 0) {
 	    error("read temp file: %s", strerror(errno));
+	    /*NOTREACHED*/
+	}
 	aclose(tempfd);
     }
 
     version_string = vstralloc("\n",
 			       "(brought to you by Amanda ", version(), ")\n",
 			       NULL);
-    if (fullwrite(mainfd, version_string, strlen(version_string)) < 0)
+    if (fullwrite(mainfd, version_string, strlen(version_string)) < 0) {
 	error("write main file: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
     amfree(version_string);
     amfree(config_dir);
     amfree(config_name);
@@ -376,10 +394,8 @@ char **argv;
 	char *subject;
 	char **a;
 	amwait_t retstat;
-	pid_t mailpid;
-	pid_t wpid;
-	int r;
-	int w;
+	ssize_t r;
+	ssize_t w;
 	char *err = NULL;
 	char *extra_info = NULL;
 	char *line = NULL;
@@ -389,8 +405,9 @@ char **argv;
 	char number[NUM_STR_SIZE];
 
 	fflush(stdout);
-	if(lseek(mainfd, (off_t)0, SEEK_SET) == -1) {
+	if(lseek(mainfd, (off_t)0, SEEK_SET) == (off_t)-1) {
 	    error("lseek main file: %s", strerror(errno));
+	    /*NOTREACHED*/
 	}
 	if(alwaysmail && !(server_probs || client_probs)) {
 	    subject = stralloc2(getconf_str(CNF_ORG),
@@ -407,19 +424,20 @@ char **argv;
 	 * Remember that split() returns the original input string in
 	 * argv[0], so we have to skip over that.
 	 */
-	a = (char **) alloc((MAILTO_LIMIT + 1) * sizeof(char *));
-	memset(a, 0, (MAILTO_LIMIT + 1) * sizeof(char *));
+	a = (char **) alloc((MAILTO_LIMIT + 1) * SIZEOF(char *));
+	memset(a, 0, (MAILTO_LIMIT + 1) * SIZEOF(char *));
 	if(mailto) {
 	    a[1] = mailto;
 	    a[2] = NULL;
 	} else {
-	    r = split(getconf_str(CNF_MAILTO), a, MAILTO_LIMIT, " ");
+	    r = (ssize_t)split(getconf_str(CNF_MAILTO), a, MAILTO_LIMIT, " ");
 	    a[r + 1] = NULL;
 	}
 	if((nullfd = open("/dev/null", O_RDWR)) < 0) {
 	    error("nullfd: /dev/null: %s", strerror(errno));
+	    /*NOTREACHED*/
 	}
-	mailpid = pipespawn(MAILER, STDIN_PIPE | STDERR_PIPE,
+	pipespawn(MAILER, STDIN_PIPE | STDERR_PIPE,
 			    &mailfd, &nullfd, &errfd,
 			    MAILER,
 			    "-s", subject,
@@ -434,28 +452,32 @@ char **argv;
 	 * cases, the pipe will break and we will exit out of the loop.
 	 */
 	signal(SIGPIPE, SIG_IGN);
-	while((r = fullread(mainfd, buffer, sizeof(buffer))) > 0) {
-	    if((w = fullwrite(mailfd, buffer, r)) != r) {
+	while((r = fullread(mainfd, buffer, SIZEOF(buffer))) > 0) {
+	    if((w = fullwrite(mailfd, buffer, (size_t)r)) != (ssize_t)r) {
 		if(w < 0 && errno == EPIPE) {
 		    strappend(extra_info, "EPIPE writing to mail process\n");
 		    break;
 		} else if(w < 0) {
 		    error("mailfd write: %s", strerror(errno));
+		    /*NOTREACHED*/
 		} else {
 		    error("mailfd write: wrote %d instead of %d", w, r);
+		    /*NOTREACHED*/
 		}
 	    }
 	}
 	aclose(mailfd);
 	ferr = fdopen(errfd, "r");
 	for(; (line = agets(ferr)) != NULL; free(line)) {
+	    if (line[0] == '\0')
+		continue;
 	    strappend(extra_info, line);
 	    strappend(extra_info, "\n");
 	}
 	afclose(ferr);
 	errfd = -1;
 	rc = 0;
-	while ((wpid = wait(&retstat)) != -1) {
+	while (wait(&retstat) != -1) {
 	    if (WIFSIGNALED(retstat)) {
 		    ret = 0;
 		    rc = sig = WTERMSIG(retstat);
@@ -470,7 +492,7 @@ char **argv;
 		    } else {
 			strappend(err, "returned ");
 		    }
-		    snprintf(number, sizeof(number), "%d", ret);
+		    snprintf(number, SIZEOF(number), "%d", ret);
 		    strappend(err, number);
 	    }
 	}
@@ -480,6 +502,7 @@ char **argv;
 		amfree(extra_info);
 	    }
 	    error("error running mailer %s: %s", MAILER, err);
+	    /*NOTREACHED*/
 	}
     }
 #endif
@@ -497,56 +520,69 @@ char *searchlabel, *labelstr;
 tape_t *tp;
 FILE *errf = NULL;
 
-int test_server_pgm(outf, dir, pgm, suid, dumpuid)
-FILE *outf;
-char *dir;
-char *pgm;
-int suid;
-uid_t dumpuid;
+int
+test_server_pgm(
+    FILE *	outf,
+    char *	dir,
+    char *	pgm,
+    int		suid,
+    uid_t	dumpuid)
 {
     struct stat statbuf;
     int pgmbad = 0;
+    char *quoted;
 
     pgm = vstralloc(dir, "/", pgm, versionsuffix(), NULL);
+    quoted = quote_string(pgm);
     if(stat(pgm, &statbuf) == -1) {
 	fprintf(outf, "ERROR: program %s: does not exist\n",
-		pgm);
+		quoted);
 	pgmbad = 1;
     } else if (!S_ISREG(statbuf.st_mode)) {
 	fprintf(outf, "ERROR: program %s: not a file\n",
-		pgm);
+		quoted);
 	pgmbad = 1;
     } else if (access(pgm, X_OK) == -1) {
 	fprintf(outf, "ERROR: program %s: not executable\n",
-		pgm);
+		quoted);
 	pgmbad = 1;
     } else if (suid \
 	       && dumpuid != 0
 	       && (statbuf.st_uid != 0 || (statbuf.st_mode & 04000) == 0)) {
-	fprintf(outf, "WARNING: program %s: not setuid-root\n",
-		pgm);
+	fprintf(outf, "ERROR: program %s: not setuid-root\n",
+		quoted);
+	pgmbad = 1;
     }
+    amfree(quoted);
     amfree(pgm);
     return pgmbad;
 }
 
-int start_server_check(fd, do_localchk, do_tapechk)
-    int fd;
-    int do_localchk, do_tapechk;
+pid_t
+start_server_check(
+    int		fd,
+    int		do_localchk,
+    int		do_tapechk)
 {
     char *tapename;
     generic_fs_stats_t fs;
     FILE *outf = NULL;
     holdingdisk_t *hdp;
-    int pid;
+    pid_t pid;
     int confbad = 0, tapebad = 0, disklow = 0, logbad = 0;
     int userbad = 0, infobad = 0, indexbad = 0, pgmbad = 0;
     int testtape = do_tapechk;
     tapetype_t *tp = NULL;
+    char *quoted;
 
     switch(pid = fork()) {
-    case -1: error("could not fork server check: %s", strerror(errno));
-    case 0: break;
+    case -1:
+    	error("could not fork server check: %s", strerror(errno));
+	/*NOTREACHED*/
+
+    case 0:
+    	break;
+
     default:
 	return pid;
     }
@@ -558,8 +594,10 @@ int start_server_check(fd, do_localchk, do_tapechk)
 
     startclock();
 
-    if((outf = fdopen(fd, "w")) == NULL)
+    if((outf = fdopen(fd, "w")) == NULL) {
 	error("fdopen %d: %s", fd, strerror(errno));
+	/*NOTREACHED*/
+    }
     errf = outf;
 
     fprintf(outf, "Amanda Tape Server Host Check\n");
@@ -608,10 +646,15 @@ int start_server_check(fd, do_localchk, do_tapechk)
      * Look up the programs used on the server side.
      */
     if(do_localchk) {
+	/* 
+	 * entreprise version will do planner/dumper suid check
+	 */
 	if(access(libexecdir, X_OK) == -1) {
+	    quoted = quote_string(libexecdir);
 	    fprintf(outf, "ERROR: program dir %s: not accessible\n",
-		    libexecdir);
+		    quoted);
 	    pgmbad = 1;
+	    amfree(quoted);
 	} else {
 	    pgmbad = pgmbad \
 		     || test_server_pgm(outf, libexecdir, "planner",
@@ -633,9 +676,11 @@ int start_server_check(fd, do_localchk, do_tapechk)
 					0, uid_dumpuser);
 	}
 	if(access(sbindir, X_OK) == -1) {
+	    quoted = quote_string(sbindir);
 	    fprintf(outf, "ERROR: program dir %s: not accessible\n",
 		    sbindir);
 	    pgmbad = 1;
+	    amfree(quoted);
 	} else {
 	    pgmbad = pgmbad \
 		     || test_server_pgm(outf, sbindir, "amgetconf",
@@ -651,8 +696,10 @@ int start_server_check(fd, do_localchk, do_tapechk)
 					0, uid_dumpuser);
 	}
 	if(access(COMPRESS_PATH, X_OK) == -1) {
+	    quoted = quote_string(COMPRESS_PATH);
 	    fprintf(outf, "WARNING: %s is not executable, server-compression and indexing will not work\n",
-	            COMPRESS_PATH);
+	            quoted);
+	    amfree(quoted);
 	}
     }
 
@@ -688,31 +735,47 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	 */
 	}
 	if(access(tape_dir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: tapelist dir %s: not writable.\n", tape_dir);
+	    quoted = quote_string(tape_dir);
+	    fprintf(outf, "ERROR: tapelist dir %s: not writable.\n", quoted);
 	    tapebad = 1;
+	    amfree(quoted);
 	}
 	else if(stat(tapefile, &statbuf) == -1) {
-	    fprintf(outf, "ERROR: tapefile %s: %s, you must create an empty file.\n",
-		    tapefile, strerror(errno));
+	    quoted = quote_string(tape_dir);
+	    fprintf(outf, "ERROR: tapefile %s (%s), "
+		    "you must create an empty file.\n",
+		    quoted, strerror(errno));
 	    tapebad = 1;
+	    amfree(quoted);
 	}
 	else if(!S_ISREG(statbuf.st_mode)) {
-	    fprintf(outf, "ERROR: tapefile %s: should be a regular file.\n", tapefile);
+	    quoted = quote_string(tapefile);
+	    fprintf(outf, "ERROR: tapefile %s: should be a regular file.\n",
+		    quoted);
 	    tapebad = 1;
+	    amfree(quoted);
 	}
 	else if(access(tapefile, F_OK) != 0) {
-	    fprintf(outf, "ERROR: can't access tape list %s\n", tapefile);
+	    quoted = quote_string(tapefile);
+	    fprintf(outf, "ERROR: can't access tape list %s\n", quoted);
 	    tapebad = 1;
+	    amfree(quoted);
 	} else if(access(tapefile, F_OK) == 0 && access(tapefile, W_OK) != 0) {
-	    fprintf(outf, "ERROR: tape list %s: not writable\n", tapefile);
+	    quoted = quote_string(tapefile);
+	    fprintf(outf, "ERROR: tape list %s: not writable\n", quoted);
 	    tapebad = 1;
+	    amfree(quoted);
 	} else if(read_tapelist(tapefile)) {
-	    fprintf(outf, "ERROR: tape list %s: parse error\n", tapefile);
+	    quoted = quote_string(tapefile);
+	    fprintf(outf, "ERROR: tape list %s: parse error\n", quoted);
 	    tapebad = 1;
+	    amfree(quoted);
 	}
 	holdfile = vstralloc(config_dir, "/", "hold", NULL);
 	if(access(holdfile, F_OK) != -1) {
+	    quoted = quote_string(holdfile);
 	    fprintf(outf, "WARNING: hold file %s exists\n", holdfile);
+	    amfree(quoted);
 	}
 	amfree(tapefile);
 	amfree(tape_dir);
@@ -731,48 +794,68 @@ int start_server_check(fd, do_localchk, do_tapechk)
 
     if(do_localchk) {
 	for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
+    	    quoted = quote_string(hdp->diskdir);
 	    if(get_fs_stats(hdp->diskdir, &fs) == -1) {
-		fprintf(outf, "ERROR: holding dir %s: %s, you must create a directory.\n",
-			hdp->diskdir, strerror(errno));
+		fprintf(outf, "ERROR: holding dir %s (%s), "
+			"you must create a directory.\n",
+			quoted, strerror(errno));
 		disklow = 1;
 	    }
 	    else if(access(hdp->diskdir, W_OK) == -1) {
 		fprintf(outf, "ERROR: holding disk %s: not writable: %s.\n",
-			hdp->diskdir, strerror(errno));
+			quoted, strerror(errno));
 		disklow = 1;
 	    }
-	    else if(fs.avail == -1) {
+	    else if(fs.avail == (off_t)-1) {
 		fprintf(outf,
-			"WARNING: holding disk %s: available space unknown (%ld KB requested)\n",
-			hdp->diskdir, (long)hdp->disksize);
+			"WARNING: holding disk %s: "
+			"available space unknown (%ld KB requested)\n",
+			quoted, (long)hdp->disksize);
 		disklow = 1;
 	    }
-	    else if(hdp->disksize > 0) {
+	    else if(hdp->disksize > (off_t)0) {
 		if(fs.avail < hdp->disksize) {
 		    fprintf(outf,
-			    "WARNING: holding disk %s: only %ld %sB free (%ld %sB requested)\n",
-			    hdp->diskdir, (long)fs.avail/unitdivisor, displayunit,
-			    (long)hdp->disksize/unitdivisor, displayunit);
+			    "WARNING: holding disk %s: "
+			    "only " OFF_T_FMT " %sB free ("
+			    OFF_T_FMT " %sB requested)\n", quoted,
+			    (OFF_T_FMT_TYPE)(fs.avail / (off_t)unitdivisor),
+			    displayunit,
+			    (OFF_T_FMT_TYPE)(hdp->disksize/(off_t)unitdivisor),
+			    displayunit);
 		    disklow = 1;
 		}
-		else
+		else {
 		    fprintf(outf,
-			    "Holding disk %s: %ld %sB disk space available, that's plenty\n",
-			    hdp->diskdir, fs.avail/unitdivisor, displayunit);
+			    "Holding disk %s: " OFF_T_FMT
+			    " %sB disk space available, that's plenty\n",
+			    quoted, (OFF_T_FMT_TYPE)(fs.avail/(off_t)unitdivisor),
+			    displayunit);
+		}
 	    }
 	    else {
-		if(fs.avail < -hdp->disksize) {
+		assert(hdp->disksize < (off_t)0);
+		if((fs.avail + hdp->disksize) > (off_t)0) {
 		    fprintf(outf,
-			    "WARNING: holding disk %s: only %ld %sB free, using nothing\n",
-			    hdp->diskdir, fs.avail/unitdivisor, displayunit);
+			    "WARNING: holding disk %s: "
+			    "only " OFF_T_FMT " %sB free, using nothing\n",
+			    quoted, (OFF_T_FMT_TYPE)(fs.avail/(off_t)unitdivisor),
+			    displayunit);
 		    disklow = 1;
 		}
-		else
+		else {
 		    fprintf(outf,
-			    "Holding disk %s: %ld %sB disk space available, using %ld %sB\n",
-			    hdp->diskdir, fs.avail/unitdivisor, displayunit,
-			    (fs.avail + hdp->disksize)/unitdivisor, displayunit);
+			    "Holding disk %s: "
+			    OFF_T_FMT " %sB disk space available, using "
+			    OFF_T_FMT " %sB\n",
+			    quoted,
+			    (OFF_T_FMT_TYPE)(fs.avail/(off_t)unitdivisor),
+			    displayunit,
+			    (OFF_T_FMT_TYPE)(fs.avail + hdp->disksize / (off_t)unitdivisor),
+			    displayunit);
+		}
 	    }
+	    amfree(quoted);
 	}
     }
 
@@ -793,36 +876,44 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	}
 	logfile = vstralloc(conf_logdir, "/log", NULL);
 
+	quoted = quote_string(conf_logdir);
 	if(stat(conf_logdir, &statbuf) == -1) {
-	    fprintf(outf, "ERROR: logdir %s: %s, you must create a directory.\n",
-		    conf_logdir, strerror(errno));
+	    fprintf(outf, "ERROR: logdir %s (%s), you must create directory.\n",
+		    quoted, strerror(errno));
 	    disklow = 1;
 	}
 	else if(access(conf_logdir, W_OK) == -1) {
-	    fprintf(outf, "ERROR: log dir %s: not writable\n", conf_logdir);
+	    fprintf(outf, "ERROR: log dir %s: not writable\n", quoted);
 	    logbad = 1;
 	}
+	amfree(quoted);
 
 	if(access(logfile, F_OK) == 0) {
 	    testtape = 0;
 	    logbad = 1;
-	    if(access(logfile, W_OK) != 0)
-		fprintf(outf, "ERROR: log file %s: not writable\n",
-			logfile);
+	    if(access(logfile, W_OK) != 0) {
+		quoted = quote_string(logfile);
+		fprintf(outf, "ERROR: log file %s: not writable\n", quoted);
+		amfree(quoted);
+	    }
 	}
 
 	olddir = vstralloc(conf_logdir, "/oldlog", NULL);
+	quoted = quote_string(olddir);
 	if (stat(olddir,&stat_old) == 0) { /* oldlog exist */
 	    if(!(S_ISDIR(stat_old.st_mode))) {
-		fprintf(outf, "ERROR: oldlog directory \"%s\" is not a directory\n", olddir);
+		fprintf(outf, "ERROR: oldlog directory %s is not a directory\n",
+			quoted);
 	    }
 	    if(access(olddir, W_OK) == -1) {
-		fprintf(outf, "ERROR: oldlog dir %s: not writable\n", olddir);
+		fprintf(outf, "ERROR: oldlog dir %s: not writable\n", quoted);
 	    }
 	}
 	else if(lstat(olddir,&stat_old) == 0) {
-	    fprintf(outf, "ERROR: oldlog directory \"%s\" is not a directory\n", olddir);
+	    fprintf(outf, "ERROR: oldlog directory %s is not a directory\n",
+		    quoted);
 	}
+	amfree(quoted);
 
 	if (testtape) {
 	    logfile = newvstralloc(logfile, conf_logdir, "/amdump", NULL);
@@ -862,7 +953,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
             if (overwrite) {
                 char *wrlabel_status;
                 wrlabel_status = tape_wrlabel(tapename, "X", label,
-                                              tp->blocksize * 1024);
+                                              (unsigned)(tp->blocksize * 1024));
                 if (wrlabel_status != NULL) {
                     if (tape_status == 3) {
                         fprintf(outf,
@@ -943,21 +1034,29 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	}
 
 #if TEXTDB
+	quoted = quote_string(conf_infofile);
 	if(stat(conf_infofile, &statbuf) == -1) {
-	    fprintf(outf, "NOTE: info dir %s: does not exist\n", conf_infofile);
-	    fprintf(outf, "NOTE: it will be created on the next run.\n");
+	    if (errno == ENOENT) {
+		fprintf(outf, "NOTE: conf info dir %s does not exist\n",
+			quoted);
+		fprintf(outf, "NOTE: it will be created on the next run.\n");
+	    } else {
+		fprintf(outf, "ERROR: conf info dir %s (%s)\n",
+			quoted, strerror(errno));
+	    }	
 	    amfree(conf_infofile);
 	} else if (!S_ISDIR(statbuf.st_mode)) {
-	    fprintf(outf, "ERROR: info dir %s: not a directory\n", conf_infofile);
+	    fprintf(outf, "ERROR: info dir %s: not a directory\n", quoted);
 	    amfree(conf_infofile);
 	    infobad = 1;
 	} else if (access(conf_infofile, W_OK) == -1) {
-	    fprintf(outf, "ERROR: info dir %s: not writable\n", conf_infofile);
+	    fprintf(outf, "ERROR: info dir %s: not writable\n", quoted);
 	    amfree(conf_infofile);
 	    infobad = 1;
 	} else {
 	    strappend(conf_infofile, "/");
 	}
+	amfree(quoted);
 #endif
 
 	while(!empty(origq)) {
@@ -966,135 +1065,190 @@ int start_server_check(fd, do_localchk, do_tapechk)
 #if TEXTDB
 	    if(conf_infofile) {
 		hostinfodir = newstralloc2(hostinfodir, conf_infofile, host);
+		quoted = quote_string(hostinfodir);
 		if(stat(hostinfodir, &statbuf) == -1) {
-		    fprintf(outf, "NOTE: info dir %s: does not exist\n",
-			    hostinfodir);
-		    fprintf(outf, "NOTE: it will be created on the next run.\n");
+		    if (errno == ENOENT) {
+			fprintf(outf, "NOTE: host info dir %s does not exist\n",
+				quoted);
+			fprintf(outf,
+				"NOTE: it will be created on the next run.\n");
+		    } else {
+			fprintf(outf, "ERROR: host info dir %s (%s)\n",
+				quoted, strerror(errno));
+		    }	
 		    amfree(hostinfodir);
 		} else if (!S_ISDIR(statbuf.st_mode)) {
 		    fprintf(outf, "ERROR: info dir %s: not a directory\n",
-			    hostinfodir);
+			    quoted);
 		    amfree(hostinfodir);
 		    infobad = 1;
 		} else if (access(hostinfodir, W_OK) == -1) {
-		    fprintf(outf, "ERROR: info dir %s: not writable\n",
-			    hostinfodir);
+		    fprintf(outf, "ERROR: info dir %s: not writable\n", quoted);
 		    amfree(hostinfodir);
 		    infobad = 1;
 		} else {
 		    strappend(hostinfodir, "/");
 		}
+		amfree(quoted);
 	    }
 #endif
 	    for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 		disk = sanitise_filename(dp->name);
 #if TEXTDB
 		if(hostinfodir) {
+		    char *quotedif;
+
 		    diskdir = newstralloc2(diskdir, hostinfodir, disk);
 		    infofile = vstralloc(diskdir, "/", "info", NULL);
+		    quoted = quote_string(diskdir);
+		    quotedif = quote_string(infofile);
 		    if(stat(diskdir, &statbuf) == -1) {
-			fprintf(outf, "NOTE: info dir %s: does not exist\n",
-				diskdir);
-			fprintf(outf, "NOTE: it will be created on the next run.\n");
+			if (errno == ENOENT) {
+			    fprintf(outf, "NOTE: info dir %s does not exist\n",
+				quoted);
+			    fprintf(outf,
+				"NOTE: it will be created on the next run.\n");
+			} else {
+			    fprintf(outf, "ERROR: info dir %s (%s)\n",
+				    quoted, strerror(errno));
+			}	
 		    } else if (!S_ISDIR(statbuf.st_mode)) {
 			fprintf(outf, "ERROR: info dir %s: not a directory\n",
-				diskdir);
+				quoted);
 			infobad = 1;
 		    } else if (access(diskdir, W_OK) == -1) {
 			fprintf(outf, "ERROR: info dir %s: not writable\n",
-				diskdir);
+				quoted);
 			infobad = 1;
 		    } else if(stat(infofile, &statbuf) == -1) {
-			fprintf(outf, "WARNING: info file %s: does not exist\n",
-				infofile);
-			fprintf(outf, "NOTE: it will be created on the next run.\n");
+			if (errno == ENOENT) {
+			    fprintf(outf, "NOTE: info file %s does not exist\n",
+				    quotedif);
+			    fprintf(outf, "NOTE: it will be created on the next run.\n");
+			} else {
+			    fprintf(outf, "ERROR: info dir %s (%s)\n",
+				quoted, strerror(errno));
+			}	
 		    } else if (!S_ISREG(statbuf.st_mode)) {
 			fprintf(outf, "ERROR: info file %s: not a file\n",
-				infofile);
+				quotedif);
 			infobad = 1;
 		    } else if (access(infofile, R_OK) == -1) {
 			fprintf(outf, "ERROR: info file %s: not readable\n",
-				infofile);
+				quotedif);
 			infobad = 1;
 		    }
+		    amfree(quotedif);
+		    amfree(quoted);
 		    amfree(infofile);
 		}
 #endif
 		if(dp->index) {
 		    if(! indexdir_checked) {
+			quoted = quote_string(conf_indexdir);
 			if(stat(conf_indexdir, &statbuf) == -1) {
-			    fprintf(outf, "NOTE: index dir %s: does not exist\n",
-				    conf_indexdir);
-			    fprintf(outf, "NOTE: it will be created on the next run.\n");
+			    if (errno == ENOENT) {
+				fprintf(outf, "NOTE: index dir %s does not exist\n",
+				    quoted);
+				fprintf(outf, "NOTE: it will be created on the next run.\n");
+			    } else {
+				fprintf(outf, "ERROR: index dir %s (%s)\n",
+					quoted, strerror(errno));
+			    }	
 			    amfree(conf_indexdir);
 			} else if (!S_ISDIR(statbuf.st_mode)) {
 			    fprintf(outf, "ERROR: index dir %s: not a directory\n",
-				    conf_indexdir);
+				    quoted);
 			    amfree(conf_indexdir);
 			    indexbad = 1;
 			} else if (access(conf_indexdir, W_OK) == -1) {
 			    fprintf(outf, "ERROR: index dir %s: not writable\n",
-				    conf_indexdir);
+				    quoted);
 			    amfree(conf_indexdir);
 			    indexbad = 1;
 			} else {
 			    strappend(conf_indexdir, "/");
 			}
 			indexdir_checked = 1;
+			amfree(quoted);
 		    }
 		    if(conf_indexdir) {
 			if(! hostindexdir_checked) {
 			    hostindexdir = stralloc2(conf_indexdir, host);
+			    quoted = quote_string(hostindexdir);
 			    if(stat(hostindexdir, &statbuf) == -1) {
-			        fprintf(outf, "NOTE: index dir %s: does not exist\n",
-				        hostindexdir);
-				fprintf(outf, "NOTE: it will be created on the next run.\n");
+				if (errno == ENOENT) {
+				    fprintf(outf, "NOTE: index dir %s does not exist\n",
+				        quoted);
+				    fprintf(outf, "NOTE: it will be created on the next run.\n");
+			        } else {
+				    fprintf(outf, "ERROR: index dir %s (%s)\n",
+					    quoted, strerror(errno));
+				}
 			        amfree(hostindexdir);
 			    } else if (!S_ISDIR(statbuf.st_mode)) {
 			        fprintf(outf, "ERROR: index dir %s: not a directory\n",
-				        hostindexdir);
+				        quoted);
 			        amfree(hostindexdir);
 			        indexbad = 1;
 			    } else if (access(hostindexdir, W_OK) == -1) {
 			        fprintf(outf, "ERROR: index dir %s: not writable\n",
-				        hostindexdir);
+				        quoted);
 			        amfree(hostindexdir);
 			        indexbad = 1;
 			    } else {
 				strappend(hostindexdir, "/");
 			    }
 			    hostindexdir_checked = 1;
+			    amfree(quoted);
 			}
 			if(hostindexdir) {
 			    diskdir = newstralloc2(diskdir, hostindexdir, disk);
+			    quoted = quote_string(diskdir);
 			    if(stat(diskdir, &statbuf) == -1) {
-				fprintf(outf, "NOTE: index dir %s: does not exist\n",
-					diskdir);
-				fprintf(outf, "NOTE: it will be created on the next run.\n");
+				if (errno == ENOENT) {
+				    fprintf(outf, "NOTE: index dir %s does not exist\n",
+					quoted);
+				    fprintf(outf, "NOTE: it will be created on the next run.\n");
+				} else {
+				    fprintf(outf, "ERROR: index dir %s (%s)\n",
+					quoted, strerror(errno));
+				}	
 			    } else if (!S_ISDIR(statbuf.st_mode)) {
 				fprintf(outf, "ERROR: index dir %s: not a directory\n",
-					diskdir);
+					quoted);
 				indexbad = 1;
 			    } else if (access(diskdir, W_OK) == -1) {
 				fprintf(outf, "ERROR: index dir %s: is not writable\n",
-					diskdir);
+					quoted);
 				indexbad = 1;
 			    }
 			}
 		    }
 		}
 
-		if ( dp->encrypt == ENCRYPT_SERV_CUST && dp->srv_encrypt ) {
-		  if(access(dp->srv_encrypt, X_OK) == -1) {
+		if ( dp->encrypt == ENCRYPT_SERV_CUST ) {
+		  if ( dp->srv_encrypt[0] == '\0' ) {
+		    fprintf(outf, "ERROR: server encryption program not specified\n");
+		    pgmbad = 1;
+		  }
+		  else if(access(dp->srv_encrypt, X_OK) == -1) {
 		    fprintf(outf, "ERROR: %s is not executable, server encryption will not work\n",
 			    dp->srv_encrypt );
 		    pgmbad = 1;
 		  }
 		}
-		if ( dp->compress == COMP_SERV_CUST && dp->srvcompprog ) {
-		  if(access(dp->srvcompprog, X_OK) == -1) {
+		if ( dp->compress == COMP_SERV_CUST ) {
+		  if ( dp->srvcompprog[0] == '\0' ) {
+		    fprintf(outf, "ERROR: server custom compression program not specified\n");
+		    pgmbad = 1;
+		  }
+		  else if(access(dp->srvcompprog, X_OK) == -1) {
+		    quoted = quote_string(dp->srvcompprog);
+
 		    fprintf(outf, "ERROR: %s is not executable, server custom compression will not work\n",
-			    dp->srvcompprog );
+			    quoted);
+		    amfree(quoted);
 		    pgmbad = 1;
 		  }
 		}
@@ -1135,7 +1289,7 @@ int start_server_check(fd, do_localchk, do_tapechk)
 	 || infobad \
 	 || indexbad \
 	 || pgmbad);
-    /* NOTREACHED */
+    /*NOTREACHED*/
     return 0;
 }
 
@@ -1144,7 +1298,8 @@ int start_server_check(fd, do_localchk, do_tapechk)
 int remote_errors;
 FILE *outf;
 
-static void handle_result P((void *, pkt_t *, security_handle_t *));
+static void handle_result(void *, pkt_t *, security_handle_t *);
+void start_host(am_host_t *hostp);
 
 #define HOST_READY				((void *)0)	/* must be 0 */
 #define HOST_ACTIVE				((void *)1)
@@ -1154,12 +1309,13 @@ static void handle_result P((void *, pkt_t *, security_handle_t *));
 #define DISK_ACTIVE				((void *)1)
 #define DISK_DONE				((void *)2)
 
-void start_host(hostp)
-    am_host_t *hostp;
+void
+start_host(
+    am_host_t *hostp)
 {
     disk_t *dp;
     char *req = NULL;
-    int req_len = 0;
+    size_t req_len = 0;
     int disk_count;
     const security_driver_t *secdrv;
     char number[NUM_STR_SIZE];
@@ -1225,7 +1381,7 @@ void start_host(hostp)
 		   hostp->hostname);
 	}
 
-	snprintf(number, sizeof(number), "%d", hostp->maxdumps);
+	snprintf(number, SIZEOF(number), "%d", hostp->maxdumps);
 	req = vstralloc("SERVICE ", "selfcheck", "\n",
 			"OPTIONS ",
 			has_features ? "features=" : "",
@@ -1245,30 +1401,45 @@ void start_host(hostp)
 	req_len += 256;                         /* room for non-disk answers */
 	for(dp = hostp->disks; dp != NULL; dp = dp->hostnext) {
 	    char *l;
-	    int l_len;
+	    size_t l_len;
 	    char *o;
-	    char* calcsize;
+	    char *calcsize;
+	    char *qname;
+	    char *qdevice;
 
 	    if(dp->up != DISK_READY || dp->todo != 1) {
 		continue;
 	    }
 	    o = optionstr(dp, hostp->features, outf);
+	    if (o == NULL) {
+	        remote_errors++;
+		continue;
+	    }
+	    qname = quote_string(dp->name); 
+	    qdevice = quote_string(dp->device); 
+	    if((qname[0] == '"') || (qdevice[0] == '"')) {
+		if(!am_has_feature(hostp->features, fe_interface_quoted_text)) {
+		    fprintf(outf,
+			    "WARNING: %s:%s:%s host does not support quoted text\n",
+			    hostp->hostname, qname, qdevice);
+		}
+	    }
 
 	    if(dp->device) {
 		if(!am_has_feature(hostp->features, fe_selfcheck_req_device)) {
 		    fprintf(outf,
 		     "ERROR: %s:%s (%s): selfcheck does not support device.\n",
-		     hostp->hostname, dp->name, dp->device);
+		     hostp->hostname, qname, dp->device);
 		}
 		if(!am_has_feature(hostp->features, fe_sendsize_req_device)) {
 		    fprintf(outf,
 		     "ERROR: %s:%s (%s): sendsize does not support device.\n",
-		     hostp->hostname, dp->name, dp->device);
+		     hostp->hostname, qname, dp->device);
 		}
 		if(!am_has_feature(hostp->features, fe_sendbackup_req_device)) {
 		    fprintf(outf,
 		     "ERROR: %s:%s (%s): sendbackup does not support device.\n",
-		     hostp->hostname, dp->name, dp->device);
+		     hostp->hostname, qname, dp->device);
 		}
 	    }
 	    if(strncmp(dp->program,"DUMP",4) == 0 || 
@@ -1276,17 +1447,17 @@ void start_host(hostp)
 		if(strcmp(dp->program, "DUMP") == 0 &&
 		   !am_has_feature(hostp->features, fe_program_dump)) {
 		    fprintf(outf, "ERROR: %s:%s does not support DUMP.\n",
-			    hostp->hostname, dp->name);
+			    hostp->hostname, qname);
 		}
 		if(strcmp(dp->program, "GNUTAR") == 0 &&
 		   !am_has_feature(hostp->features, fe_program_gnutar)) {
 		    fprintf(outf, "ERROR: %s:%s does not support GNUTAR.\n",
-			    hostp->hostname, dp->name);
+			    hostp->hostname, qname);
 		}
 		if(dp->estimate == ES_CALCSIZE &&
 		   !am_has_feature(hostp->features, fe_calcsize_estimate)) {
 		    fprintf(outf, "ERROR: %s:%s does not support CALCSIZE for estimate, using CLIENT.\n",
-			    hostp->hostname, dp->name);
+			    hostp->hostname, qname);
 		    dp->estimate = ES_CLIENT;
 		}
 		if(dp->estimate == ES_CALCSIZE &&
@@ -1318,7 +1489,7 @@ void start_host(hostp)
 		if(dp->device) {
 		    l = vstralloc(calcsize,
 				  dp->program, " ",
-				  dp->name, " ",
+				  qname, " ",
 				  dp->device,
 				  " 0 OPTIONS |",
 				  o,
@@ -1328,7 +1499,7 @@ void start_host(hostp)
 		else {
 		    l = vstralloc(calcsize,
 				  dp->program, " ",
-				  dp->name,
+				  qname,
 				  " 0 OPTIONS |",
 				  o,
 				  "\n",
@@ -1337,12 +1508,12 @@ void start_host(hostp)
 	    } else {
 		if(!am_has_feature(hostp->features, fe_program_dumper_api)) {
 		    fprintf(outf, "ERROR: %s:%s does not support DUMPER-API.\n",
-			    hostp->hostname, dp->name);
+			    hostp->hostname, qname);
 		}
 		l = vstralloc("DUMPER ",
 			      dp->program, 
 			      " ",
-			      dp->name,
+			      qname,
 			      " ",
 			      dp->device,
 			      " 0 OPTIONS |",
@@ -1350,6 +1521,7 @@ void start_host(hostp)
 			      "\n",
 			      NULL);
 	    }
+	    amfree(qname);
 	    l_len = strlen(l);
 	    amfree(o);
 
@@ -1384,6 +1556,7 @@ void start_host(hostp)
     if (secdrv == NULL) {
 	error("could not find security driver '%s' for host '%s'",
 	      hostp->disks->security_driver, hostp->hostname);
+        /*NOTREACHED*/
     }
     protocol_sendreq(hostp->hostname, secdrv, amhost_get_security_conf, 
 		     req, conf_ctimeout, handle_result, hostp);
@@ -1393,17 +1566,24 @@ void start_host(hostp)
     hostp->up = HOST_ACTIVE;
 }
 
-int start_client_checks(fd)
-int fd;
+pid_t
+start_client_checks(
+    int		fd)
 {
     am_host_t *hostp;
     disk_t *dp;
-    int hostcount, pid;
+    int hostcount;
+    pid_t pid;
     int userbad = 0;
 
     switch(pid = fork()) {
-    case -1: error("could not fork client check: %s", strerror(errno));
-    case 0: break;
+    case -1:
+    	error("could not fork client check: %s", strerror(errno));
+	/*NOTREACHED*/
+
+    case 0:
+    	break;
+
     default:
 	return pid;
     }
@@ -1415,8 +1595,10 @@ int fd;
 
     startclock();
 
-    if((outf = fdopen(fd, "w")) == NULL)
+    if((outf = fdopen(fd, "w")) == NULL) {
 	error("fdopen %d: %s", fd, strerror(errno));
+	/*NOTREACHED*/
+    }
     errf = outf;
 
     fprintf(outf, "\nAmanda Backup Client Hosts Check\n");
@@ -1454,14 +1636,15 @@ int fd;
     }
 
     exit(userbad || remote_errors > 0);
-    /* NOTREACHED */
+    /*NOTREACHED*/
     return 0;
 }
 
-static void handle_result(datap, pkt, sech)
-void *datap;
-pkt_t *pkt;
-security_handle_t *sech;
+static void
+handle_result(
+    void *		datap,
+    pkt_t *		pkt,
+    security_handle_t *	sech)
 {
     am_host_t *hostp;
     disk_t *dp;
@@ -1492,19 +1675,19 @@ security_handle_t *sech;
     ch = *s++;
     while(ch) {
 	line = s - 1;
-	skip_line(s, ch);
+	skip_quoted_line(s, ch);
 	if (s[-2] == '\n') {
 	    s[-2] = '\0';
 	}
 
 #define sc "OPTIONS "
-	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+	if(strncmp(line, sc, SIZEOF(sc)-1) == 0) {
 #undef sc
 
 #define sc "features="
 	    t = strstr(line, sc);
 	    if(t != NULL && (isspace((int)t[-1]) || t[-1] == ';')) {
-		t += sizeof(sc)-1;
+		t += SIZEOF(sc)-1;
 #undef sc
 		am_release_feature_set(hostp->features);
 		if((hostp->features = am_string_to_feature(t)) == NULL) {
@@ -1517,14 +1700,14 @@ security_handle_t *sech;
 	}
 
 #define sc "OK "
-	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
+	if(strncmp(line, sc, SIZEOF(sc)-1) == 0) {
 	    continue;
 #undef sc
 	}
 
 #define sc "ERROR "
-	if(strncmp(line, sc, sizeof(sc)-1) == 0) {
-	    t = line + sizeof(sc) - 1;
+	if(strncmp(line, sc, SIZEOF(sc)-1) == 0) {
+	    t = line + SIZEOF(sc) - 1;
 	    tch = t[-1];
 #undef sc
 
@@ -1534,11 +1717,9 @@ security_handle_t *sech;
 	     * just means the client is "old" (does not support the service).
 	     * We can ignore this.
 	     */
-	    if(hostp->features == NULL
-	       && pkt->type == P_NAK
-	       && (strcmp(t - 1, "unknown service: noop") == 0
-		   || strcmp(t - 1, "noop: invalid service") == 0)) {
-	    } else {
+	    if(!((hostp->features == NULL) && (pkt->type == P_NAK)
+	       && ((strcmp(t - 1, "unknown service: noop") == 0)
+		   || (strcmp(t - 1, "noop: invalid service") == 0)))) {
 		fprintf(outf, "ERROR: %s%s: %s\n",
 			(pkt->type == P_NAK) ? "NAK " : "",
 			hostp->hostname,

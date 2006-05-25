@@ -1,5 +1,5 @@
 /*
- *	$Id: scsi-chio.c,v 1.13 2000/06/25 18:48:11 ant Exp $
+ *	$Id: scsi-chio.c,v 1.14 2006/05/25 01:47:07 johnfranks Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -12,6 +12,7 @@
 
 #include "config.h"
 #include "amanda.h"
+#include "scsi-defs.h"
 
 #if (defined(HAVE_CHIO_H) || defined(HAVE_SYS_CHIO_H)) \
     && !defined(HAVE_CAMLIB_H)
@@ -305,6 +306,7 @@ int CloseDevice (char *device, int DeviceFD)
 {
    int ret;
 
+   dbprintf(("%s: CloseDevice(%s)\n", device, get_pname()));
    ret = close(DeviceFD);
 
    return ret;

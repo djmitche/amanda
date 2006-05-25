@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uparse.y,v 1.12 2006/05/12 19:36:04 martinea Exp $
+ * $Id: uparse.y,v 1.13 2006/05/25 01:47:14 johnfranks Exp $
  *
  * parser for amrecover interactive language
  */
@@ -32,16 +32,18 @@
 #include "amanda.h"
 #include "amrecover.h"
 
-void yyerror P((char *s));
-extern int yylex P((void));
+void		yyerror(char *s);
+extern int	yylex(void);
+extern char *	yytext;
+
 %}
 
 /* DECLARATIONS */
 %union {
-  int intval;
-  double floatval;
-  char *strval;
-  int subtok;
+	int	intval;
+	double	floatval;
+	char *	strval;
+	int	subtok;
 }
 
 	/* literal keyword tokens */
@@ -70,6 +72,12 @@ ucommand:
   |     local_command
   |	help_command
   |     extract_command
+  |     {
+	    char * errstr = vstralloc("Invalid command: ", yytext, NULL);
+	    yyerror(errstr);
+	    amfree(errstr);
+	    YYERROR;
+	} /* Quiets compiler warnings about unused label */
   ;
 
 set_command:
@@ -167,10 +175,9 @@ extract_command:
 /* ADDITIONAL C CODE */
 %%
 
-void yyerror(s)
-char *s;
+void
+yyerror(
+    char *	s)
 {
-  printf("Invalid command - %s\n", s);
+	printf("%s\n", s);
 }
-
-

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.h,v 1.10 2006/04/05 13:24:02 martinea Exp $
+ * $Id: server_util.h,v 1.11 2006/05/25 01:47:20 johnfranks Exp $
  *
  */
 #ifndef SERVER_UTIL_H
@@ -34,16 +34,21 @@
 
 #define MAX_ARGS 32
 
-typedef enum {
+/*
+ * Some lints are confused by: typedef enum (...) xxx_t;
+ * So here we use an equivalent of type int and an unnamed enum for constants.
+ */
+typedef int cmd_t;
+enum {
     BOGUS, QUIT, QUITTING, DONE, PARTIAL,
-    START, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,		/* dumper cmds */
+    START, FILE_DUMP, PORT_DUMP, CONTINUE, ABORT,	/* dumper cmds */
     FAILED, TRYAGAIN, NO_ROOM, RQ_MORE_DISK,		/* dumper results */
     ABORT_FINISHED, BAD_COMMAND,			/* dumper results */
     START_TAPER, FILE_WRITE, PORT_WRITE,		/* taper cmds */
     PORT, TAPE_ERROR, TAPER_OK,	SPLIT_NEEDNEXT,         /* taper results */
     SPLIT_CONTINUE,
     LAST_TOK
-} cmd_t;
+};
 extern const char *cmdstr[];
 
 struct cmdargs {
@@ -51,9 +56,19 @@ struct cmdargs {
     char *argv[MAX_ARGS + 1];
 };
 
-cmd_t getcmd P((struct cmdargs *cmdargs));
-void putresult P((cmd_t result, const char *, ...))
+cmd_t getcmd(struct cmdargs *cmdargs);
+cmd_t getresult(int fd, int show, int *result_argc, char **result_argv, int max_arg);
+void putresult(cmd_t result, const char *, ...)
      __attribute__ ((format (printf, 2, 3)));
-char *amhost_get_security_conf P((char *string, void *arg));
+int taper_cmd(cmd_t cmd, void *ptr, char *destname, int level, char *datestamp);
+
+struct disk_s;
+struct chunker_s;
+int chunker_cmd(struct chunker_s *chunker, cmd_t cmd, struct disk_s *dp);
+
+struct dumper_s;
+int dumper_cmd(struct dumper_s *dumper, cmd_t cmd, struct disk_s *dp);
+
+char *amhost_get_security_conf(char *string, void *arg);
 
 #endif	/* SERVER_UTIL_H */

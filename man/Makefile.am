@@ -78,26 +78,43 @@ EXTRA_XML = xslt/expand-sambadoc.xsl \
             xslt/settings.xsl \
 	    entities/global.entities \
 	    entities/xinclude.dtd
-	    
 
 EXTRA_DIST = $(ALL_MAN_PAGES) $(MAN_XML) $(EXTRA_XML)
-
-if HAVE_XSLTPROC
 
 GEN_XML = $(ALL_MAN_PAGES:%=xml-source/%.proc.xml)
 
 MOSTLYCLEANFILES = $(GEN_XML)
 MAINTAINERCLEANFILES = $(ALL_MAN_PAGES)
 
+if BUILD_MAN_PAGES
+if   HAVE_XSLTPROC
 xml-source/%.proc.xml: $(SRCMANPAGEDIR)/%.xml $(srcdir)/xslt/expand-sambadoc.xsl
 	$(XSLTPROC) --path $(srcdir)/xslt/ --xinclude --stringparam latex.imagebasedir "$*/" --stringparam noreference 1 --output $@ $(srcdir)/xslt/expand-sambadoc.xsl $<
 
 %: xml-source/%.proc.xml $(srcdir)/xslt/man.xsl
 	$(XSLTPROC) --path $(srcdir)/xslt/ --output $@ man.xsl $<
 
-endif
-# ^- HAVE_XSLTPROC
+else    # !HAVE_XSLTPROC
 
+xml-source/%.proc.xml: $(SRCMANPAGEDIR)/%.xml $(srcdir)/xslt/expand-sambadoc.xsl
+	@echo WARNING: $@ can not be generated: xsltproc is not available.
+
+%: xml-source/%.proc.xml $(srcdir)/xslt/man.xsl
+	@echo WARNING: $@ can not be generated: xsltproc is not available.
+
+endif  # HAVE_XSLTPROC
+
+else  # !BUILD_MAN_PAGES
+
+xml-source/%.proc.xml: $(SRCMANPAGEDIR)/%.xml $(srcdir)/xslt/expand-sambadoc.xsl
+	@echo  Build of $@ skipped.
+
+%: xml-source/%.proc.xml $(srcdir)/xslt/man.xsl
+	@echo  Build of $@ skipped.
+
+endif # BUILD_MAN_PAGES
+
+if BUILD_MAN_PAGES
 install-data-hook:
 	@list="$(man8_MANS)"; \
 	for p in $$list; do \
@@ -115,4 +132,11 @@ install-data-hook:
 		echo chgrp $(SETUID_GROUP) $$pa; \
 		chgrp $(SETUID_GROUP) $$pa; \
 	done
+
+else  # !BUILD_MAN_PAGES
+
+install:
+	@echo Skipping man page installation.
+
+endif
 

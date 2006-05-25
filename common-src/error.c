@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: error.c,v 1.18 2003/04/27 01:17:19 martinea Exp $
+ * $Id: error.c,v 1.19 2006/05/25 01:47:11 johnfranks Exp $
  *
  * error handling common to Amanda programs
  */
@@ -34,7 +34,7 @@
 
 #define MAXFUNCS 8
 
-typedef void (*voidfunc) P((void));
+typedef void (*voidfunc)(void);
 static voidfunc onerr[MAXFUNCS] = 
     { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
@@ -42,28 +42,34 @@ int erroutput_type = ERR_INTERACTIVE;
 
 static char *pname = "unknown";
 
-static void (*logerror) P((char *)) = NULL;
+static void output_error_message(char *msg);
 
-void set_pname(p)
-char *p;
+static void (*logerror)(char *) = NULL;
+
+void
+set_pname(
+    char *	p)
 {
     pname = p;
 }
 
-char *get_pname()
+char *
+get_pname(void)
 {
     return pname;
 }
 
-void set_logerror(f)
-void (*f) P((char *));
+void
+set_logerror(
+    void (*f)(char *))
 {
     logerror = f;
 }
 
 
-static void output_error_message(msg)
-char *msg;
+static void
+output_error_message(
+    char *	msg)
 {
     /* print and/or log message */
 
@@ -75,7 +81,7 @@ char *msg;
 #ifdef LOG_AUTH
 	openlog(get_pname(), LOG_PID, LOG_AUTH);
 #else
-	openlog(get_pname(), LOG_PID);
+	openlog(get_pname(), LOG_PID, 0);
 #endif
 	syslog(LOG_NOTICE, "%s", msg);
 	closelog();
@@ -107,7 +113,7 @@ printf_arglist_function(void error, const char *, format)
     /* format and output the error message */
 
     arglist_start(argp, format);
-    vsnprintf(linebuf, sizeof(linebuf), format, argp);
+    vsnprintf(linebuf, SIZEOF(linebuf), format, argp);
     arglist_end(argp);
     output_error_message(linebuf);
 
@@ -135,7 +141,7 @@ printf_arglist_function(void errordump, const char *, format)
     /* format error message */
 
     arglist_start(argp, format);
-    vsnprintf(linebuf, sizeof(linebuf), format, argp);
+    vsnprintf(linebuf, SIZEOF(linebuf), format, argp);
     arglist_end(argp);
     output_error_message(linebuf);
 
@@ -150,8 +156,6 @@ printf_arglist_function(void errordump, const char *, format)
 }
 
 
-int onerror(errf)
-void (*errf) P((void));
 /*
  * Register function to be called when error is called.  Up to MAXFUNCS
  * functions can be registered.  If there isn't room in the table, onerror
@@ -160,6 +164,10 @@ void (*errf) P((void));
  * The resemblance to atexit() is on purpose.  I wouldn't need onerror()
  * if everyone had atexit().  Bummer.
  */
+
+int
+onerror(
+    void	(*errf)(void))
 {
     int i;
 

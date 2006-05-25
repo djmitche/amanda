@@ -1,3 +1,6 @@
+#ifndef REGEX2_H
+#define REGEX2_H
+
 /*
  * First, the stuff that ends up in the outside-world include file
  = typedef off_t regoff_t;
@@ -37,7 +40,7 @@
  * immediately *preceding* "execution" of that operator.
  */
 typedef unsigned long sop;	/* strip operator */
-typedef long sopno;
+typedef unsigned long sopno;
 #define	OPRMASK	0xf8000000
 #define	OPDMASK	0x07ffffff
 #define	OPSHIFT	((unsigned)27)
@@ -99,8 +102,16 @@ typedef struct {
 	char *multis;		/* -> char[smulti]  ab\0cd\0ef\0\0 */
 } cset;
 /* note that CHadd and CHsub are unsafe, and CHIN doesn't yield 0/1 */
-#define	CHadd(cs, c)	((cs)->ptr[(uch)(c)] |= (cs)->mask, (cs)->hash += (c))
-#define	CHsub(cs, c)	((cs)->ptr[(uch)(c)] &= ~(cs)->mask, (cs)->hash -= (c))
+#define	CHadd(cs, c)	do {						\
+    (cs)->ptr[(uch)(c)] = (uch)((cs)->ptr[(uch)(c)] | (cs)->mask);	\
+    (cs)->hash = (uch)((cs)->hash + (c));				\
+} while (0)
+
+#define	CHsub(cs, c)	do {						\
+    (cs)->ptr[(uch)(c)] = (uch)((cs)->ptr[(uch)(c)] & ~(cs)->mask);	\
+    (cs)->hash = (uch)((cs)->hash - (c));				\
+} while (0)
+
 #define	CHIN(cs, c)	((cs)->ptr[(uch)(c)] & (cs)->mask)
 #define	MCadd(p, cs, cp)	mcadd(p, cs, cp)	/* regcomp() internal fns */
 #define	MCsub(p, cs, cp)	mcsub(p, cs, cp)
@@ -133,7 +144,7 @@ struct re_guts {
 	int ncategories;	/* how many character categories */
 	cat_t *categories;	/* ->catspace[-CHAR_MIN] */
 	char *must;		/* match must contain this string */
-	int mlen;		/* length of must */
+	sopno mlen;		/* length of must */
 	size_t nsub;		/* copy of re_nsub */
 	int backrefs;		/* does it use back references? */
 	sopno nplus;		/* how deep does it nest +s? */
@@ -144,3 +155,5 @@ struct re_guts {
 /* misc utilities */
 #define	OUT	(CHAR_MAX+1)	/* a non-character value */
 #define	ISWORD(c)	(isalnum(c) || (c) == '_')
+
+#endif	/* !REGEX2_H */

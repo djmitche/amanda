@@ -1,3 +1,6 @@
+#ifndef _SECURITY_UTIL_H
+#define _SECURITY_UTIL_H
+
 /*
  * Amanda, The Advanced Maryland Automatic Network Disk Archiver
  * Copyright (c) 1999 University of Maryland
@@ -25,7 +28,7 @@
  */
 
 /*
- * $Id: security-util.h,v 1.1 2006/05/12 23:11:50 martinea Exp $
+ * $Id: security-util.h,v 1.2 2006/05/25 01:47:12 johnfranks Exp $
  *
  */
 
@@ -41,21 +44,22 @@ struct sec_handle;
  */
 struct tcp_conn {
     const struct security_driver *driver;	/* MUST be first */
-    int read, write;				/* pipes to sec */
-    pid_t pid;					/* pid of sec process */
-    char *pkt;					/* last pkt read */
-    unsigned long pktlen;			/* len of above */
-    event_handle_t *ev_read;			/* read (EV_READFD) handle */
-    int ev_read_refcnt;				/* number of readers */
-    char hostname[MAX_HOSTNAME_LENGTH+1];	/* host we're talking to */
-    char *errmsg;				/* error passed up */
-    int refcnt;					/* number of handles using */
-    int handle;					/* last proto handle read */
-    void (*accept_fn) P((security_handle_t *, pkt_t *));
-    struct sockaddr_in peer;
+    int			read, write;		/* pipes to sec */
+    pid_t		pid;			/* pid of sec process */
+    char *		pkt;			/* last pkt read */
+    ssize_t		pktlen;			/* len of above */
+    event_handle_t *	ev_read;		/* read (EV_READFD) handle */
+    int			ev_read_refcnt;		/* number of readers */
+    char		hostname[MAX_HOSTNAME_LENGTH+1];
+						/* host we're talking to */
+    char *		errmsg;			/* error passed up */
+    int			refcnt;			/* number of handles using */
+    int			handle;			/* last proto handle read */
+    void		(*accept_fn)(security_handle_t *, pkt_t *);
+    struct sockaddr_in	peer;
     TAILQ_ENTRY(tcp_conn) tq;			/* queue handle */
-    int (*recv_security_ok) P((struct sec_handle *, pkt_t *));
-    char *(*prefix_packet) P((void *, pkt_t *));
+    int			(*recv_security_ok)(struct sec_handle *, pkt_t *);
+    char *		(*prefix_packet)(void *, pkt_t *);
 };
 
 
@@ -65,45 +69,45 @@ struct sec_stream;
  * This is the private handle data.
  */
 struct sec_handle {
-    security_handle_t sech;		/* MUST be first */
-    char *hostname;			/* ptr to rc->hostname */
-    struct sec_stream *rs;		/* virtual stream we xmit over */
-    struct tcp_conn *rc;		/* */
-
+    security_handle_t	sech;		/* MUST be first */
+    char *		hostname;	/* ptr to rc->hostname */
+    struct sec_stream *	rs;		/* virtual stream we xmit over */
+    struct tcp_conn *	rc;		/* */
     union {
-	void (*recvpkt) P((void *, pkt_t *, security_status_t));
+	void (*recvpkt)(void *, pkt_t *, security_status_t);
 					/* func to call when packet recvd */
-	void (*connect) P((void *, security_handle_t *, security_status_t));
+	void (*connect)(void *, security_handle_t *, security_status_t);
 					/* func to call when connected */
     } fn;
-    void *arg;				/* argument to pass function */
-    event_handle_t *ev_timeout;		/* timeout handle for recv */
-    struct sockaddr_in peer;
-    int sequence;
-    int event_id;
-    char *proto_handle;
-    event_handle_t *ev_read;
-    struct sec_handle *prev, *next;
-    struct udp_handle *udp;
-    void (*accept_fn) P((security_handle_t *, pkt_t *));
-    int (*recv_security_ok) P((struct sec_handle *, pkt_t *));
+    void *		arg;		/* argument to pass function */
+    event_handle_t *	ev_timeout;	/* timeout handle for recv */
+    struct sockaddr_in	peer;
+    int			sequence;
+    event_id_t		event_id;
+    char *		proto_handle;
+    event_handle_t *	ev_read;
+    struct sec_handle *	prev;
+    struct sec_handle *	next;
+    struct udp_handle *	udp;
+    void		(*accept_fn)(security_handle_t *, pkt_t *);
+    int			(*recv_security_ok)(struct sec_handle *, pkt_t *);
 };
 
 /*
  * This is the internal security_stream data for sec.
  */
 struct sec_stream {
-    security_stream_t secstr;		/* MUST be first */
-    struct tcp_conn *rc;		/* physical connection */
-    int handle;				/* protocol handle */
-    event_handle_t *ev_read;		/* read (EV_WAIT) event handle */
-    void (*fn) P((void *, void *, ssize_t));	/* read event fn */
-    void *arg;				/* arg for previous */
-    int fd;
-    char databuf[NETWORK_BLOCK_BYTES];
-    int len;
-    int socket;
-    int port;
+    security_stream_t	secstr;		/* MUST be first */
+    struct tcp_conn *	rc;		/* physical connection */
+    int			handle;		/* protocol handle */
+    event_handle_t *	ev_read;	/* read (EV_WAIT) event handle */
+    void		(*fn)(void *, void *, ssize_t);	/* read event fn */
+    void *		arg;		/* arg for previous */
+    int			fd;
+    char		databuf[NETWORK_BLOCK_BYTES];
+    ssize_t		len;
+    int			socket;
+    in_port_t		port;
 };
 
 struct connq_s {
@@ -138,9 +142,9 @@ typedef struct udp_handle {
     event_handle_t *ev_read;	/* read event handle from dgram */
     int refcnt;			/* number of handles blocked for reading */
     struct sec_handle *bh_first, *bh_last;
-    void (*accept_fn) P((security_handle_t *, pkt_t *));
-    int (*recv_security_ok) P((struct sec_handle *, pkt_t *));
-    char *(*prefix_packet) P((void *, pkt_t *));
+    void (*accept_fn)(security_handle_t *, pkt_t *);
+    int (*recv_security_ok)(struct sec_handle *, pkt_t *);
+    char *(*prefix_packet)(void *, pkt_t *);
 } udp_handle_t;
 
 /*
@@ -152,8 +156,8 @@ typedef struct udp_handle {
 #define	udp_addref(udp, netfd_read_callback) do {			\
     if ((udp)->refcnt++ == 0) {						\
 	assert((udp)->ev_read == NULL);					\
-	(udp)->ev_read = event_register((udp)->dgram.socket, EV_READFD,	\
-	    netfd_read_callback, (udp));				\
+	(udp)->ev_read = event_register((event_id_t)(udp)->dgram.socket,\
+	    EV_READFD, netfd_read_callback, (udp));			\
     }									\
     assert((udp)->refcnt > 0);						\
 } while (0)
@@ -172,69 +176,72 @@ typedef struct udp_handle {
 } while (0)
 
 
-int   sec_stream_auth P((void *));
-int   sec_stream_id P((void *));
-void  sec_accept P((const security_driver_t *, int, int,
-		    void (*)(security_handle_t *, pkt_t *)));
-void  sec_close P((void *));
-void  sec_connect_callback P((void *));
-void  sec_connect_timeout P((void *));
+int	sec_stream_auth(void *);
+int	sec_stream_id(void *);
+void	sec_accept(const security_driver_t *, int, int,
+		    void (*)(security_handle_t *, pkt_t *));
+void	sec_close(void *);
+void	sec_connect_callback(void *);
+void	sec_connect_timeout(void *);
 
-int   stream_sendpkt P((void *, pkt_t *));
-void  stream_recvpkt P((void *,
+ssize_t	stream_sendpkt(void *, pkt_t *);
+void	stream_recvpkt(void *,
 		        void (*)(void *, pkt_t *, security_status_t),
-		        void *, int));
-void  stream_recvpkt_timeout P((void *));
-void  stream_recvpkt_cancel P((void *));
+		        void *, int);
+void	stream_recvpkt_timeout(void *);
+void	stream_recvpkt_cancel(void *);
 
-int   tcpm_stream_write P((void *, const void *, size_t));
-void  tcpm_stream_read P((void *, void (*)(void *, void *, ssize_t), void *));
-int   tcpm_stream_read_sync P((void *, void **));
-void  tcpm_stream_read_cancel P((void *));
-int   tcpm_send_token P((int, int, char **, const void *, int));
-int   tcpm_recv_token P((int, int *, char **, char **, unsigned long *, int));
+int	tcpm_stream_write(void *, const void *, size_t);
+void	tcpm_stream_read(void *, void (*)(void *, void *, ssize_t), void *);
+ssize_t	tcpm_stream_read_sync(void *, void **);
+void	tcpm_stream_read_cancel(void *);
+ssize_t	tcpm_send_token(int, int, char **, const void *, size_t);
+ssize_t	tcpm_recv_token(int, int *, char **, char **, ssize_t *, int);
 
-int   tcpma_stream_accept P((void *));
-void *tcpma_stream_client P((void *, int));
-void *tcpma_stream_server P((void *));
-void  tcpma_stream_close P((void *));
+int	tcpma_stream_accept(void *);
+void *	tcpma_stream_client(void *, int);
+void *	tcpma_stream_server(void *);
+void	tcpma_stream_close(void *);
 
-void *tcp1_stream_server P((void *));
-int   tcp1_stream_accept P((void *));
-void *tcp1_stream_client P((void *, int));
+void *	tcp1_stream_server(void *);
+int	tcp1_stream_accept(void *);
+void *	tcp1_stream_client(void *, int);
 
-int   tcp_stream_write P((void *, const void *, size_t));
+int	tcp_stream_write(void *, const void *, size_t);
 
-char *bsd_prefix_packet P((void *, pkt_t *));
-int   bsd_recv_security_ok P((struct sec_handle *, pkt_t *));
+char *	bsd_prefix_packet(void *, pkt_t *);
+int	bsd_recv_security_ok(struct sec_handle *, pkt_t *);
 
-int   udpbsd_sendpkt P((void *, pkt_t *));
-void  udp_close P((void *));
-void  udp_recvpkt P((void *, void (*)(void *, pkt_t *, security_status_t),
-		     void *, int));
-void  udp_recvpkt_cancel P((void *));
-void  udp_recvpkt_callback P((void *));
-void  udp_recvpkt_timeout P((void *));
-int   udp_inithandle P((udp_handle_t *, struct sec_handle *, struct hostent *,
-		        int, char *, int));
-void  udp_netfd_read_callback P((void *));
+ssize_t	udpbsd_sendpkt(void *, pkt_t *);
+void	udp_close(void *);
+void	udp_recvpkt(void *, void (*)(void *, pkt_t *, security_status_t),
+		     void *, int);
+void	udp_recvpkt_cancel(void *);
+void	udp_recvpkt_callback(void *);
+void	udp_recvpkt_timeout(void *);
+int	udp_inithandle(udp_handle_t *, struct sec_handle *, struct hostent *,
+			in_port_t, char *, int);
+void	udp_netfd_read_callback(void *);
 
-struct tcp_conn *sec_tcp_conn_get P((const char *, int));
-void  sec_tcp_conn_put P((struct tcp_conn *));
-void  sec_tcp_conn_read P((struct tcp_conn *));
-void  parse_pkt P((pkt_t *, const void *, size_t));
-const char *pkthdr2str P((const struct sec_handle *, const pkt_t *));
-int   str2pkthdr P((udp_handle_t *));
-char *check_user P((struct sec_handle *, const char *, const char *));
+struct tcp_conn *sec_tcp_conn_get(const char *, int);
+void	sec_tcp_conn_put(struct tcp_conn *);
+void	sec_tcp_conn_read(struct tcp_conn *);
+void	parse_pkt(pkt_t *, const void *, size_t);
+const char *pkthdr2str(const struct sec_handle *, const pkt_t *);
+int	str2pkthdr(udp_handle_t *);
+char *	check_user(struct sec_handle *, const char *, const char *);
 
-char *check_user_ruserok     P((const char *host,
+char *	check_user_ruserok    (const char *host,
 				struct passwd *pwd,
-				const char *user));
-char *check_user_amandahosts P((const char *host,
+				const char *user);
+char *	check_user_amandahosts(const char *host,
 				struct passwd *pwd,
 				const char *user,
-				const char *service));
+				const char *service);
 
-int net_writev P((int, struct iovec *, int));
-ssize_t net_read P((int, void *, size_t, int));
-int net_read_fillbuf P((int, int, void *, int));
+ssize_t	net_writev(int, struct iovec *, int);
+ssize_t	net_read(int, void *, size_t, int);
+ssize_t net_read_fillbuf(int, int, void *, size_t);
+void	show_stat_info(char *a, char *b);
+
+#endif /* _SECURITY_INFO_H */

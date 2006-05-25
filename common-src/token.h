@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.h,v 1.12 2003/03/26 20:17:13 kovert Exp $
+ * $Id: token.h,v 1.13 2006/05/25 01:47:12 johnfranks Exp $
  *
  * interface to token module
  */
@@ -35,18 +35,18 @@
 
 typedef struct {char *word; int value;} table_t;
 
-extern int split P((char *str, char **token, int toklen, char *sep));
-extern char *squotef P((char *format, ...))
+extern int split(char *str, char **token, int toklen, char *sep);
+extern char *squotef(char *format, ...)
     __attribute__ ((format (printf, 1, 2)));
-extern char *squote P((char *str));
-extern char *quotef P((char *sep, char *format, ...))
+extern char *squote(char *str);
+extern char *quotef(char *sep, char *format, ...)
     __attribute__ ((format (printf, 2, 3)));
-extern char *quote P((char *sep, char *str));
-extern char *rxquote P((char *str));
+extern char *quote(char *sep, char *str);
+extern char *rxquote(char *str);
 #ifndef HAVE_SHQUOTE
-extern char *shquote P((char *str));
+extern char *shquote(char *str);
 #endif
-extern int table_lookup P((table_t *table, char *str));
-extern char *table_lookup_r P((table_t *table, int val));
+extern int table_lookup(table_t *table, char *str);
+extern char *table_lookup_r(table_t *table, int val);
 
 #endif

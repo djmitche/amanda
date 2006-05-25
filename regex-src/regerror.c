@@ -1,11 +1,5 @@
-#include <sys/types.h>
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <limits.h>
-#include <stdlib.h>
+#include "amanda.h"
 #include <regex.h>
-
 #include "utils.h"
 #include "regerror.ih"
 
@@ -61,11 +55,11 @@ static struct rerr {
  */
 /* ARGSUSED */
 size_t
-regerror(errcode, preg, errbuf, errbuf_size)
-int errcode;
-const regex_t *preg;
-char *errbuf;
-size_t errbuf_size;
+regerror(
+    int		   errcode,
+    const regex_t *preg,
+    char *	   errbuf,
+    size_t	   errbuf_size)
 {
 	register struct rerr *r;
 	register size_t len;
@@ -74,7 +68,7 @@ size_t errbuf_size;
 	char convbuf[50];
 
 	if (errcode == REG_ATOI)
-		s = regatoi(preg, convbuf, sizeof(convbuf));
+		s = regatoi(preg, convbuf, SIZEOF(convbuf));
 	else {
 		for (r = rerrs; r->code >= 0; r++)
 			if (r->code == target)
@@ -82,13 +76,13 @@ size_t errbuf_size;
 
 		if (errcode&REG_ITOA) {
 			if (r->code >= 0) {
-				strncpy(convbuf, r->name, sizeof(convbuf)-1);
-				convbuf[sizeof(convbuf)-1] = '\0';
+				strncpy(convbuf, r->name, SIZEOF(convbuf)-1);
+				convbuf[SIZEOF(convbuf)-1] = '\0';
 			} else {
-				snprintf(convbuf, sizeof(convbuf),
-					    "REG_0x%x", target);
+				snprintf(convbuf, SIZEOF(convbuf),
+					    "REG_0x%x", (unsigned)target);
 			}
-			assert(strlen(convbuf) < sizeof(convbuf));
+			assert(strlen(convbuf) < SIZEOF(convbuf));
 			s = convbuf;
 		} else
 			s = r->explain;
@@ -96,12 +90,8 @@ size_t errbuf_size;
 
 	len = strlen(s) + 1;
 	if (errbuf_size > 0) {
-		if (errbuf_size > len)
-			(void) strcpy(errbuf, s);
-		else {
-			(void) strncpy(errbuf, s, errbuf_size-1);
-			errbuf[errbuf_size-1] = '\0';
-		}
+		(void) strncpy(errbuf, s, errbuf_size-1);
+		errbuf[errbuf_size-1] = '\0';
 	}
 
 	return(len);
@@ -109,19 +99,22 @@ size_t errbuf_size;
 
 /*
  - regatoi - internal routine to implement REG_ATOI
- == static char *regatoi(const regex_t *preg, char *localbuf, int buflen);
+ == static char *regatoi(const regex_t *preg, char *localbuf, size_t buflen);
  */
 static char *
-regatoi(preg, localbuf, buflen)
-const regex_t *preg;
-char *localbuf;
-int buflen;
+regatoi(
+    const regex_t *	preg,
+    char *		localbuf,
+    size_t		buflen)
 {
 	register struct rerr *r;
 
-	for (r = rerrs; r->code >= 0; r++)
+	for (r = rerrs; r->code >= 0; r++) {
+		/*@ignore@*/
 		if (strcmp(r->name, preg->re_endp) == 0)
 			break;
+		/*@end@*/
+	}
 	if (r->code < 0)
 		return("0");
 

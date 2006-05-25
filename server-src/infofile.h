@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.h,v 1.13 2005/03/16 18:15:05 martinea Exp $
+ * $Id: infofile.h,v 1.14 2006/05/25 01:47:20 johnfranks Exp $
  *
  * interface for current info file reading code
  */
@@ -44,26 +44,26 @@
 
 typedef struct stats_s {
     /* fields updated by dumper */
-    long size;			/* original size of dump in kbytes */
-    long csize;			/* compressed size of dump in kbytes */
-    long secs;			/* time of dump in secs */
+    off_t size;			/* original size of dump in kbytes */
+    off_t csize;		/* compressed size of dump in kbytes */
+    time_t secs;		/* time of dump in secs */
     time_t date;		/* end time of dump */
     /* fields updated by taper */
-    int filenum;		/* file number on tape */
+    off_t filenum;		/* file number on tape */
     char label[MAX_LABEL];	/* tape label */
 } stats_t;
 
 typedef struct history_s {
     int level;			/* level of dump */
-    long size;			/* original size of dump in kbytes */
-    long csize;			/* compressed size of dump in kbytes */
+    off_t size;			/* original size of dump in kbytes */
+    off_t csize;		/* compressed size of dump in kbytes */
     time_t date;		/* time of dump */
-    long secs;			/* time of dump in secs */
+    time_t secs;		/* time of dump in secs */
 } history_t;
 
 typedef struct perf_s {
-    float rate[AVG_COUNT];
-    float comp[AVG_COUNT];
+    double rate[AVG_COUNT];
+    double comp[AVG_COUNT];
 } perf_t;
 
 typedef struct info_s {
@@ -80,17 +80,17 @@ typedef struct info_s {
 } info_t;
 
 
-int open_infofile P((char *infofile));
-void close_infofile P((void));
+int open_infofile(char *infofile);
+void close_infofile(void);
 
-char *get_dumpdate P((info_t *info, int level));
-double perf_average P((float *array, double def));
-int get_info P((char *hostname, char *diskname, info_t *info));
-int get_firstkey P((char *hostname, int hostname_size,
-		    char *diskname, int diskname_size));
-int get_nextkey  P((char *hostname, int hostname_size,
-		    char *diskname, int diskname_size));
-int put_info P((char *hostname, char *diskname, info_t *info));
-int del_info P((char *hostname, char *diskname));
+char *get_dumpdate(info_t *info, int level);
+double perf_average(double *array, double def);
+int get_info(char *hostname, char *diskname, info_t *info);
+int get_firstkey(char *hostname, int hostname_size,
+		    char *diskname, int diskname_size);
+int get_nextkey(char *hostname, int hostname_size,
+		    char *diskname, int diskname_size);
+int put_info(char *hostname, char *diskname, info_t *info);
+int del_info(char *hostname, char *diskname);
 
 #endif /* ! INFOFILE_H */

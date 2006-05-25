@@ -24,18 +24,21 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: versionsuffix.c,v 1.8 2005/09/20 21:32:25 jrjackson Exp $
+ * $Id: versionsuffix.c,v 1.9 2006/05/25 01:47:11 johnfranks Exp $
  *
  * prints the (possibly empty) suffix appended to amanda program names
  */
 #include "amanda.h"
 #include "version.h"
 
-int main P((void));
+int main(int argc, char **argv);
 
-int main()
+int main(int argc, char **argv)
 {
 	safe_fd(-1, 0);
+
+	(void)argc;	/* Quiet unused parameter warning */
+	(void)argv;	/* Quiet unused parameter warning */
 
 	set_pname("versionsuffix");
 

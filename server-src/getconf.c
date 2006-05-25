@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.18 2006/01/14 04:37:19 paddy_s Exp $
+ * $Id: getconf.c,v 1.19 2006/05/25 01:47:20 johnfranks Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -34,7 +34,22 @@
 #include "genversion.h"
 #include "conffile.h"
 
-int main P((int argc, char **argv));
+int main(int argc, char **argv);
+
+/*
+ * HOSTNAME_INSTANCE may not be defined at this point.
+ * We define it locally if it is needed...
+ *
+ * If CLIENT_HOST_PRINCIPLE is defined as HOSTNAME_INSTANCE
+ * then local host is the client host principle.
+ */
+#ifndef HOSTNAME_INSTANCE
+#  define HOSTNAME_INSTANCE "localhost"
+#endif
+
+#ifndef KEYFILE
+#  define KEYFILE "id_rsa"
+#endif
 
 static struct build_info {
     char *symbol;
@@ -60,117 +75,164 @@ static struct build_info {
     { "BUILT_DATE",
 #if defined(BUILT_DATE)
 	BUILT_DATE
+#else
+	NULL
 #endif
     },
     { "BUILT_MACH",
 #if defined(BUILT_MACH)
 	BUILT_MACH
+#else
+	NULL
 #endif
     },
     { "CC",
 #if defined(CC)
 	CC
+#else
+	NULL
 #endif
     },
 
     { "AMANDA_DBGDIR",
 #if defined(AMANDA_DBGDIR)
 	AMANDA_DBGDIR
+#else
+	NULL
 #endif
     },
     { "DEV_PREFIX",
 #if defined(DEV_PREFIX)
 	DEV_PREFIX
+#else
+	NULL
 #endif
     },
     { "RDEV_PREFIX",
 #if defined(RDEV_PREFIX)
-	RDEV_PREFIX },
+	RDEV_PREFIX
+#else
+	NULL
 #endif
+    },
     { "DUMP",
 #if defined(DUMP)
 	DUMP
+#else
+	NULL
 #endif
     },
     { "RESTORE",
 #if defined(DUMP)
 	RESTORE
+#else
+	NULL
 #endif
     },
     { "VDUMP",
 #if defined(VDUMP)
 	VDUMP
+#else
+	NULL
 #endif
     },
     { "VRESTORE",
 #if defined(VDUMP)
 	VRESTORE
+#else
+	NULL
 #endif
     },
     { "XFSDUMP",
 #if defined(XFSDUMP)
 	XFSDUMP
+#else
+	NULL
 #endif
     },
     { "XFSRESTORE",
 #if defined(XFSDUMP)
 	XFSRESTORE
+#else
+	NULL
 #endif
     },
     { "VXDUMP",
 #if defined(VXDUMP)
 	VXDUMP
+#else
+	NULL
 #endif
     },
     { "VXRESTORE",
 #if defined(VXDUMP)
 	VXRESTORE
+#else
+	NULL
 #endif
     },
     { "SAMBA_CLIENT",
 #if defined(SAMBA_CLIENT)
 	SAMBA_CLIENT
+#else
+	NULL
 #endif
     },
     { "GNUTAR",
 #if defined(GNUTAR)
 	GNUTAR
+#else
+	NULL
 #endif
     },
     { "COMPRESS_PATH",
 #if defined(COMPRESS_PATH)
 	COMPRESS_PATH
+#else
+	NULL
 #endif
     },
     { "UNCOMPRESS_PATH",
 #if defined(UNCOMPRESS_PATH)
 	UNCOMPRESS_PATH
+#else
+	NULL
 #endif
     },
     { "listed_incr_dir",
 #if defined(GNUTAR_LISTED_INCREMENTAL_DIR)
 	GNUTAR_LISTED_INCREMENTAL_DIR
+#else
+	NULL
 #endif
     },
     { "GNUTAR_LISTED_INCREMENTAL_DIR",
 #if defined(GNUTAR_LISTED_INCREMENTAL_DIR)
 	GNUTAR_LISTED_INCREMENTAL_DIR
+#else
+	NULL
 #endif
     },
 
     { "AIX_BACKUP",
 #if defined(AIX_BACKUP)
 	"1"
+#else
+	NULL
 #endif
     },
     { "AIX_TAPEIO",
 #if defined(AIX_TAPEIO)
 	"1"
+#else
+	NULL
 #endif
     },
     { "DUMP_RETURNS_1",
 #if defined(DUMP_RETURNS_1)
 	"1"
+#else
+	NULL
 #endif
     },
 
@@ -191,122 +253,167 @@ static struct build_info {
     { "STATFS_BSD",
 #if defined(STATFS_BSD)
 	"1"
+#else
+	NULL
 #endif
     },
     { "STATFS_OSF1",
 #if defined(STATFS_OSF1)
 	"1"
+#else
+	NULL
 #endif
     },
     { "STATFS_ULTRIX",
 #if defined(STATFS_ULTRIX)
 	"1"
+#else
+	NULL
 #endif
     },
     { "ASSERTIONS",
 #if defined(ASSERTIONS)
 	"1"
+#else
+	NULL
 #endif
     },
     { "DEBUG_CODE",
 #if defined(DEBUG_CODE)
 	"1"
+#else
+	NULL
 #endif
     },
     { "BSD_SECURITY",
 #if defined(BSD_SECURITY)
 	"1"
+#else
+	NULL
 #endif
     },
     { "USE_AMANDAHOSTS",
 #if defined(USE_AMANDAHOSTS)
 	"1"
+#else
+	NULL
 #endif
     },
     { "USE_RUNDUMP",
 #if defined(USE_RUNDUMP)
 	"1"
+#else
+	NULL
 #endif
     },
     { "FORCE_USERID",
 #if defined(FORCE_USERID)
 	"1"
+#else
+	NULL
 #endif
     },
     { "USE_VERSION_SUFFIXES",
 #if defined(USE_VERSION_SUFFIXES)
 	"1"
+#else
+	NULL
 #endif
     },
     { "HAVE_GZIP",
 #if defined(HAVE_GZIP)
 	"1"
+#else
+	NULL
 #endif
     },
 
     { "KRB4_SECURITY",
 #if defined(KRB4_SECURITY)
 	"1"
+#else
+	NULL
 #endif
     },
     { "SERVER_HOST_PRINCIPLE",
 #if defined(KRB4_SECURITY)
 	SERVER_HOST_PRINCIPLE
+#else
+	NULL
 #endif
     },
     { "SERVER_HOST_INSTANCE",
 #if defined(KRB4_SECURITY)
 	SERVER_HOST_INSTANCE
+#else
+	NULL
 #endif
     },
     { "SERVER_HOST_KEY_FILE",
 #if defined(KRB4_SECURITY)
 	SERVER_HOST_KEY_FILE
+#else
+	NULL
 #endif
     },
     { "CLIENT_HOST_PRINCIPLE",
 #if defined(KRB4_SECURITY)
 	CLIENT_HOST_PRINCIPLE
+#else
+	NULL
 #endif
     },
     { "CLIENT_HOST_INSTANCE",
 #if defined(KRB4_SECURITY)
 	CLIENT_HOST_INSTANCE
+#else
+	NULL
 #endif
     },
     { "CLIENT_HOST_KEY_FILE",
 #if defined(KRB4_SECURITY)
 	CLIENT_HOST_KEY_FILE
+#else
+	NULL
 #endif
     },
 
     { "COMPRESS_SUFFIX",
 #if defined(COMPRESS_SUFFIX)
 	COMPRESS_SUFFIX
+#else
+	NULL
 #endif
     },
     { "COMPRESS_FAST_OPT",
 #if defined(COMPRESS_FAST_OPT)
 	COMPRESS_FAST_OPT
+#else
+	NULL
 #endif
     },
     { "COMPRESS_BEST_OPT",
 #if defined(COMPRESS_BEST_OPT)
 	COMPRESS_BEST_OPT
+#else
+	NULL
 #endif
     },
     { "UNCOMPRESS_OPT",
 #if defined(UNCOMPRESS_OPT)
 	UNCOMPRESS_OPT
+#else
+	NULL
 #endif
     },
 
     { NULL,			NULL }
 };
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
     char *result;
     unsigned long malloc_hist_1, malloc_size_1;
@@ -343,8 +450,9 @@ char **argv;
     } else {
 	char my_cwd[STR_SIZE];
 
-	if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+	if (getcwd(my_cwd, SIZEOF(my_cwd)) == NULL) {
 	    error("cannot determine current working directory");
+	    /*NOTREACHED*/
 	}
 	config_dir = stralloc2(my_cwd, "/");
 	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
@@ -364,24 +472,24 @@ char **argv;
 #else
     i = -1;
 #endif
-    snprintf(number, sizeof(number), "%ld", (long)i);
+    snprintf(number, SIZEOF(number), "%ld", (long)i);
     build_info[1].value = stralloc(number);
 #if defined(KRB4_SECURITY)
     i = TICKET_LIFETIME;
 #else
     i = -1;
 #endif
-    snprintf(number, sizeof(number), "%ld", (long)i);
+    snprintf(number, SIZEOF(number), "%ld", (long)i);
     build_info[2].value = stralloc(number);
 
 #undef p
 #define	p	"build."
 
-    if(strncmp(parmname, p, sizeof(p) - 1) == 0) {
+    if(strncmp(parmname, p, SIZEOF(p) - 1) == 0) {
 	char *s;
 	char *t;
 
-	t = stralloc(parmname + sizeof(p) - 1);
+	t = stralloc(parmname + SIZEOF(p) - 1);
 	for(i = 0; (s = build_info[i].symbol) != NULL; i++) {
 	    if(strcasecmp(s, t) == 0) {
 		break;
@@ -397,12 +505,12 @@ char **argv;
 #undef p
 #define	p	"dbopen."
 
-    } else if(strncmp(parmname, p, sizeof(p) - 1) == 0) {
+    } else if(strncmp(parmname, p, SIZEOF(p) - 1) == 0) {
 	char *pname;
 	char *dbname;
 
-	if((pname = strrchr(parmname + sizeof(p) - 1, '/')) == NULL) {
-	    pname = parmname + sizeof(p) - 1;
+	if((pname = strrchr(parmname + SIZEOF(p) - 1, '/')) == NULL) {
+	    pname = parmname + SIZEOF(p) - 1;
 	} else {
 	    pname++;
 	}
@@ -421,14 +529,15 @@ char **argv;
 #undef p
 #define	p	"dbclose."
 
-    } else if(strncmp(parmname, p, sizeof(p) - 1) == 0) {
+    } else if(strncmp(parmname, p, SIZEOF(p) - 1) == 0) {
 	char *t;
 	char *pname;
 	char *dbname;
 
-	t = stralloc(parmname + sizeof(p) - 1);
+	t = stralloc(parmname + SIZEOF(p) - 1);
 	if((dbname = strchr(t, ':')) == NULL) {
 	    error("cannot parse %s", parmname);
+	    /*NOTREACHED*/
 	}
 	*dbname++ = '\0';
 	if((pname = strrchr(t, '/')) == NULL) {
@@ -447,6 +556,7 @@ char **argv;
 	conffile = stralloc2(config_dir, CONFFILE_NAME);
 	if(read_conffile(conffile)) {
 	    error("errors processing config file \"%s\"", conffile);
+	    /*NOTREACHED*/
 	}
 	amfree(conffile);
 	result = getconf_byname(parmname);

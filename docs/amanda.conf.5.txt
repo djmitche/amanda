@@ -631,7 +631,7 @@ The dumptype options and values are:
 
   program string
       Default: DUMP. The type of backup to perform. Valid values are DUMP for
-      the native operating system backup program, and GNUTAR to use GNU-tar or
+      the native operating system backup program or GNUTAR to use GNU-tar or
       to do PC backups using Samba.
 
   record boolean

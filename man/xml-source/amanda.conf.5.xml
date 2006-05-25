@@ -238,7 +238,7 @@ to make.
       <para>
 <emphasis remap='B'>WARNING</emphasis>: This option is not backward-compatible.
 Do not enable it if you intend to downgrade your server installation to
-any version earlier than Amanda 2.5.1.
+Amanda community edition 2.5.0
       </para>
     </listitem>
   </varlistentry>
@@ -250,26 +250,6 @@ any version earlier than Amanda 2.5.1.
     <para>Default: not set.
 When set, this directive will cause &A; to automatically write an &A;
 tape label to any blank tape she encounters. This option is DANGEROUS 
-because when set, &A; will ERASE any non-&A; tapes you may have, and may 
-also ERASE any near-failing tapes. Use with caution.</para>
-<para>When using this directive, specify the template for new tape 
-labels. The template should contain some number of contiguous '%' 
-characters, which will be replaced with a generated number. Be sure to 
-specify enough '%' characters that you do not run out of tape labels. 
-Example: 
-<markup>label_new_tapes "DailySet1-%%%"</markup>
-</para>
-</listitem>
-</varlistentry>
-
-  <varlistentry>
-=======
-  <term><emphasis remap='B'>label_new_tapes</emphasis>
-        <emphasis remap='I'> string</emphasis></term>
-<listitem>
-    <para>Default: not set.
-When set, this directive will cause &A; to automatically write an Amanda 
-tape label to any black tape she encounters. This option is DANGEROUS 
 because when set, &A; will ERASE any non-&A; tapes you may have, and may 
 also ERASE any near-failing tapes. Use with caution.</para>
 <para>When using this directive, specify the template for new tape 
@@ -898,7 +878,8 @@ The syntax is:</para>
 holdingdisk <emphasis remap='I'>name</emphasis> {
     <emphasis remap='I'>holdingdisk-option</emphasis> <emphasis remap='I'>holdingdisk-value</emphasis>
     <literal>...</literal>
-}</programlisting>
+}
+</programlisting>
 
 <para><emphasis remap='I'>Name</emphasis>
 is a logical name for this holding disk.</para>
@@ -1210,13 +1191,14 @@ server host as it goes from the network into the holding disk or to tape.</para>
 <para>PROG must not contain white space.</para>
 <para>Specify client_decrypt_option &quot;decryption-parameter&quot; Default: &quot;-d&quot;</para>
 <para>decryption-parameter must not contain white space.</para>
-<para>(See dumptype encrypt-fast in example/amanda.conf for reference)</para>
+<para>(See dumptype server-encrypt-fast in example/amanda.conf for reference)</para>
 </listitem>
 <listitem><para>encrypt server</para>
 <para>Specify server_encrypt &quot;PROG&quot;</para>
 <para>PROG must not contain white space.</para>
 <para>Specify server_decrypt_option &quot;decryption-parameter&quot; Default: &quot;-d&quot;</para>
 <para>decryption-parameter must not contain white space.</para>
+<para>(See dumptype client-encrypt-nocomp in example/amanda.conf for reference)</para>
 </listitem>
 </itemizedlist>
 </listitem>
@@ -1225,7 +1207,7 @@ backup(thus decrypt then uncompress during restore). So specifying
 client-encryption AND server-compression is not supported.
 <emphasis remap='I'>amcrypt</emphasis> which is a wrapper of
 	    <emphasis remap='I'>aespipe</emphasis> is provided as a reference
-		encryption program.</para>
+		symmetric encryption program.</para>
 </varlistentry>
 
 

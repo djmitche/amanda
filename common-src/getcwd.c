@@ -25,15 +25,13 @@
  * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-/* $Id: getcwd.c,v 1.4 2002/02/11 01:32:10 jrjackson Exp $ */
+/* $Id: getcwd.c,v 1.5 2006/05/25 01:47:12 johnfranks Exp $ */
 
 #ifndef lint
-static char rcsid[] = "$Header: /home/dustin/code/amanda/svn/cvs-conversion/sf-rsync/amanda/common-src/Attic/getcwd.c,v 1.4 2002/02/11 01:32:10 jrjackson Exp $ SPRITE (Berkeley)";
+static char rcsid[] = "$Header: /home/dustin/code/amanda/svn/cvs-conversion/sf-rsync/amanda/common-src/Attic/getcwd.c,v 1.5 2006/05/25 01:47:12 johnfranks Exp $ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include <stdio.h>
-#include <errno.h>
-#include <sys/param.h>
+#include "amanda.h"
 
 extern char *getwd();
 extern int errno;

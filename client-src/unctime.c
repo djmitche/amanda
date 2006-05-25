@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  */
 
-/* $Id: unctime.c,v 1.2 1997/08/27 08:11:44 amcore Exp $ */
+/* $Id: unctime.c,v 1.3 2006/05/25 01:47:11 johnfranks Exp $ */
 
 #include "amanda.h"
 
@@ -53,18 +53,18 @@
 #define	E_SECOND	17
 #define	E_YEAR		20
 
-static	int lookup P((char *));
+static	int lookup(char *);
 
 
 time_t
-unctime(str)
-	char *str;
+unctime(
+    char *str)
 {
 	struct tm then;
 	char dbuf[26];
 
-	(void) strncpy(dbuf, str, sizeof(dbuf) - 1);
-	dbuf[sizeof(dbuf) - 1] = '\0';
+	(void) strncpy(dbuf, str, SIZEOF(dbuf) - 1);
+	dbuf[SIZEOF(dbuf) - 1] = '\0';
 	dbuf[E_MONTH+3] = '\0';
 	if ((then.tm_mon = lookup(&dbuf[E_MONTH])) < 0)
 		return -1;
@@ -81,13 +81,13 @@ static char months[] =
 	"JanFebMarAprMayJunJulAugSepOctNovDec";
 
 static int
-lookup(str)
-	char *str;
+lookup(
+    char *	str)
 {
 	register char *cp, *cp2;
 
 	for (cp = months, cp2 = str; *cp != '\0'; cp += 3)
 		if (strncmp(cp, cp2, 3) == 0)
-			return ((cp-months) / 3);
+			return ((int)(cp-months) / 3);
 	return -1;
 }

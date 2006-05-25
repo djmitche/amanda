@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-cam.c,v 1.14 2005/10/15 13:20:47 martinea Exp $
+ * $Id: scsi-cam.c,v 1.15 2006/05/25 01:47:07 johnfranks Exp $
  *
  * Interface to execute SCSI commands on an system with cam support
  * Current support is for FreeBSD 4.x
@@ -75,7 +75,7 @@ extern FILE *debug_file;
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-cam.c,v 1.14 2005/10/15 13:20:47 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-cam.c,v 1.15 2006/05/25 01:47:07 johnfranks Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -94,18 +94,33 @@ int parse_btl(char *DeviceName,
     return 0;
 
   p = strtok(DeviceName, ":");
-  sscanf(p,"%d", path);
+  if (sscanf(p,"%d", path) != 1) {
+      free(DeviceName);
+      ChgExit("SCSI_OpenDevice",
+	"Path conversion error. Digits expected", FATAL);
+  }
           
   if ((p = strtok(NULL,":")) == NULL) {
       free(DeviceName);
       ChgExit("SCSI_OpenDevice", "target in Device Name not found", FATAL);
   }
-  sscanf(p,"%d", target);
+
+  if (sscanf(p,"%d", target) != 1) {
+      free(DeviceName);
+      ChgExit("SCSI_OpenDevice",
+	"Target conversion error. Digits expected", FATAL);
+  }
+
   if ((p = strtok(NULL,":")) == NULL) {
       free(DeviceName);
       ChgExit("SCSI_OpenDevice", "lun in Device Name not found", FATAL);
   }
-  sscanf(p,"%d", lun);
+  if (sscanf(p,"%d", lun) != 1) {
+      free(DeviceName);
+      ChgExit("SCSI_OpenDevice",
+	"LUN conversion error. Digits expected", FATAL);
+  }
+
   return 1;
 }
 
@@ -179,22 +194,20 @@ int SCSI_OpenDevice(int ip)
       DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### STOP SCSI_OpenDevice open failed\n");
       return(0);
     }
-  } else {
-    if (parse_btl(DeviceName, &path, &target, &lun))
-        pDev[ip].curdev = cam_open_btl(path, target, lun, O_RDWR, NULL);
-    else
-        pDev[ip].curdev = cam_open_device(DeviceName, O_RDWR);
-
-    free(DeviceName);
-
-    if (pDev[ip].curdev) {
-      pDev[ip].devopen = 1;
-      return(1);
-    } else  {
-      return(0);
-    }
   }
-  return(0); 
+  if (parse_btl(DeviceName, &path, &target, &lun))
+      pDev[ip].curdev = cam_open_btl(path, target, lun, O_RDWR, NULL);
+  else
+      pDev[ip].curdev = cam_open_device(DeviceName, O_RDWR);
+
+  free(DeviceName);
+
+  if (pDev[ip].curdev) {
+    pDev[ip].devopen = 1;
+    return(1);
+  } else  {
+    return(0);
+  }
 }
 
 int SCSI_CloseDevice(int DeviceFD)
@@ -215,11 +228,11 @@ int SCSI_CloseDevice(int DeviceFD)
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
                         CDB_T CDB,
-                        int CDB_Length,
+                        size_t CDB_Length,
                         void *DataBuffer,
-                        int DataBufferLength,
-                        char *pRequestSense,
-                        int RequestSenseLength)
+                        size_t DataBufferLength,
+                        RequestSense_T *pRequestSense,
+                        size_t RequestSenseLength)
 {
   ExtendedRequestSense_T ExtendedRequestSense;
   extern OpenFiles_T *pDev;
@@ -227,6 +240,13 @@ int SCSI_ExecuteCommand(int DeviceFD,
   int ret;
   uint32_t ccb_flags;
   OpenFiles_T *pwork = NULL;
+
+  /* Basic sanity checks */
+  assert(CDB_Length <= UCHAR_MAX);
+  assert(RequestSenseLength <= UCHAR_MAX);
+
+  /* Clear buffer for cases where sense is not returned */
+  memset(pRequestSense, 0, RequestSenseLength);
 
   if (pDev[DeviceFD].avail == 0)
     {
@@ -243,7 +263,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   ccb = cam_getccb(pDev[DeviceFD].curdev);
 
   /* Build the CCB */
-  bzero(&(&ccb->ccb_h)[1], sizeof(struct ccb_scsiio));
+  bzero(&(&ccb->ccb_h)[1], SIZEOF(struct ccb_scsiio));
   bcopy(&CDB[0], &ccb->csio.cdb_io.cdb_bytes, CDB_Length);
 
   switch (Direction)
@@ -341,7 +361,7 @@ int Tape_Ioctl( int DeviceFD, int command)
 
   if (ioctl(pDev[DeviceFD].fd , MTIOCTOP, &mtop) != 0)
     {
-      dbprintf(("Tape_Ioctl error ioctl %d\n",errno));
+      dbprintf(("Tape_Ioctl error ioctl %s\n", strerror(errno)));
       SCSI_CloseDevice(DeviceFD);
       return(-1);
     }
@@ -362,7 +382,7 @@ int Tape_Status( int DeviceFD)
 
   if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
   {
-     dbprintf(("Tape_Status error ioctl %d\n",errno));
+     dbprintf(("Tape_Status error ioctl %s\n", strerror(errno)));
      SCSI_CloseDevice(DeviceFD);
      return(-1);
   }
@@ -463,6 +483,7 @@ int ScanBus(int print)
             }
         }
     }
+    return 0;
 }
 
 #endif

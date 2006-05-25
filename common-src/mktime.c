@@ -34,7 +34,7 @@
  * SUCH DAMAGE.  */
 
 /*static char *sccsid = "from: @(#)ctime.c	5.26 (Berkeley) 2/23/91";*/
-/*static char *rcsid = "$Id: mktime.c,v 1.4 1998/03/18 10:00:49 amcore Exp $";*/
+/*static char *rcsid = "$Id: mktime.c,v 1.5 2006/05/25 01:47:12 johnfranks Exp $";*/
 
 /*
  * This implementation of mktime is lifted straight from the NetBSD (BSD 4.4)
@@ -60,6 +60,8 @@
  * by hand.  Sorry about that.
  */
 
+#include "amanda.h"
+
 #ifndef DSTMINUTES
 #define DSTMINUTES 60
 #endif
@@ -79,11 +81,6 @@
 #define MONSPERYEAR     12
 #define TM_YEAR_BASE    1900
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
-
-#include <sys/types.h>
-#include <time.h>
-
-extern time_t	time();
 
 static int	mon_lengths[2][MONSPERYEAR] = {
 	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },

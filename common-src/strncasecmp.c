@@ -1,13 +1,4 @@
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#if defined(STDC_HEADERS) || defined(HAVE_STRING_H)
-#include <string.h>
-#else
-#include <strings.h>
-#endif
+#include "amanda.h"
 
 /*
  * The following function compares the first 'n' characters in 's1'

@@ -7,44 +7,71 @@ REGsrcdir = $(srcdir)/$(REGDIR)
 
 INCLUDES = -I$(REGsrcdir)
 
-libamanda_la_SOURCES = \
-	alloc.c		amflock.c	\
-	bsd-security.c	bsdtcp-security.c	bsdudp-security.c	\
-	clock.c		\
-	debug.c		dgram.c		\
-	event.c		error.c		\
-	amfeatures.c	\
-	file.c		fileheader.c	\
-	krb4-security.c	krb5-security.c	\
-	match.c		\
-	packet.c	pipespawn.c	protocol.c	\
-	regcomp.c	regerror.c	regexec.c	regfree.c	\
-	rsh-security.c	\
-	security.c	sl.c		ssh-security.c	statfs.c	\
-	security-util.c	\
-	stream.c	tapelist.c	\
-	token.c		\
-	util.c		\
-	versuff.c	version.c
+LINT=@AMLINT@
+LINTFLAGS=@AMLINTFLAGS@
+
+libamanda_la_SOURCES =		\
+	alloc.c			\
+	amfeatures.c		\
+	amflock.c		\
+	bsd-security.c		\
+	bsdtcp-security.c	\
+	bsdudp-security.c	\
+	clock.c			\
+	debug.c			\
+	dgram.c			\
+	error.c			\
+	event.c			\
+	file.c			\
+	fileheader.c		\
+	krb4-security.c		\
+	krb5-security.c		\
+	match.c			\
+	packet.c		\
+	pipespawn.c		\
+	protocol.c		\
+	regcomp.c		\
+	regerror.c		\
+	regexec.c		\
+	regfree.c		\
+	rsh-security.c		\
+	security.c		\
+	security-util.c		\
+	sl.c			\
+	ssh-security.c		\
+	statfs.c		\
+	stream.c		\
+	tapelist.c		\
+	token.c			\
+	util.c			\
+	version.c		\
+	versuff.c
 
 libamanda_la_LIBADD =	@LTLIBOBJS@ @LTALLOCA@
 libamanda_la_LDFLAGS =  -release $(VERSION)
 
-noinst_HEADERS =	amanda.h	amregex.h	arglist.h	\
-			clock.h		\
-			dgram.h		\
-			event.h		\
-			amfeatures.h	\
-			packet.h	pipespawn.h	protocol.h	\
-			queue.h		\
-			sl.h		security.h	statfs.h	\
-			security-util.h	\
-			stream.h	\
-			tapelist.h	\
-			token.h		\
-			util.h		\
-			version.h	\
-			fileheader.h
+noinst_HEADERS =		\
+	amanda.h		\
+	amfeatures.h		\
+	amregex.h		\
+	arglist.h		\
+	clock.h			\
+	dgram.h			\
+	event.h			\
+	fileheader.h		\
+	packet.h		\
+	pipespawn.h		\
+	protocol.h		\
+	queue.h			\
+	security.h		\
+	security-util.h		\
+	sl.h			\
+	statfs.h		\
+	stream.h		\
+	tapelist.h		\
+	token.h			\
+	util.h			\
+	version.h
 
 .sh:
 	cat $< > $@
@@ -73,11 +100,13 @@ regexec.@OBJEXT@ regexec.lo: regex.h engine.ih
 regerror.@OBJEXT@ regerror.lo: regex.h regerror.ih
 regfree.@OBJEXT@ regfree.lo: regex.h
 
-REGEXHSRC =	$(REGsrcdir)/regex2.h \
-		$(REGsrcdir)/regcomp.c \
-		$(REGsrcdir)/regexec.c \
-		$(REGsrcdir)/regerror.c \
+REGEXCSRC =	$(REGsrcdir)/regcomp.c	\
+		$(REGsrcdir)/regexec.c	\
+		$(REGsrcdir)/regerror.c	\
 		$(REGsrcdir)/regfree.c
+
+REGEXHSRC =	$(REGsrcdir)/regex2.h	\
+		$(REGEXCSRC)
 
 # these are used for testing only:
 TEST_PROGS = statfs token file bsdsecurity amfeatures
@@ -87,16 +116,16 @@ CLEANFILES = regex.h regcomp.ih engine.ih regerror.ih *.test.c
 DISTCLEANFILES = version.c genversion.h genversion amanda-int.h
 
 regex.h: $(REGEXHSRC) $(REGsrcdir)/mkh
-	sh $(REGsrcdir)/mkh -o -i _REGEX_H_ $(REGEXHSRC) >$@
+	sh $(REGsrcdir)/mkh -i _REGEX_H_ $(REGEXHSRC) >$@
 
 regcomp.ih: $(REGsrcdir)/regcomp.c $(REGsrcdir)/mkh
-	sh $(REGsrcdir)/mkh -o -p $(REGsrcdir)/regcomp.c >$@
+	sh $(REGsrcdir)/mkh -p $(REGsrcdir)/regcomp.c >$@
 
 engine.ih: $(REGsrcdir)/engine.c $(REGsrcdir)/mkh
-	sh $(REGsrcdir)/mkh -o -p $(REGsrcdir)/engine.c >$@
+	sh $(REGsrcdir)/mkh -p $(REGsrcdir)/engine.c >$@
 
 regerror.ih: $(REGsrcdir)/regerror.c $(REGsrcdir)/mkh
-	sh $(REGsrcdir)/mkh -o -p $(REGsrcdir)/regerror.c >$@
+	sh $(REGsrcdir)/mkh -p $(REGsrcdir)/regerror.c >$@
 
 # used for testing only
 
@@ -136,6 +165,18 @@ bsdsecurity_LDADD = $(libamanda_a_LIBADD) \
 
 amfeatures_SOURCES = amfeatures.test.c
 amfeatures_LDADD = $(libamanda_la_LIBADD) $(STANDARD_COMMON_STUFF)
+
+lint:
+	@echo $(LINT) $(libamanda_la_SOURCES)
+	@$(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config $(INCLUDES) $(libamanda_la_SOURCES)
+	@echo $(LINT) $(genversion_SOURCES)
+	@$(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config $(INCLUDES) $(genversion_SOURCES)
+
+listlibsrc:
+	@ for p in $(libamanda_la_SOURCES) $(REGEXCSRC); do	\
+		listlibsrcs="$$listlibsrcs `pwd`/$$p";		\
+	done;							\
+	echo $$listlibsrcs 1>&2
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@

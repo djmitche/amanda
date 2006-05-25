@@ -1,8 +1,5 @@
-#include <sys/types.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "amanda.h"
 #include <regex.h>
-
 #include "utils.h"
 #include "regex2.h"
 
@@ -11,11 +8,12 @@
  = extern void regfree(regex_t *);
  */
 void
-regfree(preg)
-regex_t *preg;
+regfree(
+    regex_t *preg)
 {
 	register struct re_guts *g;
 
+	/*@ignore@*/
 	if (preg->re_magic != MAGIC1)	/* oops */
 		return;			/* nice to complain, but hard */
 
@@ -23,6 +21,7 @@ regex_t *preg;
 	if (g == NULL || g->magic != MAGIC2)	/* oops again */
 		return;
 	preg->re_magic = 0;		/* mark it invalid */
+	/*@end@*/
 	g->magic = 0;			/* mark it invalid */
 
 	if (g->strip != NULL)

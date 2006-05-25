@@ -3,6 +3,9 @@
 INCLUDES =	-I$(top_builddir)/common-src \
 		-I$(top_srcdir)/common-src
 
+LINT=@AMLINT@
+LINTFLAGS=@AMLINTFLAGS@
+
 lib_LTLIBRARIES = 	libamtape.la
 LIB_EXTENSION = la
 
@@ -77,3 +80,27 @@ amtapeio.test.c: $(srcdir)/tapeio.c
 
 tapetype:
 	@echo "Use amtapetype instead"
+
+lint:
+	@ for p in $(sbin_PROGRAMS); do						\
+		if [ $$p = "amtapetype" ]; then					\
+			s="$(amtapetype_SOURCES)";				\
+		else								\
+			s=$$p.c;						\
+		fi; 								\
+		f="$$s $(libamandad_la_SOURCES)";				\
+		f="$$f "`(cd ../common-src; make listlibsrc 2>&1 > /dev/null)`;	\
+		echo $(LINT) $$f;						\
+		$(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config	\
+		    $(INCLUDES) $$f;						\
+		if [ $$? -ne 0 ]; then						\
+		    exit 1;							\
+		fi;								\
+	done;									\
+        exit 0
+
+listlibsrc:
+	@ for p in $(libamtape_la_SOURCES); do	\
+		listlibsrcs="$$listlibsrcs `pwd`/$$p";		\
+	done;							\
+	echo $$listlibsrcs 1>&2

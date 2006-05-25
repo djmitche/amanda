@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.h,v 1.15 2005/12/09 03:22:52 paddy_s Exp $
+ * $Id: fileheader.h,v 1.16 2006/05/25 01:47:12 johnfranks Exp $
  *
  */
 
@@ -39,7 +39,7 @@
 typedef char string_t[STRMAX];
 typedef enum {
     F_UNKNOWN, F_WEIRD, F_TAPESTART, F_TAPEEND, 
-    F_DUMPFILE, F_CONT_DUMPFILE, F_SPLIT_DUMPFILE
+    F_DUMPFILE, F_CONT_DUMPFILE, F_SPLIT_DUMPFILE, F_EMPTY
 } filetype_t;
 
 typedef struct file_s {
@@ -67,17 +67,16 @@ typedef struct file_s {
     int is_partial;
     int partnum;
     int totalparts; /* -1 == UNKNOWN */
-    long blocksize;
+    size_t blocksize;
 } dumpfile_t;
 
 /* local functions */
 
-void  fh_init             P((dumpfile_t *file));
-void  parse_file_header   P((const char *buffer, dumpfile_t *file, size_t buflen));
-void  build_header        P((char *buffer,
-			     const dumpfile_t *file,
-			     size_t buflen));
-void  print_header        P((FILE *outf, const dumpfile_t *file));
-int   known_compress_type P((const dumpfile_t *file));
+void	fh_init(dumpfile_t *file);
+void	parse_file_header(const char *buffer, dumpfile_t *file, size_t buflen);
+void	build_header(char *buffer, const dumpfile_t *file, size_t buflen);
+void	print_header(FILE *outf, const dumpfile_t *file);
+int	known_compress_type(const dumpfile_t *file);
+void	dump_dumpfile_t(const dumpfile_t *file);
 
 #endif /* !FILEHEADER_H */

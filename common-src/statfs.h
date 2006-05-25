@@ -24,20 +24,25 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: statfs.h,v 1.3 1998/07/04 00:18:58 oliva Exp $
+ * $Id: statfs.h,v 1.4 2006/05/25 01:47:12 johnfranks Exp $
  *
  * interface to statfs module
  */
+#ifndef STATFS_H
+#define STATFS_H
+
 #include "amanda.h"
 
 typedef struct generic_fs_stats {
-    long total;		/* total KB in filesystem */
-    long avail;		/* KB available to non-superuser */
-    long free;		/* KB free for superuser */
+    off_t total;		/* total KB in filesystem */
+    off_t avail;		/* KB available to non-superuser */
+    off_t free;		/* KB free for superuser */
 
-    long files;		/* total # of files in filesystem */
-    long favail;	/* # files avail for non-superuser */
-    long ffree;		/* # files free for superuser */
+    off_t files;		/* total # of files in filesystem */
+    off_t favail;		/* # files avail for non-superuser */
+    off_t ffree;		/* # files free for superuser */
 } generic_fs_stats_t;
 
-int get_fs_stats P((char *dir, generic_fs_stats_t *sp));
+int get_fs_stats(char *dir, generic_fs_stats_t *sp);
+
+#endif	/* !STATFS_H */

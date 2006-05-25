@@ -1,10 +1,13 @@
+#ifndef REGEX_UTILS_H
+#define REGEX_UTILS_H
+
 /* utility definitions */
 #ifdef _POSIX2_RE_DUP_MAX
 #define	DUPMAX	_POSIX2_RE_DUP_MAX
 #else
 #define	DUPMAX	255
 #endif
-#define	INFINITY	(DUPMAX + 1)
+#define	REINFINITY	(DUPMAX + 1)
 #define	NC		(CHAR_MAX - CHAR_MIN + 1)
 typedef unsigned char uch;
 
@@ -15,8 +18,9 @@ typedef unsigned char uch;
 #endif
 #endif
 #include <assert.h>
-
 /* for old systems with bcopy() but no memmove() */
 #ifdef USEBCOPY
 #define	memmove(d, s, c)	bcopy(s, d, c)
 #endif
+
+#endif	/* !REGEX_UTILS_H */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.c,v 1.16 2006/05/12 23:11:30 martinea Exp $
+ * $Id: server_util.c,v 1.17 2006/05/25 01:47:20 johnfranks Exp $
  *
  */
 
@@ -32,6 +32,8 @@
 #include "server_util.h"
 #include "arglist.h"
 #include "token.h"
+#include "logfile.h"
+#include "util.h"
 #include "conffile.h"
 #include "diskfile.h"
 
@@ -47,8 +49,9 @@ const char *cmdstr[] = {
 };
 
 
-cmd_t getcmd(cmdargs)
-struct cmdargs *cmdargs;
+cmd_t
+getcmd(
+    struct cmdargs *	cmdargs)
 {
     char *line;
     cmd_t cmd_i;
@@ -58,14 +61,16 @@ struct cmdargs *cmdargs;
     if (isatty(0)) {
 	printf("%s> ", get_pname());
 	fflush(stdout);
+        line = readline(NULL);
+    } else {
+        line = agets(stdin);
     }
-
-    if ((line = agets(stdin)) == NULL) {
+    if (line == NULL) {
 	line = stralloc("QUIT");
     }
 
     cmdargs->argc = split(line, cmdargs->argv,
-	sizeof(cmdargs->argv) / sizeof(cmdargs->argv[0]), " ");
+	(int)(sizeof(cmdargs->argv) / sizeof(cmdargs->argv[0])), " ");
     amfree(line);
 
 #if DEBUG
@@ -99,9 +104,9 @@ printf_arglist_function1(void putresult, cmd_t, result, const char *, format)
 }
 
 char *
-amhost_get_security_conf(string, arg)
-    char *string;
-    void *arg;
+amhost_get_security_conf(
+    char *	string,
+    void *	arg)
 {
     if(!string || !*string)
 	return(NULL);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.82 2006/04/10 11:22:24 martinea Exp $
+ * $Id: amflush.c,v 1.83 2006/05/25 01:47:19 johnfranks Exp $
  *
  * write files from work directory onto tape
  */
@@ -45,22 +45,24 @@ FILE *driver_stream;
 char *driver_program;
 char *reporter_program;
 char *logroll_program;
+char *datestamp;
 char *amflush_timestamp;
 char *amflush_datestamp;
 sl_t *datestamp_list;
 
 /* local functions */
-int main P((int main_argc, char **main_argv));
-void flush_holdingdisk P((char *diskdir, char *datestamp));
-void confirm P((void));
-void redirect_stderr P((void));
-void detach P((void));
-void run_dumps P((void));
-static int get_letter_from_user P((void));
+int main(int main_argc, char **main_argv);
+void flush_holdingdisk(char *diskdir, char *datestamp);
+void confirm(void);
+void redirect_stderr(void);
+void detach(void);
+void run_dumps(void);
+static int get_letter_from_user(void);
 
-int main(main_argc, main_argv)
-int main_argc;
-char **main_argv;
+int
+main(
+    int		main_argc,
+    char **	main_argv)
 {
     int foreground;
     int batch;
@@ -92,6 +94,8 @@ char **main_argv;
 
     set_pname("amflush");
 
+    dbopen();
+
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
@@ -111,7 +115,7 @@ char **main_argv;
 	case 's': redirect = 0;
 		  break;
 	case 'D': if (datearg == NULL)
-		      datearg = alloc(21*sizeof(char *));
+		      datearg = alloc(21*SIZEOF(char *));
 		  if(nb_datearg == 20) {
 		      fprintf(stderr,"maximum of 20 -D arguments.\n");
 		      exit(1);
@@ -130,14 +134,17 @@ char **main_argv;
 
     if(main_argc < 1) {
 	error("Usage: amflush%s [-b] [-f] [-s] [-D date]* <confdir> [host [disk]* ]*", versionsuffix());
+	/*NOTREACHED*/
     }
 
     config_name = main_argv[0];
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
-    if(read_conffile(conffile))
+    if(read_conffile(conffile)) {
 	error("errors processing config file \"%s\"", conffile);
+	/*NOTREACHED*/
+    }
     amfree(conffile);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
@@ -146,8 +153,10 @@ char **main_argv;
     } else {
 	conf_diskfile = stralloc2(config_dir, conf_diskfile);
     }
-    if (read_diskfile(conf_diskfile, &diskq) < 0)
+    if (read_diskfile(conf_diskfile, &diskq) < 0) {
 	error("could not read disklist file \"%s\"", conf_diskfile);
+	/*NOTREACHED*/
+    }
     match_disklist(&diskq, main_argc-1, main_argv+1);
     amfree(conf_diskfile);
 
@@ -157,8 +166,10 @@ char **main_argv;
     } else {
 	conf_tapelist = stralloc2(config_dir, conf_tapelist);
     }
-    if(read_tapelist(conf_tapelist))
+    if(read_tapelist(conf_tapelist)) {
 	error("could not load tapelist \"%s\"", conf_tapelist);
+	/*NOTREACHED*/
+    }
     amfree(conf_tapelist);
 
     conf_usetimestamps = getconf_int(CNF_USETIMESTAMPS);
@@ -172,10 +183,14 @@ char **main_argv;
     }
 
     dumpuser = getconf_str(CNF_DUMPUSER);
-    if((pw = getpwnam(dumpuser)) == NULL)
+    if((pw = getpwnam(dumpuser)) == NULL) {
 	error("dumpuser %s not found in password file", dumpuser);
-    if(pw->pw_uid != getuid())
+	/*NOTREACHED*/
+    }
+    if(pw->pw_uid != getuid()) {
 	error("must run amflush as user %s", dumpuser);
+	/*NOTREACHED*/
+    }
 
     conf_logdir = getconf_str(CNF_LOGDIR);
     if (*conf_logdir == '/') {
@@ -184,8 +199,10 @@ char **main_argv;
 	conf_logdir = stralloc2(config_dir, conf_logdir);
     }
     conf_logfile = vstralloc(conf_logdir, "/log", NULL);
-    if (access(conf_logfile, F_OK) == 0)
+    if (access(conf_logfile, F_OK) == 0) {
 	error("%s exists: amdump or amflush is already running, or you must run amcleanup", conf_logfile);
+	/*NOTREACHED*/
+    }
     amfree(conf_logfile);
 
     driver_program = vstralloc(libexecdir, "/", "driver", versionsuffix(),
@@ -259,6 +276,7 @@ char **main_argv;
     /* START DRIVER */
     if(pipe(driver_pipe) == -1) {
 	error("error [opening pipe to driver: %s]", strerror(errno));
+	/*NOTREACHED*/
     }
     if((driver_pid = fork()) == 0) {
 	/*
@@ -270,8 +288,10 @@ char **main_argv;
 	       "driver", config_name, "nodump", (char *)0,
 	       safe_env());
 	error("cannot exec %s: %s", driver_program, strerror(errno));
+	/*NOTREACHED*/
     } else if(driver_pid == -1) {
 	error("cannot fork for %s: %s", driver_program, strerror(errno));
+	/*NOTREACHED*/
     }
     driver_stream = fdopen(driver_pipe[1], "w");
 
@@ -309,6 +329,7 @@ char **main_argv;
 		continue;
 	    } else {
 		error("wait for %s: %s", driver_program, strerror(errno));
+		/*NOTREACHED*/
 	    }
 	} else if (pid == driver_pid) {
 	    break;
@@ -355,12 +376,14 @@ char **main_argv;
 	    if (rename(errfilex, nerrfilex) != 0) {
 		error("cannot rename \"%s\" to \"%s\": %s",
 		      errfilex, nerrfilex, strerror(errno));
+	        /*NOTREACHED*/
 	    }
 	}
 	errfilex = newvstralloc(errfilex, errfile, ".1", NULL);
 	if (rename(errfile,errfilex) != 0) {
 	    error("cannot rename \"%s\" to \"%s\": %s",
 		  errfilex, nerrfilex, strerror(errno));
+	    /*NOTREACHED*/
 	}
 	amfree(errfile);
 	amfree(errfilex);
@@ -381,8 +404,10 @@ char **main_argv;
 	       "amreport", config_name, (char *)0,
 	       safe_env());
 	error("cannot exec %s: %s", reporter_program, strerror(errno));
+	/*NOTREACHED*/
     } else if(reporter_pid == -1) {
 	error("cannot fork for %s: %s", reporter_program, strerror(errno));
+	/*NOTREACHED*/
     }
     while(1) {
 	if((pid = wait(&exitcode)) == -1) {
@@ -390,6 +415,7 @@ char **main_argv;
 		continue;
 	    } else {
 		error("wait for %s: %s", reporter_program, strerror(errno));
+		/*NOTREACHED*/
 	    }
 	} else if (pid == reporter_pid) {
 	    break;
@@ -400,27 +426,32 @@ char **main_argv;
      * Call amlogroll to rename the log file to its datestamped version.
      * Since we exec at this point, our exit code will be that of amlogroll.
      */
-
     execle(logroll_program,
 	   "amlogroll", config_name, (char *)0,
 	   safe_env());
     error("cannot exec %s: %s", logroll_program, strerror(errno));
+    /*NOTREACHED*/
     return 0;				/* keep the compiler happy */
 }
 
 
-static int get_letter_from_user()
+static int
+get_letter_from_user(void)
 {
     int r, ch;
 
     fflush(stdout); fflush(stderr);
-    while((ch = getchar()) != EOF && ch != '\n' && isspace(ch)) {}
+    while((ch = getchar()) != EOF && ch != '\n' && isspace(ch)) {
+	(void)ch; /* Quite lint */
+    }
     if(ch == '\n') {
 	r = '\0';
     } else if (ch != EOF) {
 	r = ch;
 	if(islower(r)) r = toupper(r);
-	while((ch = getchar()) != EOF && ch != '\n') {}
+	while((ch = getchar()) != EOF && ch != '\n') { 
+	    (void)ch; /* Quite lint */
+	}
     } else {
 	r = ch;
 	clearerr(stdin);
@@ -429,8 +460,12 @@ static int get_letter_from_user()
 }
 
 
-void confirm()
-/* confirm before detaching and running */
+/*
+ * confirm before detaching and running
+ */
+
+void
+confirm(void)
 {
     tape_t *tp;
     char *tpchanger;
@@ -475,34 +510,43 @@ void confirm()
     exit(1);
 }
 
-void redirect_stderr()
+void
+redirect_stderr(void)
 {
     int fderr;
     char *errfile;
 
     fflush(stdout); fflush(stderr);
     errfile = vstralloc(conf_logdir, "/amflush", NULL);
-    if((fderr = open(errfile, O_WRONLY| O_CREAT | O_TRUNC, 0600)) == -1)
+    if((fderr = open(errfile, O_WRONLY| O_CREAT | O_TRUNC, 0600)) == -1) {
 	error("could not open %s: %s", errfile, strerror(errno));
+	/*NOTREACHED*/
+    }
     dup2(fderr,1);
     dup2(fderr,2);
     aclose(fderr);
     amfree(errfile);
 }
 
-void detach()
+void
+detach(void)
 {
     int fd;
 
     fflush(stdout); fflush(stderr);
-    if((fd = open("/dev/null", O_RDWR, 0666)) == -1)
+    if((fd = open("/dev/null", O_RDWR, 0666)) == -1) {
 	error("could not open /dev/null: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
 
     dup2(fd,0);
     aclose(fd);
 
     switch(fork()) {
-    case -1: error("could not fork: %s", strerror(errno));
+    case -1:
+    	error("could not fork: %s", strerror(errno));
+	/*NOTREACHED*/
+
     case 0:
 	setsid();
 	return;
@@ -510,5 +554,3 @@ void detach()
 
     exit(0);
 }
-
-

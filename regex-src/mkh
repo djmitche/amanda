@@ -25,6 +25,11 @@ do
 			"'/^\([^#\/][^\/]*[a-zA-Z0-9_)]\)(\(.*\))/s;;\1(/*\2*/);'
 		shift
 		;;
+	-A)	# funny Amanda P macro
+		peel="$peel
+			"'/^\([^#\/][^\/]*[a-zA-Z0-9_)]\)(\(.*\))/s;;\1 P((\2));'
+		shift
+		;;
 	-b)	# funny Berkeley __P macro
 		peel="$peel
 			"'/^\([^#\/][^\/]*[a-zA-Z0-9_)]\)(\(.*\))/s;;\1 __P((\2));'

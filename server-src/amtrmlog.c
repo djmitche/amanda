@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.11 2006/04/05 12:53:46 martinea Exp $
+ * $Id: amtrmlog.c,v 1.12 2006/05/25 01:47:19 johnfranks Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -42,11 +42,14 @@
 #include "find.h"
 #include "version.h"
 
-int main P((int, char **));
+int amtrmidx_debug = 0;
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv);
+
+int
+main(
+    int		argc,
+    char **	argv)
 {
     disklist_t diskl;
     int no_keep;			/* files per system to keep */
@@ -65,7 +68,6 @@ char **argv;
     char *conf_diskfile;
     char *conf_tapelist;
     char *conf_logdir;
-    int amtrmidx_debug = 0;
     int dumpcycle;
 
     safe_fd(-1, 0);
@@ -94,8 +96,10 @@ char **argv;
 
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
-    if (read_conffile(conffile))
+    if (read_conffile(conffile)) {
 	error("errors processing amanda config file \"%s\"", conffile);
+	/*NOTREACHED*/
+    }
     amfree(conffile);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
@@ -104,8 +108,10 @@ char **argv;
     } else {
 	conf_diskfile = stralloc2(config_dir, conf_diskfile);
     }
-    if (read_diskfile(conf_diskfile, &diskl) < 0)
+    if (read_diskfile(conf_diskfile, &diskl) < 0) {
 	error("could not load disklist \"%s\"", conf_diskfile);
+	/*NOTREACHED*/
+    }
     amfree(conf_diskfile);
 
     conf_tapelist = getconf_str(CNF_TAPELIST);
@@ -114,14 +120,17 @@ char **argv;
     } else {
 	conf_tapelist = stralloc2(config_dir, conf_tapelist);
     }
-    if (read_tapelist(conf_tapelist))
+    if (read_tapelist(conf_tapelist)) {
 	error("could not load tapelist \"%s\"", conf_tapelist);
+	/*NOTREACHED*/
+    }
     amfree(conf_tapelist);
 
     today = time((time_t *)NULL);
     dumpcycle = getconf_int(CNF_DUMPCYCLE);
-    if(dumpcycle > 5000) dumpcycle = 5000;
-    date_keep = today - (getconf_int(CNF_DUMPCYCLE)*86400);
+    if(dumpcycle > 5000)
+	dumpcycle = 5000;
+    date_keep = today - (dumpcycle * 86400);
 
     output_find_log = find_log();
 
@@ -136,21 +145,29 @@ char **argv;
 	conf_logdir = stralloc2(config_dir, conf_logdir);
     }
     olddir = vstralloc(conf_logdir, "/oldlog", NULL);
-    if (mkpdir(olddir, 02700, (uid_t)-1, (gid_t)-1) != 0)
+    if (mkpdir(olddir, 02700, (uid_t)-1, (gid_t)-1) != 0) {
 	error("could not create parents of %s: %s", olddir, strerror(errno));
-    if (mkdir(olddir, 02700) != 0 && errno != EEXIST)
+	/*NOTREACHED*/
+    }
+    if (mkdir(olddir, 02700) != 0 && errno != EEXIST) {
 	error("could not create %s: %s", olddir, strerror(errno));
+	/*NOTREACHED*/
+    }
 
     if (stat(olddir,&stat_old) == -1) {
 	error("can't stat oldlog directory \"%s\": %s", olddir, strerror(errno));
+	/*NOTREACHED*/
     }
 
     if (!S_ISDIR(stat_old.st_mode)) {
 	error("Oldlog directory \"%s\" is not a directory", olddir);
+	/*NOTREACHED*/
     }
 
-    if ((dir = opendir(conf_logdir)) == NULL)
+    if ((dir = opendir(conf_logdir)) == NULL) {
 	error("could not open log directory \"%s\": %s", conf_logdir,strerror(errno));
+	/*NOTREACHED*/
+    }
     while ((adir=readdir(dir)) != NULL) {
 	if(strncmp(adir->d_name,"log.",4)==0) {
 	    useful=0;
@@ -167,7 +184,7 @@ char **argv;
 	    logname=newvstralloc(logname,
 				 conf_logdir, "/" ,adir->d_name, NULL);
 	    if(stat(logname,&stat_log)==0) {
-		if(stat_log.st_mtime > date_keep) {
+		if((time_t)stat_log.st_mtime > date_keep) {
 		    useful = 1;
 		}
 	    }
@@ -176,9 +193,11 @@ char **argv;
 				       conf_logdir, "/", adir->d_name, NULL);
 		newfile = newvstralloc(newfile,
 				       olddir, "/", adir->d_name, NULL);
-		if (rename(oldfile,newfile) != 0)
+		if (rename(oldfile,newfile) != 0) {
 		    error("could not rename \"%s\" to \"%s\": %s",
 			  oldfile, newfile, strerror(errno));
+		    /*NOTREACHED*/
+	    	}
 	    }
 	}
     }

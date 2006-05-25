@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.36 2006/04/05 12:56:19 martinea Exp $
+ * $Id: amtrmidx.c,v 1.37 2006/05/25 01:47:19 johnfranks Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -41,10 +41,15 @@
 #include "tapefile.h"
 #include "find.h"
 #include "version.h"
+#include "util.h"
 
-static int sort_by_name_reversed(a, b)
-    const void *a;
-    const void *b;
+static int sort_by_name_reversed(const void *a, const void *b);
+
+int main(int argc, char **argv);
+
+static int sort_by_name_reversed(
+    const void *a,
+    const void *b)
 {
     char **ap = (char **) a;
     char **bp = (char **) b;
@@ -52,15 +57,12 @@ static int sort_by_name_reversed(a, b)
     return -1 * strcmp(*ap, *bp);
 }
 
-int main P((int, char **));
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     disk_t *diskp;
     disklist_t diskl;
-    int i;
+    size_t i;
     char *conffile;
     char *conf_diskfile;
     char *conf_tapelist;
@@ -95,8 +97,10 @@ char **argv;
 
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
-    if (read_conffile(conffile))
+    if (read_conffile(conffile)) {
 	error("errors processing config file \"%s\"", conffile);
+	/*NOTREACHED*/
+    }
     amfree(conffile);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
@@ -105,8 +109,10 @@ char **argv;
     } else {
 	conf_diskfile = stralloc2(config_dir, conf_diskfile);
     }
-    if (read_diskfile(conf_diskfile, &diskl) < 0)
+    if (read_diskfile(conf_diskfile, &diskl) < 0) {
 	error("could not load disklist \"%s\"", conf_diskfile);
+	/*NOTREACHED*/
+    }
     amfree(conf_diskfile);
 
     conf_tapelist = getconf_str(CNF_TAPELIST);
@@ -115,8 +121,10 @@ char **argv;
     } else {
 	conf_tapelist = stralloc2(config_dir, conf_tapelist);
     }
-    if(read_tapelist(conf_tapelist))
+    if(read_tapelist(conf_tapelist)) {
 	error("could not load tapelist \"%s\"", conf_tapelist);
+	/*NOTREACHED*/
+    }
     amfree(conf_tapelist);
 
     output_find = find_dump(1, &diskl);
@@ -135,42 +143,48 @@ char **argv;
     {
 	if (diskp->index)
 	{
-	    char *indexdir;
+	    char *indexdir, *qindexdir;
 	    DIR *d;
 	    struct dirent *f;
 	    char **names;
-	    int name_length;
-	    int name_count;
+	    size_t name_length;
+	    size_t name_count;
 	    char *host;
-	    char *disk;
-	    int len_date;
+	    char *disk, *qdisk;
+	    size_t len_date;
 
-	    dbprintf(("%s %s\n", diskp->host->hostname, diskp->name));
 
 	    /* get listing of indices, newest first */
 	    host = sanitise_filename(diskp->host->hostname);
 	    disk = sanitise_filename(diskp->name);
+	    qdisk = quote_string(diskp->name);
 	    indexdir = vstralloc(conf_indexdir, "/",
 				 host, "/",
 				 disk, "/",
 				 NULL);
+	    qindexdir = quote_string(indexdir);
+
+	    dbprintf(("%s %s -> %s\n", diskp->host->hostname,
+			qdisk, qindexdir));
 	    amfree(host);
+	    amfree(qdisk);
 	    amfree(disk);
 	    if ((d = opendir(indexdir)) == NULL) {
-		dbprintf(("could not open index directory \"%s\"\n", indexdir));
+		dbprintf(("could not open index directory %s\n", qindexdir));
 		amfree(indexdir);
+	        amfree(qindexdir);
 		continue;
 	    }
 	    name_length = 100;
-	    names = (char **)alloc(name_length * sizeof(char *));
+	    names = (char **)alloc(name_length * SIZEOF(char *));
 	    name_count = 0;
 	    while ((f = readdir(d)) != NULL) {
-		int l;
+		size_t l;
 
 		if(is_dot_or_dotdot(f->d_name)) {
 		    continue;
 		}
-		for(i = 0; i < sizeof("YYYYMMDDHHMMSS")-1; i++) {
+		for(i = 0; i < SIZEOF("YYYYMMDDHHMMSS")-1; i++) {
 		    if(! isdigit((int)(f->d_name[i]))) {
 			break;
 		    }
@@ -186,30 +200,32 @@ char **argv;
 		/*
 		 * Clear out old index temp files.
 		 */
-		l = strlen(f->d_name) - (sizeof(".tmp")-1);
-		if(l > len_date+1
-		    && strcmp (f->d_name + l, ".tmp") == 0) {
+		l = strlen(f->d_name) - (SIZEOF(".tmp")-1);
+		if ((l > (len_date + 1))
+			&& (strcmp(f->d_name + l, ".tmp")==0)) {
 		    struct stat sbuf;
-		    char *path;
+		    char *path, *qpath;
 
 		    path = stralloc2(indexdir, f->d_name);
+		    qpath = quote_string(path);
 		    if(lstat(path, &sbuf) != -1
-			&& (sbuf.st_mode & S_IFMT) == S_IFREG
-			&& sbuf.st_mtime < tmp_time) {
-			dbprintf(("rm %s\n", path));
+			&& ((sbuf.st_mode & S_IFMT) == S_IFREG)
+			&& ((time_t)sbuf.st_mtime < tmp_time)) {
+			dbprintf(("rm %s\n", qpath));
 		        if(amtrmidx_debug == 0 && unlink(path) == -1) {
-			    dbprintf(("Error removing \"%s\": %s\n",
-				      path, strerror(errno)));
+			    dbprintf(("Error removing %s: %s\n",
+				      qpath, strerror(errno)));
 		        }
 		    }
+		    amfree(qpath);
 		    amfree(path);
 		    continue;
 		}
 		if(name_count >= name_length) {
 		    char **new_names;
 
-		    new_names = alloc((name_length*2) * sizeof(char *));
-		    memcpy(new_names, names, name_length * sizeof(char *));
+		    new_names = alloc((name_length * 2) * SIZEOF(char *));
+		    memcpy(new_names, names, name_length * SIZEOF(char *));
 		    amfree(names);
 		    names = new_names;
 		    name_length *= 2;
@@ -217,7 +233,7 @@ char **argv;
 		names[name_count++] = stralloc(f->d_name);
 	    }
 	    closedir(d);
-	    qsort(names, name_count, sizeof(char *), sort_by_name_reversed);
+	    qsort(names, name_count, SIZEOF(char *), sort_by_name_reversed);
 
 	    /*
 	     * Search for the first full dump past the minimum number
@@ -226,9 +242,9 @@ char **argv;
 	    for(i = 0; i < name_count; i++) {
 		char *datestamp;
 		int level;
-		int len_date;
+		size_t len_date;
 
-		for(len_date = 0; len_date < sizeof("YYYYMMDDHHMMSS")-1; len_date++) {
+		for(len_date = 0; len_date < SIZEOF("YYYYMMDDHHMMSS")-1; len_date++) {
                     if(! isdigit((int)(names[i][len_date]))) {
                         break;
                     }
@@ -237,16 +253,17 @@ char **argv;
 		datestamp = stralloc(names[i]);
 		datestamp[len_date] = '\0';
 		level = names[i][len_date+1] - '0';
-		if(!dump_exist(output_find,
-					 diskp->host->hostname,diskp->name,
-					 datestamp, level)) {
-		    char *path;
+		if(!dump_exist(output_find, diskp->host->hostname,
+				diskp->name, datestamp, level)) {
+		    char *path, *qpath;
 		    path = stralloc2(indexdir, names[i]);
-		    dbprintf(("rm %s\n", path));
+		    qpath = quote_string(path);
+		    dbprintf(("rm %s\n", qpath));
 		    if(amtrmidx_debug == 0 && unlink(path) == -1) {
-			dbprintf(("Error removing \"%s\": %s\n",
-				  path, strerror(errno)));
+			dbprintf(("Error removing %s: %s\n",
+				  qpath, strerror(errno)));
 		    }
+		    amfree(qpath);
 		    amfree(path);
 		}
 		amfree(datestamp);
@@ -254,6 +271,7 @@ char **argv;
 	    }
 	    amfree(names);
 	    amfree(indexdir);
+	    amfree(qindexdir);
 	}
     }
 

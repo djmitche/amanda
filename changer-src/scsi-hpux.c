@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-hpux.c,v 1.14 2001/02/08 19:19:08 ant Exp $
+ * $Id: scsi-hpux.c,v 1.15 2006/05/25 01:47:07 johnfranks Exp $
  *
  *	scsi-chio.c -- library routines to handle the changer
  *			support for chio based systems
@@ -64,7 +64,7 @@ int GetCurrentSlot(int fd)
 
 static int get_changer_info(fd)
 {
-int rc = 0;
+    int rc = 0;
 
     if (!changer_info_init) {
 	rc = ioctl(fd, SIOC_ELEMENT_ADDRESSES, &changer_info);
@@ -89,7 +89,7 @@ int get_clean_state(char *dev)
         perror(dev);
         return 0;
     }
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, SIZEOF(buffer));
 
     *((int *) buffer) = 0;      /* length of input data */
     *(((int *) buffer) + 1) = 100;     /* length of output buffer */
@@ -168,7 +168,7 @@ int rc;
 /*
  * find the first empty slot 
  */
-int find_empty(int fd)
+int find_empty(int fd, int start, int count)
 {
 struct element_status  es;
 int i, rc;
@@ -326,14 +326,16 @@ int OpenDevice(char * tapedev)
   int DeviceFD;
 
   DeviceFD = open(tapedev, O_RDWR);
+  dbprintf(("%s: OpenDevice(%s) returns %d\n", get_pname(), tapedev, DeviceFD));
   return(DeviceFD);
 }
 
-int CloseDevice(int DeviceFD)
+int CloseDevice(char *device, int DeviceFD)
 {
   int ret;
 
   ret = close(DeviceFD);
+  dbprintf(("%s: CloseDevice(%s) returns %d\n", get_pname(), device, ret));
   return(ret);
 }
 

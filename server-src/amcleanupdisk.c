@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.17 2006/04/27 12:17:59 martinea Exp $
+ * $Id: amcleanupdisk.c,v 1.18 2006/05/25 01:47:19 johnfranks Exp $
  */
 #include "amanda.h"
 
@@ -40,13 +40,14 @@ sl_t *holding_list;
 char *datestamp;
 
 /* local functions */
-int main P((int argc, char **argv));
-void check_holdingdisk P((char *diskdir, char *datestamp));
-void check_disks P((void));
+int main(int argc, char **argv);
+void check_holdingdisk(char *diskdir, char *datestamp);
+void check_disks(void);
 
-int main(main_argc, main_argv)
-int main_argc;
-char **main_argv;
+int
+main(
+    int		main_argc,
+    char **	main_argv)
 {
     struct passwd *pw;
     char *dumpuser;
@@ -60,19 +61,25 @@ char **main_argv;
 
     set_pname("amcleanupdisk");
 
+    dbopen();
+
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
-    if(main_argc != 2)
+    if(main_argc != 2) {
 	error("Usage: amcleanupdisk%s <confdir>", versionsuffix());
+	/*NOTREACHED*/
+    }
 
     config_name = main_argv[1];
 
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
-    if(read_conffile(conffile))
+    if(read_conffile(conffile)) {
 	error("errors processing config file \"%s\"", conffile);
+	/*NOTREACHED*/
+    }
     amfree(conffile);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
@@ -81,8 +88,10 @@ char **main_argv;
     } else {
 	conf_diskfile = stralloc2(config_dir, conf_diskfile);
     }
-    if (read_diskfile(conf_diskfile, &diskq) < 0)
+    if (read_diskfile(conf_diskfile, &diskq) < 0) {
 	error("could not load disklist %s", conf_diskfile);
+	/*NOTREACHED*/
+    }
     amfree(conf_diskfile);
 
     conf_infofile = getconf_str(CNF_INFOFILE);
@@ -91,17 +100,24 @@ char **main_argv;
     } else {
 	conf_infofile = stralloc2(config_dir, conf_infofile);
     }
-    if (open_infofile(conf_infofile) < 0)
+    if (open_infofile(conf_infofile) < 0) {
 	error("could not open info db \"%s\"", conf_infofile);
+	/*NOTREACHED*/
+    }
     amfree(conf_infofile);
 
     datestamp = construct_datestamp(NULL);
 
     dumpuser = getconf_str(CNF_DUMPUSER);
-    if((pw = getpwnam(dumpuser)) == NULL)
+    if((pw = getpwnam(dumpuser)) == NULL) {
 	error("dumpuser %s not found in password file", dumpuser);
-    if(pw->pw_uid != getuid())
+	/*NOTREACHED*/
+    }
+
+    if(pw->pw_uid != getuid()) {
 	error("must run amcleanupdisk as user %s", dumpuser);
+	/*NOTREACHED*/
+    }
 
     holding_list = pick_all_datestamp(1);
 
@@ -116,8 +132,10 @@ char **main_argv;
 }
 
 
-void check_holdingdisk(diskdir, datestamp)
-char *diskdir, *datestamp;
+void
+check_holdingdisk(
+    char *	diskdir,
+    char *	datestamp)
 {
     DIR *workdir;
     struct dirent *entry;
@@ -130,7 +148,7 @@ char *diskdir, *datestamp;
     filetype_t filetype;
     info_t info;
     int level;
-    int dl, l;
+    size_t dl, l;
 
     dirname = vstralloc(diskdir, "/", datestamp, NULL);
     dl = strlen(dirname);
@@ -185,6 +203,7 @@ char *diskdir, *datestamp;
 	    if(put_info(dp->host->hostname, dp->name, &info)) {
 		error("could not put info record for %s:%s: %s",
 		      dp->host->hostname, dp->name, strerror(errno));
+	        /*NOTREACHED*/
 	    }
 	} else {
 	    fprintf(stderr,"rename_tmp_holding(%s) failed\n", destname);
@@ -203,7 +222,8 @@ char *diskdir, *datestamp;
 }
 
 
-void check_disks()
+void
+check_disks(void)
 {
     holdingdisk_t *hdisk;
     sle_t *dir;

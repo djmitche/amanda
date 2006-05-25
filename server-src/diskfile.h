@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.34 2006/05/12 23:11:30 martinea Exp $
+ * $Id: diskfile.h,v 1.35 2006/05/25 01:47:19 johnfranks Exp $
  *
  * interface for disklist file reading code
  */
@@ -72,17 +72,17 @@ typedef struct disk_s {
     sl_t *include_list;			/* include list */
     int exclude_optional;		/* exclude list are optional */
     int include_optional;		/* include list are optional */
-    long priority;			/* priority of disk */
-    long tape_splitsize;		/* size of dumpfile chunks on tape */
+    int priority;			/* priority of disk */
+    off_t tape_splitsize;		/* size of dumpfile chunks on tape */
     char *split_diskbuffer;		/* place where we can buffer PORT-WRITE dumps other than RAM */
-    long fallback_splitsize;		/* size for in-RAM PORT-WRITE buffers */
-    long dumpcycle;			/* days between fulls */
+    off_t fallback_splitsize;		/* size for in-RAM PORT-WRITE buffers */
+    int dumpcycle;			/* days between fulls */
     long frequency;			/* XXX - not used */
     char *security_driver;		/* type of authentication (per disk) */
     int maxdumps;			/* max number of parallel dumps (per system) */
     int maxpromoteday;			/* maximum of promote day */
     int bumppercent;
-    int bumpsize;
+    off_t bumpsize;
     int bumpdays;
     double bumpmult;
     time_t start_t;			/* start this dump after this time */
@@ -92,7 +92,7 @@ typedef struct disk_s {
     int encrypt;			/* type of encryption to use */
     char *srv_decrypt_opt;  	        /* server-side decryption option parameter to use */
     char *clnt_decrypt_opt;             /* client-side decryption option parameter to use */
-    float comprate[2];			/* default compression rates */
+    double comprate[2];			/* default compression rates */
     /* flag options */
     unsigned int record:1;		/* record dump in /etc/dumpdates ? */
     unsigned int skip_incr:1;		/* incs done externally ? */
@@ -113,26 +113,26 @@ typedef struct disklist_s {
 #define empty(dlist)	((dlist).head == NULL)
 
 
-int read_diskfile P((const char *, disklist_t *));
+int read_diskfile(const char *, disklist_t *);
 
-am_host_t *lookup_host P((const char *hostname));
-disk_t *lookup_disk P((const char *hostname, const char *diskname));
+am_host_t *lookup_host(const char *hostname);
+disk_t *lookup_disk(const char *hostname, const char *diskname);
 
-disk_t *add_disk P((disklist_t *list, char *hostname, char *diskname));
+disk_t *add_disk(disklist_t *list, char *hostname, char *diskname);
 
-void enqueue_disk P((disklist_t *list, disk_t *disk));
-void headqueue_disk P((disklist_t *list, disk_t *disk));
-void insert_disk P((disklist_t *list, disk_t *disk, int (*f)(disk_t *a, disk_t *b)));
-int  find_disk P((disklist_t *list, disk_t *disk));
-void sort_disk P((disklist_t *in, disklist_t *out, int (*f)(disk_t *a, disk_t *b)));
-disk_t *dequeue_disk P((disklist_t *list));
-void remove_disk P((disklist_t *list, disk_t *disk));
+void enqueue_disk(disklist_t *list, disk_t *disk);
+void headqueue_disk(disklist_t *list, disk_t *disk);
+void insert_disk(disklist_t *list, disk_t *disk, int (*f)(disk_t *a, disk_t *b));
+int  find_disk(disklist_t *list, disk_t *disk);
+void sort_disk(disklist_t *in, disklist_t *out, int (*f)(disk_t *a, disk_t *b));
+disk_t *dequeue_disk(disklist_t *list);
+void remove_disk(disklist_t *list, disk_t *disk);
 
-void dump_queue P((char *str, disklist_t q, int npr, FILE *f));
+void dump_queue(char *str, disklist_t q, int npr, FILE *f);
 
-char *optionstr P((disk_t *dp, am_feature_t *their_features, FILE *fdout));
+char *optionstr(disk_t *dp, am_feature_t *their_features, FILE *fdout);
 
-void match_disklist P((disklist_t *origqp, int sargc, char **sargv));
-void free_disklist P((disklist_t *dl));
+void match_disklist(disklist_t *origqp, int sargc, char **sargv);
+void free_disklist(disklist_t *dl);
 
 #endif /* ! DISKFILE_H */

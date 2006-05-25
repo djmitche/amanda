@@ -25,7 +25,7 @@
  *                         University of Maryland at College Park
  */
 /*
- * $Id: sl.c,v 1.5 2005/09/30 19:01:43 martinea Exp $
+ * $Id: sl.c,v 1.6 2006/05/25 01:47:12 johnfranks Exp $
  *
  * A doubly linked list of string (char *)
  */
@@ -34,8 +34,8 @@
 #include "sl.h"
 
 
-void init_sl(sl)
-sl_t *sl;
+void init_sl(
+    sl_t *sl)
 {
     sl->first = NULL;
     sl->last  = NULL;
@@ -43,24 +43,27 @@ sl_t *sl;
 }
 
 
-sl_t *new_sl() {
+sl_t *
+new_sl(void)
+{
     sl_t *sl;
-    sl = alloc(sizeof(sl_t));
+    sl = alloc(SIZEOF(sl_t));
     init_sl(sl);
     return(sl);
 }
 
 
-sl_t *insert_sl(sl, name)
-sl_t *sl;
-char *name;
+sl_t *
+insert_sl(
+    sl_t *sl,
+    char *name)
 {
     sle_t *a;
 
     if(!sl) {
 	sl = new_sl();
     }
-    a = alloc(sizeof(sle_t));
+    a = alloc(SIZEOF(sle_t));
     a->name = stralloc(name);
     a->next = sl->first;
     a->prev = NULL;
@@ -74,16 +77,17 @@ char *name;
 }
 
 
-sl_t *append_sl(sl, name)
-sl_t *sl;
-char *name;
+sl_t *
+append_sl(
+    sl_t *	sl,
+    char *	name)
 {
     sle_t *a;
 
     if(!sl) {
 	sl = new_sl();
     }
-    a = alloc(sizeof(sle_t));
+    a = alloc(SIZEOF(sle_t));
     a->name = stralloc(name);
     a->prev = sl->last;
     a->next = NULL;
@@ -97,9 +101,10 @@ char *name;
 }
 
 
-sl_t *insert_sort_sl(sl, name)
-sl_t *sl;
-char *name;
+sl_t *
+insert_sort_sl(
+    sl_t *	sl,
+    char *	name)
 {
     sle_t *a, *b;
 
@@ -116,7 +121,7 @@ char *name;
     if(b == sl->first) return insert_sl(sl, name);
     if(b == NULL)      return append_sl(sl, name);
 
-    a = alloc(sizeof(sle_t));
+    a = alloc(SIZEOF(sle_t));
     a->name = stralloc(name);
 
     /* insert before b */
@@ -129,8 +134,9 @@ char *name;
 }
 
 
-void free_sl(sl)
-sl_t *sl;
+void
+free_sl(
+    sl_t *	sl)
 {
     sle_t *a, *b;
 
@@ -147,9 +153,10 @@ sl_t *sl;
 }
 
 
-void remove_sl(sl, elem)
-sl_t *sl;
-sle_t *elem;
+void
+remove_sl(
+    sl_t *	sl,
+    sle_t *	elem)
 {
     if(elem->prev)
 	elem->prev->next = elem->next;
@@ -168,8 +175,9 @@ sle_t *elem;
 }
 
 
-sl_t *duplicate_sl(sl)
-sl_t *sl;
+sl_t *
+duplicate_sl(
+    sl_t *	sl)
 {
     sl_t *new_sl = NULL;
     sle_t *a;
@@ -186,8 +194,9 @@ sl_t *sl;
 /*
  * Return "true" iff sl is empty (i.e. contains no elements).
  */
-int is_empty_sl(sl)
-sl_t *sl;
+int
+is_empty_sl(
+    sl_t *	sl)
 {
     if (sl == NULL)
 	return 1;

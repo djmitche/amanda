@@ -24,20 +24,20 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.1 2006/05/12 19:36:04 martinea Exp $
+ * $Id: amrecover.c,v 1.2 2006/05/25 01:47:13 johnfranks Exp $
  *
  * an interactive program for recovering backed-up files
  */
 
 #include "amanda.h"
 #include "version.h"
-#ifdef HAVE_NETINET_IN_SYSTM_H
-#include <netinet/in_systm.h>
-#endif
-#include <netinet/in.h>
-#ifdef HAVE_NETINET_IP_H
-#include <netinet/ip.h>
-#endif
+//#ifdef HAVE_NETINET_IN_SYSTM_H
+//#include <netinet/in_systm.h>
+//#endif
+//#include <netinet/in.h>
+//#ifdef HAVE_NETINET_IP_H
+//#include <netinet/ip.h>
+//#endif
 #include "stream.h"
 #include "amfeatures.h"
 #include "amrecover.h"
@@ -45,26 +45,12 @@
 #include "dgram.h"
 #include "util.h"
 
-#ifdef HAVE_LIBREADLINE
-#  ifdef HAVE_READLINE_READLINE_H
-#    include <readline/readline.h>
-#    ifdef HAVE_READLINE_HISTORY_H
-#      include <readline/history.h>
-#    endif
-#  else
-#    ifdef HAVE_READLINE_H
-#      include <readline.h>
-#      ifdef HAVE_HISTORY_H
-#        include <history.h>
-#      endif
-#    else
-#      undef HAVE_LIBREADLINE
-#    endif
-#  endif
-#endif
-
-extern int process_line P((char *line));
-int guess_disk P((char *cwd, size_t cwd_len, char **dn_guess, char **mpt_guess));
+extern int process_line(char *line);
+int guess_disk(char *cwd, size_t cwd_len, char **dn_guess, char **mpt_guess);
+int get_line(void);
+int grab_reply(int show);
+void sigint_handler(int signum);
+int main(int argc, char **argv);
 
 #define USAGE "Usage: amoldrecover [[-C] <config>] [-s <index-server>] [-t <tape-server>] [-d <tape-device>]\n"
 
@@ -86,30 +72,12 @@ am_feature_t *our_features = NULL;
 am_feature_t *indexsrv_features = NULL;
 am_feature_t *tapesrv_features = NULL;
 
-
-#ifndef HAVE_LIBREADLINE
-/*
- * simple readline() replacements
- */
-
-char *
-readline(prompt)
-char *prompt;
-{
-    printf("%s",prompt);
-    fflush(stdout); fflush(stderr);
-    return agets(stdin);
-}
-
-#define add_history(x)                /* add_history((x)) */
-
-#endif
-
 /* gets a "line" from server and put in server_line */
 /* server_line is terminated with \0, \r\n is striped */
 /* returns -1 if error */
 
-int get_line ()
+int
+get_line(void)
 {
     char *line = NULL;
     char *part = NULL;
@@ -132,10 +100,8 @@ int get_line ()
 			get_pname(),
 			server_name);
 	    }
-	    amfree(line);
-	    amfree(server_line);
 	    errno = save_errno;
-	    return -1;
+	    break;	/* exit while loop */
 	}
 	if(line) {
 	    strappend(line, part);
@@ -157,6 +123,9 @@ int get_line ()
 	 */
 	strappend(line, "\n");
     }
+    amfree(line);
+    amfree(server_line);
+    return -1;
 }
 
 
@@ -165,8 +134,9 @@ int get_line ()
 /* return -1 if error */
 /* return code returned by server always occupies first 3 bytes of global
    variable server_line */
-int grab_reply (show)
-int show;
+int
+grab_reply(
+    int		show)
 {
     do {
 	if (get_line() == -1) {
@@ -182,7 +152,8 @@ int show;
 
 /* get 1 line of reply */
 /* returns -1 if error, 0 if last (or only) line, 1 if more to follow */
-int get_reply_line ()
+int
+get_reply_line(void)
 {
     if (get_line() == -1)
 	return -1;
@@ -191,7 +162,8 @@ int get_reply_line ()
 
 
 /* returns pointer to returned line */
-char *reply_line ()
+char *
+reply_line(void)
 {
     return server_line;
 }
@@ -200,14 +172,16 @@ char *reply_line ()
 
 /* returns 0 if server returned an error code (ie code starting with 5)
    and non-zero otherwise */
-int server_happy ()
+int
+server_happy(void)
 {
     return server_line[0] != '5';
 }
 
 
-int send_command(cmd)
-char *cmd;
+int
+send_command(
+    char *	cmd)
 {
     /*
      * NOTE: this routine is called from sigint_handler, so we must be
@@ -218,11 +192,12 @@ char *cmd;
     struct iovec msg[2];
     ssize_t bytes;
 
+    memset(msg, 0, sizeof(msg));
     msg[0].iov_base = cmd;
     msg[0].iov_len = strlen(msg[0].iov_base);
     msg[1].iov_base = "\r\n";
     msg[1].iov_len = strlen(msg[1].iov_base);
-    bytes = msg[0].iov_len + msg[1].iov_len;
+    bytes = (ssize_t)(msg[0].iov_len + msg[1].iov_len);
 
     if (writev(server_socket, msg, 2) < bytes) {
 	return -1;
@@ -232,8 +207,9 @@ char *cmd;
 
 
 /* send a command to the server, get reply and print to screen */
-int converse(cmd)
-char *cmd;
+int
+converse(
+    char *	cmd)
 {
     if (send_command(cmd) == -1) return -1;
     if (grab_reply(1) == -1) return -1;
@@ -242,8 +218,9 @@ char *cmd;
 
 
 /* same as converse() but reply not echoed to stdout */
-int exchange(cmd)
-char *cmd;
+int
+exchange(
+    char *	cmd)
 {
     if (send_command(cmd) == -1) return -1;
     if (grab_reply(0) == -1) return -1;
@@ -253,8 +230,9 @@ char *cmd;
 
 /* basic interrupt handler for when user presses ^C */
 /* Bale out, letting server know before doing so */
-void sigint_handler(signum)
-int signum;
+void
+sigint_handler(
+    int	signum)
 {
     /*
      * NOTE: we must be **very** careful about what we do here since there
@@ -263,6 +241,8 @@ int signum;
      * routines.  Also, use _exit() instead of exit() to make sure stdio
      * buffer flushing is not attempted.
      */
+    (void)signum;	/* Quiet unused parameter warning */
+
     if (extract_restore_child_pid != -1)
 	(void)kill(extract_restore_child_pid, SIGKILL);
     extract_restore_child_pid = -1;
@@ -272,8 +252,9 @@ int signum;
 }
 
 
-void clean_pathname(s)
-char *s;
+void
+clean_pathname(
+    char *	s)
 {
     size_t length;
     length = strlen(s);
@@ -297,9 +278,12 @@ char *s;
    2 if disk local but can't guess name */
 /* do this by looking for the longest mount point which matches the
    current directory */
-int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
-     char *cwd, **dn_guess, **mpt_guess;
-     size_t cwd_len;
+int
+guess_disk (
+    char *	cwd,
+    size_t	cwd_len,
+    char **	dn_guess,
+    char **	mpt_guess)
 {
     size_t longest_match = 0;
     size_t current_length;
@@ -309,15 +293,20 @@ int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
     char *fsname = NULL;
     char *disk_try = NULL;
 
-    *dn_guess = *mpt_guess = NULL;
+    *dn_guess = NULL;
+    *mpt_guess = NULL;
 
-    if (getcwd(cwd, cwd_len) == NULL)
+    if (getcwd(cwd, cwd_len) == NULL) {
 	return -1;
+	/*NOTREACHED*/
+    }
     cwd_length = strlen(cwd);
     dbprintf(("guess_disk: %d: \"%s\"\n", cwd_length, cwd));
 
-    if (open_fstab() == 0)
+    if (open_fstab() == 0) {
 	return -1;
+	/*NOTREACHED*/
+    }
 
     while (get_fstab_nextentry(&fsent))
     {
@@ -332,8 +321,7 @@ int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
 	    && (strncmp(fsent.mntdir, cwd, current_length) == 0))
 	{
 	    longest_match = current_length;
-	    amfree(*mpt_guess);
-	    *mpt_guess = stralloc(fsent.mntdir);
+	    *mpt_guess = newstralloc(*mpt_guess, fsent.mntdir);
 	    if(strncmp(fsent.fsname,DEV_PREFIX,(strlen(DEV_PREFIX))))
 	    {
 	        fsname = newstralloc(fsname, fsent.fsname);
@@ -395,7 +383,8 @@ int guess_disk (cwd, cwd_len, dn_guess, mpt_guess)
 }
 
 
-void quit ()
+void
+quit(void)
 {
     quit_prog = 1;
     (void)converse("QUIT");
@@ -409,11 +398,12 @@ char *localhost = NULL;
 # define DEFAULT_TAPE_SERVER_FAILOVER (NULL)
 #endif
 
-int main(argc, argv)
-int argc;
-char **argv;
+int
+main(
+    int		argc,
+    char **	argv)
 {
-    int my_port;
+    in_port_t my_port;
     struct servent *sp;
     int i;
     time_t timer;
@@ -438,12 +428,14 @@ char **argv;
     if (geteuid() != 0) {
 	erroutput_type |= ERR_SYSLOG;
 	error("amrecover must be run by root");
+	/*NOTREACHED*/
     }
 #endif
 
     localhost = alloc(MAX_HOSTNAME_LENGTH+1);
     if (gethostname(localhost, MAX_HOSTNAME_LENGTH) != 0) {
 	error("cannot determine local host name\n");
+	/*NOTREACHED*/
     }
     localhost[MAX_HOSTNAME_LENGTH] = '\0';
 
@@ -468,7 +460,7 @@ char **argv;
 	 */
 	char **new_argv;
 
-	new_argv = (char **) alloc ((argc + 1 + 1) * sizeof (*new_argv));
+	new_argv = (char **) alloc((size_t)((argc + 1 + 1) * sizeof(*new_argv)));
 	new_argv[0] = argv[0];
 	new_argv[1] = "-C";
 	for (i = 1; i < argc; i++)
@@ -523,33 +515,34 @@ char **argv;
     act.sa_handler = sigint_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    if (sigaction(SIGINT, &act, &oact) != 0)
-    {
+    if (sigaction(SIGINT, &act, &oact) != 0) {
 	error("error setting signal handler: %s", strerror(errno));
+	/*NOTREACHED*/
     }
 
     service_name = stralloc2("amandaidx", SERVICE_SUFFIX);
 
     printf("AMRECOVER Version %s. Contacting server on %s ...\n",
 	   version(), server_name);  
-    if ((sp = getservbyname(service_name, "tcp")) == NULL)
-    {
+    if ((sp = getservbyname(service_name, "tcp")) == NULL) {
 	error("%s/tcp unknown protocol", service_name);
+	/*NOTREACHED*/
     }
     amfree(service_name);
     server_socket = stream_client_privileged(server_name,
-					     ntohs(sp->s_port),
-					     -1,
-					     -1,
+					     (in_port_t)ntohs((in_port_t)sp->s_port),
+					     0,
+					     0,
 					     &my_port,
 					     0);
-    if (server_socket < 0)
-    {
+    if (server_socket < 0) {
 	error("cannot connect to %s: %s", server_name, strerror(errno));
+	/*NOTREACHED*/
     }
-    if (my_port >= IPPORT_RESERVED)
-    {
+    if (my_port >= IPPORT_RESERVED) {
+        aclose(server_socket);
 	error("did not get a reserved port: %d", my_port);
+	/*NOTREACHED*/
     }
 
 #if 0
@@ -563,8 +556,10 @@ char **argv;
 #endif
 
     /* get server's banner */
-    if (grab_reply(1) == -1)
+    if (grab_reply(1) == -1) {
+        aclose(server_socket);
 	exit(1);
+    }
     if (!server_happy())
     {
 	dbclose();
@@ -574,10 +569,14 @@ char **argv;
 
     /* do the security thing */
     line = get_security();
-    if (converse(line) == -1)
+    if (converse(line) == -1) {
+        aclose(server_socket);
 	exit(1);
-    if (!server_happy())
+    }
+    if (!server_happy()) {
+        aclose(server_socket);
 	exit(1);
+    }
     memset(line, '\0', strlen(line));
     amfree(line);
 
@@ -606,13 +605,17 @@ char **argv;
     strftime(dump_date, sizeof(dump_date), "%Y-%m-%d", localtime(&timer));
     printf("Setting restore date to today (%s)\n", dump_date);
     line = stralloc2("DATE ", dump_date);
-    if (converse(line) == -1)
+    if (converse(line) == -1) {
+        aclose(server_socket);
 	exit(1);
+    }
     amfree(line);
 
     line = stralloc2("SCNF ", config);
-    if (converse(line) == -1)
+    if (converse(line) == -1) {
+        aclose(server_socket);
 	exit(1);
+    }
     amfree(line);
 
     if (server_happy())
@@ -680,11 +683,13 @@ char **argv;
 }
 
 char *
-get_security()
+get_security(void)
 {
     struct passwd *pwptr;
 
-    if((pwptr = getpwuid(getuid())) == NULL)
+    if((pwptr = getpwuid(getuid())) == NULL) {
 	error("can't get login name for my uid %ld", (long)getuid());
+	/*NOTREACHED*/
+    }
     return stralloc2("SECURITY USER ", pwptr->pw_name);
 }

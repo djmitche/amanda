@@ -1,21 +1,13 @@
 /* Provided by Michael Schmitz <mschmitz@sema.de>; public domain? */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#if defined(STDC_HEADERS) || defined(HAVE_STRING_H)
-#include <string.h>
-#else
-#include <strings.h>
-#endif
+#include "amanda.h"
 
 /* Compare S1 and S2 ignoring case, returning less than,
    equal to or greater than zero if S1 is lexicographically
    less than, equal to or greater than S2.  */
 int
-strcasecmp(s1, s2)
-      const char *s1;
-      const char *s2;
+strcasecmp(
+    const char *s1,
+    const char *s2)
 {
   register const unsigned char *p1 = (const unsigned char *) s1;
   register const unsigned char *p2 = (const unsigned char *) s2;
@@ -24,11 +16,10 @@ strcasecmp(s1, s2)
   if (p1 == p2)
     return 0;
 
-  do
-    {
+  do {
       c1 = tolower (*p1++);
       c2 = tolower (*p2++);
       if (c1 == '\0' || c2 == '\0' || c1 != c2)
         return c1 - c2;
-    } while ( 1 == 1 );
+  } while ( 1 == 1 );
 }

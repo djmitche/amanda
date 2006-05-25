@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.h,v 1.2 2006/05/12 23:39:09 martinea Exp $
+ * $Id: clientconf.h,v 1.3 2006/05/25 01:47:11 johnfranks Exp $
  *
  * interface for client config file reading code
  */
@@ -43,16 +43,19 @@ typedef enum conf_e {
     CLN_TAPEDEV,
     CLN_AUTH,
     CLN_SSH_KEYS
-} confparm_t;
+} cconfparm_t;
 
-int read_clientconf P((char *filename));
-int client_getconf_seen P((confparm_t parameter));
-int client_getconf_int P((confparm_t parameter));
-am64_t client_getconf_am64 P((confparm_t parameter));
-double client_getconf_real P((confparm_t parameter));
-char *client_getconf_str P((confparm_t parameter));
-char *client_getconf_byname P((char *confname));
+extern char *config_name;
+extern char *config_dir;
+
+int read_clientconf(char *filename);
+int client_getconf_seen(cconfparm_t parameter);
+int client_getconf_int(cconfparm_t parameter);
+am64_t client_getconf_am64(cconfparm_t parameter);
+double client_getconf_real(cconfparm_t parameter);
+char *client_getconf_str(cconfparm_t parameter);
+char *client_getconf_byname(char *confname);
 
 /* this is in securityconf.h */
-char *generic_client_get_security_conf P((char *, void *));
+char *generic_client_get_security_conf(char *, void *);
 #endif /* ! CONFFILE_H */

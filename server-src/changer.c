@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.32 2006/05/03 02:36:42 paddy_s Exp $
+ * $Id: changer.c,v 1.33 2006/05/25 01:47:19 johnfranks Exp $
  *
  * interface routines for tape changers
  */
@@ -56,16 +56,20 @@ char *changer_resultstr = NULL;
 static char *tapechanger = NULL;
 
 /* local functions */
-static int changer_command P((char *cmd, char *arg));
+static int changer_command(char *cmd, char *arg);
+static int report_bad_resultstr(void);
+static int run_changer_command(char *cmd, char *arg, char **slotstr, char **rest);
 
-int changer_init()
+int
+changer_init(void)
 {
     tapechanger = getconf_str(CNF_TPCHANGER);
     return strcmp(tapechanger, "") != 0;
 }
 
 
-static int report_bad_resultstr()
+static int
+report_bad_resultstr(void)
 {
     char *s;
 
@@ -77,11 +81,12 @@ static int report_bad_resultstr()
     return 2;
 }
 
-static int run_changer_command(cmd, arg, slotstr, rest)
-char *cmd;
-char *arg;
-char **slotstr;
-char **rest;
+static int
+run_changer_command(
+    char *	cmd,
+    char *	arg,
+    char **	slotstr,
+    char **	rest)
 {
     int exitcode;
     char *result_copy;
@@ -107,7 +112,7 @@ char **rest;
     if (slotstr) {
         *slotstr = newstralloc(*slotstr, slot);
     }
-    s[-1] = ch;
+    s[-1] = (char)ch;
 
     skip_whitespace(s, ch);
     if (rest) {
@@ -124,32 +129,38 @@ char **rest;
     return 0;
 }
 
-int changer_reset(slotstr)
-char **slotstr;
+int
+changer_reset(
+    char **	slotstr)
 {
     char *rest;
 
     return run_changer_command("-reset", (char *) NULL, slotstr, &rest);
 }
 
-int changer_clean(slotstr)
-char **slotstr;
+int
+changer_clean(
+    char **	slotstr)
 {
     char *rest;
 
     return run_changer_command("-clean", (char *) NULL, slotstr, &rest);
 }
 
-int changer_eject(slotstr)
-char **slotstr;
+int
+changer_eject(
+    char **	slotstr)
 {
     char *rest;
 
     return run_changer_command("-eject", (char *) NULL, slotstr, &rest);
 }
 
-int changer_loadslot(inslotstr, outslotstr, devicename)
-char *inslotstr, **outslotstr, **devicename;
+int
+changer_loadslot(
+    char *inslotstr,
+    char **outslotstr,
+    char **devicename)
 {
     char *rest;
     int rc;
@@ -163,17 +174,23 @@ char *inslotstr, **outslotstr, **devicename;
     return 0;
 }
 
-/* This function is somewhat equal to changer_info with one additional
-   parameter, to get information, if the changer is able to search for
-   tapelabels himself. E.g. Barcodereader
-   The changer_script answers with an additional parameter, if it is able
-   to search. This one should be 1, if it is able to search, and 0 if it
-   knows about the extension. If the additional answer is omitted, the
-   changer is not able to search for a tape. 
-*/
-int changer_query(nslotsp, curslotstr, backwardsp, searchable)
-int *nslotsp, *backwardsp, *searchable;
-char **curslotstr;
+
+/*
+ * This function is somewhat equal to changer_info with one additional
+ * parameter, to get information, if the changer is able to search for
+ * tapelabels himself. E.g. Barcodereader
+ * The changer_script answers with an additional parameter, if it is able
+ * to search. This one should be 1, if it is able to search, and 0 if it
+ * knows about the extension. If the additional answer is omitted, the
+ * changer is not able to search for a tape. 
+ */
+
+int
+changer_query(
+    int *	nslotsp,
+    char **	curslotstr,
+    int *	backwardsp,
+    int *	searchable)
 {
     char *rest;
     int rc;
@@ -193,9 +210,11 @@ char **curslotstr;
     return 0;
 }
 
-int changer_info(nslotsp, curslotstr, backwardsp)
-int *nslotsp, *backwardsp;
-char **curslotstr;
+int
+changer_info(
+    int *	nslotsp,
+    char **	curslotstr,
+    int *	backwardsp)
 {
     char *rest;
     int rc;
@@ -212,19 +231,20 @@ char **curslotstr;
 
 /* ---------------------------- */
 
-/* This function first uses searchlabel and changer_search, if
-   the library is able to find a tape itself. If it is not, or if 
-   the tape could not be found, then the normal scan is done.
- 
-   See interface documentation in changer.h.
-*/
-void changer_find(user_data, user_init, user_slot, searchlabel)
-     void *user_data;
-     int (*user_init) P((void *user_data, int rc, int nslots, int backwards,
-                         int searchable));
-     int (*user_slot) P((void *user_data, int rc, char *slotstr,
-                         char *device));
-     char *searchlabel;
+/*
+ * This function first uses searchlabel and changer_search, if
+ * the library is able to find a tape itself. If it is not, or if 
+ * the tape could not be found, then the normal scan is done.
+ *
+ * See interface documentation in changer.h.
+ */
+
+void
+changer_find(
+     void *	user_data,
+     int	(*user_init)(void *, int, int, int, int),
+     int	(*user_slot)(void *, int, char *, char *),
+     char *	searchlabel)
 {
     char *slotstr, *device = NULL, *curslotstr = NULL;
     int nslots, checked, backwards, rc, done, searchable;
@@ -274,10 +294,11 @@ void changer_find(user_data, user_init, user_slot, searchlabel)
 
 /* ---------------------------- */
 
-void changer_current(user_data, user_init, user_slot)
-     void *user_data;
-int (*user_init) P((void *ud, int rc, int nslots, int backwards, int searchable));
-int (*user_slot) P((void *ud, int rc, char *slotstr, char *device));
+void
+changer_current(
+    void *	user_data,
+    int		(*user_init)(void *, int, int, int, int),
+    int		(*user_slot)(void *, int, char *, char *))
 {
     char *device = NULL, *curslotstr = NULL;
     int nslots, backwards, rc, done, searchable;
@@ -298,12 +319,13 @@ int (*user_slot) P((void *ud, int rc, char *slotstr, char *device));
 
 /* ---------------------------- */
 
-static int changer_command(cmd, arg)
-     char *cmd;
-     char *arg;
+static int
+changer_command(
+     char *cmd,
+     char *arg)
 {
     int fd[2];
-    amwait_t wait_exitcode;
+    amwait_t wait_exitcode = 1;
     int exitcode;
     char num1[NUM_STR_SIZE];
     char num2[NUM_STR_SIZE];
@@ -346,8 +368,8 @@ static int changer_command(cmd, arg)
     }
 
     if(fd[0] < 0 || fd[0] >= FD_SETSIZE) {
-	snprintf(num1, sizeof(num1), "%d", fd[0]);
-	snprintf(num2, sizeof(num2), "%d", FD_SETSIZE-1);
+	snprintf(num1, SIZEOF(num1), "%d", fd[0]);
+	snprintf(num2, SIZEOF(num2), "%d", FD_SETSIZE-1);
 	changer_resultstr = vstralloc ("<error> ",
 				       "could not create pipe for \"",
 				       cmdstr,
@@ -362,8 +384,8 @@ static int changer_command(cmd, arg)
 	goto done;
     }
     if(fd[1] < 0 || fd[1] >= FD_SETSIZE) {
-	snprintf(num1, sizeof(num1), "%d", fd[1]);
-	snprintf(num2, sizeof(num2), "%d", FD_SETSIZE-1);
+	snprintf(num1, SIZEOF(num1), "%d", fd[1]);
+	snprintf(num2, SIZEOF(num2), "%d", FD_SETSIZE-1);
 	changer_resultstr = vstralloc ("<error> ",
 				       "could not create pipe for \"",
 				       cmdstr,
@@ -452,7 +474,7 @@ static int changer_command(cmd, arg)
 		goto done;
 	    }
 	} else if (pid != changer_pid) {
-	    snprintf(num1, sizeof(num1), "%ld", (long)pid);
+	    snprintf(num1, SIZEOF(num1), "%ld", (long)pid);
 	    changer_resultstr = vstralloc ("<error> ",
 					   "wait for \"",
 					   tapechanger,
@@ -468,7 +490,7 @@ static int changer_command(cmd, arg)
 
     /* mark out-of-control changers as fatal error */
     if(WIFSIGNALED(wait_exitcode)) {
-	snprintf(num1, sizeof(num1), "%d", WTERMSIG(wait_exitcode));
+	snprintf(num1, SIZEOF(num1), "%d", WTERMSIG(wait_exitcode));
 	changer_resultstr = newvstralloc (changer_resultstr,
 					  "<error> ",
 					  changer_resultstr,
@@ -493,12 +515,18 @@ failed:
     return exitcode;
 }
 
-/* This function commands the changerscript to look for a tape named
-   searchlabel. If is found, the changerscript answers with the device,
-   in which the tape can be accessed.
-*/
-int changer_search(searchlabel, outslotstr, devicename)
-char *searchlabel, **outslotstr, **devicename;
+
+/*
+ * This function commands the changerscript to look for a tape named
+ * searchlabel. If is found, the changerscript answers with the device,
+ * in which the tape can be accessed.
+ */
+
+int
+changer_search(
+    char *	searchlabel,
+    char **	outslotstr,
+    char **	devicename)
 {
     char *rest;
     int rc;
@@ -513,15 +541,19 @@ char *searchlabel, **outslotstr, **devicename;
     return 0;
 }
 
-/* Because barcodelabel are short, and may not be the same as the 
-   amandalabels, the changerscript should be informed, which tapelabel
-   is associated with a tape. This function should be called after 
-   giving a label for a tape. (Maybe also, when the label and the associated
-   slot is known. e.g. during library scan.
-*/
-int changer_label (slotsp,labelstr)
-char *slotsp; 
-char *labelstr;
+
+/*
+ * Because barcodelabel are short, and may not be the same as the 
+ * amandalabels, the changerscript should be informed, which tapelabel
+ * is associated with a tape. This function should be called after 
+ * giving a label for a tape. (Maybe also, when the label and the associated
+ * slot is known. e.g. during library scan.
+ */
+
+int
+changer_label(
+    char *	slotsp, 
+    char *	labelstr)
 {
     int rc;
     char *rest=NULL;

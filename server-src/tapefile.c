@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.32 2006/04/27 12:17:59 martinea Exp $
+ * $Id: tapefile.c,v 1.33 2006/05/25 01:47:20 johnfranks Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -35,20 +35,19 @@
 static tape_t *tape_list = NULL;
 
 /* local functions */
-static tape_t *parse_tapeline P((int *status, char *line));
-static tape_t *insert P((tape_t *list, tape_t *tp));
-static time_t stamp2time P((char *datestamp));
+static tape_t *parse_tapeline(int *status, char *line);
+static tape_t *insert(tape_t *list, tape_t *tp);
+static time_t stamp2time(char *datestamp);
 
-
-
-int read_tapelist(tapefile)
-char *tapefile;
+int
+read_tapelist(
+    char *tapefile)
 {
     tape_t *tp;
     FILE *tapef;
     int pos;
     char *line = NULL;
-    int status;
+    int status = 0;
 
     tape_list = NULL;
     if((tapef = fopen(tapefile,"r")) == NULL) {
@@ -56,10 +55,16 @@ char *tapefile;
     }
 
     while((line = agets(tapef)) != NULL) {
+	if (line[0] == '\0') {
+	    amfree(line);
+	    continue;
+	}
 	tp = parse_tapeline(&status, line);
 	amfree(line);
-	if(tp == NULL && status != 0) return 1;
-	if(tp != NULL) tape_list = insert(tape_list, tp);
+	if(tp == NULL && status != 0)
+	    return 1;
+	if(tp != NULL)
+	    tape_list = insert(tape_list, tp);
     }
     afclose(tapef);
 
@@ -70,8 +75,9 @@ char *tapefile;
     return 0;
 }
 
-int write_tapelist(tapefile)
-char *tapefile;
+int
+write_tapelist(
+    char *tapefile)
 {
     tape_t *tp;
     FILE *tapef;
@@ -102,7 +108,8 @@ char *tapefile;
     return(rc != 0);
 }
 
-void clear_tapelist()
+void
+clear_tapelist(void)
 {
     tape_t *tp, *next;
 
@@ -115,8 +122,9 @@ void clear_tapelist()
     tape_list = NULL;
 }
 
-tape_t *lookup_tapelabel(label)
-char *label;
+tape_t *
+lookup_tapelabel(
+    char *label)
 {
     tape_t *tp;
 
@@ -128,8 +136,9 @@ char *label;
 
 
 
-tape_t *lookup_tapepos(pos)
-int pos;
+tape_t *
+lookup_tapepos(
+    int pos)
 {
     tape_t *tp;
 
@@ -140,8 +149,9 @@ int pos;
 }
 
 
-tape_t *lookup_tapedate(datestamp)
-char *datestamp;
+tape_t *
+lookup_tapedate(
+    char *datestamp)
 {
     tape_t *tp;
 
@@ -151,7 +161,8 @@ char *datestamp;
     return NULL;
 }
 
-int lookup_nb_tape()
+int
+lookup_nb_tape(void)
 {
     tape_t *tp;
     int pos=0;
@@ -162,8 +173,9 @@ int lookup_nb_tape()
     return pos;
 }
 
-tape_t *lookup_last_reusable_tape(skip)
-     int skip;
+tape_t *
+lookup_last_reusable_tape(
+     int skip)
 {
     tape_t *tp, **tpsave;
     int count=0;
@@ -177,7 +189,7 @@ tape_t *lookup_last_reusable_tape(skip)
      * caller.  If skip is zero, the oldest is returned, if it is
      * one, the next oldest, two, the next to next oldest and so on.
      */
-    tpsave = alloc((skip + 1) * sizeof (*tpsave));
+    tpsave = alloc((skip + 1) * SIZEOF(*tpsave));
     for(s = 0; s <= skip; s++) {
 	tpsave[s] = NULL;
     }
@@ -198,8 +210,9 @@ tape_t *lookup_last_reusable_tape(skip)
     return tp;
 }
 
-int reusable_tape(tp)
-    tape_t *tp;
+int
+reusable_tape(
+    tape_t *tp)
 {
     int count = 0;
 
@@ -213,8 +226,9 @@ int reusable_tape(tp)
     return (count >= getconf_int(CNF_TAPECYCLE));
 }
 
-void remove_tapelabel(label)
-char *label;
+void
+remove_tapelabel(
+    char *label)
 {
     tape_t *tp, *prev, *next;
 
@@ -222,12 +236,14 @@ char *label;
     if(tp != NULL) {
 	prev = tp->prev;
 	next = tp->next;
+	/*@ignore@*/
 	if(prev != NULL)
 	    prev->next = next;
 	else /* begin of list */
 	    tape_list = next;
 	if(next != NULL)
 	    next->prev = prev;
+	/*@end@*/
 	while (next != NULL) {
 	    next->position--;
 	    next = next->next;
@@ -237,15 +253,16 @@ char *label;
     }
 }
 
-tape_t *add_tapelabel(datestamp, label)
-char *datestamp;
-char *label;
+tape_t *
+add_tapelabel(
+    char *datestamp,
+    char *label)
 {
     tape_t *cur, *new;
 
     /* insert a new record to the front of the list */
 
-    new = (tape_t *) alloc(sizeof(tape_t));
+    new = (tape_t *) alloc(SIZEOF(tape_t));
 
     new->datestamp = stralloc(datestamp);
     new->position = 0;
@@ -267,7 +284,8 @@ char *label;
     return new;
 }
 
-int guess_runs_from_tapelist()
+int
+guess_runs_from_tapelist(void)
 {
     tape_t *tp;
     int i, ntapes, tape_ndays, dumpcycle, runtapes, runs;
@@ -284,7 +302,7 @@ int guess_runs_from_tapelist()
 	if((tp = lookup_tapepos(i)) == NULL) break;
 
 	tape_time  = stamp2time(tp->datestamp);
-	tape_ndays = days_diff(tape_time, today);
+	tape_ndays = (int)days_diff(tape_time, today);
 
 	if(tape_ndays < dumpcycle) ntapes++;
 	else break;
@@ -306,16 +324,17 @@ int guess_runs_from_tapelist()
     return runs;
 }
 
-static tape_t *parse_tapeline(status, line)
-int *status;
-char *line;
+static tape_t *
+parse_tapeline(
+    int *status,
+    char *line)
 {
     tape_t *tp = NULL;
     char *s, *s1;
     int ch;
 
     *status = 0;
-    tp = (tape_t *) alloc(sizeof(tape_t));
+    tp = (tape_t *) alloc(SIZEOF(tape_t));
 
     tp->prev = NULL;
     tp->next = NULL;
@@ -333,7 +352,6 @@ char *line;
     s[-1] = '\0';
     tp->datestamp = stralloc(s1);
 
-
     skip_whitespace(s, ch);
     s1 = s - 1;
     skip_non_whitespace(s, ch);
@@ -343,11 +361,11 @@ char *line;
     skip_whitespace(s, ch);
     tp->reuse = 1;
 #define sc "reuse"
-    if(strncmp(s - 1, sc, sizeof(sc)-1) == 0)
+    if(strncmp(s - 1, sc, SIZEOF(sc)-1) == 0)
 	tp->reuse = 1;
 #undef sc
 #define sc "no-reuse"
-    if(strncmp(s - 1, sc, sizeof(sc)-1) == 0)
+    if(strncmp(s - 1, sc, SIZEOF(sc)-1) == 0)
 	tp->reuse = 0;
 #undef sc
 
@@ -356,8 +374,11 @@ char *line;
 
 
 /* insert in reversed datestamp order */
-static tape_t *insert(list, tp)
-tape_t *list, *tp;
+/*@ignore@*/
+static tape_t *
+insert(
+    tape_t *list,
+    tape_t *tp)
 {
     tape_t *prev, *cur;
 
@@ -376,10 +397,8 @@ tape_t *list, *tp;
 
     return list;
 }
+/*@end@*/
 
-
-static time_t stamp2time(datestamp)
-char *datestamp;
 /*
  * Converts datestamp (an char of the form YYYYMMDD or YYYYMMDDHHMMSS) into a real
  * time_t value.
@@ -387,6 +406,10 @@ char *datestamp;
  * value is approximate.  This is ok for our purposes, since we round off
  * scheduling calculations to the nearest day.
  */
+
+static time_t
+stamp2time(
+    char *datestamp)
 {
     struct tm tm;
     time_t now;

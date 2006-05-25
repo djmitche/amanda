@@ -1,4 +1,3 @@
-dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT
 AC_CONFIG_SRCDIR([common-src/amanda.h])
@@ -14,7 +13,7 @@ AC_DEFINE_UNQUOTED(CONFIGURE_COMMAND,"$CONFIGURE_COMMAND",
 	  [Saves the original ./configure command line arguments])
 AC_SUBST(CONFIGURE_COMMAND)
 
-AM_INIT_AUTOMAKE(amanda, 2.5.1b1)
+AM_INIT_AUTOMAKE(amanda, "amanda, 2.5.1b1")
 AM_CONFIG_HEADER(config/config.h)
 
 AC_PREREQ(2.57)		dnl Minimum Autoconf version required.
@@ -55,9 +54,9 @@ AC_SUBST(VERSION_COMMENT)
 AC_SUBST(VERSION_SUFFIX)
 
 dnl
-dnl runtime and compile time
+dnl runtime and compile time paths
 dnl
-SYSPATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/bsd:/etc:/usr/etc"
+SYSPATH="/bin:/usr/bin:/sbin:/usr/sbin:/opt/SUNWspro/bin:/usr/ucb:/usr/bsd:/etc:/usr/etc"
 LOCPATH=`(
     test "x$prefix" = xNONE && prefix=$ac_default_prefix
     test "x$exec_prefix" = xNONE && exec_prefix=${prefix}
@@ -66,16 +65,106 @@ LOCPATH=`(
 SYSLOCPATH="$SYSPATH:$LOCPATH"
 LOCSYSPATH="$LOCPATH:$SYSPATH"
 
+dnl
+dnl Set up compiler location, basic CFLAGS, and include locations
+dnl and library locations before we start checking the system
+dnl configuration in more detail...
+dnl
+
 AC_ARG_WITH(cflags,
     [  --with-cflags=CFLAGS   arguments to the c compiler (-Wall, -g, etc)],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
-	    AC_MSG_ERROR([*** You must supply an argument to the --with-includes option.])
+	    AC_MSG_ERROR([*** You must supply an argument to the --with-cflags option.])
 	    ;;
 	esac
 	CFLAGS="$withval"
     ])
+
+CFLAGS="-D_GNU_SOURCE $CFLAGS"
+
+AC_PROG_CC
+AC_OBJEXT
+AC_EXEEXT
+AC_SYS_LARGEFILE
+
+dnl
+dnl Process tool locations for tools we need right away to configure.
+dnl
+AC_PATH_PROGS(GREP,grep,,$LOCSYSPATH)
+if test -z "$GREP"; then
+    GREP=grep
+fi
+AC_DEFINE_UNQUOTED(GREP,"$GREP",[Define the location of the grep program. ])
+AC_PATH_PROGS(EGREP,egrep,,$LOCSYSPATH)
+
+AC_PATH_PROGS(AMLINT,lint,,/opt/SUNWspro/bin:$SYSLOCPATH)
+if test ! -z "$AMLINT"; then
+  $AMLINT -flags | $GREP -- '-errfmt=' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    AMLINTFLAGS="-n -s -u -m -x"
+    AMLINTFLAGS="$AMLINTFLAGS -errchk=%all"
+    AMLINTFLAGS="$AMLINTFLAGS -errfmt=macro"
+    AMLINTFLAGS="$AMLINTFLAGS -errhdr=no%/usr/include"
+    AMLINTFLAGS="$AMLINTFLAGS -errhdr=%user"
+    AMLINTFLAGS="$AMLINTFLAGS -errsecurity=extended"
+    AMLINTFLAGS="$AMLINTFLAGS -errtags=yes"
+    AMLINTFLAGS="$AMLINTFLAGS -Ncheck=%all"
+    AMLINTFLAGS="$AMLINTFLAGS -Nlevel=1"
+    AMLINTFLAGS="$AMLINTFLAGS -erroff=E_ASGN_NEVER_USED"
+    AMLINTFLAGS="$AMLINTFLAGS,E_ASGN_RESET"
+    AMLINTFLAGS="$AMLINTFLAGS,E_CAST_INT_CONST_TO_SMALL_INT"
+    AMLINTFLAGS="$AMLINTFLAGS,E_CAST_INT_TO_SMALL_INT"
+    AMLINTFLAGS="$AMLINTFLAGS,E_CAST_UINT_TO_SIGNED_INT"
+    AMLINTFLAGS="$AMLINTFLAGS,E_CONSTANT_CONDITION"
+    AMLINTFLAGS="$AMLINTFLAGS,E_ENUM_UNUSE"
+    AMLINTFLAGS="$AMLINTFLAGS,E_EXPR_NULL_EFFECT"
+    AMLINTFLAGS="$AMLINTFLAGS,E_FUNC_RET_ALWAYS_IGNOR"
+    AMLINTFLAGS="$AMLINTFLAGS,E_FUNC_RET_MAYBE_IGNORED"
+    AMLINTFLAGS="$AMLINTFLAGS,E_H_C_CHECK0"
+    AMLINTFLAGS="$AMLINTFLAGS,E_H_C_CHECK1"
+    AMLINTFLAGS="$AMLINTFLAGS,E_H_C_CHECK2"
+    AMLINTFLAGS="$AMLINTFLAGS,E_INCL_MNUSD"
+    AMLINTFLAGS="$AMLINTFLAGS,E_INCL_NUSD"
+    AMLINTFLAGS="$AMLINTFLAGS,E_MCR_NODIFF"
+    AMLINTFLAGS="$AMLINTFLAGS,E_NAME_MULTIPLY_DEF"
+    AMLINTFLAGS="$AMLINTFLAGS,E_P_REF_NULL_PSBL"
+    AMLINTFLAGS="$AMLINTFLAGS,E_P_REF_SUSP"
+    AMLINTFLAGS="$AMLINTFLAGS,E_PTRDIFF_OVERFLOW"
+    AMLINTFLAGS="$AMLINTFLAGS,E_P_USE_NULL_PSBL"
+    AMLINTFLAGS="$AMLINTFLAGS,E_P_USE_SUSP"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_ACCESS_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_CHDIR_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_CHMOD_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_CREAT_WITHOUT_EXCL"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_EXEC_PATH"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_EXEC_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_FOPEN_MODE"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_GETENV_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_MKDIR_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_PRINTF_VAR_FMT"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_RAND_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_SCANF_VAR_FMT"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_SELECT_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_SHELL_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_STRNCPY_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_UMASK_WARN"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SEC_USE_AFTER_STAT"
+    AMLINTFLAGS="$AMLINTFLAGS,E_SIGN_EXTENSION_PSBL"
+    AMLINTFLAGS="$AMLINTFLAGS,E_TYPEDEF_UNUSE"
+    AMLINTFLAGS="$AMLINTFLAGS,E_UNCAL_F"
+  else
+    AMLINTFLAGS=""
+  fi
+else
+  AC_PATH_PROGS(AMLINT,splint,,$SYSLOCPATH)
+  if test ! -z "$AMLINT"; then
+    AMLINT="splint"
+  fi
+  AMLINTFLAGS='+show-scan +unixlib -weak -globs +usedef +usereleased +impouts -paramimptemp -varuse -warnposix -redef -preproc -fixedformalarray -retval -unrecog -usevarargs -formatcode'
+fi
+AC_SUBST(AMLINTFLAGS)
 
 AC_ARG_WITH(includes,
     [  --with-includes=DIR    site header files for readline, etc in DIR],
@@ -123,6 +212,10 @@ if test "$LIBRARY_DIRS"; then
 	    fi
 	done
 fi
+
+dnl
+dnl Process configuration flags
+dnl
 
 AC_ARG_WITH(dumperdir,
     [  --with-dumperdir=DIR   where we install the dumpers [[EPREFIX/dumper]]],
@@ -617,6 +710,29 @@ y |  ye | yes) AC_DEFINE(HAVE_BROKEN_FSF,1,[Define this if issuing a fsf on a ta
   ;;
 esac
 
+AC_ARG_WITH(reuseports,
+    [  --without-reuseaddr    Don't closed network connections to be reused until full timeout period.],
+    [ case "$withval" in
+        y | ye | yes)
+          REUSEADDR=no;;
+        n | no)
+          REUSEADDR=yes;;
+        *)
+          REUSEADDR=no;;
+      esac
+    ],
+    [ REUSEADDR=yes; ])
+case "$REUSEADDR" in
+n | no) :
+    ;;
+y |  ye | yes)
+    AC_DEFINE(USE_REUSEADDR,1,[Define to set SO_REUSEADDR on network connections.])
+    ;;
+*)
+    AC_MSG_ERROR([*** You must not supply an argument to --with-reuseports option.])
+    ;;
+esac
+
 AC_ARG_WITH(gnutar,
     [  --with-gnutar[[=PROG]]      use PROG as GNU tar executable [[default: looks for one]]],
     [
@@ -723,8 +839,15 @@ n | no)
     DBMALLOCLIBS=""
     ;;
 *) 
-    DBMALLOCCFLAGS="-I$DBMALLOC -DUSE_DBMALLOC"
-    DBMALLOCLIBS="-L$DBMALLOC -ldbmalloc"
+    AC_CHECK_LIB(dbmalloc,malloc)
+    if test "x$ac_cv_lib_dbmalloc_malloc" != "xyes"; then
+      AC_MSG_WARN([*** dbmalloc library not found - no malloc debugging support!])
+      DBMALLOCCFLAGS=""
+      DBMALLOCLIBS=""
+    else
+      DBMALLOCCFLAGS="-I$DBMALLOC -DUSE_DBMALLOC"
+      DBMALLOCLIBS="-L$DBMALLOC -ldbmalloc"
+    fi
     ;;
 esac
 
@@ -1042,6 +1165,7 @@ if test "$KRB5_DIR_FOUND"; then
 	if test "$KRB5_CFLAGS" ; then
 		KRB5INCLUDES="$KRB5INCLUDES $KRB5_CFLAGS"
 	fi
+        AC_CHECK_LIB(krb5support,main)
 	KRB5LDFLAGS=-L$k5libdir
 	break
 fi
@@ -1051,12 +1175,32 @@ if test "x$KRB5LDFLAGS" = "x" ; then
 fi
 
 
-AC_ARG_WITH(portrange,
-    [  --with-portrange=low,high     bind unreserved TCP server sockets to ports within this range [[unlimited]]],
+AC_ARG_WITH(low-tcpportrange,
+    [  --with-low-tcpportrange=low,high     bind reserved TCP server sockets to ports within this range [unlimited] (mainly for amrecover)],
     [
-	TCPPORTRANGE="$withval"
+ 	LOW_TCPPORTRANGE="$withval"
     ]
 )
+ 
+if test x"${LOW_TCPPORTRANGE+set}" = x"set"; then
+    if test x`echo "$LOW_TCPPORTRANGE" | sed 's/[[0-9]][[0-9]]*,[[0-9]][[0-9]]*//'` != x""; then
+    	AC_MSG_ERROR([*** --with-low-tcpportrange requires two comma-separated positive numbers])
+    fi
+    min_low_tcp_port=`echo "$LOW_TCPPORTRANGE" | sed 's/,.*//'`
+    max_low_tcp_port=`echo "$LOW_TCPPORTRANGE" | sed 's/.*,//'`
+    if test $min_low_tcp_port -gt $max_low_tcp_port; then
+	AC_MSG_ERROR([*** the second TCP port number must be greater than the first in --with-low-tcpportrange])
+    fi
+    if test $min_low_tcp_port -lt 512; then
+	AC_MSG_WARN([*** the low TCP port range should be 512 or greater in --with-low-tcpportrange])
+    fi
+    if test $max_low_tcp_port -ge 1024; then
+	AC_MSG_WARN([*** the low TCP port range should be less than 1024 in --with-low-tcpportrange])
+    fi
+    AC_DEFINE_UNQUOTED(LOW_TCPPORTRANGE,$LOW_TCPPORTRANGE,[A comma-separated list of two integers, determining the minimum and
+   maximum reserved TCP port numbers sockets should be bound to. (mainly for amrecover) ])
+fi
+
 AC_ARG_WITH(tcpportrange,
     [  --with-tcpportrange=low,high  bind unreserved TCP server sockets to ports within this range [[unlimited]]],
     [
@@ -1273,10 +1417,6 @@ AC_DEFINE_UNQUOTED(KAMANDA_SERVICE_NAME, "$KAMANDA_SERVICE_NAME", [The name for 
     AC_DEFINE_UNQUOTED(mandir,"$tmp",[Directory in which man-pages should be installed])
 )
 
-AC_PROG_CC
-AC_OBJEXT
-AC_EXEEXT
-
 dnl Set the order of dump programs to look for.  Finding the proper file
 dnl system dumping program is problematic.  Some systems, notably HP-UX
 dnl and AIX, have both the backup and dump programs.  HP-UX can't use the
@@ -1328,6 +1468,8 @@ case "$target" in
   *-pc-bsdi*)
 			;;
   *-pc-linux-*)
+			;;
+  *-redhat-linux-*)
 			;;
   x86_64-*-linux-*)
 			;;
@@ -1442,7 +1584,6 @@ if test -z "$CAT"; then
 fi
 AC_PATH_PROGS(COMPRESS,compress,,$LOCSYSPATH)
 AC_PATH_PROGS(DD,dd,,$LOCSYSPATH)
-AC_PATH_PROGS(EGREP,egrep,,$LOCSYSPATH)
 AC_PATH_PROGS(GETCONF,getconf,,$SYSPATH)
 
 AC_PATH_PROGS(GNUPLOT,gnuplot,,$LOCSYSPATH)
@@ -1450,12 +1591,6 @@ if test -z "$GNUPLOT"; then
     NO_AMPLOT_MODE=true
     AC_MSG_WARN([*** You do not have gnuplot.  Amplot will not be installed.])
 fi
-
-AC_PATH_PROGS(GREP,grep,,$LOCSYSPATH)
-if test -z "$GREP"; then
-    GREP=grep
-fi
-AC_DEFINE_UNQUOTED(GREP,"$GREP",[Define the location of the grep program. ])
 
 AC_PATH_PROGS(GNUTAR,gtar gnutar tar,,$LOCSYSPATH)
 if test ! -z "$GNUTAR"; then
@@ -1790,8 +1925,10 @@ AC_CACHE_CHECK(
 if test "x$need_resetofs" = xyes; then
     AC_DEFINE(NEED_RESETOFS,1,[Define if we have to reset tape offsets when reacing 2GB. ])
 fi
+
+
 CFLAGS="$amanda_cv_LFS_CFLAGS $CFLAGS"
-CPPFLAGS="$amanda_cv_LFS_CFLAGS $CPPFLAGS"
+CPPFLAGS="$amanda_cv_LFS_CPPFLAGS $CPPFLAGS"
 LDFLAGS="$amanda_cv_LFS_LDFLAGS $LDFLAGS"
 LIBS="$amanda_cv_LFS_LIBS $LIBS"
 
@@ -1800,6 +1937,9 @@ AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(intmax_t)
 AC_CHECK_SIZEOF(off_t)
+AC_CHECK_SIZEOF(size_t)
+AC_CHECK_SIZEOF(ssize_t)
+AC_CHECK_SIZEOF(time_t)
 
 AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
@@ -1816,6 +1956,9 @@ AC_TYPE_UID_T
 AC_TYPE_SIGNAL
 AC_STRUCT_TM
 AM_PROG_LEX
+
+dnl From here on we need to know about STDC_HEADERS
+AC_HEADER_STDC
 
 dnl AC_CHECK_TYPE does not work for socklen_t because it does not look
 dnl in <sys/socket.h>, so this is a variant that adds another header.
@@ -1838,9 +1981,9 @@ if test "x$ac_cv_type_$1" = xno; then
 fi
 ])
 AMANDA_CHECK_TYPE(socklen_t, int, sys/socket.h)
+AMANDA_CHECK_TYPE(sa_family_t, unsigned short, sys/socket.h)
 
 dnl Checks for header files.
-AC_HEADER_STDC
 AC_HEADER_DIRENT
 CF_WAIT
 CF_WAIT_INT
@@ -1859,8 +2002,10 @@ AC_CHECK_HEADERS(\
 	grp.h \
 	history.h \
 	libc.h \
+	libgen.h \
 	limits.h \
 	linux/zftape.h \
+	math.h \
 	mntent.h \
 	mnttab.h \
 	ndbm.h \
@@ -1871,6 +2016,7 @@ AC_CHECK_HEADERS(\
 	readline/readline.h \
 	scsi/sg.h \
 	scsi/scsi_ioctl.h \
+	stdarg.h \
 	stdlib.h \
 	string.h \
 	strings.h \
@@ -2580,6 +2726,9 @@ ICE_CHECK_DECL(accept,sys/types.h sys/socket.h)
 AC_FUNC_ALLOCA
 AC_CHECK_FUNCS(atexit)
 ICE_CHECK_DECL(atof,stdlib.h)
+ICE_CHECK_DECL(atoi,stdlib.h)
+ICE_CHECK_DECL(atol,stdlib.h)
+ICE_CHECK_DECL(atoll,stdlib.h)
 AC_CHECK_FUNCS(basename)
 ICE_CHECK_DECL(bind,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(bcopy,string.h strings.h stdlib.h)
@@ -2613,6 +2762,7 @@ AMANDA_FUNC_GETTIMEOFDAY_ARGS
 AC_CHECK_FUNCS(getvfsent initgroups isascii)
 ICE_CHECK_DECL(initgroups,grp.h sys/types.h unistd.h libc.h)
 ICE_CHECK_DECL(ioctl,sys/ioctl.h unistd.h libc.h)
+ICE_CHECK_DECL(isnormal,math.h)
 ICE_CHECK_DECL(listen,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(lstat,sys/types.h sys/stat.h)
 ICE_CHECK_DECL(malloc,stdlib.h)
@@ -2738,7 +2888,6 @@ ICE_CHECK_DECL(strcasecmp,string.h strings.h)
 
 AC_CHECK_FUNCS(fnmatch)
 
-AC_SYS_LARGEFILE
 
 dnl disk device prefixes
 AC_MSG_CHECKING(disk device prefixes)
@@ -2970,39 +3119,83 @@ AC_SUBST(LTALLOCA)
 DOC_BUILD_DATE=`date '+%d-%m-%Y'`
 AC_SUBST(DOC_BUILD_DATE)
 
-AC_ARG_WITH(xsltproc,
+AC_ARG_WITH(built-manpages,
     [  --without-built-manpages Do not build manpages from XML source.],
-    [ case "$withval" in
-        y | ye | yes)
-          USE_XSLTPROC=yes;;
-        n | no)
-          USE_XSLTPROC=no;;
-        *)
-          USE_XSLTPROC=yes;
-          XSLTPROC="$withval";;
-      esac
-    ],
-    [ USE_XSLTPROC=maybe; ])
+    [ BUILDMANPAGES=$withval; ],
+    [ BUILDMANPAGES=yes; ])
+AM_CONDITIONAL(BUILD_MAN_PAGES, test "x$BUILDMANPAGES" = "xyes")
 
-AC_DEFUN([AC_PATH_XSLTPROC], [AC_PATH_PROG(XSLTPROC, xsltproc)])
-
-# This looks bad, but && and || have equal precedence in shells, so
-# actually it's all OK.
-if test "$USE_XSLTPROC" = "yes" || test "$USE_XSLTPROC" = "maybe" && \
-   test -z "$XSLTPROC"; then
-    AC_PATH_XSLTPROC
-    if test -n "$XSLTPROC"; then
-        USE_XSLTPROC=yes;
-    else
-        if test "$USE_XSLTPROC" = yes; then
-           AC_MSG_ERROR([can't find xsltproc, but running with --with-xsltproc.])
-        else
-           USE_XSLTPROC=no;
-        fi
-    fi
+AC_PATH_PROGS(XSLTPROC,xsltproc,,$LOCSYSPATH)
+if test -z "$XSLTPROC"; then
+  USE_XSLTPROC=no
+  AC_MSG_WARN([can't find xsltproc, xsltproc support is unavailable])
+else
+  USE_XSLTPROC=yes
+  AC_DEFINE(HAVE_XSLTPROC,1,[xslt is available to generate man pages])
 fi
+AM_CONDITIONAL(HAVE_XSLTPROC, test "x$USE_XSLTPROC" = "xyes")
 
-AM_CONDITIONAL(HAVE_XSLTPROC, test "$USE_XSLTPROC" = yes)
+#### Enforce amanda code cleanliness rules.
+#### Done here to allow configuration code to remain intact.
+if test "x$CC" = "xgcc"; then
+  CFLAGS="$CFLAGS -Wall"
+  $CC -v --help 2>&1 | $GREP -- '-Wextra ' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -Wextra"
+  else
+   CFLAGS="$CFLAGS -W"
+  fi
+
+  $CC -v --help 2>&1 | $GREP -- '-Wparentheses' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -Wparentheses"
+  fi
+
+  $CC -v --help 2>&1 | $GREP -- '-Wdeclaration-after-statement' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -Wdeclaration-after-statement"
+  fi
+
+  $CC -v --help 2>&1 | $GREP -- '-Wmissing-prototypes ' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -Wmissing-prototypes"
+  fi
+
+  $CC -v --help 2>&1 | $GREP -- '-Wstrict-prototypes ' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -Wstrict-prototypes"
+  fi
+
+  $CC -v --help 2>&1 | $GREP -- '-Wmissing-declarations ' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -Wmissing-declarations"
+  fi
+
+  $CC -v --help 2>&1 | $GREP -- '-Wformat' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -Wformat"
+  fi
+
+  $CC -v --help 2>&1 | $GREP -- '-Wsign-compare' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -Wsign-compare"
+  fi
+
+  $CC -v --help 2>&1 | $GREP -- '-fno-strict-aliasing' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -fno-strict-aliasing"
+  fi
+
+  $CC -v --help 2>&1 | $GREP -- '-Wfloat-equal' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -Wfloat-equal"
+  fi
+
+  $CC -v --help 2>&1 | $GREP -- '-Wold-style-definition' 2>&1 > /dev/null
+  if test $? -eq 0; then
+    CFLAGS="$CFLAGS -Wold-style-definition"
+  fi
+fi
 
 AC_CONFIG_FILES([\
 	amplot/amcat.awk		amplot/amplot.sh		\
@@ -3044,9 +3237,10 @@ AC_CONFIG_FILES([\
 	server-src/amtoc.pl		server-src/amverify.sh		\
 	server-src/Makefile		server-src/amstatus.pl		\
 	server-src/amverifyrun.sh	server-src/amcrypt.sh		\
-	server-src/amaespipe.sh                                         \
+	server-src/amaespipe.sh         				\
 									\
 	tape-src/Makefile						\
 									\
 	config/Makefile			Makefile])
+
 AC_OUTPUT

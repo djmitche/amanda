@@ -29,27 +29,31 @@ extern char *getenv();
 
 extern int optind;
 
-static int do_asf();
-static int do_bsf();
-static int do_status();
+static int do_asf(int fd, off_t count);
+static int do_bsf(int fd, off_t count);
+static int do_status(int fd, off_t count);
+static void usage(void);
 
 struct cmd {
     char *name;
-    int min_chars;
+    size_t min_chars;
     int count;
-    int (*func)();
+    int (*func)(int, off_t);
     int flags;
 } cmd[] = {
-    { "eof",		0,	1,	tapefd_weof, O_RDWR },
-    { "weof",		0,	1,	tapefd_weof, O_RDWR },
-    { "fsf",		0,	1,	tapefd_fsf, O_RDONLY },
-    { "asf",		0,	0,	do_asf, O_RDONLY },
-    { "bsf",		0,	1,	do_bsf, O_RDONLY },
-    { "rewind",		0,	0,	tapefd_rewind, O_RDONLY },
-    { "offline",	0,	0,	tapefd_unload, O_RDONLY },
-    { "rewoffl",	0,	0,	tapefd_unload, O_RDONLY },
-    { "status",		0,	0,	do_status, O_RDONLY },
-    { NULL,		0,	0,	NULL }
+    { "eof",		0,	1,	tapefd_weof,	O_RDWR },
+    { "weof",		0,	1,	tapefd_weof,	O_RDWR },
+    { "fsf",		0,	1,	tapefd_fsf,	O_RDONLY },
+    { "asf",		0,	0,	do_asf,		O_RDONLY },
+    { "bsf",		0,	1,	do_bsf,		O_RDONLY },
+    { "rewind",		0,	0,	(int (*)(int, off_t))tapefd_rewind,
+							O_RDONLY },
+    { "offline",	0,	0,	(int (*)(int, off_t))tapefd_unload,
+							O_RDONLY },
+    { "rewoffl",	0,	0,	(int (*)(int, off_t))tapefd_unload,
+							O_RDONLY },
+    { "status",		0,	0,	do_status,	O_RDONLY },
+    { NULL,		0,	0,	NULL,		0 }
 };
 
 static char *pgm;
@@ -58,9 +62,9 @@ static int debug_ammt = 0;
 static char *tapename;
 
 static int
-do_asf(fd, count)
-    int fd;
-    int count;
+do_asf(
+    int		fd,
+    off_t	count)
 {
     int r;
 
@@ -71,29 +75,33 @@ do_asf(fd, count)
 	return r;
     }
     if(debug_ammt) {
-	fprintf(stderr, "calling tapefd_fsf(%d)\n", count);
+	fprintf(stderr, "calling tapefd_fsf(" OFF_T_FMT ")\n",
+		(OFF_T_FMT_TYPE)count);
     }
     return tapefd_fsf(fd, count);
 }
 
 static int
-do_bsf(fd, count)
-    int fd;
-    int count;
+do_bsf(
+    int		fd,
+    off_t	count)
 {
     if(debug_ammt) {
-	fprintf(stderr, "calling tapefd_fsf(%d)\n", -count);
+	fprintf(stderr, "calling tapefd_fsf(" OFF_T_FMT ")\n", 
+		(OFF_T_FMT_TYPE)-count);
     }
     return tapefd_fsf(fd, -count);
 }
 
 static int
-do_status(fd, count)
-    int fd;
-    int count;
+do_status(
+    int		fd,
+    off_t	count)
 {
     int ret;
     struct am_mt_status stat;
+
+    (void)count;	/* Quiet unused parameter warning */
 
     if(debug_ammt) {
 	fprintf(stderr, "calling tapefd_status()\n");
@@ -140,18 +148,21 @@ do_status(fd, count)
 }
 
 static void
-usage()
+usage(void)
 {
     fprintf(stderr, "usage: %s [-d] [-f|-t device] command [count]\n", pgm);
     exit(1);
 }
 
 int
-main(int argc, char **argv) {
+main(
+    int		argc,
+    char **	argv)
+{
     int ch;
-    int count;
-    int i;
-    int j;
+    off_t count;
+    size_t i;
+    size_t j;
     int fd;
     int save_errno;
     char *s;
@@ -177,25 +188,26 @@ main(int argc, char **argv) {
 	    break;
 	default:
 	    usage();
-	    /* NOTREACHED */
+	    /*NOTREACHED*/
 	}
     }
     if(optind >= argc) {
 	usage();
-	/* NOTREACHED */
+	/*NOTREACHED*/
     }
 
     /*
      * Compute the minimum abbreviation for each command.
      */
     for(i = 0; cmd[i].name; i++) {
-	cmd[i].min_chars = 1;
+	cmd[i].min_chars = (size_t)1;
 	while (1) {
 	    for(j = 0; cmd[j].name; j++) {
 		if(i == j) {
 		    continue;
 		}
-		if(0 == strncmp(cmd[i].name, cmd[j].name, cmd[i].min_chars)) {
+		if(0 == strncmp(cmd[i].name, cmd[j].name,
+				cmd[i].min_chars)) {
 		    break;
 		}
 	    }
@@ -207,8 +219,8 @@ main(int argc, char **argv) {
 	if(debug_ammt) {
 	    fprintf(stderr, "syntax: %-20s -> %*.*s\n",
 			    cmd[i].name,
-			    cmd[i].min_chars,
-			    cmd[i].min_chars,
+			    (int)cmd[i].min_chars,
+			    (int)cmd[i].min_chars,
 			    cmd[i].name);
 	}
     }
@@ -239,20 +251,21 @@ main(int argc, char **argv) {
 	fprintf(stderr, "tapename is \"%s\"\n", tapename);
     }
 
-    count = 1;
+    count = (off_t)1;
     if(optind < argc && cmd[i].count) {
-	count = atoi(argv[optind]);
+	count = OFF_T_ATOI(argv[optind]);
     }
 
     if(debug_ammt) {
 	fprintf(stderr, "calling tape_open(\"%s\",%d)\n", tapename, cmd[i].flags);
     }
-    if((fd = tape_open(tapename, cmd[i].flags)) < 0) {
+    if((fd = tape_open(tapename, cmd[i].flags, 0)) < 0) {
 	goto report_error;
     }
 
     if(debug_ammt) {
-	fprintf(stderr, "processing %s(%d)\n", cmd[i].name, count);
+	fprintf(stderr, "processing %s(" OFF_T_FMT ")\n",
+		cmd[i].name, (OFF_T_FMT_TYPE)count);
     }
     if(0 != (*cmd[i].func)(fd, count)) {
 	goto report_error;
@@ -267,9 +280,9 @@ report_error:
     save_errno = errno;
     fprintf(stderr, "%s %s", tapename, cmd[i].name);
     if(cmd[i].count) {
-	fprintf(stderr, " %d", count);
+	fprintf(stderr, " " OFF_T_FMT, (OFF_T_FMT_TYPE)count);
     }
     errno = save_errno;
     perror(" failed");
-    exit(1);
+    return (1); /* exit */
 }

@@ -24,19 +24,27 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: client_util.c,v 1.33 2006/04/26 15:53:36 martinea Exp $
+ * $Id: client_util.c,v 1.34 2006/05/25 01:47:11 johnfranks Exp $
  *
  */
 
+#include "amanda.h"
 #include "client_util.h"
 #include "getfsent.h"
 #include "util.h"
 
 #define MAXMAXDUMPS 16
 
-static char *fixup_relative(name, device)
-char *name;
-char *device;
+static int add_exclude(FILE *file_exclude, char *aexc, int verbose);
+static int add_include(char *disk, char *device, FILE *file_include, char *ainc, int verbose);
+static char *build_name(char *disk, char *exin, int verbose);
+static char *get_name(char *diskname, char *exin, time_t t, int n);
+
+
+char *
+fixup_relative(
+    char *	name,
+    char *	device)
 {
     char *newname;
     if(*name != '/') {
@@ -51,10 +59,12 @@ char *device;
 }
 
 
-static char *get_name(diskname, exin, t, n)
-char *diskname, *exin;
-time_t t;
-int n;
+static char *
+get_name(
+    char *	diskname,
+    char *	exin,
+    time_t	t,
+    int		n)
 {
     char number[NUM_STR_SIZE];
     char *filename;
@@ -64,7 +74,7 @@ int n;
     if(n == 0)
 	number[0] = '\0';
     else
-	snprintf(number, sizeof(number), "%03d", n - 1);
+	snprintf(number, SIZEOF(number), "%03d", n - 1);
 	
     filename = vstralloc(get_pname(), ".", diskname, ".", ts, number, ".",
 			 exin, NULL);
@@ -73,22 +83,25 @@ int n;
 }
 
 
-static char *build_name(disk, exin, verbose)
-char *disk, *exin;
-int verbose;
+static char *
+build_name(
+    char *	disk,
+    char *	exin,
+    int		verbose)
 {
-    int n=0, fd=-1;
+    int n;
+    int fd;
     char *filename = NULL;
     char *afilename = NULL;
     char *diskname;
     time_t curtime;
-    char *dbgdir = NULL;
+    char *dbgdir;
     char *e = NULL;
     DIR *d;
     struct dirent *entry;
-    char *test_name = NULL;
-    int match_len, d_name_len;
-
+    char *test_name;
+    size_t match_len, d_name_len;
+    char *quoted;
 
     time(&curtime);
     diskname = sanitise_filename(disk);
@@ -96,7 +109,8 @@ int verbose;
     dbgdir = stralloc2(AMANDA_TMPDIR, "/");
     if((d = opendir(AMANDA_TMPDIR)) == NULL) {
 	error("open debug directory \"%s\": %s",
-	AMANDA_TMPDIR, strerror(errno));
+		AMANDA_TMPDIR, strerror(errno));
+	/*NOTREACHED*/
     }
     test_name = get_name(diskname, exin,
 			 curtime - (AMANDA_DEBUG_DAYS * 24 * 60 * 60), 0);
@@ -124,7 +138,7 @@ int verbose;
     do {
 	filename = get_name(diskname, exin, curtime, n);
 	afilename = newvstralloc(afilename, dbgdir, filename, NULL);
-	if((fd=open(afilename, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0600)) < 0){
+	if((fd=open(afilename, O_WRONLY|O_CREAT|O_APPEND, 0600)) < 0){
 	    amfree(afilename);
 	    n++;
 	}
@@ -137,11 +151,16 @@ int verbose;
     if(afilename == NULL) {
 	filename = get_name(diskname, exin, curtime, 0);
 	afilename = newvstralloc(afilename, dbgdir, filename, NULL);
-	dbprintf(("%s: Cannot create '%s'\n", debug_prefix(NULL), afilename));
-	if(verbose)
-	    printf("ERROR [cannot create: %s]\n", afilename);
-	amfree(filename);
+	quoted = quote_string(afilename);
+	dbprintf(("%s: Cannot create %s (%s)\n",
+			debug_prefix(NULL), quoted, strerror(errno)));
+	if(verbose) {
+	    printf("ERROR [cannot create %s (%s)]\n",
+			quoted, strerror(errno));
+	}
+	amfree(quoted);
 	amfree(afilename);
+	amfree(filename);
     }
 
     amfree(dbgdir);
@@ -151,54 +170,71 @@ int verbose;
 }
 
 
-static int add_exclude(file_exclude, aexc, verbose)
-FILE *file_exclude;
-char *aexc;
-int verbose;
+static int
+add_exclude(
+    FILE *	file_exclude,
+    char *	aexc,
+    int		verbose)
 {
-    int l;
+    size_t l;
+    char *quoted, *file;
+
+    (void)verbose;	/* Quiet unused parameter warning */
 
     l = strlen(aexc);
     if(aexc[l-1] == '\n') {
 	aexc[l-1] = '\0';
 	l--;
     }
-    fprintf(file_exclude, "%s\n", aexc);
+    file = quoted = quote_string(aexc);
+    if (*file == '"') {
+	file[strlen(file) - 1] = '\0';
+	file++;
+    }
+    fprintf(file_exclude, "%s\n", file);
+    amfree(quoted);
     return 1;
 }
 
-static int add_include(disk, device, file_include, ainc, verbose)
-char *disk, *device;
-FILE *file_include;
-char *ainc;
-int verbose;
+static int
+add_include(
+    char *	disk,
+    char *	device,
+    FILE *	file_include,
+    char *	ainc,
+    int		verbose)
 {
-    int l;
+    size_t l;
     int nb_exp=0;
+    char *quoted, *file;
+
+    (void)disk;	/* Quiet unused parameter warning */
 
     l = strlen(ainc);
     if(ainc[l-1] == '\n') {
 	ainc[l-1] = '\0';
 	l--;
     }
-    if(l < 3) {
-	dbprintf(("%s: include must be at least 3 character long: %s\n",
-		  debug_prefix(NULL), ainc));
-	if(verbose)
-	    printf("ERROR [include must be at least 3 character long: %s]\n", ainc);
-	return 0;
-    }
-    else if(ainc[0] != '.' && ainc[0] != '\0' && ainc[1] != '/') {
-        dbprintf(("%s: include must start with './': %s\n",
-		  debug_prefix(NULL), ainc));
-	if(verbose)
-	    printf("ERROR [include must start with './': %s]\n", ainc);
-	return 0;
+    if (strncmp(ainc, "./", 2) != 0) {
+        quoted = quote_string(ainc);
+        dbprintf(("%s: include must start with './' (%s)\n",
+		  debug_prefix(NULL), quoted));
+	if(verbose) {
+	    printf("ERROR [include must start with './' (%s)]\n", quoted);
+	}
+	amfree(quoted);
     }
     else {
 	char *incname = ainc+2;
+
 	if(strchr(incname, '/')) {
-	    fprintf(file_include, "./%s\n", incname);
+            file = quoted = quote_string(ainc);
+	    if (*file == '"') {
+		file[strlen(file) - 1] = '\0';
+		file++;
+	    }
+	    fprintf(file_include, "%s\n", file);
+	    amfree(quoted);
 	    nb_exp++;
 	}
 	else {
@@ -208,12 +244,13 @@ int verbose;
 
 	    regex = glob_to_regex(incname);
 	    if((d = opendir(device)) == NULL) {
-		dbprintf(("%s: Can't open disk '%s']\n",
-		      debug_prefix(NULL), device));
-		if(verbose)
-		    printf("ERROR [Can't open disk '%s']\n", device);
-		amfree(regex);
-		return 0;
+		quoted = quote_string(device);
+		dbprintf(("%s: Can't open disk %s\n",
+		      debug_prefix(NULL), quoted));
+		if(verbose) {
+		    printf("ERROR [Can't open disk %s]\n", quoted);
+		}
+		amfree(quoted);
 	    }
 	    else {
 		while((entry = readdir(d)) != NULL) {
@@ -221,7 +258,15 @@ int verbose;
 			continue;
 		    }
 		    if(match(regex, entry->d_name)) {
-			fprintf(file_include, "./%s\n", entry->d_name);
+			incname = vstralloc("./", entry->d_name, NULL);
+			file = quoted = quote_string(incname);
+			if (*file == '"') {
+			    file[strlen(file) - 1] = '\0';
+			    file++;
+			}
+			fprintf(file_include, "%s\n", file);
+			amfree(quoted);
+			amfree(incname);
 			nb_exp++;
 		    }
 		}
@@ -233,17 +278,20 @@ int verbose;
     return nb_exp;
 }
 
-char *build_exclude(disk, device, options, verbose)
-char *disk, *device;
-option_t *options;
-int verbose;
+char *
+build_exclude(
+    char *	disk,
+    char *	device,
+    option_t *	options,
+    int		verbose)
 {
     char *filename;
     FILE *file_exclude;
     FILE *exclude;
-    char *aexc = NULL;
+    char *aexc;
     sle_t *excl;
     int nb_exclude = 0;
+    char *quoted;
 
     if(options->exclude_file) nb_exclude += options->exclude_file->nb_element;
     if(options->exclude_list) nb_exclude += options->exclude_list->nb_element;
@@ -267,6 +315,10 @@ int verbose;
 		    char *exclname = fixup_relative(excl->name, device);
 		    if((exclude = fopen(exclname, "r")) != NULL) {
 			while ((aexc = agets(exclude)) != NULL) {
+			    if (aexc[0] == '\0') {
+				amfree(aexc);
+				continue;
+			    }
 			    add_exclude(file_exclude, aexc,
 				        verbose && options->exclude_optional == 0);
 			    amfree(aexc);
@@ -274,13 +326,16 @@ int verbose;
 			fclose(exclude);
 		    }
 		    else {
-			dbprintf(("%s: Can't open exclude file '%s': %s\n",
+			quoted = quote_string(exclname);
+			dbprintf(("%s: Can't open exclude file %s (%s)\n",
 				  debug_prefix(NULL),
-				  exclname, strerror(errno)));
+				  quoted, strerror(errno)));
 			if(verbose && (options->exclude_optional == 0 ||
-				       errno != ENOENT))
-			    printf("ERROR [Can't open exclude file '%s': %s]\n",
-				   exclname, strerror(errno));
+				       errno != ENOENT)) {
+			    printf("ERROR [Can't open exclude file %s (%s)]\n",
+				   quoted, strerror(errno));
+			}
+			amfree(quoted);
 		    }
 		    amfree(exclname);
 		}
@@ -288,23 +343,27 @@ int verbose;
             fclose(file_exclude);
 	}
 	else {
-	    dbprintf(("%s: Can't create exclude file '%s': %s\n",
+	    quoted = quote_string(filename);
+	    dbprintf(("%s: Can't create exclude file %s (%s)\n",
 		      debug_prefix(NULL),
-		      filename, strerror(errno)));
-	    if(verbose)
-		printf("ERROR [Can't create exclude file '%s': %s]\n", filename,
-			strerror(errno));
+		      quoted, strerror(errno)));
+	    if(verbose) {
+		printf("ERROR [Can't create exclude file %s (%s)]\n",
+			quoted, strerror(errno));
+	    }
+	    amfree(quoted);
 	}
     }
 
     return filename;
 }
 
-char *build_include(disk, device, options, verbose)
-char *disk;
-char *device;
-option_t *options;
-int verbose;
+char *
+build_include(
+    char *	disk,
+    char *	device,
+    option_t *	options,
+    int		verbose)
 {
     char *filename;
     FILE *file_include;
@@ -313,6 +372,7 @@ int verbose;
     sle_t *incl;
     int nb_include = 0;
     int nb_exp = 0;
+    char *quoted;
 
     if(options->include_file) nb_include += options->include_file->nb_element;
     if(options->include_list) nb_include += options->include_list->nb_element;
@@ -327,7 +387,7 @@ int verbose;
 		    incl = incl->next) {
 		    nb_exp += add_include(disk, device, file_include,
 				  incl->name,
-				   verbose && options->include_optional == 0);
+				  verbose && options->include_optional == 0);
 		}
 	    }
 
@@ -337,6 +397,10 @@ int verbose;
 		    char *inclname = fixup_relative(incl->name, device);
 		    if((include = fopen(inclname, "r")) != NULL) {
 			while ((ainc = agets(include)) != NULL) {
+			    if (ainc[0] == '\0') {
+				amfree(ainc);
+				continue;
+			    }
 			    nb_exp += add_include(disk, device,
 						  file_include, ainc,
 						  verbose && options->include_optional == 0);
@@ -345,13 +409,15 @@ int verbose;
 			fclose(include);
 		    }
 		    else {
-			dbprintf(("%s: Can't open include file '%s': %s\n",
-				  debug_prefix(NULL),
-				  inclname, strerror(errno)));
+			quoted = quote_string(inclname);
+			dbprintf(("%s: Can't open include file %s (%s)\n",
+				  debug_prefix(NULL), quoted, strerror(errno)));
 			if(verbose && (options->include_optional == 0 ||
-				       errno != ENOENT))
-			    printf("ERROR [Can't open include file '%s': %s]\n",
-				   inclname, strerror(errno));
+				       errno != ENOENT)) {
+			    printf("ERROR [Can't open include file %s (%s)]\n",
+				   quoted, strerror(errno));
+			}
+			amfree(quoted);
 		   }
 		   amfree(inclname);
 		}
@@ -359,27 +425,33 @@ int verbose;
             fclose(file_include);
 	}
 	else {
-	    dbprintf(("%s: Can't create include file '%s': %s\n",
-		      debug_prefix(NULL),
-		      filename, strerror(errno)));
-	    if(verbose)
-		printf("ERROR [Can't create include file '%s': %s]\n", filename,
-			strerror(errno));
+	    quoted = quote_string(filename);
+	    dbprintf(("%s: Can't create include file %s (%s)\n",
+		      debug_prefix(NULL), quoted, strerror(errno)));
+	    if(verbose) {
+		printf("ERROR [Can't create include file %s (%s)]\n",
+			quoted, strerror(errno));
+	    }
+	    amfree(quoted);
 	}
     }
 	
     if(nb_exp == 0) {
-	dbprintf(("%s: No include for '%s'\n", debug_prefix(NULL), disk));
-	if(verbose && options->include_optional == 0)
-	    printf("ERROR [No include for '%s']\n", disk);
+	quoted = quote_string(disk);
+	dbprintf(("%s: No include for %s\n", debug_prefix(NULL), quoted));
+	if(verbose && options->include_optional == 0) {
+	    printf("ERROR [No include for %s]\n", quoted);
+	}
+	amfree(quoted);
     }
 
     return filename;
 }
 
 
-void init_options(options)
-option_t *options;
+void
+init_options(
+    option_t *options)
 {
     options->str = NULL;
     options->compress = NO_COMPR;
@@ -402,17 +474,24 @@ option_t *options;
 }
 
 
-option_t *parse_options(str, disk, device, fs, verbose)
-char *str;
-char *disk, *device;
-am_feature_t *fs;
-int verbose;
+option_t *
+parse_options(
+    char *str,
+    char *disk,
+    char *device,
+    am_feature_t *fs,
+    int verbose)
 {
     char *exc;
+    char *inc;
     option_t *options;
     char *p, *tok;
+    char *quoted;
 
-    options = alloc(sizeof(option_t));
+    (void)disk;		/* Quiet unused parameter warning */
+    (void)device;	/* Quiet unused parameter warning */
+
+    options = alloc(SIZEOF(option_t));
     init_options(options);
     options->str = stralloc(str);
 
@@ -423,21 +502,23 @@ int verbose;
 	if(am_has_feature(fs, fe_options_auth)
 	   && BSTRNCMP(tok,"auth=") == 0) {
 	    if(options->auth != NULL) {
-		dbprintf(("%s: multiple auth option \"%s\"\n",
-			  debug_prefix(NULL), tok+5));
+		quoted = quote_string(tok + 5);
+		dbprintf(("%s: multiple auth option %s\n",
+			  debug_prefix(NULL), quoted));
 		if(verbose) {
-		    printf("ERROR [multiple auth option \"%s\"\n", tok+5);
+		    printf("ERROR [multiple auth option %s]\n", quoted);
 		}
+		amfree(quoted);
 	    }
 	    options->auth = stralloc(&tok[5]);
 	}
 	else if(am_has_feature(fs, fe_options_bsd_auth)
 	   && BSTRNCMP(tok, "bsd-auth") == 0) {
 	    if(options->auth != NULL) {
-		dbprintf(("%s: multiple auth option \n",
+		dbprintf(("%s: multiple auth option\n",
 			  debug_prefix(NULL)));
 		if(verbose) {
-		    printf("ERROR [multiple auth option \n");
+		    printf("ERROR [multiple auth option]\n");
 		}
 	    }
 	    options->auth = stralloc("bsd");
@@ -445,50 +526,50 @@ int verbose;
 	else if(am_has_feature(fs, fe_options_krb4_auth)
 	   && BSTRNCMP(tok, "krb4-auth") == 0) {
 	    if(options->auth != NULL) {
-		dbprintf(("%s: multiple auth option \n",
+		dbprintf(("%s: multiple auth option\n",
 			  debug_prefix(NULL)));
 		if(verbose) {
-		    printf("ERROR [multiple auth option \n");
+		    printf("ERROR [multiple auth option]\n");
 		}
 	    }
 	    options->auth = stralloc("krb4");
 	}
 	else if(BSTRNCMP(tok, "compress-fast") == 0) {
 	    if(options->compress != NO_COMPR) {
-		dbprintf(("%s: multiple compress option \n",
+		dbprintf(("%s: multiple compress option\n",
 			  debug_prefix(NULL)));
 		if(verbose) {
-		    printf("ERROR [multiple compress option \n");
+		    printf("ERROR [multiple compress option]\n");
 		}
 	    }
 	    options->compress = COMPR_FAST;
 	}
 	else if(BSTRNCMP(tok, "compress-best") == 0) {
 	    if(options->compress != NO_COMPR) {
-		dbprintf(("%s: multiple compress option \n",
+		dbprintf(("%s: multiple compress option\n",
 			  debug_prefix(NULL)));
 		if(verbose) {
-		    printf("ERROR [multiple compress option \n");
+		    printf("ERROR [multiple compress option]\n");
 		}
 	    }
 	    options->compress = COMPR_BEST;
 	}
 	else if(BSTRNCMP(tok, "srvcomp-fast") == 0) {
 	    if(options->compress != NO_COMPR) {
-		dbprintf(("%s: multiple compress option \n",
+		dbprintf(("%s: multiple compress option\n",
 			  debug_prefix(NULL)));
 		if(verbose) {
-		    printf("ERROR [multiple compress option \n");
+		    printf("ERROR [multiple compress option]\n");
 		}
 	    }
 	    options->compress = COMPR_SERVER_FAST;
 	}
 	else if(BSTRNCMP(tok, "srvcomp-best") == 0) {
 	    if(options->compress != NO_COMPR) {
-		dbprintf(("%s: multiple compress option \n",
+		dbprintf(("%s: multiple compress option\n",
 			  debug_prefix(NULL)));
 		if(verbose) {
-		    printf("ERROR [multiple compress option \n");
+		    printf("ERROR [multiple compress option]\n");
 		}
 	    }
 	    options->compress = COMPR_SERVER_BEST;
@@ -501,7 +582,7 @@ int verbose;
 		    printf("ERROR [multiple compress option]\n");
 		}
 	    }
-	    options->srvcompprog = stralloc(tok + sizeof("srvcomp-cust=") -1);
+	    options->srvcompprog = stralloc(tok + SIZEOF("srvcomp-cust=") -1);
 	    options->compress = COMPR_SERVER_CUST;
 	}
 	else if(BSTRNCMP(tok, "comp-cust=") == 0) {
@@ -512,7 +593,7 @@ int verbose;
 		    printf("ERROR [multiple compress option]\n");
 		}
 	    }
-	    options->clntcompprog = stralloc(tok + sizeof("comp-cust=") -1);
+	    options->clntcompprog = stralloc(tok + SIZEOF("comp-cust=") -1);
 	    options->compress = COMPR_CUST;
 	    /* parse encryption options */
 	} 
@@ -524,7 +605,7 @@ int verbose;
 		    printf("ERROR [multiple encrypt option]\n");
 		}
 	    }
-	    options->srv_encrypt = stralloc(tok + sizeof("encrypt-serv-cust=") -1);
+	    options->srv_encrypt = stralloc(tok + SIZEOF("encrypt-serv-cust=") -1);
 	    options->encrypt = ENCRYPT_SERV_CUST;
 	} 
 	else if(BSTRNCMP(tok, "encrypt-cust=") == 0) {
@@ -535,82 +616,86 @@ int verbose;
 		    printf("ERROR [multiple encrypt option]\n");
 		}
 	    }
-	    options->clnt_encrypt= stralloc(tok + sizeof("encrypt-cust=") -1);
+	    options->clnt_encrypt= stralloc(tok + SIZEOF("encrypt-cust=") -1);
 	    options->encrypt = ENCRYPT_CUST;
 	} 
 	else if(BSTRNCMP(tok, "server-decrypt-option=") == 0) {
-	  options->srv_decrypt_opt = stralloc(tok + sizeof("server-decrypt-option=") -1);
+	  options->srv_decrypt_opt = stralloc(tok + SIZEOF("server-decrypt-option=") -1);
 	}
 	else if(BSTRNCMP(tok, "client-decrypt-option=") == 0) {
-	  options->clnt_decrypt_opt = stralloc(tok + sizeof("client-decrypt-option=") -1);
+	  options->clnt_decrypt_opt = stralloc(tok + SIZEOF("client-decrypt-option=") -1);
 	}
 	else if(BSTRNCMP(tok, "no-record") == 0) {
 	    if(options->no_record != 0) {
-		dbprintf(("%s: multiple no-record option \n",
+		dbprintf(("%s: multiple no-record option\n",
 			  debug_prefix(NULL)));
 		if(verbose) {
-		    printf("ERROR [multiple no-record option \n");
+		    printf("ERROR [multiple no-record option]\n");
 		}
 	    }
 	    options->no_record = 1;
 	}
 	else if(BSTRNCMP(tok, "index") == 0) {
 	    if(options->createindex != 0) {
-		dbprintf(("%s: multiple index option \n",
+		dbprintf(("%s: multiple index option\n",
 			  debug_prefix(NULL)));
 		if(verbose) {
-		    printf("ERROR [multiple index option \n");
+		    printf("ERROR [multiple index option]\n");
 		}
 	    }
 	    options->createindex = 1;
 	}
 	else if(BSTRNCMP(tok, "exclude-optional") == 0) {
 	    if(options->exclude_optional != 0) {
-		dbprintf(("%s: multiple exclude-optional option \n",
+		dbprintf(("%s: multiple exclude-optional option\n",
 			  debug_prefix(NULL)));
 		if(verbose) {
-		    printf("ERROR [multiple exclude-optional option \n");
+		    printf("ERROR [multiple exclude-optional option]\n");
 		}
 	    }
 	    options->exclude_optional = 1;
 	}
 	else if(strcmp(tok, "include-optional") == 0) {
 	    if(options->include_optional != 0) {
-		dbprintf(("%s: multiple include-optional option \n",
+		dbprintf(("%s: multiple include-optional option\n",
 			  debug_prefix(NULL)));
 		if(verbose) {
-		    printf("ERROR [multiple include-optional option \n");
+		    printf("ERROR [multiple include-optional option]\n");
 		}
 	    }
 	    options->include_optional = 1;
 	}
 	else if(BSTRNCMP(tok,"exclude-file=") == 0) {
-	    exc = &tok[13];
-	    options->exclude_file = append_sl(options->exclude_file,exc);
+	    exc = unquote_string(&tok[13]);
+	    options->exclude_file = append_sl(options->exclude_file, exc);
+	    amfree(exc);
 	}
 	else if(BSTRNCMP(tok,"exclude-list=") == 0) {
-	    exc = &tok[13];
+	    exc = unquote_string(&tok[13]);
 	    options->exclude_list = append_sl(options->exclude_list, exc);
+	    amfree(exc);
 	}
 	else if(BSTRNCMP(tok,"include-file=") == 0) {
-	    exc = &tok[13];
-	    options->include_file = append_sl(options->include_file,exc);
+	    inc = unquote_string(&tok[13]);
+	    options->include_file = append_sl(options->include_file, inc);
+	    amfree(inc);
 	}
 	else if(BSTRNCMP(tok,"include-list=") == 0) {
-	    exc = &tok[13];
-	    options->include_list = append_sl(options->include_list, exc);
+	    inc = unquote_string(&tok[13]);
+	    options->include_list = append_sl(options->include_list, inc);
+	    amfree(inc);
 	}
-	else if(strcmp(tok,"|") == 0) {
-	}
-	else {
-	    dbprintf(("%s: unknown option \"%s\"\n", debug_prefix(NULL), tok));
+	else if(strcmp(tok,"|") != 0) {
+	    quoted = quote_string(tok);
+	    dbprintf(("%s: unknown option %s\n",
+			debug_prefix(NULL), quoted));
 	    if(verbose) {
-		printf("ERROR [unknown option \"%s\"]\n", tok);
+		printf("ERROR [unknown option: %s]\n", quoted);
 	    }
+	    amfree(quoted);
 	}
 	tok = strtok(NULL, ";");
     }
     amfree(p);
     return options;
 }
-

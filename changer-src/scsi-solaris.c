@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-solaris.c,v 1.25 2005/10/15 13:20:47 martinea Exp $
+ * $Id: scsi-solaris.c,v 1.26 2006/05/25 01:47:10 johnfranks Exp $
  *
  * Interface to execute SCSI commands on an Sun Workstation
  *
@@ -60,7 +60,7 @@
 void SCSI_OS_Version()
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-solaris.c,v 1.25 2005/10/15 13:20:47 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-solaris.c,v 1.26 2006/05/25 01:47:10 johnfranks Exp $";
    DebugPrint(DEBUG_INFO, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -82,7 +82,7 @@ int SCSI_OpenDevice(int ip)
           pDev[ip].devopen = 1;
           pDev[ip].inquiry = (SCSIInquiry_T *)malloc(INQUIRY_SIZE);
           
-          if (SCSI_Inquiry(ip, pDev[ip].inquiry, INQUIRY_SIZE) == 0)
+          if (SCSI_Inquiry(ip, pDev[ip].inquiry, (unsigned char)INQUIRY_SIZE) == 0)
             {
               if (pDev[ip].inquiry->type == TYPE_TAPE || pDev[ip].inquiry->type == TYPE_CHANGER)
                 {
@@ -111,12 +111,10 @@ int SCSI_OpenDevice(int ip)
                   free(pDev[ip].inquiry);
                   return(0);
                 }
-            } else {
-              free(pDev[ip].inquiry);
-              pDev[ip].inquiry = NULL;
-              return(1);
             }
-          return(1);
+            free(pDev[ip].inquiry);
+            pDev[ip].inquiry = NULL;
+            return(1);
         } else {
           dbprintf(("SCSI_OpenDevice %s failed\n", pDev[ip].dev));
           return(0);
@@ -147,11 +145,11 @@ int SCSI_CloseDevice(int DeviceFD)
 int SCSI_ExecuteCommand(int DeviceFD,
                         Direction_T Direction,
                         CDB_T CDB,
-                        int CDB_Length,
+                        size_t CDB_Length,
                         void *DataBuffer,
-                        int DataBufferLength,
-                        char *pRequestSense,
-                        int RequestSenseLength)
+                        size_t DataBufferLength,
+                        RequestSense_T *RequestSense,
+                        size_t RequestSenseLength)
 {
   extern OpenFiles_T *pDev;
   extern FILE * debug_file;
@@ -159,10 +157,14 @@ int SCSI_ExecuteCommand(int DeviceFD,
   int retries = 1;
   extern int errno;
   struct uscsi_cmd Command;
-#if 0
-  ExtendedRequestSense_T pExtendedRequestSense;
-#endif
   static int depth = 0;
+
+  /* Basic sanity checks */
+  assert(CDB_Length <= UCHAR_MAX);
+  assert(RequestSenseLength <= UCHAR_MAX);
+
+  /* Clear buffer for cases where sense is not returned */
+  memset(RequestSense, 0, RequestSenseLength);
 
   if (pDev[DeviceFD].avail == 0)
     {
@@ -175,8 +177,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
      SCSI_CloseDevice(DeviceFD);
      return SCSI_ERROR;
   }
-  memset(&Command, 0, sizeof(struct uscsi_cmd));
-  memset(pRequestSense, 0, RequestSenseLength);
+  memset(&Command, 0, SIZEOF(struct uscsi_cmd));
+  memset(RequestSense, 0, RequestSenseLength);
   switch (Direction)
     {
     case Input:
@@ -196,7 +198,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
   /* Set timeout to 5 minutes. */
   Command.uscsi_timeout = 300;
   Command.uscsi_cdb = (caddr_t) CDB;
-  Command.uscsi_cdblen = CDB_Length;
+  Command.uscsi_cdblen = (u_char)CDB_Length;
 
   if (DataBufferLength > 0)
     {  
@@ -211,8 +213,8 @@ int SCSI_ExecuteCommand(int DeviceFD,
         | USCSI_WRITE | USCSI_RQENABLE;
    }
 
-  Command.uscsi_rqbuf = (caddr_t) pRequestSense;
-  Command.uscsi_rqlen = RequestSenseLength;
+  Command.uscsi_rqbuf = (caddr_t)RequestSense;
+  Command.uscsi_rqlen = (u_char)RequestSenseLength;
   DecodeSCSI(CDB, "SCSI_ExecuteCommand : ");
   while (retries > 0)
   {
@@ -228,24 +230,19 @@ int SCSI_ExecuteCommand(int DeviceFD,
       ret = Command.uscsi_status;
       break;
     }
-    dbprintf(("ioctl on %d failed, errno %d, ret %d\n",pDev[DeviceFD].fd, errno, ret));
+    dbprintf(("ioctl on %d failed, errno %s, ret %d\n",
+	      pDev[DeviceFD].fd, strerror(errno), ret));
 #if 0
     RequestSense(DeviceFD, &pExtendedRequestSense, 0);
 #endif
-    DecodeSense((RequestSense_T *)pRequestSense,
-		"SCSI_ExecuteCommand:", debug_file);
+    DecodeSense(RequestSense, "SCSI_ExecuteCommand:", debug_file);
     retries--;
   }
   --depth;
   SCSI_CloseDevice(DeviceFD);
 
-  switch (ret)
-    {
-    default:
-      DebugPrint(DEBUG_INFO, SECTION_SCSI,"ioctl ret (%d)\n",ret);
-      return(SCSI_OK);
-      break;
-    }
+  DebugPrint(DEBUG_INFO, SECTION_SCSI,"ioctl ret (%d)\n",ret);
+  return(SCSI_OK);
 }
 
 /*
@@ -274,7 +271,7 @@ int Tape_Ioctl( int DeviceFD, int command)
 
   if (ioctl(pDev[DeviceFD].fd , MTIOCTOP, &mtop) != 0)
     {
-      dbprintf(("Tape_Ioctl error ioctl %d\n",errno));
+      dbprintf(("Tape_Ioctl error ioctl %s\n", strerror(errno)));
       SCSI_CloseDevice(DeviceFD);
       return(-1);
     }
@@ -289,13 +286,14 @@ int Tape_Status( int DeviceFD)
   struct mtget mtget;
   int ret = -1;
 
+  memset(&mtget, 0, SIZEOF(mtget));
   if (pDev[DeviceFD].devopen == 0)
       if (SCSI_OpenDevice(DeviceFD) == 0)
           return(-1);
   
   if (ioctl(pDev[DeviceFD].fd , MTIOCGET, &mtget) != 0)
     {
-      dbprintf(("Tape_Status error ioctl %d\n",errno));
+      dbprintf(("Tape_Status error ioctl %s\n", strerror(errno)));
       SCSI_CloseDevice(DeviceFD);
       return(-1);
     }
@@ -326,6 +324,7 @@ int Tape_Status( int DeviceFD)
 
 int ScanBus(int print)
 {
+	(void)print;	/* Quiet unused parameter warning */
 	return(-1);
 }
 

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: bsdtcp-security.c,v 1.2 2006/05/12 23:39:09 martinea Exp $
+ * $Id: bsdtcp-security.c,v 1.3 2006/05/25 01:47:11 johnfranks Exp $
  *
  * bsdtcp-security.c - security and transport over bsdtcp or a bsdtcp-like command.
  *
@@ -45,7 +45,7 @@
 
 #ifdef BSDTCP_SECURITY
 
-/*#define	BSDTCP_DEBUG*/
+#define	BSDTCP_DEBUG
 
 #ifdef BSDTCP_DEBUG
 #define	bsdtcpprintf(x)	dbprintf(x)
@@ -62,11 +62,11 @@
 /*
  * Interface functions
  */
-static void bsdtcp_accept P((const struct security_driver *, int, int,
-    void (*)(security_handle_t *, pkt_t *)));
-static void bsdtcp_connect P((const char *,
+static void bsdtcp_accept(const struct security_driver *, int, int,
+    void (*)(security_handle_t *, pkt_t *));
+static void bsdtcp_connect(const char *,
     char *(*)(char *, void *), 
-    void (*)(void *, security_handle_t *, security_status_t), void *, void *));
+    void (*)(void *, security_handle_t *, security_status_t), void *, void *);
 
 /*
  * This is our interface to the outside world.
@@ -96,7 +96,7 @@ static int newhandle = 1;
 /*
  * Local functions
  */
-static int runbsdtcp P((struct sec_handle *));
+static int runbsdtcp(struct sec_handle *);
 
 
 /*
@@ -104,18 +104,20 @@ static int runbsdtcp P((struct sec_handle *));
  * up a network "connection".
  */
 static void
-bsdtcp_connect(hostname, conf_fn, fn, arg, datap)
-    const char *hostname;
-    char *(*conf_fn) P((char *, void *));
-    void (*fn) P((void *, security_handle_t *, security_status_t));
-    void *arg;
-    void *datap;
+bsdtcp_connect(
+    const char *hostname,
+    char *	(*conf_fn)(char *, void *),
+    void	(*fn)(void *, security_handle_t *, security_status_t),
+    void *	arg,
+    void *	datap)
 {
     struct sec_handle *rh;
     struct hostent *he;
 
     assert(fn != NULL);
     assert(hostname != NULL);
+    (void)conf_fn;	/* Quiet unused parameter warning */
+    (void)datap;	/* Quiet unused parameter warning */
 
     bsdtcpprintf(("%s: bsdtcp: bsdtcp_connect: %s\n", debug_prefix_time(NULL),
 	       hostname));
@@ -164,8 +166,8 @@ bsdtcp_connect(hostname, conf_fn, fn, arg, datap)
      */
     rh->fn.connect = fn;
     rh->arg = arg;
-    rh->rs->ev_read = event_register(rh->rs->rc->write, EV_WRITEFD,
-	sec_connect_callback, rh);
+    rh->rs->ev_read = event_register((event_id_t)(rh->rs->rc->write),
+	EV_WRITEFD, sec_connect_callback, rh);
     rh->ev_timeout = event_register(CONNECT_TIMEOUT, EV_TIME,
 	sec_connect_timeout, rh);
 
@@ -179,10 +181,11 @@ error:
  * Setup to handle new incoming connections
  */
 static void
-bsdtcp_accept(driver, in, out, fn)
-    const struct security_driver *driver;
-    int in, out;
-    void (*fn) P((security_handle_t *, pkt_t *));
+bsdtcp_accept(
+    const struct security_driver *driver,
+    int		in,
+    int		out,
+    void	(*fn)(security_handle_t *, pkt_t *))
 {
     struct sockaddr_in sin;
     socklen_t len;
@@ -199,7 +202,7 @@ bsdtcp_accept(driver, in, out, fn)
     rc = sec_tcp_conn_get(he->h_name, 0);
     rc->recv_security_ok = &bsd_recv_security_ok;
     rc->prefix_packet = &bsd_prefix_packet;
-    rc->peer.sin_addr = *(struct in_addr *)he->h_addr;
+    memcpy(&rc->peer.sin_addr, he->h_addr, sizeof(rc->peer.sin_addr));
     rc->peer.sin_port = sin.sin_port;
     rc->read = in;
     rc->write = out;
@@ -213,13 +216,14 @@ bsdtcp_accept(driver, in, out, fn)
  * Returns negative on error, with an errmsg in rc->errmsg.
  */
 static int
-runbsdtcp(rh)
-    struct sec_handle *rh;
+runbsdtcp(
+    struct sec_handle *	rh)
 {
-    struct servent *sp;
-    int server_socket, my_port;
-    int euid;
-    struct tcp_conn *rc = rh->rc;
+    struct servent *	sp;
+    int			server_socket; 
+    in_port_t		my_port;
+    uid_t		euid;
+    struct tcp_conn *	rc = rh->rc;
 
     if ((sp = getservbyname("amanda", "tcp")) == NULL) {
 	error("%s/tcp unknown protocol", "amanda");
@@ -229,11 +233,11 @@ runbsdtcp(rh)
     seteuid(0);
 
     server_socket = stream_client_privileged(rc->hostname,
-					     ntohs(sp->s_port),
-					     -1,
-					     -1,
-					     &my_port,
-					     0);
+				     (in_port_t)(ntohs((in_port_t)sp->s_port)),
+				     -1,
+				     -1,
+				     &my_port,
+				     0);
 
     if(server_socket < 0) {
 	security_seterror(&rh->sech,
