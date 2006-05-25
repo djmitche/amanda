@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.c,v 1.30 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: token.c,v 1.31 2006/05/25 17:35:34 martinea Exp $
  *
  * token bashing routines
  */
@@ -416,6 +416,10 @@ main(
 	int i;
 
 	safe_fd(-1, 0);
+
+	/* shut up compiler */
+	argc = argc;
+	argv = argv;
 
 	set_pname("token test");
 

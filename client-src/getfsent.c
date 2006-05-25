@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.35 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: getfsent.c,v 1.36 2006/05/25 17:35:34 martinea Exp $
  *
  * generic version of code to read fstab
  */
@@ -625,6 +625,8 @@ char *amname_to_fstype(
 }
 
 #ifdef TEST
+
+void print_entry(generic_fsent_t *fsent);
 
 void
 print_entry(

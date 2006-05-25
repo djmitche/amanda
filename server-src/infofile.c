@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.58 2006/05/25 01:47:20 johnfranks Exp $
+ * $Id: infofile.c,v 1.59 2006/05/25 17:35:34 martinea Exp $
  *
  * manage current info file
  */
@@ -887,6 +887,8 @@ del_info(
 
 #ifdef TEST
 
+void dump_rec(info_t *info);
+
 void
 dump_rec(
     info_t *	info)
@@ -907,7 +909,7 @@ dump_rec(
 	sp = &info->inf[i];
 	if( sp->size != -1) {
 
-	    printf("lev %d date %ld tape %s filenum %d size %ld csize %ld secs %ld\n",
+	    printf("lev %d date %ld tape %s filenum " OFF_T_FMT " size %ld csize %ld secs %ld\n",
 	           i, (long)sp->date, sp->label, sp->filenum,
 	           sp->size, sp->csize, sp->secs);
 	}
@@ -917,6 +919,8 @@ dump_rec(
 }
 
 #ifdef TEXTDB
+void dump_db( char *host, char *disk);
+
 void
 dump_db(
     char *	host,

@@ -1,4 +1,9 @@
 2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/getfsent.c (print_entry): Add prototype.
+	* common-src/token.c (main): Shut up compiler warning.
+	* server-src/infofile.c (dump_rec, dump_db): Add prototype.
+
+2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c, common-src/bsd-security.c,
 	  common-src/bsdtcp-security.c, common-src/bsdudp-security.c,
 	  common-src/event.c, common-src/krb5-security.c,
