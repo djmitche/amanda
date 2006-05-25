@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.11 2006/05/25 01:47:27 johnfranks Exp $
+ * $Id: output-file.c,v 1.12 2006/05/25 11:49:51 martinea Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -168,7 +168,7 @@ check_online(
 	     * This is a "tape file".
 	     */
 	    pos = OFF_T_ATOI(entry->d_name);
-	    assert((pos + 1) <= (off_t)SSIZE_T_MAX);
+	    assert((pos + 1) <= (off_t)SSIZE_MAX);
 	    amtable_alloc((void **)&volume_info[fd].fi,
 			  &volume_info[fd].fi_limit,
 			  SIZEOF(*volume_info[fd].fi),
@@ -255,7 +255,7 @@ file_open(
     if (volume_info[fd].fd < 0) {
 	flags = volume_info[fd].flags;
 	pos = volume_info[fd].file_current;
-	assert((pos + 1) < (off_t)SSIZE_T_MAX);
+	assert((pos + 1) < (off_t)SSIZE_MAX);
 	amtable_alloc((void **)&volume_info[fd].fi,
 		      &volume_info[fd].fi_limit,
 		      SIZEOF(*volume_info[fd].fi),
@@ -394,7 +394,7 @@ file_close(
 
     aclose(volume_info[fd].fd);
     pos = volume_info[fd].file_current;
-    assert((pos + 1) < (off_t)SSIZE_T_MAX);
+    assert((pos + 1) < (off_t)SSIZE_MAX);
     amtable_alloc((void **)&volume_info[fd].fi,
 		  &volume_info[fd].fi_limit,
 		  SIZEOF(*volume_info[fd].fi),
@@ -452,7 +452,7 @@ file_release(
 	position = volume_info[fd].file_current;
     }
     for (pos = position; pos < volume_info[fd].file_count; pos++) {
-	assert(pos < (off_t)SSIZE_T_MAX);
+	assert(pos < (off_t)SSIZE_MAX);
 	amtable_alloc((void **)&volume_info[fd].fi,
 		      &volume_info[fd].fi_limit,
 		      SIZEOF(*volume_info[fd].fi),

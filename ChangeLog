@@ -1,4 +1,11 @@
 2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/krb5-security.c (krb5_sendpkt, krb5_stream_read_sync,
+				      recv_token): Return ssize_t.
+	* common-src/krb5-security.c (krb5_accept, krb5_stream_accept,i
+				      krb5_stream_auth): Shut up compiler.
+	* tape-src/output-file.c: Use SSIZE_MAX instead of SSIZE_T_MAX.
+
+2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* configure.in(AM_INIT_AUTOMAKE): Fix.
 
 2006-05-24  John Franks <jrfranks@zmanda.com>

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.18 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: krb5-security.c,v 1.19 2006/05/25 11:49:51 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -223,7 +223,7 @@ struct krb5_stream {
 /*
  * Interface functions
  */
-static int	krb5_sendpkt(void *, pkt_t *);
+static ssize_t	krb5_sendpkt(void *, pkt_t *);
 static int	krb5_stream_accept(void *);
 static int	krb5_stream_auth(void *);
 static int	krb5_stream_id(void *);
@@ -241,7 +241,7 @@ static void	krb5_recvpkt(void *, void (*)(void *, pkt_t *, security_status_t),
 static void	krb5_recvpkt_cancel(void *);
 static void	krb5_stream_close(void *);
 static void	krb5_stream_read(void *, void (*)(void *, void *, ssize_t), void *);
-static int	krb5_stream_read_sync(void *, void **);
+static ssize_t	krb5_stream_read_sync(void *, void **);
 static void	krb5_stream_read_cancel(void *);
 
 /*
@@ -314,7 +314,7 @@ static void	open_callback(void *);
 static void	connect_callback(void *);
 static void	connect_timeout(void *);
 static int	send_token(struct krb5_conn *, int, const gss_buffer_desc *);
-static int	recv_token(struct krb5_conn *, int *, gss_buffer_desc *, int);
+static ssize_t	recv_token(struct krb5_conn *, int *, gss_buffer_desc *, int);
 static void	recvpkt_callback(void *, void *, ssize_t);
 static void	recvpkt_timeout(void *);
 static void	stream_read_callback(void *);
@@ -545,6 +545,10 @@ krb5_accept(
      */
     init();
 
+    /* shut up compiler */
+    driver=driver;
+    out=out;
+
     len = SIZEOF(sin);
     if (getpeername(in, (struct sockaddr *)&sin, &len) < 0)
 	return;
@@ -712,7 +716,7 @@ krb5_close(
 /*
  * Transmit a packet.  Encrypt first.
  */
-static int
+static ssize_t
 krb5_sendpkt(
     void *	cookie,
     pkt_t *	pkt)
@@ -720,7 +724,7 @@ krb5_sendpkt(
     struct krb5_handle *kh = cookie;
     gss_buffer_desc tok;
     int rval;
-    unsigned char c, *buf;
+    unsigned char *buf;
 
     assert(kh != NULL);
     assert(pkt != NULL);
@@ -910,6 +914,9 @@ krb5_stream_accept(
     void *	s)
 {
 
+    /* shut up compiler */
+    s = s;
+
     return (0);
 }
 
@@ -971,6 +978,8 @@ static int
 krb5_stream_auth(
     void *	s)
 {
+    /* shut up compiler */
+    s = s;
 
     return (0);
 }
