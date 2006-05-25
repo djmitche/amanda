@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsdudp-security.c,v 1.2 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: bsdudp-security.c,v 1.3 2006/05/25 17:07:31 martinea Exp $
  *
  * "BSD" security module
  */
@@ -42,7 +42,7 @@
 
 #ifdef BSDUDP_SECURITY
 
-#define       BSDUDP_DEBUG
+/*#define       BSDUDP_DEBUG*/
 
 #ifdef BSDUDP_DEBUG
 #define bsdudpprintf(x)    dbprintf(x)

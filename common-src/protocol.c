@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.44 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: protocol.c,v 1.45 2006/05/25 17:07:31 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -34,7 +34,7 @@
 #include "security.h"
 #include "protocol.h"
 
-#define	PROTO_DEBUG
+/*#define	PROTO_DEBUG*/
 
 /*
  * Valid actions that can be passed to the state machine

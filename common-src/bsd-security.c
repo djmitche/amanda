@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.63 2006/05/25 15:08:58 martinea Exp $
+ * $Id: bsd-security.c,v 1.64 2006/05/25 17:07:31 martinea Exp $
  *
  * "BSD" security module
  */
@@ -40,7 +40,7 @@
 #include "stream.h"
 #include "version.h"
 
-#define       BSD_DEBUG
+/*#define       BSD_DEBUG*/
 
 #ifdef BSD_DEBUG
 #define bsdprintf(x)    dbprintf(x)

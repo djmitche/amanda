@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.18 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: ssh-security.c,v 1.19 2006/05/25 17:07:31 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -45,7 +45,7 @@
 
 #ifdef SSH_SECURITY
 
-#define	SSH_DEBUG
+/*#define	SSH_DEBUG*/
 
 #ifdef SSH_DEBUG
 int	ssh_debug = 1; 

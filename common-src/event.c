@@ -24,14 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.22 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: event.c,v 1.23 2006/05/25 17:07:31 martinea Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
  * interdependency logic.
  */
 
-#define	EVENT_DEBUG
+/*#define	EVENT_DEBUG*/
 
 #ifdef EVENT_DEBUG
 #define eventprintf(x)    dbprintf(x)

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.4 2006/05/25 15:44:56 martinea Exp $
+ * $Id: security-util.c,v 1.5 2006/05/25 17:07:31 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -43,7 +43,7 @@
 #include "stream.h"
 #include "version.h"
 
-#define	SEC_DEBUG
+/*#define	SEC_DEBUG*/
 #define	SHOW_SECURITY_DETAIL
 
 #ifdef SEC_DEBUG

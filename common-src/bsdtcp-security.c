@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: bsdtcp-security.c,v 1.3 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: bsdtcp-security.c,v 1.4 2006/05/25 17:07:31 martinea Exp $
  *
  * bsdtcp-security.c - security and transport over bsdtcp or a bsdtcp-like command.
  *
@@ -45,7 +45,7 @@
 
 #ifdef BSDTCP_SECURITY
 
-#define	BSDTCP_DEBUG
+/*#define	BSDTCP_DEBUG*/
 
 #ifdef BSDTCP_DEBUG
 #define	bsdtcpprintf(x)	dbprintf(x)

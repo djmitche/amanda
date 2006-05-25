@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.22 2006/05/25 14:07:30 martinea Exp $
+ * $Id: util.c,v 1.23 2006/05/25 17:07:31 martinea Exp $
  */
 
 #include "amanda.h"
@@ -42,7 +42,7 @@ int conf_line_num, got_parserror;
 FILE *conf_conf = (FILE *)NULL;
 char *conf_confname = NULL;
 
-#define NET_READ_DEBUG
+/*#define NET_READ_DEBUG*/
 
 #ifdef NET_READ_DEBUG
 #define netprintf(x)    dbprintf(x)

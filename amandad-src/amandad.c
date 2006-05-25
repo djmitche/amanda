@@ -25,14 +25,14 @@
  */
 
 /*
- * $Id: amandad.c,v 1.7 2006/05/25 01:47:07 johnfranks Exp $
+ * $Id: amandad.c,v 1.8 2006/05/25 17:07:31 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
  * master side
  */
 
-#define	AMANDAD_DEBUG
+/*#define	AMANDAD_DEBUG*/
 
 #include "amanda.h"
 #include "amandad.h"

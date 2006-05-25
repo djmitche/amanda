@@ -1,4 +1,12 @@
 2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c, common-src/bsd-security.c,
+	  common-src/bsdtcp-security.c, common-src/bsdudp-security.c,
+	  common-src/event.c, common-src/krb5-security.c,
+	  common-src/protocol.c, common-src/rsh-security.c,
+	  common-src/security-util.c, common-src/ssh-security.c,
+	  common-src/util.c, server-src/driver.c: comment debugging.
+
+2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/security-util.c: typo.
 	* server-src/amcheck.c: Make sure all check are done.
 

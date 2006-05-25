@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.19 2006/05/25 11:49:51 martinea Exp $
+ * $Id: krb5-security.c,v 1.20 2006/05/25 17:07:31 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -71,7 +71,7 @@
 #define	KRB5_ENV_CCNAME	"KRB5CCNAME"
 #endif
 
-#define	KRB5_DEBUG
+/*#define	KRB5_DEBUG*/
 
 #ifdef KRB5_DEBUG
 #define	k5printf(x)	dbprintf(x)
