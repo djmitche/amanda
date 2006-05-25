@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.3 2006/05/25 14:07:30 martinea Exp $
+ * $Id: security-util.c,v 1.4 2006/05/25 15:44:56 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -839,7 +839,7 @@ bsd_recv_security_ok(
 	 */
 	if (ntohs(rh->peer.sin_port) >= IPPORT_RESERVED) {
 	    security_seterror(&rh->sech,
-		"hostX %s: port %d not secure", rh->hostname,
+		"host %s: port %d not secure", rh->hostname,
 		ntohs(rh->peer.sin_port));
 	    return (-1);
 	}
@@ -2211,7 +2211,7 @@ check_security(
 
 	snprintf(number, SIZEOF(number), "%hd", (short)ntohs(addr->sin_port));
 	*errstr = vstralloc("[",
-			    "hostY ", remotehost, ": ",
+			    "host ", remotehost, ": ",
 			    "port ", number, " not secure",
 			    "]", NULL);
 	amfree(remotehost);

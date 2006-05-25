@@ -1,4 +1,8 @@
 2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/security-util.c: typo.
+	* server-src/amcheck.c: Make sure all check are done.
+
+2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
 	Fix for program not compiled by default.
 	make bsdsecurity still not compile.
 	* common-src/bsd-security.c(bind_portrange): prototype change.

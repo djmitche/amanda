@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.128 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: amcheck.c,v 1.129 2006/05/25 15:44:56 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -656,24 +656,18 @@ start_server_check(
 	    pgmbad = 1;
 	    amfree(quoted);
 	} else {
-	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, libexecdir, "planner",
-					1, uid_dumpuser);
-	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, libexecdir, "dumper",
-					1, uid_dumpuser);
-	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, libexecdir, "driver",
-					0, uid_dumpuser);
-	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, libexecdir, "taper",
-					0, uid_dumpuser);
-	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, libexecdir, "amtrmidx",
-					0, uid_dumpuser);
-	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, libexecdir, "amlogroll",
-					0, uid_dumpuser);
+	    if(test_server_pgm(outf, libexecdir, "planner", 1, uid_dumpuser))
+		pgmbad = 1;
+	    if(test_server_pgm(outf, libexecdir, "dumper", 1, uid_dumpuser))
+		pgmbad = 1;
+	    if(test_server_pgm(outf, libexecdir, "driver", 0, uid_dumpuser))
+		pgmbad = 1;
+	    if(test_server_pgm(outf, libexecdir, "taper", 0, uid_dumpuser))
+		pgmbad = 1;
+	    if(test_server_pgm(outf, libexecdir, "amtrmidx", 0, uid_dumpuser))
+		pgmbad = 1;
+	    if(test_server_pgm(outf, libexecdir, "amlogroll", 0, uid_dumpuser))
+		pgmbad = 1;
 	}
 	if(access(sbindir, X_OK) == -1) {
 	    quoted = quote_string(sbindir);
@@ -682,18 +676,14 @@ start_server_check(
 	    pgmbad = 1;
 	    amfree(quoted);
 	} else {
-	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, sbindir, "amgetconf",
-					0, uid_dumpuser);
-	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, sbindir, "amcheck",
-					1, uid_dumpuser);
-	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, sbindir, "amdump",
-					0, uid_dumpuser);
-	    pgmbad = pgmbad \
-		     || test_server_pgm(outf, sbindir, "amreport",
-					0, uid_dumpuser);
+	    if(test_server_pgm(outf, sbindir, "amgetconf", 0, uid_dumpuser))
+		pgmbad = 1;
+	    if(test_server_pgm(outf, sbindir, "amcheck", 1, uid_dumpuser))
+		pgmbad = 1;
+	    if(test_server_pgm(outf, sbindir, "amdump", 0, uid_dumpuser))
+		pgmbad = 1;
+	    if(test_server_pgm(outf, sbindir, "amreport", 0, uid_dumpuser))
+		pgmbad = 1;
 	}
 	if(access(COMPRESS_PATH, X_OK) == -1) {
 	    quoted = quote_string(COMPRESS_PATH);
