@@ -3138,64 +3138,65 @@ AM_CONDITIONAL(HAVE_XSLTPROC, test "x$USE_XSLTPROC" = "xyes")
 #### Enforce amanda code cleanliness rules.
 #### Done here to allow configuration code to remain intact.
 if test "x$CC" = "xgcc"; then
-  CFLAGS="$CFLAGS -Wall"
+  AM_CFLAGS="$AM_CFLAGS -Wall -Werror"
   $CC -v --help 2>&1 | $GREP -- '-Wextra ' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -Wextra"
+    AM_CFLAGS="$AM_CFLAGS -Wextra"
   else
-   CFLAGS="$CFLAGS -W"
+   AM_CFLAGS="$AM_CFLAGS -W"
   fi
 
   $CC -v --help 2>&1 | $GREP -- '-Wparentheses' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -Wparentheses"
+    AM_CFLAGS="$AM_CFLAGS -Wparentheses"
   fi
 
   $CC -v --help 2>&1 | $GREP -- '-Wdeclaration-after-statement' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -Wdeclaration-after-statement"
+    AM_CFLAGS="$AM_CFLAGS -Wdeclaration-after-statement"
   fi
 
   $CC -v --help 2>&1 | $GREP -- '-Wmissing-prototypes ' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -Wmissing-prototypes"
+    AM_CFLAGS="$AM_CFLAGS -Wmissing-prototypes"
   fi
 
   $CC -v --help 2>&1 | $GREP -- '-Wstrict-prototypes ' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -Wstrict-prototypes"
+    AM_CFLAGS="$AM_CFLAGS -Wstrict-prototypes"
   fi
 
   $CC -v --help 2>&1 | $GREP -- '-Wmissing-declarations ' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -Wmissing-declarations"
+    AM_CFLAGS="$AM_CFLAGS -Wmissing-declarations"
   fi
 
   $CC -v --help 2>&1 | $GREP -- '-Wformat' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -Wformat"
+    AM_CFLAGS="$AM_CFLAGS -Wformat"
   fi
 
   $CC -v --help 2>&1 | $GREP -- '-Wsign-compare' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -Wsign-compare"
+    AM_CFLAGS="$AM_CFLAGS -Wsign-compare"
   fi
 
   $CC -v --help 2>&1 | $GREP -- '-fno-strict-aliasing' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -fno-strict-aliasing"
+    AM_CFLAGS="$AM_CFLAGS -fno-strict-aliasing"
   fi
 
   $CC -v --help 2>&1 | $GREP -- '-Wfloat-equal' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -Wfloat-equal"
+    AM_CFLAGS="$AM_CFLAGS -Wfloat-equal"
   fi
 
   $CC -v --help 2>&1 | $GREP -- '-Wold-style-definition' 2>&1 > /dev/null
   if test $? -eq 0; then
-    CFLAGS="$CFLAGS -Wold-style-definition"
+    AM_CFLAGS="$AM_CFLAGS -Wold-style-definition"
   fi
 fi
+AC_SUBST(AM_CFLAGS)
 
 AC_CONFIG_FILES([\
 	amplot/amcat.awk		amplot/amplot.sh		\

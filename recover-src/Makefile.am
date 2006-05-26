@@ -47,10 +47,10 @@ AM_YFLAGS =		-d
 $(srcdir)/uscan.c: $(srcdir)/uparse.h
 
 uscan.$(OBJEXT): $(srcdir)/uscan.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) $(AM_CFLAGS) -c $<
+	$(CC) $(CFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) -c $<
 
 uparse.$(OBJEXT): $(srcdir)/uparse.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) $(AM_CFLAGS) -c $<
+	$(CC) $(CFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) -c $<
 
 
 install-exec-hook:

@@ -97,6 +97,17 @@
 2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* configure.in(AM_INIT_AUTOMAKE): Fix.
 
+2006-05-25  John Franks <jrfranks@zmanda.com>
+	Pass user CFLAGS correctly to machine generated code and do not
+	enforce code quality checks on them.
+	* configure.in:
+	  Put compiler code check flags into existing, but previously
+          unused, AM_CFLAGS for Makefiles to pick up.  CFLAGS should
+	  now only contain mandatory flags.
+
+	* recover-src/Makefile.am  oldrecover-src/Makefile.am:
+	  Use CFLAGS for compiling C code generated from uparse.y and uscan.l
+
 2006-05-24  John Franks <jrfranks@zmanda.com>
 	Add support for binary path names on disk and in configuration files.
            (Allow spaces in filenames.)
