@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.136 2006/05/26 14:26:46 martinea Exp $
+ * $Id: conffile.c,v 1.137 2006/05/26 17:55:03 martinea Exp $
  *
  * read configuration file
  */
@@ -1855,6 +1855,12 @@ read_dumptype(
 	    amfree(dpcur.client_username);
 	    get_simple(&tmpval, &dpcur.s_client_username, CONF_STRING);
 	    dpcur.client_username = tmpval.s;
+	    break;
+
+	case CONF_SSH_KEYS:
+	    amfree(dpcur.ssh_keys);
+	    get_simple(&tmpval, &dpcur.s_ssh_keys, CONF_STRING);
+	    dpcur.ssh_keys = tmpval.s;
 	    break;
 
 	case CONF_RBRACE:

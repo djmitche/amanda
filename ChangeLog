@@ -1,4 +1,7 @@
 2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/conffile.c (read_dumptype): Parse SSH_KEYS.
+
+2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/security-util.c (udp_inithandle): Remove bad merge.
 	* server-src/amindexd.c: Improve error message.
 	* server-src/planner.c: Add a space in output.
