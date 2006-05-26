@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.7 2006/05/26 14:00:58 martinea Exp $
+ * $Id: security-util.c,v 1.8 2006/05/26 16:01:05 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -1277,7 +1277,6 @@ udp_inithandle(
     rh->fn.connect = NULL;
     rh->arg = NULL;
     rh->ev_read = NULL;
-    rh->rc->toclose = 0;
     rh->ev_timeout = NULL;
 
     secprintf(("%s: udp: adding handle '%s'\n",

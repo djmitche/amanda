@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.93 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: amindexd.c,v 1.94 2006/05/26 16:01:05 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -432,8 +432,12 @@ is_disk_valid(
     disk_t *idisk;
     char *qdisk;
 
-    if (config_name == NULL || dump_hostname == NULL) {
+    if (config_name == NULL) {
 	reply(501, "Must set config,host before setting disk.");
+	return -1;
+    }
+    else if (dump_hostname == NULL) {
+	reply(501, "Must set host before setting disk.");
 	return -1;
     }
 
@@ -541,8 +545,16 @@ build_disk_table(void)
     int last_partnum;
     find_result_t *find_output;
 
-    if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
+    if (config_name == NULL) {
 	reply(590, "Must set config,host,disk before building disk table");
+	return -1;
+    }
+    else if (dump_hostname == NULL) {
+	reply(590, "Must set host,disk before building disk table");
+	return -1;
+    }
+    else if (disk_name == NULL) {
+	reply(590, "Must set disk before building disk table");
 	return -1;
     }
 
@@ -597,8 +609,16 @@ disk_history_list(void)
     DUMP_ITEM *item;
     char date[20];
 
-    if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
+    if (config_name == NULL) {
 	reply(502, "Must set config,host,disk before listing history");
+	return -1;
+    }
+    else if (dump_hostname == NULL) {
+	reply(502, "Must set host,disk before listing history");
+	return -1;
+    }
+    else if (disk_name == NULL) {
+	reply(502, "Must set disk before listing history");
 	return -1;
     }
 
@@ -653,7 +673,15 @@ is_dir_valid_opaque(
 	reply(502, "Must set config,host,disk before asking about directories");
 	return -1;
     }
-    if (target_date == NULL) {
+    else if (dump_hostname == NULL) {
+	reply(502, "Must set host,disk before asking about directories");
+	return -1;
+    }
+    else if (disk_name == NULL) {
+	reply(502, "Must set disk before asking about directories");
+	return -1;
+    }
+    else if (target_date == NULL) {
 	reply(502, "Must set date before asking about directories");
 	return -1;
     }
@@ -744,11 +772,19 @@ opaque_ls(
 
     clear_dir_list();
 
-    if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
+    if (config_name == NULL) {
 	reply(502, "Must set config,host,disk before listing a directory");
 	return -1;
     }
-    if (target_date == NULL) {
+    else if (dump_hostname == NULL) {
+	reply(502, "Must set host,disk before listing a directory");
+	return -1;
+    }
+    else if (disk_name == NULL) {
+	reply(502, "Must set disk before listing a directory");
+	return -1;
+    }
+    else if (target_date == NULL) {
 	reply(502, "Must set date before listing a directory");
 	return -1;
     }
@@ -912,8 +948,16 @@ are_dumps_compressed(void)
     disk_t *diskp;
 
     /* check state okay to do this */
-    if (config_name == NULL || dump_hostname == NULL || disk_name == NULL) {
+    if (config_name == NULL) {
 	reply(501, "Must set config,host,disk name before asking about dumps.");
+	return -1;
+    }
+    else if (dump_hostname == NULL) {
+	reply(501, "Must set host,disk name before asking about dumps.");
+	return -1;
+    }
+    else if (disk_name == NULL) {
+	reply(501, "Must set disk name before asking about dumps.");
 	return -1;
     }
 
@@ -1301,8 +1345,11 @@ main(
 	    disk_t *disk;
 	    int nbdisk = 0;
 	    s[-1] = '\0';
-	    if (config_name == NULL || dump_hostname == NULL) {
+	    if (config_name == NULL) {
 		reply(501, "Must set config, host before listdisk");
+	    }
+	    else if (dump_hostname == NULL) {
+		reply(501, "Must set host before listdisk");
 	    }
 	    else if(arg) {
 		lreply(200, " List of disk for device %s on host %s", arg,

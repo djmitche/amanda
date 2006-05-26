@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.187 2006/05/25 01:47:20 johnfranks Exp $
+ * $Id: planner.c,v 1.188 2006/05/26 16:01:05 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -495,7 +495,7 @@ int main(int argc, char **argv)
 		(OFF_T_FMT_TYPE)total_size);
 	for(dp = schedq.head; dp != NULL; dp = dp->next) {
 	    qname = quote_string(dp->name);
-	    fprintf(stderr, "  %s %s pri %d lev %d nsize " OFF_T_FMT "csize " OFF_T_FMT "\n",
+	    fprintf(stderr, "  %s %s pri %d lev %d nsize " OFF_T_FMT " csize " OFF_T_FMT "\n",
 		    dp->host->hostname, qname, est(dp)->dump_priority,
 		    est(dp)->dump_level,
 		    (OFF_T_FMT_TYPE)est(dp)->dump_nsize,
