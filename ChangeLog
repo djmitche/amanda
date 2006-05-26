@@ -1,4 +1,8 @@
 2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/conffile.c: Set dpcur.no_hold correctly,
+				 Fix for conffile program.
+
+2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
 	Allow many services to share the same tcp connection for
 	bsdtcp/ssh/rsh.
 	Add a security_close_connection to the security-api.

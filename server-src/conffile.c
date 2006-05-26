@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.135 2006/05/25 15:08:58 martinea Exp $
+ * $Id: conffile.c,v 1.136 2006/05/26 14:26:46 martinea Exp $
  *
  * read configuration file
  */
@@ -459,7 +459,7 @@ getconf_long(
     case CNF_NETUSAGE: r = conf_netusage.l; break;
 
     default:
-	error("error [unknown getconf_int parm: %d]", parm);
+	error("error [unknown getconf_long parm: %d]", parm);
 	/*NOTREACHED*/
     }
     return r;
@@ -1651,7 +1651,7 @@ read_dumptype(
 
 	case CONF_HOLDING:
 	    get_simple(&tmpval, &dpcur.s_no_hold, CONF_BOOL);
-	    if (tmpval.i != 0)
+	    if (tmpval.i == 0)
 		dpcur.no_hold = 1;
 	    else
 		dpcur.no_hold = 0;
@@ -3116,7 +3116,7 @@ dump_configuration(
     printf("conf_tapecycle = %d\n", getconf_int(CNF_TAPECYCLE));
     printf("conf_bumppercent = %d\n", getconf_int(CNF_BUMPPERCENT));
     printf("conf_bumpsize = " OFF_T_FMT "\n",
-		(OFF_T_FMT_TYPE)getconf_int(CNF_BUMPSIZE));
+		(OFF_T_FMT_TYPE)getconf_am64(CNF_BUMPSIZE));
     printf("conf_bumpdays = %d\n", getconf_int(CNF_BUMPDAYS));
     printf("conf_bumpmult = %lf\n", getconf_real(CNF_BUMPMULT));
     printf("conf_netusage = %ld\n", getconf_long(CNF_NETUSAGE));
@@ -3136,8 +3136,7 @@ dump_configuration(
     printf("conf_reserve  = %d\n", getconf_int(CNF_RESERVE));
     printf("conf_maxdumpsize  = " OFF_T_FMT "\n",
 		(OFF_T_FMT_TYPE)getconf_am64(CNF_MAXDUMPSIZE));
-    printf("conf_amrecover_do_fsf  = " OFF_T_FMT "\n",
-		(OFF_T_FMT_TYPE)getconf_am64(CNF_AMRECOVER_DO_FSF));
+    printf("conf_amrecover_do_fsf  = %d\n", getconf_int(CNF_AMRECOVER_DO_FSF));
     printf("conf_amrecover_check_label  = %d\n", getconf_int(CNF_AMRECOVER_CHECK_LABEL));
     printf("conf_amrecover_changer = \"%s\"\n", getconf_str(CNF_AMRECOVER_CHANGER));
     printf("conf_taperalgo  = %s\n", taperalgo2str(getconf_int(CNF_TAPERALGO)));
