@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: security.h,v 1.16 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: security.h,v 1.17 2006/05/26 14:00:58 martinea Exp $
  *
  * security api
  */
@@ -152,6 +152,8 @@ typedef struct security_driver {
      */
     void (*stream_read_cancel)(void *);
 
+    void (*close_connection)(void *, char *);
+
 } security_driver_t;
 
 /*
@@ -254,4 +256,6 @@ void security_stream_close(security_stream_t *);
 #define	security_stream_read_cancel(stream)		\
     (*(stream)->driver->stream_read_cancel)(stream)
 
+#define security_close_connection(handle, hostname) \
+    (*(handle)->driver->close_connection)(handle, hostname)
 #endif	/* SECURITY_H */

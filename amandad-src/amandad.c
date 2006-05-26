@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.8 2006/05/25 17:07:31 martinea Exp $
+ * $Id: amandad.c,v 1.9 2006/05/26 14:00:58 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -140,7 +140,8 @@ static struct {
 } dbmalloc_info;
 #endif
 
-static int allow_many_services = 1;
+static int wait_30s = 1;
+static int exit_on_qlength = 1;
 static char *auth = NULL;
 
 int main(int argc, char **argv);
@@ -427,9 +428,10 @@ main(
     }
 
     if(strcmp(auth, "rsh") == 0 ||
-       strcmp(auth, "ssh") == 0  ||
+       strcmp(auth, "ssh") == 0 ||
        strcmp(auth, "bsdtcp") == 0) {
-	allow_many_services = 0;
+	wait_30s = 0;
+	exit_on_qlength = 1;
     }
 
     /* initialize */
@@ -456,7 +458,7 @@ main(
      * Schedule an event that will try to exit every 30 seconds if there
      * are no requests outstanding.
      */
-    if(allow_many_services)
+    if(wait_30s)
 	(void)event_register((event_id_t)30, EV_TIME, exit_check, &no_exit);
 
     /*
@@ -465,8 +467,8 @@ main(
      */
     event_loop(0);
 
-    /*NOTREACHED*/
-    return (1);	/* appease gcc/lint */
+    dbclose();
+    return(0);
 }
 
 /*
@@ -523,6 +525,13 @@ protocol_accept(
     int i;
 
     pkt_out.body = NULL;
+
+    /*
+     * If handle is NULL, then the connection is closed.
+     */
+    if(handle == NULL) {
+	return;
+    }
 
     /*
      * If pkt is NULL, then there was a problem with the new connection.
@@ -1518,7 +1527,7 @@ service_delete(
     amfree(as->rep_pkt.body);
     amfree(as);
 
-    if(allow_many_services == 0 && serviceq.qlength == 0) {
+    if(exit_on_qlength == 0 && serviceq.qlength == 0) {
 	dbclose();
 	exit(0);
     }

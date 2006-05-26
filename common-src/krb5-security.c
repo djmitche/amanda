@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.20 2006/05/25 17:07:31 martinea Exp $
+ * $Id: krb5-security.c,v 1.21 2006/05/26 14:00:58 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -265,6 +265,7 @@ const security_driver_t krb5_security_driver = {
     krb5_stream_read,
     krb5_stream_read_sync,
     krb5_stream_read_cancel,
+    sec_close_connection_none,
 };
 
 /*

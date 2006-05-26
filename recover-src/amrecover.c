@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.57 2006/05/25 01:47:13 johnfranks Exp $
+ * $Id: amrecover.c,v 1.58 2006/05/26 14:00:58 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -271,6 +271,7 @@ quit(void)
 {
     quit_prog = 1;
     (void)converse("QUIT");
+    stop_amindexd();
 }
 
 char *localhost = NULL;
@@ -757,6 +758,9 @@ amindexd_client_get_security_conf(
 
     if(strcmp(string, "auth")==0) {
 	return(client_getconf_str(CLN_AUTH));
+    }
+    else if(strcmp(string, "ssh_keys")==0) {
+	return(client_getconf_str(CLN_SSH_KEYS));
     }
     return(NULL);
 }

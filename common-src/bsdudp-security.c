@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsdudp-security.c,v 1.3 2006/05/25 17:07:31 martinea Exp $
+ * $Id: bsdudp-security.c,v 1.4 2006/05/26 14:00:58 martinea Exp $
  *
  * "BSD" security module
  */
@@ -96,6 +96,7 @@ const security_driver_t bsdudp_security_driver = {
     tcpm_stream_read,
     tcpm_stream_read_sync,
     tcpm_stream_read_cancel,
+    sec_close_connection_none,
 };
 
 /*

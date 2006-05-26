@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: bsdtcp-security.c,v 1.4 2006/05/25 17:07:31 martinea Exp $
+ * $Id: bsdtcp-security.c,v 1.5 2006/05/26 14:00:58 martinea Exp $
  *
  * bsdtcp-security.c - security and transport over bsdtcp or a bsdtcp-like command.
  *
@@ -89,6 +89,7 @@ const security_driver_t bsdtcp_security_driver = {
     tcpm_stream_read,
     tcpm_stream_read_sync,
     tcpm_stream_read_cancel,
+    tcpm_close_connection,
 };
 
 static int newhandle = 1;
@@ -136,10 +137,9 @@ bsdtcp_connect(
 	return;
     }
     rh->hostname = he->h_name;	/* will be replaced */
-    rh->rc = sec_tcp_conn_get(rh->hostname, 1);
+    rh->rs = tcpma_stream_client(rh, newhandle++);
     rh->rc->recv_security_ok = &bsd_recv_security_ok;
     rh->rc->prefix_packet = &bsd_prefix_packet;
-    rh->rs = tcpma_stream_client(rh, newhandle++);
 
     if (rh->rs == NULL)
 	goto error;
@@ -151,11 +151,12 @@ bsdtcp_connect(
      *
      * XXX need to eventually limit number of outgoing connections here.
      */
-    if (runbsdtcp(rh) < 0) {
-//	security_seterror(&rh->sech, "Can't connect to %s: %s",
-//			  hostname, rh->rs->rc->errmsg);
-	goto error;
+    if(rh->rc->read == -1) {
+	if (runbsdtcp(rh) < 0)
+	    goto error;
+	rh->rc->refcnt++;
     }
+
     /*
      * The socket will be opened async so hosts that are down won't
      * block everything.  We need to register a write event

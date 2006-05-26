@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.99 2006/05/25 01:47:14 johnfranks Exp $
+ * $Id: extract_list.c,v 1.100 2006/05/26 14:00:58 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -2010,6 +2010,7 @@ amidxtaped_response(
     assert(sech != NULL);
     memset(ports, -1, SIZEOF(ports));
 
+    security_close_connection(sech, dump_hostname);
     if (pkt == NULL) {
 	errstr = newvstralloc(errstr, "[request failed: ",
 			     security_geterror(sech), "]", NULL);
@@ -2312,6 +2313,9 @@ amidxtaped_client_get_security_conf(
 
     if(strcmp(string, "auth")==0) {
 	return(client_getconf_str(CLN_AUTH));
+    }
+    if(strcmp(string, "ssh_keys")==0) {
+	return(client_getconf_str(CLN_SSH_KEYS));
     }
     return(NULL);
 }

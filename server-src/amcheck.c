@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.129 2006/05/25 15:44:56 martinea Exp $
+ * $Id: amcheck.c,v 1.130 2006/05/26 14:00:58 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1740,4 +1740,6 @@ handle_result(
 	}
     }
     start_host(hostp);
+    if(hostp->up == HOST_DONE)
+	security_close_connection(sech, hostp->hostname);
 }

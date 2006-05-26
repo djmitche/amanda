@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.6 2006/05/26 11:10:02 martinea Exp $
+ * $Id: security-util.c,v 1.7 2006/05/26 14:00:58 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -184,6 +184,19 @@ sec_connect_timeout(
 
     (*rh->fn.connect)(rh->arg, &rh->sech, S_TIMEOUT);
 }
+
+void
+sec_close_connection_none(
+    void *h,
+    char *hostname)
+{
+    h = h;
+    hostname = hostname;
+
+    return;
+}
+
+
 
 /*
  * Transmit a packet.
@@ -417,6 +430,7 @@ tcpm_send_token(
     uint32_t		nethandle;
     uint32_t		netlength;
     struct iovec	iov[3];
+    int			nb_iov = 3;
 
     assert(SIZEOF(netlength) == 4);
 
@@ -426,7 +440,7 @@ tcpm_send_token(
      *   32 bit handle (network byte order)
      *   data
      */
-    netlength = (size_t)htonl(len);
+    netlength = htonl(len);
     iov[0].iov_base = (void *)&netlength;
     iov[0].iov_len = SIZEOF(netlength);
 
@@ -434,10 +448,16 @@ tcpm_send_token(
     iov[1].iov_base = (void *)&nethandle;
     iov[1].iov_len = SIZEOF(nethandle);
 
-    iov[2].iov_base = (void *)buf;
-    iov[2].iov_len = len;
+    if(len == 0) {
+	nb_iov = 2;
+    }
+    else {
+	iov[2].iov_base = (void *)buf;
+	iov[2].iov_len = len;
+        nb_iov = 3;
+    }
 
-    if (net_writev(fd, iov, 3) < 0) {
+    if (net_writev(fd, iov, nb_iov) < 0) {
 	if (errmsg)
             *errmsg = newvstralloc(*errmsg, "write error to ",
 				   ": ", strerror(errno), NULL);
@@ -445,6 +465,13 @@ tcpm_send_token(
     }
     return (0);
 }
+
+/*
+ *  return -1 on error
+ *  return  0 on EOF:   *handle = H_EOF  && *size = 0    if socket closed
+ *  return  0 on EOF:   *handle = handle && *size = 0    if stream closed
+ *  return size     :   *handle = handle && *size = size for data read
+ */
 
 ssize_t
 tcpm_recv_token(
@@ -469,6 +496,7 @@ tcpm_recv_token(
 	return (-1);
     case 0:
 	*size = 0;
+	*handle = H_EOF;
 	secprintf(("%s: tcpm_recv_token: A return(0)\n",
 		   debug_prefix_time(NULL)));
 	return (0);
@@ -481,6 +509,11 @@ tcpm_recv_token(
     *buf = alloc((size_t)*size);
     *handle = (int)ntohl(netint[1]);
 
+    if(*size == 0) {
+	secprintf(("%s: tcpm_recv_token: read EOF from %d\n",
+		   debug_prefix_time(NULL), *handle));
+	return 0;
+    }
     switch (net_read(fd, *buf, (size_t)*size, timeout)) {
     case -1:
 	if (errmsg)
@@ -498,10 +531,27 @@ tcpm_recv_token(
 	break;
     }
 
-    secprintf(("%s: tcpm_recv_token: read %ld bytes\n",
-	       debug_prefix_time(NULL), *size));
+    secprintf(("%s: tcpm_recv_token: read %ld bytes from %d\n",
+	       debug_prefix_time(NULL), *size, *handle));
     return((*size));
 }
+
+void
+tcpm_close_connection(
+    void *h,
+    char *hostname)
+{
+    struct sec_handle *rh = h;
+
+    hostname = hostname;
+
+    if(rh->rc->toclose == 0) {
+	rh->rc->toclose = 1;
+	sec_tcp_conn_put(rh->rc);
+    }
+}
+
+
 
 /*
  * Accept an incoming connection on a stream_server socket
@@ -540,12 +590,13 @@ tcpma_stream_client(
     security_streaminit(&rs->secstr, rh->sech.driver);
     rs->handle = id;
     rs->ev_read = NULL;
+    rs->closed_by_me = 0;
+    rs->closed_by_network = 0;
     if (rh->rc) {
 	rs->rc = rh->rc;
 	rh->rc->refcnt++;
     }
     else {
-	/*error("should never be executed B");*/
 	rs->rc = sec_tcp_conn_get(rh->hostname, 0);
 	rs->rc->driver = rh->sech.driver;
 	rh->rc = rs->rc;
@@ -572,12 +623,13 @@ tcpma_stream_server(
 
     rs = alloc(SIZEOF(*rs));
     security_streaminit(&rs->secstr, rh->sech.driver);
+    rs->closed_by_me = 0;
+    rs->closed_by_network = 0;
     if (rh->rc) {
 	rs->rc = rh->rc;
 	rs->rc->refcnt++;
     }
     else {
-	error("should never be executed A");
 	rs->rc = sec_tcp_conn_get(rh->hostname, 0);
 	rs->rc->driver = rh->sech.driver;
 	rh->rc = rs->rc;
@@ -611,14 +663,18 @@ tcpma_stream_close(
     void *	s)
 {
     struct sec_stream *rs = s;
+    char buf[1];
 
     assert(rs != NULL);
 
-    secprintf(("%s: sec: stream_close: closing stream %d\n",
+    secprintf(("%s: sec: tcpma_stream_close: closing stream %d\n",
 	       debug_prefix_time(NULL), rs->handle));
 
+    if(rs->closed_by_network == 0 && rs->rc->write != -1)
+	tcpm_stream_write(rs, &buf, 0);
     security_stream_read_cancel(&rs->secstr);
-    sec_tcp_conn_put(rs->rc);
+    if(rs->closed_by_network == 0)
+	sec_tcp_conn_put(rs->rc);
     amfree(rs);
 }
 
@@ -637,10 +693,13 @@ tcp1_stream_server(
 
     rs = alloc(SIZEOF(*rs));
     security_streaminit(&rs->secstr, rh->sech.driver);
+    rs->closed_by_me = 0;
+    rs->closed_by_network = 0;
     if (rh->rc) {
 	rs->rc = rh->rc;
 	rs->handle = 500000 - newhandle++;
 	rs->rc->refcnt++;
+	rs->socket = 0;		/* the socket is already opened */
     }
     else {
 	rh->rc = sec_tcp_conn_get(rh->hostname, 1);
@@ -707,6 +766,8 @@ tcp1_stream_client(
     security_streaminit(&rs->secstr, rh->sech.driver);
     rs->handle = id;
     rs->ev_read = NULL;
+    rs->closed_by_me = 0;
+    rs->closed_by_network = 0;
     if (rh->rc) {
 	rs->rc = rh->rc;
 	rh->rc->refcnt++;
@@ -1212,10 +1273,11 @@ udp_inithandle(
 
     rh->sequence = sequence;
     rh->event_id = (event_id_t)newevent++;
-    rh->proto_handle = handle;
+    rh->proto_handle = stralloc(handle);
     rh->fn.connect = NULL;
     rh->arg = NULL;
     rh->ev_read = NULL;
+    rh->rc->toclose = 0;
     rh->ev_timeout = NULL;
 
     secprintf(("%s: udp: adding handle '%s'\n",
@@ -1348,6 +1410,7 @@ sec_tcp_conn_get(
     rc->driver = NULL;
     rc->pid = -1;
     rc->ev_read = NULL;
+    rc->toclose = 0;
     strncpy(rc->hostname, hostname, SIZEOF(rc->hostname) - 1);
     rc->hostname[SIZEOF(rc->hostname) - 1] = '\0';
     rc->errmsg = NULL;
@@ -1526,6 +1589,9 @@ stream_read_sync_callback(
     if (rs->rc->pktlen == 0) {
         secprintf(("%s: sec: stream_read_callback_sync: EOF\n",
 		   debug_prefix_time(NULL)));
+	if(rs->closed_by_me == 0 && rs->closed_by_network == 0)
+	    sec_tcp_conn_put(rs->rc);
+	rs->closed_by_network = 1;
         return;
     }
     secprintf((
@@ -1573,6 +1639,9 @@ stream_read_callback(
     if (rs->rc->pktlen == 0) {
 	secprintf(("%s: sec: stream_read_callback: EOF\n",
 		   debug_prefix_time(NULL)));
+	if(rs->closed_by_me == 0 && rs->closed_by_network == 0)
+	    sec_tcp_conn_put(rs->rc);
+	rs->closed_by_network = 1;
 	(*rs->fn)(rs->arg, NULL, 0);
 	return;
     }
@@ -1580,7 +1649,8 @@ stream_read_callback(
 	       debug_prefix_time(NULL),
 	rs->rc->pktlen, rs->rc->hostname, rs->handle));
     (*rs->fn)(rs->arg, rs->rc->pkt, rs->rc->pktlen);
-    secprintf(("%s: sec: after callback stream_read_callback\n", debug_prefix_time(NULL)));
+    secprintf(("%s: sec: after callback stream_read_callback\n",
+	       debug_prefix_time(NULL)));
 }
 
 /*
@@ -1607,16 +1677,29 @@ sec_tcp_conn_read_callback(
 				&rc->pktlen, 60);
     secprintf(("%s: sec: conn_read_callback: tcpm_recv_token returned %d\n",
 	       debug_prefix_time(NULL), rval));
-    if (rval <= 0) {
+    if (rval < 0 || rc->handle == H_EOF) {
 	rc->pktlen = 0;
 	rc->handle = H_EOF;
 	revent = event_wakeup((event_id_t)rc);
-	secprintf(("%s: sec: conn_read_callback: event_wakeup return %d\n",
-		   debug_prefix_time(NULL), rval));
+	secprintf(("%s: H_EOF sec: conn_read_callback: event_wakeup return %d\n",
+		   debug_prefix_time(NULL), revent));
 	/* delete our 'accept' reference */
-	if (rc->accept_fn != NULL)
+	if (rc->accept_fn != NULL) {
+	    if(rc->refcnt != 1) {
+		dbprintf(("STRANGE, rc->refcnt should be 1"));
+		rc->refcnt=1;
+	    }
 	    sec_tcp_conn_put(rc);
+	}
 	rc->accept_fn = NULL;
+	return;
+    }
+
+    if(rval == 0) {
+	rc->pktlen = 0;
+	revent = event_wakeup((event_id_t)rc);
+	secprintf(("%s: 0 sec: conn_read_callback: event_wakeup return %d\n",
+		   debug_prefix_time(NULL), revent));
 	return;
     }
 
@@ -1624,7 +1707,9 @@ sec_tcp_conn_read_callback(
     revent = event_wakeup((event_id_t)rc);
     secprintf(("%s: sec: conn_read_callback: event_wakeup return %d\n",
 	       debug_prefix_time(NULL), rval));
-    if (revent > 0)
+    if (rc->handle == H_TAKEN)
+	return;
+    if(rc->pktlen == 0)
 	return;
 
     /* If there is no accept fn registered, then drop the packet */
@@ -1747,7 +1832,6 @@ str2pkthdr(
     /* parse the handle */
     if ((tok = strtok(NULL, " ")) == NULL)
 	goto parse_error;
-    amfree(udp->handle);
     udp->handle = stralloc(tok);
 
     /* Read in "SEQ" */
@@ -2086,13 +2170,13 @@ check_user_amandahosts(
 		break;
 	    }
 	} while((aservice = strtok(NULL, " \t,")) != NULL);
-	amfree(line);
 
 	if (aservice && strcmp(aservice, service) == 0) {
 	    /* success */
 	    found = 1;
 	    break;
 	}
+	amfree(line);
     }
     if (! found) {
 	result = vstralloc(ptmp, ": ",
@@ -2347,12 +2431,12 @@ net_read(
 		   debug_prefix_time(NULL), size));
 	nread = net_read_fillbuf(fd, timeout, buf, size);
 	if (nread < 0) {
-    	    secprintf(("%s: db: net_read: end retrun(-1)\n",
+    	    secprintf(("%s: db: net_read: end return(-1)\n",
 		       debug_prefix_time(NULL)));
 	    return (-1);
 	}
 	if (nread == 0) {
-    	    secprintf(("%s: net_read: end retrun(0)\n",
+    	    secprintf(("%s: net_read: end return(0)\n",
 		       debug_prefix_time(NULL)));
 	    return (0);
 	}

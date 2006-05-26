@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb4-security.c,v 1.14 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: krb4-security.c,v 1.15 2006/05/26 14:00:58 martinea Exp $
  *
  * krb4-security.c - helper functions for kerberos v4 security.
  */
@@ -155,6 +155,7 @@ const security_driver_t krb4_security_driver = {
     krb4_stream_read,
     krb4_stream_read_sync,
     krb4_stream_read_cancel,
+    sec_close_connection_none,
 };
 
 /*

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.19 2006/05/25 17:07:31 martinea Exp $
+ * $Id: ssh-security.c,v 1.20 2006/05/26 14:00:58 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -109,6 +109,7 @@ const security_driver_t ssh_security_driver = {
     tcpm_stream_read,
     tcpm_stream_read_sync,
     tcpm_stream_read_cancel,
+    tcpm_close_connection,
 };
 
 static int newhandle = 1;
@@ -147,6 +148,7 @@ ssh_connect(
     rh->hostname = NULL;
     rh->rs = NULL;
     rh->ev_timeout = NULL;
+    rh->rc = NULL;
 
     if ((he = gethostbyname(hostname)) == NULL) {
 	security_seterror(&rh->sech,
@@ -155,7 +157,6 @@ ssh_connect(
 	return;
     }
     rh->hostname = he->h_name;	/* will be replaced */
-    rh->rc = sec_tcp_conn_get(rh->hostname, 1);
     rh->rs = tcpma_stream_client(rh, newhandle++);
 
     if (rh->rs == NULL)
@@ -173,11 +174,15 @@ ssh_connect(
 	client_username = conf_fn("client_username", datap);
 	ssh_keys        = conf_fn("ssh_keys", datap);
     }
-    if (runssh(rh->rs->rc, amandad_path, client_username, ssh_keys) < 0) {
-	security_seterror(&rh->sech, "can't connect to %s: %s",
-			  hostname, rh->rs->rc->errmsg);
-	goto error;
+    if(rh->rc->read == -1) {
+	if (runssh(rh->rs->rc, amandad_path, client_username, ssh_keys) < 0) {
+	    security_seterror(&rh->sech, "can't connect to %s: %s",
+			      hostname, rh->rs->rc->errmsg);
+	    goto error;
+	}
+	rh->rc->refcnt++;
     }
+
     /*
      * The socket will be opened async so hosts that are down won't
      * block everything.  We need to register a write event
@@ -233,7 +238,6 @@ runssh(
     case 0:
 	dup2(wpipe[0], 0);
 	dup2(rpipe[1], 1);
-	dup2(rpipe[1], 2);
 	break;
     default:
 	rc->read = rpipe[0];

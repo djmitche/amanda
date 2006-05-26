@@ -28,7 +28,7 @@
  */
 
 /*
- * $Id: security-util.h,v 1.2 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: security-util.h,v 1.3 2006/05/26 14:00:58 martinea Exp $
  *
  */
 
@@ -60,6 +60,7 @@ struct tcp_conn {
     TAILQ_ENTRY(tcp_conn) tq;			/* queue handle */
     int			(*recv_security_ok)(struct sec_handle *, pkt_t *);
     char *		(*prefix_packet)(void *, pkt_t *);
+    int			toclose;
 };
 
 
@@ -108,6 +109,8 @@ struct sec_stream {
     ssize_t		len;
     int			socket;
     in_port_t		port;
+    int			closed_by_me;
+    int			closed_by_network;
 };
 
 struct connq_s {
@@ -183,6 +186,7 @@ void	sec_accept(const security_driver_t *, int, int,
 void	sec_close(void *);
 void	sec_connect_callback(void *);
 void	sec_connect_timeout(void *);
+void	sec_close_connection_none(void *, char *);
 
 ssize_t	stream_sendpkt(void *, pkt_t *);
 void	stream_recvpkt(void *,
@@ -197,6 +201,7 @@ ssize_t	tcpm_stream_read_sync(void *, void **);
 void	tcpm_stream_read_cancel(void *);
 ssize_t	tcpm_send_token(int, int, char **, const void *, size_t);
 ssize_t	tcpm_recv_token(int, int *, char **, char **, ssize_t *, int);
+void	tcpm_close_connection(void *, char *);
 
 int	tcpma_stream_accept(void *);
 void *	tcpma_stream_client(void *, int);

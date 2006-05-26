@@ -1,4 +1,31 @@
 2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
+	Allow many services to share the same tcp connection for
+	bsdtcp/ssh/rsh.
+	Add a security_close_connection to the security-api.
+	* amandad-src/amandad.c (wait_30s, exit_on_qlength): New variable to
+					control auth specific behaviour.
+	* common-src/bsd-security.c: Add sec_close_connection_none.
+	* common-src/bsdudp-security.c: Add sec_close_connection_none.
+	* common-src/krb4-security.c: Add sec_close_connection_none.
+	* common-src/krb5-security.c: Add sec_close_connection_none.
+	* common-src/security.h (security_close_connection): Prototype.
+	* common-src/security-util.h (sec_close_connection_none,
+				      tcpm_close_connection): Prototype.
+	* common-src/security-util.h (struct tcp_conn): Add toclose.
+	* common-src/security-util.h (struct sec_stream): Add closed_by_me and
+							  closed_by_network.
+	* common-src/security-util.c (sec_close_connection_none,
+				      tcpm_close_connection): New function.
+	* common-src/security-util.c: Handle many services on one connection.
+	* common-src/bsdtcp-security.c: Handle many services on one connection.
+	* common-src/rsh-security.c: Handle many services on one connection.
+	* common-src/ssh-security.c: Handle many services on one connection.
+	* recover-src/amrecover.c: Add call security_close_connection.
+	* recover-src/extract_list.c: Add call security_close_connection.
+	* server-src/amcheck.c: Add call security_close_connection.
+	* server-src/dumper.c: Add call security_close_connection.
+
+2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/security-util.c (bsd_prefix_packet): We need the username
 	  of the getuid() user.
 
