@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.5 2006/05/25 17:07:31 martinea Exp $
+ * $Id: security-util.c,v 1.6 2006/05/26 11:10:02 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -760,7 +760,7 @@ bsd_prefix_packet(
     if (pkt->type != P_REQ)
 	return "";
 
-    if ((pwd = getpwuid(geteuid())) == NULL) {
+    if ((pwd = getpwuid(getuid())) == NULL) {
 	security_seterror(&rh->sech,
 			  "can't get login name for my uid %ld",
 			  (long)getuid());

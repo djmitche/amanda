@@ -1,4 +1,8 @@
 2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/security-util.c (bsd_prefix_packet): We need the username
+	  of the getuid() user.
+
+2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/fileheader.c: Parse datestamp on F_TAPEEND.
 	* restore-src/amrestore.c: Set read_result to the result of
 				   read_file_header.
