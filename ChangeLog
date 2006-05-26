@@ -1,3 +1,12 @@
+2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/fileheader.c: Parse datestamp on F_TAPEEND.
+	* restore-src/amrestore.c: Set read_result to the result of
+				   read_file_header.
+	* restore-src/restore.c (read_file_header): Return a ssize_t.
+			Rename bytes_read by read_result.
+			Set read_result to the result of read_file_header.
+	* restore-src/restore.h (read_file_header): New prototype.
+
 2006-05-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taperscan.c: Replace bogus newvstralloc by vstrextend.
 

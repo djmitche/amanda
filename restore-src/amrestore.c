@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.58 2006/05/25 01:47:15 johnfranks Exp $
+ * $Id: amrestore.c,v 1.59 2006/05/26 11:08:37 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -312,14 +312,13 @@ main(
 	/*NOTREACHED*/
     }
 
-    read_file_header(&file, tapedev, isafile, rst_flags);
+    read_result = read_file_header(&file, tapedev, isafile, rst_flags);
     if(file.type != F_TAPESTART && !isafile && filefsf == (off_t)-1) {
 	fprintf(stderr, "%s: WARNING: not at start of tape, file numbers will be offset\n",
 			get_pname());
     }
 
-    count_error=0;
-    read_result = 0;
+    count_error = 0;
     while(count_error < 10) {
 	if(file.type == F_TAPEEND) break;
 	found_match = 0;
@@ -390,7 +389,7 @@ main(
 	    count_error=0;
 	}
 	file_number++;
-	read_file_header(&file, tapedev, isafile, rst_flags);
+	read_result = read_file_header(&file, tapedev, isafile, rst_flags);
     }
     if(isafile) {
 	close(tapedev);

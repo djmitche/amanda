@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.33 2006/05/25 01:47:15 johnfranks Exp $
+ * $Id: restore.c,v 1.34 2006/05/26 11:08:37 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -588,7 +588,7 @@ disk_match(
  * Reads the first block of a tape file.
  */
 
-void
+ssize_t
 read_file_header(
     dumpfile_t *	file,
     int			tapefd,
@@ -621,6 +621,7 @@ read_file_header(
 	parse_file_header(buffer, file, (size_t)bytes_read);
     }
     amfree(buffer);
+    return bytes_read;
 }
 
 
@@ -1227,7 +1228,7 @@ search_tapes(
     tapelist_t *desired_tape = NULL;
     struct sigaction act, oact;
     int newtape = 1;
-    ssize_t bytes_read = 0;
+    ssize_t read_result;
     off_t fsf_by;
     int	i;
 
@@ -1336,6 +1337,7 @@ search_tapes(
 	int wrongtape = 0;
 	int isafile = 0;
 
+	read_result = 0;
 	memset(&file, 0, SIZEOF(file));
 	/*
 	 * Deal with instances where we're being asked to restore from a file
@@ -1349,7 +1351,7 @@ search_tapes(
 	    }
 	    fprintf(stderr, "Reading %s to fd %d\n", desired_tape->label, tapefd);
 
-	    read_file_header(&file, tapefd, 1, flags);
+	    read_result = read_file_header(&file, tapefd, 1, flags);
 	    label = stralloc(desired_tape->label);
 	}
 	/*
@@ -1372,7 +1374,7 @@ search_tapes(
 	    }
 
  	    if (!wrongtape) {
- 		read_file_header(&file, tapefd, 0, flags);
+ 		read_result = read_file_header(&file, tapefd, 0, flags);
  		if (file.type != F_TAPESTART) {
  		    fprintf(stderr, "Not an amanda tape\n");
  		    tapefd_close(tapefd);
@@ -1384,7 +1386,6 @@ search_tapes(
  	    }
 	} else if(newtape) {
 	  wrongtape = 1; /* nothing loaded */
-	  bytes_read = -1;
 	}
 
 	/*
@@ -1564,7 +1565,7 @@ search_tapes(
 		else {
 			filenum = fsf_by;
 		}
-		read_file_header(&file, tapefd, isafile, flags);
+		read_result = read_file_header(&file, tapefd, isafile, flags);
 	    }
 	}
 
@@ -1609,44 +1610,46 @@ search_tapes(
 
 	    if(found_match){
 		char *filename = make_filename(&file);
+
 		fprintf(stderr, "%s: " OFF_T_FMT ": restoring ",
 		        get_pname(), (OFF_T_FMT_TYPE)filenum);
 		print_header(stderr, &file);
-		bytes_read = restore(&file, filename, tapefd, isafile, flags);
+		read_result = restore(&file, filename, tapefd, isafile, flags);
 		filenum ++;
 		amfree(filename);
 	    }
 
 	    /* advance to the next file, fast-forwarding where reasonable */
 	    if (!isafile) {
-		if (bytes_read == 0) {
+		if (read_result == 0) {
 			tapefd_close(tapefd);
 			if((tapefd = tape_open(cur_tapedev, 0)) < 0) {
 			    error("could not open %s: %s",
 				  cur_tapedev, strerror(errno));
 			    /*NOTREACHED*/
 			}
-		} else {
-		    /* if the file is not what we're looking for fsf to next one */
-		    if (!found_match) {
-			if (tapefd_fsf(tapefd, (off_t)1) < 0) {
-			    error("Could not fsf device %s: %s",
-				  cur_tapedev, strerror(errno));
+		/* if the file is not what we're looking for fsf to next one */
+		}
+		else if (!found_match) {
+		    if (tapefd_fsf(tapefd, (off_t)1) < 0) {
+			error("Could not fsf device %s: %s",
+			      cur_tapedev, strerror(errno));
+			/*NOTREACHED*/
+		    }
+		    filenum ++;
+		}
+		else if (flags->fsf && (tapefile_idx >= 0) && 
+			(tapefile_idx < desired_tape->numfiles)) {
+		    fsf_by = desired_tape->files[tapefile_idx] - filenum;
+		    if (fsf_by > (off_t)0) {
+			if(tapefd_fsf(tapefd, fsf_by) < 0) {
+			    error("Could not fsf device %s by " OFF_T_FMT
+				  ": %s",
+				  cur_tapedev, (OFF_T_FMT_TYPE)fsf_by,
+				  strerror(errno));
 			    /*NOTREACHED*/
 			}
-			filenum ++;
-		    } else if (flags->fsf && (tapefile_idx >= 0) && 
-				(tapefile_idx < desired_tape->numfiles)) {
-			fsf_by = desired_tape->files[tapefile_idx] - filenum;
-			if (fsf_by > (off_t)0) {
-			    if(tapefd_fsf(tapefd, fsf_by) < 0) {
-				error("Could not fsf device %s by " OFF_T_FMT ": %s",
-					cur_tapedev, (OFF_T_FMT_TYPE)fsf_by,
-					strerror(errno));
-				/*NOTREACHED*/
-			    }
-			    filenum = desired_tape->files[tapefile_idx];
-			}
+			filenum = desired_tape->files[tapefile_idx];
 		    }
 		}
 	    } /* !isafile */
@@ -1659,7 +1662,7 @@ search_tapes(
 
 	    /* only restore a single dump, if piping to stdout */
 	    if(!headers_equal(&prev_rst_file, &file, 1) &&
-			(flags->pipe_to_fd == fileno(stdout)) && found_match) {
+	       (flags->pipe_to_fd == fileno(stdout)) && found_match) {
 		break;
 	    }
 	} /* while we keep seeing headers */

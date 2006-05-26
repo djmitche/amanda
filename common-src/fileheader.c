@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.36 2006/05/25 14:07:30 martinea Exp $
+ * $Id: fileheader.c,v 1.37 2006/05/26 11:08:37 martinea Exp $
  */
 
 #include "amanda.h"
@@ -355,12 +355,16 @@ parse_file_header(
 	/* DATE is optional */
 	if (tok != NULL) {
 	    if (strcmp(tok, "DATE") == 0) {
-		strncpy(file->datestamp, tok, SIZEOF(file->datestamp) - 1);
+		tok = strtok(NULL, " ");
+		if(tok == NULL)
+		    file->datestamp[0] = '\0';
+		else
+		    strncpy(file->datestamp, tok, SIZEOF(file->datestamp) - 1);
 	    } else {
 		strange_header(file, buffer, buflen, "<DATE>", tok);
 	   }
 	} else {
-		file->datestamp[0] = '\0';
+	    file->datestamp[0] = '\0';
 	}
 	break;
 
