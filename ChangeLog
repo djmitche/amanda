@@ -1,3 +1,14 @@
+2006-05-29  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/Makefile.am: 'make listlibsrc' send it's ouput to fd 3.
+	* changer-src/Makefile.am: Ditto.
+	* client-src/Makefile.am: Ditto.
+	* common-src/Makefile.am: Ditto.
+	* oldrecover-src/Makefile.am: Ditto.
+	* recover-src/Makefile.am: Ditto.
+	* restore-src/Makefile.am: Ditto.
+	* server-src/Makefile.am: Ditto.
+	* tape-src/Makefile.am: Ditto.
+
 2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/conffile.c (read_dumptype): Parse SSH_KEYS.
 
