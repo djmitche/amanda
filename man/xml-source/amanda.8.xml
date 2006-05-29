@@ -871,7 +871,9 @@ file is:</para>
 <para><emphasis remap='I'>hostname</emphasis>
 [
 <emphasis remap='I'>username</emphasis>
-]</para>
+[
+<emphasis remap='I'>service</emphasis>
+]*]</para>
 
 <para>If
 <emphasis remap='I'>username</emphasis>
@@ -882,6 +884,15 @@ i.e. the user listed in the
 or
 <emphasis remap='B'>xinetd</emphasis>
 configuration file.</para>
+<para>The <emphasis remap='I'>service</emphasis> is a list of the service the client is authorized to execute:
+<emphasis remap='B'>amdump</emphasis>,
+<emphasis remap='B'>noop</emphasis>,
+<emphasis remap='B'>selfcheck</emphasis>,
+<emphasis remap='B'>sendsize</emphasis>,
+<emphasis remap='B'>sendbackup</emphasis>,
+<emphasis remap='B'>amindexd</emphasis>,
+<emphasis remap='B'>amidxtaped</emphasis>.
+<emphasis remap='B'>amdump</emphasis> is a shortcut for "noop selfcheck sendsize sendbackup"</para>
   </listitem>
   </varlistentry>
   <varlistentry>

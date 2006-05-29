@@ -1,4 +1,7 @@
 2006-05-29  Jean-Louis Martineau <martineau@zmanda.com>
+	* man/xml-source/amanda.8.xml: Documents service in .amandahosts.
+
+2006-05-29  Jean-Louis Martineau <martineau@zmanda.com>
 	Previous patch doesn't work because 'make -j2' will use fd 3.
 	* amandad-src/Makefile.am: Use a temporary file for output of
 				   'make listlibsrc'.
