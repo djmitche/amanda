@@ -1,4 +1,17 @@
 2006-05-29  Jean-Louis Martineau <martineau@zmanda.com>
+	Previous patch doesn't work because 'make -j2' will use fd 3.
+	* amandad-src/Makefile.am: Use a temporary file for output of
+				   'make listlibsrc'.
+	* changer-src/Makefile.am: Ditto.
+	* client-src/Makefile.am: Ditto.
+	* common-src/Makefile.am: Ditto.
+	* oldrecover-src/Makefile.am: Ditto.
+	* recover-src/Makefile.am: Ditto.
+	* restore-src/Makefile.am: Ditto.
+	* server-src/Makefile.am: Ditto.
+	* tape-src/Makefile.am: Ditto.
+
+2006-05-29  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/Makefile.am: 'make listlibsrc' send it's ouput to fd 3.
 	* changer-src/Makefile.am: Ditto.
 	* client-src/Makefile.am: Ditto.

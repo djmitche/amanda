@@ -177,7 +177,7 @@ listlibsrc:
 	@ for p in $(libamanda_la_SOURCES) $(REGEXCSRC); do	\
 		listlibsrcs="$$listlibsrcs `pwd`/$$p";		\
 	done;							\
-	echo $$listlibsrcs 1>&3
+	echo $$listlibsrcs >listlibsrc.output
 
 %.test.c: $(srcdir)/%.c
 	echo '#define TEST' >$@

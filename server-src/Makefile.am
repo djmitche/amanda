@@ -144,9 +144,11 @@ lint:
 			s=$$p.c;						\
 		fi; 								\
 		f="$$s $(libamserver_la_SOURCES)";				\
-		f="$$f "`(cd ../common-src; make listlibsrc 3>&1 1>/dev/null 2>/dev/null)`;	\
-		f="$$f "`(cd ../tape-src; make listlibsrc 3>&1 1>/dev/null 2>/dev/null)`;	\
-		echo $(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config $(INCLUDES) $$f;						\
+		(cd ../common-src; make listlibsrc);				\
+		f="$$f "`cat ../common-src/listlibsrc.output`;			\
+		(cd ../tape-src; make listlibsrc);				\
+		f="$$f "`cat ../tape-src/listlibsrc.output`;			\
+		echo $(LINT) $$f;						\
 		$(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config	\
 		    $(INCLUDES) $$f;						\
 		if [ $$? -ne 0 ]; then						\
@@ -159,7 +161,7 @@ listlibsrc:
 	@ for p in $(libamserver_la_SOURCES); do		\
 		listlibsrcs="$$listlibsrcs `pwd`/$$p";		\
 	done;							\
-	echo $$listlibsrcs 1>&3
+	echo $$listlibsrcs >listlibsrc.output
 
 
 diskfile_SOURCES = diskfile.test.c

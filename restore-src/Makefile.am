@@ -61,9 +61,12 @@ install-exec-hook:
 lint:
 	@ for p in $(libexec_PROGRAMS) $(sbin_PROGRAMS); do			\
 		f="$$p.c $(librestore_la_SOURCES)";				\
-		f="$$f "`(cd ../common-src; make listlibsrc 3>&1 1>/dev/null 2>/dev/null)`;	\
-		f="$$f "`(cd ../server-src; make listlibsrc 3>&1 1>/dev/null 2>/dev/null)`;	\
-		f="$$f "`(cd ../tape-src; make listlibsrc 3>&1 1>/dev/null 2>/dev/null)`;	\
+		(cd ../common-src; make listlibsrc);				\
+		f="$$f "`cat ../common-src/listlibsrc.output`;			\
+		(cd ../server-src; make listlibsrc);				\
+		f="$$f "`cat ../server-src/listlibsrc.output`;			\
+		(cd ../tape-src; make listlibsrc);				\
+		f="$$f "`cat ../tape-src/listlibsrc.output`;			\
 		echo $(LINT) $$f;						\
 		$(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config	\
 		    $(INCLUDES) $$f;						\
