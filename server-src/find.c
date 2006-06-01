@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.30 2006/06/01 17:05:49 martinea Exp $
+ * $Id: find.c,v 1.31 2006/06/01 20:11:35 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -280,7 +280,7 @@ search_holding_disk(
     int level = 0;
     disk_t *dp;
     int fd;
-    int result;
+    ssize_t result;
     char buf[DISK_BLOCK_BYTES];
     dumpfile_t file;
 
