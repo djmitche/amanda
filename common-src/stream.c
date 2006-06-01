@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.33 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: stream.c,v 1.34 2006/06/01 14:44:05 martinea Exp $
  *
  * functions for managing stream sockets
  */
@@ -44,7 +44,8 @@ int
 stream_server(
     in_port_t *portp,
     size_t sendsize,
-    size_t recvsize)
+    size_t recvsize,
+    int    priv)
 {
     int server_socket, retries;
     socklen_t len;
@@ -110,11 +111,13 @@ stream_server(
 		  debug_prefix(NULL), TCPPORTRANGE));
 #endif
 
-	if (bind_portrange(server_socket, &server,
-		(in_port_t)512, (in_port_t)(IPPORT_RESERVED - 1), "tcp") == 0)
-	    goto out;
-	dbprintf(("%s: stream_server: Could not bind to port in range 512 - %d.\n",
-		  debug_prefix(NULL), IPPORT_RESERVED - 1));
+	if(priv) {
+	    if (bind_portrange(server_socket, &server,
+			   (in_port_t)512, (in_port_t)(IPPORT_RESERVED - 1), "tcp") == 0)
+		goto out;
+	    dbprintf(("%s: stream_server: Could not bind to port in range 512 - %d.\n",
+		      debug_prefix(NULL), IPPORT_RESERVED - 1));
+	}
 
 	server.sin_port = INADDR_ANY;
 	if (bind(server_socket, (struct sockaddr *)&server, (socklen_t)sizeof(server)) == 0)

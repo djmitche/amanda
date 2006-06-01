@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb4-security.c,v 1.15 2006/05/26 14:00:58 martinea Exp $
+ * $Id: krb4-security.c,v 1.16 2006/06/01 14:44:04 martinea Exp $
  *
  * krb4-security.c - helper functions for kerberos v4 security.
  */
@@ -630,7 +630,7 @@ krb4_stream_server(
 
     ks = alloc(SIZEOF(*ks));
     security_streaminit(&ks->secstr, &krb4_security_driver);
-    ks->socket = stream_server(&ks->port, STREAM_BUFSIZE, STREAM_BUFSIZE);
+    ks->socket = stream_server(&ks->port, STREAM_BUFSIZE, STREAM_BUFSIZE, 1);
     if (ks->socket < 0) {
 	security_seterror(&kh->sech,
 	    "can't create server stream: %s", strerror(errno));

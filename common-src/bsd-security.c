@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.65 2006/05/26 14:00:58 martinea Exp $
+ * $Id: bsd-security.c,v 1.66 2006/06/01 14:44:04 martinea Exp $
  *
  * "BSD" security module
  */
@@ -294,7 +294,7 @@ bsd_stream_server(
     bs = alloc(SIZEOF(*bs));
     security_streaminit(&bs->secstr, &bsd_security_driver);
     bs->socket = stream_server(&bs->port, (size_t)STREAM_BUFSIZE, 
-			(size_t)STREAM_BUFSIZE);
+			(size_t)STREAM_BUFSIZE, 0);
     if (bs->socket < 0) {
 	security_seterror(&bh->sech,
 	    "can't create server stream: %s", strerror(errno));

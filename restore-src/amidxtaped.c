@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.61 2006/05/25 01:47:15 johnfranks Exp $
+/* $Id: amidxtaped.c,v 1.62 2006/06/01 14:44:05 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -525,7 +525,7 @@ main(
 
 	    dbprintf(("%s: Client understands split dumpfiles\n",get_pname()));
 
-	    if((data_sock = stream_server(&data_port, STREAM_BUFSIZE,-1)) < 0){
+	    if((data_sock = stream_server(&data_port, STREAM_BUFSIZE,-1, 0)) < 0){
 		error("%s: could not create data socket: %s", get_pname(),
 		      strerror(errno));
 		/*NOTREACHED*/

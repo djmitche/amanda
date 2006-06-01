@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.h,v 1.11 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: stream.h,v 1.12 2006/06/01 14:44:05 martinea Exp $
  *
  * interface to stream module
  */
@@ -37,7 +37,7 @@
 #define NETWORK_BLOCK_BYTES	DISK_BLOCK_BYTES
 #define STREAM_BUFSIZE		(NETWORK_BLOCK_BYTES * 2)
 
-int stream_server(in_port_t *port, size_t sendsize, size_t recvsize);
+int stream_server(in_port_t *port, size_t sendsize, size_t recvsize, int priv);
 int stream_accept(int sock, int timeout, size_t sendsize, size_t recvsize);
 int stream_client_privileged(const char *hostname,
 				in_port_t port,

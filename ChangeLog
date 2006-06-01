@@ -1,4 +1,16 @@
 2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/stream.c (stream_server): New priv parameter if we want
+					       a reserved port. Don't try to
+					       get a reserved port if priv==0.
+	* common-src/stream.h (stream_server): New prototype.
+	* common-src/bsd-security.c: Call stream_server with priv==0.
+	* common-src/krb4-security.c: Call stream_server with priv==1.
+	* common-src/security-util.c: Call stream_server with priv==0.
+	* restore-src/amidxtaped.c: Call stream_server with priv==0.
+	* server-src/chunker.c: Call stream_server with priv==0.
+	* server-src/taper.c: Call stream_server with priv==0.
+
+2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/diskfile.c: Return -1 if open of diskfile failed.
 	* server-src/driver.c: Change message if didn't get a DATE line.
 	* server-src/reporter.c: Ignore faillure in reading amanda.conf

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.8 2006/05/26 16:01:05 martinea Exp $
+ * $Id: security-util.c,v 1.9 2006/06/01 14:44:04 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -705,7 +705,7 @@ tcp1_stream_server(
 	rh->rc = sec_tcp_conn_get(rh->hostname, 1);
 	rh->rc->driver = rh->sech.driver;
 	rs->rc = rh->rc;
-	rs->socket = stream_server(&rs->port, STREAM_BUFSIZE, STREAM_BUFSIZE);
+	rs->socket = stream_server(&rs->port, STREAM_BUFSIZE, STREAM_BUFSIZE, 0);
 	if (rs->socket < 0) {
 	    security_seterror(&rh->sech,
 			    "can't create server stream: %s", strerror(errno));

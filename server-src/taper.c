@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.126 2006/05/25 01:47:20 johnfranks Exp $
+/* $Id: taper.c,v 1.127 2006/06/01 14:44:05 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -809,7 +809,7 @@ file_reader_side(
 	    amfree(id_string);
 
 	    data_port = 0;
-	    data_socket = stream_server(&data_port, 0, STREAM_BUFSIZE);	
+	    data_socket = stream_server(&data_port, 0, STREAM_BUFSIZE, 0);	
 	    if (data_socket < 0) {
 		char *m;
 
