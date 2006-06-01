@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.188 2006/05/26 16:01:05 martinea Exp $
+ * $Id: planner.c,v 1.189 2006/06/01 14:54:39 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -602,6 +602,8 @@ int main(int argc, char **argv)
     if(malloc_size_1 != malloc_size_2) {
 	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
     }
+
+    dbclose();
 
     return 0;
 }

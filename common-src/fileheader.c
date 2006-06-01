@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.37 2006/05/26 11:08:37 martinea Exp $
+ * $Id: fileheader.c,v 1.38 2006/06/01 14:54:39 martinea Exp $
  */
 
 #include "amanda.h"
@@ -180,6 +180,7 @@ parse_file_header(
 	}
 	uqname = unquote_string(tok);
 	strncpy(file->disk, uqname, SIZEOF(file->disk) - 1);
+ 	amfree(uqname);
 	
 	if(file->type == F_SPLIT_DUMPFILE) {
 	    tok = strtok(NULL, " ");

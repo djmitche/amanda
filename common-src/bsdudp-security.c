@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsdudp-security.c,v 1.4 2006/05/26 14:00:58 martinea Exp $
+ * $Id: bsdudp-security.c,v 1.5 2006/06/01 14:54:39 martinea Exp $
  *
  * "BSD" security module
  */
@@ -183,10 +183,12 @@ bsdudp_connect(
     snprintf(handle,14,"000-%08x", newhandle++);
     if (udp_inithandle(&netfd, bh, he, port, handle, sequence) < 0) {
 	(*fn)(arg, &bh->sech, S_ERROR);
+	amfree(bh->hostname);
 	amfree(bh);
     } else {
 	(*fn)(arg, &bh->sech, S_OK);
     }
+    amfree(handle);
 }
 
 /*
@@ -255,7 +257,8 @@ bsdudp_close(
 	netfd.bh_first = bh->next;
     }
 
-    /*amfree(bh->proto_handle);*/
+    amfree(bh->proto_handle);
+    amfree(bh->hostname);
     amfree(bh);
 }
 

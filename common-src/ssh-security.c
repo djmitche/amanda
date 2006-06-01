@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.20 2006/05/26 14:00:58 martinea Exp $
+ * $Id: ssh-security.c,v 1.21 2006/06/01 14:54:39 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -156,13 +156,14 @@ ssh_connect(
 	(*fn)(arg, &rh->sech, S_ERROR);
 	return;
     }
-    rh->hostname = he->h_name;	/* will be replaced */
+    rh->hostname = stralloc(he->h_name);	/* will be replaced */
     rh->rs = tcpma_stream_client(rh, newhandle++);
 
     if (rh->rs == NULL)
 	goto error;
 
-    rh->hostname = rh->rs->rc->hostname;
+    amfree(rh->hostname);
+    rh->hostname = stralloc(rh->rs->rc->hostname);
 
     /*
      * We need to open a new connection.

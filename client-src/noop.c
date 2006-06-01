@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: noop.c,v 1.4 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: noop.c,v 1.5 2006/06/01 14:54:39 martinea Exp $
  *
  * send back features.  This was pulled out to it's own program for
  * consistancy and because it's a hell of a lot easier to code in
@@ -55,6 +55,7 @@ main(
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
+    safe_fd(-1, 0);
     do {
  	/* soak up any stdin */
 	n = read(0, &ch, 1);
@@ -73,5 +74,8 @@ main(
 	/*NOTREACHED*/
     }
     amfree(options);
+    close(0);
+    close(1);
+    close(2);
     return (0); /* exit */
 }

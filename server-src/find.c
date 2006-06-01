@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.28 2006/06/01 14:46:22 martinea Exp $
+ * $Id: find.c,v 1.29 2006/06/01 14:54:39 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -909,6 +909,7 @@ search_logfile(
 		    *output_find=new_output_find;
 		}
 	    }
+	    amfree(disk);
 	}
     }
     afclose(logf);

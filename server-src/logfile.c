@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.30 2006/05/25 01:47:20 johnfranks Exp $
+ * $Id: logfile.c,v 1.31 2006/06/01 14:54:39 martinea Exp $
  *
  * common log file writing routine
  */
@@ -279,6 +279,7 @@ get_logline(
     char *s;
     int ch;
 
+    amfree(logline);
     while ((logline = agets(logf)) != NULL) {
 	if (logline[0] != '\0')
 	    break;

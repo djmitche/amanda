@@ -28,7 +28,7 @@
  */
 
 /*
- * $Id: security-util.h,v 1.3 2006/05/26 14:00:58 martinea Exp $
+ * $Id: security-util.h,v 1.4 2006/06/01 14:54:39 martinea Exp $
  *
  */
 
@@ -61,6 +61,7 @@ struct tcp_conn {
     int			(*recv_security_ok)(struct sec_handle *, pkt_t *);
     char *		(*prefix_packet)(void *, pkt_t *);
     int			toclose;
+    int			donotclose;
 };
 
 

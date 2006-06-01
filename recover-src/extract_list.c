@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.100 2006/05/26 14:00:58 martinea Exp $
+ * $Id: extract_list.c,v 1.101 2006/06/01 14:54:39 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1868,7 +1868,7 @@ extract_files(void)
     char *l;
     int first;
     int otc;
-    tapelist_t *tlist = NULL;
+    tapelist_t *tlist = NULL, *a_tlist;
 
     if (!is_extract_list_nonempty())
     {
@@ -1913,10 +1913,10 @@ extract_files(void)
 	    else
 		printf("                               ");
 	    tlist = unmarshal_tapelist_str(elist->tape); 
-	    for( ; tlist != NULL; tlist = tlist->next)
-		printf(" %s", tlist->label);
+	    for(a_tlist = tlist ; a_tlist != NULL; a_tlist = a_tlist->next)
+		printf(" %s", a_tlist->label);
 	    printf("\n");
-	    amfree(tlist);
+	    free_tapelist(tlist);
 	}
     }
     first=1;
@@ -1931,8 +1931,8 @@ extract_files(void)
 	    else
 		printf("                               ");
 	    tlist = unmarshal_tapelist_str(elist->tape); 
-	    for( ; tlist != NULL; tlist = tlist->next)
-		printf(" %s", tlist->label);
+	    for(a_tlist = tlist; a_tlist != NULL; a_tlist = a_tlist->next)
+		printf(" %s", a_tlist->label);
 	    printf("\n");
 	    free_tapelist(tlist);
 	}
@@ -1959,17 +1959,17 @@ extract_files(void)
 	    dump_device_name = newstralloc(dump_device_name, elist->tape);
 	    printf("Extracting from file ");
 	    tlist = unmarshal_tapelist_str(dump_device_name); 
-	    for( ; tlist != NULL; tlist = tlist->next)
-		printf(" %s", tlist->label);
+	    for(a_tlist = tlist; a_tlist != NULL; a_tlist = a_tlist->next)
+		printf(" %s", a_tlist->label);
 	    printf("\n");
-	    amfree(tlist);
+	    free_tapelist(tlist);
 	}
 	else {
 	    printf("Extracting files using tape drive %s on host %s.\n",
 		   tape_device_name, tape_server_name);
 	    tlist = unmarshal_tapelist_str(elist->tape); 
 	    printf("Load tape %s now\n", tlist->label);
-	    amfree(tlist);
+	    free_tapelist(tlist);
 	    otc = okay_to_continue(1,1,0);
 	    if (otc == 0)
 	        return;

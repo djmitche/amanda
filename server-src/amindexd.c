@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.94 2006/05/26 16:01:05 martinea Exp $
+ * $Id: amindexd.c,v 1.95 2006/06/01 14:54:39 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -165,7 +165,7 @@ uncompress_file(
 				"' is inaccessable: ",
 				strerror(errno),
 				NULL);
-	    dbprintf((*emsg));
+	    dbprintf(("%s\n",*emsg));
 	    amfree(filename);
 	    return NULL;
  	}

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.78 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: selfcheck.c,v 1.79 2006/06/01 14:54:39 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -297,6 +297,9 @@ main(
 #endif
 
     dbclose();
+    close(0);
+    close(1);
+    close(2);
     return 0;
 
  err:
@@ -306,6 +309,9 @@ main(
 	      err_extra ? ": " : "",
 	      err_extra ? err_extra : ""));
     dbclose();
+    close(0);
+    close(1);
+    close(2);
     return 1;
 }
 
@@ -1019,5 +1025,6 @@ check_suid(
     else {
 	printf("ERROR [can not stat %s]\n", quoted);
     }
+    amfree(quoted);
 #endif
 }

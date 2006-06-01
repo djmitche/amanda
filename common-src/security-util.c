@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.9 2006/06/01 14:44:04 martinea Exp $
+ * $Id: security-util.c,v 1.10 2006/06/01 14:54:39 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -147,6 +147,7 @@ sec_close(
     }
     /* keep us from getting here again */
     rh->sech.driver = NULL;
+    amfree(rh->hostname);
     amfree(rh);
 }
 
@@ -643,7 +644,9 @@ tcpma_stream_server(
 	security_seterror(&rh->sech, "lost connection to %s", rh->hostname);
 	return (NULL);
     }
-    rh->hostname = rs->rc->hostname;
+    assert(strcmp(rh->hostname, rs->rc->hostname) == 0);
+    //amfree(rh->hostname);
+    //rh->hostname = stralloc(rs->rc->hostname);
     /*
      * so as not to conflict with the amanda server's handle numbers,
      * we start at 500000 and work down
@@ -1046,7 +1049,8 @@ udp_close(
 	rh->udp->bh_first = rh->next;
     }
 
-    /*amfree(rh->proto_handle);*/
+    amfree(rh->proto_handle);
+    amfree(rh->hostname);
     amfree(rh);
 }
 
@@ -1134,8 +1138,8 @@ udp_recvpkt_callback(
     if (memcmp(&rh->peer.sin_addr, &rh->udp->peer.sin_addr,
 	SIZEOF(rh->udp->peer.sin_addr)) != 0 ||
 	rh->peer.sin_port != rh->udp->peer.sin_port) {
-	/*amfree(rh->udp->handle);*/
-	rh->udp->handle = NULL;
+	amfree(rh->udp->handle);
+	//rh->udp->handle = NULL;
 	return;
     }
 
@@ -1273,6 +1277,7 @@ udp_inithandle(
 
     rh->sequence = sequence;
     rh->event_id = (event_id_t)newevent++;
+    amfree(rh->proto_handle);
     rh->proto_handle = stralloc(handle);
     rh->fn.connect = NULL;
     rh->arg = NULL;
@@ -1410,6 +1415,7 @@ sec_tcp_conn_get(
     rc->pid = -1;
     rc->ev_read = NULL;
     rc->toclose = 0;
+    rc->donotclose = 0;
     strncpy(rc->hostname, hostname, SIZEOF(rc->hostname) - 1);
     rc->hostname[SIZEOF(rc->hostname) - 1] = '\0';
     rc->errmsg = NULL;
@@ -1456,7 +1462,10 @@ sec_tcp_conn_put(
 	amfree(rc->errmsg);
     connq_remove(rc);
     amfree(rc->pkt);
-    amfree(rc);
+    if(!rc->donotclose)
+	amfree(rc); /* someone might still use it           */
+		    /* eg. in sec_tcp_conn_read_callback if */
+		    /*     event_wakeup call us.            */
 }
 
 /*
@@ -1688,9 +1697,9 @@ sec_tcp_conn_read_callback(
 		dbprintf(("STRANGE, rc->refcnt should be 1"));
 		rc->refcnt=1;
 	    }
+	    rc->accept_fn = NULL;
 	    sec_tcp_conn_put(rc);
 	}
-	rc->accept_fn = NULL;
 	return;
     }
 
@@ -1703,13 +1712,17 @@ sec_tcp_conn_read_callback(
     }
 
     /* If there are events waiting on this handle, we're done */
+    rc->donotclose = 1;
     revent = event_wakeup((event_id_t)rc);
     secprintf(("%s: sec: conn_read_callback: event_wakeup return %d\n",
 	       debug_prefix_time(NULL), rval));
-    if (rc->handle == H_TAKEN)
+    rc->donotclose = 0;
+    if (rc->handle == H_TAKEN || rc->pktlen == 0) {
+	if(rc->refcnt == 0) amfree(rc);
 	return;
-    if(rc->pktlen == 0)
-	return;
+    }
+
+    assert(rc->refcnt > 0);
 
     /* If there is no accept fn registered, then drop the packet */
     if (rc->accept_fn == NULL)
@@ -1717,7 +1730,7 @@ sec_tcp_conn_read_callback(
 
     rh = alloc(SIZEOF(*rh));
     security_handleinit(&rh->sech, rc->driver);
-    rh->hostname = rc->hostname;
+    rh->hostname = stralloc(rc->hostname);
     rh->ev_timeout = NULL;
     rh->rc = rc;
     rh->peer = rc->peer;
@@ -1831,6 +1844,7 @@ str2pkthdr(
     /* parse the handle */
     if ((tok = strtok(NULL, " ")) == NULL)
 	goto parse_error;
+    amfree(udp->handle);
     udp->handle = stralloc(tok);
 
     /* Read in "SEQ" */

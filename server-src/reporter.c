@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.113 2006/06/01 13:34:35 martinea Exp $
+ * $Id: reporter.c,v 1.114 2006/06/01 14:54:40 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -758,6 +758,7 @@ main(
 	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
     }
 
+    dbclose();
     return 0;
 }
 
@@ -2428,6 +2429,7 @@ handle_failed(void)
     }
 
     dp = lookup_disk(hostname, diskname);
+    amfree(diskname);
     if(dp == NULL) {
 	addtostrange(hostname, qdiskname, level, "ERROR [not in disklist]");
     } else {

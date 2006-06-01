@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: bsdtcp-security.c,v 1.5 2006/05/26 14:00:58 martinea Exp $
+ * $Id: bsdtcp-security.c,v 1.6 2006/06/01 14:54:39 martinea Exp $
  *
  * bsdtcp-security.c - security and transport over bsdtcp or a bsdtcp-like command.
  *
@@ -136,7 +136,7 @@ bsdtcp_connect(
 	(*fn)(arg, &rh->sech, S_ERROR);
 	return;
     }
-    rh->hostname = he->h_name;	/* will be replaced */
+    rh->hostname = stralloc(he->h_name);	/* will be replaced */
     rh->rs = tcpma_stream_client(rh, newhandle++);
     rh->rc->recv_security_ok = &bsd_recv_security_ok;
     rh->rc->prefix_packet = &bsd_prefix_packet;
@@ -144,7 +144,8 @@ bsdtcp_connect(
     if (rh->rs == NULL)
 	goto error;
 
-    rh->hostname = rh->rs->rc->hostname;
+    amfree(rh->hostname);
+    rh->hostname = stralloc(rh->rs->rc->hostname);
 
     /*
      * We need to open a new connection.
@@ -221,7 +222,7 @@ runbsdtcp(
     struct sec_handle *	rh)
 {
     struct servent *	sp;
-    int			server_socket; 
+    int			server_socket;
     in_port_t		my_port;
     uid_t		euid;
     struct tcp_conn *	rc = rh->rc;
