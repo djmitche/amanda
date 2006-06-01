@@ -1,4 +1,18 @@
 2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c, client-src/amandates.c, client-src/noop.c,
+	  client-src/selfcheck.c, client-src/sendsize.c,
+	  common-src/bsd-security.c, common-src/bsdtcp-security.c,
+	  common-src/bsdudp-security.c, common-src/fileheader.c,
+	  common-src/rsh-security.c, common-src/security-util.c,
+	  common-src/security-util.h, common-src/ssh-security.c,
+	  recover-src/extract_list.c, server-src/amcheck.c,
+	  server-src/amindexd.c, server-src/amlogroll.c,
+	  server-src/diskfile.c, server-src/driver.c, server-src/dumper.c,
+	  server-src/find.c, server-src/logfile.c, server-src/planner.c,
+	  server-src/reporter.c,
+	  server-src/tapefile.c: Fix memory and fd leak.
+
+2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/find.c (search_holding_disk): Take the datestamp from the
 	  file, not the directory name, otherwise usetimestamps=no doesn't
 	  work.
