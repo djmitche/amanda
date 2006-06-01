@@ -1,4 +1,18 @@
 2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/amanda.h: Remove am64_t.
+	* client-src/clientconf.c, client-src/clientconf.h, common-src/util.c,
+	  common-src/util.h, server-src/conffile.c, server-src/conffile.h:
+	  Second pass of config cleanup, add function to parse -o argument.
+	* recover-src/amrecover.c: -o command argument.
+	* restore-src/restore.c: Use off_t instead of am64_t.
+	* server-src/amadmin.c: New config subcommand. -o command argument.
+	* server-src/amlabel.c: Fix memory leak.
+	* server-src/diskfile.c: Fix memory leak.
+	* server-src/diskfile.h: Rename no_hold to to_holdingdisk.
+	* server-src/driver.c: Many.
+	* server-src/planner.c: am64_t to off_t.
+
+2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
 	This is the first pass of a general rewrite of configuration file
 	parsing, It will now use array to store all options.
 
