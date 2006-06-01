@@ -1,4 +1,9 @@
 2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/find.c (search_holding_disk): Take the datestamp from the
+	  file, not the directory name, otherwise usetimestamps=no doesn't
+	  work.
+
+2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/stream.c (stream_server): New priv parameter if we want
 					       a reserved port. Don't try to
 					       get a reserved port if priv==0.

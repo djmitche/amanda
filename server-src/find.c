@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.27 2006/05/25 01:47:20 johnfranks Exp $
+ * $Id: find.c,v 1.28 2006/06/01 14:46:22 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -279,6 +279,10 @@ search_holding_disk(
     struct dirent *entry;
     int level = 0;
     disk_t *dp;
+    int fd;
+    int result;
+    char buf[DISK_BLOCK_BYTES];
+    dumpfile_t file;
 
     holding_list = pick_all_datestamp(1);
 
@@ -308,6 +312,21 @@ search_holding_disk(
 		}
 		if(level < 0 || level > 9)
 		    continue;
+		if ((fd = open(destname, O_RDONLY)) == -1) {
+		    continue;
+		}
+		if((result = read(fd, &buf, DISK_BLOCK_BYTES)) <= 0) {
+		    continue;
+		}
+		close(fd);
+
+		parse_file_header(buf, &file, (size_t)result);
+		if (strcmp(file.name, hostname) != 0 ||
+		    strcmp(file.disk, diskname) != 0 ||
+		    file.dumplevel != level ||
+		    !match_datestamp(file.datestamp, dir->name)) {
+		    continue;
+		}
 
 		dp = NULL;
 		for(;;) {
@@ -326,7 +345,7 @@ search_holding_disk(
 		    find_result_t *new_output_find =
 			alloc(SIZEOF(find_result_t));
 		    new_output_find->next=*output_find;
-		    new_output_find->timestamp=stralloc(dir->name);
+		    new_output_find->timestamp=stralloc(file.datestamp);
 		    new_output_find->hostname=hostname;
 		    hostname = NULL;
 		    new_output_find->diskname=diskname;
@@ -852,7 +871,7 @@ search_logfile(
 		enqueue_disk(find_diskqp, dp);
 	    }
             if(find_match(host, disk) && (curlog != L_SUCCESS ||
-		!seen_chunk_of(*output_find, date, host, disk, level))){
+		!seen_chunk_of(*output_find, date, host, disk, level))) {
 		if(curprog == P_TAPER) {
 		    find_result_t *new_output_find =
 			(find_result_t *)alloc(SIZEOF(find_result_t));
