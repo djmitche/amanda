@@ -1,3 +1,9 @@
+2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/diskfile.c: Return -1 if open of diskfile failed.
+	* server-src/driver.c: Change message if didn't get a DATE line.
+	* server-src/reporter.c: Ignore faillure in reading amanda.conf
+				 disklist and tapelist.
+
 2006-05-29  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/xml-source/amanda.8.xml: Documents service in .amandahosts.
 

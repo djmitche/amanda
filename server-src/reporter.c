@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.112 2006/05/25 01:47:20 johnfranks Exp $
+ * $Id: reporter.c,v 1.113 2006/06/01 13:34:35 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -447,8 +447,6 @@ main(
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if(read_conffile(conffile)) {
-        error("errors processing config file \"%s\"", conffile);
-	/*NOTREACHED*/
     }
     amfree(conffile);
     conf_diskfile = getconf_str(CNF_DISKFILE);
@@ -458,8 +456,6 @@ main(
 	conf_diskfile = stralloc2(config_dir, conf_diskfile);
     }
     if(read_diskfile(conf_diskfile, &diskq) < 0) {
-	error("could not load disklist \"%s\"", conf_diskfile);
-	/*NOTREACHED*/
     }
     amfree(conf_diskfile);
     if(mailout && !mailto && 
@@ -477,8 +473,6 @@ main(
 	conf_tapelist = stralloc2(config_dir, conf_tapelist);
     }
     if(read_tapelist(conf_tapelist)) {
-	error("could not read tapelist \"%s\"", conf_tapelist);
-	/*NOTREACHED*/
     }
     amfree(conf_tapelist);
     conf_infofile = getconf_str(CNF_INFOFILE);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.77 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: diskfile.c,v 1.78 2006/06/01 13:34:35 martinea Exp $
  *
  * read disklist file
  */
@@ -60,8 +60,7 @@ read_diskfile(
     line_num = 0;
 
     if ((diskf = fopen(filename, "r")) == NULL) {
-	error("could not open disklist file \"%s\": %s",
-	      filename, strerror(errno));
+	return -1;
         /*NOTREACHED*/
     }
 

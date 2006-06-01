@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.172 2006/05/25 17:07:31 martinea Exp $
+ * $Id: driver.c,v 1.173 2006/06/01 13:34:35 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -218,8 +218,7 @@ main(
 	amfree(line);
     }
     if ( line == NULL ) {
-      amfree(line);
-      error("Missing timestamp. Check if disklist file exists?\n");
+      error("Did not get DATE line from planner");
       /*NOTREACHED*/
     }
     driver_timestamp = alloc(15);
