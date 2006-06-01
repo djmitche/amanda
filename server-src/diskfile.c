@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.80 2006/06/01 17:05:49 martinea Exp $
+ * $Id: diskfile.c,v 1.81 2006/06/01 19:27:52 martinea Exp $
  *
  * read disklist file
  */
@@ -312,8 +312,23 @@ void
 free_disklist(
     disklist_t* dl)
 {
+    disk_t    *dp;
+    am_host_t *host, *hostnext;
+
     while (dl->head != NULL) {
-	free(dequeue_disk(dl));
+	dp = dequeue_disk(dl);
+	amfree(dp->name);
+	free_sl(dp->exclude_file);
+	free_sl(dp->exclude_list);
+	free_sl(dp->include_file);
+	free_sl(dp->include_list);
+	free(dp);
+    }
+
+    for(host=hostlist; host != NULL; host = hostnext) {
+	amfree(host->hostname);
+	hostnext = host->next;
+	amfree(host);
     }
 }
 
@@ -566,12 +581,12 @@ parse_diskline(
     disk->ssh_keys           = dumptype_get_ssh_keys(dtype);
     disk->comprate[0]	     = dumptype_get_comprate(dtype)[0];
     disk->comprate[1]	     = dumptype_get_comprate(dtype)[1];
-    disk->record	     = dumptype_get_record(dtype);
-    disk->skip_incr	     = dumptype_get_skip_incr(dtype);
-    disk->skip_full	     = dumptype_get_skip_full(dtype);
-    disk->no_hold	     = dumptype_get_no_hold(dtype);
-    disk->kencrypt	     = dumptype_get_kencrypt(dtype);
-    disk->index		     = dumptype_get_index(dtype);
+    disk->record	     = dumptype_get_record(dtype) == 1;
+    disk->skip_incr	     = dumptype_get_skip_incr(dtype) == 1;
+    disk->skip_full	     = dumptype_get_skip_full(dtype) == 1;
+    disk->to_holdingdisk     = dumptype_get_to_holdingdisk(dtype) == 1;
+    disk->kencrypt	     = dumptype_get_kencrypt(dtype) == 1;
+    disk->index		     = dumptype_get_index(dtype) == 1;
     disk->todo		     = 1;
 
     skip_whitespace(s, ch);
@@ -1181,7 +1196,7 @@ match_disklist(
     }
 }
 
- 
+
 #ifdef TEST
 
 static void dump_disk(const disk_t *);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.65 2006/06/01 17:05:49 martinea Exp $
+ * $Id: conffile.h,v 1.66 2006/06/01 19:27:52 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -173,7 +173,7 @@ typedef enum dumptype_e  {
     DUMPTYPE_RECORD,
     DUMPTYPE_SKIP_INCR,
     DUMPTYPE_SKIP_FULL,
-    DUMPTYPE_NO_HOLD,
+    DUMPTYPE_HOLDINGDISK,
     DUMPTYPE_KENCRYPT,
     DUMPTYPE_IGNORE,
     DUMPTYPE_INDEX,
@@ -188,7 +188,6 @@ typedef struct dumptype_s {
     val_t value[DUMPTYPE_DUMPTYPE];
 } dumptype_t;
 
-#define dumptype_get(dumptype, field) (dumptype->field)
 #define dumptype_get_name(dumptype) dumptype->name
 #define dumptype_get_seen(dumptype) dumptype->seen
 #define dumptype_get_comment(dumptype) dumptype->value[DUMPTYPE_COMMENT].v.s
@@ -210,7 +209,7 @@ typedef struct dumptype_s {
 #define dumptype_get_maxdumps(dumptype) dumptype->value[DUMPTYPE_MAXDUMPS].v.i
 #define dumptype_get_maxpromoteday(dumptype) dumptype->value[DUMPTYPE_MAXPROMOTEDAY].v.i
 #define dumptype_get_bumppercent(dumptype) dumptype->value[DUMPTYPE_BUMPPERCENT].v.i
-#define dumptype_get_bumpsize(dumptype) dumptype->value[DUMPTYPE_BUMPSIZE].v.i
+#define dumptype_get_bumpsize(dumptype) dumptype->value[DUMPTYPE_BUMPSIZE].v.am64
 #define dumptype_get_bumpdays(dumptype) dumptype->value[DUMPTYPE_BUMPDAYS].v.i
 #define dumptype_get_bumpmult(dumptype) dumptype->value[DUMPTYPE_BUMPMULT].v.r
 #define dumptype_get_start_t(dumptype) dumptype->value[DUMPTYPE_START_T].v.t
@@ -221,13 +220,13 @@ typedef struct dumptype_s {
 #define dumptype_get_srv_decrypt_opt(dumptype) dumptype->value[DUMPTYPE_SRV_DECRYPT_OPT].v.s
 #define dumptype_get_clnt_decrypt_opt(dumptype) dumptype->value[DUMPTYPE_CLNT_DECRYPT_OPT].v.s
 #define dumptype_get_comprate(dumptype) dumptype->value[DUMPTYPE_COMPRATE].v.rate
-#define dumptype_get_tape_splitsize(dumptype) dumptype->value[DUMPTYPE_TAPE_SPLITSIZE].v.l
-#define dumptype_get_fallback_splitsize(dumptype) dumptype->value[DUMPTYPE_FALLBACK_SPLITSIZE].v.l
+#define dumptype_get_tape_splitsize(dumptype) dumptype->value[DUMPTYPE_TAPE_SPLITSIZE].v.am64
+#define dumptype_get_fallback_splitsize(dumptype) dumptype->value[DUMPTYPE_FALLBACK_SPLITSIZE].v.am64
 #define dumptype_get_split_diskbuffer(dumptype) dumptype->value[DUMPTYPE_SPLIT_DISKBUFFER].v.s
 #define dumptype_get_record(dumptype) dumptype->value[DUMPTYPE_RECORD].v.i
 #define dumptype_get_skip_incr(dumptype) dumptype->value[DUMPTYPE_SKIP_INCR].v.i
 #define dumptype_get_skip_full(dumptype) dumptype->value[DUMPTYPE_SKIP_FULL].v.i
-#define dumptype_get_no_hold(dumptype) dumptype->value[DUMPTYPE_NO_HOLD].v.i
+#define dumptype_get_to_holdingdisk(dumptype) dumptype->value[DUMPTYPE_HOLDINGDISK].v.i
 #define dumptype_get_kencrypt(dumptype) dumptype->value[DUMPTYPE_KENCRYPT].v.i
 #define dumptype_get_ignore(dumptype) dumptype->value[DUMPTYPE_IGNORE].v.i
 #define dumptype_get_index(dumptype) dumptype->value[DUMPTYPE_INDEX].v.i
@@ -250,7 +249,6 @@ typedef struct interface_s {
     unsigned long curusage;		/* current usage */
 } interface_t;
 
-#define interface_get(interface, field) (interface->field)
 #define interface_get_name(interface) interface->name
 #define interface_get_seen(interface) interface->seen
 #define interface_get_comment(interface) interface->value[INTER_COMMENT].v.s
@@ -273,17 +271,15 @@ typedef struct holdingdisk_s {
     val_t value[HOLDING_HOLDING];
 
     void *up;			/* generic user pointer */
+    off_t disksize;
 } holdingdisk_t;
 
-#define holdingdisk_get(holdingdisk, field) (holdingdisk->field)
 #define holdingdisk_get_name(holdingdisk) holdingdisk->name
 #define holdingdisk_get_seen(holdingdisk) holdingdisk->seen
 #define holdingdisk_get_comment(holdingdisk) holdingdisk->value[HOLDING_COMMENT].v.s
 #define holdingdisk_get_diskdir(holdingdisk) holdingdisk->value[HOLDING_DISKDIR].v.s
-#define holdingdisk_get_disksize(holdingdisk) holdingdisk->value[HOLDING_DISKSIZE].v.l
-#define holdingdisk_get_chunksize(holdingdisk) holdingdisk->value[HOLDING_CHUNKSIZE].v.l
-
-#define holdingdisk_set_disksize(holdingdisk,val) holdingdisk->value[HOLDING_DISKSIZE].v.l = val
+#define holdingdisk_get_disksize(holdingdisk) holdingdisk->value[HOLDING_DISKSIZE].v.am64
+#define holdingdisk_get_chunksize(holdingdisk) holdingdisk->value[HOLDING_CHUNKSIZE].v.am64
 
 /* for each column we define some values on how to
  * format this column element
@@ -315,13 +311,18 @@ extern char *config_dir;
 extern holdingdisk_t *holdingdisks;
 extern int num_holdingdisks;
 
+void parse_server_conf(int parse_argc, char **parse_argv, int *new_argc,
+		       char ***new_argv);
+void report_bad_conf_arg(void);
+void free_server_config(void);
+
 int read_conffile(char *filename);
 int getconf_seen(confparm_t parameter);
 int getconf_int(confparm_t parameter);
 long getconf_long(confparm_t parameter);
 ssize_t getconf_size(confparm_t parameter);
 time_t getconf_time(confparm_t parameter);
-am64_t getconf_am64(confparm_t parameter);
+off_t getconf_am64(confparm_t parameter);
 double getconf_real(confparm_t parameter);
 char *getconf_str(confparm_t parameter);
 char *getconf_byname(char *confname);
@@ -331,7 +332,7 @@ tapetype_t *lookup_tapetype(char *identifier);
 interface_t *lookup_interface(char *identifier);
 holdingdisk_t *getconf_holdingdisks(void);
 long int getconf_unit_divisor(void);
-
+void dump_configuration(char *filename);
 int ColumnDataCount(void);
 int StringToColumn(char *s);
 char LastChar(char *s);

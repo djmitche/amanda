@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.h,v 1.4 2006/06/01 17:05:49 martinea Exp $
+ * $Id: clientconf.h,v 1.5 2006/06/01 19:27:51 martinea Exp $
  *
  * interface for client config file reading code
  */
@@ -51,10 +51,12 @@ typedef enum conf_e {
 extern char *config_name;
 extern char *config_dir;
 
+void parse_client_conf(int, char **, int *, char ***);
+void report_bad_client_arg(void);
 int read_clientconf(char *filename);
 int client_getconf_seen(cconfparm_t parameter);
 int client_getconf_int(cconfparm_t parameter);
-am64_t client_getconf_am64(cconfparm_t parameter);
+off_t client_getconf_am64(cconfparm_t parameter);
 double client_getconf_real(cconfparm_t parameter);
 char *client_getconf_str(cconfparm_t parameter);
 char *client_getconf_byname(char *confname);

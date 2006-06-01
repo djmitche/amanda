@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.110 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: amadmin.c,v 1.111 2006/06/01 19:27:51 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -74,6 +74,7 @@ void import_db(int argc, char **argv);
 void disklist(int argc, char **argv);
 void disklist_one(disk_t *dp);
 void show_version(int argc, char **argv);
+static void show_config(int argc, char **argv);
 static void check_dumpuser(void);
 
 static char *conf_tapelist = NULL;
@@ -87,6 +88,8 @@ static const struct {
 } cmdtab[] = {
     { "version", show_version,
 	"\t\t\t\t# Show version info." },
+    { "config", show_config,
+	"\t\t\t\t# Show configuration." },
     { "force", force,
 	" [<hostname> [<disks>]* ]+\t# Force level 0 at next run." },
     { "unforce", unforce,
@@ -124,6 +127,8 @@ static const struct {
 };
 #define	NCMDS	(int)(sizeof(cmdtab) / sizeof(cmdtab[0]))
 
+static char *conffile;
+
 int
 main(
     int		argc,
@@ -132,9 +137,10 @@ main(
     int i;
     char *conf_diskfile;
     char *conf_infofile;
-    char *conffile;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
+    int new_argc;
+    char **new_argv;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -150,14 +156,16 @@ main(
 
     erroutput_type = ERR_INTERACTIVE;
 
-    if(argc < 3) usage();
+    parse_server_conf(argc, argv, &new_argc, &new_argv);
 
-    if(strcmp(argv[2],"version") == 0) {
-	show_version(argc, argv);
+    if(new_argc < 3) usage();
+
+    if(strcmp(new_argv[2],"version") == 0) {
+	show_version(new_argc, new_argv);
 	goto done;
     }
 
-    config_name = argv[1];
+    config_name = new_argv[1];
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
 
@@ -165,7 +173,8 @@ main(
 	error("errors processing config file \"%s\"", conffile);
 	/*NOTREACHED*/
     }
-    amfree(conffile);
+
+    report_bad_conf_arg();
 
     check_dumpuser();
 
@@ -207,14 +216,16 @@ main(
     unitdivisor = getconf_unit_divisor();
 
     for (i = 0; i < NCMDS; i++)
-	if (strcmp(argv[2], cmdtab[i].name) == 0) {
-	    (*cmdtab[i].fn)(argc, argv);
+	if (strcmp(new_argv[2], cmdtab[i].name) == 0) {
+	    (*cmdtab[i].fn)(new_argc, new_argv);
 	    break;
 	}
     if (i == NCMDS) {
-	fprintf(stderr, "%s: unknown command \"%s\"\n", argv[0], argv[2]);
+	fprintf(stderr, "%s: unknown command \"%s\"\n", new_argv[0], new_argv[2]);
 	usage();
     }
+
+    free_new_argv(new_argc, new_argv);
 
     close_infofile();
     clear_tapelist();
@@ -229,6 +240,10 @@ done:
 	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
     }
 
+    amfree(conffile);
+    free_disklist(&diskq);
+    free_server_config();
+    dbclose();
     return 0;
 }
 
@@ -1698,7 +1713,6 @@ disklist_one(
     printf("    host %s:\n", hp->hostname);
     printf("        interface %s\n",
 	   ip->name[0] ? ip->name : "default");
-
     printf("    disk %s:\n", dp->name);
     if(dp->device) printf("        device %s\n", dp->device);
 
@@ -1823,7 +1837,7 @@ disklist_one(
     printf("        amandad_path %s\n", dp->amandad_path);
     printf("        client_username %s\n", dp->client_username);
     printf("        ssh_keys %s\n", dp->ssh_keys);
-    printf("        holdingdisk %s\n", (!dp->no_hold? "YES" : "NO"));
+    printf("        holdingdisk %s\n", (dp->to_holdingdisk? "YES" : "NO"));
     printf("        record %s\n", (dp->record? "YES" : "NO"));
     printf("        index %s\n", (dp->index? "YES" : "NO"));
     st = dp->start_t;
@@ -1878,3 +1892,14 @@ show_version(
     for(i = 0; version_info[i] != NULL; i++)
 	printf("%s", version_info[i]);
 }
+
+
+void show_config(
+    int argc,
+    char **argv)
+{
+    argc = argc;
+    argv = argv;
+    dump_configuration(conffile);
+}
+

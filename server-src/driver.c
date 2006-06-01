@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.175 2006/06/01 17:05:49 martinea Exp $
+ * $Id: driver.c,v 1.176 2006/06/01 19:27:52 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -296,46 +296,46 @@ main(
 	   || access(holdingdisk_get_diskdir(hdp), W_OK) == -1) {
 	    log_add(L_WARNING, "WARNING: ignoring holding disk %s: %s\n",
 		    holdingdisk_get_diskdir(hdp), strerror(errno));
-	    holdingdisk_set_disksize(hdp, 0L);
+	    hdp->disksize = 0L;
 	    continue;
 	}
 
 	if(fs.avail != (off_t)-1) {
-	    if(holdingdisk_get_disksize(hdp) > (off_t)0) {
-		if(holdingdisk_get_disksize(hdp) > fs.avail) {
+	    if(hdp->disksize > (off_t)0) {
+		if(hdp->disksize > fs.avail) {
 		    log_add(L_WARNING,
 			    "WARNING: %s: " OFF_T_FMT " KB requested, "
 			    "but only " OFF_T_FMT " KB available.",
 			    holdingdisk_get_diskdir(hdp),
-			    (OFF_T_FMT_TYPE)holdingdisk_get_disksize(hdp),
+			    (OFF_T_FMT_TYPE)hdp->disksize,
 			    (OFF_T_FMT_TYPE)fs.avail);
-			    holdingdisk_set_disksize(hdp, fs.avail);
+			    hdp->disksize = fs.avail;
 		}
 	    }
-	    else if((fs.avail + holdingdisk_get_disksize(hdp)) < (off_t)0) {
+	    else if((fs.avail + hdp->disksize) < (off_t)0) {
 		log_add(L_WARNING,
 			"WARNING: %s: not " OFF_T_FMT " KB free.",
-			holdingdisk_get_diskdir(hdp), -holdingdisk_get_disksize(hdp));
-		holdingdisk_set_disksize(hdp, (off_t)0);
+			holdingdisk_get_diskdir(hdp), -hdp->disksize);
+		hdp->disksize = (off_t)0;
 		continue;
 	    }
 	    else
-		holdingdisk_set_disksize(hdp, holdingdisk_get_disksize(hdp) + fs.avail);
+		hdp->disksize += fs.avail;
 	}
 
 	printf("driver: adding holding disk %d dir %s size "
 		OFF_T_FMT " chunksize " OFF_T_FMT "\n",
 	       dsk, holdingdisk_get_diskdir(hdp),
-	       (OFF_T_FMT_TYPE)(holdingdisk_get_disksize(hdp)),
+	       (OFF_T_FMT_TYPE)hdp->disksize,
 	       (OFF_T_FMT_TYPE)(holdingdisk_get_chunksize(hdp)));
 
 	newdir = newvstralloc(newdir,
 			      holdingdisk_get_diskdir(hdp), "/", hd_driver_timestamp,
 			      NULL);
 	if(!mkholdingdir(newdir)) {
-	    holdingdisk_set_disksize(hdp, (off_t)0);
+	    hdp->disksize = (off_t)0;
 	}
-	total_disksize += holdingdisk_get_disksize(hdp);
+	total_disksize += hdp->disksize;
     }
 
     reserved_space = total_disksize * (off_t)(reserve / 100);
@@ -425,9 +425,9 @@ main(
 	    log_add(L_FAIL, "%s %s %s %d [%s]",
 		diskp->host->hostname, diskp->name, sched(diskp)->datestamp,
 		sched(diskp)->level,
-		diskp->no_hold ?
-		    "can't dump no-hold disk in degraded mode" :
-		    "no more holding disk space");
+		diskp->to_holdingdisk ?
+		    "no more holding disk space" :
+		    "can't dump no-hold disk in degraded mode");
     }
 
     short_dump_state();				/* for amstatus */
@@ -753,7 +753,7 @@ start_some_dumps(
 	    } else if ((holdp =
 		find_diskspace(sched(diskp)->est_size, &cur_idle, NULL)) == NULL) {
 		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
-	    } else if (diskp->no_hold) {
+	    } else if (!diskp->to_holdingdisk) {
 		free_assignedhd(holdp);
 		cur_idle = max(cur_idle, IDLE_NO_HOLD);
 	    } else if (client_constrained(diskp)) {
@@ -1567,7 +1567,7 @@ handle_chunker_result(
 	    h[activehd]->used -= OFF_T_ATOI(result_argv[3]);
 	    h[activehd]->reserved -= OFF_T_ATOI(result_argv[3]);
 	    holdalloc(h[activehd]->disk)->allocated_space -= OFF_T_ATOI(result_argv[3]);
-	    holdingdisk_set_disksize(h[activehd]->disk, holdingdisk_get_disksize(h[activehd]->disk) - OFF_T_ATOI(result_argv[3]));
+	    h[activehd]->disk->disksize -= OFF_T_ATOI(result_argv[3]);
 	    break;
 
 	case RQ_MORE_DISK: /* RQ-MORE-DISK <handle> */
@@ -2133,7 +2133,7 @@ free_space(void)
 
     total_free = (off_t)0;
     for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
-	diff = holdingdisk_get_disksize(hdp) - holdalloc(hdp)->allocated_space;
+	diff = hdp->disksize - holdalloc(hdp)->allocated_space;
 	if(diff > (off_t)0)
 	    total_free += diff;
     }
@@ -2188,17 +2188,17 @@ find_diskspace(
 	minp = NULL; minj = -1;
 	for(j = 0, hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next, j++ ) {
 	    if( pref && pref->disk == hdp && !used[j] &&
-		holdalloc(hdp)->allocated_space <= holdingdisk_get_disksize(hdp) - (off_t)DISK_BLOCK_KB) {
+		holdalloc(hdp)->allocated_space <= hdp->disksize - (off_t)DISK_BLOCK_KB) {
 		minp = hdp;
 		minj = j;
 		break;
 	    }
-	    else if( holdalloc(hdp)->allocated_space <= holdingdisk_get_disksize(hdp) - (off_t)(2*DISK_BLOCK_KB) &&
+	    else if( holdalloc(hdp)->allocated_space <= hdp->disksize - (off_t)(2*DISK_BLOCK_KB) &&
 		!used[j] &&
 		(!minp ||
 		 holdalloc(hdp)->allocated_dumpers < holdalloc(minp)->allocated_dumpers ||
 		 (holdalloc(hdp)->allocated_dumpers == holdalloc(minp)->allocated_dumpers &&
-		  holdingdisk_get_disksize(hdp)-holdalloc(hdp)->allocated_space > holdingdisk_get_disksize(minp)-holdalloc(minp)->allocated_space)) ) {
+		  hdp->disksize-holdalloc(hdp)->allocated_space > minp->disksize-holdalloc(minp)->allocated_space)) ) {
 		minp = hdp;
 		minj = j;
 	    }
@@ -2209,7 +2209,7 @@ find_diskspace(
 	used[minj] = 1;
 
 	/* hfree = free space on the disk */
-	hfree = holdingdisk_get_disksize(minp) - holdalloc(minp)->allocated_space;
+	hfree = minp->disksize - holdalloc(minp)->allocated_space;
 
 	/* dfree = free space for data, remove 1 header for each chunksize */
 	dfree = hfree - (((hfree-(off_t)1)/holdingdisk_get_chunksize(minp))+(off_t)1) * (off_t)DISK_BLOCK_KB;
@@ -2524,7 +2524,7 @@ holdingdisk_state(
     printf("driver: hdisk-state time %s", time_str);
 
     for(hdp = getconf_holdingdisks(), dsk = 0; hdp != NULL; hdp = hdp->next, dsk++) {
-	diff = holdingdisk_get_disksize(hdp) - holdalloc(hdp)->allocated_space;
+	diff = hdp->disksize - holdalloc(hdp)->allocated_space;
 	printf(" hdisk %d: free " OFF_T_FMT " dumpers %d", dsk,
 	       (OFF_T_FMT_TYPE)diff, holdalloc(hdp)->allocated_dumpers);
     }

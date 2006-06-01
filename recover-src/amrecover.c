@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.58 2006/05/26 14:00:58 martinea Exp $
+ * $Id: amrecover.c,v 1.59 2006/06/01 19:27:51 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -298,6 +298,8 @@ main(
     const security_driver_t *secdrv;
     char *req = NULL;
     int response_error;
+    int new_argc;
+    char **new_argv;
 
     safe_fd(-1, 0);
 
@@ -323,12 +325,16 @@ main(
     }
     localhost[MAX_HOSTNAME_LENGTH] = '\0';
 
+    parse_client_conf(argc, argv, &new_argc, &new_argv);
+
     our_features = am_init_feature_set();
     our_features_string = am_feature_to_string(our_features);
 
     conffile = vstralloc(CONFIG_DIR, "/", "amanda_client.conf", NULL);
     read_clientconf(conffile);
     amfree(conffile);
+
+    report_bad_client_arg();
 
     config = stralloc(client_getconf_str(CLN_CONF));
 
@@ -347,25 +353,25 @@ main(
 
     authopt = stralloc(client_getconf_str(CLN_AUTH));
 
-    if (argc > 1 && argv[1][0] != '-') {
+    if (new_argc > 1 && new_argv[1][0] != '-') {
 	/*
 	 * If the first argument is not an option flag, then we assume
 	 * it is a configuration name to match the syntax of the other
 	 * Amanda utilities.
 	 */
-	char **new_argv;
+	char **new_argv1;
 
-	new_argv = (char **) alloc((size_t)((argc + 1 + 1) * sizeof(*new_argv)));
-	new_argv[0] = argv[0];
-	new_argv[1] = "-C";
-	for (i = 1; i < argc; i++) {
-	    new_argv[i + 1] = argv[i];
+	new_argv1 = (char **) alloc((size_t)((new_argc + 1 + 1) * sizeof(*new_argv1)));
+	new_argv1[0] = new_argv[0];
+	new_argv1[1] = "-C";
+	for (i = 1; i < new_argc; i++) {
+	    new_argv1[i + 1] = new_argv[i];
 	}
-	new_argv[i + 1] = NULL;
-	argc++;
-	argv = new_argv;
+	new_argv1[i + 1] = NULL;
+	new_argc++;
+	new_argv = new_argv1;
     }
-    while ((i = getopt(argc, argv, "C:s:t:d:U")) != EOF) {
+    while ((i = getopt(new_argc, new_argv, "C:s:t:d:U")) != EOF) {
 	switch (i) {
 	    case 'C':
 		config = newstralloc(config, optarg);
@@ -389,7 +395,7 @@ main(
 		return 0;
 	}
     }
-    if (optind != argc) {
+    if (optind != new_argc) {
 	(void)fprintf(stderr, USAGE);
 	exit(1);
     }

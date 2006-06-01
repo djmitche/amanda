@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.35 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: diskfile.h,v 1.36 2006/06/01 19:27:52 martinea Exp $
  *
  * interface for disklist file reading code
  */
@@ -97,7 +97,7 @@ typedef struct disk_s {
     unsigned int record:1;		/* record dump in /etc/dumpdates ? */
     unsigned int skip_incr:1;		/* incs done externally ? */
     unsigned int skip_full:1;		/* fulls done externally ? */
-    unsigned int no_hold:1;		/* don't use holding disk ? */
+    unsigned int to_holdingdisk:1;	/* use holding disk ? */
     unsigned int kencrypt:1;
     unsigned int index:1;		/* produce an index ? */
     int spindle;			/* spindle # - for parallel dumps */

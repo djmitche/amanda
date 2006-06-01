@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.46 2006/06/01 17:05:49 martinea Exp $
+ * $Id: amlabel.c,v 1.47 2006/06/01 19:27:51 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -454,12 +454,15 @@ main(
 	printf("\ntape not labeled\n");
     }
 
+    clear_tapelist();
+    free_server_config();
     amfree(outslot);
     amfree(tapename);
     amfree(conffile);
     amfree(conf_tapelist);
     amfree(config_dir);
     config_name=NULL;
+    dbclose();
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.10 2006/06/01 17:05:49 martinea Exp $
+ * $Id: util.h,v 1.11 2006/06/01 19:27:51 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -198,6 +198,12 @@ typedef struct {        /* token table entry */
 
 keytab_t *keytable;
 
+typedef struct {
+    char *name;
+    char *value;
+    int   used;
+} command_option_t;
+
 typedef struct exinclude_s {
     int  type;  /* 0=list   1=file */
     sl_t *sl;
@@ -208,11 +214,11 @@ typedef struct val_s {
     union {
        int         i;
        long        l;
-       am64_t      am64;
+       off_t       am64;
        double      r;
        char        *s;
        sl_t        *sl;
-       size_t      size;
+       ssize_t     size;
        time_t      t;
        float       rate[2];
        exinclude_t exinclude;
@@ -236,17 +242,20 @@ extern tok_t	tok, pushed_tok;
 extern val_t	tokenval;
 
 extern int	conf_line_num, got_parserror;
-extern FILE *	conf_conf;
-extern char *	conf_confname;
+extern FILE	*conf_conf;
+extern char	*conf_confname;
+extern char	*conf_line;
+extern char	*conf_char;
 
 /* predeclare local functions */
 
+t_conf_var  *get_np(t_conf_var *get_var, unsigned int parm);
 void	get_simple(val_t *var, tok_t type);
 int	get_int(void);
 long	get_long(void);
 time_t	get_time(void);
 ssize_t	get_size(void);
-am64_t	get_am64_t(void);
+off_t 	get_am64_t(void);
 int	get_bool(void);
 void	ckseen(int *seen);
 void	conf_parserror(const char *format, ...)
@@ -264,6 +273,7 @@ void read_bool(t_conf_var *, val_t *);
 void read_real(t_conf_var *, val_t *);
 void read_time(t_conf_var *, val_t *);
 void copy_val_t(val_t *, val_t *);
+void free_val_t(val_t *);
 char *conf_print(val_t *);
 void conf_init_string(val_t *, char *);
 void conf_init_ident(val_t *, char *);
@@ -277,7 +287,7 @@ void conf_init_strategy(val_t *, int);
 void conf_init_compress(val_t *, int);
 void conf_init_encrypt(val_t *, int);
 void conf_init_long(val_t *, long);
-void conf_init_am64(val_t *, am64_t);
+void conf_init_am64(val_t *, off_t);
 void conf_init_real(val_t *, double);
 void conf_init_rate(val_t *, double, double);
 void conf_init_time(val_t *, time_t);
@@ -285,8 +295,15 @@ void conf_init_sl(val_t *, sl_t *);
 void conf_init_exinclude(val_t *);
 void conf_set_string(val_t *, char *);
 void conf_set_int(val_t *, int);
+void conf_set_bool(val_t *, int);
 void conf_set_compress(val_t *, int);
 void conf_set_strategy(val_t *, int);
+
+void read_block(command_option_t *command_options, t_conf_var *read_var,
+		keytab_t *keytab, val_t *valarray, char *prefix, char *errormsg,
+		int read_brace, void (*copy_function)(void));
+void command_overwrite(command_option_t *command_options, t_conf_var *overwrite_var,
+		       keytab_t *keytab, val_t *valarray, char *prefix);
 
 
 
@@ -318,4 +335,5 @@ int validate_mailto(const char *mailto);
 
 char *taperalgo2str(int taperalgo);
 
+void free_new_argv(int new_argc, char **new_argv);
 #endif	/* UTIL_H */

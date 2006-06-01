@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.24 2006/06/01 17:05:49 martinea Exp $
+ * $Id: util.c,v 1.25 2006/06/01 19:27:51 martinea Exp $
  */
 
 #include "amanda.h"
@@ -41,6 +41,8 @@ val_t tokenval;
 int conf_line_num, got_parserror;
 FILE *conf_conf = (FILE *)NULL;
 char *conf_confname = NULL;
+char *conf_line = NULL;
+char *conf_char = NULL;
 
 /*#define NET_READ_DEBUG*/
 
@@ -51,6 +53,9 @@ char *conf_confname = NULL;
 #endif
 
 static int make_socket(void);
+
+char conftoken_getc(void);
+void conftoken_ungetc(char c);
 
 /*
  * Keep calling read() until we've read buflen's worth of data, or EOF,
@@ -538,6 +543,22 @@ validate_mailto(
 }
 
 
+t_conf_var *
+get_np(
+    t_conf_var        *get_var,
+    unsigned int  parm)
+{
+    t_conf_var *np;
+
+    for(np = get_var; np->token != CONF_UNKNOWN; np++)
+	if(np->parm == parm) break;
+
+    if(np->token == CONF_UNKNOWN)
+	error("error [unknown getconf_np parm: %d]", parm);
+
+    return np;
+}
+
 void
 get_simple(
     val_t  *var,
@@ -598,7 +619,7 @@ get_time(void)
     switch(tok) {
     case CONF_INT:
 #if SIZEOF_TIME_T < SIZEOF_INT
-	if ((am64_t)tokenval.v.i >= (am64_t)TIME_MAX)
+	if ((off_t)tokenval.v.i >= (off_t)TIME_MAX)
 	    conf_parserror("value too large");
 #endif
 	hhmm = (time_t)tokenval.v.i;
@@ -606,7 +627,7 @@ get_time(void)
 
     case CONF_LONG:
 #if SIZEOF_TIME_T < SIZEOF_LONG
-	if ((am64_t)tokenval.v.l >= (am64_t)TIME_MAX)
+	if ((off_t)tokenval.v.l >= (off_t)TIME_MAX)
 	    conf_parserror("value too large");
 #endif
 	hhmm = (time_t)tokenval.v.l;
@@ -614,7 +635,7 @@ get_time(void)
 
     case CONF_SIZE:
 #if SIZEOF_TIME_T < SIZEOF_SSIZE_T
-	if ((am64_t)tokenval.v.size >= (am64_t)TIME_MAX)
+	if ((off_t)tokenval.v.size >= (off_t)TIME_MAX)
 	    conf_parserror("value too large");
 #endif
 	hhmm = (time_t)tokenval.v.size;
@@ -622,7 +643,7 @@ get_time(void)
 
     case CONF_AM64:
 #if SIZEOF_TIME_T < SIZEOF_LONG_LONG
-	if ((am64_t)tokenval.v.am64 >= (am64_t)TIME_MAX)
+	if ((off_t)tokenval.v.am64 >= (off_t)TIME_MAX)
 	    conf_parserror("value too large");
 #endif
 	hhmm = (time_t)tokenval.v.am64;
@@ -690,7 +711,6 @@ get_int(void)
     keytable = numb_keytable;
 
     get_conftoken(CONF_ANY);
-
     switch(tok) {
     case CONF_INT:
 	val = tokenval.v.i;
@@ -698,9 +718,9 @@ get_int(void)
 
     case CONF_LONG:
 #if SIZEOF_INT < SIZEOF_LONG
-	if ((am64_t)tokenval.v.l > (am64_t)INT_MAX)
+	if ((off_t)tokenval.v.l > (off_t)INT_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.v.l < (am64_t)INT_MIN)
+	if ((off_t)tokenval.v.l < (off_t)INT_MIN)
 	    conf_parserror("value too small");
 #endif
 	val = (int)tokenval.v.l;
@@ -708,9 +728,9 @@ get_int(void)
 
     case CONF_SIZE:
 #if SIZEOF_INT < SIZEOF_SSIZE_T
-	if ((am64_t)tokenval.v.size > (am64_t)INT_MAX)
+	if ((off_t)tokenval.v.size > (off_t)INT_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.v.size < (am64_t)INT_MIN)
+	if ((off_t)tokenval.v.size < (off_t)INT_MIN)
 	    conf_parserror("value too small");
 #endif
 	val = (int)tokenval.v.size;
@@ -718,9 +738,9 @@ get_int(void)
 
     case CONF_AM64:
 #if SIZEOF_INT < SIZEOF_LONG_LONG
-	if (tokenval.v.am64 > (am64_t)INT_MAX)
+	if (tokenval.v.am64 > (off_t)INT_MAX)
 	    conf_parserror("value too large");
-	if (tokenval.v.am64 < (am64_t)INT_MIN)
+	if (tokenval.v.am64 < (off_t)INT_MIN)
 	    conf_parserror("value too small");
 #endif
 	val = (int)tokenval.v.am64;
@@ -738,9 +758,9 @@ get_int(void)
 
     /* get multiplier, if any */
     get_conftoken(CONF_ANY);
-
     switch(tok) {
     case CONF_NL:			/* multiply by one */
+    case CONF_END:
     case CONF_MULT1:
     case CONF_MULT1K:
 	break;
@@ -796,9 +816,9 @@ get_long(void)
 
     case CONF_INT:
 #if SIZEOF_LONG < SIZEOF_INT
-	if ((am64_t)tokenval.v.i > (am64_t)LONG_MAX)
+	if ((off_t)tokenval.v.i > (off_t)LONG_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.v.i < (am64_t)LONG_MIN)
+	if ((off_t)tokenval.v.i < (off_t)LONG_MIN)
 	    conf_parserror("value too small");
 #endif
 	val = (long)tokenval.v.i;
@@ -806,9 +826,9 @@ get_long(void)
 
     case CONF_SIZE:
 #if SIZEOF_LONG < SIZEOF_SSIZE_T
-	if ((am64_t)tokenval.v.size > (am64_t)LONG_MAX)
+	if ((off_t)tokenval.v.size > (off_t)LONG_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.v.size < (am64_t)LONG_MIN)
+	if ((off_t)tokenval.v.size < (off_t)LONG_MIN)
 	    conf_parserror("value too small");
 #endif
 	val = (long)tokenval.v.size;
@@ -816,9 +836,9 @@ get_long(void)
 
     case CONF_AM64:
 #if SIZEOF_LONG < SIZEOF_LONG_LONG
-	if (tokenval.v.am64 > (am64_t)LONG_MAX)
+	if (tokenval.v.am64 > (off_t)LONG_MAX)
 	    conf_parserror("value too large");
-	if (tokenval.v.am64 < (am64_t)LONG_MIN)
+	if (tokenval.v.am64 < (off_t)LONG_MIN)
 	    conf_parserror("value too small");
 #endif
 	val = (long)tokenval.v.am64;
@@ -894,9 +914,9 @@ get_size(void)
 
     case CONF_INT:
 #if SIZEOF_SIZE_T < SIZEOF_INT
-	if ((am64_t)tokenval.v.i > (am64_t)SSIZE_MAX)
+	if ((off_t)tokenval.v.i > (off_t)SSIZE_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.v.i < (am64_t)SSIZE_MIN)
+	if ((off_t)tokenval.v.i < (off_t)SSIZE_MIN)
 	    conf_parserror("value too small");
 #endif
 	val = (ssize_t)tokenval.v.i;
@@ -904,9 +924,9 @@ get_size(void)
 
     case CONF_LONG:
 #if SIZEOF_SIZE_T < SIZEOF_LONG
-	if ((am64_t)tokenval.v.l > (am64_t)SSIZE_MAX)
+	if ((off_t)tokenval.v.l > (off_t)SSIZE_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.v.l < (am64_t)SSIZE_MIN)
+	if ((off_t)tokenval.v.l < (off_t)SSIZE_MIN)
 	    conf_parserror("value too small");
 #endif
 	val = (ssize_t)tokenval.v.l;
@@ -914,9 +934,9 @@ get_size(void)
 
     case CONF_AM64:
 #if SIZEOF_SIZE_T < SIZEOF_LONG_LONG
-	if (tokenval.v.am64 > (am64_t)SSIZE_MAX)
+	if (tokenval.v.am64 > (off_t)SSIZE_MAX)
 	    conf_parserror("value too large");
-	if (tokenval.v.am64 < (am64_t)SSIZE_MIN)
+	if (tokenval.v.am64 < (off_t)SSIZE_MIN)
 	    conf_parserror("value too small");
 #endif
 	val = (ssize_t)tokenval.v.am64;
@@ -974,10 +994,10 @@ get_size(void)
     return val;
 }
 
-am64_t
+off_t
 get_am64_t(void)
 {
-    am64_t val;
+    off_t val;
     keytab_t *save_kt;
 
     save_kt = keytable;
@@ -987,15 +1007,15 @@ get_am64_t(void)
 
     switch(tok) {
     case CONF_INT:
-	val = (am64_t)tokenval.v.i;
+	val = (off_t)tokenval.v.i;
 	break;
 
     case CONF_LONG:
-	val = (am64_t)tokenval.v.l;
+	val = (off_t)tokenval.v.l;
 	break;
 
     case CONF_SIZE:
-	val = (am64_t)tokenval.v.size;
+	val = (off_t)tokenval.v.size;
 	break;
 
     case CONF_AM64:
@@ -1097,7 +1117,7 @@ get_bool(void)
 	break;
 
     case CONF_AM64:
-	if (tokenval.v.am64 != (am64_t)0)
+	if (tokenval.v.am64 != (off_t)0)
 	    val = 1;
 	else
 	    val = 0;
@@ -1123,9 +1143,9 @@ get_bool(void)
 }
 
 void ckseen(
-    int *	seen)
+    int *seen)
 {
-    if (*seen && !allow_overwrites) {
+    if (*seen && !allow_overwrites && conf_line_num != -2) {
 	conf_parserror("duplicate parameter, prev def on line %d", *seen);
     }
     *seen = conf_line_num;
@@ -1137,7 +1157,10 @@ printf_arglist_function(void conf_parserror, const char *, format)
 
     /* print error message */
 
-    fprintf(stderr, "\"%s\", line %d: ", conf_confname, conf_line_num);
+    if(conf_line)
+	fprintf(stderr, "argument \"%s\": ", conf_line);
+    else
+	fprintf(stderr, "\"%s\", line %d: ", conf_confname, conf_line_num);
     arglist_start(argp, format);
     vfprintf(stderr, format, argp);
     arglist_end(argp);
@@ -1172,12 +1195,40 @@ unget_conftoken(void)
     return;
 }
 
+char
+conftoken_getc(void)
+{
+    if(conf_line == NULL)
+	return getc(conf_conf);
+    if(*conf_char == '\0')
+	return -1;
+    return(*conf_char++);
+}
+
+void
+conftoken_ungetc(
+    char c)
+{
+    if(conf_line == NULL)
+	ungetc(c, conf_conf);
+    else if(conf_char > conf_line) {
+	if(c == -1)
+	    return;
+	conf_char--;
+	if(*conf_char != c)
+	    error("*conf_char != c   : %c %c", *conf_char, c);
+    }
+    else
+	error("conf_char == conf_line");
+    return;
+}
+
 void
 get_conftoken(
     tok_t	exp)
 {
     int ch, d;
-    am64_t am64;
+    off_t am64;
     char *buf;
     int token_overflow;
 
@@ -1206,12 +1257,12 @@ get_conftoken(
 	}
     }
     else {
-	ch = getc(conf_conf);
+	ch = conftoken_getc();
 
 	while(ch != EOF && ch != '\n' && isspace(ch))
-	    ch = getc(conf_conf);
+	    ch = conftoken_getc();
 	if (ch == '#') {		/* comment - eat everything but eol/eof */
-	    while((ch = getc(conf_conf)) != EOF && ch != '\n') {
+	    while((ch = conftoken_getc()) != EOF && ch != '\n') {
 		(void)ch; /* Quiet empty loop complaints */	
 	    }
 	}
@@ -1230,10 +1281,10 @@ get_conftoken(
 		    }
 		    token_overflow = 1;
 		}
-		ch = getc(conf_conf);
+		ch = conftoken_getc();
 	    } while(isalnum(ch) || ch == '_' || ch == '-');
 
-	    ungetc(ch, conf_conf);
+	    conftoken_ungetc(ch);
 	    *buf = '\0';
 
 	    tokenval.v.s = tkbuf;
@@ -1253,7 +1304,7 @@ get_conftoken(
 	    tokenval.v.am64 = 0;
 	    do {
 		tokenval.v.am64 = tokenval.v.am64 * 10 + (ch - '0');
-		ch = getc(conf_conf);
+		ch = conftoken_getc();
 	    } while(isdigit(ch));
 	    if (ch != '.') {
 		if (exp == CONF_INT) {
@@ -1279,21 +1330,21 @@ get_conftoken(
 		am64 = tokenval.v.am64;
 		tokenval.v.r = sign * (double) am64;
 		am64=0; d=1;
-		ch = getc(conf_conf);
+		ch = conftoken_getc();
 		while(isdigit(ch)) {
 		    am64 = am64 * 10 + (ch - '0');
 		    d = d * 10;
-		    ch = getc(conf_conf);
+		    ch = conftoken_getc();
 		}
 		tokenval.v.r += sign * ((double)am64)/d;
 		tok = CONF_REAL;
 	    }
-	    ungetc(ch, conf_conf);
+	    conftoken_ungetc(ch);
 	} else switch(ch) {
 	case '"':			/* string */
 	    buf = tkbuf;
 	    token_overflow = 0;
-	    ch = getc(conf_conf);
+	    ch = conftoken_getc();
 	    while(ch != '"' && ch != '\n' && ch != EOF) {
 		if (buf < tkbuf+sizeof(tkbuf)-1) {
 		    *buf++ = (char)ch;
@@ -1304,11 +1355,11 @@ get_conftoken(
 		    }
 		    token_overflow = 1;
 		}
-		ch = getc(conf_conf);
+		ch = conftoken_getc();
 	    }
 	    if (ch != '"') {
 		conf_parserror("missing end quote");
-		ungetc(ch, conf_conf);
+		conftoken_ungetc(ch);
 	    }
 	    *buf = '\0';
 	    tokenval.v.s = tkbuf;
@@ -1317,11 +1368,11 @@ get_conftoken(
 	    break;
 
 	case '-':
-	    ch = getc(conf_conf);
+	    ch = conftoken_getc();
 	    if (isdigit(ch))
 		goto negative_number;
 	    else {
-		ungetc(ch, conf_conf);
+		conftoken_ungetc(ch);
 		tok = CONF_UNKNOWN;
 	    }
 	    break;
@@ -1453,7 +1504,7 @@ read_long(
 {
     np = np;
     ckseen(&val->seen);
-    val->v.i = get_long();
+    val->v.l = get_long();
 }
 
 void
@@ -1463,7 +1514,7 @@ read_am64(
 {
     np = np;
     ckseen(&val->seen);
-    val->v.i = get_am64_t();
+    val->v.am64 = get_am64_t();
 }
 
 void
@@ -1494,7 +1545,7 @@ read_time(
 {
     np = np;
     ckseen(&val->seen);
-    val->v.i = get_time();
+    val->v.t = get_time();
 }
 
 void
@@ -1531,7 +1582,6 @@ copy_val_t(
 	    break;
 	case CONFTYPE_IDENT:
 	case CONFTYPE_STRING:
-	    amfree(valdst->v.s);
 	    valdst->v.s = stralloc(valsrc->v.s);
 	    break;
 	case CONFTYPE_TIME:
@@ -1546,6 +1596,40 @@ copy_val_t(
 	    valdst->v.exinclude.sl = duplicate_sl(valsrc->v.exinclude.sl);
 	}
     }
+}
+
+void
+free_val_t(
+    val_t *val)
+{
+    switch(val->type) {
+	case CONFTYPE_INT:
+	case CONFTYPE_BOOL:
+	case CONFTYPE_COMPRESS:
+	case CONFTYPE_ENCRYPT:
+	case CONFTYPE_ESTIMATE:
+	case CONFTYPE_STRATEGY:
+	case CONFTYPE_TAPERALGO:
+	case CONFTYPE_PRIORITY:
+	case CONFTYPE_LONG:
+	case CONFTYPE_AM64:
+	case CONFTYPE_REAL:
+	case CONFTYPE_RATE:
+	    break;
+	case CONFTYPE_IDENT:
+	case CONFTYPE_STRING:
+	    amfree(val->v.s);
+	    break;
+	case CONFTYPE_TIME:
+	    break;
+	case CONFTYPE_SL:
+	    free_sl(val->v.sl);
+	    break;
+	case CONFTYPE_EXINCLUDE:
+	    free_sl(val->v.exinclude.sl);
+	    break;
+    }
+    val->seen = 0;
 }
 
 char *
@@ -1578,7 +1662,8 @@ conf_print(
 	snprintf(buffer_conf_print, 1024, "%ld", val->v.l);
 	break;
     case CONFTYPE_AM64:
-	snprintf(buffer_conf_print, 1024, AM64_FMT , val->v.am64);
+	snprintf(buffer_conf_print, 1024, OFF_T_FMT ,
+		 (OFF_T_FMT_TYPE)val->v.am64);
 	break;
     case CONFTYPE_REAL:
 	snprintf(buffer_conf_print, 1024, "%0.5f" , val->v.r);
@@ -1588,9 +1673,9 @@ conf_print(
 	break;
     case CONFTYPE_IDENT:
 	if(val->v.s)
-	    return(val->v.s);
+	    strncpy(buffer_conf_print, val->v.s, 1024);
 	else
-	buffer_conf_print[0] = '\0';
+	    buffer_conf_print[0] = '\0';
 	break;
     case CONFTYPE_STRING:
 	buffer_conf_print[0] = '"';
@@ -1600,8 +1685,8 @@ conf_print(
 		buffer_conf_print[strlen(val->v.s)+1] = '"';
 	}
 	else {
-	buffer_conf_print[1] = '"';
-	buffer_conf_print[2] = '\0';
+	    buffer_conf_print[1] = '"';
+	    buffer_conf_print[2] = '\0';
 	}
 	break;
     case CONFTYPE_TIME:
@@ -1841,7 +1926,7 @@ conf_init_long(
 void
 conf_init_am64(
     val_t *val,
-    am64_t   l)
+    off_t   l)
 {
     val->seen = 0;
     val->type = CONFTYPE_AM64;
@@ -1923,6 +2008,16 @@ conf_set_int(
 }
 
 void
+conf_set_bool(
+    val_t *val,
+    int    i)
+{
+    val->seen = -1;
+    val->type = CONFTYPE_BOOL;
+    val->v.i = i;
+}
+
+void
 conf_set_compress(
     val_t *val,
     int    i)
@@ -1951,6 +2046,119 @@ dump_sockaddr(
 		inet_ntoa(sa->sin_addr)));
 }
 
+void
+read_block(
+    command_option_t *command_options,
+    t_conf_var    *read_var,
+    keytab_t *keytab,
+    val_t    *valarray,
+    char     *prefix,
+    char     *errormsg,
+    int       read_brace,
+    void      (*copy_function)(void))
+{
+    t_conf_var *np;
+    int    saved_conf_line_num;
+    int    done;
+
+    if(read_brace) {
+	get_conftoken(CONF_LBRACE);
+	get_conftoken(CONF_NL);
+    }
+
+    done = 0;
+    do {
+	conf_line_num += 1;
+	get_conftoken(CONF_ANY);
+	switch(tok) {
+	case CONF_RBRACE:
+	    done = 1;
+	    break;
+	case CONF_NL:	/* empty line */
+	    break;
+	case CONF_END:	/* end of file */
+	    done = 1;
+	    break;
+        case CONF_IDENT:
+	    if(copy_function) 
+		copy_function();
+	    else
+		conf_parserror("ident not expected");
+	    break;
+	default:
+	    {
+		for(np = read_var; np->token != CONF_UNKNOWN; np++)
+		    if(np->token == tok) break;
+
+		if(np->token == CONF_UNKNOWN)
+		    conf_parserror(errormsg);
+		else {
+		    np->read_function(np, &valarray[np->parm]);
+		    if(np->validate)
+			np->validate(np, &valarray[np->parm]);
+		}
+	    }
+	}
+	if(tok != CONF_NL && tok != CONF_END) get_conftoken(CONF_NL);
+    } while(!done);
+
+    /* overwrite with command line option */
+    saved_conf_line_num = conf_line_num;
+    command_overwrite(command_options, read_var, keytab, valarray, prefix);
+    conf_line_num = saved_conf_line_num;
+}
+
+void
+command_overwrite(
+    command_option_t *command_options,
+    t_conf_var    *overwrite_var,
+    keytab_t *keytab,
+    val_t    *valarray,
+    char     *prefix)
+{
+    t_conf_var	     *np;
+    keytab_t	     *kt;
+    char	     *myprefix;
+    command_option_t *command_option;
+
+    if(!command_options) return;
+
+    for(np = overwrite_var; np->token != CONF_UNKNOWN; np++) {
+	for(kt = keytab; kt->token != CONF_UNKNOWN; kt++)
+	    if(kt->token == np->token) break;
+
+	if(kt->token == CONF_UNKNOWN)
+	    error("read_conf: invalid token");
+
+        for(command_option = command_options; command_option->name != NULL;
+							    command_option++) {
+	    myprefix = stralloc2(prefix, kt->keyword);
+	    if(strcasecmp(myprefix, command_option->name) == 0) {
+		command_option->used = 1;
+		valarray[np->parm].seen = -2;
+		if(np->type == CONFTYPE_STRING &&
+		   command_option->value[0] != '"') {
+		    conf_line = vstralloc("\"", command_option->value, "\"",
+					  NULL);
+		}
+		else {
+		    conf_line = stralloc(command_option->value);
+		}
+		conf_char = conf_line;
+		token_pushed = 0;
+		conf_line_num = -2;
+		np->read_function(np, &valarray[np->parm]);
+		amfree(conf_line);
+		conf_line = conf_char = NULL;
+
+		if(np->validate)
+		    np->validate(np, &valarray[np->parm]);
+	    }
+	    amfree(myprefix);
+	}
+    }
+}
+
 #ifndef HAVE_LIBREADLINE
 /*
  * simple readline() replacements
@@ -1971,5 +2179,16 @@ add_history(
     const char *line)
 {
     (void)line; 	/* Quite unused parameter warning */
+}
+
+void
+free_new_argv(
+    int new_argc,
+    char **new_argv)
+{
+    int i;
+    for(i=0; i<new_argc; i++)
+	amfree(new_argv[i]);
+    amfree(new_argv);
 }
 #endif

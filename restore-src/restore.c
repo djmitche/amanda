@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.34 2006/05/26 11:08:37 martinea Exp $
+ * $Id: restore.c,v 1.35 2006/06/01 19:27:51 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -191,8 +191,9 @@ append_file_to_fd(
 
 	s = fullwrite(fd, buffer, (size_t)bytes_read);
 	if (s < bytes_read) {
-	    fprintf(stderr,"Error (%s) offset " OFF_T_FMT "+" AM64_FMT ", wrote " AM64_FMT "\n",
-			strerror(errno), (OFF_T_FMT_TYPE)wc, (am64_t)bytes_read, (am64_t)s);
+	    fprintf(stderr,"Error (%s) offset " OFF_T_FMT "+" OFF_T_FMT ", wrote " OFF_T_FMT "\n",
+		    strerror(errno), (OFF_T_FMT_TYPE)wc,
+		    (OFF_T_FMT_TYPE)bytes_read, (OFF_T_FMT_TYPE)s);
 	    if (s < 0) {
 		if((errno == EPIPE) || (errno == ECONNRESET)) {
 		    error("%s: pipe reader has quit in middle of file.",
@@ -613,8 +614,8 @@ read_file_header(
 	if(bytes_read == 0) {
 	    fprintf(stderr, "%s: missing file header block\n", get_pname());
 	} else {
-	    fprintf(stderr, "%s: short file header block: " AM64_FMT " byte%s\n",
-		    get_pname(), (am64_t)bytes_read, (bytes_read == 1) ? "" : "s");
+	    fprintf(stderr, "%s: short file header block: " OFF_T_FMT " byte%s\n",
+		    get_pname(), (OFF_T_FMT_TYPE)bytes_read, (bytes_read == 1) ? "" : "s");
 	}
 	file->type = F_UNKNOWN;
     } else {

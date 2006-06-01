@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.138 2006/06/01 17:05:49 martinea Exp $
+ * $Id: conffile.c,v 1.139 2006/06/01 19:27:51 martinea Exp $
  *
  * read configuration file
  */
@@ -50,17 +50,7 @@
 #ifndef INT_MAX
 #define INT_MAX 2147483647
 #endif
-/*
-typedef struct s_conf_var {
-  tok_t      token;
-  confparm_t parm;
-  conftype_t type;
-  void (*read_function)(struct s_conf_var *, val_t*);
-  int        value;
-  void (*validate)(struct s_conf_var *, val_t *);
-  val_t	     dvalue;
-} t_conf_var;
-*/
+
 /* this corresponds to the normal output of amanda, but may
  * be adapted to any spacing as you like.
  */
@@ -90,7 +80,9 @@ long int unit_divisor = 1;
 
 /* configuration parameters */
 
-val_t global_conf[CNF_CNF-1];
+val_t server_conf[CNF_CNF];
+
+command_option_t *server_options = NULL;
 
 /* other internal variables */
 static holdingdisk_t hdcur;
@@ -107,39 +99,8 @@ static interface_t *interface_list = NULL;
 
 /* predeclare local functions */
 
-void read_string(t_conf_var *, val_t *);
-void read_ident(t_conf_var *, val_t *);
-void read_int (t_conf_var *, val_t *);
-void read_long(t_conf_var *, val_t *);
-void read_real(t_conf_var *, val_t *);
-void read_am64(t_conf_var *, val_t *);
-void read_bool(t_conf_var *, val_t *);
-void read_time(t_conf_var *, val_t *);
 char *get_token_name(tok_t);
 
-char *conf_print(val_t *);
-void conf_init_string   (val_t *, char *);
-void conf_init_ident    (val_t *, char *);
-void conf_init_int      (val_t *, int);
-void conf_init_bool     (val_t *, int);
-void conf_init_strategy (val_t *, int);
-void conf_init_estimate (val_t *, int);
-void conf_init_compress (val_t *, int);
-void conf_init_encrypt  (val_t *, int);
-void conf_init_taperalgo(val_t *, int);
-void conf_init_priority (val_t *, int);
-void conf_init_long     (val_t *, long);
-void conf_init_am64     (val_t *, long);
-void conf_init_real     (val_t *, double);
-void conf_init_time     (val_t *, time_t);
-void conf_init_sl       (val_t *, sl_t *);
-void conf_init_exinclude(val_t *);
-void conf_init_rate     (val_t *, double, double);
-
-void conf_set_string    (val_t *, char *);
-void conf_set_int       (val_t *, int);
-void conf_set_compress  (val_t *, int);
-void conf_set_strategy  (val_t *, int);
 
 void validate_positive0   (t_conf_var *, val_t *);
 void validate_positive1   (t_conf_var *, val_t *);
@@ -182,7 +143,7 @@ static void get_exclude (t_conf_var *, val_t *);
 /*static void get_include(t_conf_var *, val_t *);*/
 static void get_taperalgo(t_conf_var *, val_t *);
 
-keytab_t global_keytab[] = {
+keytab_t server_keytab[] = {
     { "BUMPDAYS", CONF_BUMPDAYS },
     { "BUMPMULT", CONF_BUMPMULT },
     { "BUMPSIZE", CONF_BUMPSIZE },
@@ -323,7 +284,54 @@ keytab_t global_keytab[] = {
     { NULL, CONF_UNKNOWN }
 };
 
-
+t_conf_var server_var [] = {
+   { CONF_ORG                  , CONFTYPE_STRING   , read_string  , CNF_ORG                  , NULL },
+   { CONF_MAILTO               , CONFTYPE_STRING   , read_string  , CNF_MAILTO               , NULL },
+   { CONF_DUMPUSER             , CONFTYPE_STRING   , read_string  , CNF_DUMPUSER             , NULL },
+   { CONF_PRINTER              , CONFTYPE_STRING   , read_string  , CNF_PRINTER              , NULL },
+   { CONF_TAPEDEV              , CONFTYPE_STRING   , read_string  , CNF_TAPEDEV              , NULL },
+   { CONF_TPCHANGER            , CONFTYPE_STRING   , read_string  , CNF_TPCHANGER            , NULL },
+   { CONF_CHNGRDEV             , CONFTYPE_STRING   , read_string  , CNF_CHNGRDEV             , NULL },
+   { CONF_CHNGRFILE            , CONFTYPE_STRING   , read_string  , CNF_CHNGRFILE            , NULL },
+   { CONF_LABELSTR             , CONFTYPE_STRING   , read_string  , CNF_LABELSTR             , NULL },
+   { CONF_TAPELIST             , CONFTYPE_STRING   , read_string  , CNF_TAPELIST             , NULL },
+   { CONF_DISKFILE             , CONFTYPE_STRING   , read_string  , CNF_DISKFILE             , NULL },
+   { CONF_INFOFILE             , CONFTYPE_STRING   , read_string  , CNF_INFOFILE             , NULL },
+   { CONF_LOGDIR               , CONFTYPE_STRING   , read_string  , CNF_LOGDIR               , NULL },
+   { CONF_INDEXDIR             , CONFTYPE_STRING   , read_string  , CNF_INDEXDIR             , NULL },
+   { CONF_TAPETYPE             , CONFTYPE_IDENT    , read_ident   , CNF_TAPETYPE             , NULL },
+   { CONF_DUMPCYCLE            , CONFTYPE_INT      , read_int     , CNF_DUMPCYCLE            , validate_positive0 },
+   { CONF_RUNSPERCYCLE         , CONFTYPE_INT      , read_int     , CNF_RUNSPERCYCLE         , validate_runspercycle },
+   { CONF_RUNTAPES             , CONFTYPE_INT      , read_int     , CNF_RUNTAPES             , validate_positive0 },
+   { CONF_TAPECYCLE            , CONFTYPE_INT      , read_int     , CNF_TAPECYCLE            , validate_positive1 },
+   { CONF_BUMPDAYS             , CONFTYPE_INT      , read_int     , CNF_BUMPDAYS             , validate_positive1 },
+   { CONF_BUMPSIZE             , CONFTYPE_INT      , read_int     , CNF_BUMPSIZE             , validate_positive1 },
+   { CONF_BUMPPERCENT          , CONFTYPE_INT      , read_int     , CNF_BUMPPERCENT          , validate_bumppercent },
+   { CONF_BUMPMULT             , CONFTYPE_REAL     , read_real    , CNF_BUMPMULT             , validate_bumpmult },
+   { CONF_NETUSAGE             , CONFTYPE_INT      , read_int     , CNF_NETUSAGE             , validate_positive1 },
+   { CONF_INPARALLEL           , CONFTYPE_INT      , read_int     , CNF_INPARALLEL           , validate_inparallel },
+   { CONF_DUMPORDER            , CONFTYPE_STRING   , read_string  , CNF_DUMPORDER            , NULL },
+   { CONF_MAXDUMPS             , CONFTYPE_INT      , read_int     , CNF_MAXDUMPS             , validate_positive1 },
+   { CONF_ETIMEOUT             , CONFTYPE_INT      , read_int     , CNF_ETIMEOUT             , NULL },
+   { CONF_DTIMEOUT             , CONFTYPE_INT      , read_int     , CNF_DTIMEOUT             , validate_positive1 },
+   { CONF_CTIMEOUT             , CONFTYPE_INT      , read_int     , CNF_CTIMEOUT             , validate_positive1 },
+   { CONF_TAPEBUFS             , CONFTYPE_INT      , read_int     , CNF_TAPEBUFS             , validate_positive1 },
+   { CONF_RAWTAPEDEV           , CONFTYPE_STRING   , read_string  , CNF_RAWTAPEDEV           , NULL },
+   { CONF_COLUMNSPEC           , CONFTYPE_STRING   , read_string  , CNF_COLUMNSPEC           , NULL },
+   { CONF_TAPERALGO            , CONFTYPE_TAPERALGO, get_taperalgo, CNF_TAPERALGO            , NULL },
+   { CONF_DISPLAYUNIT          , CONFTYPE_STRING   , read_string  , CNF_DISPLAYUNIT          , validate_displayunit },
+   { CONF_AUTOFLUSH            , CONFTYPE_BOOL     , read_bool    , CNF_AUTOFLUSH            , NULL },
+   { CONF_RESERVE              , CONFTYPE_INT      , read_int     , CNF_RESERVE              , validate_reserve },
+   { CONF_MAXDUMPSIZE          , CONFTYPE_AM64     , read_am64    , CNF_MAXDUMPSIZE          , NULL },
+   { CONF_KRB5KEYTAB           , CONFTYPE_STRING   , read_string  , CNF_KRB5KEYTAB           , NULL },
+   { CONF_KRB5PRINCIPAL        , CONFTYPE_STRING   , read_string  , CNF_KRB5PRINCIPAL        , NULL },
+   { CONF_LABEL_NEW_TAPES      , CONFTYPE_STRING   , read_string  , CNF_LABEL_NEW_TAPES      , NULL },
+   { CONF_USETIMESTAMPS        , CONFTYPE_BOOL     , read_bool    , CNF_USETIMESTAMPS        , NULL },
+   { CONF_AMRECOVER_DO_FSF     , CONFTYPE_BOOL     , read_bool    , CNF_AMRECOVER_DO_FSF     , NULL },
+   { CONF_AMRECOVER_CHANGER    , CONFTYPE_STRING   , read_string  , CNF_AMRECOVER_CHANGER    , NULL },
+   { CONF_AMRECOVER_CHECK_LABEL, CONFTYPE_BOOL     , read_bool    , CNF_AMRECOVER_CHECK_LABEL, NULL },
+   { CONF_UNKNOWN              , CONFTYPE_INT      , NULL         , CNF_CNF                  , NULL }
+};
 /*
 ** ------------------------
 **  External entry points
@@ -341,16 +349,20 @@ read_conffile(
     /* We assume that conf_confname & conf are initialized to NULL above */
     read_conffile_recursively(filename);
 
+    /* overwrite with command line option */
+    command_overwrite(server_options, server_var, server_keytab, server_conf,
+		      "");
+
     if(got_parserror != -1 ) {
-	if(lookup_tapetype(global_conf[CNF_TAPETYPE].v.s) == NULL) {
+	if(lookup_tapetype(server_conf[CNF_TAPETYPE].v.s) == NULL) {
 	    char *save_confname = conf_confname;
 
 	    conf_confname = filename;
-	    if(!global_conf[CNF_TAPETYPE].seen)
-		conf_parserror("default tapetype %s not defined", global_conf[CNF_TAPETYPE].v.s);
+	    if(!server_conf[CNF_TAPETYPE].seen)
+		conf_parserror("default tapetype %s not defined", server_conf[CNF_TAPETYPE].v.s);
 	    else {
-		conf_line_num = global_conf[CNF_TAPETYPE].seen;
-		conf_parserror("tapetype %s not defined", global_conf[CNF_TAPETYPE].v.s);
+		conf_line_num = server_conf[CNF_TAPETYPE].seen;
+		conf_parserror("tapetype %s not defined", server_conf[CNF_TAPETYPE].v.s);
 	    }
 	    conf_confname = save_confname;
 	}
@@ -358,9 +370,9 @@ read_conffile(
 
     ip = alloc(sizeof(interface_t));
     ip->name = stralloc("default");
-    ip->seen = global_conf[CNF_NETUSAGE].seen;
+    ip->seen = server_conf[CNF_NETUSAGE].seen;
     conf_init_string(&ip->value[INTER_COMMENT], "implicit from NETUSAGE");
-    conf_init_int(&ip->value[INTER_MAXUSAGE], global_conf[CNF_NETUSAGE].v.i);
+    conf_init_int(&ip->value[INTER_MAXUSAGE], server_conf[CNF_NETUSAGE].v.i);
     ip->curusage = 0;
     ip->next = interface_list;
     interface_list = ip;
@@ -408,6 +420,11 @@ validate_positive1(
     case CONFTYPE_AM64:
 	if(val->v.am64 < 1)
 	    conf_parserror("%s must be positive", get_token_name(np->token));
+	break;
+    case CONFTYPE_TIME:
+	if(val->v.t < 1)
+	    conf_parserror("%s must be positive", get_token_name(np->token));
+	break;
     default:
 	conf_parserror("validate_positive1 invalid type %d\n", val->type);
     }
@@ -535,56 +552,6 @@ validate_blocksize(
     }
 }
 
-t_conf_var global_var [] = {
-   { CONF_ORG            , CONFTYPE_STRING, read_string, CNF_ORG            , NULL },
-   { CONF_MAILTO         , CONFTYPE_STRING, read_string, CNF_MAILTO         , NULL },
-   { CONF_DUMPUSER       , CONFTYPE_STRING, read_string, CNF_DUMPUSER       , NULL },
-   { CONF_PRINTER        , CONFTYPE_STRING, read_string, CNF_PRINTER        , NULL },
-   { CONF_TAPEDEV        , CONFTYPE_STRING, read_string, CNF_TAPEDEV        , NULL },
-   { CONF_TPCHANGER      , CONFTYPE_STRING, read_string, CNF_TPCHANGER      , NULL },
-   { CONF_CHNGRDEV       , CONFTYPE_STRING, read_string, CNF_CHNGRDEV       , NULL },
-   { CONF_CHNGRFILE      , CONFTYPE_STRING, read_string, CNF_CHNGRFILE      , NULL },
-   { CONF_LABELSTR       , CONFTYPE_STRING, read_string, CNF_LABELSTR       , NULL },
-   { CONF_TAPELIST       , CONFTYPE_STRING, read_string, CNF_TAPELIST       , NULL },
-   { CONF_DISKFILE       , CONFTYPE_STRING, read_string, CNF_DISKFILE       , NULL },
-   { CONF_INFOFILE       , CONFTYPE_STRING, read_string, CNF_INFOFILE       , NULL },
-   { CONF_LOGDIR         , CONFTYPE_STRING, read_string, CNF_LOGDIR         , NULL },
-   { CONF_INDEXDIR       , CONFTYPE_STRING, read_string, CNF_INDEXDIR       , NULL },
-   { CONF_TAPETYPE       , CONFTYPE_IDENT , read_ident , CNF_TAPETYPE       , NULL },
-   { CONF_DUMPCYCLE      , CONFTYPE_INT   , read_int   , CNF_DUMPCYCLE      , validate_positive0 },
-   { CONF_RUNSPERCYCLE   , CONFTYPE_INT   , read_int   , CNF_RUNSPERCYCLE   , validate_runspercycle },
-   { CONF_RUNTAPES       , CONFTYPE_INT   , read_int   , CNF_RUNTAPES       , validate_positive0 },
-   { CONF_TAPECYCLE      , CONFTYPE_INT   , read_int   , CNF_TAPECYCLE      , validate_positive1 },
-   { CONF_BUMPDAYS       , CONFTYPE_INT   , read_int   , CNF_BUMPDAYS       , validate_positive1 },
-   { CONF_BUMPSIZE       , CONFTYPE_INT   , read_int   , CNF_BUMPSIZE       , validate_positive1 },
-   { CONF_BUMPPERCENT    , CONFTYPE_INT   , read_int   , CNF_BUMPPERCENT    , validate_bumppercent },
-   { CONF_BUMPMULT       , CONFTYPE_REAL  , read_real  , CNF_BUMPMULT       , validate_bumpmult },
-   { CONF_NETUSAGE       , CONFTYPE_INT   , read_int   , CNF_NETUSAGE       , validate_positive1 },
-   { CONF_INPARALLEL     , CONFTYPE_INT   , read_int   , CNF_INPARALLEL     , validate_inparallel },
-   { CONF_DUMPORDER      , CONFTYPE_STRING, read_string, CNF_DUMPORDER      , NULL },
-   { CONF_MAXDUMPS       , CONFTYPE_INT   , read_int   , CNF_MAXDUMPS       , validate_positive1 },
-   { CONF_ETIMEOUT       , CONFTYPE_INT   , read_int   , CNF_ETIMEOUT       , NULL },
-   { CONF_DTIMEOUT       , CONFTYPE_INT   , read_int   , CNF_DTIMEOUT       , validate_positive1 },
-   { CONF_CTIMEOUT       , CONFTYPE_INT   , read_int   , CNF_CTIMEOUT       , validate_positive1 },
-   { CONF_TAPEBUFS       , CONFTYPE_INT   , read_int   , CNF_TAPEBUFS       , validate_positive1 },
-   { CONF_RAWTAPEDEV     , CONFTYPE_STRING, read_string, CNF_RAWTAPEDEV     , NULL },
-   { CONF_COLUMNSPEC     , CONFTYPE_STRING, read_string, CNF_COLUMNSPEC     , NULL },
-   { CONF_TAPERALGO      , CONFTYPE_TAPERALGO,get_taperalgo,CNF_TAPERALGO     , NULL },
-   { CONF_DISPLAYUNIT    , CONFTYPE_STRING, read_string, CNF_DISPLAYUNIT    , validate_displayunit },
-   { CONF_AUTOFLUSH      , CONFTYPE_BOOL  , read_bool  , CNF_AUTOFLUSH      , NULL },
-   { CONF_RESERVE        , CONFTYPE_INT   , read_int   , CNF_RESERVE        , validate_reserve },
-   { CONF_MAXDUMPSIZE    , CONFTYPE_AM64  , read_am64  , CNF_MAXDUMPSIZE    , NULL },
-   { CONF_KRB5KEYTAB     , CONFTYPE_STRING, read_string, CNF_KRB5KEYTAB     , NULL },
-   { CONF_KRB5PRINCIPAL  , CONFTYPE_STRING, read_string, CNF_KRB5PRINCIPAL  , NULL },
-   { CONF_LABEL_NEW_TAPES, CONFTYPE_STRING, read_string, CNF_LABEL_NEW_TAPES, NULL },
-   { CONF_USETIMESTAMPS  , CONFTYPE_BOOL  , read_bool  , CNF_USETIMESTAMPS  , NULL },
-   { CONF_AMRECOVER_DO_FSF,CONFTYPE_BOOL  , read_bool  , CNF_AMRECOVER_DO_FSF, NULL },
-   { CONF_AMRECOVER_CHANGER,CONFTYPE_STRING,read_string, CNF_AMRECOVER_CHANGER, NULL },
-   { CONF_AMRECOVER_CHECK_LABEL, CONFTYPE_BOOL, read_bool, CNF_AMRECOVER_CHECK_LABEL, NULL },
-   { CONF_UNKNOWN, CONFTYPE_INT, NULL, CNF_CNF, NULL }
-};
-
-
 char *
 getconf_byname(
     char *str)
@@ -601,18 +568,18 @@ getconf_byname(
     while((ch = *s++) != '\0') {
 	if(islower((int)ch)) s[-1] = toupper(ch);
     }
-    for(kt = global_keytab; kt->token != CONF_UNKNOWN; kt++)
+    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
 	if(strcmp(kt->keyword, tmpstr) == 0) break;
 
     if(kt->token == CONF_UNKNOWN) return NULL;
 
-    for(np = global_var; np->token != CONF_UNKNOWN; np++)
+    for(np = server_var; np->token != CONF_UNKNOWN; np++)
 	if(np->token == kt->token) break;
 
     if(np->token == CONF_UNKNOWN) return NULL;
 
     if(np->type == CONFTYPE_INT) {
-	snprintf(number, sizeof(number), "%d", getconf_int(np->parm));
+	snprintf(number, sizeof(number), "%d", server_conf[np->parm].v.i);
 	tmpstr = newstralloc(tmpstr, number);
     } else if(np->type == CONFTYPE_BOOL) {
 	if(getconf_int(np->parm) == 0) {
@@ -622,10 +589,11 @@ getconf_byname(
 	    tmpstr = newstralloc(tmpstr, "on");
 	}
     } else if(np->type == CONFTYPE_REAL) {
-	snprintf(number, sizeof(number), "%f", getconf_real(np->parm));
+	snprintf(number, sizeof(number), "%f", server_conf[np->parm].v.r);
 	tmpstr = newstralloc(tmpstr, number);
     } else if(np->type == CONFTYPE_AM64){
-	snprintf(number, sizeof(number), "%ld", getconf_am64(np->parm));
+	snprintf(number, sizeof(number), OFF_T_FMT, 
+		 (OFF_T_FMT_TYPE)server_conf[np->parm].v.am64);
 	tmpstr = newstralloc(tmpstr, number);
     } else {
 	tmpstr = newstralloc(tmpstr, getconf_str(np->parm));
@@ -639,14 +607,8 @@ getconf_seen(
     confparm_t parm)
 {
     t_conf_var *np;
-
-    for(np = global_var; np->token != CONF_UNKNOWN; np++) 
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown getconf_seen parm: %d]", parm);
-
-    return(global_conf[np->parm].seen);
+    np = get_np(server_var, parm);
+    return(server_conf[np->parm].seen);
 }
 
 int
@@ -654,13 +616,8 @@ getconf_int(
     confparm_t parm)
 {
     t_conf_var *np;
-    for(np = global_var; np->token != CONF_UNKNOWN; np++) 
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown getconf_int parm: %d]", parm);
-
-    return(global_conf[np->parm].v.i);
+    np = get_np(server_var, parm);
+    return(server_conf[np->parm].v.i);
 }
 
 time_t
@@ -668,28 +625,17 @@ getconf_time(
     confparm_t parm)
 {
     t_conf_var *np;
-    for(np = global_var; np->token != CONF_UNKNOWN; np++) 
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown getconf_time parm: %d]", parm);
-
-    return(global_conf[np->parm].v.t);
+    np = get_np(server_var, parm);
+    return(server_conf[np->parm].v.t);
 }
 
-am64_t
+off_t
 getconf_am64(
     confparm_t parm)
 {
     t_conf_var *np;
-
-    for(np = global_var; np->token != CONF_UNKNOWN; np++) 
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown getconf_am64 parm: %d]", parm);
-
-    return(global_conf[np->parm].v.am64);
+    np = get_np(server_var, parm);
+    return(server_conf[np->parm].v.am64);
 }
 
 double
@@ -697,14 +643,8 @@ getconf_real(
     confparm_t parm)
 {
     t_conf_var *np;
-
-    for(np = global_var; np->token != CONF_UNKNOWN; np++) 
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown getconf_real parm: %d]", parm);
-
-    return(global_conf[np->parm].v.r);
+    np = get_np(server_var, parm);
+    return(server_conf[np->parm].v.r);
 }
 
 char *
@@ -712,14 +652,8 @@ getconf_str(
     confparm_t parm)
 {
     t_conf_var *np;
-
-    for(np = global_var; np->token != CONF_UNKNOWN; np++) 
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown getconf_str parm: %d]", parm);
-
-    return(global_conf[np->parm].v.s);
+    np = get_np(server_var, parm);
+    return(server_conf[np->parm].v.s);
 }
 
 holdingdisk_t *
@@ -787,69 +721,66 @@ init_defaults(
 #else
     s = "YOUR ORG";
 #endif
-    conf_init_string(&global_conf[CNF_ORG], s);
-    conf_init_string(&global_conf[CNF_MAILTO], "operators");
-    conf_init_string(&global_conf[CNF_DUMPUSER], CLIENT_LOGIN);
+    conf_init_string(&server_conf[CNF_ORG], s);
+    conf_init_string(&server_conf[CNF_MAILTO], "operators");
+    conf_init_string(&server_conf[CNF_DUMPUSER], CLIENT_LOGIN);
 #ifdef DEFAULT_TAPE_DEVICE
     s = DEFAULT_TAPE_DEVICE;
 #else
     s = "/dev/rmt8";
 #endif
-    conf_init_string(&global_conf[CNF_TAPEDEV], s);
-#ifdef DEFAULT_RAW_TAPE_DEVICE
-    s = DEFAULT_RAW_TAPE_DEVICE;
-#else
-    s = "/dev/rawft0";
-#endif
-    conf_init_string(&global_conf[CNF_RAWTAPEDEV], s);
-    conf_init_string(&global_conf[CNF_TPCHANGER], "");
+    conf_init_string(&server_conf[CNF_TAPEDEV], s);
 #ifdef DEFAULT_CHANGER_DEVICE
     s = DEFAULT_CHANGER_DEVICE;
 #else
     s = "/dev/null";
 #endif
-    conf_init_string(&global_conf[CNF_CHNGRDEV], s);
-    conf_init_string(&global_conf[CNF_CHNGRFILE], "/usr/adm/amanda/changer-status");
-    conf_init_string(&global_conf[CNF_LABELSTR], ".*");
-    conf_init_string(&global_conf[CNF_TAPELIST], "tapelist");
-    conf_init_string(&global_conf[CNF_INFOFILE], "/usr/adm/amanda/curinfo");
-    conf_init_string(&global_conf[CNF_LOGDIR], "/usr/adm/amanda");
-    conf_init_string(&global_conf[CNF_DISKFILE], "disklist");
-    conf_init_ident(&global_conf[CNF_TAPETYPE], "EXABYTE");
-    conf_init_string(&global_conf[CNF_INDEXDIR], "/usr/adm/amanda/index");
-    conf_init_string(&global_conf[CNF_COLUMNSPEC], "");
-    conf_init_string(&global_conf[CNF_DUMPORDER], "ttt");
-    conf_init_string(&global_conf[CNF_AMRECOVER_CHANGER], "");
-    conf_init_string(&global_conf[CNF_PRINTER], "");
-    conf_init_string(&global_conf[CNF_DISPLAYUNIT], "k");
-    conf_init_string(&global_conf[CNF_LABEL_NEW_TAPES], "");
-
-    conf_init_string(&global_conf[CNF_KRB5KEYTAB], "/.amanda-v5-keytab");
-    conf_init_string(&global_conf[CNF_KRB5PRINCIPAL], "service/amanda");
-
-    conf_init_int(&global_conf[CNF_DUMPCYCLE],     10);
-    conf_init_int(&global_conf[CNF_RUNSPERCYCLE],     0);
-    conf_init_int(&global_conf[CNF_TAPECYCLE],     15);
-    conf_init_int(&global_conf[CNF_RUNTAPES],     1);
-    conf_init_int(&global_conf[CNF_NETUSAGE], 300);
-    conf_init_int(&global_conf[CNF_INPARALLEL],     10);
-    conf_init_int(&global_conf[CNF_MAXDUMPS],     1);
-    conf_init_int(&global_conf[CNF_BUMPPERCENT],     0);
-    conf_init_int(&global_conf[CNF_BUMPSIZE],     10*1024);
-    conf_init_int(&global_conf[CNF_BUMPDAYS],     2);
-    conf_init_real(&global_conf[CNF_BUMPMULT],     1.5);
-    conf_init_int(&global_conf[CNF_ETIMEOUT],        300);
-    conf_init_int(&global_conf[CNF_DTIMEOUT],        1800);
-    conf_init_int(&global_conf[CNF_CTIMEOUT],        30);
-    conf_init_int(&global_conf[CNF_TAPEBUFS],        20);
-    conf_init_bool(&global_conf[CNF_AUTOFLUSH],     0);
-    conf_init_int(&global_conf[CNF_RESERVE],     100);
-    conf_init_bool(&global_conf[CNF_AMRECOVER_DO_FSF],     1);
-    conf_init_bool(&global_conf[CNF_AMRECOVER_CHECK_LABEL],     1);
-    conf_init_taperalgo(&global_conf[CNF_TAPERALGO],       0);
-    conf_init_bool(&global_conf[CNF_USETIMESTAMPS],     0);
-
-    conf_init_am64(&global_conf[CNF_MAXDUMPSIZE], -1);
+    conf_init_string(&server_conf[CNF_CHNGRDEV], s);
+    conf_init_string(&server_conf[CNF_CHNGRFILE], "/usr/adm/amanda/changer-status");
+#ifdef DEFAULT_RAW_TAPE_DEVICE
+    s = DEFAULT_RAW_TAPE_DEVICE;
+#else
+    s = "/dev/rawft0";
+#endif
+    conf_init_string   (&server_conf[CNF_LABELSTR]             , ".*");
+    conf_init_string   (&server_conf[CNF_TAPELIST]             , "tapelist");
+    conf_init_string   (&server_conf[CNF_DISKFILE]             , "disklist");
+    conf_init_string   (&server_conf[CNF_INFOFILE]             , "/usr/adm/amanda/curinfo");
+    conf_init_string   (&server_conf[CNF_LOGDIR]               , "/usr/adm/amanda");
+    conf_init_string   (&server_conf[CNF_INDEXDIR]             , "/usr/adm/amanda/index");
+    conf_init_ident    (&server_conf[CNF_TAPETYPE]             , "EXABYTE");
+    conf_init_int      (&server_conf[CNF_DUMPCYCLE]            , 10);
+    conf_init_int      (&server_conf[CNF_RUNSPERCYCLE]         , 0);
+    conf_init_int      (&server_conf[CNF_TAPECYCLE]            , 15);
+    conf_init_int      (&server_conf[CNF_NETUSAGE]             , 300);
+    conf_init_int      (&server_conf[CNF_INPARALLEL]           , 10);
+    conf_init_string   (&server_conf[CNF_DUMPORDER]            , "ttt");
+    conf_init_int      (&server_conf[CNF_BUMPPERCENT]          , 0);
+    conf_init_int      (&server_conf[CNF_BUMPSIZE]             , 10*1024);
+    conf_init_real     (&server_conf[CNF_BUMPMULT]             , 1.5);
+    conf_init_int      (&server_conf[CNF_BUMPDAYS]             , 2);
+    conf_init_string   (&server_conf[CNF_TPCHANGER]            , "");
+    conf_init_int      (&server_conf[CNF_RUNTAPES]             , 1);
+    conf_init_int      (&server_conf[CNF_MAXDUMPS]             , 1);
+    conf_init_time     (&server_conf[CNF_ETIMEOUT]             , 300);
+    conf_init_time     (&server_conf[CNF_DTIMEOUT]             , 1800);
+    conf_init_time     (&server_conf[CNF_CTIMEOUT]             , 30);
+    conf_init_int      (&server_conf[CNF_TAPEBUFS]             , 20);
+    conf_init_string   (&server_conf[CNF_RAWTAPEDEV]           , s);
+    conf_init_string   (&server_conf[CNF_PRINTER]              , "");
+    conf_init_bool     (&server_conf[CNF_AUTOFLUSH]            , 0);
+    conf_init_int      (&server_conf[CNF_RESERVE]              , 100);
+    conf_init_am64     (&server_conf[CNF_MAXDUMPSIZE]          , -1);
+    conf_init_string   (&server_conf[CNF_COLUMNSPEC]           , "");
+    conf_init_bool     (&server_conf[CNF_AMRECOVER_DO_FSF]     ,     1);
+    conf_init_string   (&server_conf[CNF_AMRECOVER_CHANGER]    , "");
+    conf_init_bool     (&server_conf[CNF_AMRECOVER_CHECK_LABEL], 1);
+    conf_init_taperalgo(&server_conf[CNF_TAPERALGO]            , 0);
+    conf_init_string   (&server_conf[CNF_DISPLAYUNIT]          , "k");
+    conf_init_string   (&server_conf[CNF_KRB5KEYTAB]           , "/.amanda-v5-keytab");
+    conf_init_string   (&server_conf[CNF_KRB5PRINCIPAL]        , "service/amanda");
+    conf_init_string   (&server_conf[CNF_LABEL_NEW_TAPES]      , "");
+    conf_init_bool     (&server_conf[CNF_USETIMESTAMPS]        , 0);
 
     /* defaults for internal variables */
 
@@ -892,52 +823,52 @@ init_defaults(
 
     /* create some predefined dumptypes for backwards compatability */
     init_dumptype_defaults();
-    dpcur.name = "NO-COMPRESS"; dpcur.seen = -1;
+    dpcur.name = stralloc("NO-COMPRESS"); dpcur.seen = -1;
     conf_set_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_NONE);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = "COMPRESS-FAST"; dpcur.seen = -1;
+    dpcur.name = stralloc("COMPRESS-FAST"); dpcur.seen = -1;
     conf_set_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_FAST);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = "COMPRESS-BEST"; dpcur.seen = -1;
+    dpcur.name = stralloc("COMPRESS-BEST"); dpcur.seen = -1;
     conf_set_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_BEST);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = "COMPRESS-CUST"; dpcur.seen = -1;
+    dpcur.name = stralloc("COMPRESS-CUST"); dpcur.seen = -1;
     conf_set_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_CUST);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = "SRVCOMPRESS"; dpcur.seen = -1;
+    dpcur.name = stralloc("SRVCOMPRESS"); dpcur.seen = -1;
     conf_set_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_SERV_FAST);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = "BSD-AUTH"; dpcur.seen = -1;
+    dpcur.name = stralloc("BSD-AUTH"); dpcur.seen = -1;
     conf_set_string(&dpcur.value[DUMPTYPE_SECURITY_DRIVER], "BSD");
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = "KRB4-AUTH"; dpcur.seen = -1;
+    dpcur.name = stralloc("KRB4-AUTH"); dpcur.seen = -1;
     conf_set_string(&dpcur.value[DUMPTYPE_SECURITY_DRIVER], "KRB4");
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = "NO-RECORD"; dpcur.seen = -1;
-    conf_set_int(&dpcur.value[DUMPTYPE_RECORD], 0);
+    dpcur.name = stralloc("NO-RECORD"); dpcur.seen = -1;
+    conf_set_bool(&dpcur.value[DUMPTYPE_RECORD], 0);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = "NO-HOLD"; dpcur.seen = -1;
-    conf_set_int(&dpcur.value[DUMPTYPE_NO_HOLD], 1);
+    dpcur.name = stralloc("NO-HOLD"); dpcur.seen = -1;
+    conf_set_bool(&dpcur.value[DUMPTYPE_HOLDINGDISK], 0);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = "NO-FULL"; dpcur.seen = -1;
+    dpcur.name = stralloc("NO-FULL"); dpcur.seen = -1;
     conf_set_strategy(&dpcur.value[DUMPTYPE_STRATEGY], DS_NOFULL);
     save_dumptype();
 }
@@ -973,7 +904,7 @@ read_conffile_recursively(
 
     amfree(conf_confname);
 
-    /* Restore globals */
+    /* Restore servers */
     conf_line_num = save_line_num;
     conf_conf     = save_conf;
     conf_confname = save_confname;
@@ -989,7 +920,7 @@ read_confline(
 {
     t_conf_var *np;
 
-    keytable = global_keytab;
+    keytable = server_keytab;
 
     conf_line_num += 1;
     get_conftoken(CONF_ANY);
@@ -1022,14 +953,14 @@ read_confline(
 	return 0;
     default:
 	{
-	    for(np = global_var; np->token != CONF_UNKNOWN; np++) 
+	    for(np = server_var; np->token != CONF_UNKNOWN; np++) 
 		if(np->token == tok) break;
 
 	    if(np->token == CONF_UNKNOWN)
 		conf_parserror("configuration keyword expected");
-	    np->read_function(np, &global_conf[np->parm]);
+	    np->read_function(np, &server_conf[np->parm]);
 	    if(np->validate)
-		np->validate(np, &global_conf[np->parm]);
+		np->validate(np, &server_conf[np->parm]);
 	}
     }
     if(tok != CONF_NL) get_conftoken(CONF_NL);
@@ -1037,20 +968,19 @@ read_confline(
 }
 
 t_conf_var holding_var [] = {
-   { CONF_DIRECTORY , CONFTYPE_STRING , read_string, HOLDING_DISKDIR   , NULL },
-   { CONF_COMMENT   , CONFTYPE_STRING , read_string, HOLDING_COMMENT   , NULL },
-   { CONF_USE       , CONFTYPE_INT    , read_int   , HOLDING_DISKSIZE  , validate_use },
-   { CONF_CHUNKSIZE , CONFTYPE_INT    , read_int   , HOLDING_CHUNKSIZE , validate_chunksize },
-   { CONF_UNKNOWN   , CONFTYPE_INT    , NULL       , HOLDING_HOLDING   , NULL }
+   { CONF_DIRECTORY, CONFTYPE_STRING, read_string, HOLDING_DISKDIR  , NULL },
+   { CONF_COMMENT  , CONFTYPE_STRING, read_string, HOLDING_COMMENT  , NULL },
+   { CONF_USE      , CONFTYPE_INT   , read_int   , HOLDING_DISKSIZE , validate_use },
+   { CONF_CHUNKSIZE, CONFTYPE_INT   , read_int   , HOLDING_CHUNKSIZE, validate_chunksize },
+   { CONF_UNKNOWN  , CONFTYPE_INT   , NULL       , HOLDING_HOLDING  , NULL }
 };
 
 static void
 get_holdingdisk(
     void)
 {
-    int done;
+    char *prefix;
     int save_overwrites;
-    t_conf_var *np;
 
     save_overwrites = allow_overwrites;
     allow_overwrites = 1;
@@ -1061,39 +991,12 @@ get_holdingdisk(
     hdcur.name = stralloc(tokenval.v.s);
     hdcur.seen = conf_line_num;
 
-    get_conftoken(CONF_LBRACE);
-    get_conftoken(CONF_NL);
+    prefix = vstralloc( "HOLDINGDISK:", hdcur.name, ":", NULL);
+    read_block(server_options, holding_var, server_keytab, hdcur.value, prefix,
+	       "holding disk parameter expected", 1, NULL);
+    amfree(prefix);
 
-    done = 0;
-    do {
-	conf_line_num += 1;
-	get_conftoken(CONF_ANY);
-	switch(tok) {
-	case CONF_RBRACE:
-	    done = 1;
-	    break;
-	case CONF_NL:	/* empty line */
-	    break;
-	case CONF_END:	/* end of file */
-	    done = 1;
-	    break;
-	default:
-	    {
-		for(np = holding_var; np->token != CONF_UNKNOWN; np++)
-		    if(np->token == tok) break;
-
-		if(np->token == CONF_UNKNOWN)
-		    conf_parserror("holding disk parameter expected");
-		else {
-		    np->read_function(np, &hdcur.value[np->parm]);
-		    if(np->validate)
-			np->validate(np, &hdcur.value[np->parm]);
-		}
-	    }
-	}
-	if(tok != CONF_NL && tok != CONF_END) get_conftoken(CONF_NL);
-    } while(!done);
-
+    hdcur.disksize = holdingdisk_get_disksize((&hdcur));
     save_holdingdisk();
 
     allow_overwrites = save_overwrites;
@@ -1103,12 +1006,14 @@ static void
 init_holdingdisk_defaults(
     void)
 {
-    conf_init_string(&hdcur.value[HOLDING_COMMENT], "");
-    conf_init_string(&hdcur.value[HOLDING_DISKDIR], "");
-    conf_init_int(&hdcur.value[HOLDING_DISKSIZE], 0);
-    conf_init_int(&hdcur.value[HOLDING_CHUNKSIZE], 1024*1024/**1024*/); /* 1 Gb = 1M counted in 1Kb blocks */
+    conf_init_string(&hdcur.value[HOLDING_COMMENT]  , "");
+    conf_init_string(&hdcur.value[HOLDING_DISKDIR]  , "");
+    conf_init_am64  (&hdcur.value[HOLDING_DISKSIZE] , (off_t)0);
+                    /* 1 Gb = 1M counted in 1Kb blocks */
+    conf_init_am64  (&hdcur.value[HOLDING_CHUNKSIZE], (off_t)1024*1024);
 
     hdcur.up = (void *)0;
+    hdcur.disksize = 0l;
 }
 
 static void
@@ -1127,45 +1032,45 @@ save_holdingdisk(
 
 
 t_conf_var dumptype_var [] = {
-   { CONF_COMMENT         , CONFTYPE_STRING, read_string , DUMPTYPE_COMMENT         , NULL },
-   { CONF_AUTH            , CONFTYPE_STRING, read_string , DUMPTYPE_SECURITY_DRIVER , NULL },
-   { CONF_BUMPDAYS        , CONFTYPE_INT   , read_int    , DUMPTYPE_BUMPDAYS        , NULL },
-   { CONF_BUMPMULT        , CONFTYPE_REAL  , read_real   , DUMPTYPE_BUMPMULT        , NULL },
-   { CONF_BUMPSIZE        , CONFTYPE_INT   , read_int    , DUMPTYPE_BUMPSIZE        , NULL },
-   { CONF_BUMPPERCENT     , CONFTYPE_INT   , read_int    , DUMPTYPE_BUMPPERCENT     , NULL },
-   { CONF_COMPRATE        , CONFTYPE_REAL  , get_comprate, DUMPTYPE_COMPRATE        , NULL },
-   { CONF_COMPRESS        , CONFTYPE_INT   , get_compress, DUMPTYPE_COMPRESS        , NULL },
-   { CONF_ENCRYPT         , CONFTYPE_INT   , get_encrypt , DUMPTYPE_ENCRYPT         , NULL },
-   { CONF_DUMPCYCLE       , CONFTYPE_INT   , read_int    , DUMPTYPE_DUMPCYCLE       , validate_positive0 },
-   { CONF_EXCLUDE         , CONFTYPE_EXINCLUDE,get_exclude, DUMPTYPE_EXCLUDE        , NULL },
-   { CONF_INCLUDE         , CONFTYPE_EXINCLUDE,get_exclude, DUMPTYPE_INCLUDE        , NULL },
-   { CONF_IGNORE          , CONFTYPE_BOOL  , read_bool   , DUMPTYPE_IGNORE          , NULL },
-   { CONF_HOLDING         , CONFTYPE_BOOL  , read_bool   , DUMPTYPE_NO_HOLD         , NULL },
-   { CONF_INDEX           , CONFTYPE_BOOL  , read_bool   , DUMPTYPE_INDEX           , NULL },
-   { CONF_KENCRYPT        , CONFTYPE_BOOL  , read_bool   , DUMPTYPE_KENCRYPT        , NULL },
-   { CONF_MAXDUMPS        , CONFTYPE_INT   , read_int    , DUMPTYPE_MAXDUMPS        , validate_positive1 },
-   { CONF_MAXPROMOTEDAY   , CONFTYPE_INT   , read_int    , DUMPTYPE_MAXPROMOTEDAY   , validate_positive0 },
-   { CONF_PRIORITY        , CONFTYPE_PRIORITY, get_priority, DUMPTYPE_PRIORITY        , NULL },
-   { CONF_PROGRAM         , CONFTYPE_STRING, read_string , DUMPTYPE_PROGRAM         , NULL },
-   { CONF_RECORD          , CONFTYPE_BOOL  , read_bool   , DUMPTYPE_RECORD          , NULL },
-   { CONF_SKIP_FULL       , CONFTYPE_BOOL  , read_bool   , DUMPTYPE_SKIP_FULL       , NULL },
-   { CONF_SKIP_INCR       , CONFTYPE_BOOL  , read_bool   , DUMPTYPE_SKIP_INCR       , NULL },
-   { CONF_STARTTIME       , CONFTYPE_TIME  , read_time   , DUMPTYPE_START_T         , NULL },
-   { CONF_STRATEGY        , CONFTYPE_INT   , get_strategy, DUMPTYPE_STRATEGY        , NULL },
-   { CONF_TAPE_SPLITSIZE  , CONFTYPE_INT   , read_int    , DUMPTYPE_TAPE_SPLITSIZE  , validate_positive0 },
-   { CONF_SPLIT_DISKBUFFER, CONFTYPE_STRING, read_string , DUMPTYPE_SPLIT_DISKBUFFER, NULL },
-   { CONF_ESTIMATE        , CONFTYPE_INT   , get_estimate, DUMPTYPE_ESTIMATE        , NULL },
-   { CONF_SRV_ENCRYPT     , CONFTYPE_STRING, read_string , DUMPTYPE_SRV_ENCRYPT     , NULL },
-   { CONF_CLNT_ENCRYPT    , CONFTYPE_STRING, read_string , DUMPTYPE_CLNT_ENCRYPT    , NULL },
-   { CONF_AMANDAD_PATH    , CONFTYPE_STRING, read_string , DUMPTYPE_AMANDAD_PATH    , NULL },
-   { CONF_CLIENT_USERNAME , CONFTYPE_STRING, read_string , DUMPTYPE_CLIENT_USERNAME , NULL },
-   { CONF_SSH_KEYS        , CONFTYPE_STRING, read_string , DUMPTYPE_SSH_KEYS        , NULL },
-   { CONF_SRVCOMPPROG     , CONFTYPE_STRING, read_string , DUMPTYPE_SRVCOMPPROG     , NULL },
-   { CONF_CLNTCOMPPROG    , CONFTYPE_STRING, read_string , DUMPTYPE_CLNTCOMPPROG    , NULL },
-   { CONF_FALLBACK_SPLITSIZE,CONFTYPE_INT  , read_int    , DUMPTYPE_FALLBACK_SPLITSIZE, NULL },
-   { CONF_SRV_DECRYPT_OPT , CONFTYPE_STRING, read_string , DUMPTYPE_SRV_DECRYPT_OPT , NULL },
-   { CONF_CLNT_DECRYPT_OPT, CONFTYPE_STRING, read_string , DUMPTYPE_CLNT_DECRYPT_OPT, NULL },
-   { CONF_UNKNOWN, CONFTYPE_INT, NULL, DUMPTYPE_DUMPTYPE, NULL }
+   { CONF_COMMENT           , CONFTYPE_STRING   , read_string , DUMPTYPE_COMMENT           , NULL },
+   { CONF_AUTH              , CONFTYPE_STRING   , read_string , DUMPTYPE_SECURITY_DRIVER   , NULL },
+   { CONF_BUMPDAYS          , CONFTYPE_INT      , read_int    , DUMPTYPE_BUMPDAYS          , NULL },
+   { CONF_BUMPMULT          , CONFTYPE_REAL     , read_real   , DUMPTYPE_BUMPMULT          , NULL },
+   { CONF_BUMPSIZE          , CONFTYPE_INT      , read_int    , DUMPTYPE_BUMPSIZE          , NULL },
+   { CONF_BUMPPERCENT       , CONFTYPE_INT      , read_int    , DUMPTYPE_BUMPPERCENT       , NULL },
+   { CONF_COMPRATE          , CONFTYPE_REAL     , get_comprate, DUMPTYPE_COMPRATE          , NULL },
+   { CONF_COMPRESS          , CONFTYPE_INT      , get_compress, DUMPTYPE_COMPRESS          , NULL },
+   { CONF_ENCRYPT           , CONFTYPE_INT      , get_encrypt , DUMPTYPE_ENCRYPT           , NULL },
+   { CONF_DUMPCYCLE         , CONFTYPE_INT      , read_int    , DUMPTYPE_DUMPCYCLE         , validate_positive0 },
+   { CONF_EXCLUDE           , CONFTYPE_EXINCLUDE, get_exclude , DUMPTYPE_EXCLUDE           , NULL },
+   { CONF_INCLUDE           , CONFTYPE_EXINCLUDE, get_exclude , DUMPTYPE_INCLUDE           , NULL },
+   { CONF_IGNORE            , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_IGNORE            , NULL },
+   { CONF_HOLDING           , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_HOLDINGDISK       , NULL },
+   { CONF_INDEX             , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_INDEX             , NULL },
+   { CONF_KENCRYPT          , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_KENCRYPT          , NULL },
+   { CONF_MAXDUMPS          , CONFTYPE_INT      , read_int    , DUMPTYPE_MAXDUMPS          , validate_positive1 },
+   { CONF_MAXPROMOTEDAY     , CONFTYPE_INT      , read_int    , DUMPTYPE_MAXPROMOTEDAY     , validate_positive0 },
+   { CONF_PRIORITY          , CONFTYPE_PRIORITY , get_priority, DUMPTYPE_PRIORITY          , NULL },
+   { CONF_PROGRAM           , CONFTYPE_STRING   , read_string , DUMPTYPE_PROGRAM           , NULL },
+   { CONF_RECORD            , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_RECORD            , NULL },
+   { CONF_SKIP_FULL         , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_SKIP_FULL         , NULL },
+   { CONF_SKIP_INCR         , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_SKIP_INCR         , NULL },
+   { CONF_STARTTIME         , CONFTYPE_TIME     , read_time   , DUMPTYPE_START_T           , NULL },
+   { CONF_STRATEGY          , CONFTYPE_INT      , get_strategy, DUMPTYPE_STRATEGY          , NULL },
+   { CONF_TAPE_SPLITSIZE    , CONFTYPE_INT      , read_int    , DUMPTYPE_TAPE_SPLITSIZE    , validate_positive0 },
+   { CONF_SPLIT_DISKBUFFER  , CONFTYPE_STRING   , read_string , DUMPTYPE_SPLIT_DISKBUFFER  , NULL },
+   { CONF_ESTIMATE          , CONFTYPE_INT      , get_estimate, DUMPTYPE_ESTIMATE          , NULL },
+   { CONF_SRV_ENCRYPT       , CONFTYPE_STRING   , read_string , DUMPTYPE_SRV_ENCRYPT       , NULL },
+   { CONF_CLNT_ENCRYPT      , CONFTYPE_STRING   , read_string , DUMPTYPE_CLNT_ENCRYPT      , NULL },
+   { CONF_AMANDAD_PATH      , CONFTYPE_STRING   , read_string , DUMPTYPE_AMANDAD_PATH      , NULL },
+   { CONF_CLIENT_USERNAME   , CONFTYPE_STRING   , read_string , DUMPTYPE_CLIENT_USERNAME   , NULL },
+   { CONF_SSH_KEYS          , CONFTYPE_STRING   , read_string , DUMPTYPE_SSH_KEYS          , NULL },
+   { CONF_SRVCOMPPROG       , CONFTYPE_STRING   , read_string , DUMPTYPE_SRVCOMPPROG       , NULL },
+   { CONF_CLNTCOMPPROG      , CONFTYPE_STRING   , read_string , DUMPTYPE_CLNTCOMPPROG      , NULL },
+   { CONF_FALLBACK_SPLITSIZE, CONFTYPE_INT      , read_int    , DUMPTYPE_FALLBACK_SPLITSIZE, NULL },
+   { CONF_SRV_DECRYPT_OPT   , CONFTYPE_STRING   , read_string , DUMPTYPE_SRV_DECRYPT_OPT   , NULL },
+   { CONF_CLNT_DECRYPT_OPT  , CONFTYPE_STRING   , read_string , DUMPTYPE_CLNT_DECRYPT_OPT  , NULL },
+   { CONF_UNKNOWN           , CONFTYPE_INT      , NULL        , DUMPTYPE_DUMPTYPE          , NULL }
 };
 
 dumptype_t *
@@ -1175,11 +1080,10 @@ read_dumptype(
     char *fname,
     int *linenum)
 {
-    int done;
     int save_overwrites;
     FILE *saved_conf = NULL;
     char *saved_fname = NULL;
-    t_conf_var *np;
+    char *prefix;
 
     if (from) {
 	saved_conf = conf_conf;
@@ -1198,58 +1102,18 @@ read_dumptype(
     allow_overwrites = 1;
 
     init_dumptype_defaults();
-
     if (name) {
 	dpcur.name = name;
     } else {
 	get_conftoken(CONF_IDENT);
 	dpcur.name = stralloc(tokenval.v.s);
     }
-
     dpcur.seen = conf_line_num;
 
-    if (! name) {
-	get_conftoken(CONF_LBRACE);
-	get_conftoken(CONF_NL);
-    }
-
-    done = 0;
-    do {
-	conf_line_num += 1;
-	get_conftoken(CONF_ANY);
-	switch(tok) {
-
-	case CONF_RBRACE:
-	    done = 1;
-	    break;
-	case CONF_NL:	/* empty line */
-	    break;
-	case CONF_END:	/* end of file */
-	    done = 1;
-	    break;
-	case CONF_IDENT:
-	    copy_dumptype();
-	    break;
-	default:
-	    {
-		for(np = dumptype_var; np->token != CONF_UNKNOWN; np++)
-		    if(np->token == tok) break;
-
-		if(np->token == CONF_UNKNOWN)
-		    conf_parserror("dump type parameter expected");
-		else {
-		    np->read_function(np, &dpcur.value[np->parm]);
-		    if(np->validate)
-			np->validate(np, &dpcur.value[np->parm]);
-		}
-	    }
-	}
-	if(tok != CONF_NL && tok != CONF_END &&
-	   /* When a name is specified, we shouldn't consume the CONF_NL
-	      after the CONF_RBRACE.  */
-	   (tok != CONF_RBRACE || name == 0))
-	    get_conftoken(CONF_NL);
-    } while(!done);
+    prefix = vstralloc( "DUMPTYPE:", dpcur.name, ":", NULL);
+    read_block(server_options, dumptype_var, server_keytab, dpcur.value,
+	       prefix, "dumptype parameter expected", !name, *copy_dumptype);
+    amfree(prefix);
 
     /* XXX - there was a stupidity check in here for skip-incr and
     ** skip-full.  This check should probably be somewhere else. */
@@ -1279,47 +1143,45 @@ get_dumptype(void)
 static void
 init_dumptype_defaults(void)
 {
-
-    conf_init_string(&dpcur.value[DUMPTYPE_COMMENT], "");
-    conf_init_string(&dpcur.value[DUMPTYPE_PROGRAM], "DUMP");
-    conf_init_string(&dpcur.value[DUMPTYPE_SRVCOMPPROG], "");
-    conf_init_string(&dpcur.value[DUMPTYPE_CLNTCOMPPROG], "");
-    conf_init_string(&dpcur.value[DUMPTYPE_SRV_ENCRYPT], "");
-    conf_init_string(&dpcur.value[DUMPTYPE_CLNT_ENCRYPT], "");
-    conf_init_string(&dpcur.value[DUMPTYPE_AMANDAD_PATH], "X");
-    conf_init_string(&dpcur.value[DUMPTYPE_CLIENT_USERNAME], "X");
-    conf_init_string(&dpcur.value[DUMPTYPE_SSH_KEYS], "X");
+    dpcur.name = NULL;
+    conf_init_string   (&dpcur.value[DUMPTYPE_COMMENT]           , "");
+    conf_init_string   (&dpcur.value[DUMPTYPE_PROGRAM]           , "DUMP");
+    conf_init_string   (&dpcur.value[DUMPTYPE_SRVCOMPPROG]       , "");
+    conf_init_string   (&dpcur.value[DUMPTYPE_CLNTCOMPPROG]      , "");
+    conf_init_string   (&dpcur.value[DUMPTYPE_SRV_ENCRYPT]       , "");
+    conf_init_string   (&dpcur.value[DUMPTYPE_CLNT_ENCRYPT]      , "");
+    conf_init_string   (&dpcur.value[DUMPTYPE_AMANDAD_PATH]      , "X");
+    conf_init_string   (&dpcur.value[DUMPTYPE_CLIENT_USERNAME]   , "X");
+    conf_init_string   (&dpcur.value[DUMPTYPE_SSH_KEYS]          , "X");
+    conf_init_string   (&dpcur.value[DUMPTYPE_SECURITY_DRIVER]   , "BSD");
     conf_init_exinclude(&dpcur.value[DUMPTYPE_EXCLUDE]);
     conf_init_exinclude(&dpcur.value[DUMPTYPE_INCLUDE]);
-    conf_init_priority(&dpcur.value[DUMPTYPE_PRIORITY], 1);
-    conf_init_int(&dpcur.value[DUMPTYPE_DUMPCYCLE], global_conf[CNF_DUMPCYCLE].v.i);
-    conf_init_int(&dpcur.value[DUMPTYPE_MAXDUMPS], global_conf[CNF_MAXDUMPS].v.i);
-    conf_init_int(&dpcur.value[DUMPTYPE_MAXPROMOTEDAY], 10000);
-    conf_init_int(&dpcur.value[DUMPTYPE_BUMPPERCENT], global_conf[CNF_BUMPPERCENT].v.i);
-    conf_init_int(&dpcur.value[DUMPTYPE_BUMPSIZE], global_conf[CNF_BUMPSIZE].v.i);
-    conf_init_int(&dpcur.value[DUMPTYPE_BUMPDAYS], global_conf[CNF_BUMPDAYS].v.i);
-    conf_init_real(&dpcur.value[DUMPTYPE_BUMPMULT], global_conf[CNF_BUMPMULT].v.r);
-    conf_init_time(&dpcur.value[DUMPTYPE_START_T], 0);
-    conf_init_string(&dpcur.value[DUMPTYPE_SECURITY_DRIVER], "BSD");
-
-    /* options */
-    conf_init_bool(&dpcur.value[DUMPTYPE_RECORD], 1);
-    conf_init_strategy(&dpcur.value[DUMPTYPE_STRATEGY], DS_STANDARD);
-    conf_init_estimate(&dpcur.value[DUMPTYPE_ESTIMATE], ES_CLIENT);
-    conf_init_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_FAST);
-    conf_init_encrypt(&dpcur.value[DUMPTYPE_ENCRYPT], ENCRYPT_NONE);
-    conf_init_string(&dpcur.value[DUMPTYPE_SRV_DECRYPT_OPT], "-d");
-    conf_init_string(&dpcur.value[DUMPTYPE_CLNT_DECRYPT_OPT], "-d");
-    conf_init_rate(&dpcur.value[DUMPTYPE_COMPRATE], 0.50, 0.50);
-    conf_init_bool(&dpcur.value[DUMPTYPE_SKIP_INCR], 0);
-    conf_init_bool(&dpcur.value[DUMPTYPE_SKIP_FULL], 0);
-    conf_init_bool(&dpcur.value[DUMPTYPE_NO_HOLD], 0);
-    conf_init_bool(&dpcur.value[DUMPTYPE_KENCRYPT], 0);
-    conf_init_bool(&dpcur.value[DUMPTYPE_IGNORE], 0);
-    conf_init_bool(&dpcur.value[DUMPTYPE_INDEX], 0);
-    conf_init_long(&dpcur.value[DUMPTYPE_TAPE_SPLITSIZE], 0);
-    conf_init_string(&dpcur.value[DUMPTYPE_SPLIT_DISKBUFFER], NULL);
-    conf_init_long(&dpcur.value[DUMPTYPE_FALLBACK_SPLITSIZE], 10 * 1024);
+    conf_init_priority (&dpcur.value[DUMPTYPE_PRIORITY]          , 1);
+    conf_init_int      (&dpcur.value[DUMPTYPE_DUMPCYCLE]         , server_conf[CNF_DUMPCYCLE].v.i);
+    conf_init_int      (&dpcur.value[DUMPTYPE_MAXDUMPS]          , server_conf[CNF_MAXDUMPS].v.i);
+    conf_init_int      (&dpcur.value[DUMPTYPE_MAXPROMOTEDAY]     , 10000);
+    conf_init_int      (&dpcur.value[DUMPTYPE_BUMPPERCENT]       , server_conf[CNF_BUMPPERCENT].v.i);
+    conf_init_int      (&dpcur.value[DUMPTYPE_BUMPSIZE]          , server_conf[CNF_BUMPSIZE].v.i);
+    conf_init_int      (&dpcur.value[DUMPTYPE_BUMPDAYS]          , server_conf[CNF_BUMPDAYS].v.i);
+    conf_init_real     (&dpcur.value[DUMPTYPE_BUMPMULT]          , server_conf[CNF_BUMPMULT].v.r);
+    conf_init_time     (&dpcur.value[DUMPTYPE_START_T]           , 0);
+    conf_init_strategy (&dpcur.value[DUMPTYPE_STRATEGY]          , DS_STANDARD);
+    conf_init_estimate (&dpcur.value[DUMPTYPE_ESTIMATE]          , ES_CLIENT);
+    conf_init_compress (&dpcur.value[DUMPTYPE_COMPRESS]          , COMP_FAST);
+    conf_init_encrypt  (&dpcur.value[DUMPTYPE_ENCRYPT]           , ENCRYPT_NONE);
+    conf_init_string   (&dpcur.value[DUMPTYPE_SRV_DECRYPT_OPT]   , "-d");
+    conf_init_string   (&dpcur.value[DUMPTYPE_CLNT_DECRYPT_OPT]  , "-d");
+    conf_init_rate     (&dpcur.value[DUMPTYPE_COMPRATE]          , 0.50, 0.50);
+    conf_init_long     (&dpcur.value[DUMPTYPE_TAPE_SPLITSIZE]    , 0);
+    conf_init_long     (&dpcur.value[DUMPTYPE_FALLBACK_SPLITSIZE], 10 * 1024);
+    conf_init_string   (&dpcur.value[DUMPTYPE_SPLIT_DISKBUFFER]  , NULL);
+    conf_init_bool     (&dpcur.value[DUMPTYPE_RECORD]            , 1);
+    conf_init_bool     (&dpcur.value[DUMPTYPE_SKIP_INCR]         , 0);
+    conf_init_bool     (&dpcur.value[DUMPTYPE_SKIP_FULL]         , 0);
+    conf_init_bool     (&dpcur.value[DUMPTYPE_HOLDINGDISK]       , 1);
+    conf_init_bool     (&dpcur.value[DUMPTYPE_KENCRYPT]          , 0);
+    conf_init_bool     (&dpcur.value[DUMPTYPE_IGNORE]            , 0);
+    conf_init_bool     (&dpcur.value[DUMPTYPE_INDEX]             , 0);
 }
 
 static void
@@ -1355,32 +1217,34 @@ copy_dumptype(void)
     dt = lookup_dumptype(tokenval.v.s);
 
     if(dt == NULL) {
-	conf_parserror("dump type parameter expected");
+	conf_parserror("Adump type parameter expected");
 	return;
     }
 
-    for(i=0; i < INTER_INTER; i++) {
-	copy_val_t(&dpcur.value[i], &dt->value[i]);
+    for(i=0; i < DUMPTYPE_DUMPTYPE; i++) {
+	if(dt->value[i].seen) {
+	    free_val_t(&dpcur.value[i]);
+	    copy_val_t(&dpcur.value[i], &dt->value[i]);
+	}
     }
 }
 
 t_conf_var tapetype_var [] = {
-   { CONF_COMMENT         , CONFTYPE_STRING, read_string , TAPETYPE_COMMENT   , NULL },
-   { CONF_LBL_TEMPL       , CONFTYPE_STRING, read_string , TAPETYPE_LBL_TEMPL , NULL },
-   { CONF_BLOCKSIZE       , CONFTYPE_LONG  , read_long   , TAPETYPE_BLOCKSIZE , validate_blocksize },
-   { CONF_LENGTH          , CONFTYPE_AM64  , read_am64   , TAPETYPE_LENGTH    , validate_positive0 },
-   { CONF_FILEMARK        , CONFTYPE_AM64  , read_am64   , TAPETYPE_FILEMARK  , NULL },
-   { CONF_SPEED           , CONFTYPE_INT   , read_int    , TAPETYPE_SPEED     , validate_positive0 },
-   { CONF_FILE_PAD        , CONFTYPE_BOOL  , read_bool   , TAPETYPE_FILE_PAD  , NULL },
-   { CONF_UNKNOWN, CONFTYPE_INT, NULL, TAPETYPE_TAPETYPE, NULL }
+   { CONF_COMMENT  , CONFTYPE_STRING, read_string, TAPETYPE_COMMENT  , NULL },
+   { CONF_LBL_TEMPL, CONFTYPE_STRING, read_string, TAPETYPE_LBL_TEMPL, NULL },
+   { CONF_BLOCKSIZE, CONFTYPE_LONG  , read_long  , TAPETYPE_BLOCKSIZE, validate_blocksize },
+   { CONF_LENGTH   , CONFTYPE_AM64  , read_am64  , TAPETYPE_LENGTH   , validate_positive0 },
+   { CONF_FILEMARK , CONFTYPE_AM64  , read_am64  , TAPETYPE_FILEMARK , NULL },
+   { CONF_SPEED    , CONFTYPE_INT   , read_int   , TAPETYPE_SPEED    , validate_positive0 },
+   { CONF_FILE_PAD , CONFTYPE_BOOL  , read_bool  , TAPETYPE_FILE_PAD , NULL },
+   { CONF_UNKNOWN  , CONFTYPE_INT   , NULL       , TAPETYPE_TAPETYPE , NULL }
 };
 
 static void
 get_tapetype(void)
 {
-    int done;
     int save_overwrites;
-    t_conf_var *np;
+    char *prefix;
 
     save_overwrites = allow_overwrites;
     allow_overwrites = 1;
@@ -1391,41 +1255,10 @@ get_tapetype(void)
     tpcur.name = stralloc(tokenval.v.s);
     tpcur.seen = conf_line_num;
 
-    get_conftoken(CONF_LBRACE);
-    get_conftoken(CONF_NL);
-
-    done = 0;
-    do {
-	conf_line_num += 1;
-	get_conftoken(CONF_ANY);
-	switch(tok) {
-
-	case CONF_RBRACE:
-	    done = 1;
-	    break;
-	case CONF_IDENT:
-	    copy_tapetype();
-	    break;
-	case CONF_NL:	/* empty line */
-	    break;
-	case CONF_END:	/* end of file */
-	    done = 1;
-	    break;
-	default:
-	    {
-		for(np = tapetype_var; np->token != CONF_UNKNOWN; np++)
-		    if(np->token == tok) break;
-		if(np->token == CONF_UNKNOWN)
-		    conf_parserror("tapetype parameter expected");
-		else {
-		    np->read_function(np, &tpcur.value[np->parm]);
-		    if(np->validate)
-			np->validate(np, &tpcur.value[np->parm]);
-		}
-	    }
-	}
-	if(tok != CONF_NL && tok != CONF_END) get_conftoken(CONF_NL);
-    } while(!done);
+    prefix = vstralloc( "TAPETYPE:", tpcur.name, ":", NULL);
+    read_block(server_options, tapetype_var, server_keytab, tpcur.value,
+	       prefix, "tapetype parameter expected", 1, &copy_tapetype);
+    amfree(prefix);
 
     save_tapetype();
 
@@ -1435,13 +1268,13 @@ get_tapetype(void)
 static void
 init_tapetype_defaults(void)
 {
-    conf_init_string(&tpcur.value[TAPETYPE_COMMENT], "");
+    conf_init_string(&tpcur.value[TAPETYPE_COMMENT]  , "");
     conf_init_string(&tpcur.value[TAPETYPE_LBL_TEMPL], "");
-    conf_init_long(&tpcur.value[TAPETYPE_BLOCKSIZE], DISK_BLOCK_KB);
-    conf_init_bool(&tpcur.value[TAPETYPE_FILE_PAD], 1);
-    conf_init_am64(&tpcur.value[TAPETYPE_LENGTH], 2000 * 1024);
-    conf_init_am64(&tpcur.value[TAPETYPE_FILEMARK], 1000);
-    conf_init_int(&tpcur.value[TAPETYPE_SPEED], 200);
+    conf_init_long  (&tpcur.value[TAPETYPE_BLOCKSIZE], DISK_BLOCK_KB);
+    conf_init_am64  (&tpcur.value[TAPETYPE_LENGTH]   , 2000 * 1024);
+    conf_init_am64  (&tpcur.value[TAPETYPE_FILEMARK] , 1000);
+    conf_init_int   (&tpcur.value[TAPETYPE_SPEED]    , 200);
+    conf_init_bool  (&tpcur.value[TAPETYPE_FILE_PAD] , 1);
 }
 
 static void
@@ -1482,22 +1315,25 @@ copy_tapetype(void)
     }
 
     for(i=0; i < TAPETYPE_TAPETYPE; i++) {
-	copy_val_t(&tpcur.value[i], &tp->value[i]);
+	if(tp->value[i].seen) {
+	    free_val_t(&tpcur.value[i]);
+	    copy_val_t(&tpcur.value[i], &tp->value[i]);
+	}
     }
 }
 
 t_conf_var interface_var [] = {
-   { CONF_COMMENT, CONFTYPE_STRING, read_string , INTER_COMMENT , NULL },
-   { CONF_USE    , CONFTYPE_INT   , read_int    , INTER_MAXUSAGE, validate_positive1 },
-   { CONF_UNKNOWN, CONFTYPE_INT   , NULL        , INTER_INTER, NULL }
+   { CONF_COMMENT, CONFTYPE_STRING, read_string, INTER_COMMENT , NULL },
+   { CONF_USE    , CONFTYPE_INT   , read_int   , INTER_MAXUSAGE, validate_positive1 },
+   { CONF_UNKNOWN, CONFTYPE_INT   , NULL       , INTER_INTER   , NULL }
 };
 
 static void
 get_interface(void)
 {
-    int done;
     int save_overwrites;
-    t_conf_var *np;
+    char *prefix;
+
     save_overwrites = allow_overwrites;
     allow_overwrites = 1;
 
@@ -1507,42 +1343,10 @@ get_interface(void)
     ifcur.name = stralloc(tokenval.v.s);
     ifcur.seen = conf_line_num;
 
-    get_conftoken(CONF_LBRACE);
-    get_conftoken(CONF_NL);
-
-    done = 0;
-    do {
-	conf_line_num += 1;
-	get_conftoken(CONF_ANY);
-	switch(tok) {
-
-	case CONF_RBRACE:
-	    done = 1;
-	    break;
-	case CONF_IDENT:
-	    copy_interface();
-	    break;
-	case CONF_NL:	/* empty line */
-	    break;
-	case CONF_END:	/* end of file */
-	    done = 1;
-	    break;
-	default:
-	    {
-		for(np = interface_var; np->token != CONF_UNKNOWN; np++)
-		    if(np->token == tok) break;
-
-		if(np->token == CONF_UNKNOWN)
-		    conf_parserror("interface parameter expected");
-		else {
-		    np->read_function(np, &ifcur.value[np->parm]);
-		    if(np->validate)
-			np->validate(np, &ifcur.value[np->parm]);
-		}
-	    }
-	}
-	if(tok != CONF_NL && tok != CONF_END) get_conftoken(CONF_NL);
-    } while(!done);
+    prefix = vstralloc( "INTERFACE:", ifcur.name, ":", NULL);
+    read_block(server_options, interface_var, server_keytab, ifcur.value,
+	       prefix, "interface parameter expected", 1, &copy_interface);
+    amfree(prefix);
 
     save_interface();
 
@@ -1554,7 +1358,7 @@ get_interface(void)
 static void
 init_interface_defaults(void)
 {
-    conf_init_string(&ifcur.value[INTER_COMMENT], "");
+    conf_init_string(&ifcur.value[INTER_COMMENT] , "");
     conf_init_int   (&ifcur.value[INTER_MAXUSAGE], 300);
 
     ifcur.curusage = 0;
@@ -1587,6 +1391,13 @@ save_interface(void)
 static void
 copy_interface(void)
 {
+/*
+    int i;
+    t_xxx *np;
+    keytab_t *kt;
+    
+    val_t val;
+*/
     interface_t *ip;
     int i;
 
@@ -1598,7 +1409,10 @@ copy_interface(void)
     }
 
     for(i=0; i < INTER_INTER; i++) {
-	copy_val_t(&ifcur.value[i], &ip->value[i]);
+	if(ip->value[i].seen) {
+	    free_val_t(&ifcur.value[i]);
+	    copy_val_t(&ifcur.value[i], &ip->value[i]);
+	}
     }
 }
 
@@ -1944,7 +1758,7 @@ static void get_include(np, val)
 int
 ColumnDataCount(void )
 {
-    return sizeof(ColumnData) / sizeof(ColumnData[0]);
+    return (int)(SIZEOF(ColumnData) / SIZEOF(ColumnData[0]));
 }
 
 /* conversion from string to table index
@@ -2063,10 +1877,6 @@ getconf_unit_divisor(void)
 /* ------------------------ */
 
 
-#ifdef TEST
-
-void dump_configuration(char *filename);
-
 void
 dump_configuration(
     char *filename)
@@ -2083,28 +1893,28 @@ dump_configuration(
     printf("AMANDA CONFIGURATION FROM FILE \"%s\":\n\n", filename);
 
     for(i=0; i < CNF_CNF; i++) {
-	for(np=global_var; np->token != CONF_UNKNOWN; np++)
-	    if(np->value == i) break;
+	for(np=server_var; np->token != CONF_UNKNOWN; np++)
+	    if(np->parm == i) break;
 	if(np->token == CONF_UNKNOWN)
-	    error("global bad value");
+	    error("server bad value");
 
-	for(kt = global_keytab; kt->token != CONF_UNKNOWN; kt++)
+	for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
 	    if(kt->token == np->token) break;
 	if(kt->token == CONF_UNKNOWN)
-	    error("global bad token");
+	    error("server bad token");
 
-	printf("%-21s %s\n", kt->keyword, conf_print(&global_conf[i]));
+	printf("%-21s %s\n", kt->keyword, conf_print(&server_conf[i]));
     }
 
     for(hp = holdingdisks; hp != NULL; hp = hp->next) {
 	printf("\nHOLDINGDISK %s {\n", hp->name);
 	for(i=0; i < HOLDING_HOLDING; i++) {
 	    for(np=holding_var; np->token != CONF_UNKNOWN; np++)
-		if(np->value == i) break;
+		if(np->parm == i) break;
 	    if(np->token == CONF_UNKNOWN)
 		error("holding bad value");
 
-	    for(kt = global_keytab; kt->token != CONF_UNKNOWN; kt++)
+	    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
 		if(kt->token == np->token) break;
 	    if(kt->token == CONF_UNKNOWN)
 		error("holding bad token");
@@ -2118,11 +1928,11 @@ dump_configuration(
 	printf("\nDEFINE TAPETYPE %s {\n", tp->name);
 	for(i=0; i < TAPETYPE_TAPETYPE; i++) {
 	    for(np=tapetype_var; np->token != CONF_UNKNOWN; np++)
-		if(np->value == i) break;
+		if(np->parm == i) break;
 	    if(np->token == CONF_UNKNOWN)
 		error("tapetype bad value");
 
-	    for(kt = global_keytab; kt->token != CONF_UNKNOWN; kt++)
+	    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
 		if(kt->token == np->token) break;
 	    if(kt->token == CONF_UNKNOWN)
 		error("tapetype bad token");
@@ -2140,11 +1950,11 @@ dump_configuration(
 	printf("\n%sDEFINE DUMPTYPE %s {\n", prefix, dp->name);
 	for(i=0; i < DUMPTYPE_DUMPTYPE; i++) {
 	    for(np=dumptype_var; np->token != CONF_UNKNOWN; np++)
-		if(np->value == i) break;
+		if(np->parm == i) break;
 	    if(np->token == CONF_UNKNOWN)
 		error("dumptype bad value");
 
-	    for(kt = global_keytab; kt->token != CONF_UNKNOWN; kt++)
+	    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
 		if(kt->token == np->token) break;
 	    if(kt->token == CONF_UNKNOWN)
 		error("dumptype bad token");
@@ -2153,151 +1963,7 @@ dump_configuration(
 	}
 	printf("%s}\n", prefix);
     }
-/*
-	printf("	COMMENT \"%s\"\n", dp->comment.v.s);
-	printf("	PROGRAM \"%s\"\n", dp->program.v.s);
-	printf("	SERVER_CUSTOM_COMPRESS \"%s\"\n", dp->srvcompprog.v.s);
-	printf("	CLIENT_CUSTOM_COMPRESS \"%s\"\n", dp->clntcompprog.v.s);
-	printf("	SERVER_ENCRYPT \"%s\"\n", dp->srv_encrypt.v.s);
-	printf("	CLIENT_ENCRYPT \"%s\"\n", dp->clnt_encrypt.v.s);
-	printf("	SERVER_DECRYPT_OPTION \"%s\"\n", dp->srv_decrypt_opt.v.s);
-	printf("	CLIENT_DECRYPT_OPTION \"%s\"\n", dp->clnt_decrypt_opt.v.s);
-	printf("	AMANDAD_PATH \"%s\"\n", dp->amandad_path.v.s);
-	printf("	CLIENT_USERNAME \"%s\"\n", dp->client_username.v.s);
-	printf("	SSH_KEYS \"%s\"\n", dp->ssh_keys.v.s);
-	printf("	PRIORITY %ld\n", (long)dp->priority.v.i);
-	printf("	DUMPCYCLE %ld\n", (long)dp->dumpcycle.v.i);
-	st = dp->start_t.v.t;
-	if(st) {
-	    stm = localtime(&st);
-	    printf("	STARTTIME %d:%02d:%02d\n",
-	      stm->tm_hour, stm->tm_min, stm->tm_sec);
-	}
-	if(dp->exclude_file.v.sl) {
-	    sle_t *excl;
-	    printf("	EXCLUDE FILE");
-	    for(excl = dp->exclude_file.v.sl->first; excl != NULL; excl =excl->next){
-		printf(" \"%s\"", excl->name);
-	    }
-	    printf("\n");
-	}
-	if(dp->exclude_list.v.sl) {
-	    sle_t *excl;
-	    printf("	EXCLUDE LIST");
-	    for(excl = dp->exclude_list.v.sl->first; excl != NULL; excl =excl->next){
-		printf(" \"%s\"", excl->name);
-	    }
-	    printf("\n");
-	}
-	if(dp->include_file.v.sl) {
-	    sle_t *incl;
-	    printf("	INCLUDE FILE");
-	    for(incl = dp->include_file.v.sl->first; incl != NULL; incl =incl->next){
-		printf(" \"%s\"", incl->name);
-	    }
-	    printf("\n");
-	}
-	if(dp->include_list.v.sl) {
-	    sle_t *incl;
-	    printf("	INCLUDE LIST");
-	    for(incl = dp->include_list.v.sl->first; incl != NULL; incl =incl->next){
-		printf(" \"%s\"", incl->name);
-	    }
-	    printf("\n");
-	}
-	printf("	FREQUENCY %ld\n", (long)dp->frequency.v.i);
-	printf("	MAXDUMPS %d\n", dp->maxdumps.v.i);
-	printf("	MAXPROMOTEDAY %d\n", dp->maxpromoteday.v.i);
-	printf("	STRATEGY ");
-	switch(dp->strategy.v.i) {
-	case DS_SKIP:
-	    printf("SKIP");
-	    break;
-	case DS_STANDARD:
-	    printf("STANDARD");
-	    break;
-	case DS_NOFULL:
-	    printf("NOFULL");
-	    break;
-	case DS_NOINC:
-	    printf("NOINC");
-	    break;
-	case DS_HANOI:
-	    printf("HANOI");
-	    break;
-	case DS_INCRONLY:
-	    printf("INCRONLY");
-	    break;
-	}
-	putchar('\n');
-	printf("	ESTIMATE ");
-	switch(dp->estimate.v.i) {
-	case ES_CLIENT:
-	    printf("CLIENT");
-	    break;
-	case ES_SERVER:
-	    printf("SERVER");
-	    break;
-	case ES_CALCSIZE:
-	    printf("CALCSIZE");
-	    break;
-	}
-	putchar('\n');
-	printf("	COMPRATE %f, %f\n", dp->compratefull.v.r, dp->comprateincr.v.r);
 
-	printf("	OPTIONS: ");
-
-	switch(dp->compress.v.c) {
-	case COMP_NONE:
-	    printf("NO-COMPRESS ");
-	    break;
-	case COMP_FAST:
-	    printf("COMPRESS-FAST ");
-	    break;
-	case COMP_BEST:
-	    printf("COMPRESS-BEST ");
-	    break;
-	case COMP_CUST:
-	    printf("COMPRESS-CUST ");
-	    break;
-	case COMP_SERV_FAST:
-	    printf("SRVCOMP-FAST ");
-	    break;
-	case COMP_SERV_BEST:
-	    printf("SRVCOMP-BEST ");
-	    break;
-	case COMP_SERV_CUST:
-	    printf("SRVCOMP-CUST ");
-	    break;
-	}
-
-	switch(dp->encrypt.v.e) {
-	case ENCRYPT_NONE:
-	    printf("ENCRYPT-NONE ");
-	    break;
-	case ENCRYPT_CUST:
-	    printf("ENCRYPT-CUST ");
-	    break;
-	case ENCRYPT_SERV_CUST:
-	    printf("ENCRYPT-SERV-CUST ");
-	    break;
-	}
-
-	if(!dp->record.v.i) printf("NO-");
-	printf("RECORD");
-	printf(" %s-AUTH", dp->security_driver.v.s);
-	if(dp->skip_incr.v.i) printf(" SKIP-INCR");
-	if(dp->skip_full.v.i) printf(" SKIP-FULL");
-	if(dp->no_hold.v.i) printf(" NO-HOLD");
-	if(dp->kencrypt.v.i) printf(" KENCRYPT");
-*/
-	/* an ignored disk will never reach this point */
-/*
-	assert(!dp->ignore.v.i);
-	if(dp->index.v.i) printf(" INDEX");
-	putchar('\n');
-    }
-*/
     for(ip = interface_list; ip != NULL; ip = ip->next) {
 	if(strcmp(ip->name,"default") == 0)
 	    prefix = "#";
@@ -2306,11 +1972,11 @@ dump_configuration(
 	printf("\n%sDEFINE INTERFACE %s {\n", prefix, ip->name);
 	for(i=0; i < INTER_INTER; i++) {
 	    for(np=interface_var; np->token != CONF_UNKNOWN; np++)
-		if(np->value == i) break;
+		if(np->parm == i) break;
 	    if(np->token == CONF_UNKNOWN)
 		error("interface bad value");
 
-	    for(kt = global_keytab; kt->token != CONF_UNKNOWN; kt++)
+	    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
 		if(kt->token == np->token) break;
 	    if(kt->token == CONF_UNKNOWN)
 		error("interface bad token");
@@ -2321,6 +1987,8 @@ dump_configuration(
     }
 
 }
+
+#ifdef TEST
 
 int
 main(
@@ -2412,7 +2080,7 @@ get_token_name(
 {
     keytab_t *kt;
 
-    for(kt = global_keytab; kt->token != CONF_UNKNOWN; kt++)
+    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
 	if(kt->token == token) break;
 
     if(kt->token == CONF_UNKNOWN)
@@ -2420,3 +2088,122 @@ get_token_name(
     return(kt->keyword);
 }
 
+void
+parse_server_conf(
+    int parse_argc,
+    char **parse_argv,
+    int *new_argc,
+    char ***new_argv)
+{
+    int i;
+    char **my_argv;
+    char *myarg, *value;
+    command_option_t *server_option;
+
+    server_options = alloc((parse_argc+1) * SIZEOF(*server_options));
+    server_option = server_options;
+    server_option->name = NULL;
+
+    my_argv = alloc(parse_argc * sizeof(char *));
+    *new_argv = my_argv;
+    *new_argc = 0;
+    i=0;
+    while(i<parse_argc) {
+	if(strncmp(parse_argv[i],"-o",2) == 0) {
+	    if(strlen(parse_argv[i]) > 2)
+		myarg = &parse_argv[i][2];
+	    else {
+		i++;
+		if(i >= parse_argc)
+		    error("expect something after -o");
+		myarg = parse_argv[i];
+	    }
+	    value = index(myarg,'=');
+	    *value = '\0';
+	    value++;
+	    server_option->used = 0;
+	    server_option->name = stralloc(myarg);
+	    server_option->value = stralloc(value);
+	    server_option++;
+	    server_option->name = NULL;
+	}
+	else {
+	    my_argv[*new_argc] = stralloc(parse_argv[i]);
+	    *new_argc += 1;
+	}
+	i++;
+    }
+}
+
+void
+report_bad_conf_arg(void)
+{
+    command_option_t *command_option;
+
+    for(command_option = server_options; command_option->name != NULL;
+							command_option++) {
+	if(command_option->used == 0) {
+	    fprintf(stderr,"argument -o%s=%s not used\n",
+		    command_option->name, command_option->value);
+	}
+    }
+}
+
+void
+free_server_config(void)
+{
+    holdingdisk_t    *hp, *hpnext;
+    dumptype_t       *dp, *dpnext;
+    tapetype_t       *tp, *tpnext;
+    interface_t      *ip, *ipnext;
+    command_option_t *server_option;
+    int               i;
+
+    for(hp=holdingdisks; hp != NULL; hp = hpnext) {
+	amfree(hp->name);
+	for(i=0; i<HOLDING_HOLDING-1; i++) {
+	   free_val_t(&hp->value[i]);
+	}
+	hpnext = hp->next;
+	amfree(hp);
+    }
+
+    for(dp=dumplist; dp != NULL; dp = dpnext) {
+	amfree(dp->name);
+	for(i=0; i<DUMPTYPE_DUMPTYPE-1; i++) {
+	   free_val_t(&dp->value[i]);
+	}
+	dpnext = dp->next;
+	amfree(dp);
+    }
+
+    for(tp=tapelist; tp != NULL; tp = tpnext) {
+	amfree(tp->name);
+	for(i=0; i<TAPETYPE_TAPETYPE-1; i++) {
+	   free_val_t(&tp->value[i]);
+	}
+	tpnext = tp->next;
+	amfree(tp);
+    }
+
+    for(ip=interface_list; ip != NULL; ip = ipnext) {
+	amfree(ip->name);
+	for(i=0; i<INTER_INTER-1; i++) {
+	   free_val_t(&ip->value[i]);
+	}
+	ipnext = ip->next;
+	amfree(ip);
+    }
+
+    if(server_options) {
+	for(server_option = server_options; server_option->name != NULL;
+						server_option++) {
+	    amfree(server_option->name);
+	    amfree(server_option->value);
+        }
+	amfree(server_options);
+    }
+
+    for(i=0; i<CNF_CNF-1; i++)
+	free_val_t(&server_conf[i]);
+}

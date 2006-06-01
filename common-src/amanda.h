@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.126 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: amanda.h,v 1.127 2006/06/01 19:27:51 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1357,72 +1357,67 @@ extern ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
 #  endif
 #endif
 
-#if SIZEOF_LONG == 8
-   typedef long am64_t;
-#  ifdef LONG_MAX
-#    define AM64_MAX LONG_MAX
+#if SIZEOF_OFF_T == 8
+#  ifdef OFF_MAX
+#    define AM64_MAX (off_t)(OFF_MAX)
 #  else
-#    define AM64_MAX 9223372036854775807L
+#    define AM64_MAX (off_t)(9223372036854775807LL)
+#  endif
+#  ifdef OFF_MIN
+#    define AM64_MIN (off_t)(OFF_MIN)
+#  else
+#    define AM64_MIN (off_t)(-9223372036854775807LL -1LL)
+#  endif
+#  define AM64_FMT OFF_T_FMT
+#else
+#if SIZEOF_LONG == 8
+#  ifdef LONG_MAX
+#    define AM64_MAX (off_t)(LONG_MAX)
+#  else
+#    define AM64_MAX (off_t)9223372036854775807L
 #  endif
 #  ifdef LONG_MIN
-#    define AM64_MIN LONG_MIN
+#    define AM64_MIN (off_t)(LONG_MIN)
 #  else
-#    define AM64_MIN -9223372036854775807L -1L
+#    define AM64_MIN (off_t)(-9223372036854775807L -1L)
 #  endif
 #  define AM64_FMT "%ld"
 #else
 #if SIZEOF_LONG_LONG == 8
-   typedef long long am64_t;
 #  ifdef LONG_LONG_MAX
-#    define AM64_MAX LONG_LONG_MAX
+#    define AM64_MAX (off_t)(LONG_LONG_MAX)
 #  else
-#    define AM64_MAX 9223372036854775807LL
+#    define AM64_MAX (off_t)9223372036854775807LL
 #  endif
 #  ifdef LONG_LONG_MIN
-#    define AM64_MIN LONG_LONG_MIN
+#    define AM64_MIN (off_t)(LONG_LONG_MIN)
 #  else
-#    define AM64_MIN -9223372036854775807LL -1LL
+#    define AM64_MIN (off_t)(-9223372036854775807LL -1LL)
 #  endif
 #  define AM64_FMT LL_FMT
 #else
 #if SIZEOF_INTMAX_T == 8
-   typedef intmax_t am64_t;
 #  ifdef INTMAX_MAX
-#    define AM64_MAX INTMAX_MAX
+#    define AM64_MAX (off_t)(INTMAX_MAX)
 #  else
-#    define AM64_MAX 9223372036854775807LL
+#    define AM64_MAX (off_t)9223372036854775807LL
 #  endif
 #  ifdef INTMAX_MIN
-#    define AM64_MIN INTMAX_MIN
+#    define AM64_MIN (off_t)(INTMAX_MIN)
 #  else
-#    define AM64_MIN -9223372036854775807LL -1LL
+#    define AM64_MIN (off_t)(-9223372036854775807LL -1LL)
 #  endif
 #  define AM64_FMT LL_FMT
-#else
-#if SIZEOF_OFF_T == 8
-   typedef off_t am64_t;
-#  ifdef OFF_MAX
-#    define AM64_MAX OFF_MAX
-#  else
-#    define AM64_MAX 9223372036854775807LL
-#  endif
-#  ifdef OFF_MIN
-#    define AM64_MIN OFF_MIN
-#  else
-#    define AM64_MIN -9223372036854775807LL -1LL
-#  endif
-#  define AM64_FMT OFF_T_FMT
 #else  /* no 64 bits type found, use long. */
-   typedef long am64_t;
 #  ifdef LONG_MAX
-#    define AM64_MAX LONG_MAX
+#    define AM64_MAX (off_t)(LONG_MAX)
 #  else
-#    define AM64_MAX 2147483647
+#    define AM64_MAX (off_t)2147483647
 #  endif
 #  ifdef LONG_MIN
-#    define AM64_MIN LONG_MIN
+#    define AM64_MIN (off_t)(LONG_MIN)
 #  else
-#    define AM64_MIN -2147483647 -1
+#    define AM64_MIN (off_t)(-2147483647 -1)
 #  endif
 #  define AM64_FMT "%ld"
 #endif

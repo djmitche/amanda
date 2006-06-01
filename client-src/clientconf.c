@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.4 2006/06/01 17:05:49 martinea Exp $
+ * $Id: clientconf.c,v 1.5 2006/06/01 19:27:51 martinea Exp $
  *
  * read configuration file
  */
@@ -44,7 +44,9 @@
 /* configuration parameters */
 static char *cln_config_dir = NULL;
 
-val_t client_conf[CLN_CLN-1];
+val_t client_conf[CLN_CLN];
+
+command_option_t *client_options = NULL;
 
 /* predeclare local functions */
 
@@ -52,38 +54,6 @@ static void init_defaults(void);
 static void read_conffile_recursively(char *filename);
 
 static int read_confline(void);
-
-/*
-** ------------------------
-**  External entry points
-** ------------------------
-*/
-
-int
-read_clientconf(
-    char *	filename)
-{
-    init_defaults();
-
-    /* We assume that conf_confname & conf_conf are initialized to NULL above */
-    read_conffile_recursively(filename);
-
-    return got_parserror;
-}
-
-struct byname {
-    char *name;
-    cconfparm_t parm;
-    tok_t typ;
-} byname_table [] = {
-    { "CONF",		CLN_CONF,		CONF_STRING },
-    { "INDEX_SERVER",	CLN_INDEX_SERVER,	CONF_STRING },
-    { "TAPE_SERVER",	CLN_TAPE_SERVER,	CONF_STRING },
-    { "TAPEDEV",	CLN_TAPEDEV,		CONF_STRING },
-    { "AUTH",		CLN_AUTH,		CONF_STRING },
-    { "SSH_KEYS",	CLN_SSH_KEYS,		CONF_STRING },
-    { NULL,		CLN_CONF,		CONF_UNKNOWN }
-};
 
 keytab_t client_keytab[] = {
     { "CONF", CONF_CONF },
@@ -108,6 +78,26 @@ t_conf_var client_var [] = {
    { CONF_CLIENT_USERNAME, CONFTYPE_STRING, read_string, CLN_CLIENT_USERNAME, NULL },
    { CONF_UNKNOWN        , CONFTYPE_INT   , NULL       , CLN_CLN            , NULL }
 };
+
+/*
+** ------------------------
+**  External entry points
+** ------------------------
+*/
+int read_clientconf(
+    char *filename)
+{
+    init_defaults();
+
+    /* We assume that conf_confname & conf are initialized to NULL above */
+    read_conffile_recursively(filename);
+
+    command_overwrite(client_options, client_var, client_keytab, client_conf,
+		      "");
+
+    return got_parserror;
+}
+
 
 char *
 client_getconf_byname(
@@ -135,17 +125,17 @@ client_getconf_byname(
     for(np = client_var; np->token != CONF_UNKNOWN; np++)
 	if(np->token == kt->token) break;
 
-    if(np->type == CONF_INT) {
+    if(np->type == CONFTYPE_INT) {
 	snprintf(number, sizeof(number), "%d", client_getconf_int(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
-    } else if(np->type == CONF_BOOL) {
+    } else if(np->type == CONFTYPE_BOOL) {
 	if(client_getconf_int(np->parm) == 0) {
 	    tmpstr = newstralloc(tmpstr, "off");
 	}
 	else {
 	    tmpstr = newstralloc(tmpstr, "on");
 	}
-    } else if(np->type == CONF_REAL) {
+    } else if(np->type == CONFTYPE_REAL) {
 	snprintf(number, sizeof(number), "%lf", client_getconf_real(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else {
@@ -160,13 +150,7 @@ client_getconf_seen(
     cconfparm_t parm)
 {
     t_conf_var *np;
-
-    for(np = client_var; np->token != CONF_UNKNOWN; np++)
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown client_getconf_seen parm: %d]", parm);
-
+    np = get_np(client_var, parm);
     return(client_conf[np->parm].seen);
 }
 
@@ -175,28 +159,16 @@ client_getconf_int(
     cconfparm_t	parm)
 {
     t_conf_var *np;
-
-    for(np = client_var; np->token != CONF_UNKNOWN; np++)
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown client_getconf_int parm: %d]", parm);
-
+    np = get_np(client_var, parm);
     return(client_conf[np->parm].v.i);
 }
 
-am64_t
+off_t
 client_getconf_am64(
     cconfparm_t	parm)
 {
     t_conf_var *np;
-
-    for(np = client_var; np->token != CONF_UNKNOWN; np++)
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown client_getconf_am64 parm: %d]", parm);
-
+    np = get_np(client_var, parm);
     return(client_conf[np->parm].v.am64);
 }
 
@@ -205,13 +177,7 @@ client_getconf_real(
     cconfparm_t	parm)
 {
     t_conf_var *np;
-
-    for(np = client_var; np->token != CONF_UNKNOWN; np++)
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown client_getconf_real parm: %d]", parm);
-
+    np = get_np(client_var, parm);
     return(client_conf[np->parm].v.r);
 }
 
@@ -220,13 +186,7 @@ client_getconf_str(
     cconfparm_t parm)
 {
     t_conf_var *np;
-
-    for(np = client_var; np->token != CONF_UNKNOWN; np++)
-	if(np->parm == parm) break;
-
-    if(np->token == CONF_UNKNOWN)
-	error("error [unknown client_getconf_str parm: %d]", parm);
-
+    np = get_np(client_var, parm);
     return(client_conf[np->parm].v.s);
 }
 
@@ -502,4 +462,67 @@ generic_client_get_security_conf(
 */
 	}
 	return(NULL);
+}
+
+
+void
+parse_client_conf(
+    int parse_argc,
+    char **parse_argv,
+    int *new_argc,
+    char ***new_argv)
+{
+    int i;
+    char **my_argv;
+    char *myarg, *value;
+    command_option_t *client_option;
+
+    client_options = alloc(parse_argc+1 * SIZEOF(*client_options));
+    client_option = client_options;
+    client_option->name = NULL;
+
+
+    my_argv = alloc(parse_argc * sizeof(char *));
+    *new_argv = my_argv;
+    *new_argc = 0;
+    i=0;
+    while(i<parse_argc) {
+	if(strncmp(parse_argv[i],"-o",2) == 0) {
+	    if(strlen(parse_argv[i]) > 2)
+		myarg = &parse_argv[i][2];
+	    else {
+		i++;
+		if(i >= parse_argc)
+		    error("expect something after -o");
+		myarg = parse_argv[i];
+	    }
+	    value = index(myarg,'=');
+	    *value = '\0';
+	    value++;
+	    client_option->used = 0;
+	    client_option->name = stralloc(myarg);
+	    client_option->value = stralloc(value);
+	    client_option++;
+	    client_option->name = NULL;
+	}
+	else {
+	    my_argv[*new_argc] = stralloc(parse_argv[i]);
+	    *new_argc += 1;
+	}
+	i++;
+    }
+}
+
+void
+report_bad_client_arg(void)
+{
+    command_option_t *command_option;
+
+    for(command_option = client_options; command_option->name != NULL;
+							command_option++) {
+	if(command_option->used == 0) {
+	    fprintf(stderr,"argument -o%s=%s not used\n",
+		    command_option->name, command_option->value);
+	}
+    }
 }
