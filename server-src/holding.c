@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.53 2006/05/25 01:47:20 johnfranks Exp $
+ * $Id: holding.c,v 1.54 2006/06/01 17:05:49 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -199,7 +199,7 @@ scan_holdingdir(
     disk_t *dp;
     dumpfile_t file;
 
-    dirname = vstralloc(holdp->diskdir, "/", datestamp, NULL);
+    dirname = vstralloc(holdingdisk_get_diskdir(holdp), "/", datestamp, NULL);
     if((workdir = opendir(dirname)) == NULL) {
 	if(errno != ENOENT)
 	    log_add(L_INFO, "%s: could not open dir: %s",
@@ -329,7 +329,7 @@ pick_all_datestamp(
 
     holding_list = new_sl();
     for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
-	holding_list = scan_holdingdisk(holding_list, hdisk->diskdir, verbose);
+	holding_list = scan_holdingdisk(holding_list, holdingdisk_get_diskdir(hdisk), verbose);
 
     return holding_list;
 }

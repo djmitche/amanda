@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.131 2006/06/01 14:54:39 martinea Exp $
+ * $Id: amcheck.c,v 1.132 2006/06/01 17:05:49 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -621,7 +621,7 @@ start_server_check(
 	    amfree(errstr);
 	    confbad = 1;
 	}
-	lbl_templ = tp->lbl_templ;
+	lbl_templ = tapetype_get_lbl_templ(tp);
 	if(strcmp(lbl_templ, "") != 0) {
 	    if(strchr(lbl_templ, '/') == NULL) {
 		lbl_templ = stralloc2(config_dir, lbl_templ);
@@ -784,14 +784,14 @@ start_server_check(
 
     if(do_localchk) {
 	for(hdp = holdingdisks; hdp != NULL; hdp = hdp->next) {
-    	    quoted = quote_string(hdp->diskdir);
-	    if(get_fs_stats(hdp->diskdir, &fs) == -1) {
+    	    quoted = quote_string(holdingdisk_get_diskdir(hdp));
+	    if(get_fs_stats(holdingdisk_get_diskdir(hdp), &fs) == -1) {
 		fprintf(outf, "ERROR: holding dir %s (%s), "
 			"you must create a directory.\n",
 			quoted, strerror(errno));
 		disklow = 1;
 	    }
-	    else if(access(hdp->diskdir, W_OK) == -1) {
+	    else if(access(holdingdisk_get_diskdir(hdp), W_OK) == -1) {
 		fprintf(outf, "ERROR: holding disk %s: not writable: %s.\n",
 			quoted, strerror(errno));
 		disklow = 1;
@@ -800,18 +800,18 @@ start_server_check(
 		fprintf(outf,
 			"WARNING: holding disk %s: "
 			"available space unknown (%ld KB requested)\n",
-			quoted, (long)hdp->disksize);
+			quoted, holdingdisk_get_disksize(hdp));
 		disklow = 1;
 	    }
-	    else if(hdp->disksize > (off_t)0) {
-		if(fs.avail < hdp->disksize) {
+	    else if(holdingdisk_get_disksize(hdp) > (off_t)0) {
+		if(fs.avail < holdingdisk_get_disksize(hdp)) {
 		    fprintf(outf,
 			    "WARNING: holding disk %s: "
 			    "only " OFF_T_FMT " %sB free ("
 			    OFF_T_FMT " %sB requested)\n", quoted,
 			    (OFF_T_FMT_TYPE)(fs.avail / (off_t)unitdivisor),
 			    displayunit,
-			    (OFF_T_FMT_TYPE)(hdp->disksize/(off_t)unitdivisor),
+			    (OFF_T_FMT_TYPE)(holdingdisk_get_disksize(hdp)/(off_t)unitdivisor),
 			    displayunit);
 		    disklow = 1;
 		}
@@ -824,8 +824,8 @@ start_server_check(
 		}
 	    }
 	    else {
-		assert(hdp->disksize < (off_t)0);
-		if((fs.avail + hdp->disksize) > (off_t)0) {
+		assert(holdingdisk_get_disksize(hdp) < (off_t)0);
+		if((fs.avail + holdingdisk_get_disksize(hdp)) > (off_t)0) {
 		    fprintf(outf,
 			    "WARNING: holding disk %s: "
 			    "only " OFF_T_FMT " %sB free, using nothing\n",
@@ -841,7 +841,7 @@ start_server_check(
 			    quoted,
 			    (OFF_T_FMT_TYPE)(fs.avail/(off_t)unitdivisor),
 			    displayunit,
-			    (OFF_T_FMT_TYPE)(fs.avail + hdp->disksize / (off_t)unitdivisor),
+			    (OFF_T_FMT_TYPE)(fs.avail + holdingdisk_get_disksize(hdp) / (off_t)unitdivisor),
 			    displayunit);
 		}
 	    }
@@ -943,7 +943,7 @@ start_server_check(
             if (overwrite) {
                 char *wrlabel_status;
                 wrlabel_status = tape_wrlabel(tapename, "X", label,
-                                              (unsigned)(tp->blocksize * 1024));
+				(unsigned)(tapetype_get_blocksize(tp) * 1024));
                 if (wrlabel_status != NULL) {
                     if (tape_status == 3) {
                         fprintf(outf,

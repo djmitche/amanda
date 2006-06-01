@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.64 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: conffile.h,v 1.65 2006/06/01 17:05:49 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -33,7 +33,7 @@
 #define CONFFILE_H
 
 #include "amanda.h"
-#include "sl.h"
+#include "util.h"
 
 #define CONFFILE_NAME "amanda.conf"
 
@@ -49,18 +49,14 @@ typedef enum {
     CNF_DISKFILE,
     CNF_INFOFILE,
     CNF_LOGDIR,
-    CNF_DISKDIR,
     CNF_INDEXDIR,
     CNF_TAPETYPE,
     CNF_DUMPCYCLE,
     CNF_RUNSPERCYCLE,
-    CNF_MAXCYCLE,
     CNF_TAPECYCLE,
-    CNF_DISKSIZE,
     CNF_NETUSAGE,
     CNF_INPARALLEL,
     CNF_DUMPORDER,
-    CNF_TIMEOUT,
     CNF_BUMPPERCENT,
     CNF_BUMPSIZE,
     CNF_BUMPMULT,
@@ -86,31 +82,39 @@ typedef enum {
     CNF_KRB5KEYTAB,
     CNF_KRB5PRINCIPAL,
     CNF_LABEL_NEW_TAPES,
-    CNF_USETIMESTAMPS
+    CNF_USETIMESTAMPS,
+    CNF_CNF
 } confparm_t;
+
+typedef enum tapetype_e  {
+    TAPETYPE_COMMENT,
+    TAPETYPE_LBL_TEMPL,
+    TAPETYPE_BLOCKSIZE,
+    TAPETYPE_LENGTH,
+    TAPETYPE_FILEMARK,
+    TAPETYPE_SPEED,
+    TAPETYPE_FILE_PAD,
+    TAPETYPE_TAPETYPE
+} tapetype_ee;
 
 typedef struct tapetype_s {
     struct tapetype_s *next;
     int seen;
     char *name;
 
-    char *comment;
-    char *lbl_templ;
-    ssize_t blocksize;
-    off_t length;
-    ssize_t filemark;
-    int speed;
-    int file_pad;
-
-    /* seen flags */
-    int s_comment;
-    int s_lbl_templ;
-    int s_blocksize;
-    int s_file_pad;
-    int s_length;
-    int s_filemark;
-    int s_speed;
+    val_t value[TAPETYPE_TAPETYPE];
 } tapetype_t;
+
+#define tapetype_get(tapetype, field) (tapetype->field)
+#define tapetype_get_name(tapetype) tapetype->name
+#define tapetype_get_seen(tapetype) tapetype->seen
+#define tapetype_get_comment(tapetype) tapetype->value[TAPETYPE_COMMENT].v.s
+#define tapetype_get_lbl_templ(tapetype) tapetype->value[TAPETYPE_LBL_TEMPL].v.s
+#define tapetype_get_blocksize(tapetype) tapetype->value[TAPETYPE_BLOCKSIZE].v.l
+#define tapetype_get_length(tapetype) tapetype->value[TAPETYPE_LENGTH].v.am64
+#define tapetype_get_filemark(tapetype) tapetype->value[TAPETYPE_FILEMARK].v.am64
+#define tapetype_get_speed(tapetype) tapetype->value[TAPETYPE_SPEED].v.i
+#define tapetype_get_file_pad(tapetype) tapetype->value[TAPETYPE_FILE_PAD].v.i
 
 /* Dump strategies */
 #define DS_SKIP		0	/* Don't do any dumps at all */
@@ -127,24 +131,6 @@ typedef struct tapetype_s {
 #define ES_SERVER	1	/* server estimate */
 #define ES_CALCSIZE	2	/* calcsize estimate */
 
-/* Compression types */
-typedef enum {
-    COMP_NONE,		/* No compression */
-    COMP_FAST,		/* Fast compression on client */
-    COMP_BEST,		/* Best compression on client */
-    COMP_CUST,		/* Custom compression on client */
-    COMP_SERV_FAST,	/* Fast compression on server */
-    COMP_SERV_BEST,	/* Best compression on server */
-    COMP_SERV_CUST	/* Custom compression on server */
-} comp_t;
-
-/* Encryption types */
-typedef enum {
-    ENCRYPT_NONE,		/* No encryption */
-    ENCRYPT_CUST,		/* Custom encryption on client */
-    ENCRYPT_SERV_CUST,	        /* Custom encryption on server */
-} encrypt_t;
-
 #define ALGO_FIRST	0
 #define ALGO_FIRSTFIT	1
 #define ALGO_LARGEST	2
@@ -152,138 +138,152 @@ typedef enum {
 #define ALGO_SMALLEST	4
 #define ALGO_LAST	5
 
+typedef enum dumptype_e  {
+    DUMPTYPE_COMMENT,
+    DUMPTYPE_PROGRAM,
+    DUMPTYPE_SRVCOMPPROG,
+    DUMPTYPE_CLNTCOMPPROG,
+    DUMPTYPE_SRV_ENCRYPT,
+    DUMPTYPE_CLNT_ENCRYPT,
+    DUMPTYPE_AMANDAD_PATH,
+    DUMPTYPE_CLIENT_USERNAME,
+    DUMPTYPE_SSH_KEYS,
+    DUMPTYPE_SECURITY_DRIVER,
+    DUMPTYPE_EXCLUDE,
+    DUMPTYPE_INCLUDE,
+    DUMPTYPE_PRIORITY,
+    DUMPTYPE_DUMPCYCLE,
+    DUMPTYPE_MAXDUMPS,
+    DUMPTYPE_MAXPROMOTEDAY,
+    DUMPTYPE_BUMPPERCENT,
+    DUMPTYPE_BUMPSIZE,
+    DUMPTYPE_BUMPDAYS,
+    DUMPTYPE_BUMPMULT,
+    DUMPTYPE_START_T,
+    DUMPTYPE_STRATEGY,
+    DUMPTYPE_ESTIMATE,
+    DUMPTYPE_COMPRESS,
+    DUMPTYPE_ENCRYPT,
+    DUMPTYPE_SRV_DECRYPT_OPT,
+    DUMPTYPE_CLNT_DECRYPT_OPT,
+    DUMPTYPE_COMPRATE,
+    DUMPTYPE_TAPE_SPLITSIZE,
+    DUMPTYPE_FALLBACK_SPLITSIZE,
+    DUMPTYPE_SPLIT_DISKBUFFER,
+    DUMPTYPE_RECORD,
+    DUMPTYPE_SKIP_INCR,
+    DUMPTYPE_SKIP_FULL,
+    DUMPTYPE_NO_HOLD,
+    DUMPTYPE_KENCRYPT,
+    DUMPTYPE_IGNORE,
+    DUMPTYPE_INDEX,
+    DUMPTYPE_DUMPTYPE
+} dumptype_ee;
+
 typedef struct dumptype_s {
     struct dumptype_s *next;
     int seen;
     char *name;
 
-    char *comment;
-    char *program;
-    char *srvcompprog;
-    char *clntcompprog;
-    char *srv_encrypt;
-    char *clnt_encrypt;
-    char *amandad_path;
-    char *client_username;
-    char *ssh_keys;
-    sl_t *exclude_file;
-    sl_t *exclude_list;
-    sl_t *include_file;
-    sl_t *include_list;
-    int exclude_optional;
-    int include_optional;
-    int priority;
-    int dumpcycle;
-    int maxcycle;
-    int frequency;
-    char *security_driver;
-    int maxdumps;
-    int maxpromoteday;
-    int bumppercent;
-    off_t bumpsize;
-    int bumpdays;
-    double bumpmult;
-    time_t start_t;
-    int strategy;
-    int estimate;
-    comp_t compress;
-    encrypt_t encrypt;
-    char *srv_decrypt_opt;
-    char *clnt_decrypt_opt;
-    double comprate[2]; /* first is full, second is incremental */
-    off_t tape_splitsize;
-    char *split_diskbuffer;
-    off_t fallback_splitsize;
-    /* flag options */
-    unsigned int record:1;
-    unsigned int skip_incr:1;
-    unsigned int skip_full:1;
-    unsigned int no_hold:1;
-    unsigned int kencrypt:1;
-    unsigned int ignore:1;
-    unsigned int index:1;
-
-    /* seen flags */
-    int s_comment;
-    int s_program;
-    int s_srvcompprog;
-    int s_clntcompprog;
-    int s_srv_encrypt;
-    int s_clnt_encrypt;
-    int s_amandad_path;
-    int s_client_username;
-    int s_ssh_keys;
-    int s_exclude_file;
-    int s_exclude_list;
-    int s_include_file;
-    int s_include_list;
-    int s_exclude_optional;
-    int s_include_optional;
-    int s_priority;
-    int s_dumpcycle;
-    int s_maxcycle;
-    int s_frequency;
-    int s_security_driver;
-    int s_maxdumps;
-    int s_maxpromoteday;
-    int s_bumppercent;
-    int s_bumpsize;
-    int s_bumpdays;
-    int s_bumpmult;
-    int s_start_t;
-    int s_strategy;
-    int s_estimate;
-    int s_compress;
-    int s_encrypt;
-    int s_srv_decrypt_opt;
-    int s_clnt_decrypt_opt;
-    int s_comprate;
-    int s_record;
-    int s_skip_incr;
-    int s_skip_full;
-    int s_no_hold;
-    int s_kencrypt;
-    int s_ignore;
-    int s_index;
-    int s_tape_splitsize;
-    int s_split_diskbuffer;
-    int s_fallback_splitsize;
+    val_t value[DUMPTYPE_DUMPTYPE];
 } dumptype_t;
 
+#define dumptype_get(dumptype, field) (dumptype->field)
+#define dumptype_get_name(dumptype) dumptype->name
+#define dumptype_get_seen(dumptype) dumptype->seen
+#define dumptype_get_comment(dumptype) dumptype->value[DUMPTYPE_COMMENT].v.s
+#define dumptype_get_program(dumptype) dumptype->value[DUMPTYPE_PROGRAM].v.s
+#define dumptype_get_srvcompprog(dumptype) dumptype->value[DUMPTYPE_SRVCOMPPROG].v.s
+#define dumptype_get_clntcompprog(dumptype) dumptype->value[DUMPTYPE_CLNTCOMPPROG].v.s
+#define dumptype_get_srv_encrypt(dumptype) dumptype->value[DUMPTYPE_SRV_ENCRYPT].v.s
+#define dumptype_get_clnt_encrypt(dumptype) dumptype->value[DUMPTYPE_CLNT_ENCRYPT].v.s
+#define dumptype_get_amandad_path(dumptype) dumptype->value[DUMPTYPE_AMANDAD_PATH].v.s
+#define dumptype_get_client_username(dumptype) dumptype->value[DUMPTYPE_CLIENT_USERNAME].v.s
+#define dumptype_get_ssh_keys(dumptype) dumptype->value[DUMPTYPE_SSH_KEYS].v.s
+#define dumptype_get_security_driver(dumptype) dumptype->value[DUMPTYPE_SECURITY_DRIVER].v.s
+#define dumptype_get_exclude(dumptype) dumptype->value[DUMPTYPE_EXCLUDE].v.exinclude
+#define dumptype_get_include(dumptype) dumptype->value[DUMPTYPE_INCLUDE].v.exinclude
+#define dumptype_get_priority(dumptype) dumptype->value[DUMPTYPE_PRIORITY].v.i
+#define dumptype_get_dumpcycle(dumptype) dumptype->value[DUMPTYPE_DUMPCYCLE].v.i
+#define dumptype_get_maxcycle(dumptype) dumptype->value[DUMPTYPE_MAXCYCLE].v.i
+#define dumptype_get_frequency(dumptype) dumptype->value[DUMPTYPE_FREQUENCY].v.i
+#define dumptype_get_maxdumps(dumptype) dumptype->value[DUMPTYPE_MAXDUMPS].v.i
+#define dumptype_get_maxpromoteday(dumptype) dumptype->value[DUMPTYPE_MAXPROMOTEDAY].v.i
+#define dumptype_get_bumppercent(dumptype) dumptype->value[DUMPTYPE_BUMPPERCENT].v.i
+#define dumptype_get_bumpsize(dumptype) dumptype->value[DUMPTYPE_BUMPSIZE].v.i
+#define dumptype_get_bumpdays(dumptype) dumptype->value[DUMPTYPE_BUMPDAYS].v.i
+#define dumptype_get_bumpmult(dumptype) dumptype->value[DUMPTYPE_BUMPMULT].v.r
+#define dumptype_get_start_t(dumptype) dumptype->value[DUMPTYPE_START_T].v.t
+#define dumptype_get_strategy(dumptype) dumptype->value[DUMPTYPE_STRATEGY].v.i
+#define dumptype_get_estimate(dumptype) dumptype->value[DUMPTYPE_ESTIMATE].v.i
+#define dumptype_get_compress(dumptype) dumptype->value[DUMPTYPE_COMPRESS].v.i
+#define dumptype_get_encrypt(dumptype) dumptype->value[DUMPTYPE_ENCRYPT].v.i
+#define dumptype_get_srv_decrypt_opt(dumptype) dumptype->value[DUMPTYPE_SRV_DECRYPT_OPT].v.s
+#define dumptype_get_clnt_decrypt_opt(dumptype) dumptype->value[DUMPTYPE_CLNT_DECRYPT_OPT].v.s
+#define dumptype_get_comprate(dumptype) dumptype->value[DUMPTYPE_COMPRATE].v.rate
+#define dumptype_get_tape_splitsize(dumptype) dumptype->value[DUMPTYPE_TAPE_SPLITSIZE].v.l
+#define dumptype_get_fallback_splitsize(dumptype) dumptype->value[DUMPTYPE_FALLBACK_SPLITSIZE].v.l
+#define dumptype_get_split_diskbuffer(dumptype) dumptype->value[DUMPTYPE_SPLIT_DISKBUFFER].v.s
+#define dumptype_get_record(dumptype) dumptype->value[DUMPTYPE_RECORD].v.i
+#define dumptype_get_skip_incr(dumptype) dumptype->value[DUMPTYPE_SKIP_INCR].v.i
+#define dumptype_get_skip_full(dumptype) dumptype->value[DUMPTYPE_SKIP_FULL].v.i
+#define dumptype_get_no_hold(dumptype) dumptype->value[DUMPTYPE_NO_HOLD].v.i
+#define dumptype_get_kencrypt(dumptype) dumptype->value[DUMPTYPE_KENCRYPT].v.i
+#define dumptype_get_ignore(dumptype) dumptype->value[DUMPTYPE_IGNORE].v.i
+#define dumptype_get_index(dumptype) dumptype->value[DUMPTYPE_INDEX].v.i
+
 /* A network interface */
+typedef enum interface_e  {
+    INTER_COMMENT,
+    INTER_MAXUSAGE,
+    INTER_INTER
+} interface_ee;
+
+
 typedef struct interface_s {
     struct interface_s *next;
     int seen;
     char *name;
 
-    char *comment;
-    unsigned long maxusage;		/* bandwidth we can consume [kb/s] */
-
-    /* seen flags */
-    int s_comment;
-    int s_maxusage;
+    val_t value[INTER_INTER];
 
     unsigned long curusage;		/* current usage */
 } interface_t;
 
+#define interface_get(interface, field) (interface->field)
+#define interface_get_name(interface) interface->name
+#define interface_get_seen(interface) interface->seen
+#define interface_get_comment(interface) interface->value[INTER_COMMENT].v.s
+#define interface_get_maxusage(interface) interface->value[INTER_MAXUSAGE].v.i
+
 /* A holding disk */
+typedef enum holdingdisk_e  {
+    HOLDING_COMMENT,
+    HOLDING_DISKDIR,
+    HOLDING_DISKSIZE,
+    HOLDING_CHUNKSIZE,
+    HOLDING_HOLDING
+} holdingdisk_ee;
+
 typedef struct holdingdisk_s {
     struct holdingdisk_s *next;
     int seen;
     char *name;
 
-    char *comment;
-    char *diskdir;
-    off_t disksize;
-    off_t chunksize;
-
-    int s_comment;
-    int s_disk;
-    int s_size;
-    int s_csize;
+    val_t value[HOLDING_HOLDING];
 
     void *up;			/* generic user pointer */
 } holdingdisk_t;
+
+#define holdingdisk_get(holdingdisk, field) (holdingdisk->field)
+#define holdingdisk_get_name(holdingdisk) holdingdisk->name
+#define holdingdisk_get_seen(holdingdisk) holdingdisk->seen
+#define holdingdisk_get_comment(holdingdisk) holdingdisk->value[HOLDING_COMMENT].v.s
+#define holdingdisk_get_diskdir(holdingdisk) holdingdisk->value[HOLDING_DISKDIR].v.s
+#define holdingdisk_get_disksize(holdingdisk) holdingdisk->value[HOLDING_DISKSIZE].v.l
+#define holdingdisk_get_chunksize(holdingdisk) holdingdisk->value[HOLDING_CHUNKSIZE].v.l
+
+#define holdingdisk_set_disksize(holdingdisk,val) holdingdisk->value[HOLDING_DISKSIZE].v.l = val
 
 /* for each column we define some values on how to
  * format this column element
@@ -336,8 +336,6 @@ int ColumnDataCount(void);
 int StringToColumn(char *s);
 char LastChar(char *s);
 int SetColumDataFromString(ColumnInfo* ci, char *s, char **errstr);
-
-char *taperalgo2str(int taperalgo);
 
 /* this is in securityconf.h */
 char *generic_get_security_conf(char *, void *);

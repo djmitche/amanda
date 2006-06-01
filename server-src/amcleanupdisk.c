@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.18 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: amcleanupdisk.c,v 1.19 2006/06/01 17:05:49 martinea Exp $
  */
 #include "amanda.h"
 
@@ -230,6 +230,6 @@ check_disks(void)
 
     for(dir = holding_list->first; dir !=NULL; dir = dir->next) {
 	for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next)
-	    check_holdingdisk(hdisk->diskdir, dir->name);
+	    check_holdingdisk(holdingdisk_get_diskdir(hdisk), dir->name);
     }
 }

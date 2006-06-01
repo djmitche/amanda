@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.127 2006/06/01 14:44:05 martinea Exp $
+/* $Id: taper.c,v 1.128 2006/06/01 17:05:50 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -313,9 +313,9 @@ main(
 
     conf_tapebufs = getconf_int(CNF_TAPEBUFS);
 
-    tt_blocksize_kb = (size_t)tt->blocksize;
+    tt_blocksize_kb = (size_t)tapetype_get_blocksize(tt);
     tt_blocksize = tt_blocksize_kb * 1024;
-    tt_file_pad = tt->file_pad;
+    tt_file_pad = tapetype_get_file_pad(tt);
 
     if (interactive) {
 	fprintf(stderr,"taper: running in interactive test mode\n");
@@ -2911,7 +2911,7 @@ label_tape(void)
 	return 0;
     }
 
-    tapefd_setinfo_length(tape_fd, tt->length);
+    tapefd_setinfo_length(tape_fd, tapetype_get_length(tt));
 
     tapefd_setinfo_datestamp(tape_fd, taper_timestamp);
     tapefd_setinfo_disk(tape_fd, label);

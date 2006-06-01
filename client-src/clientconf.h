@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.h,v 1.3 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: clientconf.h,v 1.4 2006/06/01 17:05:49 martinea Exp $
  *
  * interface for client config file reading code
  */
@@ -42,7 +42,10 @@ typedef enum conf_e {
     CLN_TAPE_SERVER,
     CLN_TAPEDEV,
     CLN_AUTH,
-    CLN_SSH_KEYS
+    CLN_SSH_KEYS,
+    CLN_AMANDAD_PATH,
+    CLN_CLIENT_USERNAME,
+    CLN_CLN
 } cconfparm_t;
 
 extern char *config_name;

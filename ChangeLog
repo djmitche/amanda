@@ -1,4 +1,22 @@
 2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
+	This is the first pass of a general rewrite of configuration file
+	parsing, It will now use array to store all options.
+
+	* client-src/clientconf.c:
+	* client-src/clientconf.h:
+	* server-src/conffile.c:
+	* server-src/conffile.h:
+	* common-src/util.c: Many new functions.
+	* common-src/util.h:
+
+	* restore-src/amidxtaped.c, server-src/amcheck.c,
+	  server-src/amcleanupdisk.c, server-src/amlabel.c,
+	  server-src/diskfile.c, server-src/driver.c, server-src/driverio.c,
+	  server-src/find.c, server-src/holding.c, server-src/planner.c,
+	  server-src/reporter.c,
+	  server-src/taper.c: Use new macro to get configuration option.
+
+2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c, client-src/amandates.c, client-src/noop.c,
 	  client-src/selfcheck.c, client-src/sendsize.c,
 	  common-src/bsd-security.c, common-src/bsdtcp-security.c,

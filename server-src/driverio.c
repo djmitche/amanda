@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.86 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: driverio.c,v 1.87 2006/06/01 17:05:49 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -518,7 +518,7 @@ chunker_cmd(
 	    holdalloc(h[activehd]->disk)->allocated_dumpers++;
 	    snprintf(number, SIZEOF(number), "%d", sched(dp)->level);
 	    snprintf(chunksize, SIZEOF(chunksize), OFF_T_FMT,
-		    (OFF_T_FMT_TYPE)h[0]->disk->chunksize);
+		    (OFF_T_FMT_TYPE)holdingdisk_get_chunksize(h[0]->disk));
 	    snprintf(use, SIZEOF(use), OFF_T_FMT,
 		    (OFF_T_FMT_TYPE)h[0]->reserved);
 	    features = am_feature_to_string(dp->host->features);
@@ -560,7 +560,7 @@ chunker_cmd(
 	    qdest = quote_string(h[activehd]->destname);
 	    holdalloc(h[activehd]->disk)->allocated_dumpers++;
 	    snprintf(chunksize, SIZEOF(chunksize), OFF_T_FMT, 
-		     (OFF_T_FMT_TYPE)h[activehd]->disk->chunksize);
+		     (OFF_T_FMT_TYPE)holdingdisk_get_chunksize(h[activehd]->disk));
 	    snprintf(use, SIZEOF(use), OFF_T_FMT, 
 		     (OFF_T_FMT_TYPE)(h[activehd]->reserved - h[activehd]->used));
 	    cmdline = vstralloc(cmdstr[cmd],

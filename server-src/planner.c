@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.189 2006/06/01 14:54:39 martinea Exp $
+ * $Id: planner.c,v 1.190 2006/06/01 17:05:49 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -351,10 +351,10 @@ int main(int argc, char **argv)
 	tape_length = (off_t)conf_maxdumpsize;
     }
     else {
-	tape_length = tape->length * (off_t)conf_runtapes;
+	tape_length = tapetype_get_length(tape) * (off_t)conf_runtapes;
     }
-    tape_mark = (size_t)tape->filemark;
-    tt_blocksize_kb = (size_t)tape->blocksize;
+    tape_mark = (size_t)tapetype_get_filemark(tape);
+    tt_blocksize_kb = (size_t)tapetype_get_blocksize(tape);
     tt_blocksize = tt_blocksize_kb * 1024;
 
     fprintf(stderr, "%s: time %s: startup took %s secs\n",
@@ -2230,7 +2230,7 @@ static void delay_dumps(void)
 	ndp = dp->next; /* remove_disk zaps this */
 
 	if (est(dp)->dump_csize == (off_t)-1 ||
-	    est(dp)->dump_csize <= tape->length * (off_t)avail_tapes) {
+	    est(dp)->dump_csize <= tapetype_get_length(tape) * (off_t)avail_tapes) {
 	    continue;
 	}
 
@@ -2251,7 +2251,7 @@ static void delay_dumps(void)
 		delete = 1;
 		message = "but no incremental estimate";
 	    }
-	    else if (est(dp)->degr_csize > tape->length) {
+	    else if (est(dp)->degr_csize > tapetype_get_length(tape)) {
 		delete = 1;
 		message = "incremental dump also larger than tape";
 	    }
@@ -2414,7 +2414,7 @@ static void delay_dumps(void)
 	    new_total = total_size - est(dp)->dump_csize + bi->csize;
 	}
 	if((new_total <= tape_length) &&
-	  (bi->csize < (tape->length * (off_t)avail_tapes))) {
+	  (bi->csize < (tapetype_get_length(tape) * (off_t)avail_tapes))) {
 	    /* reinstate it */
 	    total_size = new_total;
 	    if(bi->deleted) {

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.29 2006/06/01 14:54:39 martinea Exp $
+ * $Id: find.c,v 1.30 2006/06/01 17:05:49 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -289,7 +289,7 @@ search_holding_disk(
     for(hdisk = getconf_holdingdisks(); hdisk != NULL; hdisk = hdisk->next) {
 	for(dir = holding_list->first; dir != NULL; dir = dir->next) {
 	    sdirname = newvstralloc(sdirname,
-				    hdisk->diskdir, "/", dir->name,
+				    holdingdisk_get_diskdir(hdisk), "/", dir->name,
 				    NULL);
 	    if((workdir = opendir(sdirname)) == NULL) {
 	        continue;

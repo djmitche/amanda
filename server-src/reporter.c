@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.114 2006/06/01 14:54:40 martinea Exp $
+ * $Id: reporter.c,v 1.115 2006/06/01 17:05:50 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -630,7 +630,7 @@ main(
 	/* if the postscript_label_template (tp->lbl_templ) field is not */
 	/* the empty string (i.e. it is set to something), open the      */
 	/* postscript debugging file for writing.                        */
-	if ((strcmp(tp->lbl_templ, "")) != 0) {
+	if ((strcmp(tapetype_get_lbl_templ(tp), "")) != 0) {
 	    if ((postscript = fopen(psfname, "w")) == NULL) {
 		curlog = L_ERROR;
 		curprog = P_REPORTER;
@@ -657,7 +657,7 @@ main(
 	    printer_cmd = vstralloc(LPRCMD, NULL);
 #endif
 
-	if ((strcmp(tp->lbl_templ, "")) != 0) {
+	if ((strcmp(tapetype_get_lbl_templ(tp), "")) != 0) {
 #ifdef LPRCMD
 	    if ((postscript = popen(printer_cmd, "w")) == NULL) {
 		curlog = L_ERROR;
@@ -800,8 +800,8 @@ output_stats(void)
     size_t marksize;
     int lv, first;
 
-    tapesize = tp->length;
-    marksize = (size_t)tp->filemark;
+    tapesize = tapetype_get_length(tp);
+    marksize = tapetype_get_filemark(tp);
 
     stats[2].dumpdisks   = stats[0].dumpdisks   + stats[1].dumpdisks;
     stats[2].tapedisks   = stats[0].tapedisks   + stats[1].tapedisks;
@@ -2734,8 +2734,8 @@ do_postscript_output(void)
     off_t tapesize;
     size_t marksize;
 
-    tapesize = tp->length;
-    marksize = (size_t)tp->filemark;
+    tapesize = tapetype_get_length(tp);
+    marksize = tapetype_get_filemark(tp);
 
     for(current_tape = stats_by_tape; current_tape != NULL;
 	    current_tape = current_tape->next) {
@@ -2744,7 +2744,7 @@ do_postscript_output(void)
 	    break;
 	}
 
-	copy_template_file(tp->lbl_templ);
+	copy_template_file(tapetype_get_lbl_templ(tp));
 
 	/* generate a few elements */
 	fprintf(postscript,"(%s) DrawDate\n\n",

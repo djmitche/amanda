@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.62 2006/06/01 14:44:05 martinea Exp $
+/* $Id: amidxtaped.c,v 1.63 2006/06/01 17:05:49 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -501,7 +501,7 @@ main(
     /* Read the default block size from the tape type */
     if(re_config && (conf_tapetype = getconf_str(CNF_TAPETYPE)) != NULL) {
 	tape = lookup_tapetype(conf_tapetype);
-	rst_flags->blocksize = tape->blocksize * 1024;
+	rst_flags->blocksize = tapetype_get_blocksize(tape) * 1024;
     }
 
     if(rst_flags->fsf && re_config &&

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.3 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: clientconf.c,v 1.4 2006/06/01 17:05:49 martinea Exp $
  *
  * read configuration file
  */
@@ -44,26 +44,7 @@
 /* configuration parameters */
 static char *cln_config_dir = NULL;
 
-/* strings */
-static val_t cln_conf;
-static val_t cln_index_server;
-static val_t cln_tape_server;
-static val_t cln_tapedev;
-static val_t cln_auth;
-static val_t cln_ssh_keys;
-
-/* ints */
-
-/* reals */
-
-/* other internal variables */
-
-static int seen_conf;
-static int seen_index_server;
-static int seen_tape_server;
-static int seen_tapedev;
-static int seen_auth;
-static int seen_ssh_keys;
+val_t client_conf[CLN_CLN-1];
 
 /* predeclare local functions */
 
@@ -104,13 +85,38 @@ struct byname {
     { NULL,		CLN_CONF,		CONF_UNKNOWN }
 };
 
+keytab_t client_keytab[] = {
+    { "CONF", CONF_CONF },
+    { "INDEX_SERVER", CONF_INDEX_SERVER },
+    { "TAPE_SERVER", CONF_TAPE_SERVER },
+    { "TAPEDEV", CONF_TAPEDEV },
+    { "AUTH", CONF_AUTH },
+    { "SSH_KEYS", CONF_SSH_KEYS },
+    { "AMANDAD_PATH", CONF_AMANDAD_PATH },
+    { "CLIENT_USERNAME", CONF_CLIENT_USERNAME },
+    { NULL, CONF_UNKNOWN },
+};
+
+t_conf_var client_var [] = {
+   { CONF_CONF           , CONFTYPE_STRING, read_string, CLN_CONF           , NULL },
+   { CONF_INDEX_SERVER   , CONFTYPE_STRING, read_string, CLN_INDEX_SERVER   , NULL },
+   { CONF_TAPE_SERVER    , CONFTYPE_STRING, read_string, CLN_TAPE_SERVER    , NULL },
+   { CONF_TAPEDEV        , CONFTYPE_STRING, read_string, CLN_TAPEDEV        , NULL },
+   { CONF_AUTH           , CONFTYPE_STRING, read_string, CLN_AUTH           , NULL },
+   { CONF_SSH_KEYS       , CONFTYPE_STRING, read_string, CLN_SSH_KEYS       , NULL },
+   { CONF_AMANDAD_PATH   , CONFTYPE_STRING, read_string, CLN_AMANDAD_PATH   , NULL },
+   { CONF_CLIENT_USERNAME, CONFTYPE_STRING, read_string, CLN_CLIENT_USERNAME, NULL },
+   { CONF_UNKNOWN        , CONFTYPE_INT   , NULL       , CLN_CLN            , NULL }
+};
+
 char *
 client_getconf_byname(
     char *	str)
 {
     static char *tmpstr;
     char number[NUM_STR_SIZE];
-    struct byname *np;
+    t_conf_var *np;
+    keytab_t *kt;
     char *s;
     char ch;
 
@@ -121,22 +127,25 @@ client_getconf_byname(
 	    s[-1] = (char)toupper(ch);
     }
 
-    for(np = byname_table; np->name != NULL; np++)
-	if(strcmp(np->name, tmpstr) == 0) break;
+    for(kt = client_keytab; kt->token != CONF_UNKNOWN; kt++)
+	if(strcmp(kt->keyword, tmpstr) == 0) break;
 
-    if(np->name == NULL) return NULL;
+    if(kt->token == CONF_UNKNOWN) return NULL;
 
-    if(np->typ == CONF_INT) {
+    for(np = client_var; np->token != CONF_UNKNOWN; np++)
+	if(np->token == kt->token) break;
+
+    if(np->type == CONF_INT) {
 	snprintf(number, sizeof(number), "%d", client_getconf_int(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
-    } else if(np->typ == CONF_BOOL) {
+    } else if(np->type == CONF_BOOL) {
 	if(client_getconf_int(np->parm) == 0) {
 	    tmpstr = newstralloc(tmpstr, "off");
 	}
 	else {
 	    tmpstr = newstralloc(tmpstr, "on");
 	}
-    } else if(np->typ == CONF_REAL) {
+    } else if(np->type == CONF_REAL) {
 	snprintf(number, sizeof(number), "%lf", client_getconf_real(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else {
@@ -150,79 +159,75 @@ int
 client_getconf_seen(
     cconfparm_t parm)
 {
-    switch(parm) {
-    case CLN_CONF: return seen_conf;
-    case CLN_INDEX_SERVER: return seen_index_server;
-    case CLN_TAPE_SERVER: return seen_tape_server;
-    case CLN_TAPEDEV: return seen_tapedev;
-    case CLN_AUTH: return seen_auth;
-    case CLN_SSH_KEYS: return seen_ssh_keys;
-    default: return 0;
-    }
+    t_conf_var *np;
+
+    for(np = client_var; np->token != CONF_UNKNOWN; np++)
+	if(np->parm == parm) break;
+
+    if(np->token == CONF_UNKNOWN)
+	error("error [unknown client_getconf_seen parm: %d]", parm);
+
+    return(client_conf[np->parm].seen);
 }
 
 int
 client_getconf_int(
     cconfparm_t	parm)
 {
-    int r = 0;
+    t_conf_var *np;
 
-    switch(parm) {
-    default:
+    for(np = client_var; np->token != CONF_UNKNOWN; np++)
+	if(np->parm == parm) break;
+
+    if(np->token == CONF_UNKNOWN)
 	error("error [unknown client_getconf_int parm: %d]", parm);
-	/* NOTREACHED */
-    }
-    return r;
+
+    return(client_conf[np->parm].v.i);
 }
 
 am64_t
 client_getconf_am64(
     cconfparm_t	parm)
 {
-    am64_t r = 0;
+    t_conf_var *np;
 
-    switch(parm) {
-    default:
+    for(np = client_var; np->token != CONF_UNKNOWN; np++)
+	if(np->parm == parm) break;
+
+    if(np->token == CONF_UNKNOWN)
 	error("error [unknown client_getconf_am64 parm: %d]", parm);
-	/* NOTREACHED */
-    }
-    return r;
+
+    return(client_conf[np->parm].v.am64);
 }
 
 double
 client_getconf_real(
     cconfparm_t	parm)
 {
-    double r = 0;
+    t_conf_var *np;
 
-    switch(parm) {
-    default:
+    for(np = client_var; np->token != CONF_UNKNOWN; np++)
+	if(np->parm == parm) break;
+
+    if(np->token == CONF_UNKNOWN)
 	error("error [unknown client_getconf_real parm: %d]", parm);
-	/* NOTREACHED */
-    }
-    return r;
+
+    return(client_conf[np->parm].v.r);
 }
 
 char *
 client_getconf_str(
     cconfparm_t parm)
 {
-    char *r = 0;
+    t_conf_var *np;
 
-    switch(parm) {
+    for(np = client_var; np->token != CONF_UNKNOWN; np++)
+	if(np->parm == parm) break;
 
-    case CLN_CONF: r = cln_conf.s; break;
-    case CLN_INDEX_SERVER: r = cln_index_server.s; break;
-    case CLN_TAPE_SERVER: r = cln_tape_server.s; break;
-    case CLN_TAPEDEV: r = cln_tapedev.s; break;
-    case CLN_AUTH: r = cln_auth.s; break;
-    case CLN_SSH_KEYS: r = cln_ssh_keys.s; break;
-
-    default:
+    if(np->token == CONF_UNKNOWN)
 	error("error [unknown client_getconf_str parm: %d]", parm);
-	/* NOTREACHED */
-    }
-    return r;
+
+    return(client_conf[np->parm].v.s);
 }
 
 /*
@@ -244,14 +249,14 @@ init_defaults(void)
 #else
     s = "";
 #endif
-    cln_conf.s = stralloc(s);
+    conf_init_string(&client_conf[CLN_CONF], s);
 
 #ifdef DEFAULT_SERVER
     s = DEFAULT_SERVER;
 #else
     s = "";
 #endif
-    cln_index_server.s = stralloc(s);
+    conf_init_string(&client_conf[CLN_INDEX_SERVER], s);
 
 
 #ifdef DEFAULT_TAPE_SERVER
@@ -263,27 +268,21 @@ init_defaults(void)
     s = "";
 #endif
 #endif
-    cln_tape_server.s = stralloc(s);
+    conf_init_string(&client_conf[CLN_TAPE_SERVER], s);
 
 #ifdef DEFAULT_TAPE_DEVICE
     s = DEFAULT_TAPE_DEVICE;
 #else
     s = "/dev/nst0";
 #endif
-    cln_tapedev.s = stralloc(s);
+    conf_init_string(&client_conf[CLN_TAPEDEV], s);
 
-    cln_auth.s = stralloc("bsd");
-
-    cln_ssh_keys.s = stralloc("");
+    conf_init_string(&client_conf[CLN_AUTH], "bsd");
+    conf_init_string(&client_conf[CLN_SSH_KEYS], "");
+    conf_init_string(&client_conf[CLN_AMANDAD_PATH], "");
+    conf_init_string(&client_conf[CLN_CLIENT_USERNAME], "");
 
     /* defaults for internal variables */
-
-    seen_conf = 0;
-    seen_index_server = 0;
-    seen_tape_server = 0;
-    seen_tapedev = 0;
-    seen_auth = 0;
-    seen_ssh_keys = 0;
 
     conf_line_num = got_parserror = 0;
     allow_overwrites = 0;
@@ -335,20 +334,12 @@ read_conffile_recursively(
 /* ------------------------ */
 
 
-keytab_t main_keytable[] = {
-    { "CONF", CONF_CONF },
-    { "INDEX_SERVER", CONF_INDEX_SERVER },
-    { "TAPE_SERVER", CONF_TAPE_SERVER },
-    { "TAPEDEV", CONF_TAPEDEV },
-    { "AUTH", CONF_AUTH },
-    { "SSH_KEYS", CONF_SSH_KEYS },
-    { NULL, CONF_IDENT }
-};
-
 static int
 read_confline(void)
 {
-    keytable = main_keytable;
+    t_conf_var *np;
+
+    keytable = client_keytab;
 
     conf_line_num += 1;
     get_conftoken(CONF_ANY);
@@ -358,33 +349,9 @@ read_confline(void)
 	    char *fn;
 
 	    get_conftoken(CONF_STRING);
-	    fn = tokenval.s;
+	    fn = tokenval.v.s;
 	    read_conffile_recursively(fn);
 	}
-	break;
-
-    case CONF_CONF:
-	get_simple(&cln_conf, &seen_conf, CONF_STRING);
-	break;
-
-    case CONF_INDEX_SERVER:
-	get_simple(&cln_index_server, &seen_index_server, CONF_STRING);
-	break;
-
-    case CONF_TAPE_SERVER:
-	get_simple(&cln_tape_server, &seen_tape_server, CONF_STRING);
-	break;
-
-    case CONF_TAPEDEV:
-	get_simple(&cln_tapedev, &seen_tapedev, CONF_STRING);
-	break;
-
-    case CONF_AUTH:
-	get_simple(&cln_auth, &seen_auth, CONF_STRING);
-	break;
-
-    case CONF_SSH_KEYS:
-	get_simple(&cln_ssh_keys, &seen_ssh_keys, CONF_STRING);
 	break;
 
     case CONF_NL:	/* empty line */
@@ -394,7 +361,17 @@ read_confline(void)
 	return 0;
 
     default:
-	conf_parserror("configuration keyword expected");
+	{
+	    for(np = client_var; np->token != CONF_UNKNOWN; np++)
+		if(np->token == tok) break;
+
+	    if(np->token == CONF_UNKNOWN)
+		conf_parserror("configuration keyword expected");
+
+	    np->read_function(np, &client_conf[np->parm]);
+	    if(np->validate)
+		np->validate(np, &client_conf[np->parm]);
+	}
     }
     if(tok != CONF_NL)
 	get_conftoken(CONF_NL);
@@ -411,7 +388,7 @@ static char *cln_config_name = NULL;
 static char *cln_config_dir = NULL;
 
 void
-dump_configuration(
+dump_client_configuration(
     char *filename)
 {
     printf("AMANDA CLIENT CONFIGURATION FROM FILE \"%s\":\n\n", filename);
@@ -477,7 +454,7 @@ main(
 	  result = read_diskfile(diskfile, &lst);
       }
   }
-  dump_configuration(CONFFILE_NAME);
+  dump_client_configuration(CONFFILE_NAME);
   amfree(conffile);
 
   malloc_size_2 = malloc_inuse(&malloc_hist_2);
@@ -513,6 +490,10 @@ generic_client_get_security_conf(
 		return(client_getconf_str(CLN_AUTH));
 	} else if(strcmp(string, "ssh_keys")==0) {
 		return(client_getconf_str(CLN_SSH_KEYS));
+	} else if(strcmp(string, "amandad_path")==0) {
+		return(client_getconf_str(CLN_AMANDAD_PATH));
+	} else if(strcmp(string, "client_username")==0) {
+		return(client_getconf_str(CLN_CLIENT_USERNAME));
 /*
 	} else if(strcmp(string, "krb5principal")==0) {
 		return(client_getconf_str(CNF_KRB5PRINCIPAL));

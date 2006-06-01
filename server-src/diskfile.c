@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.79 2006/06/01 14:54:39 martinea Exp $
+ * $Id: diskfile.c,v 1.80 2006/06/01 17:05:49 martinea Exp $
  *
  * read disklist file
  */
@@ -517,50 +517,62 @@ parse_diskline(
 	return (-1);
     }
 
-    disk->dtype_name	= dtype->name;
-    disk->program	= dtype->program;
-    disk->exclude_file	= duplicate_sl(dtype->exclude_file);
-    disk->exclude_list	= duplicate_sl(dtype->exclude_list);
-    disk->include_file	= duplicate_sl(dtype->include_file);
-    disk->include_list	= duplicate_sl(dtype->include_list);
-    disk->exclude_optional = dtype->exclude_optional;
-    disk->include_optional = dtype->include_optional;
-    disk->priority	= dtype->priority;
-    disk->dumpcycle	= dtype->dumpcycle;
-    disk->frequency	= dtype->frequency;
-    disk->security_driver = dtype->security_driver;
-    disk->maxdumps	= dtype->maxdumps;
-    disk->tape_splitsize	= dtype->tape_splitsize;
-    disk->split_diskbuffer	= dtype->split_diskbuffer;
-    disk->fallback_splitsize	= dtype->fallback_splitsize;
-    disk->maxpromoteday	= dtype->maxpromoteday;
-    disk->bumppercent	= dtype->bumppercent;
-    disk->bumpsize	= dtype->bumpsize;
-    disk->bumpdays	= dtype->bumpdays;
-    disk->bumpmult	= dtype->bumpmult;
-    disk->start_t	= dtype->start_t;
-    disk->strategy	= dtype->strategy;
-    disk->estimate	= dtype->estimate;
-    disk->compress	= dtype->compress;
-    disk->srvcompprog	= dtype->srvcompprog;
-    disk->clntcompprog	= dtype->clntcompprog;
-    disk->encrypt       = dtype->encrypt;
-    disk->srv_decrypt_opt   = dtype->srv_decrypt_opt;
-    disk->clnt_decrypt_opt  = dtype->clnt_decrypt_opt;
-    disk->srv_encrypt   = dtype->srv_encrypt;
-    disk->clnt_encrypt  = dtype->clnt_encrypt;
-    disk->amandad_path  = dtype->amandad_path;
-    disk->client_username  = dtype->client_username;
-    disk->ssh_keys      = dtype->ssh_keys;
-    disk->comprate[0]	= dtype->comprate[0];
-    disk->comprate[1]	= dtype->comprate[1];
-    disk->record	= dtype->record;
-    disk->skip_incr	= dtype->skip_incr;
-    disk->skip_full	= dtype->skip_full;
-    disk->no_hold	= dtype->no_hold;
-    disk->kencrypt	= dtype->kencrypt;
-    disk->index		= dtype->index;
-    disk->todo		= 1;
+    disk->dtype_name	     = dtype->name;
+    disk->program	     = dumptype_get_program(dtype);
+    if(dumptype_get_exclude(dtype).type == 0) {
+	disk->exclude_list   = duplicate_sl(dumptype_get_exclude(dtype).sl);
+	disk->exclude_file   = NULL;
+    }
+    else {
+	disk->exclude_file   = duplicate_sl(dumptype_get_exclude(dtype).sl);
+	disk->exclude_list   = NULL;
+    }
+    disk->exclude_optional   = dumptype_get_exclude(dtype).optional;
+    if(dumptype_get_include(dtype).type == 0) {
+	disk->include_list   = duplicate_sl(dumptype_get_include(dtype).sl);
+	disk->include_file   = NULL;
+    }
+    else {
+	disk->include_file   = duplicate_sl(dumptype_get_include(dtype).sl);
+	disk->include_list   = NULL;
+    }
+    disk->include_optional   = dumptype_get_include(dtype).optional;
+    disk->priority	     = dumptype_get_priority(dtype);
+    disk->dumpcycle	     = dumptype_get_dumpcycle(dtype);
+/*    disk->frequency	     = dumptype_get_frequency(dtype);*/
+    disk->security_driver    = dumptype_get_security_driver(dtype);
+    disk->maxdumps	     = dumptype_get_maxdumps(dtype);
+    disk->tape_splitsize     = dumptype_get_tape_splitsize(dtype);
+    disk->split_diskbuffer   = dumptype_get_split_diskbuffer(dtype);
+    disk->fallback_splitsize = dumptype_get_fallback_splitsize(dtype);
+    disk->maxpromoteday	     = dumptype_get_maxpromoteday(dtype);
+    disk->bumppercent	     = dumptype_get_bumppercent(dtype);
+    disk->bumpsize	     = dumptype_get_bumpsize(dtype);
+    disk->bumpdays	     = dumptype_get_bumpdays(dtype);
+    disk->bumpmult	     = dumptype_get_bumpmult(dtype);
+    disk->start_t	     = dumptype_get_start_t(dtype);
+    disk->strategy	     = dumptype_get_strategy(dtype);
+    disk->estimate	     = dumptype_get_estimate(dtype);
+    disk->compress	     = dumptype_get_compress(dtype);
+    disk->srvcompprog	     = dumptype_get_srvcompprog(dtype);
+    disk->clntcompprog	     = dumptype_get_clntcompprog(dtype);
+    disk->encrypt            = dumptype_get_encrypt(dtype);
+    disk->srv_decrypt_opt    = dumptype_get_srv_decrypt_opt(dtype);
+    disk->clnt_decrypt_opt   = dumptype_get_clnt_decrypt_opt(dtype);
+    disk->srv_encrypt        = dumptype_get_srv_encrypt(dtype);
+    disk->clnt_encrypt       = dumptype_get_clnt_encrypt(dtype);
+    disk->amandad_path       = dumptype_get_amandad_path(dtype);
+    disk->client_username    = dumptype_get_client_username(dtype);
+    disk->ssh_keys           = dumptype_get_ssh_keys(dtype);
+    disk->comprate[0]	     = dumptype_get_comprate(dtype)[0];
+    disk->comprate[1]	     = dumptype_get_comprate(dtype)[1];
+    disk->record	     = dumptype_get_record(dtype);
+    disk->skip_incr	     = dumptype_get_skip_incr(dtype);
+    disk->skip_full	     = dumptype_get_skip_full(dtype);
+    disk->no_hold	     = dumptype_get_no_hold(dtype);
+    disk->kencrypt	     = dumptype_get_kencrypt(dtype);
+    disk->index		     = dumptype_get_index(dtype);
+    disk->todo		     = 1;
 
     skip_whitespace(s, ch);
     fp = s - 1;
@@ -602,7 +614,7 @@ parse_diskline(
 	    return (-1);
 	}
     } else {
-	netif = lookup_interface("");
+	netif = lookup_interface("default");
     }
 
     skip_whitespace(s, ch);
@@ -610,7 +622,7 @@ parse_diskline(
 	disk_parserror(filename, line_num, "end of line expected");
     }
 
-    if(dtype->ignore || dtype->strategy == DS_SKIP) {
+    if(dumptype_get_ignore(dtype) || dumptype_get_strategy(dtype) == DS_SKIP) {
 	amfree(hostname);
 	amfree(disk->name);
 	amfree(disk);

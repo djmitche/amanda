@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.23 2006/05/25 17:07:31 martinea Exp $
+ * $Id: util.c,v 1.24 2006/06/01 17:05:49 martinea Exp $
  */
 
 #include "amanda.h"
@@ -540,47 +540,46 @@ validate_mailto(
 
 void
 get_simple(
-    val_t *	var,
-    int *	seen,
-    tok_t	type)
+    val_t  *var,
+    tok_t  type)
 {
-    ckseen(seen);
+    ckseen(&var->seen);
 
     switch(type) {
     case CONF_STRING:
     case CONF_IDENT:
 	get_conftoken(type);
-	var->s = newstralloc(var->s, tokenval.s);
-	malloc_mark(var->s);
+	var->v.s = newstralloc(var->v.s, tokenval.v.s);
+	malloc_mark(var->v.s);
 	break;
 
     case CONF_INT:
-	var->i = get_int();
+	var->v.i = get_int();
 	break;
 
     case CONF_LONG:
-	var->l = get_long();
+	var->v.l = get_long();
 	break;
 
     case CONF_SIZE:
-	var->size = get_size();
+	var->v.size = get_size();
 	break;
 
     case CONF_AM64:
-	var->am64 = get_am64_t();
+	var->v.am64 = get_am64_t();
 	break;
 
     case CONF_BOOL:
-	var->i = get_bool();
+	var->v.i = get_bool();
 	break;
 
     case CONF_REAL:
 	get_conftoken(CONF_REAL);
-	var->r = tokenval.r;
+	var->v.r = tokenval.v.r;
 	break;
 
     case CONF_TIME:
-	var->t = get_time();
+	var->v.t = get_time();
 	break;
 
     default:
@@ -599,34 +598,34 @@ get_time(void)
     switch(tok) {
     case CONF_INT:
 #if SIZEOF_TIME_T < SIZEOF_INT
-	if ((am64_t)tokenval.i >= (am64_t)TIME_MAX)
+	if ((am64_t)tokenval.v.i >= (am64_t)TIME_MAX)
 	    conf_parserror("value too large");
 #endif
-	hhmm = (time_t)tokenval.i;
+	hhmm = (time_t)tokenval.v.i;
 	break;
 
     case CONF_LONG:
 #if SIZEOF_TIME_T < SIZEOF_LONG
-	if ((am64_t)tokenval.l >= (am64_t)TIME_MAX)
+	if ((am64_t)tokenval.v.l >= (am64_t)TIME_MAX)
 	    conf_parserror("value too large");
 #endif
-	hhmm = (time_t)tokenval.l;
+	hhmm = (time_t)tokenval.v.l;
 	break;
 
     case CONF_SIZE:
 #if SIZEOF_TIME_T < SIZEOF_SSIZE_T
-	if ((am64_t)tokenval.size >= (am64_t)TIME_MAX)
+	if ((am64_t)tokenval.v.size >= (am64_t)TIME_MAX)
 	    conf_parserror("value too large");
 #endif
-	hhmm = (time_t)tokenval.size;
+	hhmm = (time_t)tokenval.v.size;
 	break;
 
     case CONF_AM64:
 #if SIZEOF_TIME_T < SIZEOF_LONG_LONG
-	if ((am64_t)tokenval.am64 >= (am64_t)TIME_MAX)
+	if ((am64_t)tokenval.v.am64 >= (am64_t)TIME_MAX)
 	    conf_parserror("value too large");
 #endif
-	hhmm = (time_t)tokenval.am64;
+	hhmm = (time_t)tokenval.v.am64;
 	break;
 
     case CONF_AMINFINITY:
@@ -694,37 +693,37 @@ get_int(void)
 
     switch(tok) {
     case CONF_INT:
-	val = tokenval.i;
+	val = tokenval.v.i;
 	break;
 
     case CONF_LONG:
 #if SIZEOF_INT < SIZEOF_LONG
-	if ((am64_t)tokenval.l > (am64_t)INT_MAX)
+	if ((am64_t)tokenval.v.l > (am64_t)INT_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.l < (am64_t)INT_MIN)
+	if ((am64_t)tokenval.v.l < (am64_t)INT_MIN)
 	    conf_parserror("value too small");
 #endif
-	val = (int)tokenval.l;
+	val = (int)tokenval.v.l;
 	break;
 
     case CONF_SIZE:
 #if SIZEOF_INT < SIZEOF_SSIZE_T
-	if ((am64_t)tokenval.size > (am64_t)INT_MAX)
+	if ((am64_t)tokenval.v.size > (am64_t)INT_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.size < (am64_t)INT_MIN)
+	if ((am64_t)tokenval.v.size < (am64_t)INT_MIN)
 	    conf_parserror("value too small");
 #endif
-	val = (int)tokenval.size;
+	val = (int)tokenval.v.size;
 	break;
 
     case CONF_AM64:
 #if SIZEOF_INT < SIZEOF_LONG_LONG
-	if (tokenval.am64 > (am64_t)INT_MAX)
+	if (tokenval.v.am64 > (am64_t)INT_MAX)
 	    conf_parserror("value too large");
-	if (tokenval.am64 < (am64_t)INT_MIN)
+	if (tokenval.v.am64 < (am64_t)INT_MIN)
 	    conf_parserror("value too small");
 #endif
-	val = (int)tokenval.am64;
+	val = (int)tokenval.v.am64;
 	break;
 
     case CONF_AMINFINITY:
@@ -792,37 +791,37 @@ get_long(void)
 
     switch(tok) {
     case CONF_LONG:
-	val = tokenval.l;
+	val = tokenval.v.l;
 	break;
 
     case CONF_INT:
 #if SIZEOF_LONG < SIZEOF_INT
-	if ((am64_t)tokenval.i > (am64_t)LONG_MAX)
+	if ((am64_t)tokenval.v.i > (am64_t)LONG_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.i < (am64_t)LONG_MIN)
+	if ((am64_t)tokenval.v.i < (am64_t)LONG_MIN)
 	    conf_parserror("value too small");
 #endif
-	val = (long)tokenval.i;
+	val = (long)tokenval.v.i;
 	break;
 
     case CONF_SIZE:
 #if SIZEOF_LONG < SIZEOF_SSIZE_T
-	if ((am64_t)tokenval.size > (am64_t)LONG_MAX)
+	if ((am64_t)tokenval.v.size > (am64_t)LONG_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.size < (am64_t)LONG_MIN)
+	if ((am64_t)tokenval.v.size < (am64_t)LONG_MIN)
 	    conf_parserror("value too small");
 #endif
-	val = (long)tokenval.size;
+	val = (long)tokenval.v.size;
 	break;
 
     case CONF_AM64:
 #if SIZEOF_LONG < SIZEOF_LONG_LONG
-	if (tokenval.am64 > (am64_t)LONG_MAX)
+	if (tokenval.v.am64 > (am64_t)LONG_MAX)
 	    conf_parserror("value too large");
-	if (tokenval.am64 < (am64_t)LONG_MIN)
+	if (tokenval.v.am64 < (am64_t)LONG_MIN)
 	    conf_parserror("value too small");
 #endif
-	val = (long)tokenval.am64;
+	val = (long)tokenval.v.am64;
 	break;
 
     case CONF_AMINFINITY:
@@ -890,37 +889,37 @@ get_size(void)
 
     switch(tok) {
     case CONF_SIZE:
-	val = tokenval.size;
+	val = tokenval.v.size;
 	break;
 
     case CONF_INT:
 #if SIZEOF_SIZE_T < SIZEOF_INT
-	if ((am64_t)tokenval.i > (am64_t)SSIZE_MAX)
+	if ((am64_t)tokenval.v.i > (am64_t)SSIZE_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.i < (am64_t)SSIZE_MIN)
+	if ((am64_t)tokenval.v.i < (am64_t)SSIZE_MIN)
 	    conf_parserror("value too small");
 #endif
-	val = (ssize_t)tokenval.i;
+	val = (ssize_t)tokenval.v.i;
 	break;
 
     case CONF_LONG:
 #if SIZEOF_SIZE_T < SIZEOF_LONG
-	if ((am64_t)tokenval.l > (am64_t)SSIZE_MAX)
+	if ((am64_t)tokenval.v.l > (am64_t)SSIZE_MAX)
 	    conf_parserror("value too large");
-	if ((am64_t)tokenval.l < (am64_t)SSIZE_MIN)
+	if ((am64_t)tokenval.v.l < (am64_t)SSIZE_MIN)
 	    conf_parserror("value too small");
 #endif
-	val = (ssize_t)tokenval.l;
+	val = (ssize_t)tokenval.v.l;
 	break;
 
     case CONF_AM64:
 #if SIZEOF_SIZE_T < SIZEOF_LONG_LONG
-	if (tokenval.am64 > (am64_t)SSIZE_MAX)
+	if (tokenval.v.am64 > (am64_t)SSIZE_MAX)
 	    conf_parserror("value too large");
-	if (tokenval.am64 < (am64_t)SSIZE_MIN)
+	if (tokenval.v.am64 < (am64_t)SSIZE_MIN)
 	    conf_parserror("value too small");
 #endif
-	val = (ssize_t)tokenval.am64;
+	val = (ssize_t)tokenval.v.am64;
 	break;
 
     case CONF_AMINFINITY:
@@ -988,19 +987,19 @@ get_am64_t(void)
 
     switch(tok) {
     case CONF_INT:
-	val = (am64_t)tokenval.i;
+	val = (am64_t)tokenval.v.i;
 	break;
 
     case CONF_LONG:
-	val = (am64_t)tokenval.l;
+	val = (am64_t)tokenval.v.l;
 	break;
 
     case CONF_SIZE:
-	val = (am64_t)tokenval.size;
+	val = (am64_t)tokenval.v.size;
 	break;
 
     case CONF_AM64:
-	val = tokenval.am64;
+	val = tokenval.v.am64;
 	break;
 
     case CONF_AMINFINITY:
@@ -1077,28 +1076,28 @@ get_bool(void)
 
     switch(tok) {
     case CONF_INT:
-	if (tokenval.i != 0)
+	if (tokenval.v.i != 0)
 	    val = 1;
 	else
 	    val = 0;
 	break;
 
     case CONF_LONG:
-	if (tokenval.l != 0L)
+	if (tokenval.v.l != 0L)
 	    val = 1;
 	else
 	    val = 0;
 	break;
 
     case CONF_SIZE:
-	if (tokenval.size != (size_t)0)
+	if (tokenval.v.size != (size_t)0)
 	    val = 1;
 	else
 	    val = 0;
 	break;
 
     case CONF_AM64:
-	if (tokenval.am64 != (am64_t)0)
+	if (tokenval.v.am64 != (am64_t)0)
 	    val = 1;
 	else
 	    val = 0;
@@ -1202,7 +1201,7 @@ get_conftoken(
 	    if (exp == CONF_IDENT)
 		tok = CONF_IDENT;
 	    else
-		tok = lookup_keyword(tokenval.s);
+		tok = lookup_keyword(tokenval.v.s);
 	    break;
 	}
     }
@@ -1237,11 +1236,11 @@ get_conftoken(
 	    ungetc(ch, conf_conf);
 	    *buf = '\0';
 
-	    tokenval.s = tkbuf;
+	    tokenval.v.s = tkbuf;
 
 	    if (token_overflow) tok = CONF_UNKNOWN;
 	    else if (exp == CONF_IDENT) tok = CONF_IDENT;
-	    else tok = lookup_keyword(tokenval.s);
+	    else tok = lookup_keyword(tokenval.v.s);
 	}
 	else if (isdigit(ch)) {	/* integer */
 	    int sign;
@@ -1251,34 +1250,34 @@ get_conftoken(
 	    negative_number: /* look for goto negative_number below */
 		sign = -1;
 	    }
-	    tokenval.am64 = 0;
+	    tokenval.v.am64 = 0;
 	    do {
-		tokenval.am64 = tokenval.am64 * 10 + (ch - '0');
+		tokenval.v.am64 = tokenval.v.am64 * 10 + (ch - '0');
 		ch = getc(conf_conf);
 	    } while(isdigit(ch));
 	    if (ch != '.') {
 		if (exp == CONF_INT) {
 		    tok = CONF_INT;
-		    tokenval.i *= sign;
+		    tokenval.v.i *= sign;
 		}
 		else if (exp == CONF_LONG) {
 		    tok = CONF_LONG;
-		    tokenval.l *= sign;
+		    tokenval.v.l *= sign;
 		}
 		else if (exp != CONF_REAL) {
 		    tok = CONF_AM64;
-		    tokenval.am64 *= sign;
+		    tokenval.v.am64 *= sign;
 		} else {
 		    /* automatically convert to real when expected */
-		    am64 = tokenval.am64;
-		    tokenval.r = sign * (double) am64;
+		    am64 = tokenval.v.am64;
+		    tokenval.v.r = sign * (double) am64;
 		    tok = CONF_REAL;
 		}
 	    }
 	    else {
 		/* got a real number, not an int */
-		am64 = tokenval.am64;
-		tokenval.r = sign * (double) am64;
+		am64 = tokenval.v.am64;
+		tokenval.v.r = sign * (double) am64;
 		am64=0; d=1;
 		ch = getc(conf_conf);
 		while(isdigit(ch)) {
@@ -1286,7 +1285,7 @@ get_conftoken(
 		    d = d * 10;
 		    ch = getc(conf_conf);
 		}
-		tokenval.r += sign * ((double)am64)/d;
+		tokenval.v.r += sign * ((double)am64)/d;
 		tok = CONF_REAL;
 	    }
 	    ungetc(ch, conf_conf);
@@ -1312,7 +1311,7 @@ get_conftoken(
 		ungetc(ch, conf_conf);
 	    }
 	    *buf = '\0';
-	    tokenval.s = tkbuf;
+	    tokenval.v.s = tkbuf;
 	    if (token_overflow) tok = CONF_UNKNOWN;
 	    else tok = CONF_STRING;
 	    break;
@@ -1408,10 +1407,539 @@ get_conftoken(
 	conf_parserror("%s is expected", str);
 	tok = exp;
 	if (tok == CONF_INT)
-	    tokenval.i = 0;
+	    tokenval.v.i = 0;
 	else
-	    tokenval.s = "";
+	    tokenval.v.s = "";
     }
+}
+
+
+void
+read_string(
+    t_conf_var *np,
+    val_t *val)
+{
+    np = np;
+    ckseen(&val->seen);
+    get_conftoken(CONF_STRING);
+    val->v.s = newstralloc(val->v.s, tokenval.v.s);
+}
+
+void
+read_ident(
+    t_conf_var *np,
+    val_t *val)
+{
+    np = np;
+    ckseen(&val->seen);
+    get_conftoken(CONF_IDENT);
+    val->v.s = newstralloc(val->v.s, tokenval.v.s);
+}
+
+void
+read_int(
+    t_conf_var *np,
+    val_t *val)
+{
+    np = np;
+    ckseen(&val->seen);
+    val->v.i = get_int();
+}
+
+void
+read_long(
+    t_conf_var *np,
+    val_t *val)
+{
+    np = np;
+    ckseen(&val->seen);
+    val->v.i = get_long();
+}
+
+void
+read_am64(
+    t_conf_var *np,
+    val_t *val)
+{
+    np = np;
+    ckseen(&val->seen);
+    val->v.i = get_am64_t();
+}
+
+void
+read_bool(
+    t_conf_var *np,
+    val_t *val)
+{
+    np = np;
+    ckseen(&val->seen);
+    val->v.i = get_bool();
+}
+
+void
+read_real(
+    t_conf_var *np,
+    val_t *val)
+{
+    np = np;
+    ckseen(&val->seen);
+    get_conftoken(CONF_REAL);
+    val->v.r = tokenval.v.r;
+}
+
+void
+read_time(
+    t_conf_var *np,
+    val_t *val)
+{
+    np = np;
+    ckseen(&val->seen);
+    val->v.i = get_time();
+}
+
+void
+copy_val_t(
+    val_t *valdst,
+    val_t *valsrc)
+{
+    if(valsrc->seen) {
+	valdst->type = valsrc->type;
+	valdst->seen = valsrc->seen;
+	switch(valsrc->type) {
+	case CONFTYPE_INT:
+	case CONFTYPE_BOOL:
+	case CONFTYPE_COMPRESS:
+	case CONFTYPE_ENCRYPT:
+	case CONFTYPE_ESTIMATE:
+	case CONFTYPE_STRATEGY:
+	case CONFTYPE_TAPERALGO:
+	case CONFTYPE_PRIORITY:
+	    valdst->v.i = valsrc->v.i;
+	    break;
+	case CONFTYPE_LONG:
+	    valdst->v.l = valsrc->v.l;
+	    break;
+	case CONFTYPE_AM64:
+	    valdst->v.am64 = valsrc->v.am64;
+	    break;
+	case CONFTYPE_REAL:
+	    valdst->v.r = valsrc->v.r;
+	    break;
+	case CONFTYPE_RATE:
+	    valdst->v.rate[0] = valsrc->v.rate[0];
+	    valdst->v.rate[1] = valsrc->v.rate[1];
+	    break;
+	case CONFTYPE_IDENT:
+	case CONFTYPE_STRING:
+	    amfree(valdst->v.s);
+	    valdst->v.s = stralloc(valsrc->v.s);
+	    break;
+	case CONFTYPE_TIME:
+	    valdst->v.t = valsrc->v.t;
+	    break;
+	case CONFTYPE_SL:
+	    valdst->v.sl = duplicate_sl(valsrc->v.sl);
+	    break;
+	case CONFTYPE_EXINCLUDE:
+	    valdst->v.exinclude.type = valsrc->v.exinclude.type;
+	    valdst->v.exinclude.optional = valsrc->v.exinclude.optional;
+	    valdst->v.exinclude.sl = duplicate_sl(valsrc->v.exinclude.sl);
+	}
+    }
+}
+
+char *
+taperalgo2str(
+    int taperalgo)
+{
+    if(taperalgo == ALGO_FIRST) return "FIRST";
+    if(taperalgo == ALGO_FIRSTFIT) return "FIRSTFIT";
+    if(taperalgo == ALGO_LARGEST) return "LARGEST";
+    if(taperalgo == ALGO_LARGESTFIT) return "LARGESTFIT";
+    if(taperalgo == ALGO_SMALLEST) return "SMALLEST";
+    if(taperalgo == ALGO_LAST) return "LAST";
+    return "UNKNOWN";
+}
+
+static char buffer_conf_print[1025];
+char *
+conf_print(
+    val_t *val)
+{
+    struct tm *stm;
+    int pos;
+
+    buffer_conf_print[0] = '\0';
+    switch(val->type) {
+    case CONFTYPE_INT:
+	snprintf(buffer_conf_print, 1024, "%d", val->v.i);
+	break;
+    case CONFTYPE_LONG:
+	snprintf(buffer_conf_print, 1024, "%ld", val->v.l);
+	break;
+    case CONFTYPE_AM64:
+	snprintf(buffer_conf_print, 1024, AM64_FMT , val->v.am64);
+	break;
+    case CONFTYPE_REAL:
+	snprintf(buffer_conf_print, 1024, "%0.5f" , val->v.r);
+	break;
+    case CONFTYPE_RATE:
+	snprintf(buffer_conf_print, 1024, "%0.5f %0.5f" , val->v.rate[0], val->v.rate[1]);
+	break;
+    case CONFTYPE_IDENT:
+	if(val->v.s)
+	    return(val->v.s);
+	else
+	buffer_conf_print[0] = '\0';
+	break;
+    case CONFTYPE_STRING:
+	buffer_conf_print[0] = '"';
+	if(val->v.s) {
+	    strncpy(&buffer_conf_print[1],val->v.s, 1023);
+	    if(strlen(val->v.s) < 1023)
+		buffer_conf_print[strlen(val->v.s)+1] = '"';
+	}
+	else {
+	buffer_conf_print[1] = '"';
+	buffer_conf_print[2] = '\0';
+	}
+	break;
+    case CONFTYPE_TIME:
+	stm = localtime(&val->v.t);
+	snprintf(buffer_conf_print, 1024, "%d%02d%02d",stm->tm_hour, stm->tm_min, stm->tm_sec);
+	break;
+    case CONFTYPE_SL:
+	buffer_conf_print[0] = '\0';
+	break;
+    case CONFTYPE_EXINCLUDE:
+	buffer_conf_print[0] = '\0';
+	if(val->v.exinclude.type == 0)
+	    strcpy(buffer_conf_print,"LIST ");
+	else
+	    strcpy(buffer_conf_print,"FILE ");
+	pos = 5;
+	if(val->v.exinclude.optional == 1)
+	    strcpy(&buffer_conf_print[pos],"OPTIONAL ");
+	pos += 9;
+	break;
+    case CONFTYPE_BOOL:
+	if(val->v.i)
+	    strcpy(buffer_conf_print,"yes");
+	else
+	    strcpy(buffer_conf_print,"no");
+	break;
+    case CONFTYPE_STRATEGY:
+	switch(val->v.i) {
+	case DS_SKIP:
+	    strcpy(buffer_conf_print,"SKIP");
+	    break;
+	case DS_STANDARD:
+	    strcpy(buffer_conf_print,"STANDARD");
+	    break;
+	case DS_NOFULL:
+	    strcpy(buffer_conf_print,"NOFULL");
+	    break;
+	case DS_NOINC:
+	    strcpy(buffer_conf_print,"NOINC");
+	    break;
+	case DS_HANOI:
+	    strcpy(buffer_conf_print,"HANOI");
+	    break;
+	case DS_INCRONLY:
+	    strcpy(buffer_conf_print,"INCRONLY");
+	    break;
+	}
+	break;
+    case CONFTYPE_COMPRESS:
+	switch(val->v.i) {
+	case COMP_NONE:
+	    strcpy(buffer_conf_print,"NONE");
+	    break;
+	case COMP_FAST:
+	    strcpy(buffer_conf_print,"CLIENT FAST");
+	    break;
+	case COMP_BEST:
+	    strcpy(buffer_conf_print,"CLIENT BEST");
+	    break;
+	case COMP_CUST:
+	    strcpy(buffer_conf_print,"CLIENT CUSTOM");
+	    break;
+	case COMP_SERV_FAST:
+	    strcpy(buffer_conf_print,"SERVER FAST");
+	    break;
+	case COMP_SERV_BEST:
+	    strcpy(buffer_conf_print,"SERVER FAST");
+	    break;
+	case COMP_SERV_CUST:
+	    strcpy(buffer_conf_print,"SERVER CUSTOM");
+	    break;
+	}
+	break;
+    case CONFTYPE_ESTIMATE:
+	switch(val->v.i) {
+	case ES_CLIENT:
+	    strcpy(buffer_conf_print,"CLIENT");
+	    break;
+	case ES_SERVER:
+	    strcpy(buffer_conf_print,"SERVER");
+	    break;
+	case ES_CALCSIZE:
+	    strcpy(buffer_conf_print,"CALCSIZE");
+	    break;
+	}
+	break;
+     case CONFTYPE_ENCRYPT:
+	switch(val->v.i) {
+	case ENCRYPT_NONE:
+	    strcpy(buffer_conf_print,"NONE");
+	    break;
+	case ENCRYPT_CUST:
+	    strcpy(buffer_conf_print,"CLIENT");
+	    break;
+	case ENCRYPT_SERV_CUST:
+	    strcpy(buffer_conf_print,"SERVER");
+	    break;
+	}
+	break;
+     case CONFTYPE_TAPERALGO:
+	strcpy(buffer_conf_print,taperalgo2str(val->v.i));
+	break;
+     case CONFTYPE_PRIORITY:
+	switch(val->v.i) {
+	case 0:
+	    strcpy(buffer_conf_print,"LOW");
+	    break;
+	case 1:
+	    strcpy(buffer_conf_print,"MEDIUM");
+	    break;
+	case 2:
+	    strcpy(buffer_conf_print,"HIGH");
+	    break;
+	}
+	break;
+    }
+    buffer_conf_print[1024] = '\0';
+    return buffer_conf_print;
+}
+
+void
+conf_init_string(
+    val_t *val,
+    char  *s)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_STRING;
+    if(s)
+	val->v.s = stralloc(s);
+    else
+	val->v.s = NULL;
+}
+
+void
+conf_init_ident(
+    val_t *val,
+    char  *s)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_IDENT;
+    if(s)
+	val->v.s = stralloc(s);
+    else
+	val->v.s = NULL;
+}
+
+void
+conf_init_int(
+    val_t *val,
+    int    i)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_INT;
+    val->v.i = i;
+}
+
+void
+conf_init_bool(
+    val_t *val,
+    int    i)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_BOOL;
+    val->v.i = i;
+}
+
+void
+conf_init_strategy(
+    val_t *val,
+    int    i)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_STRATEGY;
+    val->v.i = i;
+}
+
+void
+conf_init_estimate(
+    val_t *val,
+    int    i)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_ESTIMATE;
+    val->v.i = i;
+}
+
+void
+conf_init_taperalgo(
+    val_t *val,
+    int    i)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_TAPERALGO;
+    val->v.i = i;
+}
+
+void
+conf_init_priority(
+    val_t *val,
+    int    i)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_PRIORITY;
+    val->v.i = i;
+}
+
+void
+conf_init_compress(
+    val_t *val,
+    int    i)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_COMPRESS;
+    val->v.i = i;
+}
+
+void
+conf_init_encrypt(
+    val_t *val,
+    int    i)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_ENCRYPT;
+    val->v.i = i;
+}
+
+void
+conf_init_long(
+    val_t *val,
+    long   l)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_LONG;
+    val->v.l = l;
+}
+
+void
+conf_init_am64(
+    val_t *val,
+    am64_t   l)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_AM64;
+    val->v.am64 = l;
+}
+
+void
+conf_init_real(
+    val_t  *val,
+    double r)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_REAL;
+    val->v.r = r;
+}
+
+void
+conf_init_rate(
+    val_t  *val,
+    double r1,
+    double r2)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_RATE;
+    val->v.rate[0] = r1;
+    val->v.rate[1] = r2;
+}
+
+void
+conf_init_time(
+    val_t *val,
+    time_t   t)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_TIME;
+    val->v.t = t;
+}
+
+void
+conf_init_sl(
+    val_t *val,
+    sl_t  *sl)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_AM64;
+    val->v.sl = sl;
+}
+
+void
+conf_init_exinclude(
+    val_t *val)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_EXINCLUDE;
+    val->v.exinclude.type = 0;
+    val->v.exinclude.optional = 0;
+    val->v.exinclude.sl = NULL;
+}
+
+void
+conf_set_string(
+    val_t *val,
+    char *s)
+{
+    val->seen = -1;
+    val->type = CONFTYPE_STRING;
+    amfree(val->v.s);
+    val->v.s = stralloc(s);
+}
+
+void
+conf_set_int(
+    val_t *val,
+    int    i)
+{
+    val->seen = -1;
+    val->type = CONFTYPE_INT;
+    val->v.i = i;
+}
+
+void
+conf_set_compress(
+    val_t *val,
+    int    i)
+{
+    val->seen = -1;
+    val->type = CONFTYPE_COMPRESS;
+    val->v.i = i;
+}
+
+void
+conf_set_strategy(
+    val_t *val,
+    int    i)
+{
+    val->seen = -1;
+    val->type = CONFTYPE_STRATEGY;
+    val->v.i = i;
 }
 
 void

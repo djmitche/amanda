@@ -24,12 +24,74 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.9 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: util.h,v 1.10 2006/06/01 17:05:49 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
 
 #include "amanda.h"
+#include "sl.h"
+
+/* */
+typedef enum {
+    CONFTYPE_INT,
+    CONFTYPE_LONG,
+    CONFTYPE_AM64,
+    CONFTYPE_REAL,
+    CONFTYPE_STRING,
+    CONFTYPE_IDENT,
+    CONFTYPE_TIME,
+    CONFTYPE_SL,
+    CONFTYPE_BOOL,
+    CONFTYPE_COMPRESS,
+    CONFTYPE_ENCRYPT,
+    CONFTYPE_ESTIMATE,
+    CONFTYPE_STRATEGY,
+    CONFTYPE_TAPERALGO,
+    CONFTYPE_PRIORITY,
+    CONFTYPE_RATE,
+    CONFTYPE_EXINCLUDE,
+} conftype_t;
+
+/* Compression types */
+typedef enum {
+    COMP_NONE,          /* No compression */
+    COMP_FAST,          /* Fast compression on client */
+    COMP_BEST,          /* Best compression on client */
+    COMP_CUST,          /* Custom compression on client */
+    COMP_SERV_FAST,     /* Fast compression on server */
+    COMP_SERV_BEST,     /* Best compression on server */
+    COMP_SERV_CUST      /* Custom compression on server */
+} comp_t;
+
+/* Encryption types */
+typedef enum {
+    ENCRYPT_NONE,               /* No encryption */
+    ENCRYPT_CUST,               /* Custom encryption on client */
+    ENCRYPT_SERV_CUST,          /* Custom encryption on server */
+} encrypt_t;
+
+/* Dump strategies */
+#define DS_SKIP		0	/* Don't do any dumps at all */
+#define DS_STANDARD	1	/* Standard (0 1 1 1 1 2 2 2 ...) */
+#define DS_NOFULL	2	/* No full's (1 1 1 ...) */
+#define DS_NOINC	3	/* No inc's (0 0 0 ...) */
+#define DS_4		4	/* ? (0 1 2 3 4 5 6 7 8 9 10 11 ...) */
+#define DS_5		5	/* ? (0 1 1 1 1 1 1 1 1 1 1 1 ...) */
+#define DS_HANOI	6	/* Tower of Hanoi (? ? ? ? ? ...) */
+#define DS_INCRONLY	7	/* Forced fulls (0 1 1 2 2 FORCE0 1 1 ...) */
+
+/* Estimate strategies */
+#define ES_CLIENT	0	/* client estimate */
+#define ES_SERVER	1	/* server estimate */
+#define ES_CALCSIZE	2	/* calcsize estimate */
+
+#define ALGO_FIRST	0
+#define ALGO_FIRSTFIT	1
+#define ALGO_LARGEST	2
+#define ALGO_LARGESTFIT	3
+#define ALGO_SMALLEST	4
+#define ALGO_LAST	5
 
 #define BSTRNCMP(a,b)  strncmp(a, b, strlen(b)) 
 						  
@@ -136,15 +198,36 @@ typedef struct {        /* token table entry */
 
 keytab_t *keytable;
 
-typedef union {
-    int		i;
-    long	l;
-    time_t	t;
-    ssize_t	size;
-    am64_t	am64;
-    double	r;
-    char *	s;
+typedef struct exinclude_s {
+    int  type;  /* 0=list   1=file */
+    sl_t *sl;
+    int  optional;
+} exinclude_t;
+
+typedef struct val_s {
+    union {
+       int         i;
+       long        l;
+       am64_t      am64;
+       double      r;
+       char        *s;
+       sl_t        *sl;
+       size_t      size;
+       time_t      t;
+       float       rate[2];
+       exinclude_t exinclude;
+    } v;
+    int seen;
+    conftype_t type;
 } val_t;
+
+typedef struct s_conf_var {
+    tok_t      token;
+    conftype_t type;
+    void (*read_function) (struct s_conf_var *, val_t*);
+    unsigned int        parm;
+    void (*validate) (struct s_conf_var *, val_t *);
+} t_conf_var;
 
 extern int	allow_overwrites;
 extern int	token_pushed;
@@ -158,7 +241,7 @@ extern char *	conf_confname;
 
 /* predeclare local functions */
 
-void	get_simple(val_t *var, int *seen, tok_t type);
+void	get_simple(val_t *var, tok_t type);
 int	get_int(void);
 long	get_long(void);
 time_t	get_time(void);
@@ -171,6 +254,40 @@ void	conf_parserror(const char *format, ...)
 tok_t	lookup_keyword(char *str);
 void	unget_conftoken(void);
 void	get_conftoken(tok_t exp);
+
+void read_string(t_conf_var *, val_t *);
+void read_ident(t_conf_var *, val_t *);
+void read_int(t_conf_var *, val_t *);
+void read_long(t_conf_var *, val_t *);
+void read_am64(t_conf_var *, val_t *);
+void read_bool(t_conf_var *, val_t *);
+void read_real(t_conf_var *, val_t *);
+void read_time(t_conf_var *, val_t *);
+void copy_val_t(val_t *, val_t *);
+char *conf_print(val_t *);
+void conf_init_string(val_t *, char *);
+void conf_init_ident(val_t *, char *);
+void conf_init_int(val_t *, int);
+void conf_init_bool(val_t *, int);
+void conf_init_strategy(val_t *, int);
+void conf_init_estimate(val_t *, int);
+void conf_init_taperalgo(val_t *, int);
+void conf_init_priority(val_t *, int);
+void conf_init_strategy(val_t *, int);
+void conf_init_compress(val_t *, int);
+void conf_init_encrypt(val_t *, int);
+void conf_init_long(val_t *, long);
+void conf_init_am64(val_t *, am64_t);
+void conf_init_real(val_t *, double);
+void conf_init_rate(val_t *, double, double);
+void conf_init_time(val_t *, time_t);
+void conf_init_sl(val_t *, sl_t *);
+void conf_init_exinclude(val_t *);
+void conf_set_string(val_t *, char *);
+void conf_set_int(val_t *, int);
+void conf_set_compress(val_t *, int);
+void conf_set_strategy(val_t *, int);
+
 
 
 ssize_t	fullread(int, void *, size_t);
@@ -198,5 +315,7 @@ void	dump_sockaddr(struct sockaddr_in *	sa);
  *   else returns 1
  */
 int validate_mailto(const char *mailto);
+
+char *taperalgo2str(int taperalgo);
 
 #endif	/* UTIL_H */
