@@ -1,4 +1,7 @@
 2006-06-02  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/reporter.c: Remove empty if.
+
+2006-06-02  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.c (read_block): Don't read CONF_NL aftre the '{'.
 	* server-src/conffile.c(get_holdingdisk, get_tapetype, get_interface):
 	  Read a CONF_NL after the call to read_block.

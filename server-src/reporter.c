@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.115 2006/06/01 17:05:50 martinea Exp $
+ * $Id: reporter.c,v 1.116 2006/06/02 11:30:44 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -446,8 +446,8 @@ main(
     /* read configuration files */
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
-    if(read_conffile(conffile)) {
-    }
+    /* Ignore error from read_conffile */
+    read_conffile(conffile);
     amfree(conffile);
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {
@@ -455,8 +455,8 @@ main(
     } else {
 	conf_diskfile = stralloc2(config_dir, conf_diskfile);
     }
-    if(read_diskfile(conf_diskfile, &diskq) < 0) {
-    }
+    /* Ignore error from read_diskfile */
+    read_diskfile(conf_diskfile, &diskq);
     amfree(conf_diskfile);
     if(mailout && !mailto && 
        getconf_seen(CNF_MAILTO) && strlen(getconf_str(CNF_MAILTO)) > 0) {
@@ -472,8 +472,8 @@ main(
     } else {
 	conf_tapelist = stralloc2(config_dir, conf_tapelist);
     }
-    if(read_tapelist(conf_tapelist)) {
-    }
+    /* Ignore error from read_tapelist */
+    read_tapelist(conf_tapelist);
     amfree(conf_tapelist);
     conf_infofile = getconf_str(CNF_INFOFILE);
     if (*conf_infofile == '/') {
