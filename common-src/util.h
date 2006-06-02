@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.11 2006/06/01 19:27:51 martinea Exp $
+ * $Id: util.h,v 1.12 2006/06/02 17:56:52 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -310,9 +310,10 @@ void command_overwrite(command_option_t *command_options, t_conf_var *overwrite_
 ssize_t	fullread(int, void *, size_t);
 ssize_t	fullwrite(int, const void *, size_t);
 
-int	connect_portrange(struct sockaddr_in *, int, int, char *,
-		struct sockaddr_in *, int);
-int	bind_portrange(int, struct sockaddr_in *, in_port_t, in_port_t, char *);
+int	connect_portrange(struct sockaddr_in *, in_port_t, in_port_t, char *,
+			  struct sockaddr_in *, int);
+int	bind_portrange(int, struct sockaddr_in *, in_port_t, in_port_t,
+		       char *);
 
 char *	construct_datestamp(time_t *t);
 char *	construct_timestamp(time_t *t);

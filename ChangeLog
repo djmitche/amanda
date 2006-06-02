@@ -1,4 +1,11 @@
 2006-06-02  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/stream.c (stream_client_internal): Use connect_portrange.
+	* common-src/util.c (connect_portrange): First, try to connect with a
+						 port already used.
+	* common-src/util.c (connect_port): Try to connect with a specific port.
+	* common-src/util.h: Cleanup.
+
+2006-06-02  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/reporter.c: Remove empty if.
 
 2006-06-02  Jean-Louis Martineau <martineau@zmanda.com>

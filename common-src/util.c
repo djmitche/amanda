@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.26 2006/06/02 11:28:10 martinea Exp $
+ * $Id: util.c,v 1.27 2006/06/02 17:56:52 martinea Exp $
  */
 
 #include "amanda.h"
@@ -53,6 +53,8 @@ char *conf_char = NULL;
 #endif
 
 static int make_socket(void);
+static int connect_port(struct sockaddr_in *addrp, in_port_t port, char *proto,
+			struct sockaddr_in *svaddr, int nonblock);
 
 char conftoken_getc(void);
 void conftoken_ungetc(char c);
@@ -124,8 +126,10 @@ make_socket(void)
 {
     int s;
     int save_errno;
+#if defined(SO_KEEPALIVE) || defined(USE_REUSEADDR)
     int on=1;
     int r;
+#endif
 
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         save_errno = errno;
@@ -141,7 +145,16 @@ make_socket(void)
         return -1;
     }
 
-    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+#ifdef USE_REUSEADDR
+    r = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+    if (r < 0) {
+	save_errno = errno;
+	dbprintf(("%s: stream_server: setsockopt(SO_REUSEADDR) failed: %s\n",
+		  debug_prefix(NULL),
+		  strerror(errno)));
+	errno = save_errno;
+    }
+#endif
 
 #ifdef SO_KEEPALIVE
     r = setsockopt(s, SOL_SOCKET, SO_KEEPALIVE,
@@ -165,85 +178,147 @@ make_socket(void)
 int
 connect_portrange(
     struct sockaddr_in *addrp,
-    int			first_port,
-    int			last_port,
+    in_port_t		first_port,
+    in_port_t		last_port,
     char *		proto,
     struct sockaddr_in *svaddr,
     int			nonblock)
 {
     int			s;
-    int			save_errno;
-    struct servent *	servPort;
-    int			port;
-    socklen_t		len;
+    in_port_t		port;
+    static in_port_t	port_in_use[1024];
+    static int		nb_port_in_use = 0;
+    int			i;
 
-    assert(first_port > 0 && first_port <= last_port && last_port < 65536);
+    assert(first_port <= last_port);
 
-    if ((s = make_socket()) == -1) return -1;
-
-    for (port = first_port; port <= last_port; port++) {
-	servPort = getservbyport((int)htons((in_port_t)port), proto);
-	if ((servPort == NULL) || strstr(servPort->s_name, "amanda")){
-	    dbprintf(("%s: connect_portrange: trying port=%d\n",
-		      debug_prefix_time(NULL), port));
-	    addrp->sin_port = (in_port_t)htons((in_port_t)port);
-	    if (bind(s, (struct sockaddr *)addrp, sizeof(*addrp)) >= 0) {
-		/* find out what port was actually used */
-
-		len = sizeof(*addrp);
-		if (getsockname(s, (struct sockaddr *)addrp, &len) == -1) {
-		    save_errno = errno;
-		    dbprintf((
-			   "%s: connect_portrange: getsockname() failed: %s\n",
-			   debug_prefix(NULL),
-			   strerror(save_errno)));
-		    aclose(s);
-		    if ((s = make_socket()) == -1) return -1;
-		    errno = save_errno;
-		}
-
-		else {
-		    if (nonblock)
-			fcntl(s, F_SETFL,
-			      fcntl(s, F_GETFL, 0)|O_NONBLOCK);
-
-		    if (connect(s, (struct sockaddr *)svaddr,
-			       sizeof(*svaddr)) == -1 && !nonblock) {
-			save_errno = errno;
-			dbprintf((
-			"%s: connect_portrange: connect to %s.%d failed: %s\n",
-				  debug_prefix_time(NULL),
-				  inet_ntoa(svaddr->sin_addr),
-				  ntohs(svaddr->sin_port),
-				  strerror(save_errno)));
-			aclose(s);
-			if (save_errno != EADDRNOTAVAIL) {
-			    dbprintf(("errno %d strerror %s\n",
-				      errno, strerror(errno)));
-			    errno = save_errno;
-			    return -1;
-			}
-			if ((s = make_socket()) == -1) return -1;
-		    }
-		    else {
-			return s;
-		    }
-		}
-	    }
-	    /*
-	     * If the error was something other then port in use, stop.
-	     */
-	    else if (errno != EADDRINUSE) {
-		save_errno = errno;
-		dbprintf(("errno %d strerror %s\n",
-			  errno, strerror(errno)));
-		errno = save_errno;
-		return -1;
+    /* Try a port already used */
+    for(i=0; i < nb_port_in_use; i++) {
+	port = port_in_use[i];
+	if(port >= first_port && port <= last_port) {
+	    s = connect_port(addrp, port, proto, svaddr, nonblock);
+	    if(s == -2) return -1;
+	    if(s > 0) {
+		return s;
 	    }
 	}
-	port++;
     }
+
+    /* Try a port in the range */
+    for (port = first_port; port <= last_port; port++) {
+	s = connect_port(addrp, port, proto, svaddr, nonblock);
+	if(s == -2) return -1;
+	if(s > 0) {
+	    port_in_use[nb_port_in_use++] = port;
+	    return s;
+	}
+    }
+
+    dbprintf(("%s: connect_portrange: all ports between %d and %d busy\n",
+	      debug_prefix_time(NULL),
+	      first_port,
+	      last_port));
+    errno = EAGAIN;
     return -1;
+}
+
+/* addrp is my address */
+/* svaddr is the address of the remote machine */
+/* return -2: Don't try again */
+/* return -1: Try with another port */
+/* return >0: this is the connected socket */
+int
+connect_port(
+    struct sockaddr_in *addrp,
+    in_port_t  		port,
+    char *		proto,
+    struct sockaddr_in *svaddr,
+    int			nonblock)
+{
+    int			save_errno;
+    struct servent *	servPort;
+    socklen_t		len;
+    int			s;
+
+    servPort = getservbyport((int)htons(port), proto);
+    if (servPort != NULL && !strstr(servPort->s_name, "amanda")) {
+	dbprintf(("%s: connect_port: Skip port %d: Owned by %s.\n",
+		  debug_prefix_time(NULL), port, servPort->s_name));
+	return -1;
+    }
+
+    if(servPort == NULL)
+	dbprintf(("%s: connect_port: Try  port %d: Available   - ",
+		  debug_prefix_time(NULL), port));
+    else {
+	dbprintf(("%s: connect_port: Try  port %d: Owned by %s - ",
+		  debug_prefix_time(NULL), port, servPort->s_name));
+    }
+
+    if ((s = make_socket()) == -1) return -2;
+
+    addrp->sin_port = htons(port);
+
+    if (bind(s, (struct sockaddr *)addrp, sizeof(*addrp)) != 0) {
+	save_errno = errno;
+	aclose(s);
+	if (save_errno != EADDRINUSE) {
+	    dbprintf(("errno %d strerror %s\n",
+		      errno, strerror(errno)));
+	    errno = save_errno;
+	    return -2;
+	}
+	errno = save_errno;
+	return -1;
+    }
+
+    /* find out what port was actually used */
+
+    len = sizeof(*addrp);
+    if (getsockname(s, (struct sockaddr *)addrp, &len) == -1) {
+	save_errno = errno;
+	dbprintf(("%s: connect_port: getsockname() failed: %s\n",
+		  debug_prefix(NULL),
+		  strerror(save_errno)));
+	aclose(s);
+	errno = save_errno;
+	return -1;
+    }
+
+    if (nonblock)
+	fcntl(s, F_SETFL, fcntl(s, F_GETFL, 0)|O_NONBLOCK);
+    if (connect(s, (struct sockaddr *)svaddr,
+		(socklen_t)sizeof(*svaddr)) == -1 && !nonblock) {
+	save_errno = errno;
+	dbprintf(("%s: connect_portrange: connect from %s.%d failed\n",
+		  debug_prefix_time(NULL),
+		  inet_ntoa(addrp->sin_addr),
+		  ntohs(addrp->sin_port),
+		  strerror(save_errno)));
+	dbprintf(("%s: connect_portrange: connect to %s.%d failed: %s\n",
+		  debug_prefix_time(NULL),
+		  inet_ntoa(svaddr->sin_addr),
+		  ntohs(svaddr->sin_port),
+		  strerror(save_errno)));
+	aclose(s);
+	if (save_errno != EADDRNOTAVAIL) {
+	    dbprintf(("errno %d strerror %s\n",
+		      errno, strerror(errno)));
+	    errno = save_errno;
+	    return -1;
+	}
+	return -2;
+    }
+
+    dbprintf(("%s: connected to %s.%d\n",
+              debug_prefix_time(NULL),
+              inet_ntoa(svaddr->sin_addr),
+              ntohs(svaddr->sin_port)));
+    dbprintf(("%s: our side is %s.%d\n",
+              debug_prefix(NULL),
+              inet_ntoa(addrp->sin_addr),
+              ntohs(addrp->sin_port)));
+    return s;
 }
 
 
