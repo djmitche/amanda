@@ -1,3 +1,9 @@
+2006-06-01  John Franks <jfranks@zmanda.com>
+	Eliminate Cygwin compile warnings.
+	* client-src/getfsent.c:  Quiet unused parameter warnings.
+	* client-src/selfcheck.c: Quiet unused parameter warnings.
+	* common-src/security-util.h: Make hostname const char *.
+
 2006-06-01  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amcheck.c: holdingdisk_get_disksize() return an off_t.
 	* server-src/find.c: result should be ssize_t.
@@ -97,6 +103,17 @@
 	* restore-src/Makefile.am: Ditto.
 	* server-src/Makefile.am: Ditto.
 	* tape-src/Makefile.am: Ditto.
+
+2006-05-28  Paddy Sreenivasan <paddy@zmanda.com>
+        * tape-src/tapeio.c : Fixed warnings
+        * tape-src/output-rait.c : Fixed warnings
+        * tape-src/output-null.c : Fixed warnings
+        * tape-src/output-file.c : Fiexed warnings
+        * recover-src/amrecover.c: Fixed warnings
+        * recover-src/extract_list.c : Fixed warnings
+        * server-src/amadmin.c : Fixed warnings
+        * server-src/driver.c : Fixed warnings
+        * server-src/infofile.c : Fixed warnings
 
 2006-05-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/conffile.c (read_dumptype): Parse SSH_KEYS.

@@ -178,7 +178,7 @@ amtable_free(
 }
 #endif
 
-#define rait_table_alloc(fd)	amtable_alloc((void **)&rait_table,	     \
+#define rait_table_alloc(fd)	amtable_alloc((void **)rait_table_p,	     \
 					      &rait_table_count,	     \
 					      SIZEOF(*rait_table),   \
 					      (size_t)(fd),		     \
@@ -200,6 +200,8 @@ rait_open(
     int rait_flag;		/* true if RAIT syntax in dev */
     int save_errno;
     int r;
+    RAIT **rait_table_p = &rait_table;
+    int **fds_p;
 
     rait_debug((stderr,"rait_open( %s, %d, %d )\n", dev, flags, mask));
 
@@ -261,7 +263,8 @@ rait_open(
         }
 
 	while (0 != (dev_real = tapeio_next_devname(dev_left, dev_right, &dev_next))) {
-	    r = amtable_alloc((void **)&res->fds,
+            fds_p = &(res->fds);
+	    r = amtable_alloc((void **)fds_p,
 			    &res->fd_count,
 			    SIZEOF(*res->fds),
 			    (size_t)res->nfds + 1,
@@ -300,7 +303,8 @@ rait_open(
 	*/
 
 	res->nfds = 0;
-	r = amtable_alloc((void **)&res->fds,
+        fds_p = &(res->fds);
+	r = amtable_alloc((void **)fds_p,
 			  &res->fd_count,
 			  SIZEOF(*res->fds),
 			  (size_t)res->nfds + 1,
@@ -399,6 +403,7 @@ rait_close(
     RAIT *pr;			/* RAIT entry from table */
     int save_errno = errno;
     pid_t kid;
+    int **fds_p;
 
     rait_debug((stderr,"rait_close( %d )\n", fd));
 
@@ -472,7 +477,8 @@ rait_close(
 	(void)close(fd);	/* close the dummy /dev/null descriptor */
     }
     if (0 != pr->fds) {
-	amtable_free((void **)&pr->fds, &pr->fd_count);
+        fds_p = &pr->fds;
+	amtable_free((void **)fds_p, &pr->fd_count);
     }
     if (0 != pr->readres) {
 	amfree(pr->readres);

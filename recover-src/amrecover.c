@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.59 2006/06/01 19:27:51 martinea Exp $
+ * $Id: amrecover.c,v 1.60 2006/06/02 00:56:06 paddy_s Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -94,11 +94,12 @@ get_line(void)
 {
     ssize_t size;
     char *buf, *newbuf, *s;
+    char **buf_p = &buf;
 
     if(!mesg_buffer) mesg_buffer = stralloc("");
  
     while(!strstr(mesg_buffer,"\r\n")) {
-	size = security_stream_read_sync(streams[MESGFD].fd, (void **)&buf);
+	size = security_stream_read_sync(streams[MESGFD].fd, (void **)buf_p);
 	if(size < 0) {
 	    return -1;
 	}

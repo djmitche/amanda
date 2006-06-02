@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.12 2006/05/25 11:49:51 martinea Exp $
+ * $Id: output-file.c,v 1.13 2006/06/02 00:56:06 paddy_s Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -127,6 +127,7 @@ check_online(
     DIR *tapedir;
     struct dirent *entry;
     struct file_info *fi;
+    struct file_info **fi_p;
     char *line;
     int f;
     off_t pos;
@@ -169,7 +170,8 @@ check_online(
 	     */
 	    pos = OFF_T_ATOI(entry->d_name);
 	    assert((pos + 1) <= (off_t)SSIZE_MAX);
-	    amtable_alloc((void **)&volume_info[fd].fi,
+            fi_p = &volume_info[fd].fi;
+	    amtable_alloc((void **)fi_p,
 			  &volume_info[fd].fi_limit,
 			  SIZEOF(*volume_info[fd].fi),
 			  (size_t)(pos + 1),
@@ -235,6 +237,7 @@ file_open(
     int fd)
 {
     struct file_info *fi;
+    struct file_info **fi_p;
     char *datafilename = NULL;
     char *recordfilename = NULL;
     char *f = NULL;
@@ -248,6 +251,7 @@ file_open(
     int n;
     char *line;
     struct record_info *ri;
+    struct record_info **ri_p;
     off_t start_record;
     off_t end_record;
     size_t record_size = 0;
@@ -256,7 +260,8 @@ file_open(
 	flags = volume_info[fd].flags;
 	pos = volume_info[fd].file_current;
 	assert((pos + 1) < (off_t)SSIZE_MAX);
-	amtable_alloc((void **)&volume_info[fd].fi,
+	fi_p = &volume_info[fd].fi;
+	amtable_alloc((void **)fi_p,
 		      &volume_info[fd].fi_limit,
 		      SIZEOF(*volume_info[fd].fi),
 		      (size_t)(pos + 1),
@@ -356,7 +361,8 @@ file_open(
 			   (OFF_T_FMT_TYPE *)&end_record,
 			   (SIZE_T_FMT_TYPE *)&record_size);
 		if (n == 3) {
-		    amtable_alloc((void **)&fi->ri,
+                    ri_p = &fi->ri;
+		    amtable_alloc((void **)ri_p,
 				  &fi->ri_limit,
 				  SIZEOF(*fi->ri),
 				  (size_t)fi->ri_count + 1,
@@ -386,6 +392,7 @@ file_close(
     int fd)
 {
     struct file_info *fi;
+    struct file_info **fi_p;
     off_t pos;
     char number[NUM_STR_SIZE];
     char *filename = NULL;
@@ -395,7 +402,8 @@ file_close(
     aclose(volume_info[fd].fd);
     pos = volume_info[fd].file_current;
     assert((pos + 1) < (off_t)SSIZE_MAX);
-    amtable_alloc((void **)&volume_info[fd].fi,
+    fi_p = &volume_info[fd].fi;
+    amtable_alloc((void **)fi_p,
 		  &volume_info[fd].fi_limit,
 		  SIZEOF(*volume_info[fd].fi),
 		  (size_t)(pos + 1),
@@ -441,6 +449,7 @@ file_release(
     char *filename;
     off_t pos;
     char number[NUM_STR_SIZE];
+    struct file_info **fi_p;
 
     /*
      * If the current file is open, release everything beyond it.
@@ -453,7 +462,8 @@ file_release(
     }
     for (pos = position; pos < volume_info[fd].file_count; pos++) {
 	assert(pos < (off_t)SSIZE_MAX);
-	amtable_alloc((void **)&volume_info[fd].fi,
+        fi_p = &volume_info[fd].fi;
+	amtable_alloc((void **)fi_p,
 		      &volume_info[fd].fi_limit,
 		      SIZEOF(*volume_info[fd].fi),
 		      (size_t)(pos + 1),
@@ -524,6 +534,7 @@ put_record_size(
 {
     size_t r;
     struct record_info *ri;
+    struct record_info **ri_p;
 
     fi->ri_altered = 1;
     if (record == (off_t)0) {
@@ -555,7 +566,8 @@ put_record_size(
     /*
      * Add a new entry.
      */
-    amtable_alloc((void **)&fi->ri,
+    ri_p = &fi->ri;
+    amtable_alloc((void **)ri_p,
 		  &fi->ri_limit,
 		  SIZEOF(*fi->ri),
 		  (size_t)fi->ri_count + 1,
@@ -581,6 +593,7 @@ file_tape_open(
     int fd;
     int save_errno;
     char *info_file;
+    struct volume_info **volume_info_p =  &volume_info;
 
     /*
      * Use only O_RDONLY and O_RDWR.
@@ -611,7 +624,7 @@ file_tape_open(
     /*
      * Create the internal info structure for this "tape".
      */
-    amtable_alloc((void **)&volume_info,
+    amtable_alloc((void **)volume_info_p,
 		  &open_count,
 		  SIZEOF(*volume_info),
 		  (size_t)fd + 1,
@@ -867,6 +880,8 @@ file_tapefd_close(
     size_t len;
     char number[NUM_STR_SIZE];
     ssize_t result;
+    struct file_info **fi_p;
+    struct record_info **ri_p;
 
     /*
      * If our last operation was a write, write a tapemark.
@@ -897,11 +912,13 @@ file_tapefd_close(
      */
     for (pos = 0; pos < (off_t)volume_info[fd].fi_limit; pos++) {
 	amfree(volume_info[fd].fi[pos].name);
-	amtable_free((void **)&volume_info[fd].fi[pos].ri,
+        ri_p = &volume_info[fd].fi[pos].ri;
+	amtable_free((void **)ri_p,
 		     &volume_info[fd].fi[pos].ri_limit);
 	volume_info[fd].fi[pos].ri_count = 0;
     }
-    amtable_free((void **)&volume_info[fd].fi, &volume_info[fd].fi_limit);
+    fi_p = &volume_info[fd].fi;
+    amtable_free((void **)fi_p, &volume_info[fd].fi_limit);
     volume_info[fd].file_count = 0;
     amfree(volume_info[fd].basename);
 

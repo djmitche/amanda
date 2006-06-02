@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-null.c,v 1.8 2006/05/25 01:47:27 johnfranks Exp $
+ * $Id: output-null.c,v 1.9 2006/06/02 00:56:06 paddy_s Exp $
  *
  * tapeio.c virtual tape interface for a null device.
  */
@@ -51,6 +51,7 @@ null_tape_open(
     mode_t	mask)
 {
     int fd;
+    off_t **amount_written_p = &amount_written;
 
     (void)filename;	/* Quiet unused parameter warning */
 
@@ -60,7 +61,7 @@ null_tape_open(
     }
     if ((fd = open("/dev/null", flags, mask)) >= 0) {
 	tapefd_setinfo_fake_label(fd, 1);
-	amtable_alloc((void **)&amount_written,
+	amtable_alloc((void **)amount_written_p,
 		      &open_count,
 		      SIZEOF(*amount_written),
 		      (size_t)(fd + 1),

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.101 2006/06/01 14:54:39 martinea Exp $
+ * $Id: extract_list.c,v 1.102 2006/06/02 00:56:06 paddy_s Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -2232,13 +2232,14 @@ get_amidxtaped_line(void)
 {
     ssize_t size;
     char *buf, *newbuf, *s;
+    char **buf_p = &buf;
 
     amfree(amidxtaped_line);
     if(!ctl_buffer) ctl_buffer = stralloc("");
 
     while(!strstr(ctl_buffer,"\r\n")) {
         size = security_stream_read_sync(amidxtaped_streams[CTLFD].fd,
-					 (void **)&buf);
+					 (void **)buf_p);
         if(size < 0) {
             return -1;
         }

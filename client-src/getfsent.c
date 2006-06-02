@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.36 2006/05/25 17:35:34 martinea Exp $
+ * $Id: getfsent.c,v 1.37 2006/06/02 00:56:05 paddy_s Exp $
  *
  * generic version of code to read fstab
  */
@@ -496,6 +496,9 @@ search_fstab(
   /* There is no real mount table so this will always fail and
    * we are using GNU tar so we can just return here.
    */
+  (void)name;		/* Quiet unused parameter warning */
+  (void)fsent;		/* Quiet unused parameter warning */
+  (void)check_dev;	/* Quiet unused parameter warning */
   return 0;
 #else
   struct stat stats[3];

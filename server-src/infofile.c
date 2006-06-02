@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.59 2006/05/25 17:35:34 martinea Exp $
+ * $Id: infofile.c,v 1.60 2006/06/02 00:56:06 paddy_s Exp $
  *
  * manage current info file
  */
@@ -228,6 +228,8 @@ read_txinfofile(
     for(rc = -2; (line = agets(infof)) != NULL; free(line)) {
 	stats_t onestat;	/* one stat record */
 	time_t date = 0;
+        time_t *date_p = &date;
+        time_t *secs_p;
 	int level = 0;
 
 	if (line[0] == '\0')
@@ -277,15 +279,16 @@ read_txinfofile(
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
+        secs_p = &onestat.secs;
 	if(ch == '\0' || sscanf((s - 1), TIME_T_FMT,
-				(TIME_T_FMT_TYPE *)&onestat.secs) != 1) {
+				(TIME_T_FMT_TYPE *)secs_p) != 1) {
 	    break;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf((s - 1), TIME_T_FMT,
-				(TIME_T_FMT_TYPE *)&date) != 1) {
+				(TIME_T_FMT_TYPE *)date_p) != 1) {
 	    break;
 	}
 	skip_integer(s, ch);
@@ -331,6 +334,8 @@ read_txinfofile(
     for(rc = -2; (line = agets(infof)) != NULL; free(line)) {
 	history_t onehistory;	/* one history record */
 	time_t date;
+	time_t *date_p = &date;
+        time_t *secs_p;
 
 	if (line[0] == '\0')
 	    continue;
@@ -381,7 +386,7 @@ read_txinfofile(
 
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf((s - 1), TIME_T_FMT,
-				(TIME_T_FMT_TYPE *)&date) != 1) {
+				(TIME_T_FMT_TYPE *)date_p) != 1) {
 	    amfree(line);
 	    break;
 	}
@@ -391,9 +396,10 @@ read_txinfofile(
 
 	onehistory.secs = (unsigned long)-1;
 	skip_whitespace(s, ch);
+        secs_p = &onehistory.secs;
 	if(ch != '\0') {
 	    if(sscanf((s - 1), TIME_T_FMT,
-	    			(TIME_T_FMT_TYPE *)&onehistory.secs) != 1) {
+	    			(TIME_T_FMT_TYPE *)secs_p) != 1) {
 		amfree(line);
 		break;
 	    }

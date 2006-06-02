@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.111 2006/06/01 19:27:51 martinea Exp $
+ * $Id: amadmin.c,v 1.112 2006/06/02 00:56:06 paddy_s Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1395,12 +1395,14 @@ import_one(void)
     stats_t onestat;
     int rc, level;
     time_t onedate;
+    time_t *onedate_p = &onedate;
     char *line = NULL;
     char *s, *fp;
     int ch;
     int nb_history, i;
     char *hostname = NULL;
     char *diskname = NULL;
+    time_t *secs_p;
 
 #if TEXTDB
     check_dumpuser();
@@ -1546,15 +1548,16 @@ import_one(void)
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
+        secs_p = &onestat.secs;
 	if(ch == '\0' || sscanf(s - 1, TIME_T_FMT,
-				(TIME_T_FMT_TYPE *)&onestat.secs) != 1) {
+				(TIME_T_FMT_TYPE *)secs_p) != 1) {
 	    goto parse_err;
 	}
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf(s - 1, TIME_T_FMT,
-				(TIME_T_FMT_TYPE *)&onedate) != 1) {
+				(TIME_T_FMT_TYPE *)onedate_p) != 1) {
 	    goto parse_err;
 	}
 	skip_integer(s, ch);
@@ -1590,6 +1593,7 @@ import_one(void)
     while(1) {
 	history_t onehistory;
 	time_t date;
+        time_t *date_p = &date;
 
 	if(line[0] == '/' && line[1] == '/') {
 	    info.history[nb_history].level = -2;
@@ -1628,7 +1632,7 @@ import_one(void)
 
 	skip_whitespace(s, ch);
 	if((ch == '\0') || (sscanf((s - 1), TIME_T_FMT,
-				(TIME_T_FMT_TYPE *)&date) != 1)) {
+				(TIME_T_FMT_TYPE *)date_p) != 1)) {
 	    break;
 	}
 	skip_integer(s, ch);

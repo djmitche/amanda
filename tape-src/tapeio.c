@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.55 2006/05/25 15:08:58 martinea Exp $
+ * $Id: tapeio.c,v 1.56 2006/06/02 00:56:06 paddy_s Exp $
  *
  * implements generic tape I/O functions
  */
@@ -103,6 +103,8 @@ static struct tape_info {
     int ioctl_fork;
     int master_fd;
 } *tape_info = NULL;
+static struct tape_info **tape_info_p = &tape_info;
+
 static size_t tape_info_count = 0;
 
 static char *errstr = NULL;
@@ -275,7 +277,7 @@ char *
 tapefd_getinfo_host(
     int fd)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -291,7 +293,7 @@ tapefd_setinfo_host(
     int fd,
     char *v)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -307,7 +309,7 @@ char *
 tapefd_getinfo_disk(
     int fd)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -323,7 +325,7 @@ tapefd_setinfo_disk(
     int fd,
     char *v)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -339,7 +341,7 @@ int
 tapefd_getinfo_level(
     int fd)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -355,7 +357,7 @@ tapefd_setinfo_level(
     int fd,
     int v)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -368,7 +370,7 @@ char *
 tapefd_getinfo_datestamp(
     int fd)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -382,7 +384,7 @@ tapefd_setinfo_datestamp(
     int fd,
     char *v)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -395,7 +397,7 @@ off_t
 tapefd_getinfo_length(
     int fd)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -409,7 +411,7 @@ tapefd_setinfo_length(
     int fd,
     off_t v)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -422,7 +424,7 @@ char *
 tapefd_getinfo_tapetype(
     int fd)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -436,7 +438,7 @@ tapefd_setinfo_tapetype(
     int fd,
     char *v)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -449,7 +451,7 @@ int
 tapefd_getinfo_fake_label(
     int fd)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -463,7 +465,7 @@ tapefd_setinfo_fake_label(
     int fd,
     int v)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -476,7 +478,7 @@ int
 tapefd_getinfo_ioctl_fork(
     int fd)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -490,7 +492,7 @@ tapefd_setinfo_ioctl_fork(
     int fd,
     int v)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -504,7 +506,7 @@ tapefd_set_master_fd(
     int fd,
     int master_fd)
 {
-    amtable_alloc((void **)&tape_info,
+    amtable_alloc((void **)tape_info_p,
 		  &tape_info_count,
 		  SIZEOF(*tape_info),
 		  (size_t)fd + 1,
@@ -559,7 +561,7 @@ tape_open(
 
     vslot = name2slot(filename, &tname);
     if((fd = vtable[vslot].xxx_tape_open(tname, mode, mask)) >= 0) {
-	amtable_alloc((void **)&tape_info,
+	amtable_alloc((void **)tape_info_p,
 		      &tape_info_count,
 		      SIZEOF(*tape_info),
 		      (size_t)(fd + 1),

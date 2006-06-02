@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.176 2006/06/01 19:27:52 martinea Exp $
+ * $Id: driver.c,v 1.177 2006/06/02 00:56:06 paddy_s Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -34,7 +34,7 @@
  *     tape.  Probably not effective though, should do this in planner.
  */
 
-/*#define HOLD_DEBUG*/
+/* #define HOLD_DEBUG */
 
 #include "amanda.h"
 #include "clock.h"
@@ -1828,6 +1828,8 @@ read_schedule(
     char *dumpdate, *degr_dumpdate;
     int degr_level;
     time_t time, degr_time;
+    time_t *time_p = &time;
+    time_t *degr_time_p = &degr_time;
     off_t nsize, csize, degr_nsize, degr_csize;
     unsigned long kps, degr_kps;
     char *hostname, *features, *diskname, *datestamp, *inpline = NULL;
@@ -1943,7 +1945,7 @@ read_schedule(
 
 	skip_whitespace(s, ch);			/* find the time number */
 	if(ch == '\0' || sscanf(s - 1, TIME_T_FMT,
-				(TIME_T_FMT_TYPE *)&time) != 1) {
+				(TIME_T_FMT_TYPE *)time_p) != 1) {
 	    error("schedule line %d: syntax error (bad estimated time)", line);
 	    /*NOTREACHED*/
 	}
@@ -1992,7 +1994,7 @@ read_schedule(
 
 	    skip_whitespace(s, ch);		/* find the degr time number */
 	    if(ch == '\0' || sscanf(s - 1, TIME_T_FMT,
-				(TIME_T_FMT_TYPE *)&degr_time) != 1) {
+				(TIME_T_FMT_TYPE *)degr_time_p) != 1) {
 		error("schedule line %d: syntax error (bad degr estimated time)", line);
 		/*NOTREACHED*/
 	    }
@@ -2254,7 +2256,7 @@ find_diskspace(
     for( i = 0; result && result[i]; i++ ) {
 	printf("%s: find diskspace: selected %s free " OFF_T_FMT " reserved " OFF_T_FMT " dumpers %d\n",
 		debug_prefix_time(": find_diskspace"),
-		result[i]->disk->diskdir,
+		holdingdisk_get_diskdir(result[i]->disk),
 		(OFF_T_FMT_TYPE)(result[i]->disk->disksize -
 		  holdalloc(result[i]->disk)->allocated_space),
 		(OFF_T_FMT_TYPE)result[i]->reserved,
@@ -2309,7 +2311,7 @@ assign_holdingdisk(
 #ifdef HOLD_DEBUG
 	    printf("%s: merging holding disk %s to disk %s:%s, add " OFF_T_FMT " for reserved " OFF_T_FMT ", left " OFF_T_FMT "\n",
 		   debug_prefix_time(": assign_holdingdisk"),
-		   sched(diskp)->holdp[j-1]->disk->diskdir,
+		   holdingdisk_get_diskdir(sched(diskp)->holdp[j-1]->disk),
 		   diskp->host->hostname, qname,
 		   (OFF_T_FMT_TYPE)holdp[0]->reserved,
 		   (OFF_T_FMT_TYPE)sched(diskp)->holdp[j-1]->reserved,
@@ -2339,7 +2341,7 @@ assign_holdingdisk(
 #ifdef HOLD_DEBUG
 	printf("%s: %d assigning holding disk %s to disk %s:%s, reserved " OFF_T_FMT ", left " OFF_T_FMT "\n",
 		debug_prefix_time(": assign_holdingdisk"),
-		i, holdp[i]->disk->diskdir, diskp->host->hostname, qname,
+		i, holdingdisk_get_diskdir(holdp[i]->disk), diskp->host->hostname, qname,
 		(OFF_T_FMT_TYPE)holdp[i]->reserved,
 		(OFF_T_FMT_TYPE)size);
 	fflush(stdout);
