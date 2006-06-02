@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.139 2006/06/01 19:27:51 martinea Exp $
+ * $Id: conffile.c,v 1.140 2006/06/02 11:28:10 martinea Exp $
  *
  * read configuration file
  */
@@ -995,6 +995,7 @@ get_holdingdisk(
     read_block(server_options, holding_var, server_keytab, hdcur.value, prefix,
 	       "holding disk parameter expected", 1, NULL);
     amfree(prefix);
+    get_conftoken(CONF_NL);
 
     hdcur.disksize = holdingdisk_get_disksize((&hdcur));
     save_holdingdisk();
@@ -1114,6 +1115,8 @@ read_dumptype(
     read_block(server_options, dumptype_var, server_keytab, dpcur.value,
 	       prefix, "dumptype parameter expected", !name, *copy_dumptype);
     amfree(prefix);
+    if(!name)
+	get_conftoken(CONF_NL);
 
     /* XXX - there was a stupidity check in here for skip-incr and
     ** skip-full.  This check should probably be somewhere else. */
@@ -1259,6 +1262,7 @@ get_tapetype(void)
     read_block(server_options, tapetype_var, server_keytab, tpcur.value,
 	       prefix, "tapetype parameter expected", 1, &copy_tapetype);
     amfree(prefix);
+    get_conftoken(CONF_NL);
 
     save_tapetype();
 
@@ -1347,6 +1351,7 @@ get_interface(void)
     read_block(server_options, interface_var, server_keytab, ifcur.value,
 	       prefix, "interface parameter expected", 1, &copy_interface);
     amfree(prefix);
+    get_conftoken(CONF_NL);
 
     save_interface();
 

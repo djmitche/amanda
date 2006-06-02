@@ -1,3 +1,11 @@
+2006-06-02  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c (read_block): Don't read CONF_NL aftre the '{'.
+	* server-src/conffile.c(get_holdingdisk, get_tapetype, get_interface):
+	  Read a CONF_NL after the call to read_block.
+	* server-src/conffile.c(read_dumptype): Read a CONF_NL if we are not
+	                                        called from diskfile.
+	* server-src/diskfile.c: Don't loop on empty line after read_dumptype.
+
 2006-06-01  John Franks <jfranks@zmanda.com>
 	Eliminate Cygwin compile warnings.
 	* client-src/getfsent.c:  Quiet unused parameter warnings.

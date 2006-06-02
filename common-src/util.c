@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.25 2006/06/01 19:27:51 martinea Exp $
+ * $Id: util.c,v 1.26 2006/06/02 11:28:10 martinea Exp $
  */
 
 #include "amanda.h"
@@ -2099,7 +2099,8 @@ read_block(
 		}
 	    }
 	}
-	if(tok != CONF_NL && tok != CONF_END) get_conftoken(CONF_NL);
+	if(tok != CONF_NL && tok != CONF_END && tok != CONF_RBRACE)
+	    get_conftoken(CONF_NL);
     } while(!done);
 
     /* overwrite with command line option */
