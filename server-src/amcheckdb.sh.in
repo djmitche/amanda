@@ -32,6 +32,7 @@ if [ "$Config" = "" ]; then
 	log "usage: ${Program} <config>"
 	exit 1
 fi
+shift;
 
 #
 # Check if the configuration directory exists.  Make sure that the
@@ -51,7 +52,7 @@ fi
 # Get the location and name of the tapelist filename.  If tapelist is not
 # specified in the amanda.conf file, then use tapelist in the config
 # directory.
-TapeList=`amgetconf${SUF} tapelist`
+TapeList=`amgetconf${SUF} $Config tapelist "@$"`
 if [ ! "$TapeList" ]; then
 	TapeList="$ConfigDir/$Config/tapelist"
 fi
@@ -66,7 +67,7 @@ Amadmin=$sbindir/amadmin$SUF
 	&& echo "$Amadmin not found or not executable" >&2 \
 	&& exit 1
 
-$Amadmin $Config export \
+$Amadmin $Config export "$@"\
 	| grep "^stats: " \
 	| while read LINE; do
 		[ "$LINE" = "" ] && continue

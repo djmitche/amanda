@@ -59,15 +59,16 @@ if [ ! -d $confdir/$conf ]; then
     echo "amdump$SUF: could not find directory $confdir/$conf" 1>&2
     exit 1
 fi
+shift
 
 cd $confdir/$conf || exit 1
 
-logdir=`amgetconf$SUF $conf logdir`
+logdir=`amgetconf$SUF $conf logdir "$@"`
 [ $? -ne 0 ]  && exit 1
 errfile=$logdir/amdump
-tapecycle=`amgetconf$SUF $conf tapecycle`
+tapecycle=`amgetconf$SUF $conf tapecycle "$@"`
 [ $? -ne 0 ]  && exit 1
-dumpuser=`amgetconf$SUF $conf dumpuser`
+dumpuser=`amgetconf$SUF $conf dumpuser "$@"`
 [ $? -ne 0 ]  && exit 1
 
 runuser=`{ whoami ; } 2>/dev/null`
@@ -80,10 +81,10 @@ if [ $? -ne 0 ]; then
 	fi
 fi
 
-if [ $runuser != $dumpuser ]; then
-	echo "amdump: must be run as user $dumpuser, not $runuser" 1>&2
-	exit 1
-fi
+#if [ $runuser != $dumpuser ]; then
+#	echo "amdump: must be run as user $dumpuser, not $runuser" 1>&2
+#	exit 1
+#fi
 
 if test -f hold; then
 	echo "amdump: waiting for hold file to be removed" 1>&2
@@ -105,20 +106,20 @@ touch $errfile
 exec </dev/null 2>>$errfile 1>&2
 echo "amdump: start at `date`"
 echo "amdump: datestamp `date +%Y%m%d`"
-$libexecdir/planner$SUF "$@" | $libexecdir/driver$SUF $conf
+$libexecdir/planner$SUF $conf "$@" | $libexecdir/driver$SUF $conf "$@"
 echo "amdump: end at `date`"
 
 # Send out a report on the dumps.
-$sbindir/amreport$SUF $conf
+$sbindir/amreport$SUF $conf "$@"
 
 # Roll the log file to its datestamped name.
-$libexecdir/amlogroll$SUF $conf
+$libexecdir/amlogroll$SUF $conf "$@"
 
 # Trim the log file to those for dumps that still exist.
-$libexecdir/amtrmlog$SUF $conf
+$libexecdir/amtrmlog$SUF $conf "$@"
 
 # Trim the index file to those for dumps that still exist.
-$libexecdir/amtrmidx$SUF $conf
+$libexecdir/amtrmidx$SUF $conf "$@"
 
 # Keep a debug log through the tapecycle plus a couple of days.
 maxdays=`expr $tapecycle + 2`

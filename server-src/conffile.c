@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.140 2006/06/02 11:28:10 martinea Exp $
+ * $Id: conffile.c,v 1.141 2006/06/05 19:36:41 martinea Exp $
  *
  * read configuration file
  */
@@ -670,7 +670,7 @@ lookup_dumptype(
     dumptype_t *p;
 
     for(p = dumplist; p != NULL; p = p->next) {
-	if(strcmp(p->name, str) == 0) return p;
+	if(strcasecmp(p->name, str) == 0) return p;
     }
     return NULL;
 }
@@ -682,7 +682,7 @@ lookup_tapetype(
     tapetype_t *p;
 
     for(p = tapelist; p != NULL; p = p->next) {
-	if(strcmp(p->name, str) == 0) return p;
+	if(strcasecmp(p->name, str) == 0) return p;
     }
     return NULL;
 }
@@ -695,7 +695,7 @@ lookup_interface(
 
     if(str == NULL) return interface_list;
     for(p = interface_list; p != NULL; p = p->next) {
-	if(strcmp(p->name, str) == 0) return p;
+	if(strcasecmp(p->name, str) == 0) return p;
     }
     return NULL;
 }

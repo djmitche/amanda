@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.128 2006/06/01 17:05:50 martinea Exp $
+/* $Id: taper.c,v 1.129 2006/06/05 19:36:42 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -230,6 +230,8 @@ main(
     size_t j;
     size_t page_size;
     char *first_buffer;
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
 
@@ -242,17 +244,21 @@ main(
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
+    parse_server_conf(main_argc, main_argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
     fprintf(stderr, "%s: pid %ld executable %s version %s\n",
-	    get_pname(), (long) getpid(), main_argv[0], version());
+	    get_pname(), (long) getpid(), my_argv[0], version());
     dbprintf(("%s: pid %ld executable %s version %s\n",
-	    get_pname(), (long) getpid(), main_argv[0], version()));
+	    get_pname(), (long) getpid(), my_argv[0], version()));
     fflush(stderr);
 
-    if (main_argc > 1 && main_argv[1][0] != '-') {
-	config_name = stralloc(main_argv[1]);
-	config_dir = vstralloc(CONFIG_DIR, "/", main_argv[1], "/", NULL);
-	main_argc--;
-	main_argv++;
+    if (my_argc > 1 && my_argv[1][0] != '-') {
+	config_name = stralloc(my_argv[1]);
+	config_dir = vstralloc(CONFIG_DIR, "/", my_argv[1], "/", NULL);
+	my_argc--;
+	my_argv++;
     } else {
 	char my_cwd[STR_SIZE];
 
@@ -273,13 +279,15 @@ main(
 
     /* print prompts and debug messages if running interactive */
 
-    interactive = (main_argc > 1 && strcmp(main_argv[1],"-t") == 0);
+    interactive = (my_argc > 1 && strcmp(my_argv[1],"-t") == 0);
     if (interactive) {
 	erroutput_type = ERR_INTERACTIVE;
     } else {
 	erroutput_type = ERR_AMANDALOG;
 	set_logerror(logerror);
     }
+
+    free_new_argv(new_argc, new_argv);
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if (read_conffile(conffile)) {
@@ -299,11 +307,11 @@ main(
 	/*NOTREACHED*/
     }
 
-    tapedev	= getconf_str(CNF_TAPEDEV);
+    tapedev	= stralloc(getconf_str(CNF_TAPEDEV));
     tapetype    = getconf_str(CNF_TAPETYPE);
     tt		= lookup_tapetype(tapetype);
 #ifdef HAVE_LIBVTBLC
-    rawtapedev = getconf_str(CNF_RAWTAPEDEV);
+    rawtapedev = stralloc(getconf_str(CNF_RAWTAPEDEV));
 #endif /* HAVE_LIBVTBLC */
     tapedays	= getconf_int(CNF_TAPECYCLE);
     labelstr	= getconf_str(CNF_LABELSTR);
@@ -970,14 +978,16 @@ file_reader_side(
 		fflush(stderr);
 	    }
 
-	    if (datestamp != NULL)
-		amfree(datestamp);
+	    amfree(datestamp);
+	    clear_tapelist();
+	    free_server_config();
+	    amfree(taper_timestamp);
 	    amfree(label);
 	    amfree(errstr);
 	    amfree(changer_resultstr);
 	    amfree(tapedev);
-	    amfree(conf_tapelist);
 	    amfree(filename);
+	    amfree(conf_tapelist);
 	    amfree(config_dir);
 	    amfree(config_name);
 	    amfree(holdfile_name);
@@ -2143,6 +2153,7 @@ tape_writer_side(
 	case 'Q':
 	    end_tape(0);	/* XXX check results of end tape ?? */
 	    clear_tapelist();
+	    free_server_config();
 	    amfree(taper_timestamp);
 	    amfree(label);
 	    amfree(errstr);
@@ -2886,6 +2897,8 @@ label_tape(void)
     char *s, *r;
     int slot = -1;
 
+    amfree(label);
+    amfree(tapedev);
     if (taper_scan(NULL, &label, &timestamp, &tapedev, CHAR_taperscan_output_callback, &error_msg) < 0) {
 	fprintf(stderr, "%s\n", error_msg);
 	errstr = error_msg;

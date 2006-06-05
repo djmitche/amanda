@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.177 2006/06/01 14:54:39 martinea Exp $
+/* $Id: dumper.c,v 1.178 2006/06/05 19:36:41 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -243,6 +243,8 @@ main(
     char *q = NULL;
     int a;
     uid_t ruid;
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
 
@@ -258,8 +260,12 @@ main(
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
 
-    if (main_argc > 1) {
-	config_name = stralloc(main_argv[1]);
+    parse_server_conf(main_argc, main_argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
+    if (my_argc > 1) {
+	config_name = stralloc(my_argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     } else {
 	char my_cwd[STR_SIZE];
@@ -305,7 +311,7 @@ main(
     fprintf(stderr,
 	    "%s: pid %ld executable %s version %s\n",
 	    get_pname(), (long) getpid(),
-	    main_argv[0], version());
+	    my_argv[0], version());
     fflush(stderr);
 
     /* now, make sure we are a valid user */
@@ -476,6 +482,10 @@ main(
 	    } else {
 		do_dump(&db);
 	    }
+
+	    amfree(amandad_path);
+	    amfree(client_username);
+
 	    break;
 
 	default:
@@ -501,6 +511,10 @@ main(
       seteuid(ruid);
     }
 
+    free_new_argv(new_argc, new_argv);
+    free_server_config();
+    am_release_feature_set(our_features);
+    amfree(our_feature_string);
     amfree(errstr);
     amfree(dumper_timestamp);
     amfree(handle);

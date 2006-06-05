@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.191 2006/06/01 19:27:52 martinea Exp $
+ * $Id: planner.c,v 1.192 2006/06/05 19:36:41 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -169,13 +169,19 @@ int main(int argc, char **argv)
     times_t section_start;
     uid_t ruid;
     char *qname;
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
 
     setvbuf(stderr, (char *)NULL, (int)_IOLBF, 0);
 
-    if (argc > 1) {
-	config_name = stralloc(argv[1]);
+    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
+    if (my_argc > 1) {
+	config_name = stralloc(my_argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     } else {
 	char my_cwd[STR_SIZE];
@@ -210,7 +216,7 @@ int main(int argc, char **argv)
     our_feature_string = am_feature_to_string(our_features);
 
     fprintf(stderr, "%s: pid %ld executable %s version %s\n",
-	    get_pname(), (long) getpid(), argv[0], version());
+	    get_pname(), (long) getpid(), my_argv[0], version());
     for (i = 0; version_info[i] != NULL; i++)
 	fprintf(stderr, "%s: %s", get_pname(), version_info[i]);
 
@@ -266,7 +272,7 @@ int main(int argc, char **argv)
 	error("could not load disklist \"%s\"", conf_diskfile);
 	/*NOTREACHED*/
     }
-    match_disklist(&origq, argc-2, argv+2);
+    match_disklist(&origq, my_argc-2, my_argv+2);
     for(dp = origq.head; dp != NULL; dp = dp->next) {
 	if(dp->todo) {
 	    qname = quote_string(dp->name);
@@ -590,6 +596,9 @@ int main(int argc, char **argv)
     close_infofile();
     log_add(L_FINISH, "date %s time %s", planner_timestamp, walltime_str(curclock()));
 
+    clear_tapelist();
+    free_new_argv(new_argc, new_argv);
+    free_server_config();
     amfree(planner_timestamp);
     amfree(config_dir);
     amfree(config_name);
@@ -1756,6 +1765,7 @@ fprintf(stderr, "planner: packet='%s'\n", pkt->body);
 	hostp->features = am_set_default_feature_set();
     }
 
+    security_close_connection(sech, hostp->hostname);
 
     /* XXX what about disks that only got some estimates...  do we care? */
     /* XXX amanda 2.1 treated that case as a bad msg */

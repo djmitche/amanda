@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.12 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: amtrmlog.c,v 1.13 2006/06/05 19:36:41 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -69,6 +69,8 @@ main(
     char *conf_tapelist;
     char *conf_logdir;
     int dumpcycle;
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -78,21 +80,25 @@ main(
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
-    if (argc > 1 && strcmp(argv[1], "-t") == 0) {
+    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
+    if (my_argc > 1 && strcmp(my_argv[1], "-t") == 0) {
 	amtrmidx_debug = 1;
-	argc--;
-	argv++;
+	my_argc--;
+	my_argv++;
     }
 
-    if (argc < 2) {
-	fprintf(stderr, "Usage: %s [-t] <config>\n", argv[0]);
+    if (my_argc < 2) {
+	fprintf(stderr, "Usage: %s [-t] <config>\n", my_argv[0]);
 	return 1;
     }
 
     dbopen();
-    dbprintf(("%s: version %s\n", argv[0], version()));
+    dbprintf(("%s: version %s\n", my_argv[0], version()));
 
-    config_name = argv[1];
+    config_name = my_argv[1];
 
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
@@ -212,6 +218,10 @@ main(
     amfree(olddir);
     amfree(config_dir);
     amfree(conf_logdir);
+    clear_tapelist();
+    free_disklist(&diskl);
+    free_new_argv(new_argc, new_argv);
+    free_server_config();
 
     dbclose();
 

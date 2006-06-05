@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.9 2006/06/01 14:54:39 martinea Exp $
+ * $Id: amlogroll.c,v 1.10 2006/06/05 19:36:41 martinea Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -49,6 +49,8 @@ int main(int argc, char **argv)
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
     char my_cwd[STR_SIZE];
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
 
@@ -67,13 +69,17 @@ int main(int argc, char **argv)
 	/*NOTREACHED*/
     }
 
-    if (argc < 2) {
+    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
+    if (my_argc < 2) {
 	config_dir = stralloc2(my_cwd, "/");
 	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
 	    config_name = stralloc(config_name + 1);
 	}
     } else {
-	config_name = stralloc(argv[1]);
+	config_name = stralloc(my_argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     }
 
@@ -121,6 +127,8 @@ int main(int argc, char **argv)
     amfree(datestamp);
     amfree(config_dir);
     amfree(config_name);
+    free_new_argv(new_argc, new_argv);
+    free_server_config();
 
     malloc_size_2 = malloc_inuse(&malloc_hist_2);
 

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.28 2006/06/01 14:44:05 martinea Exp $
+/* $Id: chunker.c,v 1.29 2006/06/05 19:36:41 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -120,6 +120,8 @@ main(
     times_t runtime;
     am_feature_t *their_features = NULL;
     int a;
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
 
@@ -135,8 +137,12 @@ main(
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
 
-    if (main_argc > 1) {
-	config_name = stralloc(main_argv[1]);
+    parse_server_conf(main_argc, main_argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
+    if (my_argc > 1) {
+	config_name = stralloc(my_argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     } else {
 	char my_cwd[STR_SIZE];
@@ -163,7 +169,7 @@ main(
     fprintf(stderr,
 	    "%s: pid %ld executable %s version %s\n",
 	    get_pname(), (long) getpid(),
-	    main_argv[0], version());
+	    my_argv[0], version());
     fflush(stderr);
 
     /* now, make sure we are a valid user */
@@ -225,6 +231,7 @@ main(
 	    if (filename != NULL)
 		amfree(filename);
 	    filename = unquote_string(qfilename);
+	    amfree(qfilename);
 
 	    if(a >= cmdargs.argc) {
 		error("error [chunker PORT-WRITE: not enough args: hostname]");
@@ -361,6 +368,8 @@ main(
 		    amfree(q);
 		}
 	    }
+	    amfree(filename);
+	    amfree(db.filename);
 	    break;
 
 	default:
@@ -378,6 +387,8 @@ main(
 
 /*    } while(cmd != QUIT); */
 
+    free_new_argv(new_argc, new_argv);
+    free_server_config();
     amfree(errstr);
     amfree(chunker_timestamp);
     amfree(handle);
@@ -396,6 +407,8 @@ main(
 
     if (malloc_size_1 != malloc_size_2)
 	malloc_list(fileno(stderr), malloc_hist_1, malloc_hist_2);
+
+    dbclose();
 
     return (0); /* exit */
 }

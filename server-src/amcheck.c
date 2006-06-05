@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.133 2006/06/01 20:11:35 martinea Exp $
+ * $Id: amcheck.c,v 1.134 2006/06/05 19:36:41 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -107,6 +107,8 @@ main(
     char *dumpuser;
     struct passwd *pw;
     uid_t uid_me;
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -137,9 +139,13 @@ main(
     server_probs = client_probs = 0;
     tempfd = mainfd = -1;
 
+    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
     /* process arguments */
 
-    while((opt = getopt(argc, argv, "M:mawsclt")) != EOF) {
+    while((opt = getopt(my_argc, my_argv, "M:mawsclt")) != EOF) {
 	switch(opt) {
 	case 'M':	mailto=stralloc(optarg);
 			if(!validate_mailto(mailto)){
@@ -181,8 +187,8 @@ main(
 	    usage();
 	}
     }
-    argc -= optind, argv += optind;
-    if(argc < 1) usage();
+    my_argc -= optind, my_argv += optind;
+    if(my_argc < 1) usage();
 
 
     if ((do_localchk | do_clientchk | do_tapechk) == 0) {
@@ -190,7 +196,7 @@ main(
 	do_localchk = do_clientchk = do_tapechk = 1;
     }
 
-    config_name = stralloc(*argv);
+    config_name = stralloc(*my_argv);
 
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
@@ -198,6 +204,9 @@ main(
 	error("errors processing config file \"%s\"", conffile);
 	/*NOTREACHED*/
     }
+
+    report_bad_conf_arg();
+
     amfree(conffile);
     if(mailout && !mailto && 
        (getconf_seen(CNF_MAILTO)==0 || strlen(getconf_str(CNF_MAILTO)) == 0)) {
@@ -240,7 +249,7 @@ main(
 	error("could not load disklist %s", conf_diskfile);
 	/*NOTREACHED*/
     }
-    match_disklist(&origq, argc-1, argv+1);
+    match_disklist(&origq, my_argc-1, my_argv+1);
     amfree(conf_diskfile);
 
     /*
@@ -506,6 +515,9 @@ main(
 	}
     }
 #endif
+    free_new_argv(new_argc, new_argv);
+    free_server_config();
+
     dbclose();
     return (server_probs || client_probs);
 }
@@ -1213,6 +1225,7 @@ start_server_check(
 					quoted);
 				indexbad = 1;
 			    }
+			    amfree(quoted);
 			}
 		    }
 		}

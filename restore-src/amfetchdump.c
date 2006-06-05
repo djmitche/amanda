@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.9 2006/05/25 01:47:15 johnfranks Exp $
+ * $Id: amfetchdump.c,v 1.10 2006/06/05 19:36:41 martinea Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -274,6 +274,8 @@ main(
     int arg_state;
     rst_flags_t *rst_flags;
     struct passwd *pwent;
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     for(fd = 3; fd < FD_SETSIZE; fd++) {
 	/*
@@ -320,7 +322,11 @@ main(
 
     onerror(errexit);
 
-    if(argc <= 1) {
+    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
+    if(my_argc <= 1) {
 	usage();
 	/*NOTREACHED*/
     }
@@ -329,7 +335,7 @@ main(
     rst_flags->wait_tape_prompt = 1;
 
     /* handle options */
-    while( (opt = getopt(argc, argv, "alht:scCpb:nwi:d:o:")) != -1) {
+    while( (opt = getopt(my_argc, my_argv, "alht:scCpb:nwi:d:o:")) != -1) {
 	switch(opt) {
 	case 'b':
             rst_flags->blocksize = (ssize_t)strtol(optarg, &e, 10);
@@ -390,7 +396,7 @@ main(
 	/*NOTREACHED*/
     }
 
-    config_name = argv[optind++];
+    config_name = my_argv[optind++];
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
     if (read_conffile(conffile)) {
@@ -400,7 +406,7 @@ main(
     amfree(conffile);
 
 
-    if((argc - optind) < 1 && !rst_flags->inventory_log){
+    if((my_argc - optind) < 1 && !rst_flags->inventory_log){
 	fprintf(stderr, "Not enough arguments\n\n");
 	usage();
 	/*NOTREACHED*/
@@ -412,14 +418,14 @@ main(
 #define ARG_GET_LEVL 3
 
     arg_state = ARG_GET_HOST;
-    while(optind < argc) {
+    while(optind < my_argc) {
         switch(arg_state) {
         case ARG_GET_HOST:
             /*
              * New host/disk/date/level set, so allocate a match_list.
              */
             me = alloc(SIZEOF(*me));
-            me->hostname = argv[optind++];
+            me->hostname = my_argv[optind++];
             me->diskname = "";
             me->datestamp = "";
             me->level = "";
@@ -435,7 +441,7 @@ main(
             arg_state = ARG_GET_DISK;
             break;
         case ARG_GET_DISK:
-            me->diskname = argv[optind++];
+            me->diskname = my_argv[optind++];
             if(me->diskname[0] != '\0'
                && (errstr=validate_regexp(me->diskname)) != NULL) {
                 fprintf(stderr, "%s: bad diskname regex \"%s\": %s\n",
@@ -446,7 +452,7 @@ main(
             arg_state = ARG_GET_DATE;
             break;
         case ARG_GET_DATE:
-            me->datestamp = argv[optind++];
+            me->datestamp = my_argv[optind++];
             if(me->datestamp[0] != '\0'
                && (errstr=validate_regexp(me->datestamp)) != NULL) {
                 fprintf(stderr, "%s: bad datestamp regex \"%s\": %s\n",
@@ -457,7 +463,7 @@ main(
             arg_state = ARG_GET_LEVL;
             break;
         case ARG_GET_LEVL:
-            me->level = argv[optind++];
+            me->level = my_argv[optind++];
             if(me->level[0] != '\0'
                && (errstr=validate_regexp(me->level)) != NULL) {
                 fprintf(stderr, "%s: bad level regex \"%s\": %s\n",
@@ -505,6 +511,7 @@ main(
     else flush_open_outputs(0, NULL);
 
     free_rst_flags(rst_flags);
+    free_new_argv(new_argc, new_argv);
 
     return(0);
 }

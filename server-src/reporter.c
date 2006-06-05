@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.116 2006/06/02 11:30:44 martinea Exp $
+ * $Id: reporter.c,v 1.117 2006/06/05 19:36:42 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -326,6 +326,8 @@ main(
     int cn;
     int mailout = 1;
     char *mailto = NULL;
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
 
@@ -350,20 +352,24 @@ main(
 	/*NOTREACHED*/
     }
 
-    if (argc < 2) {
+    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
+    if (my_argc < 2) {
 	config_dir = stralloc2(my_cwd, "/");
 	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
 	    config_name = stralloc(config_name + 1);
 	}
     } else {
-	if (argv[1][0] == '-') {
+	if (my_argv[1][0] == '-') {
 	    usage();
 	    return 1;
 	}
-	config_name = stralloc(argv[1]);
+	config_name = stralloc(my_argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
-	--argc; ++argv;
-	while((opt = getopt(argc, argv, "M:f:l:p:i")) != EOF) {
+	--my_argc; ++my_argv;
+	while((opt = getopt(my_argc, my_argv, "M:f:l:p:i")) != EOF) {
 	    switch(opt) {
 	    case 'i': 
 		mailout = 0;
@@ -419,10 +425,10 @@ main(
 	    }
 	}
 
-	argc -= optind;
-	argv += optind;
+	my_argc -= optind;
+	my_argv += optind;
 
-	if (argc > 1) {
+	if (my_argc > 1) {
 	    usage();
 	    return 1;
 	}
@@ -744,6 +750,10 @@ main(
         mailf = NULL;
     }
 
+    clear_tapelist();
+    free_disklist(&diskq);
+    free_new_argv(new_argc, new_argv);
+    free_server_config();
     amfree(run_datestamp);
     amfree(tape_labels);
     amfree(config_dir);
@@ -1814,6 +1824,10 @@ handle_stats(void)
 
 	    repdata->est_nsize = nbytes;
 	    repdata->est_csize = cbytes;
+
+	    amfree(hostname);
+	    amfree(diskname);
+	    amfree(datestamp);
 	}
 	else {
 	    bogus_line(s - 1);

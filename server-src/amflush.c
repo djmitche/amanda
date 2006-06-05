@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.83 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: amflush.c,v 1.84 2006/06/05 19:36:41 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -88,6 +88,8 @@ main(
     int driver_pipe[2];
     char date_string[100];
     time_t today;
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -106,7 +108,11 @@ main(
 
     /* process arguments */
 
-    while((opt = getopt(main_argc, main_argv, "bfsD:")) != EOF) {
+    parse_server_conf(main_argc, main_argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
+    while((opt = getopt(my_argc, my_argv, "bfsD:")) != EOF) {
 	switch(opt) {
 	case 'b': batch = 1;
 		  break;
@@ -130,14 +136,14 @@ main(
 	exit(1);
     }
 
-    main_argc -= optind, main_argv += optind;
+    my_argc -= optind, my_argv += optind;
 
-    if(main_argc < 1) {
+    if(my_argc < 1) {
 	error("Usage: amflush%s [-b] [-f] [-s] [-D date]* <confdir> [host [disk]* ]*", versionsuffix());
 	/*NOTREACHED*/
     }
 
-    config_name = main_argv[0];
+    config_name = my_argv[0];
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
 
     conffile = stralloc2(config_dir, CONFFILE_NAME);
@@ -157,7 +163,7 @@ main(
 	error("could not read disklist file \"%s\"", conf_diskfile);
 	/*NOTREACHED*/
     }
-    match_disklist(&diskq, main_argc-1, main_argv+1);
+    match_disklist(&diskq, my_argc-1, my_argv+1);
     amfree(conf_diskfile);
 
     conf_tapelist = getconf_str(CNF_TAPELIST);

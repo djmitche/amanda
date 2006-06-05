@@ -1,3 +1,18 @@
+2006-06-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/amfetchdump.c, server-src/amcheck.c,
+	  server-src/amcheckdb.sh.in, server-src/amcleanup.sh.in,
+	  server-src/amdump.sh.in, server-src/amflush.c,
+	  server-src/amlabel.c, server-src/amlogroll.c,
+	  server-src/amtrmidx.c, server-src/amtrmlog.c,
+	  server-src/chunker.c, server-src/conffile.c,
+	  server-src/diskfile.c, server-src/driver.c,
+	  server-src/driverio.c, server-src/dumper.c,
+	  server-src/getconf.c, server-src/planner.c,
+	  server-src/reporter.c, server-src/taper.c,
+	  server-src/taperscan.c: Allow -o options and some memory fix.
+	* server-src/conffile.c(lookup_dumptype, lookup_tapetype,
+	  lookup_interface): Use strcasecmp.
+
 2006-06-02  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/stream.c (stream_client_internal): Use connect_portrange.
 	* common-src/util.c (connect_portrange): First, try to connect with a

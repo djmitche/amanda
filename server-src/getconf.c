@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.19 2006/05/25 01:47:20 johnfranks Exp $
+ * $Id: getconf.c,v 1.20 2006/06/05 19:36:41 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -423,13 +423,19 @@ main(
     char *parmname;
     int i;
     char number[NUM_STR_SIZE];
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    if((pgm = strrchr(argv[0], '/')) == NULL) {
-	pgm = argv[0];
+    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
+
+    if((pgm = strrchr(my_argv[0], '/')) == NULL) {
+	pgm = my_argv[0];
     } else {
 	pgm++;
     }
@@ -438,15 +444,15 @@ main(
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
-    if(argc < 2) {
+    if(my_argc < 2) {
 	fprintf(stderr, "Usage: %s [config] <parmname>\n", pgm);
 	exit(1);
     }
 
-    if (argc > 2) {
-	config_name = stralloc(argv[1]);
+    if (my_argc > 2) {
+	config_name = stralloc(my_argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
-	parmname = argv[2];
+	parmname = my_argv[2];
     } else {
 	char my_cwd[STR_SIZE];
 
@@ -458,7 +464,7 @@ main(
 	if ((config_name = strrchr(my_cwd, '/')) != NULL) {
 	    config_name = stralloc(config_name + 1);
 	}
-	parmname = argv[1];
+	parmname = my_argv[1];
     }
 
     safe_cd();
@@ -570,6 +576,8 @@ main(
 
     puts(result);
 
+    free_new_argv(new_argc, new_argv);
+    free_server_config();
     amfree(result);
     amfree(config_dir);
     amfree(config_name);

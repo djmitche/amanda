@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.47 2006/06/01 19:27:51 martinea Exp $
+ * $Id: amlabel.c,v 1.48 2006/06/05 19:36:41 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -78,6 +78,8 @@ main(
     uid_t uid_dumpuser;
     char *dumpuser;
     struct passwd *pw;
+    int    new_argc;
+    char **new_argv;
 
 #ifdef HAVE_LIBVTBLC
     int vtbl_no      = -1;
@@ -100,20 +102,22 @@ main(
 
     erroutput_type = ERR_INTERACTIVE;
 
-    if(argc > 1 && strcmp(argv[1],"-f") == 0)
+    parse_server_conf(argc, argv, &new_argc, &new_argv);
+
+    if(new_argc > 1 && strcmp(new_argv[1],"-f") == 0)
 	 force=1;
     else force=0;
 
-    if(argc != 3+force && argc != 5+force)
+    if(new_argc != 3+force && new_argc != 5+force)
 	usage();
 
-    config_name = argv[1+force];
-    label = argv[2+force];
+    config_name = new_argv[1+force];
+    label = new_argv[2+force];
 
-    if(argc == 5+force) {
-	if(strcmp(argv[3+force], "slot"))
+    if(new_argc == 5+force) {
+	if(strcmp(new_argv[3+force], "slot"))
 	    usage();
-	slotstr = argv[4+force];
+	slotstr = new_argv[4+force];
 	slotcommand = 1;
     } else {
 	slotstr = "current";
@@ -126,6 +130,8 @@ main(
 	error("errors processing config file \"%s\"", conffile);
 	/*NOTREACHED*/
     }
+
+    report_bad_conf_arg();
 
     conf_tapelist = getconf_str(CNF_TAPELIST);
     if (*conf_tapelist == '/') {
@@ -177,7 +183,7 @@ main(
 	if(slotcommand) {
 	    fprintf(stderr,
 	     "%s: no tpchanger specified in \"%s\", so slot command invalid\n",
-		    argv[0], conffile);
+		    new_argv[0], conffile);
 	    usage();
 	}
 	tapename = stralloc(getconf_str(CNF_TAPEDEV));
@@ -455,6 +461,7 @@ main(
     }
 
     clear_tapelist();
+    free_new_argv(new_argc, new_argv);
     free_server_config();
     amfree(outslot);
     amfree(tapename);

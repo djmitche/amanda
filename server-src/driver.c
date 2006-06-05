@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.177 2006/06/02 00:56:06 paddy_s Exp $
+ * $Id: driver.c,v 1.178 2006/06/05 19:36:41 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -156,6 +156,8 @@ main(
     char *conf_tapetype;
     tapetype_t *tape;
     char *line;
+    int    new_argc,   my_argc;
+    char **new_argv, **my_argv;
 
     safe_fd(-1, 0);
 
@@ -176,14 +178,18 @@ main(
 
     startclock();
 
-    printf("%s: pid %ld executable %s version %s\n",
-	   get_pname(), (long) getpid(), main_argv[0], version());
+    parse_server_conf(main_argc, main_argv, &new_argc, &new_argv);
+    my_argc = new_argc;
+    my_argv = new_argv;
 
-    if (main_argc > 1) {
-	config_name = stralloc(main_argv[1]);
+    printf("%s: pid %ld executable %s version %s\n",
+	   get_pname(), (long) getpid(), my_argv[0], version());
+
+    if (my_argc > 1) {
+	config_name = stralloc(my_argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
-	if(main_argc > 2) {
-	    if(strncmp(main_argv[2], "nodump", 6) == 0) {
+	if(my_argc > 2) {
+	    if(strncmp(my_argv[2], "nodump", 6) == 0) {
 		nodump = 1;
 	    }
 	}
@@ -236,9 +242,9 @@ main(
 				     driver_timestamp, ".0", NULL);
 	if(access(logfile, F_OK) == 0 || access(oldlogfile, F_OK) == 0) {
 	    log_add(L_ERROR, "WARNING: This is not the first amdump run today. Enable the usetimestamps option in the configuration file if you want to run amdump more than once per calendar day.");
+	}
 	amfree(oldlogfile);
 	amfree(logfile);
-}
 	hd_driver_timestamp = construct_timestamp(NULL);
     }
     else {
