@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.117 2006/06/05 19:36:42 martinea Exp $
+ * $Id: reporter.c,v 1.118 2006/06/06 14:48:29 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -300,7 +300,7 @@ addline(
 static void
 usage(void)
 {
-    error("Usage: amreport conf [-i] [-Maddress] [-f output-file] [-l logfile] [-p postscript-file]");
+    error("Usage: amreport conf [-i] [-M address] [-f output-file] [-l logfile] [-p postscript-file] [-o configoption]*");
     /*NOTREACHED*/
 }
 
@@ -455,6 +455,7 @@ main(
     /* Ignore error from read_conffile */
     read_conffile(conffile);
     amfree(conffile);
+    report_bad_conf_arg();
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {
 	conf_diskfile = stralloc(conf_diskfile);

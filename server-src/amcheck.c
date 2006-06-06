@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.134 2006/06/05 19:36:41 martinea Exp $
+ * $Id: amcheck.c,v 1.135 2006/06/06 14:48:29 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -68,7 +68,7 @@ int test_server_pgm(FILE *outf, char *dir, char *pgm, int suid, uid_t dumpuid);
 void
 usage(void)
 {
-    error("Usage: amcheck%s [-[Mm] <username>] [-awsclt] <conf> [host [disk]* ]*", versionsuffix());
+    error("Usage: amcheck%s [-[Mm] <username>] [-awsclt] <conf> [host [disk]* ]* [-o configoption]*", versionsuffix());
     /*NOTREACHED*/
 }
 

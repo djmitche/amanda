@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.192 2006/06/05 19:36:41 martinea Exp $
+ * $Id: planner.c,v 1.193 2006/06/06 14:48:29 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -261,6 +261,8 @@ int main(int argc, char **argv)
 	/*NOTREACHED*/
     }
     amfree(conffile);
+
+    report_bad_conf_arg();
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {

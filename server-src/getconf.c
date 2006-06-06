@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.20 2006/06/05 19:36:41 martinea Exp $
+ * $Id: getconf.c,v 1.21 2006/06/06 14:48:29 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -445,7 +445,7 @@ main(
     signal(SIGPIPE, SIG_IGN);
 
     if(my_argc < 2) {
-	fprintf(stderr, "Usage: %s [config] <parmname>\n", pgm);
+	fprintf(stderr, "Usage: %s [config] <parmname> [-o configoption]*\n", pgm);
 	exit(1);
     }
 
@@ -565,6 +565,7 @@ main(
 	    /*NOTREACHED*/
 	}
 	amfree(conffile);
+	report_bad_conf_arg();
 	result = getconf_byname(parmname);
     }
     if(result == NULL) {

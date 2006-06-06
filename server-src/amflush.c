@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.84 2006/06/05 19:36:41 martinea Exp $
+ * $Id: amflush.c,v 1.85 2006/06/06 14:48:29 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -139,7 +139,7 @@ main(
     my_argc -= optind, my_argv += optind;
 
     if(my_argc < 1) {
-	error("Usage: amflush%s [-b] [-f] [-s] [-D date]* <confdir> [host [disk]* ]*", versionsuffix());
+	error("Usage: amflush%s [-b] [-f] [-s] [-D date]* <confdir> [host [disk]* ]* [-o configoption]*", versionsuffix());
 	/*NOTREACHED*/
     }
 
@@ -152,6 +152,8 @@ main(
 	/*NOTREACHED*/
     }
     amfree(conffile);
+
+    report_bad_conf_arg();
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {

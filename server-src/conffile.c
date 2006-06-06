@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.141 2006/06/05 19:36:41 martinea Exp $
+ * $Id: conffile.c,v 1.142 2006/06/06 14:48:29 martinea Exp $
  *
  * read configuration file
  */
@@ -1439,6 +1439,8 @@ get_comprate(
     switch(tok) {
     case CONF_NL:
 	return;
+    case CONF_END:
+	return;
     case CONF_COMMA:
 	break;
     default:
@@ -1477,6 +1479,7 @@ get_compress(
 	case CONF_SERVER: serv = 1; break;
 	case CONF_CUSTOM: custom=1; break;
 	case CONF_NL:     done = 1; break;
+	case CONF_END:    done = 1; break;
 	default:
 	    done = 1;
 	    serv = clie = 1; /* force an error */

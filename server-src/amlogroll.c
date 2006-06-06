@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.10 2006/06/05 19:36:41 martinea Exp $
+ * $Id: amlogroll.c,v 1.11 2006/06/06 14:48:29 martinea Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -93,6 +93,8 @@ int main(int argc, char **argv)
 	/*NOTREACHED*/
     }
     amfree(conffile);
+
+    report_bad_conf_arg();
 
     conf_logdir = getconf_str(CNF_LOGDIR);
     if (*conf_logdir == '/') {

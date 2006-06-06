@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.112 2006/06/02 00:56:06 paddy_s Exp $
+ * $Id: amadmin.c,v 1.113 2006/06/06 14:48:29 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -87,11 +87,11 @@ static const struct {
     const char *usage;
 } cmdtab[] = {
     { "version", show_version,
-	"\t\t\t\t# Show version info." },
+	"\t\t\t\t\t# Show version info." },
     { "config", show_config,
-	"\t\t\t\t# Show configuration." },
+	"\t\t\t\t\t# Show configuration." },
     { "force", force,
-	" [<hostname> [<disks>]* ]+\t# Force level 0 at next run." },
+	" [<hostname> [<disks>]* ]+\t\t# Force level 0 at next run." },
     { "unforce", unforce,
 	" [<hostname> [<disks>]* ]+\t# Clear force command." },
     { "force-bump", force_bump,
@@ -100,30 +100,30 @@ static const struct {
 	" [<hostname> [<disks>]* ]+\t# Force no-bump at next run." },
     { "unforce-bump", unforce_bump,
 	" [<hostname> [<disks>]* ]+\t# Clear bump command." },
-    { "reuse", reuse,
-	" <tapelabel> ...\t\t# re-use this tape." },
-    { "no-reuse", noreuse,
-	" <tapelabel> ...\t# never re-use this tape." },
-    { "find", find,
-	" [<hostname> [<disks>]* ]*\t# Show which tapes these dumps are on." },
-    { "delete", delete,
-	" [<hostname> [<disks>]* ]+\t# Delete from database." },
-    { "info", info,
-	" [<hostname> [<disks>]* ]*\t# Show current info records." },
-    { "due", due,
-	" [<hostname> [<disks>]* ]*\t# Show due date." },
-    { "balance", balance,
-	" [-days <num>]\t\t# Show nightly dump size balance." },
-    { "tape", tape,
-	" [-days <num>]\t\t\t# Show which tape is due next." },
-    { "bumpsize", bumpsize,
-	"\t\t\t# Show current bump thresholds." },
-    { "export", export_db,
-	" [<hostname> [<disks>]* ]*\t# Export curinfo database to stdout." },
-    { "import", import_db,
-	"\t\t\t\t# Import curinfo database from stdin." },
     { "disklist", disklist,
 	" [<hostname> [<disks>]* ]*\t# Debug disklist entries." },
+    { "reuse", reuse,
+	" <tapelabel> ...\t\t # re-use this tape." },
+    { "no-reuse", noreuse,
+	" <tapelabel> ...\t # never re-use this tape." },
+    { "find", find,
+	" [<hostname> [<disks>]* ]*\t # Show which tapes these dumps are on." },
+    { "delete", delete,
+	" [<hostname> [<disks>]* ]+ # Delete from database." },
+    { "info", info,
+	" [<hostname> [<disks>]* ]*\t # Show current info records." },
+    { "due", due,
+	" [<hostname> [<disks>]* ]*\t # Show due date." },
+    { "balance", balance,
+	" [-days <num>]\t\t # Show nightly dump size balance." },
+    { "tape", tape,
+	" [-days <num>]\t\t # Show which tape is due next." },
+    { "bumpsize", bumpsize,
+	"\t\t\t # Show current bump thresholds." },
+    { "export", export_db,
+	" [<hostname> [<disks>]* ]* # Export curinfo database to stdout." },
+    { "import", import_db,
+	"\t\t\t\t # Import curinfo database from stdin." },
 };
 #define	NCMDS	(int)(sizeof(cmdtab) / sizeof(cmdtab[0]))
 
@@ -253,7 +253,7 @@ usage(void)
 {
     int i;
 
-    fprintf(stderr, "\nUsage: %s%s <conf> <command> {<args>} ...\n",
+    fprintf(stderr, "\nUsage: %s%s <conf> <command> {<args>} [-o configoption]* ...\n",
 	    get_pname(), versionsuffix());
     fprintf(stderr, "    Valid <command>s are:\n");
     for (i = 0; i < NCMDS; i++)

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.48 2006/06/05 19:36:41 martinea Exp $
+ * $Id: amlabel.c,v 1.49 2006/06/06 14:48:29 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -46,7 +46,7 @@ void usage(void);
 void
 usage(void)
 {
-    fprintf(stderr, "Usage: %s [-f] <conf> <label> [slot <slot-number>]\n",
+    fprintf(stderr, "Usage: %s [-f] <conf> <label> [slot <slot-number>] [-o configoption]*\n",
 	    get_pname());
     exit(1);
 }

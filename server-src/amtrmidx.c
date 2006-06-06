@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.38 2006/06/05 19:36:41 martinea Exp $
+ * $Id: amtrmidx.c,v 1.39 2006/06/06 14:48:29 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
     }
 
     if (my_argc < 2) {
-	fprintf(stderr, "Usage: %s [-t] <config>\n", my_argv[0]);
+	fprintf(stderr, "Usage: %s [-t] <config> [-o configoption]*\n", my_argv[0]);
 	return 1;
     }
 
@@ -108,6 +108,8 @@ int main(int argc, char **argv)
 	/*NOTREACHED*/
     }
     amfree(conffile);
+
+    report_bad_conf_arg();
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if(*conf_diskfile == '/') {
