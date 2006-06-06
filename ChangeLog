@@ -1,4 +1,11 @@
 2006-06-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c (conftoken_ungetc): Return the character.
+	* common-src/util.c (get_conftoken): Merge to allow escape character.
+	* common-src/util.c (read_block): Allow STRING as IDENT.
+	* server-src/conffile.c (getconf_long, getconf_size): New function.
+	* server-src/conffile.c: Cleanup after Merge.
+
+2006-06-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amadmin.c, server-src/amcheck.c, server-src/amflush.c,
 	  server-src/amlabel.c, server-src/amlogroll.c, server-src/amtrmidx.c,
 	  server-src/amtrmlog.c, server-src/getconf.c,

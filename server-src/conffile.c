@@ -25,16 +25,11 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.142 2006/06/06 14:48:29 martinea Exp $
+ * $Id: conffile.c,v 1.143 2006/06/06 16:43:17 martinea Exp $
  *
  * read configuration file
  */
-/*
- *
- * XXX - I'm not happy *at all* with this implementation, but I don't
- * think YACC would be any easier.  A more table based implementation
- * would be better.  Also clean up memory leaks.
- */
+
 #include "amanda.h"
 #include "arglist.h"
 #include "util.h"
@@ -58,13 +53,13 @@ ColumnInfo ColumnData[] = {
     { "HostName",   0, 12, 12, 0, "%-*.*s", "HOSTNAME" },
     { "Disk",       1, 11, 11, 0, "%-*.*s", "DISK" },
     { "Level",      1, 1,  1,  0, "%*.*d",  "L" },
-    { "OrigKB",     1, 7,  0,  0, "%*.*f",  "ORIG-KB" },
-    { "OutKB",      1, 7,  0,  0, "%*.*f",  "OUT-KB" },
-    { "Compress",   1, 6,  1,  0, "%*.*f",  "COMP%" },
+    { "OrigKB",     1, 7,  0,  0, "%*.*lf", "ORIG-KB" },
+    { "OutKB",      1, 7,  0,  0, "%*.*lf", "OUT-KB" },
+    { "Compress",   1, 6,  1,  0, "%*.*lf", "COMP%" },
     { "DumpTime",   1, 7,  7,  0, "%*.*s",  "MMM:SS" },
-    { "DumpRate",   1, 6,  1,  0, "%*.*f",  "KB/s" },
+    { "DumpRate",   1, 6,  1,  0, "%*.*lf", "KB/s" },
     { "TapeTime",   1, 6,  6,  0, "%*.*s",  "MMM:SS" },
-    { "TapeRate",   1, 6,  1,  0, "%*.*f",  "KB/s" },
+    { "TapeRate",   1, 6,  1,  0, "%*.*lf", "KB/s" },
     { NULL,         0, 0,  0,  0, NULL,     NULL }
 };
 
@@ -368,7 +363,7 @@ read_conffile(
 	}
     }
 
-    ip = alloc(sizeof(interface_t));
+    ip = alloc(SIZEOF(interface_t));
     ip->name = stralloc("default");
     ip->seen = server_conf[CNF_NETUSAGE].seen;
     conf_init_string(&ip->value[INTER_COMMENT], "implicit from NETUSAGE");
@@ -566,7 +561,8 @@ getconf_byname(
     tmpstr = stralloc(str);
     s = tmpstr;
     while((ch = *s++) != '\0') {
-	if(islower((int)ch)) s[-1] = toupper(ch);
+	if(islower((int)ch))
+	    s[-1] = toupper(ch);
     }
     for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
 	if(strcmp(kt->keyword, tmpstr) == 0) break;
@@ -589,7 +585,7 @@ getconf_byname(
 	    tmpstr = newstralloc(tmpstr, "on");
 	}
     } else if(np->type == CONFTYPE_REAL) {
-	snprintf(number, sizeof(number), "%f", server_conf[np->parm].v.r);
+	snprintf(number, sizeof(number), "%lf", server_conf[np->parm].v.r);
 	tmpstr = newstralloc(tmpstr, number);
     } else if(np->type == CONFTYPE_AM64){
 	snprintf(number, sizeof(number), OFF_T_FMT, 
@@ -620,6 +616,15 @@ getconf_int(
     return(server_conf[np->parm].v.i);
 }
 
+long
+getconf_long(
+    confparm_t parm)
+{
+    t_conf_var *np;
+    np = get_np(server_var, parm);
+    return(server_conf[np->parm].v.l);
+}
+
 time_t
 getconf_time(
     confparm_t parm)
@@ -627,6 +632,15 @@ getconf_time(
     t_conf_var *np;
     np = get_np(server_var, parm);
     return(server_conf[np->parm].v.t);
+}
+
+ssize_t
+getconf_size(
+    confparm_t parm)
+{
+    t_conf_var *np;
+    np = get_np(server_var, parm);
+    return(server_conf[np->parm].v.size);
 }
 
 off_t
@@ -823,52 +837,62 @@ init_defaults(
 
     /* create some predefined dumptypes for backwards compatability */
     init_dumptype_defaults();
-    dpcur.name = stralloc("NO-COMPRESS"); dpcur.seen = -1;
+    dpcur.name = stralloc("NO-COMPRESS");
+    dpcur.seen = -1;
     conf_set_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_NONE);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = stralloc("COMPRESS-FAST"); dpcur.seen = -1;
+    dpcur.name = stralloc("COMPRESS-FAST");
+    dpcur.seen = -1;
     conf_set_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_FAST);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = stralloc("COMPRESS-BEST"); dpcur.seen = -1;
+    dpcur.name = stralloc("COMPRESS-BEST");
+    dpcur.seen = -1;
     conf_set_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_BEST);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = stralloc("COMPRESS-CUST"); dpcur.seen = -1;
+    dpcur.name = stralloc("COMPRESS-CUST");
+    dpcur.seen = -1;
     conf_set_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_CUST);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = stralloc("SRVCOMPRESS"); dpcur.seen = -1;
+    dpcur.name = stralloc("SRVCOMPRESS");
+    dpcur.seen = -1;
     conf_set_compress(&dpcur.value[DUMPTYPE_COMPRESS], COMP_SERV_FAST);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = stralloc("BSD-AUTH"); dpcur.seen = -1;
+    dpcur.name = stralloc("BSD-AUTH");
+    dpcur.seen = -1;
     conf_set_string(&dpcur.value[DUMPTYPE_SECURITY_DRIVER], "BSD");
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = stralloc("KRB4-AUTH"); dpcur.seen = -1;
+    dpcur.name = stralloc("KRB4-AUTH");
+    dpcur.seen = -1;
     conf_set_string(&dpcur.value[DUMPTYPE_SECURITY_DRIVER], "KRB4");
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = stralloc("NO-RECORD"); dpcur.seen = -1;
+    dpcur.name = stralloc("NO-RECORD");
+    dpcur.seen = -1;
     conf_set_bool(&dpcur.value[DUMPTYPE_RECORD], 0);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = stralloc("NO-HOLD"); dpcur.seen = -1;
+    dpcur.name = stralloc("NO-HOLD");
+    dpcur.seen = -1;
     conf_set_bool(&dpcur.value[DUMPTYPE_HOLDINGDISK], 0);
     save_dumptype();
 
     init_dumptype_defaults();
-    dpcur.name = stralloc("NO-FULL"); dpcur.seen = -1;
+    dpcur.name = stralloc("NO-FULL");
+    dpcur.seen = -1;
     conf_set_strategy(&dpcur.value[DUMPTYPE_STRATEGY], DS_NOFULL);
     save_dumptype();
 }
@@ -881,6 +905,7 @@ read_conffile_recursively(
     int  save_line_num  = conf_line_num;
     FILE *save_conf     = conf_conf;
     char *save_confname = conf_confname;
+    int  rc;
 
     if (*filename == '/' || config_dir == NULL) {
 	conf_confname = stralloc(filename);
@@ -899,7 +924,9 @@ read_conffile_recursively(
     conf_line_num = 0;
 
     /* read_confline() can invoke us recursively via "includefile" */
-    while(read_confline());
+    do {
+	rc = read_confline();
+    } while (rc != 0);
     afclose(conf_conf);
 
     amfree(conf_confname);
@@ -928,10 +955,23 @@ read_confline(
     case CONF_INCLUDEFILE:
 	{
 	    char *fn;
+	    char *cname;
 
 	    get_conftoken(CONF_STRING);
 	    fn = tokenval.v.s;
-	    read_conffile_recursively(fn);
+	    if (*fn == '/' || config_dir == NULL) {
+		cname = stralloc(fn);
+	    } else {
+		cname = stralloc2(config_dir, fn);
+	    }
+	    if ( cname != NULL &&  (access(cname, R_OK) == 0)) {
+		read_conffile_recursively(cname);
+		amfree(cname);
+	    } else {
+		conf_parserror("cannot open %s: %s\n", fn, strerror(errno));
+	    }
+	    amfree(cname);
+	    
 	}
 	break;
 
@@ -949,8 +989,10 @@ read_confline(
 
     case CONF_NL:	/* empty line */
 	break;
+
     case CONF_END:	/* end of file */
 	return 0;
+
     default:
 	{
 	    for(np = server_var; np->token != CONF_UNKNOWN; np++) 
@@ -1220,7 +1262,7 @@ copy_dumptype(void)
     dt = lookup_dumptype(tokenval.v.s);
 
     if(dt == NULL) {
-	conf_parserror("Adump type parameter expected");
+	conf_parserror("dumptype parameter expected");
 	return;
     }
 
@@ -1439,10 +1481,13 @@ get_comprate(
     switch(tok) {
     case CONF_NL:
 	return;
+
     case CONF_END:
 	return;
+
     case CONF_COMMA:
 	break;
+
     default:
 	unget_conftoken();
     }

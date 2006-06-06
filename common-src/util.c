@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.27 2006/06/02 17:56:52 martinea Exp $
+ * $Id: util.c,v 1.28 2006/06/06 16:43:17 martinea Exp $
  */
 
 #include "amanda.h"
@@ -57,7 +57,7 @@ static int connect_port(struct sockaddr_in *addrp, in_port_t port, char *proto,
 			struct sockaddr_in *svaddr, int nonblock);
 
 char conftoken_getc(void);
-void conftoken_ungetc(char c);
+int conftoken_ungetc(char c);
 
 /*
  * Keep calling read() until we've read buflen's worth of data, or EOF,
@@ -1280,22 +1280,22 @@ conftoken_getc(void)
     return(*conf_char++);
 }
 
-void
+int
 conftoken_ungetc(
     char c)
 {
     if(conf_line == NULL)
-	ungetc(c, conf_conf);
+	return ungetc(c, conf_conf);
     else if(conf_char > conf_line) {
 	if(c == -1)
-	    return;
+	    return EOF;
 	conf_char--;
 	if(*conf_char != c)
 	    error("*conf_char != c   : %c %c", *conf_char, c);
     }
     else
 	error("conf_char == conf_line");
-    return;
+    return c;
 }
 
 void
@@ -1305,7 +1305,10 @@ get_conftoken(
     int ch, d;
     off_t am64;
     char *buf;
+    char *tmps;
     int token_overflow;
+    int inquote = 0;
+    int escape = 0;
 
     if (token_pushed) {
 	token_pushed = 0;
@@ -1360,6 +1363,14 @@ get_conftoken(
 	    } while(isalnum(ch) || ch == '_' || ch == '-');
 
 	    conftoken_ungetc(ch);
+	    if (conftoken_ungetc(ch) == EOF) {
+		if (ferror(conf_conf)) {
+		    conf_parserror("Pushback of '%c' failed: %s",
+				   ch, strerror(ferror(conf_conf)));
+		} else {
+		    conf_parserror("Pushback of '%c' failed: EOF", ch);
+		}
+	    }
 	    *buf = '\0';
 
 	    tokenval.v.s = tkbuf;
@@ -1414,32 +1425,58 @@ get_conftoken(
 		tokenval.v.r += sign * ((double)am64)/d;
 		tok = CONF_REAL;
 	    }
-	    conftoken_ungetc(ch);
+	    if (conftoken_ungetc(ch) == EOF) {
+		if (ferror(conf_conf)) {
+		    conf_parserror("Pushback of '%c' failed: %s",
+				   ch, strerror(ferror(conf_conf)));
+		} else {
+		    conf_parserror("Pushback of '%c' failed: EOF", ch);
+		}
+	    }
 	} else switch(ch) {
 	case '"':			/* string */
 	    buf = tkbuf;
 	    token_overflow = 0;
-	    ch = conftoken_getc();
-	    while(ch != '"' && ch != '\n' && ch != EOF) {
-		if (buf < tkbuf+sizeof(tkbuf)-1) {
-		    *buf++ = (char)ch;
+	    inquote = 1;
+	    *buf++ = ch;
+	    while (inquote && ((ch = conftoken_getc()) != EOF)) {
+		if (ch == '\n') {
+		    if (!escape)
+			break;
+		    escape = 0;
+		    buf--; /* Consume escape in buffer */
+		} else if (ch == '\\') {
+		    escape = 1;
 		} else {
-		    *buf = '\0';
+		    if (ch == '"') {
+			if (!escape)
+			    inquote = 0;
+		    }
+		    escape = 0;
+		}
+
+		if(buf >= &tkbuf[sizeof(tkbuf) - 1]) {
 		    if (!token_overflow) {
 			conf_parserror("string too long: %.20s...", tkbuf);
 		    }
 		    token_overflow = 1;
+		    break;
 		}
-		ch = conftoken_getc();
-	    }
-	    if (ch != '"') {
-		conf_parserror("missing end quote");
-		conftoken_ungetc(ch);
+		*buf++ = ch;
 	    }
 	    *buf = '\0';
+
+	    /*
+	     * A little manuver to leave a fully unquoted, unallocated  string
+	     * in tokenval.v.s
+	     */
+	    tmps = unquote_string(tkbuf);
+	    strncpy(tkbuf, tmps, sizeof(tkbuf));
+	    amfree(tmps);
 	    tokenval.v.s = tkbuf;
-	    if (token_overflow) tok = CONF_UNKNOWN;
-	    else tok = CONF_STRING;
+
+	    tok = (token_overflow) ? CONF_UNKNOWN :
+			(exp == CONF_IDENT) ? CONF_IDENT : CONF_STRING;
 	    break;
 
 	case '-':
@@ -1447,7 +1484,14 @@ get_conftoken(
 	    if (isdigit(ch))
 		goto negative_number;
 	    else {
-		conftoken_ungetc(ch);
+		if (conftoken_ungetc(ch) == EOF) {
+		    if (ferror(conf_conf)) {
+			conf_parserror("Pushback of '%c' failed: %s",
+				       ch, strerror(ferror(conf_conf)));
+		    } else {
+			conf_parserror("Pushback of '%c' failed: EOF", ch);
+		    }
+		}
 		tok = CONF_UNKNOWN;
 	    }
 	    break;
@@ -2155,6 +2199,7 @@ read_block(
 	    done = 1;
 	    break;
         case CONF_IDENT:
+        case CONF_STRING:
 	    if(copy_function) 
 		copy_function();
 	    else
