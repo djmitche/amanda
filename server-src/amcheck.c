@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.135 2006/06/06 14:48:29 martinea Exp $
+ * $Id: amcheck.c,v 1.136 2006/06/06 23:13:26 paddy_s Exp $
  *
  * checks for common problems in server and clients
  */
@@ -120,6 +120,7 @@ main(
 
     dbopen();
 
+    memset(buffer, 0, sizeof(buffer));
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
     snprintf(pid_str, SIZEOF(pid_str), "%ld", (long)getpid());

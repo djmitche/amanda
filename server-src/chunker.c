@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.30 2006/06/06 14:48:29 martinea Exp $
+/* $Id: chunker.c,v 1.31 2006/06/06 23:13:26 paddy_s Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -486,6 +486,7 @@ do_chunk(
 
     dumpsize = dumpbytes = filesize = (off_t)0;
     headersize = 0;
+    memset(header_buf, 0, sizeof(header_buf));
 
     /*
      * The first thing we should receive is the file header, which we

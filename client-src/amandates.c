@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amandates.c,v 1.18 2006/06/01 14:54:39 martinea Exp $
+ * $Id: amandates.c,v 1.19 2006/06/06 23:13:25 paddy_s Exp $
  *
  * manage amandates file, that mimics /etc/dumpdates, but stores
  * GNUTAR dates
@@ -201,20 +201,29 @@ lookup(
     (void)import;	/* Quiet unused parameter warning */
     rc = 0;
 
-    for(prevp=NULL,amdp=amandates_list;amdp!=NULL;prevp=amdp,amdp=amdp->next)
-	if((rc = strcmp(name, amdp->name)) <= 0)
+    prevp = NULL;
+    amdp = amandates_list;
+    while (amdp != NULL) {
+	if ((rc = strcmp(name, amdp->name)) <= 0)
 	    break;
-
-    if(!(amdp && (rc == 0))) {
+	prevp = amdp;
+	amdp = amdp->next;
+    }
+    if (!(amdp && (rc == 0))) {
 	amandates_t *newp = alloc(SIZEOF(amandates_t));
 	newp->name = stralloc(name);
-	for(level = 0; level < DUMP_LEVELS; level++)
+	for (level = 0; level < DUMP_LEVELS; level++)
 	    newp->dates[level] = EPOCH;
 	newp->next = amdp;
-	if(prevp)
+	if (prevp != NULL) {
+#ifndef __lint	/* Remove complaint about NULL pointer assignment */
 	    prevp->next = newp;
-	else
+#else
+	    (void)prevp;
+#endif
+	} else {
 	    amandates_list = newp;
+	}
 	import_dumpdates(newp);
 	return newp;
     }

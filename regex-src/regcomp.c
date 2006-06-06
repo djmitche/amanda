@@ -189,9 +189,9 @@ regcomp(
 	/* do it */
 	EMIT(OEND, 0);
 	g->firststate = (sopno)THERE();
-	if (cflags&REG_EXTENDED)
+	if (cflags & REG_EXTENDED)
 		p_ere(p, OUT);
-	else if (cflags&REG_NOSPEC)
+	else if (cflags & REG_NOSPEC)
 		p_str(p);
 	else
 		p_bre(p, OUT, OUT);
@@ -208,7 +208,7 @@ regcomp(
 	preg->re_nsub = g->nsub;
 	preg->re_g = g;
 	preg->re_magic = MAGIC1;
-		/*@end@*/
+	/*@end@*/
 #ifndef REDEBUG
 	/* not debugging, so can't rely on the assert() in regexec() */
 	if (g->iflags&BAD)

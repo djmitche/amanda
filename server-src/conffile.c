@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.143 2006/06/06 16:43:17 martinea Exp $
+ * $Id: conffile.c,v 1.144 2006/06/06 23:13:26 paddy_s Exp $
  *
  * read configuration file
  */
@@ -475,22 +475,22 @@ validate_displayunit(
     np = np;
     if(strcmp(val->v.s, "k") == 0 ||
        strcmp(val->v.s, "K") == 0) {
-	val->v.s[0] = toupper(val->v.s[0]);
+	val->v.s[0] = (char)toupper(val->v.s[0]);
 	unit_divisor=1;
     }
     else if(strcmp(val->v.s, "m") == 0 ||
        strcmp(val->v.s, "M") == 0) {
-	val->v.s[0] = toupper(val->v.s[0]);
+	val->v.s[0] = (char)toupper(val->v.s[0]);
 	unit_divisor=1024;
     }
     else if(strcmp(val->v.s, "g") == 0 ||
        strcmp(val->v.s, "G") == 0) {
-	val->v.s[0] = toupper(val->v.s[0]);
+	val->v.s[0] = (char)toupper(val->v.s[0]);
 	unit_divisor=1024*1024;
     }
     else if(strcmp(val->v.s, "t") == 0 ||
        strcmp(val->v.s, "T") == 0) {
-	val->v.s[0] = toupper(val->v.s[0]);
+	val->v.s[0] = (char)toupper(val->v.s[0]);
 	unit_divisor=1024*1024*1024;
     }
     else {
@@ -562,7 +562,7 @@ getconf_byname(
     s = tmpstr;
     while((ch = *s++) != '\0') {
 	if(islower((int)ch))
-	    s[-1] = toupper(ch);
+	    s[-1] = (char)toupper(ch);
     }
     for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
 	if(strcmp(kt->keyword, tmpstr) == 0) break;
@@ -705,12 +705,19 @@ interface_t *
 lookup_interface(
     char *str)
 {
+#ifndef __lint
     interface_t *p;
+#endif
 
-    if(str == NULL) return interface_list;
-    for(p = interface_list; p != NULL; p = p->next) {
+    if (str == NULL)
+	return interface_list;
+
+#ifndef __lint
+    for (p = interface_list; p != NULL; p = p->next) {
 	if(strcasecmp(p->name, str) == 0) return p;
+	    return p;
     }
+#endif
     return NULL;
 }
 
@@ -905,7 +912,7 @@ read_conffile_recursively(
     int  save_line_num  = conf_line_num;
     FILE *save_conf     = conf_conf;
     char *save_confname = conf_confname;
-    int  rc;
+    int	rc;
 
     if (*filename == '/' || config_dir == NULL) {
 	conf_confname = stralloc(filename);
@@ -1005,7 +1012,8 @@ read_confline(
 		np->validate(np, &server_conf[np->parm]);
 	}
     }
-    if(tok != CONF_NL) get_conftoken(CONF_NL);
+    if(tok != CONF_NL)
+	get_conftoken(CONF_NL);
     return 1;
 }
 
@@ -1155,7 +1163,8 @@ read_dumptype(
 
     prefix = vstralloc( "DUMPTYPE:", dpcur.name, ":", NULL);
     read_block(server_options, dumptype_var, server_keytab, dpcur.value,
-	       prefix, "dumptype parameter expected", !name, *copy_dumptype);
+	       prefix, "dumptype parameter expected",
+	       (name == NULL), *copy_dumptype);
     amfree(prefix);
     if(!name)
 	get_conftoken(CONF_NL);
@@ -1248,7 +1257,10 @@ save_dumptype(void)
     if(!dumplist)
 	dumplist = dp;
     else {
-	for(dp1 = dumplist; dp1->next != NULL; dp1 = dp1->next) ;
+	dp1 = dumplist;
+	while (dp1->next != NULL) {
+	     dp1 = dp1->next;
+	}
 	dp1->next = dp;
     }
 }
@@ -1277,7 +1289,7 @@ copy_dumptype(void)
 t_conf_var tapetype_var [] = {
    { CONF_COMMENT  , CONFTYPE_STRING, read_string, TAPETYPE_COMMENT  , NULL },
    { CONF_LBL_TEMPL, CONFTYPE_STRING, read_string, TAPETYPE_LBL_TEMPL, NULL },
-   { CONF_BLOCKSIZE, CONFTYPE_LONG  , read_long  , TAPETYPE_BLOCKSIZE, validate_blocksize },
+   { CONF_BLOCKSIZE, CONFTYPE_SIZE  , read_size  , TAPETYPE_BLOCKSIZE, validate_blocksize },
    { CONF_LENGTH   , CONFTYPE_AM64  , read_am64  , TAPETYPE_LENGTH   , validate_positive0 },
    { CONF_FILEMARK , CONFTYPE_AM64  , read_am64  , TAPETYPE_FILEMARK , NULL },
    { CONF_SPEED    , CONFTYPE_INT   , read_int   , TAPETYPE_SPEED    , validate_positive0 },
@@ -1316,7 +1328,7 @@ init_tapetype_defaults(void)
 {
     conf_init_string(&tpcur.value[TAPETYPE_COMMENT]  , "");
     conf_init_string(&tpcur.value[TAPETYPE_LBL_TEMPL], "");
-    conf_init_long  (&tpcur.value[TAPETYPE_BLOCKSIZE], DISK_BLOCK_KB);
+    conf_init_size  (&tpcur.value[TAPETYPE_BLOCKSIZE], DISK_BLOCK_KB);
     conf_init_am64  (&tpcur.value[TAPETYPE_LENGTH]   , 2000 * 1024);
     conf_init_am64  (&tpcur.value[TAPETYPE_FILEMARK] , 1000);
     conf_init_int   (&tpcur.value[TAPETYPE_SPEED]    , 200);
@@ -1342,7 +1354,10 @@ save_tapetype(void)
     if(!tapelist)
 	tapelist = tp;
     else {
-	for(tp1 = tapelist; tp1->next != NULL; tp1 = tp1->next) ;
+	tp1 = tapelist;
+	while (tp1->next != NULL) {
+	    tp1 = tp1->next;
+	}
 	tp1->next = tp;
     }
 }
@@ -1427,10 +1442,13 @@ save_interface(void)
     ip = alloc(sizeof(interface_t));
     *ip = ifcur;
     /* add at end of list */
-    if(!interface_list)
+    if(!interface_list) {
 	interface_list = ip;
-    else {
-	for(ip1 = interface_list; ip1->next != NULL; ip1 = ip1->next) ;
+    } else {
+	ip1 = interface_list;
+	while (ip1->next != NULL) {
+	    ip1 = ip1->next;
+	}
 	ip1->next = ip;
     }
 }
@@ -1506,7 +1524,7 @@ get_compress(
 {
     int serv, clie, none, fast, best, custom;
     int done;
-    int comp;
+    comp_t comp;
 
     np = np;
     ckseen(&val->seen);
@@ -1550,12 +1568,12 @@ get_compress(
 	if(!none && !fast && !best && custom) comp = COMP_SERV_CUST;
     }
 
-    if(comp == -1) {
+    if((int)comp == -1) {
 	conf_parserror("NONE, CLIENT FAST, CLIENT BEST, CLIENT CUSTOM, SERVER FAST, SERVER BEST or SERVER CUSTOM expected");
 	comp = COMP_NONE;
     }
 
-    val->v.i = comp;
+    val->v.i = (int)comp;
 }
 
 static void
@@ -1563,7 +1581,7 @@ get_encrypt(
     t_conf_var *np,
     val_t *val)
 {
-   int encrypt;
+   encrypt_t encrypt;
 
    np = np;
    ckseen(&val->seen);
@@ -1573,18 +1591,22 @@ get_encrypt(
    case CONF_NONE:  
      encrypt = ENCRYPT_NONE; 
      break;
+
    case CONF_CLIENT:  
      encrypt = ENCRYPT_CUST;
      break;
+
    case CONF_SERVER: 
      encrypt = ENCRYPT_SERV_CUST;
      break;
+
    default:
      conf_parserror("NONE, CLIENT or SERVER expected");
      encrypt = ENCRYPT_NONE;
+     break;
    }
 
-   val->v.i = encrypt;
+   val->v.i = (int)encrypt;
 }
 
 static void
@@ -1704,7 +1726,6 @@ get_exclude(
     int file, got_one = 0;
     sl_t *exclude;
     int optional = 0;
-    int append = 0;
 
     np = np;
     get_conftoken(CONF_ANY);
@@ -1727,12 +1748,10 @@ get_exclude(
 
     if(tok == CONF_APPEND) {
 	get_conftoken(CONF_ANY);
-	append = 1;
     }
     else {
 	free_sl(exclude);
 	exclude = NULL;
-	append = 0;
     }
 
     while(tok == CONF_STRING) {
@@ -1903,7 +1922,7 @@ SetColumDataFromString(
 	    return -1;
 	}
 	ColumnData[cn].Width= Width;
-	ColumnData[cn].PrefixSpace= Space;
+	ColumnData[cn].PrefixSpace = Space;
 	if (LastChar(ColumnData[cn].Format) == 's') {
 	    if (Width < 0)
 		ColumnData[cn].MaxWidth= 1;
@@ -1912,7 +1931,7 @@ SetColumDataFromString(
 		    ColumnData[cn].Precision= Width;
 	}
 	else if (Width < ColumnData[cn].Precision)
-	    ColumnData[cn].Precision= Width;
+	    ColumnData[cn].Precision = Width;
 	s= strchr(eon+1, ',');
 	if (s != NULL)
 	    s++;
@@ -1938,7 +1957,7 @@ dump_configuration(
     dumptype_t *dp;
     interface_t *ip;
     holdingdisk_t *hp;
-    unsigned int i;
+    int i;
     t_conf_var *np;
     keytab_t *kt;
     char *prefix;
@@ -1946,8 +1965,10 @@ dump_configuration(
     printf("AMANDA CONFIGURATION FROM FILE \"%s\":\n\n", filename);
 
     for(i=0; i < CNF_CNF; i++) {
-	for(np=server_var; np->token != CONF_UNKNOWN; np++)
-	    if(np->parm == i) break;
+	for(np=server_var; np->token != CONF_UNKNOWN; np++) {
+	    if(np->parm == i)
+		break;
+	}
 	if(np->token == CONF_UNKNOWN)
 	    error("server bad value");
 
@@ -1962,13 +1983,17 @@ dump_configuration(
     for(hp = holdingdisks; hp != NULL; hp = hp->next) {
 	printf("\nHOLDINGDISK %s {\n", hp->name);
 	for(i=0; i < HOLDING_HOLDING; i++) {
-	    for(np=holding_var; np->token != CONF_UNKNOWN; np++)
-		if(np->parm == i) break;
+	    for(np=holding_var; np->token != CONF_UNKNOWN; np++) {
+		if(np->parm == i)
+			break;
+	    }
 	    if(np->token == CONF_UNKNOWN)
 		error("holding bad value");
 
-	    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
-		if(kt->token == np->token) break;
+	    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++) {
+		if(kt->token == np->token)
+		    break;
+	    }
 	    if(kt->token == CONF_UNKNOWN)
 		error("holding bad token");
 
@@ -2153,11 +2178,11 @@ parse_server_conf(
     char *myarg, *value;
     command_option_t *server_option;
 
-    server_options = alloc((parse_argc+1) * SIZEOF(*server_options));
+    server_options = alloc((size_t)(parse_argc+1) * SIZEOF(*server_options));
     server_option = server_options;
     server_option->name = NULL;
 
-    my_argv = alloc(parse_argc * sizeof(char *));
+    my_argv = alloc((size_t)parse_argc * SIZEOF(char *));
     *new_argv = my_argv;
     *new_argc = 0;
     i=0;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.h,v 1.36 2006/06/01 19:27:52 martinea Exp $
+ * $Id: diskfile.h,v 1.37 2006/06/06 23:13:26 paddy_s Exp $
  *
  * interface for disklist file reading code
  */
@@ -49,61 +49,61 @@ typedef struct amhost_s {
 } am_host_t;
 
 typedef struct disk_s {
-    int line;				/* line number of last definition */
+    int		line;			/* line number of last definition */
     struct disk_s *prev, *next;		/* doubly linked disk list */
 
-    am_host_t *host;			/* host list */
+    am_host_t	*host;			/* host list */
     struct disk_s *hostnext;
 
-    char *name;				/* label name for disk */
-    char *device;			/* device name for disk, eg "sd0g" */
-    char *dtype_name;			/* name of dump type   XXX shouldn't need this */
-    char *program;			/* dump program, eg DUMP, GNUTAR */
-    char *srvcompprog;                  /* custom compression server filter */
-    char *clntcompprog;                 /* custom compression client filter */
-    char *srv_encrypt;                  /* custom encryption server filter */
-    char *clnt_encrypt;                 /* custom encryption client filter */
-    char *amandad_path;			/* amandad path on the client */
-    char *client_username;		/* username to connect on the client */
-    char *ssh_keys;			/* ssh_key file to use */
-    sl_t *exclude_file;			/* file exclude spec */
-    sl_t *exclude_list;			/* exclude list */
-    sl_t *include_file;			/* file include spec */
-    sl_t *include_list;			/* include list */
-    int exclude_optional;		/* exclude list are optional */
-    int include_optional;		/* include list are optional */
-    int priority;			/* priority of disk */
-    off_t tape_splitsize;		/* size of dumpfile chunks on tape */
-    char *split_diskbuffer;		/* place where we can buffer PORT-WRITE dumps other than RAM */
-    off_t fallback_splitsize;		/* size for in-RAM PORT-WRITE buffers */
-    int dumpcycle;			/* days between fulls */
-    long frequency;			/* XXX - not used */
-    char *security_driver;		/* type of authentication (per disk) */
-    int maxdumps;			/* max number of parallel dumps (per system) */
-    int maxpromoteday;			/* maximum of promote day */
-    int bumppercent;
-    off_t bumpsize;
-    int bumpdays;
-    double bumpmult;
-    time_t start_t;			/* start this dump after this time */
-    int strategy;			/* what dump strategy to use */
-    int estimate;			/* what estimate strategy to use */
-    int compress;			/* type of compression to use */
-    int encrypt;			/* type of encryption to use */
-    char *srv_decrypt_opt;  	        /* server-side decryption option parameter to use */
-    char *clnt_decrypt_opt;             /* client-side decryption option parameter to use */
-    double comprate[2];			/* default compression rates */
+    char	*name;			/* label name for disk */
+    char	*device;		/* device name for disk, eg "sd0g" */
+    char	*dtype_name;		/* name of dump type   XXX shouldn't need this */
+    char	*program;		/* dump program, eg DUMP, STAR, GNUTAR */
+    char	*srvcompprog;		/* custom compression server filter */
+    char	*clntcompprog;		/* custom compression client filter */
+    char	*srv_encrypt;		/* custom encryption server filter */
+    char	*clnt_encrypt;		/* custom encryption client filter */
+    char	*amandad_path;		/* amandad path on the client */
+    char	*client_username;	/* username to connect on the client */
+    char	*ssh_keys;		/* ssh_key file to use */
+    sl_t	*exclude_file;		/* file exclude spec */
+    sl_t	*exclude_list;		/* exclude list */
+    sl_t	*include_file;		/* file include spec */
+    sl_t	*include_list;		/* include list */
+    int		exclude_optional;	/* exclude list are optional */
+    int		include_optional;	/* include list are optional */
+    int		priority;		/* priority of disk */
+    off_t	tape_splitsize;		/* size of dumpfile chunks on tape */
+    char	*split_diskbuffer;	/* place where we can buffer PORT-WRITE dumps other than RAM */
+    off_t	fallback_splitsize;	/* size for in-RAM PORT-WRITE buffers */
+    int		dumpcycle;		/* days between fulls */
+    long	frequency;		/* XXX - not used */
+    char	*security_driver;	/* type of authentication (per disk) */
+    int		maxdumps;		/* max number of parallel dumps (per system) */
+    int		maxpromoteday;		/* maximum of promote day */
+    int		bumppercent;
+    off_t	bumpsize;
+    int		bumpdays;
+    double	bumpmult;
+    time_t	start_t;		/* start this dump after this time */
+    int		strategy;		/* what dump strategy to use */
+    int		estimate;		/* what estimate strategy to use */
+    int		compress;		/* type of compression to use */
+    int		encrypt;		/* type of encryption to use */
+    char	*srv_decrypt_opt;	/* server-side decryption option parameter to use */
+    char	*clnt_decrypt_opt;	/* client-side decryption option parameter to use */
+    double	comprate[2];		/* default compression rates */
     /* flag options */
-    unsigned int record:1;		/* record dump in /etc/dumpdates ? */
-    unsigned int skip_incr:1;		/* incs done externally ? */
-    unsigned int skip_full:1;		/* fulls done externally ? */
-    unsigned int to_holdingdisk:1;	/* use holding disk ? */
-    unsigned int kencrypt:1;
-    unsigned int index:1;		/* produce an index ? */
-    int spindle;			/* spindle # - for parallel dumps */
-    int inprogress;			/* being dumped now? */
-    int todo;
-    void *up;				/* generic user pointer */
+    int		record;			/* record dump in /etc/dumpdates ? */
+    int		skip_incr;		/* incs done externally ? */
+    int		skip_full;		/* fulls done externally ? */
+    int		to_holdingdisk;		/* use holding disk ? */
+    int		kencrypt;
+    int		index;			/* produce an index ? */
+    int		spindle;		/* spindle # - for parallel dumps */
+    int		inprogress;		/* being dumped now? */
+    int		todo;
+    void	*up;			/* generic user pointer */
 } disk_t;
 
 typedef struct disklist_s {

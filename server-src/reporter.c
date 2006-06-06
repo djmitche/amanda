@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.118 2006/06/06 14:48:29 martinea Exp $
+ * $Id: reporter.c,v 1.119 2006/06/06 23:13:26 paddy_s Exp $
  *
  * nightly Amanda Report generator
  */
@@ -808,7 +808,7 @@ output_stats(void)
     double idle_time;
     tapetype_t *tp = lookup_tapetype(getconf_str(CNF_TAPETYPE));
     off_t tapesize;
-    size_t marksize;
+    off_t marksize;
     int lv, first;
 
     tapesize = tapetype_get_length(tp);
@@ -2747,7 +2747,7 @@ do_postscript_output(void)
     repdata_t *repdata;
     double outsize, origsize;
     off_t tapesize;
-    size_t marksize;
+    off_t marksize;
 
     tapesize = tapetype_get_length(tp);
     marksize = tapetype_get_filemark(tp);

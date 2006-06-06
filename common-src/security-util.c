@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.10 2006/06/01 14:54:39 martinea Exp $
+ * $Id: security-util.c,v 1.11 2006/06/06 23:13:25 paddy_s Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -43,13 +43,17 @@
 #include "stream.h"
 #include "version.h"
 
-/*#define	SEC_DEBUG*/
+/*#define	SEC_DEBUG */
 #define	SHOW_SECURITY_DETAIL
 
 #ifdef SEC_DEBUG
-#define	secprintf(x)	dbprintf(x)
+#  define	secprintf(x)	dbprintf(x)
 #else
-#define	secprintf(x)
+#  ifdef __lint
+#    define	secprintf(x)	(void)(x)
+#  else
+#    define	secprintf(x)
+#  endif
 #endif
 
 /*
@@ -666,7 +670,7 @@ tcpma_stream_close(
     void *	s)
 {
     struct sec_stream *rs = s;
-    char buf[1];
+    char buf = 0;
 
     assert(rs != NULL);
 
@@ -1969,7 +1973,7 @@ check_user_ruserok(
 
 	secprintf(("%s: bsd: calling ruserok(%s, %d, %s, %s)\n",
 		   debug_prefix_time(NULL),
-	           host, myuid == 0, remoteuser, pwd->pw_name));
+	           host, ((myuid == 0) ? 1 : 0), remoteuser, pwd->pw_name));
 	if (myuid == 0) {
 	    secprintf(("%s: bsd: because you are running as root, ",
 		       debug_prefix(NULL)));

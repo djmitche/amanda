@@ -30,7 +30,9 @@ SERVER_MAN8_PAGES = amadmin.8 \
 		    amverifyrun.8 \
 		    amfetchdump.8 \
 		    amcrypt.8 \
-		    amaespipe.8
+		    amaespipe.8 \
+		    amcrypt-ossl.8 \
+		    amcrypt-ossl-asym.8
 
 if WANT_RECOVER
 RECOVER_MAN8_PAGES = amrecover.8

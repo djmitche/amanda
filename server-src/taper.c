@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.130 2006/06/06 14:48:29 martinea Exp $
+/* $Id: taper.c,v 1.131 2006/06/06 23:13:26 paddy_s Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -1146,7 +1146,7 @@ get_next_holding_file(
 	
  	bp1.status = EMPTY;
  	bp1.size = DISK_BLOCK_BYTES;
- 	bp1.buffer = malloc(DISK_BLOCK_BYTES);
+  	bp1.buffer = alloc(DISK_BLOCK_BYTES);
 	
  	if (fd != save_fd) {
  	    close(fd);
@@ -1915,33 +1915,33 @@ taper_fill_buffer(
     size_t buflen)
 {
     char *curptr;
-    size_t spaceleft;
     ssize_t cnt;
 
     curptr = bp->buffer;
-    bp->size = 0;
-    spaceleft = buflen;
 
-    cnt = fullread(fd, curptr, spaceleft);
+    cnt = fullread(fd, curptr, buflen);
     switch(cnt) {
     case 0:	/* eof */
 	if (interactive)
 	    fputs("r0", stderr);
-	return (ssize_t)bp->size;
+	bp->size = 0;
+	return (ssize_t)0;
+	/*NOTREACHED*/
 
     case -1:	/* error on read, punt */
 	if (interactive)
 	    fputs("rE", stderr);
+	bp->size = 0;
 	return -1;
+	/*NOTREACHED*/
 
     default:
 	if ((mode == MODE_PORT_WRITE) && (splitsize > (off_t)0)) {
 	    memcpy(splitbuf_wr_ptr, curptr, (size_t)cnt);
 	    splitbuf_wr_ptr += cnt;
 	}
-	spaceleft -= cnt;
-	curptr += cnt;
-	bp->size += cnt;
+	bp->size = cnt;
+	break;
     }
 
     if (interactive)
@@ -2768,6 +2768,7 @@ syncpipe_get(
     ssize_t rc;
     char buf[SIZEOF(char) + SIZEOF(int)];
 
+    memset(buf, 0, sizeof(buf));
     rc = fullread(getpipe, buf, SIZEOF(buf));
     if (rc != (ssize_t)sizeof(buf)) {
 	syncpipe_read_error(rc, (ssize_t)sizeof(buf));
@@ -2787,7 +2788,7 @@ int
 syncpipe_getint(void)
 {
     ssize_t rc;
-    int i;
+    int i = 0;
 
     rc = fullread(getpipe, &i, SIZEOF(i));
     if (rc != (ssize_t)sizeof(i)) {

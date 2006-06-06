@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.12 2006/06/02 17:56:52 martinea Exp $
+ * $Id: util.h,v 1.13 2006/06/06 23:13:25 paddy_s Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -41,6 +41,7 @@ typedef enum {
     CONFTYPE_STRING,
     CONFTYPE_IDENT,
     CONFTYPE_TIME,
+    CONFTYPE_SIZE,
     CONFTYPE_SL,
     CONFTYPE_BOOL,
     CONFTYPE_COMPRESS,
@@ -212,27 +213,27 @@ typedef struct exinclude_s {
 
 typedef struct val_s {
     union {
-       int         i;
-       long        l;
-       off_t       am64;
-       double      r;
-       char        *s;
-       sl_t        *sl;
-       ssize_t     size;
-       time_t      t;
-       float       rate[2];
-       exinclude_t exinclude;
+       int		i;
+       long		l;
+       off_t		am64;
+       double		r;
+       char		*s;
+       sl_t		*sl;
+       ssize_t		size;
+       time_t		t;
+       float		rate[2];
+       exinclude_t	exinclude;
     } v;
     int seen;
     conftype_t type;
 } val_t;
 
 typedef struct s_conf_var {
-    tok_t      token;
-    conftype_t type;
-    void (*read_function) (struct s_conf_var *, val_t*);
-    unsigned int        parm;
-    void (*validate) (struct s_conf_var *, val_t *);
+    tok_t	token;
+    conftype_t	type;
+    void	(*read_function) (struct s_conf_var *, val_t*);
+    int		parm;
+    void	(*validate) (struct s_conf_var *, val_t *);
 } t_conf_var;
 
 extern int	allow_overwrites;
@@ -249,7 +250,7 @@ extern char	*conf_char;
 
 /* predeclare local functions */
 
-t_conf_var  *get_np(t_conf_var *get_var, unsigned int parm);
+t_conf_var  *get_np(t_conf_var *get_var, int parm);
 void	get_simple(val_t *var, tok_t type);
 int	get_int(void);
 long	get_long(void);
@@ -268,6 +269,7 @@ void read_string(t_conf_var *, val_t *);
 void read_ident(t_conf_var *, val_t *);
 void read_int(t_conf_var *, val_t *);
 void read_long(t_conf_var *, val_t *);
+void read_size(t_conf_var *, val_t *);
 void read_am64(t_conf_var *, val_t *);
 void read_bool(t_conf_var *, val_t *);
 void read_real(t_conf_var *, val_t *);
@@ -284,9 +286,10 @@ void conf_init_estimate(val_t *, int);
 void conf_init_taperalgo(val_t *, int);
 void conf_init_priority(val_t *, int);
 void conf_init_strategy(val_t *, int);
-void conf_init_compress(val_t *, int);
-void conf_init_encrypt(val_t *, int);
+void conf_init_compress(val_t *, comp_t);
+void conf_init_encrypt(val_t *, encrypt_t);
 void conf_init_long(val_t *, long);
+void conf_init_size(val_t *, ssize_t);
 void conf_init_am64(val_t *, off_t);
 void conf_init_real(val_t *, double);
 void conf_init_rate(val_t *, double, double);
@@ -296,7 +299,8 @@ void conf_init_exinclude(val_t *);
 void conf_set_string(val_t *, char *);
 void conf_set_int(val_t *, int);
 void conf_set_bool(val_t *, int);
-void conf_set_compress(val_t *, int);
+void conf_set_compress(val_t *, comp_t);
+void conf_set_encrypt(val_t *, encrypt_t);
 void conf_set_strategy(val_t *, int);
 
 void read_block(command_option_t *command_options, t_conf_var *read_var,

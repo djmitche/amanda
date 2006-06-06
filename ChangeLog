@@ -17,6 +17,27 @@
 	  server-src/taper.c: Add call to report_bad_conf_arg.
 	* server-src/conffile.c(get_comprate, get_compress): Parse CONF_END.
 
+2006-06-06  John Franks <jrfranks@zmanda.com>
+	* configure.in:
+		Increase checking level from 1 to 2 for SUN lint.
+	* client-src/amandates.c client-src/clientconf.c
+	  common-src/security-util.c recover-src/amrecover.c
+	  recover-src/extract_list.c regex-src/regcomp.c server-src/amcheck.c
+	  server-src/amlabel.c server-src/chunker.c server-src/conffile.c
+	  server-src/conffile.h server-src/diskfile.c server-src/diskfile.h
+	  server-src/driver.c server-src/holding.c server-src/reporter.c
+	  server-src/tapefile.c server-src/taper.c tape-src/amdd.c:
+		Lint clean again.
+	* common-src/util.h common-src/util.c:
+		Lint clean again.
+		Add missing conftype size.
+	* common-src/bsd-security.c
+		Fix infinte loop which consumes all /tmp space and 1/2
+		the CPU time when EOF is reached on socket.
+
+2006-06-05  Paddy Sreenivasan <paddy@zmanda.com>
+        * common-src/util.c: Fix warning
+
 2006-06-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/amfetchdump.c, server-src/amcheck.c,
 	  server-src/amcheckdb.sh.in, server-src/amcleanup.sh.in,
@@ -49,6 +70,17 @@
 	* server-src/conffile.c(read_dumptype): Read a CONF_NL if we are not
 	                                        called from diskfile.
 	* server-src/diskfile.c: Don't loop on empty line after read_dumptype.
+
+2006-06-01  Kevin Till  <ktill@zmanda.com>
+        * server-src/amcrypt-ossl.sh.in: symmetric encrypt script using openSSL.
+          Thanks to Ben Slusky.
+        * server-src/amcrypt-ossl-asym.sh.in: public-ley encrypt script using openSSL.
+        * man/xml-source/amcrypt-ossl.8.xml: man page
+        * man/xml-source/amcrypt-ossl-asym.8.xml: man page
+        * configure.in: ditto
+        * man/Makefile.am: ditto
+        * man/entities/global.entities: ditto
+        * server-src/Makefile.am: ditto
 
 2006-06-01  John Franks <jfranks@zmanda.com>
 	Eliminate Cygwin compile warnings.

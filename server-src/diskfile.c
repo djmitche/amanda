@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.83 2006/06/05 19:36:41 martinea Exp $
+ * $Id: diskfile.c,v 1.84 2006/06/06 23:13:26 paddy_s Exp $
  *
  * read disklist file
  */
@@ -54,7 +54,6 @@ read_diskfile(
     char *line;
 
     /* initialize */
-
     hostlist = NULL;
     lst->head = lst->tail = NULL;
     line_num = 0;
@@ -355,7 +354,7 @@ parse_diskline(
     const char *filename,
     FILE *	diskf,
     int *	line_num_p,
-    char **	line_p)
+    /*@keep@*/ char **	line_p)
 {
     am_host_t *host;
     disk_t *disk;
@@ -422,7 +421,8 @@ parse_diskline(
 	    diskdevice = dumptype;
 	    skip_whitespace(s, ch);
 	    if(ch == '\0' || ch == '#') {
-		disk_parserror(filename, line_num, "disk dumptype expected");
+		disk_parserror(filename, line_num,
+			"disk dumptype '%s' not found", dumptype);
 		amfree(hostname);
 		amfree(diskdevice);
 		amfree(diskname);
@@ -483,9 +483,6 @@ parse_diskline(
 	dtype = read_dumptype(vstralloc("custom(", hostname,
 					":", disk->name, ")", 0),
 			      diskf, (char*)filename, line_num_p);
-	*line_p = line = agets(diskf);
-	line_num = *line_num_p; /* no incr, read_dumptype did it already */
-
 	if (dtype == NULL || dup) {
 	    amfree(hostname);
 	    if(!dup) {
@@ -498,6 +495,9 @@ parse_diskline(
 	    }
 	    return (-1);
 	}
+
+	*line_p = line = agets(diskf);
+	line_num = *line_num_p; /* no incr, read_dumptype did it already */
 
 	if (line == NULL)
 	    *line_p = line = stralloc("");

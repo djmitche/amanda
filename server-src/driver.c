@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.179 2006/06/06 14:48:29 martinea Exp $
+ * $Id: driver.c,v 1.180 2006/06/06 23:13:26 paddy_s Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -34,7 +34,7 @@
  *     tape.  Probably not effective though, should do this in planner.
  */
 
-/* #define HOLD_DEBUG */
+#define HOLD_DEBUG
 
 #include "amanda.h"
 #include "clock.h"
@@ -95,7 +95,6 @@ static void handle_taper_result(void *);
 static void holdingdisk_state(char *time_str);
 static dumper_t *idle_dumper(void);
 static void interface_state(char *time_str);
-static int num_busy_dumpers(void);
 static int queue_length(disklist_t q);
 static disklist_t read_flush(void);
 static void read_schedule(void *cookie);
@@ -195,6 +194,7 @@ main(
 	}
 
     } else {
+
 	char my_cwd[STR_SIZE];
 
 	if (getcwd(my_cwd, SIZEOF(my_cwd)) == NULL) {
@@ -265,14 +265,6 @@ main(
     tape = lookup_tapetype(conf_tapetype);
     tape_length = tapetype_get_length(tape);
     printf("driver: tape size " OFF_T_FMT "\n", (OFF_T_FMT_TYPE)tape_length);
-
-    /* taper takes a while to get going, so start it up right away */
-
-    init_driverio();
-    if(conf_runtapes > 0) {
-	startup_tape_process(taper_program);
-	taper_cmd(START_TAPER, driver_timestamp, NULL, 0, NULL);
-    }
 
     /* start initializing: read in databases */
 
@@ -355,6 +347,14 @@ main(
     amfree(newdir);
 
     if(inparallel > MAX_DUMPERS) inparallel = MAX_DUMPERS;
+
+    /* taper takes a while to get going, so start it up right away */
+
+    init_driverio();
+    if(conf_runtapes > 0) {
+        startup_tape_process(taper_program);
+        taper_cmd(START_TAPER, driver_timestamp, NULL, 0, NULL);
+    }
 
     /* fire up the dumpers now while we are waiting */
     if(!nodump) startup_dump_processes(dumper_program, inparallel, driver_timestamp);
@@ -886,11 +886,6 @@ start_some_dumps(
 		dumper_cmd(dumper, PORT_DUMP, diskp);
 	    }
 	    diskp->host->start_t = now + 15;
-	} else if (/* cur_idle != NOT_IDLE && */
-	    (num_busy_dumpers() > 0 || taper_busy)) {
-	    /*
-	     * We are constrained.
-	     */
 	}
     }
 }
@@ -1257,19 +1252,6 @@ idle_dumper(void)
 
     return NULL;
 }
-
-static int
-num_busy_dumpers(void)
-{
-    dumper_t *dumper;
-    int n = 0;
-
-    for(dumper = dmptable; dumper < dmptable+inparallel; dumper++)
-	if(dumper->busy) n += 1;
-
-    return n;
-}
-
 
 static void
 dumper_result(
@@ -2094,9 +2076,10 @@ free_kps(
 	    curusage += p->curusage;
 	}
 	res = maxusage - curusage;
-    }
-    else {
+#ifndef __lint
+    } else {
 	res = interface_get_maxusage(ip) - ip->curusage;
+#endif
     }
 
     return res;
@@ -2466,6 +2449,7 @@ build_diskspace(
     struct stat finfo;
     char *filename = destname;
 
+    memset(buffer, 0, sizeof(buffer));
     for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
         num_holdingdisks++;
     }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.49 2006/06/06 14:48:29 martinea Exp $
+ * $Id: amlabel.c,v 1.50 2006/06/06 23:13:26 paddy_s Exp $
  *
  * write an Amanda label on a tape
  */
@@ -177,7 +177,7 @@ main(
     	}
     }
     tape = lookup_tapetype(getconf_str(CNF_TAPETYPE));
-    tt_blocksize_kb = tapetype_get_blocksize(tape);
+    tt_blocksize_kb = (size_t)tapetype_get_blocksize(tape);
 
     if((have_changer = changer_init()) == 0) {
 	if(slotcommand) {

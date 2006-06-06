@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.66 2006/06/01 19:27:52 martinea Exp $
+ * $Id: conffile.h,v 1.67 2006/06/06 23:13:26 paddy_s Exp $
  *
  * interface for config file reading code
  */
@@ -110,7 +110,7 @@ typedef struct tapetype_s {
 #define tapetype_get_seen(tapetype) tapetype->seen
 #define tapetype_get_comment(tapetype) tapetype->value[TAPETYPE_COMMENT].v.s
 #define tapetype_get_lbl_templ(tapetype) tapetype->value[TAPETYPE_LBL_TEMPL].v.s
-#define tapetype_get_blocksize(tapetype) tapetype->value[TAPETYPE_BLOCKSIZE].v.l
+#define tapetype_get_blocksize(tapetype) tapetype->value[TAPETYPE_BLOCKSIZE].v.size
 #define tapetype_get_length(tapetype) tapetype->value[TAPETYPE_LENGTH].v.am64
 #define tapetype_get_filemark(tapetype) tapetype->value[TAPETYPE_FILEMARK].v.am64
 #define tapetype_get_speed(tapetype) tapetype->value[TAPETYPE_SPEED].v.i
@@ -286,12 +286,12 @@ typedef struct holdingdisk_s {
  */
 typedef struct {
     char *Name;		/* column name */
-    char PrefixSpace;	/* the blank space to print before this
+    int PrefixSpace;	/* the blank space to print before this
    			 * column. It is used to get the space
 			 * between the colums
 			 */
     int Width;		/* the width of the column itself */
-    char Precision;	/* the precision if its a float */
+    int Precision;	/* the precision if its a float */
     int MaxWidth;	/* if set, Width will be recalculated
     			 * to the space needed */
     char *Format;	/* the printf format string for this

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.54 2006/06/01 17:05:49 martinea Exp $
+ * $Id: holding.c,v 1.55 2006/06/06 23:13:26 paddy_s Exp $
  *
  * Functions to access holding disk
  */
@@ -424,6 +424,7 @@ get_amanda_names( char *	fname,
     int fd;
     *hostname = *diskname = NULL;
 
+    memset(buffer, 0, sizeof(buffer));
     if((fd = open(fname, O_RDONLY)) == -1)
 	return F_UNKNOWN;
 
@@ -452,6 +453,8 @@ get_dumpfile(
 {
     char buffer[DISK_BLOCK_BYTES];
     int fd;
+
+    memset(buffer, 0, sizeof(buffer));
 
     fh_init(file);
     file->type = F_UNKNOWN;
@@ -482,6 +485,7 @@ size_holding_files(
     off_t size = (off_t)0;
     struct stat finfo;
 
+    memset(buffer, 0, sizeof(buffer));
     filename = stralloc(holding_file);
     while(filename != NULL && filename[0] != '\0') {
 	if((fd = open(filename,O_RDONLY)) == -1) {
@@ -522,6 +526,7 @@ unlink_holding_files(
     dumpfile_t file;
     char *filename;
 
+    memset(buffer, 0, sizeof(buffer));
     filename = stralloc(holding_file);
     while(filename != NULL && filename[0] != '\0') {
 	if((fd = open(filename,O_RDONLY)) == -1) {
@@ -558,6 +563,7 @@ rename_tmp_holding(
     char *filename;
     char *filename_tmp = NULL;
 
+    memset(buffer, 0, sizeof(buffer));
     filename = stralloc(holding_file);
     while(filename != NULL && filename[0] != '\0') {
 	filename_tmp = newvstralloc(filename_tmp, filename, ".tmp", NULL);

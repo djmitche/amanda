@@ -111,7 +111,7 @@ if test ! -z "$AMLINT"; then
     AMLINTFLAGS="$AMLINTFLAGS -errsecurity=extended"
     AMLINTFLAGS="$AMLINTFLAGS -errtags=yes"
     AMLINTFLAGS="$AMLINTFLAGS -Ncheck=%all"
-    AMLINTFLAGS="$AMLINTFLAGS -Nlevel=1"
+    AMLINTFLAGS="$AMLINTFLAGS -Nlevel=2"
     AMLINTFLAGS="$AMLINTFLAGS -erroff=E_ASGN_NEVER_USED"
     AMLINTFLAGS="$AMLINTFLAGS,E_ASGN_RESET"
     AMLINTFLAGS="$AMLINTFLAGS,E_CAST_INT_CONST_TO_SMALL_INT"
@@ -3238,8 +3238,8 @@ AC_CONFIG_FILES([\
 	server-src/amtoc.pl		server-src/amverify.sh		\
 	server-src/Makefile		server-src/amstatus.pl		\
 	server-src/amverifyrun.sh	server-src/amcrypt.sh		\
-	server-src/amaespipe.sh         				\
-									\
+	server-src/amaespipe.sh         server-src/amcrypt-ossl.sh	\
+	server-src/amcrypt-ossl-asym.sh					\
 	tape-src/Makefile						\
 									\
 	config/Makefile			Makefile])

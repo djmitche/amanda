@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.5 2006/06/01 19:27:51 martinea Exp $
+ * $Id: clientconf.c,v 1.6 2006/06/06 23:13:25 paddy_s Exp $
  *
  * read configuration file
  */
@@ -126,7 +126,7 @@ client_getconf_byname(
 	if(np->token == kt->token) break;
 
     if(np->type == CONFTYPE_INT) {
-	snprintf(number, sizeof(number), "%d", client_getconf_int(np->parm));
+	snprintf(number, SIZEOF(number), "%d", client_getconf_int(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else if(np->type == CONFTYPE_BOOL) {
 	if(client_getconf_int(np->parm) == 0) {
@@ -136,7 +136,7 @@ client_getconf_byname(
 	    tmpstr = newstralloc(tmpstr, "on");
 	}
     } else if(np->type == CONFTYPE_REAL) {
-	snprintf(number, sizeof(number), "%lf", client_getconf_real(np->parm));
+	snprintf(number, SIZEOF(number), "%lf", client_getconf_real(np->parm));
 	tmpstr = newstralloc(tmpstr, number);
     } else {
 	tmpstr = newstralloc(tmpstr, client_getconf_str(np->parm));
@@ -397,7 +397,7 @@ main(
   } else {
     char my_cwd[STR_SIZE];
 
-    if (getcwd(my_cwd, sizeof(my_cwd)) == NULL) {
+    if (getcwd(my_cwd, SIZEOF(my_cwd)) == NULL) {
       error("cannot determine current working directory");
     }
     cln_config_dir = stralloc2(my_cwd, "/");
@@ -482,7 +482,7 @@ parse_client_conf(
     client_option->name = NULL;
 
 
-    my_argv = alloc(parse_argc * sizeof(char *));
+    my_argv = alloc((size_t)parse_argc * SIZEOF(char *));
     *new_argv = my_argv;
     *new_argc = 0;
     i=0;

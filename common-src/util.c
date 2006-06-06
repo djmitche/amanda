@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.28 2006/06/06 16:43:17 martinea Exp $
+ * $Id: util.c,v 1.29 2006/06/06 23:13:25 paddy_s Exp $
  */
 
 #include "amanda.h"
@@ -57,7 +57,7 @@ static int connect_port(struct sockaddr_in *addrp, in_port_t port, char *proto,
 			struct sockaddr_in *svaddr, int nonblock);
 
 char conftoken_getc(void);
-int conftoken_ungetc(char c);
+int conftoken_ungetc(int c);
 
 /*
  * Keep calling read() until we've read buflen's worth of data, or EOF,
@@ -158,7 +158,7 @@ make_socket(void)
 
 #ifdef SO_KEEPALIVE
     r = setsockopt(s, SOL_SOCKET, SO_KEEPALIVE,
-		   (void *)&on, sizeof(on));
+		   (void *)&on, SIZEOF(on));
     if (r == -1) {
 	save_errno = errno;
 	dbprintf(("%s: make_socket: setsockopt() failed: %s\n",
@@ -393,7 +393,7 @@ construct_datestamp(
     time_t *t)
 {
     struct tm *tm;
-    char datestamp[3*NUM_STR_SIZE];
+    char datestamp[3 * NUM_STR_SIZE];
     time_t when;
 
     if (t == NULL) {
@@ -415,7 +415,7 @@ construct_timestamp(
     time_t *t)
 {
     struct tm *tm;
-    char timestamp[6*NUM_STR_SIZE];
+    char timestamp[6 * NUM_STR_SIZE];
     time_t when;
 
     if (t == NULL) {
@@ -620,13 +620,15 @@ validate_mailto(
 
 t_conf_var *
 get_np(
-    t_conf_var        *get_var,
-    unsigned int  parm)
+    t_conf_var	*get_var,
+    int 	parm)
 {
     t_conf_var *np;
 
-    for(np = get_var; np->token != CONF_UNKNOWN; np++)
-	if(np->parm == parm) break;
+    for(np = get_var; np->token != CONF_UNKNOWN; np++) {
+	if(np->parm == parm)
+	    break;
+    }
 
     if(np->token == CONF_UNKNOWN)
 	error("error [unknown getconf_np parm: %d]", parm);
@@ -1282,7 +1284,7 @@ conftoken_getc(void)
 
 int
 conftoken_ungetc(
-    char c)
+    int c)
 {
     if(conf_line == NULL)
 	return ungetc(c, conf_conf);
@@ -1627,6 +1629,16 @@ read_long(
 }
 
 void
+read_size(
+    t_conf_var *np,
+    val_t *val)
+{
+    np = np;
+    ckseen(&val->seen);
+    val->v.size = get_size();
+}
+
+void
 read_am64(
     t_conf_var *np,
     val_t *val)
@@ -1686,33 +1698,46 @@ copy_val_t(
 	case CONFTYPE_PRIORITY:
 	    valdst->v.i = valsrc->v.i;
 	    break;
+
 	case CONFTYPE_LONG:
 	    valdst->v.l = valsrc->v.l;
 	    break;
+
+	case CONFTYPE_SIZE:
+	    valdst->v.size = valsrc->v.size;
+	    break;
+
 	case CONFTYPE_AM64:
 	    valdst->v.am64 = valsrc->v.am64;
 	    break;
+
 	case CONFTYPE_REAL:
 	    valdst->v.r = valsrc->v.r;
 	    break;
+
 	case CONFTYPE_RATE:
 	    valdst->v.rate[0] = valsrc->v.rate[0];
 	    valdst->v.rate[1] = valsrc->v.rate[1];
 	    break;
+
 	case CONFTYPE_IDENT:
 	case CONFTYPE_STRING:
 	    valdst->v.s = stralloc(valsrc->v.s);
 	    break;
+
 	case CONFTYPE_TIME:
 	    valdst->v.t = valsrc->v.t;
 	    break;
+
 	case CONFTYPE_SL:
 	    valdst->v.sl = duplicate_sl(valsrc->v.sl);
 	    break;
+
 	case CONFTYPE_EXINCLUDE:
 	    valdst->v.exinclude.type = valsrc->v.exinclude.type;
 	    valdst->v.exinclude.optional = valsrc->v.exinclude.optional;
 	    valdst->v.exinclude.sl = duplicate_sl(valsrc->v.exinclude.sl);
+	    break;
 	}
     }
 }
@@ -1728,6 +1753,7 @@ free_val_t(
 	case CONFTYPE_ENCRYPT:
 	case CONFTYPE_ESTIMATE:
 	case CONFTYPE_STRATEGY:
+	case CONFTYPE_SIZE:
 	case CONFTYPE_TAPERALGO:
 	case CONFTYPE_PRIORITY:
 	case CONFTYPE_LONG:
@@ -1735,15 +1761,19 @@ free_val_t(
 	case CONFTYPE_REAL:
 	case CONFTYPE_RATE:
 	    break;
+
 	case CONFTYPE_IDENT:
 	case CONFTYPE_STRING:
 	    amfree(val->v.s);
 	    break;
+
 	case CONFTYPE_TIME:
 	    break;
+
 	case CONFTYPE_SL:
 	    free_sl(val->v.sl);
 	    break;
+
 	case CONFTYPE_EXINCLUDE:
 	    free_sl(val->v.exinclude.sl);
 	    break;
@@ -1765,6 +1795,7 @@ taperalgo2str(
 }
 
 static char buffer_conf_print[1025];
+
 char *
 conf_print(
     val_t *val)
@@ -1775,154 +1806,193 @@ conf_print(
     buffer_conf_print[0] = '\0';
     switch(val->type) {
     case CONFTYPE_INT:
-	snprintf(buffer_conf_print, 1024, "%d", val->v.i);
+	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print), "%d", val->v.i);
 	break;
+
     case CONFTYPE_LONG:
-	snprintf(buffer_conf_print, 1024, "%ld", val->v.l);
+	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print), "%ld", val->v.l);
 	break;
+
+    case CONFTYPE_SIZE:
+	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print), SSIZE_T_FMT,
+		(SSIZE_T_FMT_TYPE)val->v.size);
+	break;
+
     case CONFTYPE_AM64:
-	snprintf(buffer_conf_print, 1024, OFF_T_FMT ,
+	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print), OFF_T_FMT ,
 		 (OFF_T_FMT_TYPE)val->v.am64);
 	break;
+
     case CONFTYPE_REAL:
-	snprintf(buffer_conf_print, 1024, "%0.5f" , val->v.r);
+	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print), "%0.5f" , val->v.r);
 	break;
+
     case CONFTYPE_RATE:
-	snprintf(buffer_conf_print, 1024, "%0.5f %0.5f" , val->v.rate[0], val->v.rate[1]);
+	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print), "%0.5f %0.5f" , val->v.rate[0], val->v.rate[1]);
 	break;
+
     case CONFTYPE_IDENT:
-	if(val->v.s)
-	    strncpy(buffer_conf_print, val->v.s, 1024);
-	else
+	if(val->v.s) {
+	    strncpy(buffer_conf_print, val->v.s, SIZEOF(buffer_conf_print));
+	    buffer_conf_print[SIZEOF(buffer_conf_print) - 1] = '\0';
+	} else
 	    buffer_conf_print[0] = '\0';
 	break;
+
     case CONFTYPE_STRING:
 	buffer_conf_print[0] = '"';
 	if(val->v.s) {
-	    strncpy(&buffer_conf_print[1],val->v.s, 1023);
-	    if(strlen(val->v.s) < 1023)
-		buffer_conf_print[strlen(val->v.s)+1] = '"';
-	}
-	else {
+	    strncpy(&buffer_conf_print[1], val->v.s,
+	    		SIZEOF(buffer_conf_print) - 1);
+	    buffer_conf_print[SIZEOF(buffer_conf_print) - 2] = '\0';
+	    buffer_conf_print[strlen(buffer_conf_print)] = '"';
+	} else {
 	    buffer_conf_print[1] = '"';
 	    buffer_conf_print[2] = '\0';
 	}
 	break;
+
     case CONFTYPE_TIME:
 	stm = localtime(&val->v.t);
-	snprintf(buffer_conf_print, 1024, "%d%02d%02d",stm->tm_hour, stm->tm_min, stm->tm_sec);
+	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print), "%d%02d%02d",stm->tm_hour, stm->tm_min, stm->tm_sec);
 	break;
+
     case CONFTYPE_SL:
 	buffer_conf_print[0] = '\0';
 	break;
+
     case CONFTYPE_EXINCLUDE:
 	buffer_conf_print[0] = '\0';
 	if(val->v.exinclude.type == 0)
-	    strcpy(buffer_conf_print,"LIST ");
+	    strncpy(buffer_conf_print, "LIST ", SIZEOF(buffer_conf_print));
 	else
-	    strcpy(buffer_conf_print,"FILE ");
+	    strncpy(buffer_conf_print, "FILE ", SIZEOF(buffer_conf_print));
 	pos = 5;
 	if(val->v.exinclude.optional == 1)
-	    strcpy(&buffer_conf_print[pos],"OPTIONAL ");
+	    strncpy(&buffer_conf_print[pos], "OPTIONAL ", SIZEOF(buffer_conf_print));
 	pos += 9;
 	break;
+
     case CONFTYPE_BOOL:
 	if(val->v.i)
-	    strcpy(buffer_conf_print,"yes");
+	    strncpy(buffer_conf_print, "yes", SIZEOF(buffer_conf_print));
 	else
-	    strcpy(buffer_conf_print,"no");
+	    strncpy(buffer_conf_print, "no", SIZEOF(buffer_conf_print));
 	break;
+
     case CONFTYPE_STRATEGY:
 	switch(val->v.i) {
 	case DS_SKIP:
-	    strcpy(buffer_conf_print,"SKIP");
+	    strncpy(buffer_conf_print, "SKIP", SIZEOF(buffer_conf_print));
 	    break;
+
 	case DS_STANDARD:
-	    strcpy(buffer_conf_print,"STANDARD");
+	    strncpy(buffer_conf_print, "STANDARD", SIZEOF(buffer_conf_print));
 	    break;
+
 	case DS_NOFULL:
-	    strcpy(buffer_conf_print,"NOFULL");
+	    strncpy(buffer_conf_print, "NOFULL", SIZEOF(buffer_conf_print));
 	    break;
+
 	case DS_NOINC:
-	    strcpy(buffer_conf_print,"NOINC");
+	    strncpy(buffer_conf_print, "NOINC", SIZEOF(buffer_conf_print));
 	    break;
+
 	case DS_HANOI:
-	    strcpy(buffer_conf_print,"HANOI");
+	    strncpy(buffer_conf_print, "HANOI", SIZEOF(buffer_conf_print));
 	    break;
+
 	case DS_INCRONLY:
-	    strcpy(buffer_conf_print,"INCRONLY");
+	    strncpy(buffer_conf_print, "INCRONLY", SIZEOF(buffer_conf_print));
 	    break;
 	}
 	break;
+
     case CONFTYPE_COMPRESS:
 	switch(val->v.i) {
 	case COMP_NONE:
-	    strcpy(buffer_conf_print,"NONE");
+	    strncpy(buffer_conf_print, "NONE", SIZEOF(buffer_conf_print));
 	    break;
+
 	case COMP_FAST:
-	    strcpy(buffer_conf_print,"CLIENT FAST");
+	    strncpy(buffer_conf_print, "CLIENT FAST", SIZEOF(buffer_conf_print));
 	    break;
+
 	case COMP_BEST:
-	    strcpy(buffer_conf_print,"CLIENT BEST");
+	    strncpy(buffer_conf_print, "CLIENT BEST", SIZEOF(buffer_conf_print));
 	    break;
+
 	case COMP_CUST:
-	    strcpy(buffer_conf_print,"CLIENT CUSTOM");
+	    strncpy(buffer_conf_print, "CLIENT CUSTOM", SIZEOF(buffer_conf_print));
 	    break;
+
 	case COMP_SERV_FAST:
-	    strcpy(buffer_conf_print,"SERVER FAST");
+	    strncpy(buffer_conf_print, "SERVER FAST", SIZEOF(buffer_conf_print));
 	    break;
+
 	case COMP_SERV_BEST:
-	    strcpy(buffer_conf_print,"SERVER FAST");
+	    strncpy(buffer_conf_print, "SERVER FAST", SIZEOF(buffer_conf_print));
 	    break;
+
 	case COMP_SERV_CUST:
-	    strcpy(buffer_conf_print,"SERVER CUSTOM");
+	    strncpy(buffer_conf_print, "SERVER CUSTOM", SIZEOF(buffer_conf_print));
 	    break;
 	}
 	break;
+
     case CONFTYPE_ESTIMATE:
 	switch(val->v.i) {
 	case ES_CLIENT:
-	    strcpy(buffer_conf_print,"CLIENT");
+	    strncpy(buffer_conf_print, "CLIENT", SIZEOF(buffer_conf_print));
 	    break;
+
 	case ES_SERVER:
-	    strcpy(buffer_conf_print,"SERVER");
+	    strncpy(buffer_conf_print, "SERVER", SIZEOF(buffer_conf_print));
 	    break;
+
 	case ES_CALCSIZE:
-	    strcpy(buffer_conf_print,"CALCSIZE");
+	    strncpy(buffer_conf_print, "CALCSIZE", SIZEOF(buffer_conf_print));
 	    break;
 	}
 	break;
+
      case CONFTYPE_ENCRYPT:
 	switch(val->v.i) {
 	case ENCRYPT_NONE:
-	    strcpy(buffer_conf_print,"NONE");
+	    strncpy(buffer_conf_print, "NONE", SIZEOF(buffer_conf_print));
 	    break;
+
 	case ENCRYPT_CUST:
-	    strcpy(buffer_conf_print,"CLIENT");
+	    strncpy(buffer_conf_print, "CLIENT", SIZEOF(buffer_conf_print));
 	    break;
+
 	case ENCRYPT_SERV_CUST:
-	    strcpy(buffer_conf_print,"SERVER");
+	    strncpy(buffer_conf_print, "SERVER", SIZEOF(buffer_conf_print));
 	    break;
 	}
 	break;
+
      case CONFTYPE_TAPERALGO:
-	strcpy(buffer_conf_print,taperalgo2str(val->v.i));
+	strncpy(buffer_conf_print, taperalgo2str(val->v.i), SIZEOF(buffer_conf_print));
 	break;
+
      case CONFTYPE_PRIORITY:
 	switch(val->v.i) {
 	case 0:
-	    strcpy(buffer_conf_print,"LOW");
+	    strncpy(buffer_conf_print, "LOW", SIZEOF(buffer_conf_print));
 	    break;
+
 	case 1:
-	    strcpy(buffer_conf_print,"MEDIUM");
+	    strncpy(buffer_conf_print, "MEDIUM", SIZEOF(buffer_conf_print));
 	    break;
+
 	case 2:
-	    strcpy(buffer_conf_print,"HIGH");
+	    strncpy(buffer_conf_print, "HIGH", SIZEOF(buffer_conf_print));
 	    break;
 	}
 	break;
     }
-    buffer_conf_print[1024] = '\0';
+    buffer_conf_print[SIZEOF(buffer_conf_print) - 1] = '\0';
     return buffer_conf_print;
 }
 
@@ -2015,21 +2085,21 @@ conf_init_priority(
 void
 conf_init_compress(
     val_t *val,
-    int    i)
+    comp_t    i)
 {
     val->seen = 0;
     val->type = CONFTYPE_COMPRESS;
-    val->v.i = i;
+    val->v.i = (int)i;
 }
 
 void
 conf_init_encrypt(
     val_t *val,
-    int    i)
+    encrypt_t    i)
 {
     val->seen = 0;
     val->type = CONFTYPE_ENCRYPT;
-    val->v.i = i;
+    val->v.i = (int)i;
 }
 
 void
@@ -2040,6 +2110,16 @@ conf_init_long(
     val->seen = 0;
     val->type = CONFTYPE_LONG;
     val->v.l = l;
+}
+
+void
+conf_init_size(
+    val_t *val,
+    ssize_t   sz)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_LONG;
+    val->v.size = sz;
 }
 
 void
@@ -2139,11 +2219,21 @@ conf_set_bool(
 void
 conf_set_compress(
     val_t *val,
-    int    i)
+    comp_t    i)
 {
     val->seen = -1;
     val->type = CONFTYPE_COMPRESS;
-    val->v.i = i;
+    val->v.i = (int)i;
+}
+
+void
+conf_set_encrypt(
+    val_t *val,
+    encrypt_t    i)
+{
+    val->seen = -1;
+    val->type = CONFTYPE_COMPRESS;
+    val->v.i = (int)i;
 }
 
 void
@@ -2248,8 +2338,10 @@ command_overwrite(
 	for(kt = keytab; kt->token != CONF_UNKNOWN; kt++)
 	    if(kt->token == np->token) break;
 
-	if(kt->token == CONF_UNKNOWN)
+	if(kt->token == CONF_UNKNOWN) {
 	    error("read_conf: invalid token");
+	    /*NOTREACHED*/
+	}
 
         for(command_option = command_options; command_option->name != NULL;
 							    command_option++) {

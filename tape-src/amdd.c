@@ -78,6 +78,7 @@ main(
 	    fprintf(stderr, "debug mode!\n");
 	    break;
 
+#ifndef __lint
 	case 'l':
 	    have_length = 1;
 	    length = OFF_T_ATOI(optarg);
@@ -93,7 +94,7 @@ main(
 		length /= (off_t)1024;
 	    }
 	    break;
-
+#endif
 	case 'h':
 	default:
 	    usage();
