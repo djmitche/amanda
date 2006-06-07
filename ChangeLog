@@ -1,4 +1,7 @@
 2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/bsd-security.c (stream_read_callback): Merge with zmanda.
+
+2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c(process_writenetfd): Call security_stream_read
 						     only if size > 0.
 

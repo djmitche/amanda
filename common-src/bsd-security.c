@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.68 2006/06/06 23:13:25 paddy_s Exp $
+ * $Id: bsd-security.c,v 1.69 2006/06/07 12:33:39 martinea Exp $
  *
  * "BSD" security module
  */
@@ -534,8 +534,6 @@ stream_read_callback(
 
     if (n < 0) {
 	security_stream_seterror(&bs->secstr, strerror(errno));
-    } else if (n == 0) {
-	security_stream_close(&bs->secstr);
     } else {
 	(*bs->fn)(bs->arg, bs->databuf, n);
     }
