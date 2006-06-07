@@ -23,11 +23,12 @@
 <cmdsynopsis>
   <command>amreport</command>    
     <arg choice='opt'><replaceable>config</replaceable></arg>
-    <arg choice='opt'><arg choice='plain'>-i </arg></arg>
-    <arg choice='opt'><arg choice='plain'>-M </arg><arg choice='plain'><replaceable>address</replaceable></arg></arg>
-    <arg choice='opt'><arg choice='plain'>-l </arg><arg choice='plain'><replaceable>logfile</replaceable></arg></arg>
-    <arg choice='opt'><arg choice='plain'>-f </arg><arg choice='plain'><replaceable>outputfile</replaceable></arg></arg>
-    <arg choice='opt'><arg choice='plain'>-p </arg><arg choice='plain'><replaceable>postscriptfile</replaceable></arg></arg>
+    <arg choice='opt'>-i</arg>
+    <group><arg choice='plain'>-M</arg><arg choice='plain'><replaceable>address</replaceable></arg></group>
+    <group><arg choice='plain'>-l</arg><arg choice='plain'><replaceable>logfile</replaceable></arg></group>
+    <group><arg choice='plain'>-f</arg><arg choice='plain'><replaceable>outputfile</replaceable></arg></group>
+    <group><arg choice='plain'>-p</arg><arg choice='plain'><replaceable>postscriptfile</replaceable></arg></group>
+    <group><arg choice='plain'>-o</arg><arg choice='plain'><replaceable>configoption</replaceable></arg></group>*
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -117,6 +118,14 @@ This option has an effect only if the
 directive is specified in amanda.conf.</para>
   </listitem>
   </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>-o</emphasis> <replaceable>configoption</replaceable></term>
+  <listitem>
+<para>See the "<emphasis remap='B'>CONFIGURATION OVERWRITE</emphasis>" section in <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>.</para>
+  </listitem>
+  </varlistentry>
+
 </variablelist>
 </refsect1>
 

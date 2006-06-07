@@ -22,11 +22,11 @@
 <refsynopsisdiv>
 <cmdsynopsis>
   <command>amcheck</command>    
-    <arg choice='opt'>-mwsclt </arg>
-    <arg choice='opt'>-Maddress </arg>
+    <arg choice='opt'>-mwsclt</arg>
+    <arg choice='opt'>-M<replaceable>address</replaceable></arg>
     <arg choice='plain'><replaceable>config</replaceable></arg>
-    <arg choice='opt' rep='repeat'><arg choice='plain'><replaceable>host</replaceable></arg><arg choice='opt' rep='repeat'><replaceable>disk</replaceable></arg></arg>
-    
+    <group><arg choice='plain'><replaceable>host</replaceable></arg><arg choice='opt'><replaceable>disk</replaceable></arg>*</group>*
+    <group><arg choice='plain'>-o</arg><arg choice='plain'><replaceable>configoption</replaceable></arg></group>*
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -122,8 +122,9 @@ is set.</para>
 but the mail is always sent.</para>
   </listitem>
   </varlistentry>
+
   <varlistentry>
-  <term><option>-M</option><replaceable>address</replaceable></term>
+  <term><option>-M</option> <replaceable>address</replaceable></term>
   <listitem>
 <para>Mail the report to
 <emphasis remap='I'>address</emphasis>
@@ -133,6 +134,20 @@ value from
 <emphasis remap='I'>amanda.conf</emphasis>.
 Implies
 <option>-m</option>.</para>
+  </listitem>
+  </varlistentry>
+
+  <varlistentry>
+  <term><replaceable>host</replaceable> [<replaceable>disk</replaceable>]*</term>
+  <listitem>
+<para>Specify the host and disk on which the command will work.</para>
+  </listitem>
+  </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>-o</emphasis> <replaceable>configoption</replaceable></term>
+  <listitem>
+<para>See the "<emphasis remap='B'>CONFIGURATION OVERWRITE</emphasis>" section in <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>.</para>
   </listitem>
   </varlistentry>
 </variablelist>

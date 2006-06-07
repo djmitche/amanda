@@ -24,7 +24,8 @@
   <command>amadmin</command>    
     <arg choice='plain'><replaceable>config</replaceable></arg>
     <arg choice='plain'><replaceable>command</replaceable></arg>
-    <arg choice='opt'><arg choice='plain'><replaceable>command</replaceable></arg><arg choice='plain'><replaceable>options</replaceable></arg></arg>
+    <group><replaceable><arg choice='plain'>command</arg><arg choice='plain'>options</arg></replaceable></group>
+    <group><arg choice='plain'>-o</arg><arg choice='plain'><replaceable>configoption</replaceable></arg></group>*
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -245,6 +246,15 @@ on
 Mostly used for debugging.</para>
   </listitem>
   </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>-o</emphasis> <replaceable>configoption</replaceable></term>
+  <listitem>
+<para>See the "<emphasis remap='B'>CONFIGURATION OVERWRITE</emphasis>"
+ section in <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>.</para>
+  </listitem>
+  </varlistentry>
+
 </variablelist>
 </refsect1>
 

@@ -23,12 +23,13 @@
 <cmdsynopsis>
   <command>amrestore</command>    
     <group choice='opt'><arg choice='plain'>-r </arg><arg choice='plain'>-c </arg><arg choice='plain'>-C </arg></group>
-    <arg choice='opt'><arg choice='plain'>-b </arg><arg choice='plain'><replaceable>blocksize</replaceable></arg></arg>
-    <arg choice='opt'><arg choice='plain'>-f </arg><arg choice='plain'><replaceable>fileno</replaceable></arg></arg>
-    <arg choice='opt'><arg choice='plain'>-l </arg><arg choice='plain'><replaceable>label</replaceable></arg></arg>
-    <arg choice='opt'>-p </arg>
-    <arg choice='opt'>-h </arg>
-    <group choice='plain'><arg choice='plain'><replaceable>tapedevice</replaceable></arg><arg choice='plain'><replaceable>holdingfile</replaceable></arg><arg choice='opt'><arg choice='plain'><replaceable>hostname</replaceable></arg><arg choice='opt'><arg choice='plain'><replaceable>diskname</replaceable></arg><arg choice='opt'><arg choice='plain'><replaceable>datestamp</replaceable></arg><arg choice='opt'><arg choice='plain'><replaceable>hostname</replaceable></arg><arg choice='opt'><arg choice='plain'><replaceable>diskname</replaceable></arg><arg choice='opt' rep='repeat'><replaceable>datestamp</replaceable></arg></arg></arg></arg></arg></arg></group>
+    <group><arg choice='plain'>-b</arg><arg choice='plain'><replaceable>blocksize</replaceable></arg></group>
+    <group><arg choice='plain'>-f</arg><arg choice='plain'><replaceable>fileno</replaceable></arg></group>
+    <group><arg choice='plain'>-l </arg><arg choice='plain'><replaceable>label</replaceable></arg></group>
+    <arg choice='opt'>-p</arg>
+    <arg choice='opt'>-h</arg>
+    <arg choice='plain'><arg choice='plain'><replaceable>tapedevice</replaceable></arg>|<arg choice='plain'><replaceable>holdingfile</replaceable></arg></arg>
+    <group><arg choice='plain'><replaceable>hostname</replaceable></arg><group><arg choice='plain'><replaceable>diskname</replaceable></arg><group><arg choice='plain'><replaceable>datestamp</replaceable></arg><group><arg choice='plain'><replaceable>hostname</replaceable></arg><group><arg choice='plain'><replaceable>diskname</replaceable></arg><group><arg choice='plain'><replaceable>datestamp</replaceable></arg><arg choice='plain'>...</arg></group></group></group></group></group></group>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -240,6 +241,16 @@ uses the header to determine the restore program to use.</para>
 <para>If a header is written (-r or -h),
 only 32 KBytes are output regardless of the tape blocksize.
 This makes the resulting image usable as a holding file.</para>
+
+<variablelist remap='TP'>
+  <varlistentry>
+  <term><emphasis remap='B'>-o</emphasis> <replaceable>configoption</replaceable></term>
+  <listitem>
+<para>See the "<emphasis remap='B'>CONFIGURATION OVERWRITE</emphasis>" section in <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>.</para>
+  </listitem>
+  </varlistentry>
+</variablelist>
+
 </refsect1>
 
 <refsect1><title>EXAMPLES</title>

@@ -22,14 +22,13 @@
 <refsynopsisdiv>
 <cmdsynopsis>
   <command>amflush</command>    
-    <arg choice='opt'>-b </arg>
-    <arg choice='opt'>-f </arg>
-    <arg choice='opt'>-s </arg>
-    <arg choice='opt' rep='repeat'><arg choice='plain'>-D </arg><arg choice='plain'><replaceable>datestamp</replaceable></arg></arg>
-    
+    <arg choice='opt'>-b</arg>
+    <arg choice='opt'>-f</arg>
+    <arg choice='opt'>-s</arg>
+    <group><arg choice='plain'>-D</arg><arg choice='plain'><replaceable>datestamp</replaceable></arg></group>*
     <arg choice='plain'><replaceable>config</replaceable></arg>
-    <arg choice='opt' rep='repeat'><arg choice='plain'><replaceable>host</replaceable></arg><arg choice='opt' rep='repeat'><replaceable>disk</replaceable></arg></arg>
-    
+    <group><arg choice='plain'><replaceable>host</replaceable></arg><arg choice='opt'><replaceable>disk</replaceable></arg>*</group>*
+    <group><arg choice='plain'>-o</arg><arg choice='plain'><replaceable>configoption</replaceable></arg></group>*
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -97,6 +96,21 @@ will flush all
 dumps from 25 december 2000 to 27 december 2000.</para>
   </listitem>
   </varlistentry>
+
+  <varlistentry>
+  <term><replaceable>host</replaceable> [<replaceable>disk</replaceable>]*</term>
+  <listitem>
+<para>Specify the host and disk on which the command will work.</para>
+  </listitem>
+  </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>-o</emphasis> <replaceable>configoption</replaceable></term>
+  <listitem>
+<para>See the "<emphasis remap='B'>CONFIGURATION OVERWRITE</emphasis>" section in <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>.</para>
+  </listitem>
+  </varlistentry>
+
 </variablelist>
 
 <para>You can specify many host/disk expressions, only disks that

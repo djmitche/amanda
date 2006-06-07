@@ -23,8 +23,8 @@
 <cmdsynopsis>
   <command>amdump</command>    
     <arg choice='plain'><replaceable>config</replaceable></arg>
-    <arg choice='opt' rep='repeat'><arg choice='plain'><replaceable>host</replaceable></arg><arg choice='opt' rep='repeat'><replaceable>disk</replaceable></arg></arg>
-    
+    <group><arg choice='plain'><replaceable>host</replaceable></arg><arg choice='opt'><replaceable>disk</replaceable></arg>*</group>*
+    <group><arg choice='plain'>-o</arg><arg choice='plain'><replaceable>configoption</replaceable></arg></group>*
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -56,6 +56,26 @@ checks for the hold file every minute.</para>
 <para>See the
 <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>
 man page for more details about &A;.</para>
+</refsect1>
+
+<refsect1><title>OPTIONS</title>
+<variablelist remap='TP'>
+
+  <varlistentry>
+  <term><replaceable>host</replaceable> [<replaceable>disk</replaceable>]*</term>
+  <listitem>
+<para>Specify the host and disk on which the command will work.</para>
+  </listitem>
+  </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>-o</emphasis> <replaceable>configoption</replaceable></term>
+  <listitem>
+<para>See the "<emphasis remap='B'>CONFIGURATION OVERWRITE</emphasis>" section in <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>.</para>
+  </listitem>
+  </varlistentry>
+
+</variablelist>
 </refsect1>
 
 <refsect1><title>EXAMPLE</title>

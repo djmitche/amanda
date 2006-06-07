@@ -24,6 +24,7 @@
   <command>amgetconf</command>    
     <arg choice='opt'><replaceable>config</replaceable></arg>
     <arg choice='plain'><replaceable>parameter</replaceable></arg>
+    <group><arg choice='plain'>-o</arg><arg choice='plain'><replaceable>configoption</replaceable></arg></group>*
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -79,6 +80,20 @@ followed by a colon (:) and the previously opened file name.</para>
 <para>See the
 <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>
 man page for more details about &A;.</para>
+</refsect1>
+
+<refsect1><title>OPTIONS</title>
+<variablelist remap='TP'>
+
+  <varlistentry>
+  <term><emphasis remap='B'>-o</emphasis> <replaceable>configoption</replaceable></term>
+  <listitem>
+<para>See the "<emphasis remap='B'>CONFIGURATION OVERWRITE</emphasis>" section in <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>.</para>
+  </listitem>
+  </varlistentry>
+
+
+</variablelist>
 </refsect1>
 
 <refsect1><title>EXAMPLE</title>
