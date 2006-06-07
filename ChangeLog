@@ -1,4 +1,11 @@
 2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c: exec the service with the auth as parameter.
+	* amandad-src/amandad.c(writebuf): Do no close fd.
+	* client-src/selfcheck.c: Read the auth for the command line and
+				  compare with the option string.
+	* client-src/selfcheck.c(main): Do no close 0,1,2 fd.
+
+2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/xml-source/amanda.8.xml(CONFIGURATION OVERWRITE): New section.
 	* man/xml-source/amadmin.8.xml,   man/xml-source/amcheck.8.xml,
 	  man/xml-source/amdump.8.xml,    man/xml-source/amflush.8.xml,

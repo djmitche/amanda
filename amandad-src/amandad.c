@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.11 2006/06/07 12:12:48 martinea Exp $
+ * $Id: amandad.c,v 1.12 2006/06/07 18:45:10 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1457,7 +1457,7 @@ service_new(
 	safe_fd(DATA_FD_OFFSET, DATA_FD_COUNT*2);
 	close(2);
 
-	execle(cmd, cmd, "amandad", NULL, safe_env());
+	execle(cmd, cmd, "amandad", auth, NULL, safe_env());
 	error("could not exec service %s: %s\n", cmd, strerror(errno));
 	/*NOTREACHED*/
     }
@@ -1557,10 +1557,8 @@ writebuf(
 	return 0;			/* this is the parent */
 
     case 0: 				/* this is the child */
-	safe_fd(as->reqfd, 1);
-	close(0);close(1);close(2);
+	close(as->repfd);
 	writesize = fullwrite(as->reqfd, bufp, size);
-	aclose(as->reqfd);
 	exit(writesize != (ssize_t)size);
 	/* NOTREACHED */
     }

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.80 2006/06/02 00:56:05 paddy_s Exp $
+ * $Id: selfcheck.c,v 1.81 2006/06/07 18:45:10 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -62,6 +62,7 @@ int need_compress_path=0;
 int need_calcsize=0;
 int program_is_wrapper=0;
 
+static char *amandad_auth = NULL;
 static am_feature_t *our_features = NULL;
 static char *our_feature_string = NULL;
 static g_option_t *g_options = NULL;
@@ -101,9 +102,6 @@ main(
     unsigned long malloc_hist_2, malloc_size_2;
 #endif
 
-    (void)argc;	/* Quiet unused parameter warning */
-    (void)argv;	/* Quiet unused parameter warning */
-
     /* initialize */
 
     safe_fd(-1, 0);
@@ -122,6 +120,10 @@ main(
     dbopen();
     startclock();
     dbprintf(("%s: version %s\n", get_pname(), version()));
+
+    if(argc > 2 && strcmp(argv[1], "amandad") == 0) {
+	amandad_auth = stralloc(argv[2]);
+    }
 
     our_features = am_init_feature_set();
     our_feature_string = am_feature_to_string(our_features);
@@ -297,9 +299,6 @@ main(
 #endif
 
     dbclose();
-    close(0);
-    close(1);
-    close(2);
     return 0;
 
  err:
@@ -309,9 +308,6 @@ main(
 	      err_extra ? ": " : "",
 	      err_extra ? err_extra : ""));
     dbclose();
-    close(0);
-    close(1);
-    close(2);
     return 1;
 }
 
@@ -460,7 +456,13 @@ check_options(
     if ((options->compress == COMPR_BEST) || (options->compress == COMPR_FAST) 
 		|| (options->compress == COMPR_CUST)) {
 	need_compress_path=1;
-   }
+    }
+    if(options->auth && amandad_auth) {
+	if(strcmp(options->auth, amandad_auth) != 0) {
+	    fprintf(stdout,"ERROR [client configured for auth=%s while server requested '%s']\n",
+		    amandad_auth, options->auth);
+	}
+    }
 }
 
 static void
