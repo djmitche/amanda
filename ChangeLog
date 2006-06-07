@@ -1,4 +1,7 @@
 2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c(get_conftoken): Merge from zmanda.
+
+2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.c(get_conftoken): Remove a conftoken_ungetc.
 
 2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.30 2006/06/07 13:52:54 martinea Exp $
+ * $Id: util.c,v 1.31 2006/06/07 14:43:36 martinea Exp $
  */
 
 #include "amanda.h"
@@ -257,7 +257,7 @@ connect_port(
 
     if ((s = make_socket()) == -1) return -2;
 
-    addrp->sin_port = htons(port);
+    addrp->sin_port = (in_port_t)htons(port);
 
     if (bind(s, (struct sockaddr *)addrp, sizeof(*addrp)) != 0) {
 	save_errno = errno;
@@ -1311,6 +1311,7 @@ get_conftoken(
     int token_overflow;
     int inquote = 0;
     int escape = 0;
+    int sign;
 
     if (token_pushed) {
 	token_pushed = 0;
@@ -1364,6 +1365,7 @@ get_conftoken(
 		ch = conftoken_getc();
 	    } while(isalnum(ch) || ch == '_' || ch == '-');
 
+	    conftoken_ungetc(ch);
 	    if (conftoken_ungetc(ch) == EOF) {
 		if (ferror(conf_conf)) {
 		    conf_parserror("Pushback of '%c' failed: %s",
@@ -1381,51 +1383,45 @@ get_conftoken(
 	    else tok = lookup_keyword(tokenval.v.s);
 	}
 	else if (isdigit(ch)) {	/* integer */
-	    int sign;
-	    if (1) {
-		sign = 1;
-	    } else {
-	    negative_number: /* look for goto negative_number below */
-		sign = -1;
-	    }
-	    tokenval.v.am64 = 0;
+	    sign = 1;
+
+negative_number: /* look for goto negative_number below sign is set there */
+	    am64 = 0;
 	    do {
-		tokenval.v.am64 = tokenval.v.am64 * 10 + (ch - '0');
+		am64 = am64 * 10 + (ch - '0');
 		ch = conftoken_getc();
-	    } while(isdigit(ch));
+	    } while (isdigit(ch));
+
 	    if (ch != '.') {
 		if (exp == CONF_INT) {
 		    tok = CONF_INT;
-		    tokenval.v.i *= sign;
-		}
-		else if (exp == CONF_LONG) {
+		    tokenval.v.i = sign * (int)am64;
+		} else if (exp == CONF_LONG) {
 		    tok = CONF_LONG;
-		    tokenval.v.l *= sign;
-		}
-		else if (exp != CONF_REAL) {
+		    tokenval.v.l = (long)sign * (long)am64;
+		} else if (exp != CONF_REAL) {
 		    tok = CONF_AM64;
-		    tokenval.v.am64 *= sign;
+		    tokenval.v.am64 = (off_t)sign * am64;
 		} else {
 		    /* automatically convert to real when expected */
-		    am64 = tokenval.v.am64;
-		    tokenval.v.r = sign * (double) am64;
+		    tokenval.v.r = (double)sign * (double)am64;
 		    tok = CONF_REAL;
 		}
-	    }
-	    else {
+	    } else {
 		/* got a real number, not an int */
-		am64 = tokenval.v.am64;
 		tokenval.v.r = sign * (double) am64;
-		am64=0; d=1;
+		am64 = 0;
+		d = 1;
 		ch = conftoken_getc();
-		while(isdigit(ch)) {
+		while (isdigit(ch)) {
 		    am64 = am64 * 10 + (ch - '0');
 		    d = d * 10;
 		    ch = conftoken_getc();
 		}
-		tokenval.v.r += sign * ((double)am64)/d;
+		tokenval.v.r += sign * ((double)am64) / d;
 		tok = CONF_REAL;
 	    }
+
 	    if (conftoken_ungetc(ch) == EOF) {
 		if (ferror(conf_conf)) {
 		    conf_parserror("Pushback of '%c' failed: %s",
@@ -1439,7 +1435,7 @@ get_conftoken(
 	    buf = tkbuf;
 	    token_overflow = 0;
 	    inquote = 1;
-	    *buf++ = ch;
+	    *buf++ = (char)ch;
 	    while (inquote && ((ch = conftoken_getc()) != EOF)) {
 		if (ch == '\n') {
 		    if (!escape)
@@ -1463,7 +1459,7 @@ get_conftoken(
 		    token_overflow = 1;
 		    break;
 		}
-		*buf++ = ch;
+		*buf++ = (char)ch;
 	    }
 	    *buf = '\0';
 
@@ -1482,8 +1478,10 @@ get_conftoken(
 
 	case '-':
 	    ch = conftoken_getc();
-	    if (isdigit(ch))
+	    if (isdigit(ch)) {
+		sign = -1;
 		goto negative_number;
+	    }
 	    else {
 		if (conftoken_ungetc(ch) == EOF) {
 		    if (ferror(conf_conf)) {
