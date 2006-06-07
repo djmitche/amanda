@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.29 2006/06/06 23:13:25 paddy_s Exp $
+ * $Id: util.c,v 1.30 2006/06/07 13:52:54 martinea Exp $
  */
 
 #include "amanda.h"
@@ -1341,7 +1341,7 @@ get_conftoken(
 
 	while(ch != EOF && ch != '\n' && isspace(ch))
 	    ch = conftoken_getc();
-	if (ch == '#') {		/* comment - eat everything but eol/eof */
+	if (ch == '#') {	/* comment - eat everything but eol/eof */
 	    while((ch = conftoken_getc()) != EOF && ch != '\n') {
 		(void)ch; /* Quiet empty loop complaints */	
 	    }
@@ -1364,7 +1364,6 @@ get_conftoken(
 		ch = conftoken_getc();
 	    } while(isalnum(ch) || ch == '_' || ch == '-');
 
-	    conftoken_ungetc(ch);
 	    if (conftoken_ungetc(ch) == EOF) {
 		if (ferror(conf_conf)) {
 		    conf_parserror("Pushback of '%c' failed: %s",
