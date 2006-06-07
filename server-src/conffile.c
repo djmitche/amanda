@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.144 2006/06/06 23:13:26 paddy_s Exp $
+ * $Id: conffile.c,v 1.145 2006/06/07 11:28:31 martinea Exp $
  *
  * read configuration file
  */
@@ -714,7 +714,7 @@ lookup_interface(
 
 #ifndef __lint
     for (p = interface_list; p != NULL; p = p->next) {
-	if(strcasecmp(p->name, str) == 0) return p;
+	if(strcasecmp(p->name, str) == 0)
 	    return p;
     }
 #endif

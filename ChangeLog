@@ -1,3 +1,6 @@
+2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/conffile.c (lookup_interface): Fix merge error.
+
 2006-06-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.c (conftoken_ungetc): Return the character.
 	* common-src/util.c (get_conftoken): Merge to allow escape character.
