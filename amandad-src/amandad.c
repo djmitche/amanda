@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.10 2006/06/01 14:54:39 martinea Exp $
+ * $Id: amandad.c,v 1.11 2006/06/07 12:12:48 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1231,9 +1231,8 @@ process_writenetfd(
 
     if(size > 0) {
 	fullwrite(dh->fd_write, buf, (size_t)size);
+	security_stream_read(dh->netfd, process_writenetfd, dh);
     }
-
-    security_stream_read(dh->netfd, process_writenetfd, dh);
 }
 
 

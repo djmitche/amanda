@@ -1,4 +1,8 @@
 2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c(process_writenetfd): Call security_stream_read
+						     only if size > 0.
+
+2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/conffile.c (lookup_interface): Fix merge error.
 
 2006-06-06  Jean-Louis Martineau <martineau@zmanda.com>
