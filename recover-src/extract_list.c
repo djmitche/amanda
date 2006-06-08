@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.103 2006/06/06 23:13:25 paddy_s Exp $
+ * $Id: extract_list.c,v 1.104 2006/06/08 11:44:25 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1305,8 +1305,12 @@ extract_files_setup(
 	      authopt, tape_server_name);
     }
 
+    /* We assume that amidxtaped support fe_amidxtaped_options_features */
+    /*                               and fe_amidxtaped_options_auth     */
+    /* We should send a noop to really know                             */
     req = vstralloc("SERVICE amidxtaped\n",
 		    "OPTIONS ", "features=", our_features_string, ";",
+				"auth=", authopt, ";",
 		    "\n", NULL);
     protocol_sendreq(tape_server_name, amidxtaped_secdrv,
 		     amidxtaped_client_get_security_conf, req, STARTUP_TIMEOUT,

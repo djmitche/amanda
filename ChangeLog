@@ -1,4 +1,27 @@
 2006-06-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.h (g_option_t): Add auth.
+	* amandad-src/amandad_util.c (init_g_options): Set auth to NULL.
+	* amandad-src/amandad_util.c (parse_g_options): Parse auth.
+	* amandad-src/amandad_util.c (free_g_options): Free auth.
+	* client-src/sendbackup.c: Get amandad_auth from command line and
+				   compare with REQ packet.
+	* common-src/amfeatures.h (fe_amindexd_options_hostname,
+				   fe_amindexd_options_features,
+				   fe_amindexd_options_auth,
+				   fe_amidxtaped_options_hostname,
+				   fe_amidxtaped_options_features,
+				   fe_amidxtaped_options_auth): New amfeatures.
+	* common-src/amfeatures.c (am_init_feature_set): Set new amfeatures.
+	* recover-src/amrecover.c: Send auth in OPTIONS of req packet.
+	* recover-src/extract_list.c: Send auth in OPTIONS of req packet.
+	* restore-src/amidxtaped.c: Parse amandad_auth from command line.
+				    Get auth from OPTIONS line.
+				    Compare them.
+	* server-src/amindexd.c: Parse amandad_auth from command line.
+				 Get auth from OPTIONS line.
+				 Compare them.
+
+2006-06-08  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.c(connect_port): Return -2 on ECONNREFUSED error
 					   from connect.
 

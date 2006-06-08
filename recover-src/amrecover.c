@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.61 2006/06/06 23:13:25 paddy_s Exp $
+ * $Id: amrecover.c,v 1.62 2006/06/08 11:44:25 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -421,8 +421,12 @@ main(
 
     protocol_init();
 
+    /* We assume that amindexd support fe_amindexd_options_features */
+    /*                             and fe_amindexd_options_auth     */
+    /* We should send a noop to really know                         */
     req = vstralloc("SERVICE amindexd\n",
 		    "OPTIONS ", "features=", our_features_string, ";",
+				"auth=", authopt, ";",
 		    "\n", NULL);
 
     secdrv = security_getdriver(authopt);

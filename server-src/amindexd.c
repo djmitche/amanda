@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.95 2006/06/01 14:54:39 martinea Exp $
+ * $Id: amindexd.c,v 1.96 2006/06/08 11:44:25 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -91,6 +91,7 @@ static int process_ls_dump(char *, DUMP_ITEM *, int, char **);
 
 static size_t reply_buffer_size = STR_SIZE;
 static char *reply_buffer = NULL;
+static char *amandad_auth = NULL;
 
 static void reply(int, char *, ...)
     __attribute__ ((format (printf, 2, 3)));
@@ -1077,6 +1078,11 @@ main(
 	from_amandad = 1;
 	argc--;
 	argv++;
+	if(argc > 0) {
+	    amandad_auth = *argv;
+	    argc--;
+	    argv++;
+	}
     }
     else {
 	from_amandad = 0;
@@ -1166,6 +1172,15 @@ main(
 	}
 	amfree(line);
 
+	if(amandad_auth && g_options->auth) {
+	    if(strcmp(amandad_auth, g_options->auth) != 0) {
+		printf("ERROR recover program ask for auth=%s while amindexd is configured for '%s'\n",
+		       g_options->auth, amandad_auth);
+		error("amindexd: ERROR recover program ask for auth=%s while amindexd is configured for '%s'",
+		      g_options->auth, amandad_auth);
+		/*NOTREACHED*/
+	    }
+	}
 	/* send the REP packet */
 	printf("CONNECT MESG %d\n", DATA_FD_OFFSET);
 	printf("\n");

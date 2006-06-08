@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.63 2006/06/01 17:05:49 martinea Exp $
+/* $Id: amidxtaped.c,v 1.64 2006/06/08 11:44:25 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -59,6 +59,7 @@ static am_feature_t *our_features = NULL;
 static am_feature_t *their_features = NULL;
 static g_option_t *g_options = NULL;
 static int ctlfdin, ctlfdout, datafdout;
+static char *amandad_auth = NULL;
 
 static char *get_client_line(void);
 static void check_security_buffer(char *);
@@ -275,6 +276,8 @@ main(
 
     if(argv[1] && strcmp(argv[1], "amandad") == 0) {
 	from_amandad = 1;
+	if(argv[2])
+	    amandad_auth = argv[2];
     }
     else {
 	from_amandad = 0;
@@ -374,6 +377,15 @@ main(
 	}
 	amfree(line);
 
+	if(amandad_auth && g_options->auth) {
+	    if(strcmp(amandad_auth, g_options->auth) != 0) {
+		printf("ERROR recover program ask for auth=%s while amidxtaped is configured for '%s'\n",
+		       g_options->auth, amandad_auth);
+		error("ERROR recover program ask for auth=%s while amidxtaped is configured for '%s'",
+		      g_options->auth, amandad_auth);
+		/*NOTREACHED*/
+	    }
+	}
 	/* send the REP packet */
 	printf("CONNECT CTL %d DATA %d\n", DATA_FD_OFFSET, DATA_FD_OFFSET+1);
 	printf("\n");

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.79 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: sendbackup.c,v 1.80 2006/06/08 11:44:25 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -61,6 +61,7 @@ backup_program_t *program = NULL;
 static am_feature_t *our_features = NULL;
 static char *our_feature_string = NULL;
 static g_option_t *g_options = NULL;
+static char *amandad_auth = NULL;
 
 /* local functions */
 int main(int argc, char **argv);
@@ -204,11 +205,22 @@ main(
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    interactive = (argc > 1 && strcmp(argv[1],"-t") == 0);
+    if(argc > 1 && strcmp(argv[1],"-t") == 0) {
+	interactive = 1;
+	argc--;
+	argv++;
+    } else {
+	interactive = 0;
+    }
+
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
     dbopen();
     startclock();
     dbprintf(("%s: version %s\n", get_pname(), version()));
+
+    if(argc > 2 && strcmp(argv[1], "amandad") == 0) {
+	amandad_auth = stralloc(argv[2]);
+    }
 
     our_features = am_init_feature_set();
     our_feature_string = am_feature_to_string(our_features);
@@ -371,6 +383,14 @@ main(
     }
     if (!options->createindex)
 	indexfd = -1;
+
+    if(options->auth && amandad_auth) {
+	if(strcmp(options->auth, amandad_auth) != 0) {
+	    printf("ERROR [client configured for auth=%s while server requested '%s']\n",
+		   amandad_auth, options->auth);
+	    exit(-1);
+	}
+    }
 
     printf("CONNECT DATA %d MESG %d INDEX %d\n",
 	   DATA_FD_OFFSET, DATA_FD_OFFSET+1,

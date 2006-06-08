@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: amandad_util.c,v 1.3 2006/05/25 01:47:07 johnfranks Exp $
+ * $Id: amandad_util.c,v 1.4 2006/06/08 11:44:25 martinea Exp $
  *
  */
 
@@ -40,6 +40,7 @@ init_g_options(
     g_options->str      = NULL;
     g_options->features = NULL;
     g_options->hostname = NULL;
+    g_options->auth     = NULL;
     g_options->maxdumps = 0;
 }
 
@@ -86,6 +87,16 @@ parse_g_options(
 		}
 	    }
 	    g_options->hostname = stralloc(tok+9);
+	}
+	else if(strncmp(tok,"auth=", 5) == 0) {
+	    if(g_options->auth != NULL) {
+		dbprintf(("%s: multiple auth option\n", 
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple auth option]\n");
+		}
+	    }
+	    g_options->auth = stralloc(tok+5);
 	}
 	else if(strncmp(tok,"maxdumps=", 9) == 0) {
 	    if(g_options->maxdumps != 0) {
@@ -145,5 +156,6 @@ free_g_options(
     amfree(g_options->str);
     am_release_feature_set(g_options->features);
     amfree(g_options->hostname);
+    amfree(g_options->auth);
     amfree(g_options);
 }
