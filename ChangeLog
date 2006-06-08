@@ -1,4 +1,7 @@
 2006-06-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/diskfile.c (parse_diskline): Only return 0 or -1.
+
+2006-06-08  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.h (g_option_t): Add auth.
 	* amandad-src/amandad_util.c (init_g_options): Set auth to NULL.
 	* amandad-src/amandad_util.c (parse_g_options): Parse auth.

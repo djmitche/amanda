@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.84 2006/06/06 23:13:26 paddy_s Exp $
+ * $Id: diskfile.c,v 1.85 2006/06/08 11:54:21 martinea Exp $
  *
  * read disklist file
  */
@@ -348,6 +348,8 @@ upcase(
 }
 
 
+/* return  0 on success */
+/* return -1 on error   */
 static int
 parse_diskline(
     disklist_t *lst,
@@ -406,7 +408,7 @@ parse_diskline(
 	disk_parserror(filename, line_num, "disk dumptype expected");
 	amfree(hostname);
 	amfree(diskname);
-	return 1;
+	return (-1);
     }
     fp = s - 1;
     skip_quoted_string(s, ch);
@@ -426,7 +428,7 @@ parse_diskline(
 		amfree(hostname);
 		amfree(diskdevice);
 		amfree(diskname);
-		return 1;
+		return (-1);
 	    }
 
 	    fp = s - 1;
@@ -467,6 +469,7 @@ parse_diskline(
 	if (strchr(s-1, '}') &&
 	    (strchr(s-1, '#') == NULL ||
 	     strchr(s-1, '}') < strchr(s-1, '#'))) {
+	    disk_parserror(filename, line_num,"'}' on same line than '{'");
 	    amfree(hostname);
 	    if(!dup) {
 		amfree(disk->device);
@@ -484,6 +487,8 @@ parse_diskline(
 					":", disk->name, ")", 0),
 			      diskf, (char*)filename, line_num_p);
 	if (dtype == NULL || dup) {
+	    disk_parserror(filename, line_num,
+			   "read of custom dumptype failed");
 	    amfree(hostname);
 	    if(!dup) {
 		amfree(disk->device);
@@ -607,7 +612,7 @@ parse_diskline(
 	    amfree(hostname);
 	    amfree(disk->name);
 	    amfree(disk);
-	    return 1;
+	    return (-1);
 	}
 	disk->spindle = atoi(fp);
 	skip_integer(s, ch);
@@ -639,7 +644,7 @@ parse_diskline(
 	amfree(hostname);
 	amfree(disk->name);
 	amfree(disk);
-	return (1);
+	return (0);
     }
 
     /* success, add disk to lists */
