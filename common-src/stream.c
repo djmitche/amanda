@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.35 2006/06/02 17:56:52 martinea Exp $
+ * $Id: stream.c,v 1.36 2006/06/08 23:25:02 paddy_s Exp $
  *
  * functions for managing stream sockets
  */
@@ -277,7 +277,7 @@ out:
     try_socksize(client_socket, SO_SNDBUF, sendsize);
     try_socksize(client_socket, SO_RCVBUF, recvsize);
     if (localport != NULL)
-	*localport = ntohs(claddr.sin_port);
+	*localport = (in_port_t)ntohs(claddr.sin_port);
     return client_socket;
 }
 

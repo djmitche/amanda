@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.145 2006/06/07 11:28:31 martinea Exp $
+ * $Id: conffile.c,v 1.146 2006/06/08 23:25:02 paddy_s Exp $
  *
  * read configuration file
  */
@@ -564,13 +564,18 @@ getconf_byname(
 	if(islower((int)ch))
 	    s[-1] = (char)toupper(ch);
     }
-    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
-	if(strcmp(kt->keyword, tmpstr) == 0) break;
+    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++) {
+	if(strcmp(kt->keyword, tmpstr) == 0)
+	    break;
+    }
 
-    if(kt->token == CONF_UNKNOWN) return NULL;
+    if(kt->token == CONF_UNKNOWN)
+	return NULL;
 
-    for(np = server_var; np->token != CONF_UNKNOWN; np++)
-	if(np->token == kt->token) break;
+    for(np = server_var; np->token != CONF_UNKNOWN; np++) {
+	if(np->token == kt->token)
+	    break;
+    }
 
     if(np->token == CONF_UNKNOWN) return NULL;
 
@@ -580,8 +585,7 @@ getconf_byname(
     } else if(np->type == CONFTYPE_BOOL) {
 	if(getconf_int(np->parm) == 0) {
 	    tmpstr = newstralloc(tmpstr, "off");
-	}
-	else {
+	} else {
 	    tmpstr = newstralloc(tmpstr, "on");
 	}
     } else if(np->type == CONFTYPE_REAL) {
@@ -714,7 +718,7 @@ lookup_interface(
 
 #ifndef __lint
     for (p = interface_list; p != NULL; p = p->next) {
-	if(strcasecmp(p->name, str) == 0)
+	if (strcasecmp(p->name, str) == 0)
 	    return p;
     }
 #endif

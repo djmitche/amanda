@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.180 2006/06/06 23:13:26 paddy_s Exp $
+ * $Id: driver.c,v 1.181 2006/06/08 23:25:03 paddy_s Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -74,6 +74,7 @@ static int need_degraded=0;
 static event_handle_t *dumpers_ev_time = NULL;
 static event_handle_t *schedule_ev_read = NULL;
 
+static void wait_for_children(void);
 static void allocate_bandwidth(interface_t *ip, unsigned long kps);
 static int assign_holdingdisk(assignedhd_t **holdp, disk_t *diskp);
 static void adjust_diskspace(disk_t *diskp, cmd_t cmd);
@@ -166,6 +167,8 @@ main(
     set_pname("driver");
 
     dbopen();
+
+    atexit(wait_for_children);
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
@@ -526,6 +529,17 @@ main(
     dbclose();
 
     return 0;
+}
+
+static void
+wait_for_children(void)
+{
+	pid_t pid;
+	amwait_t status;
+
+	do {
+		pid = waitpid((pid_t)-1, &status, (int)NULL);
+	} while ((pid != 1) && (errno != ECHILD));
 }
 
 static void

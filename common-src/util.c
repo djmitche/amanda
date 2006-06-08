@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.32 2006/06/08 11:37:37 martinea Exp $
+ * $Id: util.c,v 1.33 2006/06/08 23:25:02 paddy_s Exp $
  */
 
 #include "amanda.h"
@@ -632,9 +632,10 @@ get_np(
 	    break;
     }
 
-    if(np->token == CONF_UNKNOWN)
+    if(np->token == CONF_UNKNOWN) {
 	error("error [unknown getconf_np parm: %d]", parm);
-
+	/* NOTREACHED */
+    }
     return np;
 }
 
@@ -1221,7 +1222,8 @@ get_bool(void)
     return val;
 }
 
-void ckseen(
+void
+ckseen(
     int *seen)
 {
     if (*seen && !allow_overwrites && conf_line_num != -2) {
@@ -1294,11 +1296,14 @@ conftoken_ungetc(
 	if(c == -1)
 	    return EOF;
 	conf_char--;
-	if(*conf_char != c)
+	if(*conf_char != c) {
 	    error("*conf_char != c   : %c %c", *conf_char, c);
-    }
-    else
+	    /* NOTREACHED */
+	}
+    } else {
 	error("conf_char == conf_line");
+	/* NOTREACHED */
+    }
     return c;
 }
 
@@ -2339,7 +2344,7 @@ command_overwrite(
 
 	if(kt->token == CONF_UNKNOWN) {
 	    error("read_conf: invalid token");
-	    /*NOTREACHED*/
+	    /* NOTREACHED */
 	}
 
         for(command_option = command_options; command_option->name != NULL;
