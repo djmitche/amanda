@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.62 2006/06/08 11:44:25 martinea Exp $
+ * $Id: amrecover.c,v 1.63 2006/06/08 13:55:28 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -48,7 +48,7 @@ int grab_reply(int show);
 void sigint_handler(int signum);
 int main(int argc, char **argv);
 
-#define USAGE "Usage: amrecover [[-C] <config>] [-s <index-server>] [-t <tape-server>] [-d <tape-device>]\n"
+#define USAGE "Usage: amrecover [[-C] <config>] [-s <index-server>] [-t <tape-server>] [-d <tape-device>] [-o <clientconfigoption>]*\n"
 
 char *config = NULL;
 char *server_name = NULL;
@@ -329,32 +329,6 @@ main(
 
     parse_client_conf(argc, argv, &new_argc, &new_argv);
 
-    our_features = am_init_feature_set();
-    our_features_string = am_feature_to_string(our_features);
-
-    conffile = vstralloc(CONFIG_DIR, "/", "amanda_client.conf", NULL);
-    read_clientconf(conffile);
-    amfree(conffile);
-
-    report_bad_client_arg();
-
-    config = stralloc(client_getconf_str(CLN_CONF));
-
-    amfree(server_name);
-    server_name = getenv("AMANDA_SERVER");
-    if(!server_name) server_name = client_getconf_str(CLN_INDEX_SERVER);
-    server_name = stralloc(server_name);
-
-    amfree(tape_server_name);
-    tape_server_name = getenv("AMANDA_TAPESERVER");
-    if(!tape_server_name) tape_server_name = client_getconf_str(CLN_TAPE_SERVER);
-    tape_server_name = stralloc(tape_server_name);
-
-    amfree(tape_device_name);
-    tape_device_name = stralloc(client_getconf_str(CLN_TAPEDEV));
-
-    authopt = stralloc(client_getconf_str(CLN_AUTH));
-
     if (new_argc > 1 && new_argv[1][0] != '-') {
 	/*
 	 * If the first argument is not an option flag, then we assume
@@ -371,24 +345,29 @@ main(
 	}
 	new_argv1[i + 1] = NULL;
 	new_argc++;
+	amfree(new_argv);
 	new_argv = new_argv1;
     }
     while ((i = getopt(new_argc, new_argv, "C:s:t:d:U")) != EOF) {
 	switch (i) {
 	    case 'C':
-		config = newstralloc(config, optarg);
+		add_client_conf(CLN_CONF, optarg);
+		//config = newstralloc(config, optarg);
 		break;
 
 	    case 's':
-		server_name = newstralloc(server_name, optarg);
+		add_client_conf(CLN_INDEX_SERVER, optarg);
+		//server_name = newstralloc(server_name, optarg);
 		break;
 
 	    case 't':
-		tape_server_name = newstralloc(tape_server_name, optarg);
+		add_client_conf(CLN_TAPE_SERVER, optarg);
+		//tape_server_name = newstralloc(tape_server_name, optarg);
 		break;
 
 	    case 'd':
-		tape_device_name = newstralloc(tape_device_name, optarg);
+		add_client_conf(CLN_TAPEDEV, optarg);
+		//tape_device_name = newstralloc(tape_device_name, optarg);
 		break;
 
 	    case 'U':
@@ -401,6 +380,38 @@ main(
 	(void)fprintf(stderr, USAGE);
 	exit(1);
     }
+
+    our_features = am_init_feature_set();
+    our_features_string = am_feature_to_string(our_features);
+
+    conffile = vstralloc(CONFIG_DIR, "/", "amanda_client.conf", NULL);
+    read_clientconf(conffile);
+    amfree(conffile);
+
+    config = stralloc(client_getconf_str(CLN_CONF));
+
+    conffile = vstralloc(CONFIG_DIR, "/", config, "/", "amanda_client.conf",
+			 NULL);
+    read_clientconf(conffile);
+    amfree(conffile);
+
+    report_bad_client_arg();
+
+    amfree(server_name);
+    server_name = getenv("AMANDA_SERVER");
+    if(!server_name) server_name = client_getconf_str(CLN_INDEX_SERVER);
+    server_name = stralloc(server_name);
+
+    amfree(tape_server_name);
+    tape_server_name = getenv("AMANDA_TAPESERVER");
+    if(!tape_server_name) tape_server_name = client_getconf_str(CLN_TAPE_SERVER);
+    tape_server_name = stralloc(tape_server_name);
+
+    amfree(tape_device_name);
+    tape_device_name = stralloc(client_getconf_str(CLN_TAPEDEV));
+
+    authopt = stralloc(client_getconf_str(CLN_AUTH));
+
 
     amfree(disk_name);
     amfree(mount_point);

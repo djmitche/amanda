@@ -1,4 +1,12 @@
 2006-06-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/clientconf.c (add_client_conf): New function to map
+						     normal option to their
+						     -o equivalent.
+	* client-src/clientconf.h (add_client_conf): Prototype.
+	* man/xml-source/amrecover.8.xml: Document -o.
+	* recover-src/amrecover.c: Also read <config>/amanda-client.conf
+
+2006-06-08  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/diskfile.c (parse_diskline): Only return 0 or -1.
 
 2006-06-08  Jean-Louis Martineau <martineau@zmanda.com>

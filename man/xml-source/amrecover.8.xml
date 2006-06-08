@@ -23,10 +23,11 @@
 <refsynopsisdiv>
 <cmdsynopsis>
   <command>amrecover</command>    
-    <arg choice='opt'><arg choice='opt'>-C </arg><arg choice='plain'><replaceable>config</replaceable></arg></arg>
-    <arg choice='opt'><arg choice='plain'>-s </arg><arg choice='plain'><replaceable>index-server</replaceable></arg></arg>
-    <arg choice='opt'><arg choice='plain'>-t </arg><arg choice='plain'><replaceable>tape-server</replaceable></arg></arg>
-    <arg choice='opt'><arg choice='plain'>-d </arg><arg choice='plain'><replaceable>tape-device</replaceable></arg></arg>
+    <group><arg choice='opt'>-C </arg><arg choice='plain'><replaceable>config</replaceable></arg></group>
+    <group><arg choice='plain'>-s </arg><arg choice='plain'><replaceable>index-server</replaceable></arg></group>
+    <group><arg choice='plain'>-t </arg><arg choice='plain'><replaceable>tape-server</replaceable></arg></group>
+    <group><arg choice='plain'>-d </arg><arg choice='plain'><replaceable>tape-device</replaceable></arg></group>
+    <group><arg choice='plain'>-o </arg><arg choice='plain'><replaceable>clientconfigoption</replaceable></arg></group>*
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -43,6 +44,8 @@ from the root of the backed up filesystem, or use
 to move into that directory, otherwise a directory tree that resembles 
 the backed up filesystem will be created in the current directory.
 See the examples below for details.</para>
+
+<para>Amrecover will read the <emphasis remap='B'>amanda-client.conf</emphasis> file and the <replaceable>config</replaceable><emphasis remap='B'>/amanda-client.conf</emphasis> file.</para>
 
 <para>See the
 <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>
@@ -78,6 +81,15 @@ client-custom-compressed tapes.</note>
 <para>Tape device to use on the tape server host.</para>
   </listitem>
   </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>-o</emphasis> <replaceable>clientconfigoption</replaceable></term>
+  <listitem>
+<para>See the "<emphasis remap='B'>CONFIGURATION OVERWRITE</emphasis>"
+ section in <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>.</para>
+  </listitem>
+  </varlistentry>
+
 </variablelist>
 </refsect1>
 

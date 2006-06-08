@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.6 2006/06/06 23:13:25 paddy_s Exp $
+ * $Id: clientconf.c,v 1.7 2006/06/08 13:55:28 martinea Exp $
  *
  * read configuration file
  */
@@ -46,7 +46,8 @@ static char *cln_config_dir = NULL;
 
 val_t client_conf[CLN_CLN];
 
-command_option_t *client_options = NULL;
+command_option_t *client_options      = NULL;
+int               client_options_size = 0;
 
 /* predeclare local functions */
 
@@ -79,6 +80,8 @@ t_conf_var client_var [] = {
    { CONF_UNKNOWN        , CONFTYPE_INT   , NULL       , CLN_CLN            , NULL }
 };
 
+static int first_file = 1;
+
 /*
 ** ------------------------
 **  External entry points
@@ -87,7 +90,12 @@ t_conf_var client_var [] = {
 int read_clientconf(
     char *filename)
 {
-    init_defaults();
+    if(first_file == 1) {
+	init_defaults();
+	first_file = 0;
+    } else {
+	allow_overwrites = 1;
+    }
 
     /* We assume that conf_confname & conf are initialized to NULL above */
     read_conffile_recursively(filename);
@@ -267,12 +275,13 @@ read_conffile_recursively(
     }
 
     if((conf_conf = fopen(conf_confname, "r")) == NULL) {
-	fprintf(stderr, "could not open conf file \"%s\": %s\n", conf_confname,
-		strerror(errno));
+	dbprintf(("Could not open conf file \"%s\": %s\n", conf_confname,
+		  strerror(errno)));
 	amfree(conf_confname);
 	got_parserror = -1;
 	return;
     }
+    dbprintf(("Reading conf file \"%s\".\n", conf_confname));
 
     conf_line_num = 0;
 
@@ -477,10 +486,10 @@ parse_client_conf(
     char *myarg, *value;
     command_option_t *client_option;
 
-    client_options = alloc(parse_argc+1 * SIZEOF(*client_options));
+    client_options = alloc((size_t)(parse_argc+1) * SIZEOF(*client_options));
+    client_options_size = parse_argc+1;
     client_option = client_options;
     client_option->name = NULL;
-
 
     my_argv = alloc((size_t)parse_argc * SIZEOF(char *));
     *new_argv = my_argv;
@@ -511,6 +520,58 @@ parse_client_conf(
 	}
 	i++;
     }
+}
+
+/* return  0 on success             */
+/* return -1 if it is already there */
+/* return -2 if other failure       */
+int
+add_client_conf(
+    cconfparm_t parm,
+    char *value)
+{
+    t_conf_var *np;
+    keytab_t *kt;
+    command_option_t *command_option;
+    int nb_option;
+
+    for(np = client_var; np->token != CONF_UNKNOWN; np++)
+	if(np->parm == (int)parm) break;
+
+    if(np->token == CONF_UNKNOWN) return -2;
+
+    for(kt = client_keytab; kt->token != CONF_UNKNOWN; kt++)
+	if(kt->token == np->token) break;
+
+    if(kt->token == CONF_UNKNOWN) return -2;
+
+    /* Try to find it */
+    nb_option = 0;
+    for(command_option = client_options; command_option->name != NULL;
+							command_option++) {
+	if(strcasecmp(command_option->name, kt->keyword) == 0) {
+	    return -1;
+	}
+	nb_option++;
+    }
+
+    /* Increase size of client_options if needed */
+    if(nb_option >= client_options_size-1) {
+	client_options_size *= 2;
+	client_options = realloc(client_options,
+			        client_options_size * SIZEOF(*client_options));
+	for(command_option = client_options; command_option->name != NULL;
+							command_option++) {
+	}
+    }
+
+    /* add it */
+    command_option->used = 0;
+    command_option->name = stralloc(kt->keyword);
+    command_option->value = stralloc(value);
+    command_option++;
+    command_option->name = NULL;
+    return 0;
 }
 
 void
