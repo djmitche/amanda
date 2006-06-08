@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.31 2006/06/07 14:43:36 martinea Exp $
+ * $Id: util.c,v 1.32 2006/06/08 11:37:37 martinea Exp $
  */
 
 #include "amanda.h"
@@ -175,6 +175,8 @@ make_socket(void)
 
 /* addrp is my address */
 /* svaddr is the address of the remote machine */
+/* return socket on success */
+/* return -1     on failure */
 int
 connect_portrange(
     struct sockaddr_in *addrp,
@@ -301,7 +303,7 @@ connect_port(
 		  ntohs(svaddr->sin_port),
 		  strerror(save_errno)));
 	aclose(s);
-	if (save_errno != EADDRNOTAVAIL) {
+	if (save_errno != EADDRNOTAVAIL && save_errno != ECONNREFUSED) {
 	    dbprintf(("errno %d strerror %s\n",
 		      errno, strerror(errno)));
 	    errno = save_errno;

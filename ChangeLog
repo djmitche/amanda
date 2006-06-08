@@ -1,3 +1,7 @@
+2006-06-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c(connect_port): Return -2 on ECONNREFUSED error
+					   from connect.
+
 2006-06-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c: exec the service with the auth as parameter.
 	* amandad-src/amandad.c(writebuf): Do no close fd.
