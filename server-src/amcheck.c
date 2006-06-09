@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.136 2006/06/06 23:13:26 paddy_s Exp $
+ * $Id: amcheck.c,v 1.137 2006/06/09 10:30:29 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -652,6 +652,11 @@ start_server_check(
 	    fprintf(outf, "ERROR: lbl_templ set but no LPRCMD defined, you should reconfigure amanda\n       and make sure it find a lpr or lp command.\n");
 	    confbad = 1;
 #endif
+	}
+
+	/* check that localhost is resolvable */
+	if ((gethostbyname("localhost")) == NULL) {
+	    fprintf(outf, "ERROR: Cannot resolve `localhost'.\n");
 	}
     }
 
