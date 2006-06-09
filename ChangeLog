@@ -1,4 +1,7 @@
 2006-06-09  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c (connect_port): ETIMEDOUT is a fatal error.
+
+2006-06-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/stream.c (stream_client_internal): Get errno set
 							correctly.
 	* server-src/driver.c (handle_chunker_result): Don't asserti(0) on

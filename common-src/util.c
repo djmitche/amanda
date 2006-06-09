@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.33 2006/06/08 23:25:02 paddy_s Exp $
+ * $Id: util.c,v 1.34 2006/06/09 17:29:10 martinea Exp $
  */
 
 #include "amanda.h"
@@ -303,13 +303,12 @@ connect_port(
 		  ntohs(svaddr->sin_port),
 		  strerror(save_errno)));
 	aclose(s);
-	if (save_errno != EADDRNOTAVAIL && save_errno != ECONNREFUSED) {
-	    dbprintf(("errno %d strerror %s\n",
-		      errno, strerror(errno)));
-	    errno = save_errno;
-	    return -1;
+	errno = save_errno;
+	if (save_errno == ECONNREFUSED ||
+	    save_errno == ETIMEDOUT)  {
+	    return -2	;
 	}
-	return -2;
+	return -1;
     }
 
     dbprintf(("%s: connected to %s.%d\n",
