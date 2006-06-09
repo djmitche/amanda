@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.63 2006/06/08 13:55:28 martinea Exp $
+ * $Id: amrecover.c,v 1.64 2006/06/09 18:26:21 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -70,6 +70,7 @@ am_feature_t *indexsrv_features = NULL;
 am_feature_t *tapesrv_features = NULL;
 static char *errstr = NULL;
 char *authopt;
+int amindexd_alive = 0;
 
 static struct {
     const char *name;
@@ -242,7 +243,9 @@ sigint_handler(
 	(void)kill(extract_restore_child_pid, SIGKILL);
     extract_restore_child_pid = -1;
 
-    (void)send_command("QUIT");
+    if(amindexd_alive) 
+	(void)send_command("QUIT");
+
     _exit(1);
 }
 
@@ -736,6 +739,7 @@ bad_nak:
 
     /* everything worked */
     *response_error = 0;
+    amindexd_alive = 1;
     return;
 
 parse_error:
@@ -761,6 +765,8 @@ void
 stop_amindexd(void)
 {
     int i;
+
+    amindexd_alive = 0;
     for (i = 0; i < NSTREAMS; i++) {
         if (streams[i].fd != NULL) {
             security_stream_close(streams[i].fd);
