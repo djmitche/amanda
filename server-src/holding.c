@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: holding.c,v 1.55 2006/06/06 23:13:26 paddy_s Exp $
+ * $Id: holding.c,v 1.56 2006/06/09 23:07:26 martinea Exp $
  *
  * Functions to access holding disk
  */
@@ -374,19 +374,21 @@ pick_datestamp(
 	    printf("Select directories to flush [A..%c]: [ALL] ", max_char);
 	    fflush(stdout); fflush(stderr);
 	    amfree(answer);
-	    if (((answer = agets(stdin)) == NULL) || (*answer == '\0')) {
+	    if ((answer = agets(stdin)) == NULL) {
 		clearerr(stdin);
 		continue;
 	    }
+
+	    if (*answer == '\0' || strncasecmp(answer, "ALL", 3) == 0) {
+		break;
+	    }
+
 	    a = answer;
 	    while ((ch = *a++) != '\0') {
 		if (!isspace(ch))
 		    break;
 	    }
 
-	    if(ch == '\0' || strncasecmp(a, "ALL", 3) == 0) {
-		break;
-	    }
 	    do {
 		if (isspace(ch) || ch == ',') {
 		    continue;

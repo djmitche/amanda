@@ -1,6 +1,9 @@
 2006-06-09  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/holding.c (pick_datestamp): Fix reading user input.
+
+2006-06-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/amrecover.c (sigint_handler): Call send_command only if
-						    amindexd is aliave.
+						    amindexd is alive.
 
 2006-06-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.c (connect_port): ETIMEDOUT is a fatal error.
