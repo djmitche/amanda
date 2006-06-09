@@ -1,4 +1,13 @@
 2006-06-09  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/stream.c (stream_client_internal): Get errno set
+							correctly.
+	* server-src/driver.c (handle_chunker_result): Don't asserti(0) on
+			      receive of a TRYAGAIN from a chunker, but set
+			      chunker->result.
+	* server-src/dumper.c: Try gethostbyname("localhost") before calling
+			       stream_client and log appropriate message.
+
+2006-06-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amcheck.c: Report ERROR if gethostbyname("localhost")
 				doesn't succeed.
 

@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.179 2006/06/06 14:48:29 martinea Exp $
+/* $Id: dumper.c,v 1.180 2006/06/09 10:39:55 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -448,13 +448,28 @@ main(
 	        /*NOTREACHED*/
 	    }
 
-	    /* connect outf to taper port */
+	    if ((gethostbyname("localhost")) == NULL) {
+		errstr = newstralloc(errstr,
+				     "could not resolve localhost");
+		q = squotef(errstr);
+		putresult(FAILED, "%s %s\n", handle, q);
+		log_add(L_FAIL, "%s %s %s %d [%s]", hostname, qdiskname,
+			dumper_timestamp, level, errstr);
+		amfree(q);
+		break;
+	    }
+	    /* connect outf to chunker/taper port */
 
 	    outfd = stream_client("localhost", taper_port,
 				  STREAM_BUFSIZE, 0, NULL, 0);
 	    if (outfd == -1) {
-		q = squotef("[taper port open: %s]", strerror(errno));
+		
+		errstr = newvstralloc(errstr, "port open: ",
+				      strerror(errno), NULL);
+		q = squotef(errstr);
 		putresult(FAILED, "%s %s\n", handle, q);
+		log_add(L_FAIL, "%s %s %s %d [%s]", hostname, qdiskname,
+			dumper_timestamp, level, errstr);
 		amfree(q);
 		break;
 	    }

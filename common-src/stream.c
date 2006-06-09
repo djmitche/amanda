@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.36 2006/06/08 23:25:02 paddy_s Exp $
+ * $Id: stream.c,v 1.37 2006/06/09 10:39:55 martinea Exp $
  *
  * functions for managing stream sockets
  */
@@ -199,7 +199,7 @@ stream_client_internal(
     f = priv ? "stream_client_privileged" : "stream_client";
 
     if((hostp = gethostbyname(hostname)) == NULL) {
-	save_errno = errno;
+	save_errno = EHOSTUNREACH;
 	dbprintf(("%s: %s: gethostbyname(%s) failed\n",
 		  debug_prefix(NULL),
 		  f,
@@ -269,8 +269,10 @@ stream_client_internal(
     if(client_socket > 0)
 	goto out;
 
+    save_errno = errno;
     dbprintf(("%s: stream_client: Could not bind to any port: %s\n",
-	      debug_prefix(NULL), strerror(errno)));
+	      debug_prefix(NULL), strerror(save_errno)));
+    errno = save_errno;
     return -1;
 
 out:

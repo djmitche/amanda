@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.181 2006/06/08 23:25:03 paddy_s Exp $
+ * $Id: driver.c,v 1.182 2006/06/09 10:39:55 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1553,8 +1553,9 @@ handle_chunker_result(
 	    break;
 
 	case TRYAGAIN: /* TRY-AGAIN <handle> <errstr> */
-	    assert(0);
 	    event_release(chunker->ev_read);
+
+	    chunker->result = cmd;
 
 	    break;
 	case FAILED: /* FAILED <handle> <errstr> */
