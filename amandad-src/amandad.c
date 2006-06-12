@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.12 2006/06/07 18:45:10 martinea Exp $
+ * $Id: amandad.c,v 1.13 2006/06/12 18:44:05 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1229,9 +1229,15 @@ process_writenetfd(
     assert(cookie != NULL);
     dh = cookie;
 
-    if(size > 0) {
+    if (dh->fd_write <= 0) {
+	dbprintf(("%s: process_writenetfd: dh->fd_write <= 0\n",
+	    debug_prefix_time(NULL)));
+    } else if (size > 0) {
 	fullwrite(dh->fd_write, buf, (size_t)size);
 	security_stream_read(dh->netfd, process_writenetfd, dh);
+    }
+    else {
+	aclose(dh->fd_write);
     }
 }
 

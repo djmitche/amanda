@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.104 2006/06/08 11:44:25 martinea Exp $
+ * $Id: extract_list.c,v 1.105 2006/06/12 18:44:05 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1386,6 +1386,10 @@ extract_files_setup(
 	get_amidxtaped_line();
 	if(strncmp(amidxtaped_line,"FEATURES=",9) == 0) {
 	    tapesrv_features = am_string_to_feature(amidxtaped_line+9);
+	} else {
+	    fprintf(stderr, "amrecover - expecting FEATURES line from amidxtaped\n");
+	    stop_amidxtaped();
+	    return -1;
 	}
 	am_release_feature_set(tapesrv_features);
     }
@@ -2218,6 +2222,7 @@ static void
 stop_amidxtaped(void)
 {
     int i;
+
     for (i = 0; i < NSTREAMS; i++) {
         if (amidxtaped_streams[i].fd != NULL) {
             security_stream_close(amidxtaped_streams[i].fd);

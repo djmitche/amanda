@@ -1,4 +1,10 @@
 2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c (process_writenetfd): Close the pipe if the
+						      security_stream is closed.
+	* recover-src/extract_list.c: Improve message if we don't get thei
+				      FEATURE line from amidxtaped.
+
+2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/amrecover.c: Read amanda-client.conf and
 				   <conf>/amanda-client.conf.
 
