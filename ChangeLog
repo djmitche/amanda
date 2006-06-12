@@ -1,4 +1,7 @@
 2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/restore.c: Fix Adding at end of list.
+
+2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taper.c (syncpipe_putstr): Don't crash if str is NULL.
 
 2006-06-09  Jean-Louis Martineau <martineau@zmanda.com>

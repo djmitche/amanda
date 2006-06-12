@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.35 2006/06/01 19:27:51 martinea Exp $
+ * $Id: restore.c,v 1.36 2006/06/12 15:14:46 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1584,7 +1584,7 @@ search_tapes(
 	    memcpy(tempdump->file, &file, SIZEOF(dumpfile_t));
 	    if(tape_seen->files){
 		fileentry = tape_seen->files;
-		while (fileentry != NULL)
+		while (fileentry->next != NULL)
 			fileentry = fileentry->next;
 		fileentry->next = tempdump;
 	    }
