@@ -1,4 +1,8 @@
 2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* recover-src/amrecover.c: Read amanda-client.conf and
+				   <conf>/amanda-client.conf.
+
+2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/security-util.c, common-src/tapelist.c,
 	  restore-src/restore.c, server-src/amcheck.c, server-src/amindexd.c,
 	  server-src/amtape.c, server-src/changer.c, server-src/driver.c,

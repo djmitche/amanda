@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.64 2006/06/09 18:26:21 martinea Exp $
+ * $Id: amrecover.c,v 1.65 2006/06/12 18:35:50 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -387,13 +387,13 @@ main(
     our_features = am_init_feature_set();
     our_features_string = am_feature_to_string(our_features);
 
-    conffile = vstralloc(CONFIG_DIR, "/", "amanda_client.conf", NULL);
+    conffile = vstralloc(CONFIG_DIR, "/", "amanda-client.conf", NULL);
     read_clientconf(conffile);
     amfree(conffile);
 
     config = stralloc(client_getconf_str(CLN_CONF));
 
-    conffile = vstralloc(CONFIG_DIR, "/", config, "/", "amanda_client.conf",
+    conffile = vstralloc(CONFIG_DIR, "/", config, "/", "amanda-client.conf",
 			 NULL);
     read_clientconf(conffile);
     amfree(conffile);
