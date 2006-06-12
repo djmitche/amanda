@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.33 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: changer.c,v 1.34 2006/06/12 15:34:49 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -270,9 +270,9 @@ changer_find(
     }
 
     if ((searchlabel!=NULL) && searchable && !done){
-      rc=changer_search(searchlabel,&curslotstr,&device);
+      rc=changer_search(searchlabel, &curslotstr, &device);
       if(rc == 0)
-        done = user_slot(user_data, rc,curslotstr,device);
+        done = user_slot(user_data, rc, curslotstr, device);
     }
  
     slotstr = "current";

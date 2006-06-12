@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.15 2006/06/05 19:36:42 martinea Exp $
+ * $Id: taperscan.c,v 1.16 2006/06/12 15:34:49 martinea Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -190,7 +190,10 @@ scan_slot(
 	break;
 
     case 0:
-	newvstralloc(*(ct->error_message), "slot ", slotstr, ": ", NULL);
+	*(ct->error_message) = newvstralloc(*(ct->error_message), "slot ",
+					    slotstr, ": ", NULL);
+	amfree(*ct->gotlabel);
+	amfree(*ct->timestamp);
         label_result = scan_read_label(device, ct->wantlabel, ct->gotlabel,
                                        ct->timestamp, ct->error_message);
         if (label_result == 1 || label_result == 3 ||
@@ -248,7 +251,7 @@ changer_taper_scan(
     changertrack_t local_data;
     char *outslotstr = NULL;
     int result;
-    
+
     *gotlabel = *timestamp = *tapedev = NULL;
     local_data.wantlabel = wantlabel;
     local_data.gotlabel  = gotlabel;
@@ -293,7 +296,6 @@ int taper_scan(char* wantlabel,
     char *error_message = NULL;
     int result;
     *gotlabel = *timestamp = NULL;
-    *tapedev = stralloc(getconf_str(CNF_TAPEDEV));
 
     if (wantlabel == NULL) {
         tape_t *tmp;
@@ -309,6 +311,7 @@ int taper_scan(char* wantlabel,
 				     taperscan_output_callback, data);
     }
     else {
+	*tapedev = stralloc(getconf_str(CNF_TAPEDEV));
 	result =  scan_read_label(*tapedev, wantlabel,
 				  gotlabel, timestamp, &error_message);
 	taperscan_output_callback(data, error_message);

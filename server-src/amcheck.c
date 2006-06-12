@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.137 2006/06/09 10:30:29 martinea Exp $
+ * $Id: amcheck.c,v 1.138 2006/06/12 15:34:49 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -991,6 +991,7 @@ start_server_check(
                 }                    
             }
         }
+	amfree(tapename);
     } else if (do_tapechk) {
 	fprintf(outf, "WARNING: skipping tape test because amdump or amflush seem to be running\n");
 	fprintf(outf, "WARNING: if they are not, you must run amcleanup\n");

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.96 2006/06/08 11:44:25 martinea Exp $
+ * $Id: amindexd.c,v 1.97 2006/06/12 15:34:49 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -1146,12 +1146,13 @@ main(
 		  inet_ntoa(his_addr.sin_addr));
 	    /*NOTREACHED*/
 	}
-	fp = s = his_name->h_name;
+	fp = s = stralloc(his_name->h_name);
 	ch = *s++;
 	while(ch && ch != '.') ch = *s++;
 	s[-1] = '\0';
 	remote_hostname = newstralloc(remote_hostname, fp);
 	s[-1] = (char)ch;
+	amfree(fp);
     }
     else {
 	cmdfdout  = DATA_FD_OFFSET + 0;
@@ -1301,6 +1302,7 @@ main(
 	}
 
 	if (strcmp(cmd, "QUIT") == 0) {
+	    amfree(line);
 	    break;
 	} else if (strcmp(cmd, "HOST") == 0 && arg) {
 	    /* set host we are restoring */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.193 2006/06/06 14:48:29 martinea Exp $
+ * $Id: planner.c,v 1.194 2006/06/12 15:34:49 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1658,7 +1658,6 @@ static void handle_result(
     }
 
     msgdisk_undo = NULL;
-fprintf(stderr, "planner: packet='%s'\n", pkt->body);
     s = pkt->body;
     ch = *s++;
     while(ch) {

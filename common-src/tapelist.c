@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapelist.c,v 1.7 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: tapelist.c,v 1.8 2006/06/12 15:34:48 martinea Exp $
  *
  * Support code for amidxtaped and amindexd.
  */
@@ -231,12 +231,16 @@ marshal_tapelist(
 	    char num_str[NUM_STR_SIZE];
 	    snprintf(num_str, SIZEOF(num_str), OFF_T_FMT,
 			(OFF_T_FMT_TYPE)cur_tape->files[c]);
-	    if(!files_str) files_str = stralloc(num_str);
-	    else files_str = vstralloc(files_str, ",", num_str, NULL);
+	    if (!files_str)
+		files_str = stralloc(num_str);
+	    else
+		vstrextend(&files_str, ",", num_str, NULL);
 	}
 
-	if(!str) str = vstralloc(esc_label, ":", files_str, NULL);
-	else str = vstralloc(str, ";", esc_label, ":", files_str, NULL);
+	if (!str)
+	    str = vstralloc(esc_label, ":", files_str, NULL);
+	else
+	    vstrextend(&str, ";", esc_label, ":", files_str, NULL);
 
 	amfree(esc_label);
 	amfree(files_str);

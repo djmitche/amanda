@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.43 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: amtape.c,v 1.44 2006/06/12 15:34:49 martinea Exp $
  *
  * tape changer interface program
  */
@@ -497,11 +497,13 @@ show_slot(
 	error("could not load slot %s: %s", slotstr, changer_resultstr);
 	/*NOTREACHED*/
     }
-    else if(rc == 1)
+    else if(rc == 1) {
 	fprintf(stderr, "slot %s: %s\n", slotstr, changer_resultstr);
-    else if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL)
+    }
+    else if((errstr = tape_rdlabel(device, &datestamp, &label)) != NULL) {
 	fprintf(stderr, "slot %s: %s\n", slotstr, errstr);
-    else {
+	amfree(errstr);
+    } else {
 	fprintf(stderr, "slot %s: date %-8s label %s\n",
 		slotstr, datestamp, label);
     }

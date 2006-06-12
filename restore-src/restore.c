@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.36 2006/06/12 15:14:46 martinea Exp $
+ * $Id: restore.c,v 1.37 2006/06/12 15:34:49 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -277,7 +277,7 @@ loadlabel_slot(
                 amfree(errstr);
             }
 	    amfree(cur_tapedev);
-	    curslot = stralloc(slotstr);
+	    curslot = newstralloc(curslot, slotstr);
             amfree(datestamp);
             amfree(label);
 	    if(device)
@@ -289,7 +289,7 @@ loadlabel_slot(
     amfree(label);
 
     amfree(cur_tapedev);
-    curslot = stralloc(slotstr);
+    curslot = newstralloc(curslot, slotstr);
     if(!device) return(1);
     cur_tapedev = stralloc(device);
 
@@ -507,10 +507,10 @@ make_filename(
     snprintf(number, SIZEOF(number), "%d", file->dumplevel);
     snprintf(part, SIZEOF(part), "%d", file->partnum);
 
-    if(file->totalparts < 0){
+    if(file->totalparts < 0) {
 	snprintf(totalparts, SIZEOF(totalparts), "UNKNOWN");
     }
-    else{
+    else {
 	snprintf(totalparts, SIZEOF(totalparts), "%d", file->totalparts);
     }
     padlen = strlen(totalparts) + 1 - strlen(part);
@@ -529,8 +529,8 @@ make_filename(
 		   ".",
 		   number,
 		   NULL);
-    if(file->partnum > 0){
-	fn = vstralloc(fn, ".", part, NULL);
+    if (file->partnum > 0) {
+	vstrextend(&fn, ".", part, NULL);
     }
     amfree(sfn);
     amfree(pad);
@@ -1288,6 +1288,7 @@ search_tapes(
 	/*NOTREACHED*/
     }
     else{ /* good, the changer works, see what it can do */
+	amfree(curslot);
 	changer_info(&slots, &curslot, &backwards);
     }
 
@@ -1328,7 +1329,7 @@ search_tapes(
      * (obnoxious, isn't this?)
      */
     slot_num = 0;
-    curslot = stralloc("<none>");
+    curslot = newstralloc(curslot, "<none>");
     while(desired_tape || ((slot_num < slots || !have_changer) && !tapelist)) {
 	char *label = NULL;
 	struct seentapes *tape_seen = NULL;
@@ -1439,10 +1440,12 @@ search_tapes(
 			changer_find(NULL, scan_init, loadlabel_slot, desired_tape->label);
 		    }
 		    else{
+			amfree(curslot);
 			changer_loadslot("next", &curslot, &cur_tapedev);
 		    }
 		    while(have_changer && !cur_tapedev){
 		        fprintf(stderr, "Changer did not set the tape device (slot empty or changer misconfigured?)\n");
+			amfree(curslot);
 			changer_loadslot("next", &curslot, &cur_tapedev);
 		    }
 		}
@@ -1480,6 +1483,7 @@ search_tapes(
 	    else {
                 assert(!flags->amidxtaped);
 		if(have_changer){
+		    amfree(curslot);
 		    if(slot_num == 0)
 			changer_loadslot("first", &curslot, &cur_tapedev);
 		    else

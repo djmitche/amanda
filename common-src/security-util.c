@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.11 2006/06/06 23:13:25 paddy_s Exp $
+ * $Id: security-util.c,v 1.12 2006/06/12 15:34:48 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -2191,6 +2191,7 @@ check_user_amandahosts(
 	if (aservice && strcmp(aservice, service) == 0) {
 	    /* success */
 	    found = 1;
+	    amfree(line);
 	    break;
 	}
 	amfree(line);
