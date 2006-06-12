@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.131 2006/06/06 23:13:26 paddy_s Exp $
+/* $Id: taper.c,v 1.132 2006/06/12 13:12:19 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -2870,6 +2870,9 @@ syncpipe_putstr(
 {
     ssize_t n, rc;
 
+    if(!str)
+	str = "UNKNOWN syncpipe_putstr STRING";
+
     n = (ssize_t)strlen(str) + 1;			/* send '\0' as well */
     syncpipe_putint((int)n);
 
@@ -2889,6 +2892,9 @@ syncpipe_putstr(
 int label_tape(void);
 
 /* local functions */
+
+/* return 0 on success              */
+/* return 1 on error and set errstr */
 int
 label_tape(void)
 {  
@@ -2994,6 +3000,8 @@ label_tape(void)
     return 1;
 }
 
+/* return 0 on error and set errstr */
+/* return 1 on success              */
 int
 first_tape(
     char *new_datestamp)
