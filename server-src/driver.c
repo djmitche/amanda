@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.183 2006/06/12 15:34:49 martinea Exp $
+ * $Id: driver.c,v 1.184 2006/06/13 11:14:15 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -246,7 +246,7 @@ main(
 	char *oldlogfile = vstralloc(conf_logdir, "/oldlog/log.",
 				     driver_timestamp, ".0", NULL);
 	if(access(logfile, F_OK) == 0 || access(oldlogfile, F_OK) == 0) {
-	    log_add(L_ERROR, "WARNING: This is not the first amdump run today. Enable the usetimestamps option in the configuration file if you want to run amdump more than once per calendar day.");
+	    log_add(L_WARNING, "WARNING: This is not the first amdump run today. Enable the usetimestamps option in the configuration file if you want to run amdump more than once per calendar day.");
 	}
 	amfree(oldlogfile);
 	amfree(logfile);

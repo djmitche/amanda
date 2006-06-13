@@ -1,4 +1,7 @@
 2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driver.c: usetimestamps is a warning.
+
+2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c (process_writenetfd): Close the pipe if the
 						      security_stream is closed.
 	* recover-src/extract_list.c: Improve message if we don't get thei
