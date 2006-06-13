@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.13 2006/06/12 18:44:05 martinea Exp $
+ * $Id: amandad.c,v 1.14 2006/06/13 20:53:36 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1035,6 +1035,14 @@ s_ackwait(
 #endif
 
     assert(action == A_RECVPKT);
+
+    if (pkt->type == P_REQ) {
+	dbprintf(("%s: received dup P_REQ packet, resending REP\n",
+		  debug_prefix_time(NULL)));
+	as->state = s_sendrep;
+	return (A_CONTINUE);
+    }
+
     if (pkt->type != P_ACK)
 	return (A_SENDNAK);
 
