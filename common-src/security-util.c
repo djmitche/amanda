@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.12 2006/06/12 15:34:48 martinea Exp $
+ * $Id: security-util.c,v 1.13 2006/06/13 18:07:45 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -855,35 +855,34 @@ bsd_recv_security_ok(
 {
     char *tok, *security, *body, *result;
     char *service = NULL, *serviceX;
-
-    /*
-     * Set this preempively before we mangle the body.  
-     */
-    security_seterror(&rh->sech,
-	"bad SECURITY line: '%s'", pkt->body);
+    char *security_line;
+    size_t len;
 
     /*
      * Now, find the SECURITY line in the body, and parse it out
      * into an argv.
      */
-    if (strncmp(pkt->body, "SECURITY", SIZEOF("SECURITY") - 1) == 0) {
-	tok = strtok(pkt->body, " ");
-	assert(strcmp(tok, "SECURITY") == 0);
-	/* security info goes until the newline */
-	security = strtok(NULL, "\n");
-	body = strtok(NULL, "");
-	/*
-	 * If the body is f-ked, then try to recover
-	 */
-	if (body == NULL) {
-	    if (security != NULL)
-		body = security + strlen(security) + 2;
-	    else
-		body = pkt->body;
+    if (strncmp(pkt->body, "SECURITY ", SIZEOF("SECURITY ") - 1) == 0) {
+	security = pkt->body;
+	len = 0;
+	while(*security != '\n' && len < pkt->size) {
+	    security++;
+	    len++;
+	}
+	if(*security == '\n') {
+	    body = security+1;
+	    *security = '\0';
+	    security_line = stralloc(pkt->body);
+	    security = pkt->body + strlen("SECURITY ");
+	} else {
+	    body = pkt->body;
+	    security_line = NULL;
+	    security = NULL;
 	}
     } else {
-	security = NULL;
 	body = pkt->body;
+	security_line = NULL;
+	security = NULL;
     }
 
     /*
@@ -930,22 +929,31 @@ bsd_recv_security_ok(
 	/* second word must be USER */
 	if ((tok = strtok(security, " ")) == NULL) {
 	    amfree(service);
+	    security_seterror(&rh->sech,
+		"SECURITY line: %s", security_line);
+	    amfree(security_line);
 	    return (-1);	/* default errmsg */
 	}
 	if (strcmp(tok, "USER") != 0) {
 	    security_seterror(&rh->sech,
 		"REQ SECURITY line parse error, expecting USER, got %s", tok);
 	    amfree(service);
+	    amfree(security_line);
 	    return (-1);
 	}
 
 	/* the third word is the username */
-	if ((tok = strtok(NULL, "")) == NULL)
+	if ((tok = strtok(NULL, "")) == NULL) {
+	    security_seterror(&rh->sech,
+		"SECURITY line: %s", security_line);
+	    amfree(security_line);
 	    return (-1);	/* default errmsg */
+	}
 	if ((result = check_user(rh, tok, service)) != NULL) {
 	    security_seterror(&rh->sech, "%s", result);
 	    amfree(service);
 	    amfree(result);
+	    amfree(security_line);
 	    return (-1);
 	}
 
@@ -955,6 +963,7 @@ bsd_recv_security_ok(
 	break;
     }
     amfree(service);
+    amfree(security_line);
 
     /*
      * If there is security info at the front of the packet, we need to

@@ -1,3 +1,7 @@
+2006-06-13  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/security-util.c (bsd_recv_security_ok): Set error only
+	  if we get an error.
+
 2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c: usetimestamps is a warning.
 
