@@ -1,3 +1,7 @@
+2006-06-14  Jean-Louis Martineau <martineau@zmanda.com>
+	* changer-src/chg-zd-mtx.sh.in: Accept changerfile that already
+					have the .conf suffix.
+
 2006-06-13  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c (s_ackwait): Resend the REP on receive of a
 					     duplicate REQ.

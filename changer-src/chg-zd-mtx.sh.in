@@ -162,8 +162,10 @@
 # in amanda.conf.  For example, if amanda.conf has:
 #
 #	changerfile="/etc/amanda/Dailyset1/CHANGER"
+#    or changerfile="/etc/amanda/Dailyset1/CHANGER.conf"
 #
 # the variables must be in "/etc/amanda/Dailyset1/CHANGER.conf".
+# The ".conf" is appended only if it's not there".
 #
 # If "changerfile" is a relative path, it is relative to the directory
 # that contains amanda.conf.  That also happens to be the directory Amanda
@@ -667,7 +669,13 @@ export TAPE					# for mtx command
 
 #### Set up the various config files.
 
-configfile=$changerfile.conf
+conf_match=`expr "$changerfile" : .\*\.conf\$`
+if [ $conf_match -ge 6 ]; then
+	configfile=$changerfile
+else
+	configfile=$changerfile.conf
+fi
+
 cleanfile=$changerfile-clean
 accessfile=$changerfile-access
 slotfile=$changerfile-slot
