@@ -1147,9 +1147,7 @@ info() {
 	if [ $currentslot -lt $firstslot -o $currentslot -gt $lastslot ]; then
 		currentslot=$firstslot		# what "current" will get
 	fi
-	set x $slot_list
-	shift					# get rid of the "x"
-	numslots=$#
+	numslots=`expr $lastslot - $firstslot + 1`
 	Exit 0 "$currentslot" "$numslots 1 $reader"
 	return $?				# in case we are internal
 }
