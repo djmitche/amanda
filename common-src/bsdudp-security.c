@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsdudp-security.c,v 1.5 2006/06/01 14:54:39 martinea Exp $
+ * $Id: bsdudp-security.c,v 1.6 2006/06/14 18:56:05 martinea Exp $
  *
  * "BSD" security module
  */
@@ -159,8 +159,8 @@ bsdudp_connect(
 	 */
 	if (port >= IPPORT_RESERVED) {
 	    security_seterror(&bh->sech,
-		"unable to bind to a reserved port (got port %d)",
-		port);
+		"unable to bind to a reserved port (got port %u)",
+		(unsigned int)port);
 	    (*fn)(arg, &bh->sech, S_ERROR);
 	    return;
 	}

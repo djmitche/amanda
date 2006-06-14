@@ -1,4 +1,8 @@
 2006-06-14  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/bsd-security.c: Use %u to print in_port_t data.
+	* common-src/bsdudp-security.c: Ditto.
+
+2006-06-14  Jean-Louis Martineau <martineau@zmanda.com>
 	* changer-src/chg-disk.sh.in: Return the number of slot in output of
 				      the -info command.
 	* changer-src/chg-zd-mtx.sh.in: Ditto.
