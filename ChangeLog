@@ -1,4 +1,8 @@
 2006-06-15  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amcheck.c: -w doesn't change the test selection.
+	* man/xml-source/amcheck.8.xml: Document.
+
+2006-06-15  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/planner.c: Log empty disklist and no DLE selected.
 
 2006-06-14  Jean-Louis Martineau <martineau@zmanda.com>

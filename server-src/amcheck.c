@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.138 2006/06/12 15:34:49 martinea Exp $
+ * $Id: amcheck.c,v 1.139 2006/06/15 12:54:52 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -68,7 +68,7 @@ int test_server_pgm(FILE *outf, char *dir, char *pgm, int suid, uid_t dumpuid);
 void
 usage(void)
 {
-    error("Usage: amcheck%s [-[Mm] <username>] [-awsclt] <conf> [host [disk]* ]* [-o configoption]*", versionsuffix());
+    error("Usage: amcheck%s [-am] [-w] [-sclt] [-M <address>] <conf> [host [disk]* ]* [-o configoption]*", versionsuffix());
     /*NOTREACHED*/
 }
 
@@ -179,7 +179,7 @@ main(
 			break;
 	case 'l':	do_localchk = 1;
 			break;
-	case 'w':	overwrite =  do_localchk = do_clientchk = do_tapechk = 1;
+	case 'w':	overwrite = 1;
 			break;
 	case 't':	do_tapechk = 1;
 			break;
@@ -196,6 +196,9 @@ main(
 	/* Check everything if individual checks were not asked for */
 	do_localchk = do_clientchk = do_tapechk = 1;
     }
+
+    if(overwrite)
+	do_tapechk = 1;
 
     config_name = stralloc(*my_argv);
 

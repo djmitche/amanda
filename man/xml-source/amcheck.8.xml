@@ -22,8 +22,10 @@
 <refsynopsisdiv>
 <cmdsynopsis>
   <command>amcheck</command>    
-    <arg choice='opt'>-mwsclt</arg>
-    <arg choice='opt'>-M<replaceable>address</replaceable></arg>
+    <arg choice='opt'>-am</arg>
+    <arg choice='opt'>-w</arg>
+    <arg choice='opt'>-sclt</arg>
+    <group><arg choice='plain'>-M</arg><arg choice='plain'><replaceable>address</replaceable></arg></group>*
     <arg choice='plain'><replaceable>config</replaceable></arg>
     <group><arg choice='plain'><replaceable>host</replaceable></arg><arg choice='opt'><replaceable>disk</replaceable></arg>*</group>*
     <group><arg choice='plain'>-o</arg><arg choice='plain'><replaceable>configoption</replaceable></arg></group>*
@@ -94,8 +96,7 @@ If the tape
 is writable, this check causes all data after the tape label to be
 erased. If the label_new_tapes option is enabled, this check may ERASE
 any non-Amanda tape in the drive or changer.
-The check implies
-<option>-t</option>
+The check enable the tape tests on the server host
 and is only made if the tape is otherwise correct.</para>
   </listitem>
   </varlistentry>
