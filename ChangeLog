@@ -1,3 +1,6 @@
+2006-06-15  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/planner.c: Log empty disklist and no DLE selected.
+
 2006-06-14  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/bsd-security.c: Use %u to print in_port_t data.
 	* common-src/bsdudp-security.c: Ditto.

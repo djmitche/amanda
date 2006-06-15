@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.194 2006/06/12 15:34:49 martinea Exp $
+ * $Id: planner.c,v 1.195 2006/06/15 12:52:08 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -171,6 +171,7 @@ int main(int argc, char **argv)
     char *qname;
     int    new_argc,   my_argc;
     char **new_argv, **my_argv;
+    int    nb_disk;
 
     safe_fd(-1, 0);
 
@@ -274,13 +275,25 @@ int main(int argc, char **argv)
 	error("could not load disklist \"%s\"", conf_diskfile);
 	/*NOTREACHED*/
     }
+    if(origq.head == NULL) {
+	error("empty disklist \"%s\"", conf_diskfile);
+	/*NOTREACHED*/
+    }
+
     match_disklist(&origq, my_argc-2, my_argv+2);
+    nb_disk = 0;
     for(dp = origq.head; dp != NULL; dp = dp->next) {
 	if(dp->todo) {
 	    qname = quote_string(dp->name);
 	    log_add(L_DISK, "%s %s", dp->host->hostname, qname);
 	    amfree(qname);
+	    nb_disk++;
 	}
+    }
+
+    if(nb_disk == 0) {
+	error("no DLE to backup");
+	/*NOTREACHED*/
     }
     amfree(conf_diskfile);
 
