@@ -1,4 +1,8 @@
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/bsd-security.c (stream_read_callback): Send error to the
+							    callback.
+
+2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/extract_list.c: Typo.
 	* restore-src/restore.c: Typo.
 
