@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.98 2006/06/16 18:55:31 martinea Exp $
+ * $Id: amindexd.c,v 1.99 2006/06/16 19:05:31 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -1193,7 +1193,7 @@ main(
 	amfree(line);
 
 	if(amandad_auth && g_options->auth) {
-	    if(strcmp(amandad_auth, g_options->auth) != 0) {
+	    if(strcasecmp(amandad_auth, g_options->auth) != 0) {
 		printf("ERROR recover program ask for auth=%s while amindexd is configured for '%s'\n",
 		       g_options->auth, amandad_auth);
 		error("amindexd: ERROR recover program ask for auth=%s while amindexd is configured for '%s'",

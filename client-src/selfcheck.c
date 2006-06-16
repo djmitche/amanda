@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.81 2006/06/07 18:45:10 martinea Exp $
+ * $Id: selfcheck.c,v 1.82 2006/06/16 19:05:30 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -458,7 +458,7 @@ check_options(
 	need_compress_path=1;
     }
     if(options->auth && amandad_auth) {
-	if(strcmp(options->auth, amandad_auth) != 0) {
+	if(strcasecmp(options->auth, amandad_auth) != 0) {
 	    fprintf(stdout,"ERROR [client configured for auth=%s while server requested '%s']\n",
 		    amandad_auth, options->auth);
 	}

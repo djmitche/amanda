@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.80 2006/06/08 11:44:25 martinea Exp $
+ * $Id: sendbackup.c,v 1.81 2006/06/16 19:05:31 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -385,7 +385,7 @@ main(
 	indexfd = -1;
 
     if(options->auth && amandad_auth) {
-	if(strcmp(options->auth, amandad_auth) != 0) {
+	if(strcasecmp(options->auth, amandad_auth) != 0) {
 	    printf("ERROR [client configured for auth=%s while server requested '%s']\n",
 		   amandad_auth, options->auth);
 	    exit(-1);

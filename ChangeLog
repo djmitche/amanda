@@ -1,4 +1,11 @@
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c   : Use strcasecmp to compare auth.
+	* client-src/selfcheck.c  : Ditto
+	* client-src/sendbackup.c : Ditto
+	* restore-src/amidxtaped.c: Ditto
+	* server-src/amindexd.c   : Ditto
+
+2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amindexd.c (reply, lreply, fast_lreply): Correct use
 	  of arglist_start and arglist_end..
 	* server-src/amindexd.c (lreply_backend): Remove function.

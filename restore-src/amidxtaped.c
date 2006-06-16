@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.64 2006/06/08 11:44:25 martinea Exp $
+/* $Id: amidxtaped.c,v 1.65 2006/06/16 19:05:31 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -378,7 +378,7 @@ main(
 	amfree(line);
 
 	if(amandad_auth && g_options->auth) {
-	    if(strcmp(amandad_auth, g_options->auth) != 0) {
+	    if(strcasecmp(amandad_auth, g_options->auth) != 0) {
 		printf("ERROR recover program ask for auth=%s while amidxtaped is configured for '%s'\n",
 		       g_options->auth, amandad_auth);
 		error("ERROR recover program ask for auth=%s while amidxtaped is configured for '%s'",

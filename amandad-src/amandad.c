@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.14 2006/06/13 20:53:36 martinea Exp $
+ * $Id: amandad.c,v 1.15 2006/06/16 19:05:30 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -427,9 +427,9 @@ main(
 	}
     }
 
-    if(strcmp(auth, "rsh") == 0 ||
-       strcmp(auth, "ssh") == 0 ||
-       strcmp(auth, "bsdtcp") == 0) {
+    if(strcasecmp(auth, "rsh") == 0 ||
+       strcasecmp(auth, "ssh") == 0 ||
+       strcasecmp(auth, "bsdtcp") == 0) {
 	wait_30s = 0;
 	exit_on_qlength = 1;
     }
