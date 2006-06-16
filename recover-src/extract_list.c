@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.105 2006/06/12 18:44:05 martinea Exp $
+ * $Id: extract_list.c,v 1.106 2006/06/16 11:33:43 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1775,7 +1775,6 @@ writer_intermediary(
 {
     int child_pipe[2];
     pid_t pid;
-    char buffer[DISK_BLOCK_BYTES];
     amwait_t extractor_status;
 
     if(pipe(child_pipe) == -1) {
@@ -1829,8 +1828,11 @@ writer_intermediary(
 		}
 		amfree(input);
 	    }
+	} else if(strncmp(amidxtaped_line, "MESSAGE ", 8) == 0) {
+	    printf("%s\n",&amidxtaped_line[8]);
 	} else {
-	    fprintf(stderr, "Strange message from tape server: %s", buffer);
+	    fprintf(stderr, "Strange message from tape server: %s",
+		    amidxtaped_line);
 	    break;
 	}
     }
