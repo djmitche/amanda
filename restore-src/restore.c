@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.38 2006/06/16 11:00:53 martinea Exp $
+ * $Id: restore.c,v 1.39 2006/06/16 13:14:19 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1244,7 +1244,7 @@ search_tapes(
     } *seentapes = NULL;
 
     dbprintf(("search_tapes(prompt=%p, use_changer=%d, tapelist=%p, "
-	      "match_list=%p, flags=%p, features=%p\n)",
+	      "match_list=%p, flags=%p, features=%p)\n",
 	      prompt_out, use_changer, tapelist, match_list,
 	      flags, their_features));
 
@@ -1895,7 +1895,7 @@ printf_arglist_function3(static void send_message, FILE *, prompt_out, rst_flags
     vsnprintf(linebuf, SIZEOF(linebuf)-1, format, argp);
     arglist_end(argp);
 
-    fprintf(stderr,"%s\r\n", linebuf);
+    fprintf(stderr,"%s\n", linebuf);
     if (flags->amidxtaped && their_features &&
 	am_has_feature(their_features, fe_amrecover_message)) {
 	fprintf(prompt_out, "MESSAGE %s\r\n", linebuf);

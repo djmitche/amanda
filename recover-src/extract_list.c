@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.106 2006/06/16 11:33:43 martinea Exp $
+ * $Id: extract_list.c,v 1.107 2006/06/16 13:14:19 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1803,7 +1803,7 @@ writer_intermediary(
     security_stream_read(amidxtaped_streams[DATAFD].fd,
 			 read_amidxtaped_data, &(child_pipe[1]));
 
-    while(get_amidxtaped_line() > 0) {
+    while(get_amidxtaped_line() >= 0) {
 	char desired_tape[MAX_TAPE_LABEL_BUF];
                 
 	/* if prompted for a tape, relay said prompt to the user */
