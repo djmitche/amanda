@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.7 2006/06/08 13:55:28 martinea Exp $
+ * $Id: clientconf.c,v 1.8 2006/06/16 12:25:10 martinea Exp $
  *
  * read configuration file
  */
@@ -65,6 +65,7 @@ keytab_t client_keytab[] = {
     { "SSH_KEYS", CONF_SSH_KEYS },
     { "AMANDAD_PATH", CONF_AMANDAD_PATH },
     { "CLIENT_USERNAME", CONF_CLIENT_USERNAME },
+    { "INCLUDEFILE", CONF_INCLUDEFILE },
     { NULL, CONF_UNKNOWN },
 };
 
@@ -87,6 +88,11 @@ static int first_file = 1;
 **  External entry points
 ** ------------------------
 */
+
+/* return  0 on success        */
+/* return  1 on error          */
+/* return -1 if file not found */
+
 int read_clientconf(
     char *filename)
 {
@@ -334,12 +340,13 @@ read_confline(void)
 	    for(np = client_var; np->token != CONF_UNKNOWN; np++)
 		if(np->token == tok) break;
 
-	    if(np->token == CONF_UNKNOWN)
+	    if(np->token == CONF_UNKNOWN) {
 		conf_parserror("configuration keyword expected");
-
-	    np->read_function(np, &client_conf[np->parm]);
-	    if(np->validate)
-		np->validate(np, &client_conf[np->parm]);
+	    } else {
+		np->read_function(np, &client_conf[np->parm]);
+		if(np->validate)
+		    np->validate(np, &client_conf[np->parm]);
+	    }
 	}
     }
     if(tok != CONF_NL)

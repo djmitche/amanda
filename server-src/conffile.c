@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.146 2006/06/08 23:25:02 paddy_s Exp $
+ * $Id: conffile.c,v 1.147 2006/06/16 12:25:10 martinea Exp $
  *
  * read configuration file
  */
@@ -1009,11 +1009,13 @@ read_confline(
 	    for(np = server_var; np->token != CONF_UNKNOWN; np++) 
 		if(np->token == tok) break;
 
-	    if(np->token == CONF_UNKNOWN)
+	    if(np->token == CONF_UNKNOWN) {
 		conf_parserror("configuration keyword expected");
-	    np->read_function(np, &server_conf[np->parm]);
-	    if(np->validate)
-		np->validate(np, &server_conf[np->parm]);
+	    } else {
+		np->read_function(np, &server_conf[np->parm]);
+		if(np->validate)
+		    np->validate(np, &server_conf[np->parm]);
+	    }
 	}
     }
     if(tok != CONF_NL)
