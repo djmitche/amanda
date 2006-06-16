@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.37 2006/06/12 15:34:49 martinea Exp $
+ * $Id: restore.c,v 1.38 2006/06/16 11:00:53 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -37,6 +37,7 @@
 #include "changer.h"
 #include "logfile.h"
 #include "fileheader.h"
+#include "arglist.h"
 #include <signal.h>
 
 int file_number;
@@ -78,6 +79,8 @@ static void handle_sigint(int sig);
 static int scan_init(void *ud, int rc, int ns, int bk, int s);
 int loadlabel_slot(void *ud, int rc, char *slotstr, char *device);
 void drain_file(int tapefd, rst_flags_t *flags);
+static void send_message(FILE *prompt_out, rst_flags_t *flags, am_feature_t *their_features, char * format, ...);
+/*     __attribute__ ((format (printf, 4, 5))); */
 
 /* local functions */
 
@@ -1338,7 +1341,6 @@ search_tapes(
 	int tapefile_idx = -1;
 	int wrongtape = 0;
 	int isafile = 0;
-
 	read_result = 0;
 	memset(&file, 0, SIZEOF(file));
 	/*
@@ -1360,25 +1362,28 @@ search_tapes(
 	 * Make sure we can read whatever tape is loaded, then grab the label.
 	 */
 	else if(cur_tapedev && newtape){
-	    if(tape_stat(cur_tapedev,&stat_tape)!=0) {
+	    if(tape_stat(cur_tapedev, &stat_tape)!=0) {
 		error("could not stat %s: %s", cur_tapedev, strerror(errno));
 		/*NOTREACHED*/
 	    }
 
 	    if((err = tape_rewind(cur_tapedev)) != NULL) {
-	        fprintf(stderr, "Could not rewind device '%s': %s\n",
-                        cur_tapedev, err);
+		send_message(prompt_out, flags, their_features, 
+			     "Could not rewind device '%s': %s",
+			     cur_tapedev, err);
  		wrongtape = 1;
 	    } else if((tapefd = tape_open(cur_tapedev, 0)) < 0){
-		fprintf(stderr, "could not open tape device %s: %s\n",
-                        cur_tapedev, strerror(errno));
+		send_message(prompt_out, flags, their_features,
+			     "could not open tape device %s: %s",
+			     cur_tapedev, strerror(errno));
  		wrongtape = 1;
 	    }
 
  	    if (!wrongtape) {
  		read_result = read_file_header(&file, tapefd, 0, flags);
  		if (file.type != F_TAPESTART) {
- 		    fprintf(stderr, "Not an amanda tape\n");
+		    send_message(prompt_out, flags, their_features,
+				 "Not an amanda tape");
  		    tapefd_close(tapefd);
 		    wrongtape = 1;
  		} else {
@@ -1387,7 +1392,9 @@ search_tapes(
 		}
  	    }
 	} else if(newtape) {
-	  wrongtape = 1; /* nothing loaded */
+	    send_message(prompt_out, flags, their_features,
+			 "Nothing loaded");
+	    wrongtape = 1; /* nothing loaded */
 	}
 
 	/*
@@ -1399,7 +1406,9 @@ search_tapes(
 	    for(tape_seen = seentapes; tape_seen; tape_seen = tape_seen->next){
 		if(!strcmp(tape_seen->label, label) &&
 			!strcmp(tape_seen->slotstr, curslot)){
-		    fprintf(stderr, "Saw repeat tape %s in slot %s\n", label, curslot);
+		    send_message(prompt_out, flags, their_features,
+				 "Saw repeat tape %s in slot %s",
+				 label, curslot);
 		    wrongtape = 1;
 		    amfree(label);
 		    break;
@@ -1415,13 +1424,21 @@ search_tapes(
 	    if(!label || (flags->check_labels &&
 		    desired_tape && strcmp(label, desired_tape->label) != 0)){
 		if(label){
-		    fprintf(stderr, "Label mismatch, got %s and expected %s\n", label, desired_tape->label);
+		    send_message(prompt_out, flags, their_features,
+				 "Label mismatch, got %s and expected %s",
+				 label, desired_tape->label);
 		    if(have_changer && !backwards){
-		        fprintf(stderr, "Changer can't go backwards, restoring anyway\n");
+			send_message(prompt_out, flags, their_features,
+				"Changer can't go backwards, restoring anyway");
 		    }
-		    else wrongtape = 1;
+		    else {
+			wrongtape = 1;
+		    }
 		}
-		else fprintf(stderr, "No tape device initialized yet\n");
+		else {
+		    send_message(prompt_out, flags, their_features,
+				 "No tape device initialized yet");
+		}
 	    }
 	}
 	    
@@ -1434,7 +1451,9 @@ search_tapes(
 	    if(desired_tape){
 		tapefd_close(tapefd);
 		if(have_changer){
-		    fprintf(stderr,"Looking for tape %s...\n", desired_tape->label);
+		    send_message(prompt_out, flags, their_features,
+				 "Looking for tape %s...",
+				 desired_tape->label);
 		    if(backwards){
 			searchlabel = desired_tape->label; 
 			changer_find(NULL, scan_init, loadlabel_slot, desired_tape->label);
@@ -1444,7 +1463,8 @@ search_tapes(
 			changer_loadslot("next", &curslot, &cur_tapedev);
 		    }
 		    while(have_changer && !cur_tapedev){
-		        fprintf(stderr, "Changer did not set the tape device (slot empty or changer misconfigured?)\n");
+			send_message(prompt_out, flags, their_features,
+				     "Changer did not set the tape device (slot empty or changer misconfigured?)");
 			amfree(curslot);
 			changer_loadslot("next", &curslot, &cur_tapedev);
 		    }
@@ -1463,7 +1483,7 @@ search_tapes(
                     } else if (their_features &&
 			       am_has_feature(their_features,
 					      fe_amrecover_FEEDME)) {
-                        fprintf(prompt_out, "FEEDME %s\n",
+                        fprintf(prompt_out, "FEEDME %s\r\n",
                                 desired_tape->label);
                         fflush(prompt_out);
                         input = agets(stdin); /* Strips \n but not \r */
@@ -1864,3 +1884,22 @@ free_match_list(
     }
     amfree(prev);
 }
+
+
+printf_arglist_function3(static void send_message, FILE *, prompt_out, rst_flags_t *, flags, am_feature_t *, their_features, char *, format)
+{
+    va_list argp;
+    char linebuf[STR_SIZE];
+
+    arglist_start(argp, format);
+    vsnprintf(linebuf, SIZEOF(linebuf)-1, format, argp);
+    arglist_end(argp);
+
+    fprintf(stderr,"%s\r\n", linebuf);
+    if (flags->amidxtaped && their_features &&
+	am_has_feature(their_features, fe_amrecover_message)) {
+	fprintf(prompt_out, "MESSAGE %s\r\n", linebuf);
+	fflush(prompt_out);
+    }
+}
+

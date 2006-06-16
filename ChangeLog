@@ -1,4 +1,9 @@
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/restore.c (send_message): New function that send message
+						to stderr and/or amrecover.
+	* restore-src/restore.c: Call send_message on some error path.
+
+2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/event.c (event_loop_wait, event_wait): Take an
 					 event_handle_t * as parameter.
 	* common-src/event.h: New prototype.
