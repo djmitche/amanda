@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.97 2006/06/12 15:34:49 martinea Exp $
+ * $Id: amindexd.c,v 1.98 2006/06/16 18:55:31 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -89,7 +89,7 @@ static REMOVE_ITEM *remove_files(REMOVE_ITEM *);
 static char *uncompress_file(char *, char **);
 static int process_ls_dump(char *, DUMP_ITEM *, int, char **);
 
-static size_t reply_buffer_size = STR_SIZE;
+static size_t reply_buffer_size = 1;
 static char *reply_buffer = NULL;
 static char *amandad_auth = NULL;
 
@@ -283,22 +283,25 @@ process_ls_dump(
 printf_arglist_function1(static void reply, int, n, char *, fmt)
 {
     va_list args;
+    int len;
 
     if(!reply_buffer)
 	reply_buffer = alloc(reply_buffer_size);
 
-    arglist_start(args, fmt);
-    snprintf(reply_buffer, reply_buffer_size, "%03d ", n);
-    while ((size_t)vsnprintf(reply_buffer+4, reply_buffer_size-4, fmt, args)
-						 >= (reply_buffer_size-4)) {
-	amfree(reply_buffer);
-	reply_buffer_size *= 2;
-	reply_buffer = alloc(reply_buffer_size);
-	snprintf(reply_buffer, reply_buffer_size, "%03d ", n);
-    }
-    arglist_end(args);
+    while(1) {
+	arglist_start(args, fmt);
+	len = vsnprintf(reply_buffer, reply_buffer_size, fmt, args);
+	arglist_end(args);
 
-    if (printf("%s\r\n", reply_buffer) < 0)
+	if (len > -1 && (size_t)len < reply_buffer_size)
+	    break;
+
+	reply_buffer_size *= 2;
+	amfree(reply_buffer);
+	reply_buffer = alloc(reply_buffer_size);
+    }
+
+    if (printf("%03d %s\r\n", n, reply_buffer) < 0)
     {
 	dbprintf(("%s: ! error %d (%s) in printf\n",
 		  debug_prefix_time(NULL), errno, strerror(errno)));
@@ -312,35 +315,39 @@ printf_arglist_function1(static void reply, int, n, char *, fmt)
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
-    dbprintf(("%s: < %s\n", debug_prefix_time(NULL), reply_buffer));
+    dbprintf(("%s: < %03d %s\n", debug_prefix_time(NULL), n, reply_buffer));
 }
 
-static void
-lreply_backend(
-    int		flush,
-    int		n,
-    char *	fmt,
-    va_list	args)
+/* send one line of a multi-line response */
+printf_arglist_function1(static void lreply, int, n, char *, fmt)
 {
-    if(!reply_buffer) reply_buffer = alloc(reply_buffer_size);
+    va_list args;
+    int len;
 
-    snprintf(reply_buffer, reply_buffer_size, "%03d-", n);
-    while ((size_t)vsnprintf(reply_buffer+4, reply_buffer_size-4, fmt, args)
-						 >= (reply_buffer_size-4)) {
-	amfree(reply_buffer);
-	reply_buffer_size *= 2;
+    if(!reply_buffer)
 	reply_buffer = alloc(reply_buffer_size);
-	snprintf(reply_buffer, reply_buffer_size, "%03d ", n);
+
+    while(1) {
+	arglist_start(args, fmt);
+	len = vsnprintf(reply_buffer, reply_buffer_size, fmt, args);
+	arglist_end(args);
+
+	if (len > -1 && (size_t)len < reply_buffer_size)
+	    break;
+
+	reply_buffer_size *= 2;
+	amfree(reply_buffer);
+	reply_buffer = alloc(reply_buffer_size);
     }
 
-    if (printf("%s\r\n", reply_buffer) < 0)
+    if (printf("%03d-%s\r\n", n, reply_buffer) < 0)
     {
 	dbprintf(("%s: ! error %d (%s) in printf\n",
 		  debug_prefix_time(NULL), errno, strerror(errno)));
 	uncompress_remove = remove_files(uncompress_remove);
 	exit(1);
     }
-    if (flush && fflush(stdout) != 0)
+    if (fflush(stdout) != 0)
     {
 	dbprintf(("%s: ! error %d (%s) in fflush\n",
 		  debug_prefix_time(NULL), errno, strerror(errno)));
@@ -348,17 +355,7 @@ lreply_backend(
 	exit(1);
     }
 
-    dbprintf(("%s: < %s\n", debug_prefix_time(NULL), reply_buffer));
-}
-
-/* send one line of a multi-line response */
-printf_arglist_function1(static void lreply, int, n, char *, fmt)
-{
-    va_list args;
-
-    arglist_start(args, fmt);
-    lreply_backend(1, n, fmt, args);
-    arglist_end(args);
+    dbprintf(("%s: < %03d-%s\n", debug_prefix_time(NULL), n, reply_buffer));
 
 }
 
@@ -366,11 +363,33 @@ printf_arglist_function1(static void lreply, int, n, char *, fmt)
 printf_arglist_function1(static void fast_lreply, int, n, char *, fmt)
 {
     va_list args;
+    int len;
 
-    arglist_start(args, fmt);
-    lreply_backend(0, n, fmt, args);
-    arglist_end(args);
+    if(!reply_buffer)
+	reply_buffer = alloc(reply_buffer_size);
 
+    while(1) {
+	arglist_start(args, fmt);
+	len = vsnprintf(reply_buffer, reply_buffer_size, fmt, args);
+	arglist_end(args);
+
+	if (len > -1 && (size_t)len < reply_buffer_size)
+	    break;
+
+	reply_buffer_size *= 2;
+	amfree(reply_buffer);
+	reply_buffer = alloc(reply_buffer_size);
+    }
+
+    if (printf("%03d-%s\r\n", n, reply_buffer) < 0)
+    {
+	dbprintf(("%s: ! error %d (%s) in printf\n",
+		  debug_prefix_time(NULL), errno, strerror(errno)));
+	uncompress_remove = remove_files(uncompress_remove);
+	exit(1);
+    }
+
+    dbprintf(("%s: < %03d-%s\n", debug_prefix_time(NULL), n, reply_buffer));
 }
 
 /* see if hostname is valid */
