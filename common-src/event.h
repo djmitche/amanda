@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.h,v 1.8 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: event.h,v 1.9 2006/06/16 10:55:05 martinea Exp $
  */
 #ifndef EVENT_H
 #define EVENT_H
@@ -97,7 +97,7 @@ int event_wakeup(event_id_t);
 /*
  * Block until the event is terminated.
  */
-int event_wait(event_id_t);
+int event_wait(event_handle_t *);
 
 /*
  * Process events.  If the argument is nonzero, then the loop does

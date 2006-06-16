@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb4-security.c,v 1.16 2006/06/01 14:44:04 martinea Exp $
+ * $Id: krb4-security.c,v 1.17 2006/06/16 10:55:05 martinea Exp $
  *
  * krb4-security.c - helper functions for kerberos v4 security.
  */
@@ -888,7 +888,7 @@ krb4_stream_read_sync(
 
     ks->ev_read = event_register((event_id_t)ks->fd, EV_READFD,
 			stream_read_sync_callback, ks);
-    event_wait((event_id_t)ks->fd);
+    event_wait(ks->ev_read);
     return((ssize_t)ks->len);
 }
 

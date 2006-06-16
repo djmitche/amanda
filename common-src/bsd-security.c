@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.70 2006/06/14 18:56:05 martinea Exp $
+ * $Id: bsd-security.c,v 1.71 2006/06/16 10:55:05 martinea Exp $
  *
  * "BSD" security module
  */
@@ -462,7 +462,7 @@ bsd_stream_read_sync(
     }
     bs->ev_read = event_register((event_id_t)bs->fd, EV_READFD,
 			stream_read_sync_callback, bs);
-    event_wait((event_id_t)bs->fd);
+    event_wait(bs->ev_read);
     *buf = bs->databuf;
     return (bs->len);
 }

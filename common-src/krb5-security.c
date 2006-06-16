@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.21 2006/05/26 14:00:58 martinea Exp $
+ * $Id: krb5-security.c,v 1.22 2006/06/16 10:55:05 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -1105,7 +1105,7 @@ krb5_stream_read_sync(
     ks->ev_read = event_register((event_id_t)ks->kc, EV_WAIT,
 	stream_read_callback, ks);
     conn_read(ks->kc);
-    event_wait((event_id_t)ks->kc);
+    event_wait(ks->ev_read);
     buf = (void **)&ks->buf;
     return ks->len;
 }

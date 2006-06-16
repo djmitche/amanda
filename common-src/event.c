@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: event.c,v 1.23 2006/05/25 17:07:31 martinea Exp $
+ * $Id: event.c,v 1.24 2006/06/16 10:55:05 martinea Exp $
  *
  * Event handler.  Serializes different kinds of events to allow for
  * a uniform interface, central state storage, and centralized
@@ -96,7 +96,7 @@ static const char *event_type2str(event_type_t);
 static void signal_handler(int);
 static event_handle_t *gethandle(void);
 static void puthandle(event_handle_t *);
-static int event_loop_wait (event_id_t, const int);
+static int event_loop_wait (event_handle_t *, const int);
 
 /*
  * Add a new event.  See the comment in event.h for what the arguments
@@ -226,16 +226,16 @@ void
 event_loop(
     const int dontblock)
 {
-    event_loop_wait((event_id_t)-1, dontblock);
+    event_loop_wait((event_handle_t *)NULL, dontblock);
 }
 
 
 
 int
 event_wait(
-    event_id_t	id)
+    event_handle_t *eh)
 {
-    return event_loop_wait(id, 0);
+    return event_loop_wait(eh, 0);
 }
 
 /*
@@ -245,8 +245,8 @@ event_wait(
  */
 static int
 event_loop_wait(
-    event_id_t	id,
-    const int	dontblock)
+    event_handle_t *wait_eh,
+    const int       dontblock)
 {
 #ifdef ASSERTIONS
     static int entry = 0;
@@ -261,9 +261,9 @@ event_loop_wait(
     int event_wait_fired = 0;
     int see_event;
 
-    eventprintf(("%s: event: loop: enter: dontblock=%d, qlength=%d\n",
+    eventprintf(("%s: event: loop: enter: dontblock=%d, qlength=%d, eh=%p\n",
 		 debug_prefix_time(NULL),
-		 dontblock, eventq.qlength));
+		 dontblock, eventq.qlength, wait_eh));
 
     /*
      * If we have no events, we have nothing to do
@@ -286,8 +286,9 @@ event_loop_wait(
 
     do {
 #ifdef EVENT_DEBUG
-	eventprintf(("%s: event: loop: dontblock=%d, qlength=%d\n",
-		     debug_prefix_time(NULL), dontblock, eventq.qlength));
+	eventprintf(("%s: event: loop: dontblock=%d, qlength=%d eh=%p\n",
+		     debug_prefix_time(NULL), dontblock, eventq.qlength,
+		     wait_eh));
 	for (eh = eventq_first(eventq); eh != NULL; eh = eventq_next(eh)) {
 	    eventprintf(("%s: %p): %s data=%lu fn=%p arg=%p\n",
 			 debug_prefix_time(NULL), eh,
@@ -323,7 +324,7 @@ event_loop_wait(
 	FD_ZERO(&errfds);
 	maxfd = 0;
 
-	see_event = (id == (event_id_t)-1);
+	see_event = (wait_eh == (event_handle_t *)NULL);
 	/*
 	 * Run through each event handle and setup the events.
 	 * We save our next pointer early in case we GC some dead
@@ -341,7 +342,7 @@ event_loop_wait(
 		FD_SET((int)eh->data, &readfds);
 		FD_SET((int)eh->data, &errfds);
 		maxfd = max(maxfd, (int)eh->data);
-		see_event |= (eh->data == id);
+		see_event |= (eh == wait_eh);
 		break;
 
 	    /*
@@ -351,7 +352,7 @@ event_loop_wait(
 		FD_SET((int)eh->data, &writefds);
 		FD_SET((int)eh->data, &errfds);
 		maxfd = max(maxfd, (int)eh->data);
-		see_event |= (eh->data == id);
+		see_event |= (eh == wait_eh);
 		break;
 
 	    /*
@@ -360,7 +361,7 @@ event_loop_wait(
 	     */
 	    case EV_SIG:
 		se = &sigtable[eh->data];
-		see_event |= (eh->data == id);
+		see_event |= (eh == wait_eh);
 
 		if (se->handle == eh)
 		    break;
@@ -396,14 +397,14 @@ event_loop_wait(
 		    tvptr = &timeout;
 		    timeout.tv_sec = interval;
 		}
-		see_event |= (eh->data == id);
+		see_event |= (eh == wait_eh);
 		break;
 
 	    /*
 	     * Wait events are processed immediately by event_wakeup()
 	     */
 	    case EV_WAIT:
-		see_event |= (eh->data == id);
+		see_event |= (eh == wait_eh);
 		break;
 
 	    /*
@@ -486,7 +487,7 @@ event_loop_wait(
 		    FD_CLR((int)eh->data, &readfds);
 		    FD_CLR((int)eh->data, &errfds);
 		    fire(eh);
-		    if(eh->data == id) event_wait_fired = 1;
+		    if(eh == wait_eh) event_wait_fired = 1;
 		}
 		break;
 
@@ -499,7 +500,7 @@ event_loop_wait(
 		    FD_CLR((int)eh->data, &writefds);
 		    FD_CLR((int)eh->data, &werrfds);
 		    fire(eh);
-		    if(eh->data == id) event_wait_fired = 1;
+		    if(eh == wait_eh) event_wait_fired = 1;
 		}
 		break;
 
@@ -513,7 +514,7 @@ event_loop_wait(
 		    assert(se->handle == eh);
 		    se->score = 0;
 		    fire(eh);
-		    if(eh->data == id) event_wait_fired = 1;
+		    if(eh == wait_eh) event_wait_fired = 1;
 		}
 		break;
 
@@ -527,7 +528,7 @@ event_loop_wait(
 		if ((curtime - eh->lastfired) >= (time_t)eh->data) {
 		    eh->lastfired = curtime;
 		    fire(eh);
-		    if(eh->data == id) event_wait_fired = 1;
+		    if(eh == wait_eh) event_wait_fired = 1;
 		}
 		break;
 

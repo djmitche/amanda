@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.13 2006/06/13 18:07:45 martinea Exp $
+ * $Id: security-util.c,v 1.14 2006/06/16 10:55:05 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -396,7 +396,7 @@ tcpm_stream_read_sync(
     rs->ev_read = event_register((event_id_t)rs->rc, EV_WAIT,
         stream_read_sync_callback, rs);
     sec_tcp_conn_read(rs->rc);
-    event_wait((event_id_t)rs->rc);
+    event_wait(rs->ev_read);
     *buf = rs->rc->pkt;
     return (rs->rc->pktlen);
 }

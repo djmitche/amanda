@@ -1,3 +1,12 @@
+2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/event.c (event_loop_wait, event_wait): Take an
+					 event_handle_t * as parameter.
+	* common-src/event.h: New prototype.
+	* common-src/bsd-security.c: Call event_wait(bs->ev_read).
+	* common-src/krb4-security.c: Call event_wait(ks->ev_read).
+	* common-src/krb5-security.c: Call event_wait(ks->ev_read).
+	* common-src/security-util.c: Call event_wait(ss->ev_read).
+
 2006-06-15  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amcheck.c: -w doesn't change the test selection.
 	* man/xml-source/amcheck.8.xml: Document.
