@@ -1,4 +1,10 @@
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/amfeatures.c (am_init_feature_set): Set
+							 fe_amrecover_message.
+	* common-src/amfeatures.h (am_feature_e): Add fe_amrecover_message.
+	* common-src/arglist.h (printf_arglist_function3): Prototype.
+
+2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c (send_message): New function that send message
 						to stderr and/or amrecover.
 	* restore-src/restore.c: Call send_message on some error path.

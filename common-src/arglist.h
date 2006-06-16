@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: arglist.h,v 1.7 2002/12/03 21:36:39 martinea Exp $
+ * $Id: arglist.h,v 1.8 2006/06/16 11:18:57 martinea Exp $
  *
  * support macros for variable argument list declaration and definition
  */
@@ -55,6 +55,17 @@
 	__attribute__ ((format (printf, 3, 0))) \
 	fdecl(arg1_type arg1_name, \
 	      arg2_type arg2_name, \
+	      hook_type hook_name, ...)
+
+#define printf_arglist_function3(fdecl, \
+				 arg1_type, arg1_name, \
+				 arg2_type, arg2_name, \
+				 arg3_type, arg3_name, \
+				 hook_type, hook_name) \
+	__attribute__ ((format (printf, 3, 0))) \
+	fdecl(arg1_type arg1_name, \
+	      arg2_type arg2_name, \
+	      arg3_type arg3_name, \
 	      hook_type hook_name, ...)
 
 #define arglist_function(fdecl, \
