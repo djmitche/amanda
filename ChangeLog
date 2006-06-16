@@ -1,4 +1,7 @@
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amstatus.pl.in: Match quotes in DONE line.
+
+2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c   : Use strcasecmp to compare auth.
 	* client-src/selfcheck.c  : Ditto
 	* client-src/sendbackup.c : Ditto

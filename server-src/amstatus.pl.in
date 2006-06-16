@@ -508,7 +508,7 @@ while(<AMDUMP>) {
 		$error{$hostpart}="driver: (aborted:$error)";
 		$dumpers_active--;
 	}
-	elsif(/driver: result time (\S+) from (dumper\d+): (DONE|PARTIAL) (\d+-\d+) (\d+) (\d+) (\d+) \[.*\]/) {
+	elsif(/driver: result time (\S+) from (dumper\d+): (DONE|PARTIAL) (\d+-\d+) (\d+) (\d+) (\d+) "?\[.*\]"?/) {
 		$current_time=$1;
 		$serial=$4;
 		$origsize=$5 / $unitdivisor;
@@ -523,7 +523,7 @@ while(<AMDUMP>) {
 		$dumpers_active--;
 		$partial{$hostpart}=1 if $3 eq "PARTIAL" ;
 	}
-	elsif(/driver: result time (\S+) from (chunker\d+): (DONE|PARTIAL) (\d+-\d+) (\d+) \[.*\]/) {
+	elsif(/driver: result time (\S+) from (chunker\d+): (DONE|PARTIAL) (\d+-\d+) (\d+) "?\[.*\]"?/) {
 		$current_time=$1;
 		$serial=$4;
 		$outputsize=$5 / $unitdivisor;
@@ -633,7 +633,7 @@ while(<AMDUMP>) {
 		$taper_finished{$hostpart}=0;
 		$taper_time{$hostpart}=$1;
 	}
-	elsif(/driver: result time (\S+) from taper: (DONE|PARTIAL) (\d+-\d+) (\S+) (\d+) \[sec (\S+) kb (\d+) kps/) {
+	elsif(/driver: result time (\S+) from taper: (DONE|PARTIAL) (\d+-\d+) (\S+) (\d+) "?\[sec (\S+) kb (\d+) kps/) {
 		$current_time=$1;
 		$serial=$3;
 		$label=$4;
