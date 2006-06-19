@@ -1,4 +1,7 @@
 2006-06-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* docs/wishlist.txt: Remove features done in 2.5.0/2.5.1
+
+2006-06-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/xml-source/amanda.conf.5.xml: amrecover_check_label and
 					    amrecover_do_fsf default to yes.
 	* server-src/conffile (init_dumptype_defaults): DUMPTYPE_INDEX set to 1.

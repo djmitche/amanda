@@ -73,10 +73,6 @@ Oct. 2004.
   periodicaly if the dumper is still alive (in case the dumper hang).
 
 
-* image span / multiple tape. John Stange <building@nap.edu> is working on it.
-  His patch will very likely go into a development-branch.
-
-
 * retry failed backups in a single run. If backup fails because of active
   filesystems or lack of memory, AMANDA could throw the failed backup away and
   run it again, instead of trying it again in the next run only.
@@ -102,9 +98,6 @@ Oct. 2004.
 
 * Write to tape and holding disk in parallel (For dump to tape), the dump to
   tape could be started first, while doing some dump to holding disk.
-
-
-* Autoflush to tape while doing estimate.
 
 
 * Keep files on holding disk after taped, that will permit faster recovery
@@ -142,10 +135,6 @@ Oct. 2004.
 * AMANDA should install man-pages for installed programs only.
 
 
-* We should provide for client-side configuration files, to specify default
-  tape server, index server, and perhaps even pathnames to some programs.
-
-
 * It should be possible to configure whether amidxtaped should decompress the
   dump stream or not (so amrecover could decompress it locally).
 
@@ -172,13 +161,6 @@ Oct. 2004.
 
 * amkill:
   A new script to kill all process on client and server
-
-
-* Convert datestamp to timestamp everywhere, that will permit many run a day,
-  and be able to recover them easily. it's already done for holding disk.
-  (That's a big job, AMANDA use the datestamp sometimes as INT, sometime as
-  CHAR*, converting every thing to CHAR* is probably not very difficult, what
-  will be difficult will be to stay compatible with the old datestamp.)
 
 
 * Enhance the protocol between client-server to allow white-space and any
