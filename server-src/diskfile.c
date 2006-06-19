@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.86 2006/06/08 23:25:03 paddy_s Exp $
+ * $Id: diskfile.c,v 1.87 2006/06/19 18:31:22 martinea Exp $
  *
  * read disklist file
  */
@@ -589,7 +589,7 @@ parse_diskline(
     disk->skip_full	     = dumptype_get_skip_full(dtype) == 1;
     disk->to_holdingdisk     = dumptype_get_to_holdingdisk(dtype) == 1;
     disk->kencrypt	     = dumptype_get_kencrypt(dtype) == 1;
-    disk->index		     = (dumptype_get_index(dtype) != 0) ? 1 : 0;
+    disk->index		     = dumptype_get_index(dtype) == 1;
     disk->todo		     = 1;
 
     skip_whitespace(s, ch);

@@ -1,3 +1,10 @@
+2006-06-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* man/xml-source/amanda.conf.5.xml: amrecover_check_label and
+					    amrecover_do_fsf default to yes.
+	* server-src/conffile (init_dumptype_defaults): DUMPTYPE_INDEX set to 1.
+	* server-src/diskfile.c (parse_diskline): index set from
+						  dumptype_get_index.
+
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amstatus.pl.in: Match quotes in DONE line.
 

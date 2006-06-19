@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.147 2006/06/16 12:25:10 martinea Exp $
+ * $Id: conffile.c,v 1.148 2006/06/19 18:31:22 martinea Exp $
  *
  * read configuration file
  */
@@ -797,7 +797,7 @@ init_defaults(
     conf_init_int      (&server_conf[CNF_RESERVE]              , 100);
     conf_init_am64     (&server_conf[CNF_MAXDUMPSIZE]          , -1);
     conf_init_string   (&server_conf[CNF_COLUMNSPEC]           , "");
-    conf_init_bool     (&server_conf[CNF_AMRECOVER_DO_FSF]     ,     1);
+    conf_init_bool     (&server_conf[CNF_AMRECOVER_DO_FSF]     , 1);
     conf_init_string   (&server_conf[CNF_AMRECOVER_CHANGER]    , "");
     conf_init_bool     (&server_conf[CNF_AMRECOVER_CHECK_LABEL], 1);
     conf_init_taperalgo(&server_conf[CNF_TAPERALGO]            , 0);
@@ -1241,7 +1241,7 @@ init_dumptype_defaults(void)
     conf_init_bool     (&dpcur.value[DUMPTYPE_HOLDINGDISK]       , 1);
     conf_init_bool     (&dpcur.value[DUMPTYPE_KENCRYPT]          , 0);
     conf_init_bool     (&dpcur.value[DUMPTYPE_IGNORE]            , 0);
-    conf_init_bool     (&dpcur.value[DUMPTYPE_INDEX]             , 0);
+    conf_init_bool     (&dpcur.value[DUMPTYPE_INDEX]             , 1);
 }
 
 static void

@@ -784,7 +784,7 @@ Whether an amdump run will flush the dumps from holding disk to tape.</para>
   <term><emphasis remap='B'>amrecover_do_fsf</emphasis> <emphasis remap='I'> bool</emphasis></term>
   <listitem>
 <para>Default:
-<emphasis remap='I'>off</emphasis>.
+<emphasis remap='I'>on</emphasis>.
 Amrecover will call amrestore with the -f flag for faster positioning of the tape.</para>
   </listitem>
   </varlistentry>
@@ -792,7 +792,7 @@ Amrecover will call amrestore with the -f flag for faster positioning of the tap
   <term><emphasis remap='B'>amrecover_check_label</emphasis> <emphasis remap='I'> bool</emphasis></term>
   <listitem>
 <para>Default:
-<emphasis remap='I'>off</emphasis>.
+<emphasis remap='I'>on</emphasis>.
 Amrecover will call amrestore with the -l flag to check the label.</para>
   </listitem>
   </varlistentry>
