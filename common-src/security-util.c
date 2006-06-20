@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.14 2006/06/16 10:55:05 martinea Exp $
+ * $Id: security-util.c,v 1.15 2006/06/20 17:32:24 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -2409,29 +2409,35 @@ net_writev(
 	/*
 	 * Write the iovec
 	 */
-	total += n = writev(fd, iov, iovcnt);
-	if (n < 0)
-	    return (-1);
-	if (n == 0) {
+	n = writev(fd, iov, iovcnt);
+	if (n < 0) {
+	    if (errno != EINTR)
+		return (-1);
+	    secprintf(("%s: net_writev got EINTR\n",
+		       debug_prefix(NULL)));
+	}
+	else if (n == 0) {
 	    errno = EIO;
 	    return (-1);
-	}
-	/*
-	 * Iterate through each iov.  Figure out what we still need
-	 * to write out.
-	 */
-	for (; n > 0; iovcnt--, iov++) {
-	    /* 'delta' is the bytes written from this iovec */
-	    delta = ((size_t)n < iov->iov_len) ? n : (ssize_t)iov->iov_len;
-	    /* subtract from the total num bytes written */
-	    n -= delta;
-	    assert(n >= 0);
-	    /* subtract from this iovec */
-	    iov->iov_len -= delta;
-	    iov->iov_base = (char *)iov->iov_base + delta;
-	    /* if this iovec isn't empty, run the writev again */
-	    if (iov->iov_len > 0)
-		break;
+	} else {
+	    total += n;
+	    /*
+	     * Iterate through each iov.  Figure out what we still need
+	     * to write out.
+	     */
+	    for (; n > 0; iovcnt--, iov++) {
+		/* 'delta' is the bytes written from this iovec */
+		delta = ((size_t)n < iov->iov_len) ? n : (ssize_t)iov->iov_len;
+		/* subtract from the total num bytes written */
+		n -= delta;
+		assert(n >= 0);
+		/* subtract from this iovec */
+		iov->iov_len -= delta;
+		iov->iov_base = (char *)iov->iov_base + delta;
+		/* if this iovec isn't empty, run the writev again */
+		if (iov->iov_len > 0)
+		    break;
+	    }
 	}
     }
     return (total);

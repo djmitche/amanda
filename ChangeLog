@@ -1,3 +1,6 @@
+2006-06-20  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/security-util.c: ignore EINTR in net_writev.
+
 2006-06-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* docs/wishlist.txt: Remove features done in 2.5.0/2.5.1
 
