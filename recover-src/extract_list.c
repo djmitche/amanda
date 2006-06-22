@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.107 2006/06/16 13:14:19 martinea Exp $
+ * $Id: extract_list.c,v 1.108 2006/06/22 17:16:39 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1808,25 +1808,23 @@ writer_intermediary(
                 
 	/* if prompted for a tape, relay said prompt to the user */
 	if(sscanf(amidxtaped_line, "FEEDME %132s\n", desired_tape) == 1) {
-	    int done = 0;
-	    while (!done) {
-		char *input = NULL;
-		printf("Please insert tape %s. Continue? [Y|n]: ",
-		       desired_tape);
-		fflush(stdout);
-                        
-		input = agets(stdin); /* strips \n */
-		if (strcasecmp("", input) == 0|| 
-		    strcasecmp("y", input) == 0|| 
-		    strcasecmp("yes", input) == 0) {
+	    int done;
+	    printf("Load tape %s now\n", desired_tape);
+	    done = okay_to_continue(am_has_feature(indexsrv_features,
+						   fe_amrecover_feedme_tape),
+				    0, 0);
+	    if (done == 1) {
+		if (am_has_feature(indexsrv_features,
+				   fe_amrecover_feedme_tape)) {
+		    char *reply = stralloc2("TAPE ", tape_device_name);
+		    send_to_tape_server(amidxtaped_streams[CTLFD].fd, reply);
+		    amfree(reply);
+		} else {
 		    send_to_tape_server(amidxtaped_streams[CTLFD].fd, "OK");
-		    done = 1;
-		} else if (strcasecmp("n", input) == 0|| 
-			   strcasecmp("no", input) == 0) {
-		    send_to_tape_server(amidxtaped_streams[CTLFD].fd, "ERROR");
-		    return -1;
 		}
-		amfree(input);
+	    } else {
+		send_to_tape_server(amidxtaped_streams[CTLFD].fd, "ERROR");
+		break;
 	    }
 	} else if(strncmp(amidxtaped_line, "MESSAGE ", 8) == 0) {
 	    printf("%s\n",&amidxtaped_line[8]);
@@ -1998,7 +1996,12 @@ extract_files(void)
 	    return;
 	}
 
-	if(writer_intermediary(elist) == 0)
+	/* if the server have fe_amrecover_feedme_tape, it has asked for
+	 * the tape itself, even if the restore didn't succeed, we should
+	 * remove it.
+	 */
+	if(writer_intermediary(elist) == 0 ||
+	   am_has_feature(indexsrv_features, fe_amrecover_feedme_tape))
 	    delete_tape_list(elist);	/* tape done so delete from list */
 
 	stop_amidxtaped();

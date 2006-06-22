@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.65 2006/06/16 19:05:31 martinea Exp $
+/* $Id: amidxtaped.c,v 1.66 2006/06/22 17:16:39 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -495,7 +495,7 @@ main(
     }
 
     /* If we'll be stepping on the tape server's devices, lock them. */
-    if(re_config  &&
+    if(re_config &&
        (use_changer || (rst_flags->alt_tapedev &&
                         strcmp(rst_flags->alt_tapedev,
                                getconf_str(CNF_TAPEDEV)) == 0) ) ) {
@@ -521,7 +521,8 @@ main(
 	rst_flags->fsf = (off_t)0;
     }
 
-    if(re_config && getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
+    if (!use_changer && re_config &&
+	getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
 	rst_flags->check_labels = 0;
     }
 
@@ -569,9 +570,26 @@ main(
 	      get_pname(), rst_flags->pipe_to_fd));
 
 
+    if(get_lock == 0 &&
+       re_config && 
+       (use_changer || (rst_flags->alt_tapedev &&
+                        strcmp(rst_flags->alt_tapedev,
+                               getconf_str(CNF_TAPEDEV)) == 0) ) ) {
+	send_message(prompt_stream, rst_flags, their_features,
+		     "%s exists: amdump or amflush is already running, "
+		     "or you must run amcleanup", 
+		     rst_conf_logfile);
+	error("%s exists: amdump or amflush is already running, "
+	      "or you must run amcleanup",
+	      rst_conf_logfile);
+    }
+
     /* make sure our restore flags aren't crazy */
-    if(check_rst_flags(rst_flags) == -1){
-	if(rst_flags->pipe_to_fd != -1) aclose(rst_flags->pipe_to_fd);
+    if (check_rst_flags(rst_flags) == -1) {
+	if (rst_flags->pipe_to_fd != -1)
+	    aclose(rst_flags->pipe_to_fd);
+	send_message(prompt_stream, rst_flags, their_features,
+		     "restore flags are crazy");
 	exit(1);
     }
 

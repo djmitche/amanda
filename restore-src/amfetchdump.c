@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.11 2006/06/22 17:10:34 martinea Exp $
+ * $Id: amfetchdump.c,v 1.12 2006/06/22 17:16:39 martinea Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -501,6 +501,9 @@ main(
     parent_pid = getpid();
     atexit(cleanup);
     get_lock = lock_logfile(); /* config is loaded, should be ok here */
+    if(get_lock == 0) {
+	error("%s exists: amdump or amflush is already running, or you must run amcleanup", rst_conf_logfile);
+    }
     search_tapes(NULL, 1, needed_tapes, match_list, rst_flags, NULL);
     cleanup();
 

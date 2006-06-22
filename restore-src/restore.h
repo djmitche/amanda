@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.h,v 1.7 2006/05/26 11:08:37 martinea Exp $
+ * $Id: restore.h,v 1.8 2006/06/22 17:16:39 martinea Exp $
  *
  * 
  */
@@ -84,6 +84,10 @@ int check_rst_flags(rst_flags_t *flags);
 void free_rst_flags(rst_flags_t *flags);
 void free_match_list(match_list_t *match_list);
 int lock_logfile(void);
+void send_message(FILE *prompt_out, rst_flags_t *flags,
+		  am_feature_t *their_features, char * format, ...);
+	/*     __attribute__ ((format (printf, 4, 5))); */
+
 
 #endif /* RESTORE_H */
 

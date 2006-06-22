@@ -1,4 +1,15 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/amfeatures.c (am_init_feature_set): Set
+	  fe_amrecover_feedme_tape.
+	* common-src/amfeatures.h (fe_amrecover_feedme_tape): New amfeatures.
+	* common-src/fileheader.c (print_header): Fix.
+	* recover-src/extract_list.c: Use fe_amrecover_feedme_tape.
+	* restore-src/amfetchdump.c: Print error if get_lock == 0.
+	* restore-src/amidxtaped.c: Call send_message if get_lock == 0.
+	* restore-src/restore.c: Split search_tapes in 5 functions.
+	* restore-src/restore.h (send_message): prototype.
+
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/xml-source/amfetchdump.8.xml: Document -O and new -o.
 	* restore-src/amfetchdump.c: Replace -o by -O
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.38 2006/06/01 14:54:39 martinea Exp $
+ * $Id: fileheader.c,v 1.39 2006/06/22 17:16:38 martinea Exp $
  */
 
 #include "amanda.h"
@@ -700,7 +700,7 @@ print_header(
     FILE *		outf,
     const dumpfile_t *	file)
 {
-    char *qname;
+    char *qdisk;
     char number[NUM_STR_SIZE*2];
 
     switch(file->type) {
@@ -723,10 +723,10 @@ print_header(
 
     case F_DUMPFILE:
     case F_CONT_DUMPFILE:
-	qname = quote_string(file->name);
+	qdisk = quote_string(file->disk);
 	fprintf(outf, "%s: date %s host %s disk %s lev %d comp %s",
 	    filetype2str(file->type), file->datestamp, file->name,
-	    qname, file->dumplevel, file->comp_suffix);
+	    qdisk, file->dumplevel, file->comp_suffix);
 	if (*file->program)
 	    fprintf(outf, " program %s",file->program);
 	if (strcmp(file->encrypt_suffix, "enc") == 0)
@@ -744,7 +744,7 @@ print_header(
 	if (*file->clnt_decrypt_opt)
 	    fprintf(outf, " client_decrypt_option %s", file->clnt_decrypt_opt);
 	fprintf(outf, "\n");
-	amfree(qname);
+	amfree(qdisk);
 	break;
 
     case F_SPLIT_DUMPFILE:
@@ -752,9 +752,9 @@ print_header(
             snprintf(number, SIZEOF(number), "%d", file->totalparts);
         }   
         else snprintf(number, SIZEOF(number), "UNKNOWN");
-	qname = quote_string(file->name);
+	qdisk = quote_string(file->disk);
         fprintf(outf, "split dumpfile: date %s host %s disk %s part %d/%s lev %d comp %s",
-                      file->datestamp, file->name, qname, file->partnum,
+                      file->datestamp, file->name, qdisk, file->partnum,
                       number, file->dumplevel, file->comp_suffix);
         if (*file->program)
             fprintf(outf, " program %s",file->program);
@@ -773,7 +773,7 @@ print_header(
 	if (*file->clnt_decrypt_opt)
 	    fprintf(outf, " client_decrypt_option %s", file->clnt_decrypt_opt);
         fprintf(outf, "\n");
-	amfree(qname);
+	amfree(qdisk);
         break;
 
     case F_TAPEEND:
