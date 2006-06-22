@@ -1,4 +1,8 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* recover-src/extract_list.c (is_empty_dir): New function.
+	* recover-src/extract_list.c: Print a warning if cwd is not empty.
+	
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amadmin.c: Allow 'p' and 'P' in --sort argument.
 
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>

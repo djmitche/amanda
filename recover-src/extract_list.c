@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.108 2006/06/22 17:16:39 martinea Exp $
+ * $Id: extract_list.c,v 1.109 2006/06/22 23:23:14 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -100,6 +100,7 @@ unsigned short samba_extract_method = SAMBA_TAR;
 
 EXTRACT_LIST *first_tape_list(void);
 EXTRACT_LIST *next_tape_list(EXTRACT_LIST *list);
+static int is_empty_dir(char *fname);
 int is_extract_list_nonempty(void);
 int length_of_tape_list(EXTRACT_LIST *tape_list);
 void add_file(char *path, char *regex);
@@ -1177,6 +1178,27 @@ display_extract_list(
 }
 
 
+static int
+is_empty_dir(
+    char *fname)
+{
+    DIR *dir;
+    struct dirent *entry;
+    int gotentry;
+
+    if((dir = opendir(fname)) == NULL)
+        return 1;
+
+    gotentry = 0;
+    while(!gotentry && (entry = readdir(dir)) != NULL) {
+        gotentry = !is_dot_or_dotdot(entry->d_name);
+    }
+
+    closedir(dir);
+    return !gotentry;
+
+}
+
 /* returns 0 if extract list empty and 1 if it isn't */
 int
 is_extract_list_nonempty(void)
@@ -1953,6 +1975,11 @@ extract_files(void)
     }
 
     printf("Restoring files into directory %s\n", buf);
+    if (!is_empty_dir(buf)) {
+	printf("WARNING: Directory %s is not empty.\n"
+	       "         All existing files will be deleted.\n", buf);
+    }
+
 #ifdef SAMBA_CLIENT
     if (samba_extract_method == SAMBA_SMBCLIENT)
       printf("(unless it is a Samba backup, that will go through to the SMB server)\n");
