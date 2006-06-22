@@ -1,4 +1,7 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amadmin.c: Allow 'p' and 'P' in --sort argument.
+
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amadmin.c: Print errstr returned by match_disklist.
 	* server-src/amcheck.c: Print errstr returned by match_disklist.
 	* server-src/amflush.c: Print errstr returned by match_disklist.

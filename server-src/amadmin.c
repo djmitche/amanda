@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.114 2006/06/22 20:41:32 martinea Exp $
+ * $Id: amadmin.c,v 1.115 2006/06/22 20:43:33 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1100,6 +1100,8 @@ find(
 	    case 'D':
 	    case 'l':
 	    case 'L':
+	    case 'p':
+	    case 'P':
 	    case 'b':
 	    case 'B':
 		    break;
