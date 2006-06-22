@@ -1,4 +1,8 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amindexd.c (uncompress_file): Set LC_ALL=C before
+						   executing sort.
+
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c (wait_children, kill_children): New function.
 	* server-src/driver.c (wait_for_children): Use wait_children and
 						   kill_children.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.99 2006/06/16 19:05:31 martinea Exp $
+ * $Id: amindexd.c,v 1.100 2006/06/22 17:25:24 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -177,7 +177,7 @@ uncompress_file(
 #endif
 			" \'", filename_gz, "\'",
 			" 2>/dev/null",
-			" | sort",
+			" | (LC_ALL=C; export LC_ALL ; sort) ",
 			" > ", "\'", filename, "\'",
 			NULL);
 	dbprintf(("%s: uncompress command: %s\n",
@@ -266,7 +266,9 @@ process_ls_dump(
 		}
 		if(old_line == NULL || strcmp(line, old_line) != 0) {
 		    add_dir_list_item(dump_item, line);
-		    old_line = newstralloc(old_line, line);
+		    amfree(old_line);
+		    old_line = line;
+		    line = NULL;
 		}
 	    }
 	}
