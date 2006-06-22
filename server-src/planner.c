@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.195 2006/06/15 12:52:08 martinea Exp $
+ * $Id: planner.c,v 1.196 2006/06/22 20:41:33 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -172,6 +172,7 @@ int main(int argc, char **argv)
     int    new_argc,   my_argc;
     char **new_argv, **my_argv;
     int    nb_disk;
+    char  *errstr;
 
     safe_fd(-1, 0);
 
@@ -280,7 +281,11 @@ int main(int argc, char **argv)
 	/*NOTREACHED*/
     }
 
-    match_disklist(&origq, my_argc-2, my_argv+2);
+    errstr = match_disklist(&origq, my_argc-2, my_argv+2);
+    if (errstr) {
+	fprintf(stderr,"%s",errstr);
+	amfree(errstr);
+    }
     nb_disk = 0;
     for(dp = origq.head; dp != NULL; dp = dp->next) {
 	if(dp->todo) {

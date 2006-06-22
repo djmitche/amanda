@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.85 2006/06/06 14:48:29 martinea Exp $
+ * $Id: amflush.c,v 1.86 2006/06/22 20:41:33 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -90,6 +90,7 @@ main(
     time_t today;
     int    new_argc,   my_argc;
     char **new_argv, **my_argv;
+    char *errstr;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -165,7 +166,11 @@ main(
 	error("could not read disklist file \"%s\"", conf_diskfile);
 	/*NOTREACHED*/
     }
-    match_disklist(&diskq, my_argc-1, my_argv+1);
+    errstr = match_disklist(&diskq, my_argc-1, my_argv+1);
+    if (errstr) {
+	printf("%s",errstr);
+	amfree(errstr);
+    }
     amfree(conf_diskfile);
 
     conf_tapelist = getconf_str(CNF_TAPELIST);

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.113 2006/06/06 14:48:29 martinea Exp $
+ * $Id: amadmin.c,v 1.114 2006/06/22 20:41:32 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -345,6 +345,7 @@ diskloop(
 {
     disk_t *dp;
     int count = 0;
+    char *errstr;
 
     if(argc < 4) {
 	fprintf(stderr,"%s: expecting \"%s [<hostname> [<disks>]* ]+\"\n",
@@ -352,7 +353,11 @@ diskloop(
 	usage();
     }
 
-    match_disklist(&diskq, argc-3, argv+3);
+    errstr = match_disklist(&diskq, argc-3, argv+3);
+    if (errstr) {
+	printf("%s", errstr);
+	amfree(errstr);
+    }
 
     for(dp = diskq.head; dp != NULL; dp = dp->next) {
 	if(dp->todo) {
@@ -1071,6 +1076,7 @@ find(
     int start_argc;
     char *sort_order = NULL;
     find_result_t *output_find;
+    char *errstr;
 
     if(argc < 3) {
 	fprintf(stderr,
@@ -1110,11 +1116,21 @@ find(
     } else {
 	start_argc=4;
     }
-    match_disklist(&diskq, argc-(start_argc-1), argv+(start_argc-1));
+    errstr = match_disklist(&diskq, argc-(start_argc-1), argv+(start_argc-1));
+    if (errstr) {
+	printf("%s", errstr);
+	amfree(errstr);
+    }
+
     output_find = find_dump(1, &diskq);
     if(argc-(start_argc-1) > 0) {
 	free_find_result(&output_find);
-	match_disklist(&diskq, argc-(start_argc-1), argv+(start_argc-1));
+	errstr = match_disklist(&diskq, argc-(start_argc-1),
+					argv+(start_argc-1));
+	if (errstr) {
+	    printf("%s", errstr);
+	    amfree(errstr);
+	}
 	output_find = find_dump(0, NULL);
     }
 

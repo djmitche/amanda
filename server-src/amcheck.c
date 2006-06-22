@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.139 2006/06/15 12:54:52 martinea Exp $
+ * $Id: amcheck.c,v 1.140 2006/06/22 20:41:32 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -109,6 +109,7 @@ main(
     uid_t uid_me;
     int    new_argc,   my_argc;
     char **new_argv, **my_argv;
+    char *errstr;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -253,7 +254,11 @@ main(
 	error("could not load disklist %s", conf_diskfile);
 	/*NOTREACHED*/
     }
-    match_disklist(&origq, my_argc-1, my_argv+1);
+    errstr = match_disklist(&origq, my_argc-1, my_argv+1);
+    if (errstr) {
+	printf("%s",errstr);
+	amfree(errstr);
+    }
     amfree(conf_diskfile);
 
     /*

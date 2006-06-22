@@ -1,4 +1,13 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amadmin.c: Print errstr returned by match_disklist.
+	* server-src/amcheck.c: Print errstr returned by match_disklist.
+	* server-src/amflush.c: Print errstr returned by match_disklist.
+	* server-src/diskfile.c (match_disklist): Return an error str.
+	* server-src/diskfile.h (match_disklist): New prototype.
+	* server-src/planner.c: Print errstr returned by match_disklist.
+	* server-src/reporter.c: Accept host/disk as arguments.
+
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amindexd.c (uncompress_file): Set LC_ALL=C before
 						   executing sort.
 

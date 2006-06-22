@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.119 2006/06/06 23:13:26 paddy_s Exp $
+ * $Id: reporter.c,v 1.120 2006/06/22 20:41:34 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -419,19 +419,15 @@ main(
 		}
                 break;
             case '?':
-            default:
 		usage();
 		return 1;
+            default:
+		break;
 	    }
 	}
 
 	my_argc -= optind;
 	my_argv += optind;
-
-	if (my_argc > 1) {
-	    usage();
-	    return 1;
-	}
     }
     if( !mailout && mailto ){
 	printf("You cannot specify both -i & -M at the same time\n");
