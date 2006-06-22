@@ -1,4 +1,8 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* man/xml-source/amfetchdump.8.xml: Document -O and new -o.
+	* restore-src/amfetchdump.c: Replace -o by -O
+
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/clientconf.c (parse_client_conf): Fix segmentation fault.
 	* server-src/conffile.c (parse_server_conf): Fix segmentation fault.
 

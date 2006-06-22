@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.8 2006/06/16 12:25:10 martinea Exp $
+ * $Id: clientconf.c,v 1.9 2006/06/22 17:07:40 martinea Exp $
  *
  * read configuration file
  */
@@ -513,13 +513,17 @@ parse_client_conf(
 		myarg = parse_argv[i];
 	    }
 	    value = index(myarg,'=');
-	    *value = '\0';
-	    value++;
-	    client_option->used = 0;
-	    client_option->name = stralloc(myarg);
-	    client_option->value = stralloc(value);
-	    client_option++;
-	    client_option->name = NULL;
+	    if (value == NULL) {
+		conf_parserror("Must specify a value for %s.\n", myarg);
+	    } else {
+		*value = '\0';
+		value++;
+		client_option->used = 0;
+		client_option->name = stralloc(myarg);
+		client_option->value = stralloc(value);
+		client_option++;
+		client_option->name = NULL;
+	    }
 	}
 	else {
 	    my_argv[*new_argc] = stralloc(parse_argv[i]);

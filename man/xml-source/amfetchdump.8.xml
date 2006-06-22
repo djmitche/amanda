@@ -23,7 +23,7 @@
   <command>amfetchdump</command>
     <arg choice='opt'>-pcClawns</arg>
     <arg choice='opt'>-d <replaceable>device</replaceable></arg>
-    <arg choice='opt'>-o <replaceable>directory</replaceable></arg>
+    <arg choice='opt'>-O <replaceable>directory</replaceable></arg>
     <arg choice='opt'>-i <replaceable>logfile</replaceable></arg>
     <arg choice='opt'>-b <replaceable>blocksize</replaceable></arg>
     <arg choice='plain'><replaceable>config</replaceable></arg>
@@ -41,6 +41,7 @@
         </arg>
       </arg>
     </arg>
+    <group><arg choice='plain'>-o</arg><arg choice='plain'><replaceable>configoption</replaceable></arg></group>*
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -94,7 +95,7 @@ facility).</para></listitem>
 <listitem><para> Restore from this tape device instead of the default.</para></listitem>
   </varlistentry>
   <varlistentry>
-    <term><option>-o</option>
+    <term><option>-O</option>
     <replaceable>directory</replaceable></term>
 <listitem><para>Output restored files to this directory, instead of to the
     current working directory.</para></listitem>
@@ -163,6 +164,15 @@ operation.</para></listitem>
     value will usually be autodetected, and should not normally need
     to be set.</para></listitem>
   </varlistentry>
+
+  <varlistentry>
+  <term><emphasis remap='B'>-o</emphasis> <replaceable>configoption</replaceable></term>
+  <listitem>
+<para>See the "<emphasis remap='B'>CONFIGURATION OVERWRITE</emphasis>"
+ section in <citerefentry><refentrytitle>amanda</refentrytitle><manvolnum>8</manvolnum></citerefentry>.</para>
+  </listitem>
+  </varlistentry>
+
 </variablelist>
 </refsect1>
 

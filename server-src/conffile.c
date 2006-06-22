@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.148 2006/06/19 18:31:22 martinea Exp $
+ * $Id: conffile.c,v 1.149 2006/06/22 17:07:40 martinea Exp $
  *
  * read configuration file
  */
@@ -2203,13 +2203,17 @@ parse_server_conf(
 		myarg = parse_argv[i];
 	    }
 	    value = index(myarg,'=');
-	    *value = '\0';
-	    value++;
-	    server_option->used = 0;
-	    server_option->name = stralloc(myarg);
-	    server_option->value = stralloc(value);
-	    server_option++;
-	    server_option->name = NULL;
+	    if (value == NULL) {
+		conf_parserror("Must specify a value for %s.\n", myarg);
+	    } else {
+		*value = '\0';
+		value++;
+		server_option->used = 0;
+		server_option->name = stralloc(myarg);
+		server_option->value = stralloc(value);
+		server_option++;
+		server_option->name = NULL;
+	    }
 	}
 	else {
 	    my_argv[*new_argc] = stralloc(parse_argv[i]);

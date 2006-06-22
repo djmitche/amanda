@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.10 2006/06/05 19:36:41 martinea Exp $
+ * $Id: amfetchdump.c,v 1.11 2006/06/22 17:10:34 martinea Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -84,11 +84,11 @@ errexit(void)
 void
 usage(void)
 {
-    fprintf(stderr, "Usage: amfetchdump [options] config hostname [diskname [datestamp [level [hostname [diskname [datestamp [level ... ]]]]]]]\n\n");
+    fprintf(stderr, "Usage: amfetchdump [options] config hostname [diskname [datestamp [level [hostname [diskname [datestamp [level ... ]]]]]]] [-o configoption]*\n\n");
     fprintf(stderr, "Goes and grabs a dump from tape, moving tapes around and assembling parts as\n");
     fprintf(stderr, "necessary.  Files are restored to the current directory, unless otherwise\nspecified.\n\n");
     fprintf(stderr, "  -p Pipe exactly *one* complete dumpfile to stdout, instead of to disk.\n");
-    fprintf(stderr, "  -o <output dir> Restore files to this directory.\n");
+    fprintf(stderr, "  -O <output dir> Restore files to this directory.\n");
     fprintf(stderr, "  -d <device> Force restoration from a particular tape device.\n");
     fprintf(stderr, "  -c Compress output, fastest method available.\n");
     fprintf(stderr, "  -C Compress output, best filesize method available.\n");
@@ -335,7 +335,7 @@ main(
     rst_flags->wait_tape_prompt = 1;
 
     /* handle options */
-    while( (opt = getopt(my_argc, my_argv, "alht:scCpb:nwi:d:o:")) != -1) {
+    while( (opt = getopt(my_argc, my_argv, "alht:scCpb:nwi:d:O:")) != -1) {
 	switch(opt) {
 	case 'b':
             rst_flags->blocksize = (ssize_t)strtol(optarg, &e, 10);
@@ -353,7 +353,7 @@ main(
 	    }
 	    break;
 	case 'c': rst_flags->compress = 1; break;
-	case 'o': rst_flags->restore_dir = stralloc(optarg) ; break;
+	case 'O': rst_flags->restore_dir = stralloc(optarg) ; break;
 	case 'd': rst_flags->alt_tapedev = stralloc(optarg) ; break;
 	case 'C':
 	    rst_flags->compress = 1;
