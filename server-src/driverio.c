@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.88 2006/06/05 19:36:41 martinea Exp $
+ * $Id: driverio.c,v 1.89 2006/06/22 17:21:56 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -379,9 +379,9 @@ taper_cmd(
 		cmdline, strerror(errno));
 	fflush(stdout);
 	amfree(cmdline);
-	if(cmd == QUIT) aclose(taper);
 	return 0;
     }
+    if(cmd == QUIT) aclose(taper);
     amfree(cmdline);
     return 1;
 }
@@ -606,9 +606,9 @@ chunker_cmd(
 	printf("writing %s command: %s\n", chunker->name, strerror(errno));
 	fflush(stdout);
 	amfree(cmdline);
-	if(cmd == QUIT || cmd == ABORT) aclose(chunker->fd);
 	return 0;
     }
+    if(cmd == QUIT || cmd == ABORT) aclose(chunker->fd);
     amfree(cmdline);
     return 1;
 }

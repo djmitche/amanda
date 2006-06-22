@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.184 2006/06/13 11:14:15 martinea Exp $
+ * $Id: driver.c,v 1.185 2006/06/22 17:21:56 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -74,6 +74,7 @@ static int need_degraded=0;
 static event_handle_t *dumpers_ev_time = NULL;
 static event_handle_t *schedule_ev_read = NULL;
 
+static int wait_children(int count);
 static void wait_for_children(void);
 static void allocate_bandwidth(interface_t *ip, unsigned long kps);
 static int assign_holdingdisk(assignedhd_t **holdp, disk_t *diskp);
@@ -152,7 +153,6 @@ main(
     int result_argc;
     char *result_argv[MAX_ARGS+1];
     char *taper_program;
-    amwait_t retstat;
     char *conf_tapetype;
     tapetype_t *tape;
     char *line;
@@ -449,7 +449,8 @@ main(
 
     if(!nodump) {
 	for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
-	    dumper_cmd(dumper, QUIT, NULL);
+	    if(dumper->fd >= 0)
+		dumper_cmd(dumper, QUIT, NULL);
 	}
     }
 
@@ -458,50 +459,7 @@ main(
     }
 
     /* wait for all to die */
-
-    while(1) {
-	char number[NUM_STR_SIZE];
-	pid_t pid;
-	char *who;
-	char *what;
-	int code=0;
-
-	if((pid = wait(&retstat)) == -1) {
-	    if(errno == EINTR) continue;
-	    else break;
-	}
-	what = NULL;
-	if(! WIFEXITED(retstat)) {
-	    what = "signal";
-	    code = WTERMSIG(retstat);
-	} else if(WEXITSTATUS(retstat) != 0) {
-	    what = "code";
-	    code = WEXITSTATUS(retstat);
-	}
-	who = NULL;
-	for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
-	    if(pid == dumper->pid) {
-		who = stralloc(dumper->name);
-		break;
-	    }
-	}
-	if(who == NULL && pid == taper_pid) {
-	    who = stralloc("taper");
-	}
-	if(what != NULL && who == NULL) {
-	    snprintf(number, SIZEOF(number), "%ld", (long)pid);
-	    who = stralloc2("unknown pid ", number);
-	}
-	if(who && what) {
-	    log_add(L_WARNING, "%s exited with %s %d\n", who, what, code);
-	    printf("driver: %s exited with %s %d\n", who, what, code);
-	}
-	amfree(who);
-    }
-
-    for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
-	amfree(dumper->name);
-    }
+    wait_children(600);
 
     for(hdp = getconf_holdingdisks(); hdp != NULL; hdp = hdp->next) {
 	cleanup_holdingdisk(holdingdisk_get_diskdir(hdp), 0);
@@ -532,15 +490,132 @@ main(
     return 0;
 }
 
+/* sleep up to count seconds, and wait for terminating child process */
+/* if sleep is negative, this function will not timeout              */
+/* exit once all child process are finished or the timout expired    */
+/* return 0 if no more children to wait                              */
+/* return 1 if some children are still alive                         */
+static int
+wait_children(int count)
+{
+    pid_t     pid;
+    amwait_t  retstat;
+    char     *who;
+    char     *what;
+    int       code=0;
+    dumper_t *dumper;
+    int       wait_errno;
+
+    do {
+	do {
+	    pid = waitpid((pid_t)-1, &retstat, WNOHANG);
+	    wait_errno = errno;
+	    if (pid > 0) {
+		what = NULL;
+		if (! WIFEXITED(retstat)) {
+		    what = "signal";
+		    code = WTERMSIG(retstat);
+		} else if (WEXITSTATUS(retstat) != 0) {
+		    what = "code";
+		    code = WEXITSTATUS(retstat);
+		}
+		who = NULL;
+		for (dumper = dmptable; dumper < dmptable + inparallel;
+		     dumper++) {
+		    if (pid == dumper->pid) {
+			who = stralloc(dumper->name);
+			dumper->pid = -1;
+			break;
+		    }
+		    if (pid == dumper->chunker->pid) {
+			who = stralloc(dumper->chunker->name);
+			dumper->chunker->pid = -1;
+			break;
+		    }
+		}
+		if (who == NULL && pid == taper_pid) {
+		    who = stralloc("taper");
+		    taper_pid = -1;
+		}
+		if(what != NULL && who == NULL) {
+		    who = stralloc("unknown");
+		}
+		if(who && what) {
+		    log_add(L_WARNING, "%s pid %d exited with %s %d\n", who, pid, what, code);
+		    printf("driver: %s pid %d exited with %s %d\n", who, pid, what, code);
+		}
+		amfree(who);
+	    }
+	} while (pid > 0 || wait_errno == EINTR);
+	if (errno != ECHILD)
+	    sleep(1);
+	if (count > 0)
+	    count--;
+    } while ((errno != ECHILD) && (count != 0));
+    return (errno != ECHILD);
+}
+
+static void
+kill_children(int signal)
+{
+    dumper_t *dumper;
+
+    if(!nodump) {
+        for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
+	    if (!dumper->down && dumper->pid > 1) {
+		printf("driver: sending signal %d to %s pid %d\n", signal,
+		       dumper->name, dumper->pid);
+		if (kill(dumper->pid, signal) == -1 && errno == ESRCH)
+		    dumper->chunker->pid = 0;
+		if (dumper->chunker && dumper->chunker->pid > 1) {
+		    printf("driver: sending signal %d to %s pid %d\n", signal,
+			   dumper->chunker->name, dumper->chunker->pid);
+		    if (kill(dumper->chunker->pid, signal) == -1 &&
+			errno == ESRCH)
+			dumper->chunker->pid = 0;
+		}
+	    }
+        }
+    }
+
+    if(taper_pid > 1)
+	printf("driver: sending signal %d to %s pid %d\n", signal,
+	       "taper", taper_pid);
+	if (kill(taper_pid, signal) == -1 && errno == ESRCH)
+	    taper_pid = 0;
+}
+
 static void
 wait_for_children(void)
 {
-	pid_t pid;
-	amwait_t status;
+    dumper_t *dumper;
 
-	do {
-		pid = waitpid((pid_t)-1, &status, (int)NULL);
-	} while ((pid != 1) && (errno != ECHILD));
+    if(!nodump) {
+	for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
+	    if (dumper->pid > 1 && dumper->fd >= 0) {
+		dumper_cmd(dumper, QUIT, NULL);
+		if (dumper->chunker && dumper->chunker->pid > 1 &&
+		    dumper->chunker->fd >= 0)
+		    chunker_cmd(dumper->chunker, QUIT, NULL);
+	    }
+	}
+    }
+
+    if(taper_pid > 1 && taper > 0) {
+	taper_cmd(QUIT, NULL, NULL, 0, NULL);
+    }
+
+    if(wait_children(60) == 0)
+	return;
+
+    kill_children(SIGHUP);
+    if(wait_children(60) == 0)
+	return;
+
+    kill_children(SIGKILL);
+    if(wait_children(-1) == 0)
+	return;
+
 }
 
 static void

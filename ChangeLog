@@ -1,4 +1,12 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driver.c (wait_children, kill_children): New function.
+	* server-src/driver.c (wait_for_children): Use wait_children and
+						   kill_children.
+	* server-src/driver.c (main): Use wait_children.
+	* server-src/driverio.c (taper_cmd, chunker_cmd): Close socket on QUIT
+							  or ABORT command.
+
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/amfeatures.c (am_init_feature_set): Set
 	  fe_amrecover_feedme_tape.
 	* common-src/amfeatures.h (fe_amrecover_feedme_tape): New amfeatures.
