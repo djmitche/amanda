@@ -2,7 +2,7 @@
 pkgdata_DATA = \
 	Appendix.txt \
 	amadmin.8.txt \
-	amaespipe.8.txt
+	amaespipe.8.txt \
 	amanda.8.txt \
 	amanda.conf.5.txt \
 	amanda-client.conf.5.txt \
