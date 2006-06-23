@@ -11,11 +11,22 @@ Bert de Ridder
 
 Original text
 
+Paul Bijnens
+
+Original text
+
 Stefan G. Weichinger
 
 XML-conversion; Updates
 AMANDA Core Team
 <sgw@amanda.org>
+Table of Contents
+
+
+  Bert_de_Ridder's_suggestions
+
+  Paul_Bijnens's_suggestions
+
 
 Note
 
@@ -24,10 +35,13 @@ of this document.
 
 Note
 
-The script used in this document is not part of the official AMANDA release.
-The AMANDA core team does not take any responsibility for this script.
+The script used in this document is not part of the official Amanda release.
+The Amanda core team does not take any responsibility for this script.
+
+Bert de Ridder's suggestions
+
 This is a mini-howto explaining how to control other running tasks on a server
-where the AMANDA software is used to backup data.
+where the Amanda software is used to backup data.
 Problem : Lots of software is picky about their datafiles being backed up while
 the files are in use. It sometimes is even necessary to know the state of the
 datafiles at the moment of backup so that when restoring you know exactly
@@ -144,7 +158,7 @@ course is just an example, anything you can do in a shell script can be done.
        # End script
 
      On some systems it may be necessary to setuid root the script.
-  2. Rebuild AMANDA so that it uses your newly created script.
+  2. Rebuild Amanda so that it uses your newly created script.
      Download the sources, untar them to a directory. I'm sure there are lots
      of documents already available on how to do this, so I won't go into too
      much detail. (Refer to Amanda_Installation_Notes).
@@ -178,8 +192,110 @@ course is just an example, anything you can do in a shell script can be done.
 
      Now proceed as with a "normal" installation.
 
+
+Paul Bijnens's suggestions
+
+How do I run pre- and post dump programs, e.g. database stop/start?
+Currently (Amanda 2.4.5) there is no direct support to run a program before or
+after a backup on a client. But there is an easy workaround by using a wrapper
+for GNU-tar that does the additional tasks.
+Let's suppose you want to stop a database before the backup, and start it up
+again when the backup is finished. You have already two scripts "shutdb" and
+"startdb" to shutdown and startup the database.
+First you have to configure Amanda on the client to use the gnutar-wrapper
+instead of the real GNU-tar:
+
+  ./configure ... --with-gnutar=/usr/local/bin/amgtar ...
+
+and re-compile Amanda. The program "amgtar" can be a simple link to the real
+GNU-tar-binary on clients that don't need special handling, or it can be a
+script.
+Amanda expects that the bytestream on stdout is the backup image, and the
+bytestream on stderr are messages. The stderr messages are filtered against a
+known set of strings, and anything unexpected is flagged as "STRANGE" in the
+Amanda report. The return-codes of the program should be the same as the
+return-codes of GNU-tar:
+
+* 0 = ok (backup image will be put on tape)
+* 1 = not ok (backup image will not be put on tape, same level will be tried
+  next time).
+
+The arguments passed to the program are pretty static (see in the sources
+client-src/sendbackup-gnutar.c, line 483). To decide if you need to stop/start
+the database you have to check if:
+
+* this run makes a backup and not a restore: look for "--create"
+* this it is not an estimate run: look for "--file /dev/null" (estimate) or "--
+  file -" (real run)
+* this run is for the database directory: look for "--directory /my/data/base"
+
+In all other cases, we just pass the args and run the real GNU-tar.
+Here is an example script in Bourne shell:
+Example 15.1. 
+
+  #!/bin/sh
+
+  # # uncomment next block to follow the flow
+  # LOG=/tmp/amanda/mytar.debug
+  # date >> $LOG
+  # echo "$@" >> $LOG
+  # if [ "$3" = "/dev/null" ]
+  # then echo "Estimate only" >> $LOG
+  # else echo "Real backup" >> $LOG
+  # fi
+
+  # - Avoid output to stdout! (the backup stream by tar)
+  # - Any output to stderr is flagged as "strange" by amanda
+  #   and may be used to pass error messages into the report
+
+  if [ "$1" = "--create"  -a  "$3" = "-"  -a  "$5" = "/my/dir" ]
+  then
+      # echo "/my/dir: want to execute some progs first" >>$LOG
+      /usr/local/bin/shutdb thedb >&2
+      /usr/local/bin/gtar "$@"
+      rc=$?
+      # echo "Finished the real backup; some postprocessing" >>$LOG
+      /usr/local/bin/startdb thedb >&2
+      exit $rc
+  else
+      /usr/local/bin/gtar "$@"
+  fi
+
+Here is an example script in perl:
+Example 15.2. 
+
+  #!/usr/bin/perl -w
+
+  use Getopt::Long qw(:config pass_through);
+
+  my @saveopts = @ARGV;
+  GetOptions (
+          'create' => \$create,
+          'directory=s' => \$dir,
+          'file=s' => \$file,
+  );
+  @ARGV = @saveopts;
+
+  my $postproc = 0;
+  if ($create  &&  $dir eq '/my/data/base' &&  $file ne '/dev/null') {
+      system '/usr/local/bin/dbshut thedb >/tmp/amanda/dbshut.debug 2>&1';
+      $postproc = 1;
+  }
+
+  unshift(@ARGV, "/usr/local/bin/gtar");
+  system @ARGV;
+
+  my $rc = $? >> 8;
+
+  if ($postproc) {
+      system '/usr/local/bin/dbstart thedb >/tmp/amanda/dbstart.debug 2>&1';
+  }
+
+  exit $rc;
+
 -------------------------------------------------------------------------------
 
-Prev                    Up                           Next
-Chapter 14. AFS HOWTO  Home  Part IV. Various Information
+Prev                    Up                                            Next
+Chapter 14. AFS HOWTO  Home  Chapter 16. How to do Amanda-server-side gpg-
+                                                        encrypted backups.
 

@@ -14,13 +14,6 @@ A
   autoflush, the_multiple-dumps-question
 
 
-B
-
-
-
-  bumping, AMANDA_FAQ
-
-
 C
 
 
@@ -90,6 +83,6 @@ V
 
 -------------------------------------------------------------------------------
 
-Prev                         Up   
-Chapter 36. Web Ressources  Home  
+Prev                              
+Chapter 37. Web Ressources  Home  
 

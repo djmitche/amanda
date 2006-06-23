@@ -1,10 +1,10 @@
 
-     Chapter 8. AMANDA Tape Changer Support
+     Chapter 8. Amanda Tape Changer Support
 Prev  Part II. About Tapes and Changers  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 8. AMANDA Tape Changer Support
+Chapter 8. Amanda Tape Changer Support
 
 
 James da Silva
@@ -74,16 +74,16 @@ of this document.
 
  Introduction
 
-This document outlines the tape changer support design of AMANDA 2.2 and
+This document outlines the tape changer support design of Amanda 2.2 and
 beyond. It defines a small interface for changer software to follow so that
-AMANDA can remain device-independent but still support the widest range of tape
+Amanda can remain device-independent but still support the widest range of tape
 software and hardware possible.
 The interface is a bit simplistic and has only had complications added when
 there is a body of field experience.
 
  Specifying a tape changer in amanda.conf
 
-All device-specifics are hidden by a glue program that the rest of AMANDA calls
+All device-specifics are hidden by a glue program that the rest of Amanda calls
 to interact with the tape changer.
 The name of this changer program is given by the "tpchanger" variable in the
 file amanda.conf. Example entry:
@@ -95,9 +95,9 @@ The tapedev parameter is ignored if a tpchanger program is specified, unless
 the changer program itself reads tapedev from amanda.conf. The chg-multi
 changer doesn't, as it reads all its configuration arguments from its own
 configuration file, specified as changerfile.
-If the tpchanger program does not begin with a '/', AMANDA expects it to reside
+If the tpchanger program does not begin with a '/', Amanda expects it to reside
 in libexecdir, and possibly have the version suffix appended depending on how
-AMANDA was configured.
+Amanda was configured.
 Two other amanda.conf parameters are available for changer use, however their
 definition is left entirely up to the changer script itself. They are
 changerfile and changerdev. Typically changerfile will point to the
@@ -147,7 +147,7 @@ Flag indicating whether the changer can go backwards
 (0 if it can't, 1 if it can). (required)
 Flag indicating whether the changer is searchable
 (optional). Shows whether the changer supports the -search and -label commands
-and is able to load a tape given only the AMANDA label string (0 or omitted if
+and is able to load a tape given only the Amanda label string (0 or omitted if
 it can't, 1 if it can). (optional)
 Examples:
 
@@ -196,7 +196,7 @@ The tape changer program MAY support the following commands:
 
 * <tpchanger> -search <labelstr>
 
-Loads an AMANDA tape by name (labelstr).
+Loads an Amanda tape by name (labelstr).
 Output and error handling are the same as the -slot command.
 taper, amcheck and amtape will use this command if the changer reports it is
 searchable.
@@ -205,7 +205,7 @@ Example:
   		% chg-zd-mtx -search DailySet005
   		5 /dev/nrst8			# exitcode returned is 0
 
--<tpchanger> -label <labelstr> Associates the AMANDA label <labelstr> with the
+-<tpchanger> -label <labelstr> Associates the Amanda label <labelstr> with the
 barcode of the currently loaded (in the tape drive) tape.
 Outputs to stdout the current slot and tape device. amlabel will use this
 command if your changer is searchable to build up the barcode database.
@@ -216,15 +216,15 @@ Example:
 
 For all the commands:
 An exit code of 0 implies that the operation was completely successful, and the
-output may be parsed by the AMANDA code as described above.
+output may be parsed by the Amanda code as described above.
 For non-zero exit codes, the first field is still the slot name, but the actual
 error messages are not fixed. They are just displayed and/or logged as-is by
-the calling AMANDA program.
+the calling Amanda program.
 An exit code of 1 implies the operation failed in a benign way, for example an
 empty slot or an attempt to go backwards in a gravity stacker. The calling
-AMANDA program will print the error message if appropriate and continue,
+Amanda program will print the error message if appropriate and continue,
 perhaps requesting a different slot be loaded.
-Any other exit code is considered fatal and will cause AMANDA to stop
+Any other exit code is considered fatal and will cause Amanda to stop
 attempting to talk to the tape changer.
 
  Slot names and the "current" slot
@@ -233,14 +233,14 @@ Some tape changers, such as carousels and gravity stackers, have a hardware
 notion of current position. Others have no current position when no tape is
 loaded: all tapes are in their slots and the changer arm is docked away from
 the slots.
-Nevertheless, AMANDA requires tape-changer scripts to maintain the notion of a
+Nevertheless, Amanda requires tape-changer scripts to maintain the notion of a
 "current" position. This is for performance reasons: as tapes tend to be loaded
-into the rack in order, and AMANDA uses them in order, the next tape to use can
+into the rack in order, and Amanda uses them in order, the next tape to use can
 be found much quicker if the position of the current one is remembered. As an
 example, the chg-multi script maintains the current position in a chg-
 multi.state file (or any other file specified in a `statefile' line in the
 changer configuration file).
-AMANDA does not care how slots are available or how they are named. They could
+Amanda does not care how slots are available or how they are named. They could
 be numbered 0 to N-1, numbered 1 to N, or even designated by letter, A .. Z.
 The only requirement is that the names do not contain whitespace and that the
 names "current", "next", "prev", "first", "last" and "advance" retain their
@@ -259,7 +259,7 @@ issuing successive "slot next" positioning commands.
 
  Operator interface
 
-The amtape program is the main operator interface to AMANDA's tape changer
+The amtape program is the main operator interface to Amanda's tape changer
 support. The commands supported include:
 amtape <conf> slot <slot-specifier> Load the tape from the specified slot into
 the drive
@@ -295,7 +295,7 @@ find the right tape, then run amrestore giving the resulting tape device name.
 
  How amdump interacts with the tape changer
 
-AMANDA does not require a particular tape label for a run. Any label that
+Amanda does not require a particular tape label for a run. Any label that
 matches the labelstr regex and is determined to be "inactive" according to the
 tapelist database, may be written to. However, there is a preferred 'next'
 tape, the one that is next in the cycle implied by the current tapelist.
@@ -310,7 +310,7 @@ it is not found, the first tape encountered that matches the labelstr and is
 not active is picked.
 Gravity stackers (anything that can not go backwards):
 To avoid going all the way to the bottom of the stacker only to find that the
-preferred tape isn't present and nothing can be done, AMANDA picks the first
+preferred tape isn't present and nothing can be done, Amanda picks the first
 tape (starting at the current position) that matches the labelstr and is not
 active, regardless of whether it is the preferred tape.
 
@@ -323,7 +323,7 @@ This tape changer script supports several common configurations:
 
 * Using multiple tape drives in a single host to emulate a tape changer. This
   can also be used with a single physical drive to write several tapes in an
-  AMANDA run.
+  Amanda run.
 
 
 * Using a gravity stacker or a real changer configured to sequentially load the
@@ -390,11 +390,11 @@ changerfile points to a real configuration file, not only a counting file. In
 this configuration file you may specify that the tapedrive needs an eject
 command and an optional waittime, necessary after inserting the tape into the
 drive. You are also able to configure a range of slots which should be used by
-your configuration. The idea behind this is, that you don't want AMANDA to
-cycle all the tapes if AMANDA searches exactly one tape. If you have a library
+your configuration. The idea behind this is, that you don't want Amanda to
+cycle all the tapes if Amanda searches exactly one tape. If you have a library
 which supports more than one drive you can also specify which drive to use. For
 each configuration (there should be at least one) you have to specify a file,
-where AMANDA remembers which tape is actually in the drive. For future use
+where Amanda remembers which tape is actually in the drive. For future use
 there is also some stuff for cleaning the drives.
 In amanda.conf:
 
@@ -469,7 +469,7 @@ If this option is given on every eject/move the log pages of the tape device
 will be dumped in this file. There are 2 log pages were you can see how many
 read/write errors (corrected) are processed by the tape
 labelfile <filename>
-This file is used for the mapping from barcode labels to AMANDA volume labels.
+This file is used for the mapping from barcode labels to Amanda volume labels.
 It is used if the changer has a barcode reader. To initialize run amtape show,
 this will add the mapping for the tapes in the magazine.
 eject > 1
@@ -585,11 +585,11 @@ the SCSI bus. It expects `tapedev' to specify the tape device to be used.
 chg-juke
 
 A shell script that uses the Fermilab "juke" software (see http://www.fnal.gov/
-fermitools/, the "juke" link) to control tape chagners. It supports mounting
+fermitools, the "juke" link) to control tape chagners. It supports mounting
 multiple tapes for RAIT tapedrive sets, both multiple jukeboxes, or one jukebox
 with multiple tape drives, or combinations. 'juke' must be configured to know
-tape drives by the same name AMANDA calls them. It uses 'changerfile' to track
-AMANDA's current tape state, 'tapedev' must be the tape drive (or RAIT set)
+tape drives by the same name Amanda calls them. It uses 'changerfile' to track
+Amanda's current tape state, 'tapedev' must be the tape drive (or RAIT set)
 name, and 'changerdev' is the juke software's name for the changer, or a csh-
 glob that expands to several jukebox names (i.e. "changer{a,b,c}").
 
@@ -636,7 +636,7 @@ The directory tree should be:
 
 Where "slot_root_dir" is the tapedev "file:xxx" parameter and "n" the tapecycle
 parameter.
-Please refer to How_to_use_the_AMANDA_file-driver for details of usage.
+Please refer to How_to_use_the_Amanda_file-driver for details of usage.
 
 chg-iomega
 
@@ -661,7 +661,7 @@ via crontab. Make sure you comply with any of the following. - Add statements
 to your amanda.conf. - Add entry to /etc/fstab to specify mount point of
 removable disk and make this disk mountable by any user. - Format all disks,
 add a "data" sub directory and label all disks by using amlabel. - Be aware
-that as of version 2.4.4p1, AMANDA can't handle backups that are larger than
+that as of version 2.4.4p1, Amanda can't handle backups that are larger than
 the size of the removable disk media. So make sure /etc/amanda/<backup_set>/
 disklist specifies chunks smaller than the disk size.
 

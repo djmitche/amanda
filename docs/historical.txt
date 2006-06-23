@@ -5,24 +5,24 @@ Prev                 Next
 -------------------------------------------------------------------------------
 
 
-Historical files
+Part VI. Historical files
 
 
 
 Old and outdated material, proposals and drafts.
 
 Here you find some chapters which contain outdated informations. These chapters
-nonetheless can help to get a more complete picture of AMANDA.
+nonetheless can help to get a more complete picture of Amanda.
 
 Note
 
 Please realize that the following does not necessarily describe current
-features of AMANDA. There are also features described which were never added to
-AMANDA.
+features of Amanda. There are also features described which were never added to
+Amanda.
 Table of Contents
 
 
-  28._Response_to_CPIO_Security_Notice_Issue_11:
+  29._Response_to_CPIO_Security_Notice_Issue_11:
 
 
         Affected_Versions
@@ -32,12 +32,12 @@ Table of Contents
         Acknowledgements
 
 
-  29._Upgrade_Issues
+  30._Upgrade_Issues
 
-  30._What_once_was_new
+  31._What_once_was_new
 
 
-        What's_new_in_AMANDA_2.3
+        What's_new_in_Amanda_2.3
 
 
               Indexing_backups_for_easier_restore
@@ -57,7 +57,7 @@ Table of Contents
               amadmin_import/export
 
 
-        What's_new_in_AMANDA_2.2
+        What's_new_in_Amanda_2.2
 
 
               Client_side_setup_has_changed
@@ -94,7 +94,7 @@ Table of Contents
 
 
 
-  31._Multitape_support_in_AMANDA_2.2
+  32._Multitape_support_in_Amanda_2.2
 
 
         Introduction
@@ -124,15 +124,15 @@ Table of Contents
 
 
 
-  32._Thoughts_about_a_Strategy_API
+  33._Thoughts_about_a_Strategy_API
 
-  33._Y2K_Compliancy
+  34._Y2K_Compliancy
 
-  34._Usage_of_floppy_tape_drives_on_Linux
+  35._Usage_of_floppy_tape_drives_on_Linux
 
 -------------------------------------------------------------------------------
 
-Prev                             Up                                    Next
-Chapter 27. Using Kerberos with Home  Chapter 28. Response to CPIO Security
-AMANDA                                                     Notice Issue 11:
+Prev                                                                   Next
+Chapter 28. Using Kerberos with Home  Chapter 29. Response to CPIO Security
+Amanda                                                     Notice Issue 11:
 

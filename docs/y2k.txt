@@ -1,13 +1,13 @@
 
-        Chapter 33. Y2K Compliance
+        Chapter 34. Y2K Compliancy
 Prev  Part VI. Historical files  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 33. Y2K Compliance
+Chapter 34. Y2K Compliancy
 
 
-AMANDA Core Team
+Amanda Core Team
 
 Original text
 AMANDA Core Team
@@ -22,13 +22,13 @@ Note
 
 Refer to http://www.amanda.org/docs/y2k.html for the current version of this
 document.
-The AMANDA developers believe AMANDA is Y2K-compliant, as long as the
+The Amanda developers believe Amanda is Y2K-compliant, as long as the
 underlying operating system and C library are. The only date manipulations
-performed by AMANDA use C-language time manipulation functions and/or strings
+performed by Amanda use C-language time manipulation functions and/or strings
 where years are represented with the century-included notation.
 -------------------------------------------------------------------------------
 
 Prev                                   Up                               Next
-Chapter 32. Thoughts about a Strategy Home  Chapter 34. Usage of floppy tape
+Chapter 33. Thoughts about a Strategy Home  Chapter 35. Usage of floppy tape
 API                                                          drives on Linux
 

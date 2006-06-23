@@ -5,19 +5,19 @@ Prev                    Next
 -------------------------------------------------------------------------------
 
 
-Technical Background
+Part V. Technical Background
 
 
 
-How AMANDA really works ...
+How Amanda really works ...
 
 This section contains some papers which describe the technical concepts behind
-AMANDA. You find descriptions of the various APIs as well as a basic draft of
-the internals of AMANDA.
+Amanda. You find descriptions of the various APIs as well as a basic draft of
+the internals of Amanda.
 Table of Contents
 
 
-  21._How_AMANDA_uses_UDP_and_TCP_ports
+  22._How_Amanda_uses_UDP_and_TCP_ports
 
 
         TCP_port_allocation
@@ -31,7 +31,7 @@ Table of Contents
         Firewalls_and_NAT
 
 
-  22._AMANDA_dumper_API
+  23._Amanda_dumper_API
 
 
         Introduction
@@ -59,7 +59,7 @@ Table of Contents
         Conclusion
 
 
-  23._AMANDA_Internals
+  24._Amanda_Internals
 
 
         Protocols
@@ -73,7 +73,7 @@ Table of Contents
         taper(read)_and_taper(write)
 
 
-  24._AMANDA_Event_API
+  25._Amanda_Event_API
 
 
         Introduction
@@ -86,6 +86,8 @@ Table of Contents
               event_release
 
               event_loop
+
+              event_wait
 
               event_wakeup
 
@@ -117,7 +119,7 @@ Table of Contents
 
 
 
-  25._AMANDA_Security_API
+  26._Amanda_Security_API
 
 
         Introduction
@@ -181,12 +183,12 @@ Table of Contents
 
 
 
-  26._Virtual_Tape_API
+  27._Virtual_Tape_API
 
-  27._Using_Kerberos_with_AMANDA
+  28._Using_Kerberos_with_Amanda
 
 
-        AMANDA_2.5.0_-_KERBEROS_v4_SUPPORT_NOTES
+        Amanda_2.5.0_-_KERBEROS_v4_SUPPORT_NOTES
 
 
               Configuration
@@ -196,7 +198,7 @@ Table of Contents
               conf_file
 
 
-        AMANDA_2.5.0_-_KERBEROS_v5_SUPPORT_NOTES
+        Amanda_2.5.0_-_KERBEROS_v5_SUPPORT_NOTES
 
 
               Building
@@ -211,7 +213,7 @@ Table of Contents
 
 -------------------------------------------------------------------------------
 
-Prev                                Up                                  Next
-Chapter 20. AMANDA Survey Results  Home  Chapter 21. How AMANDA uses UDP and
-                                                                   TCP ports
+Prev                                                                  Next
+Chapter 21. Amanda WISHLIST  Home  Chapter 22. How Amanda uses UDP and TCP
+                                                                     ports
 

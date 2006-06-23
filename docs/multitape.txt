@@ -1,10 +1,10 @@
 
-Chapter 31. Multitape support in AMANDA 2.2
+Chapter 32. Multitape support in Amanda 2.2
 Prev  Part VI. Historical files        Next
 
 -------------------------------------------------------------------------------
 
-Chapter 31. Multitape support in AMANDA 2.2
+Chapter 32. Multitape support in Amanda 2.2
 
 
 James da Silva
@@ -56,8 +56,8 @@ this document.
 
  Introduction
 
-The goal of this enhancement is to make AMANDA independent of the number of
-tapes used per run or even per dump cycle. Specifically, I would like AMANDA to
+The goal of this enhancement is to make Amanda independent of the number of
+tapes used per run or even per dump cycle. Specifically, I would like Amanda to
 handle the following:
 
 * output of amdump run goes to more than one tape
@@ -79,10 +79,10 @@ And later:
  Time
 
 Previously, planner marked time by the number of amdump runs, which it equated
-with number of tapes, and number of days. In AMANDA 2.2, AMANDA keeps track of
+with number of tapes, and number of days. In Amanda 2.2, Amanda keeps track of
 the real passage of time, and doesn't generally care about the number of runs
 or tapes between any two events.
-While AMANDA 2.2 doesn't care about spacing between runs, dump cycles are still
+While Amanda 2.2 doesn't care about spacing between runs, dump cycles are still
 in terms of days, to make things easy to understand for the user. So, time
 differences are rounded to the nearest 24 hours:
 days_diff(A,B) = (<B> - <A> + 86400/2) / 86400
@@ -100,7 +100,7 @@ There is a complication for "skip-full" filesystems. Under 2.2, these will be
 skipped on any runs that occur on the day the full is due, but we have to do
 the right thing if multiple runs are done that day, and if no runs are done
 that day (in which case we should be doing an incremental). Also, the time of
-last full dump is a fiction maintained by the planner -- AMANDA has no way to
+last full dump is a fiction maintained by the planner -- Amanda has no way to
 tell whether the full backup was actually done or when it was done:
 
   	if(skip-full) {
@@ -144,11 +144,11 @@ handle stale information.
 
 taper must now handle writing to multiple tapes in one night, but choosing the
 tapes from the tape rack is done one at a time as needed, re-applying the same
-algorithm each time (see AMANDA_Tape_Changer_Support).
+algorithm each time (see Amanda_Tape_Changer_Support).
 
  End of tape handling
 
-As in earlier versions of AMANDA, taper itself does not try to restrict writing
+As in earlier versions of Amanda, taper itself does not try to restrict writing
 to the tape size given in the config file. It relied on planner having
 correctly estimated backup sizes and limiting itself to what would fit on one
 tape.
@@ -178,5 +178,5 @@ whether or not the end of tape was reached.
 -------------------------------------------------------------------------------
 
 Prev                            Up                                        Next
-Chapter 30. What once was new  Home  Chapter 32. Thoughts about a Strategy API
+Chapter 31. What once was new  Home  Chapter 33. Thoughts about a Strategy API
 

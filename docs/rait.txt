@@ -46,12 +46,12 @@ double-tape failure is required to lose data).
 Similarly, a 5-drive RAIT set will give you 4 times the capacity, 4 times the
 throughput (with sufficient bus bandwidth), and the square of the failure rate.
 This means you can back up partitions as large as four times your tape size
-with AMANDA, with higher reliability and speed.
+with Amanda, with higher reliability and speed.
 
  Using a RAIT
 
 If you have several tape devices on your system [currently either 3 or 5 drive
-sets are supported] you tell AMANDA to use them as a RAIT by listing them as a
+sets are supported] you tell Amanda to use them as a RAIT by listing them as a
 single tape device using /bin/csh curly-brace-and-comma notation, as in:
 
   	tapedev = "rait:/dev/rmt/tps0d{4,5,6}n"
@@ -87,15 +87,15 @@ and change your tapetype entry to:
   	tapetype EXB-8500x3
   		
 
-to tell AMANDA about the multiple drive set.
+to tell Amanda about the multiple drive set.
 
  Disaster Recovery
 
-To assist in disaster recovery (as well as changer scripts) the AMANDA package
+To assist in disaster recovery (as well as changer scripts) the Amanda package
 now also includes amdd, which is a simple dd(1) replacement which supports
 (only) the "if=xxx", "of=xxx", "bs=nnn[kMb]" "skip=nnn" and "count=nnn"
 options, but which can read and write RAIT tapesets.
-Using amdd and your usual AMANDA unpack instructions will suffice for disaster
+Using amdd and your usual Amanda unpack instructions will suffice for disaster
 recovery from RAIT tape-sets.
 -------------------------------------------------------------------------------
 

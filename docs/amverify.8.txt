@@ -1,6 +1,6 @@
 
                               amverify
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ See the amanda(8) man page for more details about Amanda.
 AUTHOR
 
 Axel Zinser <fifi@icem.de> : Original text
-Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
+Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the Amanda-documentation:
 XML-conversion
 
 SEE ALSO

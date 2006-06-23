@@ -1,10 +1,10 @@
 
-         Chapter 23. AMANDA Internals
+         Chapter 24. Amanda Internals
 Prev  Part V. Technical Background  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 23. AMANDA Internals
+Chapter 24. Amanda Internals
 
 
 George Scott
@@ -34,7 +34,7 @@ Note
 
 Refer to http://www.amanda.org/docs/internals.html for the current version of
 this document.
-This is an attempt to document AMANDA's internals. Please feel free to make
+This is an attempt to document Amanda's internals. Please feel free to make
 comments and suggest changes. Text for new sections gratefully accepted!
 
  Protocols
@@ -44,7 +44,7 @@ Note
 
 The following was an ASCII-illustration in the original docs, I managed to
 transfer it at last. Maybe someone will convert this to the first image in the
-AMANDA-docs ;-) . sgw.
+Amanda-docs ;-) . sgw.
 
 
         Client I Server         +-planner-+
@@ -177,5 +177,5 @@ Quit Q --->
 -------------------------------------------------------------------------------
 
 Prev                            Up                           Next
-Chapter 22. AMANDA dumper API  Home  Chapter 24. AMANDA Event API
+Chapter 23. Amanda dumper API  Home  Chapter 25. Amanda Event API
 

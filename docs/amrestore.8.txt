@@ -1,18 +1,18 @@
 
                              amrestore
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-amrestore  extract backup images from an AMANDA tape
+amrestore  extract backup images from an Amanda tape
 
 Synopsis
 
-amrestore [ -r | -c | -C ] [ -b blocksize ] [ -f fileno ] [ -l label ] [-p ] [-
-h ] tapedevice | holdingfile | [ hostname [ diskname [ datestamp [ hostname
-[ diskname [datestamp...]]]]]]
+amrestore [ -r | -c | -C ] [ -b | blocksize ] [ -f | fileno ] [ -l | label ] [-
+p] [-h] tapedevice | holdingfile [ hostname [ diskname [ datestamp [ hostname
+[ diskname [ datestamp | ... ]]]]]]
 
 DESCRIPTION
 
@@ -94,6 +94,11 @@ block size, and you should set it to 2. See the example below.
 If a header is written (-r or -h), only 32 KBytes are output regardless of the
 tape blocksize. This makes the resulting image usable as a holding file.
 
+
+  -o configoption
+      See the "CONFIGURATION OVERWRITE" section in amanda(8).
+
+
 EXAMPLES
 
 The following does an interactive restore of disk rz3g from host seine, to
@@ -132,7 +137,7 @@ AUTHOR
 
 James da Silva, <jds@amanda.org>, University of Maryland, College Park:
 Original text
-Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
+Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the Amanda-documentation:
 XML-conversion
 
 SEE ALSO

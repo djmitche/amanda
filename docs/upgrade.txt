@@ -1,10 +1,10 @@
 
-        Chapter 29. Upgrade Issues
+        Chapter 30. Upgrade Issues
 Prev  Part VI. Historical files  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 29. Upgrade Issues
+Chapter 30. Upgrade Issues
 
 
 Stefan G. Weichinger
@@ -17,17 +17,17 @@ Note
 
 Refer to http://www.amanda.org/docs/upgrade.html for the current version of
 this document.
-AMANDA 2.4.0 has introduced a major incompatibility in the AMANDA protocol.
+Amanda 2.4.0 has introduced a major incompatibility in the Amanda protocol.
 This means that pre-2.4.0 clients won't interoperate with a 2.4.0 server, nor
 will 2.4.0 clients interoperate with pre-2.4.0 servers. You have to upgrade
 them all at the same time.
-To ease the upgrade process AMANDA has, from release 2.4.0 on, a configure flag
-(--with-testing) that will cause AMANDA to use alternate service names (AMANDA-
+To ease the upgrade process Amanda has, from release 2.4.0 on, a configure flag
+(--with-testing) that will cause Amanda to use alternate service names (Amanda-
 test) instead of the standard ones. This allows you to keep using your old
-version of AMANDA while you test the new one.
-Depending upon the version of AMANDA you are upgrading from, AMANDA may use a
-different database library to store the backup information, and the new AMANDA
-may not be able to read the old AMANDA database files. In this case, you will
+version of Amanda while you test the new one.
+Depending upon the version of Amanda you are upgrading from, Amanda may use a
+different database library to store the backup information, and the new Amanda
+may not be able to read the old Amanda database files. In this case, you will
 want to do something like the following:
 Before the upgrade (using the old version of amadmin):
 
@@ -63,6 +63,6 @@ http://www.amanda.org/2.4-conv/msg00428.html
 -------------------------------------------------------------------------------
 
 Prev                                   Up                            Next
-Chapter 28. Response to CPIO Security Home  Chapter 30. What once was new
+Chapter 29. Response to CPIO Security Home  Chapter 31. What once was new
 Notice Issue 11: 
 

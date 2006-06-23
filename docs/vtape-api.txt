@@ -1,10 +1,10 @@
 
-         Chapter 26. Virtual Tape API
+         Chapter 27. Virtual Tape API
 Prev  Part V. Technical Background  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 26. Virtual Tape API
+Chapter 27. Virtual Tape API
 
 
 Stefan G. Weichinger
@@ -17,7 +17,7 @@ Note
 
 Refer to http://www.amanda.org/docs/vtape-api.html for the current version of
 this document.
-The upper level AMANDA code (including some of the other tape_xxx routines)
+The upper level Amanda code (including some of the other tape_xxx routines)
 calls the following routines which implement a virtual tape table:
 
 * int tape_access(filename, mode) Acts like access(2) on possibly virtual
@@ -61,5 +61,5 @@ but we hope to add a "rmt" (remote tape client), and possibly "dvd" types soon.
 -------------------------------------------------------------------------------
 
 Prev                              Up                                     Next
-Chapter 25. AMANDA Security API  Home  Chapter 27. Using Kerberos with AMANDA
+Chapter 26. Amanda Security API  Home  Chapter 28. Using Kerberos with Amanda
 

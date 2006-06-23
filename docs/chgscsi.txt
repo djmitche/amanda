@@ -23,7 +23,7 @@ Table of Contents
 
   Notes_about_changer.conf
 
-  AMANDA's_actual_usage_of_chg-scsi
+  Amanda's_actual_usage_of_chg-scsi
 
   Configuration_notes
 
@@ -37,7 +37,7 @@ this document.
 Jason's new and improved chg-scsi documentation.
 This documentation will also include an occasional reference to the mtx suite
 as I have attempted to use chg-zd-mtx. I use mtx often as a fast query tool.
-Please also refer to AMANDA_Tape_Changer_Support for additional details.
+Please also refer to Amanda_Tape_Changer_Support for additional details.
 My equipment list is as follows:
 
 * Redhat 7.0 machine
@@ -53,7 +53,7 @@ My equipment list is as follows:
 I base this documentation on the following:
 
 * mtx version 1.2.16rel
-* AMANDA version 2.4.3b3
+* Amanda version 2.4.3b3
 * SCSI2 specification: X3T9.2/375R revision 10L
 * Quantum/ATL Field Service Manual 6321101-03 Ver.3, rel.0
 * Quantum DLT800 Tape system product manual 02 April, 2001 81-60118-04
@@ -62,8 +62,8 @@ I base this documentation on the following:
 
 Note that Quantum/ATL's L-series changers follow the SCSI command set, and do
 not use any proprietary commands. Thus, it was fairly simple to make this work.
-I had to install AMANDA --with-suffixes and setup my server's client side of
-things using AMANDA-2.4.2p2 --with-suffixes.
+I had to install Amanda --with-suffixes and setup my server's client side of
+things using Amanda-2.4.2p2 --with-suffixes.
 Please note that my usage of "barcode" and "barcode reader" throughout this
 document really refers to "physical tape identification system". for example:
 the EEPROM in the AIT cartridge.
@@ -86,9 +86,9 @@ chg-scsi's command line options:
   -scan
   -genconf
 
-Note that chg-scsi is called by AMANDA in the context of whatever AMANDA
-configuration AMANDA is currently using. In short, to call chg-scsi by hand,
-change to your AMANDA configuration directory, then run chg-scsi.
+Note that chg-scsi is called by Amanda in the context of whatever Amanda
+configuration Amanda is currently using. In short, to call chg-scsi by hand,
+change to your Amanda configuration directory, then run chg-scsi.
 -slot <param> command:
 this command takes either a slot number, or any one of the following: current,
 next, prev, first, last, advance
@@ -114,7 +114,7 @@ labelfile with the given parameter as it's tape header. I have not tested this.
 -search <param> command:
 this only should be used if a barcode reader is present, or emulate barcode is
 turned on.
-the required parameter is an AMANDA tape label. The label searched in the
+the required parameter is an Amanda tape label. The label searched in the
 labelfile. If a barcode is found, then that tape is loaded directly.
 I believe the fallback is to search the entire magazine.
 -status command:
@@ -128,7 +128,7 @@ present only for a particular type of changer.
 -inventory: (this takes a LONG time to do)
 unloads tape back to its slot issues command to changer to do an inventory of
 itself (read all barcodes...)
-loads each tape, retrieves the barcode, and reads the AMANDA
+loads each tape, retrieves the barcode, and reads the Amanda
 label off of the tape itself stores/updates the label database file
 -dumpdb:
 prints out in human readable form the label database contents from the
@@ -139,7 +139,7 @@ name and the device types. I found that linux didn't classify either of my tape
 devices as generic, but this facility did.
 USE THIS FOR FINDING VALUE OF SCSItapedev. Be certain though you have the
 correct tape drive: I came close to wreaking havoc with my DDS3 drive while it
-was flushing AMANDA data...and my changer has a DLT drive! Please refer to my
+was flushing Amanda data...and my changer has a DLT drive! Please refer to my
 configuration notes below.
 -genconf:
 prints out a SAMPLE changer.conf file. Note that I said sample. except for that
@@ -206,12 +206,12 @@ other values are (taken from the code)
 cleanmax cleancart cleanfile I have my changer set to autoclean, and the slot
 the cleaning cartridge is in is not available for any other use.
 
- AMANDA's actual usage of chg-scsi
+ Amanda's actual usage of chg-scsi
 
-this should be brief: AMANDA really only issues "slot next" type commands.
-Currently AMANDA doesn't ask chg-scsi to load "tape x with label Daily_set023".
+this should be brief: Amanda really only issues "slot next" type commands.
+Currently Amanda doesn't ask chg-scsi to load "tape x with label Daily_set023".
 the chg-scsi mechanism is there for use, and functions quite well for the user
-to load a particular tape. I understand they (the AMANDA team) are working on
+to load a particular tape. I understand they (the Amanda team) are working on
 this.
 
  Configuration notes
@@ -227,7 +227,7 @@ tapedev to 0 set changerdev to /dev/<changer generic device>
 
 in changer.conf: set number_configs to 1 set dev to <non-rewinding tape device
 eg: /dev/nst1> set debug to 9:0
-run "chg-scsi -scan" from your AMANDA configuration directory I get: name /dev/
+run "chg-scsi -scan" from your Amanda configuration directory I get: name /dev/
 sg0 Tape Count 1 name /dev/sg1 Changer Count 2 name /dev/sg2 Tape Count 3
 I set SCSItapedev to /dev/sg0 to test with, then ran chg-scsi -info. Check the
 chg-scsi debug file for tapeidentification details. This is where I discoverd
@@ -261,6 +261,6 @@ My desires are:
 -------------------------------------------------------------------------------
 
 Prev                            Up                                   Next
-Chapter 8. AMANDA Tape Changer Home  Chapter 10. RAIT (Redundant Array of
+Chapter 8. Amanda Tape Changer Home  Chapter 10. RAIT (Redundant Array of
 Support                                         Inexpensive Tape) Support
 

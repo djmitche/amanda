@@ -5,42 +5,42 @@ Prev                    Next
 -------------------------------------------------------------------------------
 
 
-Various Information
+Part IV. Various Information
 
 
 
-Additional information about AMANDA
+Additional information about Amanda
 
-Here you find various other documents like the AMANDA FAQ, the Top Ten
-Questions and the AMANDA-Wishlist. You can also find the last AMANDA-Survey in
+Here you find various other documents like the Amanda FAQ, the Top Ten
+Questions and the Amanda-Wishlist. You can also find the last Amanda-Survey in
 here (although it still needs formatting ... sorry, Jon ...). The latest
-addition is the "famous" AMANDA-chapter by John R. Jackson.
+addition is the "famous" Amanda-chapter by John R. Jackson.
 Table of Contents
 
 
-  16._Using_AMANDA
+  18._Using_Amanda
 
 
         An_Introduction
 
-        AMANDA_Features
+        Amanda_Features
 
-        Future_Capabilities_of_AMANDA
+        Future_Capabilities_of_Amanda
 
-        AMANDA_Resources
+        Amanda_Resources
 
-        Installing_AMANDA
+        Installing_Amanda
 
 
               Install_Related_Packages
 
               Perform_Preliminary_Setup
 
-              Configure_the_AMANDA_Build
+              Configure_the_Amanda_Build
 
-              Build_and_Install_AMANDA
+              Build_and_Install_Amanda
 
-              Configuring_AMANDA
+              Configuring_Amanda
 
               Decide_on_a_Tape_Server
 
@@ -68,7 +68,7 @@ Table of Contents
 
               Run_amdump
 
-              Read_AMANDA's_Reports
+              Read_Amanda's_Reports
 
               Monitor_Tape_and_Holding_Disk_Status
 
@@ -77,7 +77,7 @@ Table of Contents
               Miscellanous_Operational_Notes
 
 
-        Advanced_AMANDA_Configuration
+        Advanced_Amanda_Configuration
 
 
               Adjust_the_Backup_Cycle
@@ -89,20 +89,20 @@ Table of Contents
               Excluding_Files
 
 
-        Restoring_with_AMANDA
+        Restoring_with_Amanda
 
 
               Configuring_and_Using_amrecover
 
               Using_amrestore
 
-              Restoring_Without_AMANDA
+              Restoring_Without_Amanda
 
 
 
-  17._AMANDA_FAQ
+  19._Amanda_FAQ
 
-  18._Collection_of_the_top_ten_AMANDA_questions._And_answers.
+  20._Collection_of_the_top_ten_Amanda_questions._And_answers.
 
 
         Reason_for_starting_this_list.
@@ -132,12 +132,11 @@ Table of Contents
         ...
 
 
-  19._AMANDA_WISHLIST
-
-  20._AMANDA_Survey_Results
+  21._Amanda_WISHLIST
 
 -------------------------------------------------------------------------------
 
-Prev                               Up                       Next
-Chapter 15. How to use a wrapper  Home  Chapter 16. Using AMANDA
+Prev                                                                 Next
+Chapter 17. How to use different auth with Home  Chapter 18. Using Amanda
+Amanda 
 

@@ -5,13 +5,13 @@ Prev                         Next
 -------------------------------------------------------------------------------
 
 
-About Tapes and Changers
+Part II. About Tapes and Changers
 
 
 
 Tape-Drives and Tape-Changers
 
-AMANDA is able to use a wide range of Tape-Drives and Tape-Changers. This
+Amanda is able to use a wide range of Tape-Drives and Tape-Changers. This
 section contains information on the concept of the tapetypes as well as
 information on how to make use of your tape-changer by using the appropriate
 changer-scripts.
@@ -20,7 +20,7 @@ Table of Contents
 
   7._Tapetypes
 
-  8._AMANDA_Tape_Changer_Support
+  8._Amanda_Tape_Changer_Support
 
 
         Introduction
@@ -76,7 +76,7 @@ Table of Contents
 
         Notes_about_changer.conf
 
-        AMANDA's_actual_usage_of_chg-scsi
+        Amanda's_actual_usage_of_chg-scsi
 
         Configuration_notes
 
@@ -107,6 +107,6 @@ Table of Contents
 
 -------------------------------------------------------------------------------
 
-Prev                 Up                   Next
+Prev                                      Next
 Chapter 6. Restore  Home  Chapter 7. Tapetypes
 

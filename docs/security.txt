@@ -1,13 +1,13 @@
 
-Chapter 28. Response to CPIO Security Notice Issue 11:
+Chapter 29. Response to CPIO Security Notice Issue 11:
 Prev  Part VI. Historical files                   Next
 
 -------------------------------------------------------------------------------
 
-Chapter 28. Response to CPIO Security Notice Issue 11:
+Chapter 29. Response to CPIO Security Notice Issue 11:
 
 
-AMANDA Core Team
+Amanda Core Team
 
 Original text
 AMANDA Core Team
@@ -31,8 +31,8 @@ Note
 
 Refer to http://www.amanda.org/docs/security.html for the current version of
 this document.
-The AMANDA development team confirms the existence of the amrecover security
-hole in recent versions of AMANDA. We have made a new release, AMANDA 2.4.0b5,
+The Amanda development team confirms the existence of the amrecover security
+hole in recent versions of Amanda. We have made a new release, Amanda 2.4.0b5,
 that fixes the amrecover problem and other potential security holes, and is the
 product of a security audit conducted in conjunction with the OpenBSD effort.
 The new version is available at:
@@ -42,16 +42,16 @@ information given in the CPIO Security Notice:
 
  Affected Versions
 
-The AMANDA 2.3.0.x interim releases that introduced amrecover, and the 2.4.0
-beta releases by the AMANDA team are vulnerable.
-AMANDA 2.3.0 and earlier UMD releases are not affected by this particular bug,
+The Amanda 2.3.0.x interim releases that introduced amrecover, and the 2.4.0
+beta releases by the Amanda team are vulnerable.
+Amanda 2.3.0 and earlier UMD releases are not affected by this particular bug,
 as amrecover was not part of those releases. However, earlier releases do have
-potential security problems and other bugs, so the AMANDA Team recommends
+potential security problems and other bugs, so the Amanda Team recommends
 upgrading to the new release as soon as practicable.
 
  Workaround
 
-At an active site running AMANDA 2.3.0.x or 2.4.0 beta, amrecover/ amindexd can
+At an active site running Amanda 2.3.0.x or 2.4.0 beta, amrecover/ amindexd can
 be disabled by:
 
 * removing amandaidx and amidxtape from /etc/inetd.conf
@@ -60,7 +60,7 @@ be disabled by:
 * restarting /etc/inetd.conf (kill -HUP should do)
 
 This will avoid this particular vulnerability while continuing to run backups.
-However, other vulnerabilities might exist, so the AMANDA Team recommends
+However, other vulnerabilities might exist, so the Amanda Team recommends
 upgrading to the new release as soon as practicable.
 
  Acknowledgements
@@ -68,12 +68,12 @@ upgrading to the new release as soon as practicable.
 This release (2.4.0) has addressed a number of security concerns with the
 assistance of Theo de Raadt, Ejovi Nuwere and David Sacerdote of the OpenBSD
 project. Thanks guys! Any problems that remain are our own fault, of course.
-The AMANDA Team would also like to thank the many other people who have
-contributed suggestions, patches, and new subsystems for AMANDA. We're grateful
+The Amanda Team would also like to thank the many other people who have
+contributed suggestions, patches, and new subsystems for Amanda. We're grateful
 for any contribution that helps us achieve and sustain critical mass for
-improving AMANDA.
+improving Amanda.
 -------------------------------------------------------------------------------
 
 Prev                        Up                         Next
-Part VI. Historical files  Home  Chapter 29. Upgrade Issues
+Part VI. Historical files  Home  Chapter 30. Upgrade Issues
 

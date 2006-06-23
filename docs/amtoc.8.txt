@@ -1,12 +1,12 @@
 
                                 amtoc
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-amtoc  generate TOC (Table Of Contents) for an AMANDA run
+amtoc  generate TOC (Table Of Contents) for an Amanda run
 
 Synopsis
 
@@ -14,7 +14,7 @@ amtoc [-a ] [-i ] [-t ] [ -f file ] [ -s subs ] [-w ] [-- ] logfile
 
 DESCRIPTION
 
-Amtoc generates a table of contents for an AMANDA run. It's a perl script (if
+Amtoc generates a table of contents for an Amanda run. It's a perl script (if
 you don't have perl, install it first!).
 
 OPTIONS
@@ -89,7 +89,7 @@ AUTHOR
 
 Nicolas Mayencourt <Nicolas.Mayencourt@cui.unige.ch>, University of Geneva/
 Switzerland : Original text
-Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
+Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the Amanda-documentation:
 XML-conversion
 -------------------------------------------------------------------------------
 

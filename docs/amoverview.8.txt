@@ -1,23 +1,23 @@
 
                             amoverview
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-amoverview  display file systems processed by AMANDA over time
+amoverview  display file systems processed by Amanda over time
 
 Synopsis
 
 amoverview [[-config ] config ] [-hostwidth width] [-diskwidth width] [-
-skipmissed] [-verbose]
+skipmissed] [-last] [-num0] [-togo0] [-verbose]
 
 DESCRIPTION
 
-Amoverview displays a chart showing hosts and file systems processed by AMANDA
+Amoverview displays a chart showing hosts and file systems processed by Amanda
 along with the backup level performed each day.
-See the amanda(8) man page for more details about AMANDA.
+See the amanda(8) man page for more details about Amanda.
 
 OPTIONS
 
@@ -33,8 +33,18 @@ OPTIONS
       Set disk field column width to width characters instead of 20.
 
   -skipmissed
-      Compacts the output by only printing stats for the days AMANDA actually
+      Compacts the output by only printing stats for the days Amanda actually
       ran.
+
+  -last
+      Outputs the last status of each disk at the start. Useful for long
+      tapecycles and/or sparse reports.
+
+  -num0
+      Outputs the number of level 0 dumps for each disk.
+
+  -togo0
+      Outputs the number of runs until the last level 0 dump is overwritten.
 
   -verbose
       Amoverview can take a long while on large systems. This option reports
@@ -53,7 +63,7 @@ You can have an "E" followed by a number if a filesystem ran into end-of-tape
 once (gives an "E", and later that day, you flush it to a second tape (a
 number: the level, indicating success). If the flush failed too, you get a
 double "EE" for that day.
-You can also have a double code if you have two tapes in the changer and AMANDA
+You can also have a double code if you have two tapes in the changer and Amanda
 failed to write to tape the first time because it hit end of tape (resulting in
 "E0", for a full, "E1" for an incremental etc.) or twice with error ("EE"), and
 may a successful flush afterwards giving maybe "EE0". (Only the latest 2

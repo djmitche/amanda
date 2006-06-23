@@ -33,6 +33,7 @@ pkgdata_DATA = \
 	faq.txt \
 	historical.txt \
 	howto-afs.txt \
+	howto-auth.txt \
 	howto-cygwin.txt \
 	howto-filedriver.txt \
 	howto-wrapper.txt \

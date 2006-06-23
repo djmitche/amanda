@@ -1,10 +1,10 @@
 
-Chapter 21. How AMANDA uses UDP and TCP ports
+Chapter 22. How Amanda uses UDP and TCP ports
 Prev  Part V. Technical Background       Next
 
 -------------------------------------------------------------------------------
 
-Chapter 21. How AMANDA uses UDP and TCP ports
+Chapter 22. How Amanda uses UDP and TCP ports
 
 
 John R. Jackson
@@ -36,7 +36,7 @@ Note
 
 Refer to http://www.amanda.org/docs/portusage.html for the current version of
 this document.
-AMANDA uses both UDP and TCP ports during its operation. The amandad service is
+Amanda uses both UDP and TCP ports during its operation. The amandad service is
 listening (via inetd/xinetd) at a well known (fixed) port on each client for
 UDP connections. The amindexd and amidxtaped services are listening (also via
 inetd/xinetd) at well known ports on the tape server for TCP connections.
@@ -51,7 +51,7 @@ A similar sequence of events happens when amrecover on a client wants to
 contact amindexd or amidxtaped on the tape server. The port that amrecover
 binds to its TCP socket must be privileged, which is one of the reasons it must
 be run as root.
-AMANDA also uses TCP connections for transmitting the backup image, messages
+Amanda also uses TCP connections for transmitting the backup image, messages
 and (optionally) the index list from a client back to the dumper process on the
 tape server. A process called sendbackup is started by amandad on the client.
 It creates two (or three, if indexing is enabled) TCP sockets and sends their
@@ -66,7 +66,7 @@ does not check the peer (connecting) port number.
 
  TCP port allocation
 
-When AMANDA creates a TCP server socket to listen for incoming connections
+When Amanda creates a TCP server socket to listen for incoming connections
 ( sendbackup), it goes through the following bind steps:
 
 * try for the user TCP port range (--with-tcpportrange), if defined. If that
@@ -78,8 +78,9 @@ When AMANDA creates a TCP server socket to listen for incoming connections
 
 * get any available port.
 
-This sequence is implemented in stream_server().
-When AMANDA ( dumper) creates an unprivileged TCP client socket to connect to a
+In all cases, it will not use a port that has been assigned to other well-known
+services. This sequence is implemented in stream_server().
+When Amanda ( dumper) creates an unprivileged TCP client socket to connect to a
 server, it goes through the following bind steps:
 
 * try for the user TCP port range (--with-tcpportrange), if defined. If that
@@ -88,8 +89,9 @@ server, it goes through the following bind steps:
 
 * get any available port.
 
-This sequence is implemented in stream_client().
-When AMANDA ( amrecover) creates a privileged TCP client socket to connect to a
+In all cases, it will not use a port that has been assigned to other well-known
+services. This sequence is implemented in stream_client().
+When Amanda ( amrecover) creates a privileged TCP client socket to connect to a
 server, it goes through the following bind step:
 
 * try for a privileged port (512 .. 1023). If that fails, the whole request is
@@ -141,7 +143,7 @@ potential use by making the portrange larger.
 
  UDP port allocation
 
-When AMANDA creates a UDP socket, the same order of assignment as above is used
+When Amanda creates a UDP socket, the same order of assignment as above is used
 by dgram_bind():
 
 * try for the user UDP port range (--with-udpportrange), if defined. If that
@@ -153,11 +155,12 @@ by dgram_bind():
 
 * get any available port.
 
-The dgram_bind() routine is called from three places, amcheck, planner and
-dumper. In each case, a connection to amandad on a client is being set up.
-amandad, in turn, calls security_ok(), which insists the other end of the
-connection be a privileged port, so a user UDP port range (--with-udpportrange)
-must specify privileged port numbers.
+In all cases, it will not use a port that has been assigned to other well-known
+services. The dgram_bind() routine is called from three places, amcheck,
+planner and dumper. In each case, a connection to amandad on a client is being
+set up. amandad, in turn, calls security_ok(), which insists the other end of
+the connection be a privileged port, so a user UDP port range (--with-
+udpportrange) must specify privileged port numbers.
 A user UDP port range must allow for one port for each client that might be
 contacted at a time. planner and amcheck use a single socket to contact all
 their clients, but there may be multiple dumpers (based on "inparallel" in
@@ -175,16 +178,16 @@ I'm not familiar with firewalls or NAT -- one of the benefits of working in a
 University environment :-). So the following is likely to be completely wrong,
 but I have tried to get the advice of folks who do really understand this
 stuff.
-Firewalls and AMANDA should be pretty easy to set up. Just pick user UDP and
-TCP port ranges, build AMANDA with them (--with-udpportrange and --with-
+Firewalls and Amanda should be pretty easy to set up. Just pick user UDP and
+TCP port ranges, build Amanda with them (--with-udpportrange and --with-
 tcpportrange) and let them through the firewall. You also need to let the well
-known AMANDA ports through, just as you would ftp or telnet.
-NAT has other issues. If the AMANDA client is "outside" NAT, there should not
+known Amanda ports through, just as you would ftp or telnet.
+NAT has other issues. If the Amanda client is "outside" NAT, there should not
 be a problem for backups. Sendbackup will set up the ports and tell dumper what
 they are. Then dumper will connect to them from "inside" and NAT should leave
 that alone, although it doesn't really matter since sendbackup does not care
 who connects to it (other than it not be ftp port 20).
-If the AMANDA tape server is outside, NAT will have to be told how to translate
+If the Amanda tape server is outside, NAT will have to be told how to translate
 the incoming connections from dumper to the client. To do that, the UDP and TCP
 port ranges will have to be known and only one client can be inside.
 The reverse is true for amrecover. If amrecover is run from inside NAT, there
@@ -202,5 +205,5 @@ up on the documentation that comes with them.
 -------------------------------------------------------------------------------
 
 Prev                           Up                            Next
-Part V. Technical Background  Home  Chapter 22. AMANDA dumper API
+Part V. Technical Background  Home  Chapter 23. Amanda dumper API
 

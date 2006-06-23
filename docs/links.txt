@@ -1,10 +1,10 @@
 
-    Chapter 36. Web Ressources
+    Chapter 37. Web Ressources
 Prev  Part VII. Appendixes  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 36. Web Ressources
+Chapter 37. Web Ressources
 
 
 Stefan G. Weichinger
@@ -17,12 +17,12 @@ Note
 
 Refer to http://www.amanda.org/docs/links.html for the current version of this
 document.
-See some original AMANDA-papers by James da Silva and Olafur Gundmundsson here:
+See some original Amanda-papers by James da Silva and Olafur Gundmundsson here:
 
-* The presentation of AMANDA:
+* The presentation of Amanda:
   Postscript: http://www.amanda.org/docs/lisa-vii.ps
   PDF: http://www.amanda.org/docs/lisa-vii.pdf
-* A document about the performance of AMANDA:
+* A document about the performance of Amanda:
   Postscript: http://www.amanda.org/docs/usenix92.ps
   PDF: http://www.amanda.org/docs/usenix92.pdf
 

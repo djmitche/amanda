@@ -1,4 +1,13 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* docs/Makefile.am (pkgdata_DATA): Add howto-auth.txt.
+	* docs/howto-auth: Documentation on auth.
+	* docs/*.txt: Update from xml-docs
+
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* man/xml-source/amanda.conf.5.xml: Add notes about bsdudp and bsdtcp.
+	* man/xml-source/amanda-client.conf.5.xml: Ditto.
+
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/extract_list.c (is_empty_dir): New function.
 	* recover-src/extract_list.c: Print a warning if cwd is not empty.
 	

@@ -1,12 +1,12 @@
 
                               amrmtape
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-amrmtape  remove a tape from the AMANDA database
+amrmtape  remove a tape from the Amanda database
 
 Synopsis
 
@@ -18,7 +18,7 @@ Amrmtape invalidates the contents of an existing backup tape in the
 configuration database. This is meant as a recovery mechanism when a good
 backup is damaged either by faulty hardware or user error, e.g. the tape is
 eaten by the drive or is overwritten.
-See the amanda(8) man page for more details about AMANDA.
+See the amanda(8) man page for more details about Amanda.
 
 OPTIONS
 
@@ -49,7 +49,7 @@ Remove tape labeled DAILY034 from the DailySet1 configuration.
 AUTHOR
 
 Adrian T. Filipi-Martin <atf3r@cs.virginia.edu>: Original text
-Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
+Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the Amanda-documentation:
 XML-conversion
 
 SEE ALSO

@@ -1,12 +1,12 @@
 
                                  ammt
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-ammt  AMANDA version of mt
+ammt  Amanda version of mt
 
 Synopsis
 
@@ -15,12 +15,12 @@ ammt [-d ] [ -f | -t | device ] command [count]
 DESCRIPTION
 
 Ammt provides just enough of the standard UNIX mt command for the needs of
-AMANDA. This is handy when doing a full restore and the standard mt program has
+Amanda. This is handy when doing a full restore and the standard mt program has
 not yet been found.
-Ammt also provides access to the AMANDA output drivers that support various
+Ammt also provides access to the Amanda output drivers that support various
 tape simulations.
-See the amanda(8) man page for more details about AMANDA. See the OUTPUT
-DRIVERS section of amanda(8) for more information on the AMANDA output drivers.
+See the amanda(8) man page for more details about Amanda. See the OUTPUT
+DRIVERS section of amanda(8) for more information on the Amanda output drivers.
 
 OPTIONS
 
@@ -105,7 +105,7 @@ Many systems only report good data when a tape is in the drive and ready.
 AUTHOR
 
 Marc Mengel <mengel@fnal.gov>, John R. Jackson <jrj@purdue.edu>: Original text
-Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
+Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the Amanda-documentation:
 XML-conversion
 
 SEE ALSO

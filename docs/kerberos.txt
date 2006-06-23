@@ -1,13 +1,13 @@
 
- Chapter 27. Using Kerberos with AMANDA
+ Chapter 28. Using Kerberos with Amanda
 Prev  Part V. Technical Background  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 27. Using Kerberos with AMANDA
+Chapter 28. Using Kerberos with Amanda
 
 
-AMANDA Core Team
+Amanda Core Team
 
 Original text
 AMANDA Core Team
@@ -20,7 +20,7 @@ AMANDA Core Team
 Table of Contents
 
 
-  AMANDA_2.5.0_-_KERBEROS_v4_SUPPORT_NOTES
+  Amanda_2.5.0_-_KERBEROS_v4_SUPPORT_NOTES
 
 
         Configuration
@@ -30,7 +30,7 @@ Table of Contents
         conf_file
 
 
-  AMANDA_2.5.0_-_KERBEROS_v5_SUPPORT_NOTES
+  Amanda_2.5.0_-_KERBEROS_v5_SUPPORT_NOTES
 
 
         Building
@@ -48,7 +48,7 @@ Note
 Refer to http://www.amanda.org/docs/kerberos.html for the current version of
 this document.
 
- AMANDA 2.5.0 - KERBEROS v4 SUPPORT NOTES
+ Amanda 2.5.0 - KERBEROS v4 SUPPORT NOTES
 
 
  Configuration
@@ -88,7 +88,7 @@ libkrb.a.
 
  Installation
 
-The kerberized AMANDA service uses a different port on the client hosts. The /
+The kerberized Amanda service uses a different port on the client hosts. The /
 etc/services line is:
 
   kamanda      10081/udp
@@ -100,7 +100,7 @@ And the /etc/inetd.conf line is:
   auth=krb4
   	
 
-Note that you're running this as root, rather than as your dump user. AMANDA
+Note that you're running this as root, rather than as your dump user. Amanda
 will set it's uid down to the dump user at times it doesn't need to read the
 srvtab file, and give up root permissions entirely before it goes off and runs
 dump. Alternately you can change your srvtab files to be readable by user
@@ -121,7 +121,7 @@ The following dumptype options apply to krb4:
   	
 
 
- AMANDA 2.5.0 - KERBEROS v5 SUPPORT NOTES
+ Amanda 2.5.0 - KERBEROS v5 SUPPORT NOTES
 
 
  Building
@@ -141,12 +141,12 @@ The krb5 driver script defaults to:
   /*
    * The lifetime of our tickets in minutes.
    */
-  #define AMANDA_TKT_LIFETIME     (12*60)
+  #define Amanda_TKT_LIFETIME     (12*60)
 
   /*
    * The name of the service in /etc/services.
    */
-  #define AMANDA_KRB5_SERVICE_NAME        "k5amanda"
+  #define Amanda_KRB5_SERVICE_NAME        "k5amanda"
   	
 
 You can currently only override these by editing the source.
@@ -156,7 +156,7 @@ want to and that's described in common-src/krb5-security.c
 
  Installation
 
-The kerberized AMANDA service uses a different port on the client hosts. The /
+The kerberized Amanda service uses a different port on the client hosts. The /
 etc/services line is:
 
   k5amanda      10082/tcp
@@ -168,7 +168,7 @@ And the /etc/inetd.conf line is:
   auth=krb5
   	
 
-Note that you're running this as root, rather than as your dump user. AMANDA
+Note that you're running this as root, rather than as your dump user. Amanda
 will set it's uid down to the dump user at times it doesn't need to read the
 keytab file, and give up root permissions entirely before it goes off and runs
 dump. Alternately you can change your keytab files to be readable by user
@@ -214,8 +214,8 @@ This is described in section 4.
 There are several ways to go about authorizing a server to connect to a client.
 The normal way is via a .k5amandausers file or a .k5login file in the client
 user's home directory. The determination of which file to use is based on the
-way you ran configure on AMANDA. By default, AMANDA will use .k5amandahosts,
-but if you configured with --without-amandahosts, AMANDA will use .k5login.
+way you ran configure on Amanda. By default, Amanda will use .k5amandahosts,
+but if you configured with --without-amandahosts, Amanda will use .k5login.
 (similar to the default for .rhosts/.amandahosts-style security). The .k5login
 file syntax is a superset of the default krb5 .k5login. The routines to check
 it are implemented in amanda rather than using krb5_kuserok because the
@@ -249,5 +249,5 @@ have cross-realm authentication setup).
 -------------------------------------------------------------------------------
 
 Prev                           Up                        Next
-Chapter 26. Virtual Tape API  Home  Part VI. Historical files
+Chapter 27. Virtual Tape API  Home  Part VI. Historical files
 

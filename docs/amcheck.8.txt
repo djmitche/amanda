@@ -1,21 +1,22 @@
 
                               amcheck
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-amcheck  run AMANDA self-checks
+amcheck  run Amanda self-checks
 
 Synopsis
 
-amcheck [-mwsclt ] [-Maddress ] config [ host [disk...]...]
+amcheck [-am] [-w] [-sclt] [ -M | address ]* config [ host | [disk]*]* [ -o |
+configoption ]*
 
 DESCRIPTION
 
-Amcheck runs a number of self-checks on both the AMANDA tape server host and
-the AMANDA client hosts.
+Amcheck runs a number of self-checks on both the Amanda tape server host and
+the Amanda client hosts.
 On the tape server host, amcheck can go through the same tape checking used at
 the start of the nightly amdump run to verify the correct tape for the next run
 is mounted.
@@ -23,7 +24,7 @@ Amcheck can also do a self-check on all client hosts to make sure each host is
 running and that permissions on filesystems to be backed up are correct.
 You can specify many host/disk expressions, only disks that match an expression
 will be checked. All disks are checked if no expressions are given.
-See the amanda(8) man page for more details about AMANDA.
+See the amanda(8) man page for more details about Amanda.
 
 OPTIONS
 
@@ -42,12 +43,12 @@ OPTIONS
       Run the tape tests on the server host.
 
   -w
-      Enables a destructive check for write-protection on the tape (which would
+      Enables a DESTRUCTIVE check for write-protection on the tape (which would
       otherwise cause the subsequent amdump to fail). If the tape is writable,
-      this check causes all data after the tape label to be erased (actually
-      depends on the device driver: there is no portable non-destructive way to
-      check for write-protection). The check implies -t and is only made if the
-      tape is otherwise correct.
+      this check causes all data after the tape label to be erased. If the
+      label_new_tapes option is enabled, this check may ERASE any non-Amanda
+      tape in the drive or changer. The check enable the tape tests on the
+      server host and is only made if the tape is otherwise correct.
 
   -m
       Nothing is printed, but mail is sent if any errors are detected. The mail
@@ -57,9 +58,15 @@ OPTIONS
   -a
       Like -m but the mail is always sent.
 
-  -Maddress
+  -M address
       Mail the report to address instead of the mailto value from amanda.conf.
       Implies -m.
+
+  host [disk]*
+      Specify the host and disk on which the command will work.
+
+  -o configoption
+      See the "CONFIGURATION OVERWRITE" section in amanda(8).
 
 The default is -cs.
 
@@ -69,21 +76,21 @@ In this example, both the tape server and client tests are run. The results are
 displayed on standard output.
 
   % amcheck daily
-  AMANDA Tape Server Host Check
+  Amanda Tape Server Host Check
   -----------------------------
   /amanda2/amanda/work: 911475 KB disk space available, that's plenty.
   NOTE: skipping tape-writable test.
   Tape VOL10 label ok.
   Server check took 34.966 seconds.
 
-  AMANDA Backup Client Hosts Check
+  Amanda Backup Client Hosts Check
   --------------------------------
   WARNING: northstar: selfcheck request timed out.  Host down?
   WARNING: drinkme: selfcheck request timed out.  Host down?
   WARNING: scruffy: selfcheck request timed out.  Host down?
   Client check: 136 hosts checked in 51.945 seconds, 3 problems found.
 
-  (brought to you by AMANDA 2.4.5)
+  (brought to you by Amanda 2.5.0)
 
 In this example, if the line mailto csd-amanda is in amanda.conf, mail will be
 sent to csd-amanda if the server check returns an error.
@@ -143,7 +150,7 @@ MESSAGES
       instead of runuser.
 
   ERROR: program dir directory: not accessible
-      (error) The directory AMANDA expects to find its auxiliary programs in,
+      (error) The directory Amanda expects to find its auxiliary programs in,
       directory, is not accessible.
 
   ERROR: program program: does not exist
@@ -169,21 +176,21 @@ MESSAGES
 
 
         log
-            for the AMANDA log directory (see logdir in amanda.conf)
+            for the Amanda log directory (see logdir in amanda.conf)
 
         oldlog
             for the directory that holds the old log files (see logdir in
             amanda.conf)
 
         info
-            for an AMANDA database information directory (see curinfo in
+            for an Amanda database information directory (see curinfo in
             amanda.conf) or
 
         index
-            for an AMANDA index directory (see indexdir in amanda.conf)
+            for an Amanda index directory (see indexdir in amanda.conf)
 
         tapelist
-            for the AMANDA tapelist directory (see tapelist in amanda.conf)
+            for the Amanda tapelist directory (see tapelist in amanda.conf)
 
 
   NOTE: XXX dir directory: does not exist
@@ -216,16 +223,16 @@ MESSAGES
       not allow search permission.
 
   ERROR: tape list tapelist: not writable
-      (error) AMANDA tape list file tapelist (see tapelist in amanda.conf) is
+      (error) Amanda tape list file tapelist (see tapelist in amanda.conf) is
       not writable or was not found.
 
   ERROR: tape list tapelist: parse error
-      (error) AMANDA tape list file tapelist (see tapelist in amanda.conf)
+      (error) Amanda tape list file tapelist (see tapelist in amanda.conf)
       could not be read or parsed.
 
   WARNING: tapedev is /dev/null, dumps will be thrown away
       (warning) The tapedev parameter in amanda.conf is set to /dev/null and
-      AMANDA uses that when debugging to throw all the dump images away.
+      Amanda uses that when debugging to throw all the dump images away.
 
   WARNING: hold file file exists
       (info) Hold file file exists and will cause amdump to pause at the
@@ -265,7 +272,7 @@ MESSAGES
       enough for what is requested in amanda.conf.
 
   Holding disk disk: F KB disk space available, using U KB
-      (info) Holding disk disk has F KBytes of free space and AMANDA will be
+      (info) Holding disk disk has F KBytes of free space and Amanda will be
       using up to U Kbytes.
 
   WARNING: if a tape changer is not available, runtapes must be set to 1.
@@ -302,7 +309,7 @@ MESSAGES
       (info) The tape write test (see the -w option) was not enabled.
 
   WARNING: skipping tape test because amdump or amflush seem to be running,
-  WARNING: if they are not, you must run amcleanup,
+  WARNING: if they are not, you must run amcleanup
       (warning) It looked to amcheck like either amdump or amflush were running
       because a log file or amdump file exists. If they are not running, you
       probably need to run amcleanup to clear up a previous failure. Otherwise,
@@ -341,7 +348,7 @@ MESSAGES
 
   ERROR: host NAK: [NAK parse failed]
       (error) Amcheck could not parse the negative acknowledgment error from
-      host. There might be an AMANDA version mismatch between the host running
+      host. There might be an Amanda version mismatch between the host running
       amcheck and host.
 
   ERROR: host [mutual-authentication failed]
@@ -354,7 +361,7 @@ MESSAGES
 AUTHOR
 
 James da Silva, <jds@amanda.org> : Original text
-Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
+Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the Amanda-documentation:
 XML-conversion
 
 SEE ALSO
@@ -362,6 +369,6 @@ SEE ALSO
 amanda(8), amdump(8)
 -------------------------------------------------------------------------------
 
-Prev          Up        Next
-amanda.conf  Home  amcheckdb
+Prev                 Up        Next
+amanda-client.conf  Home  amcheckdb
 

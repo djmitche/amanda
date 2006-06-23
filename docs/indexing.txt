@@ -1,10 +1,10 @@
 
-Chapter 4. Indexing with AMANDA
+Chapter 4. Indexing with Amanda
 Prev  Part I. Installation  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 4. Indexing with AMANDA
+Chapter 4. Indexing with Amanda
 
 
 Alan M. McIvor
@@ -71,7 +71,7 @@ generate the entry /user1/data. The index files are stored in compressed format
 
 The client is called amrecover and is loosely based on the functionality of the
 program recover from Backup Copilot. A user starts up amrecover. This requires
-specifying the index server and the AMANDA config name (defaults for both are
+specifying the index server and the Amanda config name (defaults for both are
 compiled in as part of the installation). Then the user has to specify the name
 of the host information is wanted about, the disk name, and (optionally) the
 disk mount point. Finally a date needs to be specified. Given all this, the
@@ -118,7 +118,7 @@ Table 4.1. Protocol between amindexd and amrecover
 |HOST_<host>________|set_host_to_host________________________________________|
 |DISK_<disk>________|set_disk_to_disk________________________________________|
 |LISTDISK_[<device>]|list_the_disks_for_the_current_host_____________________|
-|SCNF_<config>______|set_AMANDA_configuration_to_config______________________|
+|SCNF_<config>______|set_Amanda_configuration_to_config______________________|
 |DATE_<date>________|set_date_to_date________________________________________|
 |DHST_______________|return_dump_history_of_current_disk_____________________|
 |                   |Opaque is directory? query. Is the directory dir present|
@@ -154,10 +154,10 @@ Table 4.1. Protocol between amindexd and amrecover
      This cause sendbackup-dump on the client machine to generate an index file
      which is stored local to the client, for later recovery by amgetidx (which
      is called by amdump).
-  3. AMANDA saves all the index files under a directory specified by
+  3. Amanda saves all the index files under a directory specified by
      "indexdir" in amanda.conf. You need to create this directory by hand. It
      needs to have read/write permissions set for the user you defined to run
-     AMANDA.
+     Amanda.
      If you are using the "text database" option you may set indexdir and
      infofile to be the same directory.
   4. The index browser, amrecover, currently gets installed as part of the
@@ -172,7 +172,7 @@ Table 4.1. Protocol between amindexd and amrecover
 
  Permissions
 
-The userid chosen to run the AMANDA client code must have permission to run
+The userid chosen to run the Amanda client code must have permission to run
 restore since this is used by createindex-dump to generate the index files.
 For a user to be able to restore files from within amrecover, that user must
 have permission to run restore.
@@ -180,7 +180,7 @@ have permission to run restore.
  Changes from amindex-1.0
 
 Get index directory from amanda.conf.
-Integration into AMANDA-2.3.0.4.
+Integration into Amanda-2.3.0.4.
 Rewriting of amgetidx to use amandad instead of using rsh/rcp.
 
  Changes from amindex-0.3

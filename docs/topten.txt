@@ -1,10 +1,10 @@
 
-Chapter 18. Collection of the top ten AMANDA questions. And answers.
+Chapter 20. Collection of the top ten Amanda questions. And answers.
 Prev  Part IV. Various Information                              Next
 
 -------------------------------------------------------------------------------
 
-Chapter 18. Collection of the top ten AMANDA questions. And answers.
+Chapter 20. Collection of the top ten Amanda questions. And answers.
 
 
 Stefan G. Weichinger
@@ -50,9 +50,9 @@ document.
  Reason for starting this list.
 
 Jon LaBadie once wrote to me:
-" I think a good "what is AMANDA", "how is it different", "can I use it in my
+" I think a good "what is Amanda", "how is it different", "can I use it in my
 setup", "why is it so different" kinda document is needed to stop the constant
-"how do I put 10 dumps on one tape", or "how do I make AMANDA do full backups
+"how do I put 10 dumps on one tape", or "how do I make Amanda do full backups
 on saturday and incrementals ..." queries off the list :)) "
 Stefan G. Weichinger
 
@@ -67,7 +67,7 @@ confused by the use of the abbreviation DLE.
 It has become very common for regular mailinglist-participants to use the
 abbreviation DLE, which means in its long form
 DiskList Entry
-A DLE refers to one entry in the disklist of an AMANDA-configuration. General
+A DLE refers to one entry in the disklist of an Amanda-configuration. General
 usage was to describe them as partitions, or file systems. But in fact they do
 not have to be either. They can be directory trees, or multiple trees, or trees
 with some branches cut off. So the more generic term DLE was coined.
@@ -85,7 +85,7 @@ and ask "Why?"
 SHORT ANSWER:
 DO NOT USE "localhost" as host entry in your disklist entries (aka DLEs). Use
 the FQDN (Fully Qualified Domain Name) instead.
-In AMANDA-releases newer than 2004-03-22 there is a WARNING issued when you use
+In Amanda-releases newer than 2004-03-22 there is a WARNING issued when you use
 something like "localhost" or localhost.localdomain.net in your disklist.
 Example (applies to Linux, syntax may be different on other systems):
 
@@ -111,12 +111,12 @@ then give some typical goofs:
 The first thing to understand is how to read this message. When it says "access
 as amanda ..." it is telling you the client side ( amandad) is running as user
 "amanda". The "... from amanda@some.amanda.server" part tells you the server
-trying to connect is "some.amanda.server" and the AMANDA command (e.g. amcheck
+trying to connect is "some.amanda.server" and the Amanda command (e.g. amcheck
 or amdump) is running as user "amanda".
 The user names are typically the same on both client and server, but some
 situations use different names and it is important to understand which is
 which. For instance, amrecover connects as root ("... from
-root@some.amanda.server") regardless of what the usual AMANDA user is.
+root@some.amanda.server") regardless of what the usual Amanda user is.
 Potential problems:
 
 * "some.server" is not spelled exactly that way in ~amanda/.amandahosts. A
@@ -127,13 +127,13 @@ Potential problems:
   some	amanda
 
 does not match "some.amanda.server" even though both names may be equivalent.
-When AMANDA looks up the host name in .amandahosts, it uses the exact name it
+When Amanda looks up the host name in .amandahosts, it uses the exact name it
 lists in the message. It does not try to look up abbreviations.
 The only exception to this is that the lookup is case insensitive.
 
 * The user name listed in ~amanda/.amandahosts is not the one trying to connect
   from the server. In particular, watch out for the "root" case listed above
-  for amrecover. The AMANDA server typically needs lines like this in its
+  for amrecover. The Amanda server typically needs lines like this in its
   .amandahosts file:
 
 
@@ -158,7 +158,7 @@ same machine), the server will look for the matching DLE's using the real host
 name, not "localhost". The sethost command inside amrecover can "fix" this, but
 why not just set it up right in the first place?
 Another reason to not use "localhost" is because it helps with future changes.
-As the AMANDA configuration grows, it's not at all unusual to take a server and
+As the Amanda configuration grows, it's not at all unusual to take a server and
 make it a client of a new, larger, server. But now "localhost" does not point
 to the same machine it used to. If the FQDN of the machine had been used all
 along, this upgrade would have been much easier.
@@ -169,23 +169,23 @@ when they didn't :-).
 
  the friday-tape-question
 
-"How do I make AMANDA do full backups on Saturday and incrementals ... ?"
+"How do I make Amanda do full backups on Saturday and incrementals ... ?"
 "My backup screwed up on tuesday and now it keeps asking for the tuesday tape
 even though it is wednesday!"
 ANSWER:
 The short answer is: You can't.
 The longer answer is: You can. But you should not.
-The reason: AMANDA is designed to schedule your backups. Let "her" do it.
-When you want to make the best use of AMANDA, you have to let go the classic
+The reason: Amanda is designed to schedule your backups. Let "her" do it.
+When you want to make the best use of Amanda, you have to let go the classic
 schedule where one used to have one tape dedicated to each day of the week, and
 one for the friday.
 The main difference in concept is this:
 In the classic backup scheme you said:
 "I want to have incremental backups from Mo-Th and a full backup on Fr."
-Using AMANDA you say:
+Using Amanda you say:
 "I want to have at least one full backup in 5 days."
 So you don't have to specify exactly WHEN the full backup should happen. You
-just tell AMANDA some goals it should reach and let it work out the details.
+just tell Amanda some goals it should reach and let it work out the details.
 There are several advantages in this:
 Imagine that you have your classic backup-schedule running fine. Everything is
 calculated and designed well, so your tape gets filled well each night.
@@ -194,16 +194,16 @@ duplicates one big data-directory by mistake.
 So the size of the directory raises within one day, maybe for multiple GBs.
 Would your classic backup-scheme catch that? Or would it run out of tape,
 simply because it was not calculated to have that filesystem with that size?
-AMANDA would try to catch it (and most of the time succeed ...).
-As there is the estimate-phase before actually dumping something, AMANDA can
+Amanda would try to catch it (and most of the time succeed ...).
+As there is the estimate-phase before actually dumping something, Amanda can
 look at the DLEs and determine the actual size at the time. It also determines
 the size of an incremental backup so it can test for the Plan B to just run a
 level-1 if it does not work out to do a level-0 for that DLE.
-If the size of the DLE is much bigger than it has been the run before, AMANDA
+If the size of the DLE is much bigger than it has been the run before, Amanda
 still tries to meet your goals. It just reschedules stuff, combining full and
 incremental backups to meet the goals as good as possible.
-So you can think of it as some algorithm which lets AMANDA adapt to your data.
-If you set the goals in a reasonable way, AMANDA will just do the rest.
+So you can think of it as some algorithm which lets Amanda adapt to your data.
+If you set the goals in a reasonable way, Amanda will just do the rest.
 
  the multiple-dumps-question
 
@@ -212,18 +212,18 @@ ANSWER (provided by Jon LaBadie):
 Use another backup scheduler.
 This question is most often asked by individual computer users as a cost
 consideration.
-AMANDA was developed at the University of Maryland Computing Center for use in
+Amanda was developed at the University of Maryland Computing Center for use in
 moderately sized computer centers. That it can be used by users of small
 computers is a testament to its designers and maintainers.
 While it may seem cost effective to put as many dumps as possible on a single
 tape, in a computing center that would be considered a very risky decision. The
 loss of, or damage to, a single tape would be the loss of many days worth of
 dumps. That is too much to chance.
-Thus, AMANDA was designed to never overwrite a non-AMANDA tape, nor an AMANDA
-tape from a different configuration, nor an AMANDA tape from the current
+Thus, Amanda was designed to never overwrite a non-Amanda tape, nor an Amanda
+tape from a different configuration, nor an Amanda tape from the current
 configuration that is still "active", i.e. has backups on the tape more recent
 than the dumpcycle length.
-If you still feel you want AMANDA to put multiple dumps on a single tape, there
+If you still feel you want Amanda to put multiple dumps on a single tape, there
 is a crude way to accomplish your goal.
 But first ask yourself, "If my data is worth so little that I can not afford a
 few more tapes, why am I backing it up?"
@@ -241,7 +241,7 @@ tape. I.e. if you want a weeks' worth of backups on a single tape, leave the
 tape out for a week. Then stick it in and run amflush.
 (Better make sure you have sufficient disk space on your holding disk.)
 Note, a slight variant of this is to have the parameter autoflush in
-amanda.conf set to "yes". (Users of older AMANDA-releases should check out if
+amanda.conf set to "yes". (Users of older Amanda-releases should check out if
 their version already supports that parameter.)
 Then after several dumps have collected in the holding disk, put the tape in
 before that day's amdump is scheduled. amdump will both flush the holding disk
@@ -251,10 +251,10 @@ to tape and add the regularly scheduled dump.
 
 "How do i get off this damn mailing list?"
 ANSWER:
-Frequent users of the AMANDA-users-mailing-list get mails like containing
+Frequent users of the Amanda-users-mailing-list get mails like containing
 "unsubscribe"
 as people are trying desperately to get off the list.
-Everyone that subscribes to AMANDA-users gets a mail in which the following is
+Everyone that subscribes to Amanda-users gets a mail in which the following is
 contained:
 >Welcome to the amanda-users mailing list!
 >Please save this message for future reference. Thank you.
@@ -267,23 +267,23 @@ to <amanda-users@amanda.org> !
 
  the distro-question
 
-"Where can i get binary distributions of AMANDA?"
+"Where can i get binary distributions of Amanda?"
 ANSWER:
 It is well known that various distributions of Linux contain precompiled
-packages of AMANDA-servers and -clients.
-Due to the design of the AMANDA source code, in which MANY features can be
+packages of Amanda-servers and -clients.
+Due to the design of the Amanda source code, in which MANY features can be
 configured at compile-time, it is heavily and heartily recommended to take the
 effort and roll your own special flavour.
-Thinking about these things before actually doing backups with AMANDA will help
+Thinking about these things before actually doing backups with Amanda will help
 you in many ways. And you get the benefits of compiling your own paths/devices/
-configurations right into your AMANDA-binaries. You also get the benefit of a
-much more improved understanding of the way AMANDA does backups.
+configurations right into your Amanda-binaries. You also get the benefit of a
+much more improved understanding of the way Amanda does backups.
 
  the index-question
 
 "Why does amrecover say there are no index files?"
 ANSWER:
-It is very likely that AMANDA is right about that. Check your dumptypes and
+It is very likely that Amanda is right about that. Check your dumptypes and
 make sure they include the line:
 
   index yes
@@ -297,14 +297,14 @@ that line was edited?
  the tapetype-questions
 
 " amtapetype has been running for 9 days, is this normal?"
-"Will AMANDA work with my frozboz tape drive/library?"
+"Will Amanda work with my frozboz tape drive/library?"
 "Which device is my changer?"
 " amtapetype is broken, it says my 200GB tape only holds 65GB."
 "My file marks are HUGE, 1.3MB (on a 200GB tape, i.e. about 0.05% of the total
 capacity, or expressed another way, maybe 2 mm of a 125000 mm tape ...)"
 ANSWER:
-It is crucial to tell AMANDA the truth about the tape-device(s) you want to
-use. Given the wrong values, AMANDA can't calculate proper dumpsizes, free
+It is crucial to tell Amanda the truth about the tape-device(s) you want to
+use. Given the wrong values, Amanda can't calculate proper dumpsizes, free
 tape-space or make valuable use of compression.
 Before you consider running amtapetype, think twice. Twice.
 As tapedrives tend to be produced by not-so-small companies and as those not-
@@ -312,12 +312,12 @@ so-small companies tend to produce more than one unit to maximize profits, it
 is very likely that someone else has the same device you have or at least one
 that uses the same technology.
 Many people have already run amtapetype to determine the proper values to fill
-in their amanda.conf-files. Browse the example amanda.conf in your AMANDA-
-tarball for various tapetypes. Browse the AMANDA-FAQ on http://www.amanda.org.
+in their amanda.conf-files. Browse the example amanda.conf in your Amanda-
+tarball for various tapetypes. Browse the Amanda-FAQ on http://www.amanda.org.
 Chances are high that you find just your device described.
 As in every other topic discussed in internet mailing lists, please try finding
-an answer there before asking on the AMANDA-users list.
-If your device is so exotic that even the AMANDA-users can't help you, you
+an answer there before asking on the Amanda-users list.
+If your device is so exotic that even the Amanda-users can't help you, you
 still have your copy of amtapetype.
 Before you start running it, note this:
 
@@ -346,12 +346,12 @@ And for the filemark-size: Just read the question again.
 
 "How do I back up a partition that won't fit on a tape?"
 aka
-"Can AMANDA span one file over multiple tapes?"
+"Can Amanda span one file over multiple tapes?"
 ANSWER:
 There are two basic rules when it comes to these things:
 
-* AMANDA supports using more than one tape in a single run of amdump
-* AMANDA does not support splitting a dump image across tapes
+* Amanda supports using more than one tape in a single run of amdump
+* Amanda does not support splitting a dump image across tapes
 
 The first rule lets you make use of two or more tapes for a single amdump when
 using a tapechanger-robot or a tape-library. You could even use multiple tapes
@@ -388,26 +388,26 @@ Try to redefine your disklist as in the following example:
   exclude append "./bigdir"
   }
 
-(example taken from a mail by Paul Bijnens on the AMANDA-users-list)
+(example taken from a mail by Paul Bijnens on the Amanda-users-list)
 The trick is to form several chunks of data of which each fits on tape. In the
 example above the chunks are formed by regular expressions matching files named
 like file00, file123 and file9999. You have to look at your DLEs to find the
 patterns describing your chunks.
-As this technique forms data-chunks that fit on your tape it also helps AMANDA
+As this technique forms data-chunks that fit on your tape it also helps Amanda
 to schedule your backups more flexible. Having more and smaller DLEs, the
 planner has more variations to possibly schedule your backups, so this will
 help getting nice output from amadmin <conf> balance, too.
 
 Note
 
-DLE-spanning might be supported by AMANDA in a future release.
+DLE-spanning might be supported by Amanda in a future release.
 
  the GUI-question
 
-"Is anyone working on a GUI for AMANDA?"
+"Is anyone working on a GUI for Amanda?"
 ANSWER:
-Actually there are people working on GUIs for AMANDA. Aside from that the
-question really is: "Does anyone need a GUI for AMANDA?"
+Actually there are people working on GUIs for Amanda. Aside from that the
+question really is: "Does anyone need a GUI for Amanda?"
 Given the fact that backups tend to be run at night while people tend to sleep,
 who would need a fancy GUI showing 3D-backup-diagrams via X11? The only part of
 backups where GUIs maybe could add some comfort is recovery for unexperienced
@@ -427,5 +427,5 @@ users-mailinglist at mailto://amanda-users@amanda.org.
 -------------------------------------------------------------------------------
 
 Prev                     Up                          Next
-Chapter 17. AMANDA FAQ  Home  Chapter 19. AMANDA WISHLIST
+Chapter 19. Amanda FAQ  Home  Chapter 21. Amanda WISHLIST
 

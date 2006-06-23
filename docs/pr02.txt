@@ -2,12 +2,12 @@
 Prev     Next
 
 -------------------------------------------------------------------------------
-Conversion to Docbook/XML by Stefan G. Weichinger, member of the AMANDA Core
+Conversion to Docbook/XML by Stefan G. Weichinger, member of the Amanda Core
 Team.
 XML-Buildtree by Jelmer R. Vernooij, member of the Samba-Team. Thanks, Jelmer
 ... !
 -------------------------------------------------------------------------------
 
-Prev       Up                    Next
+Prev                             Next
 Abstract  Home  Copyright Information
 

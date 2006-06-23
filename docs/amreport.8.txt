@@ -1,23 +1,24 @@
 
                               amreport
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-amreport  generate a formatted output of statistics for an AMANDA run
+amreport  generate a formatted output of statistics for an Amanda run
 
 Synopsis
 
-amreport [config] [ -i ] [ -Maddress ] [ -l logfile ] [ -f outputfile ] [ -p postscriptfile ]
+amreport [config] [-i] [ -M | address ] [ -l | logfile ] [ -f | outputfile ]
+[ -p | postscriptfile ] [ -o | configoption ]*
 
 DESCRIPTION
 
 Amreport generates a summary report of an amanda(8) backup run. If no
 configuration name is specified, amanda.conf is read from the current
 directory.
-See the amanda(8) man page for more details about AMANDA.
+See the amanda(8) man page for more details about Amanda.
 
 OPTIONS
 
@@ -26,10 +27,10 @@ OPTIONS
   config
       Name of the configuration to process.
 
-  -i 
-      Don't email the report. 
+  -i
+      Don't email the report.
 
-  -Maddress
+  -M address
       Mail the report to address instead of the mailto value from amanda.conf.
 
   -l logfile
@@ -50,10 +51,13 @@ where logdir is the log directory defined in amanda.conf.
       lpr(1) command. This option has an effect only if the lbl-templ directive
       is specified in amanda.conf.
 
+  -o configoption
+      See the "CONFIGURATION OVERWRITE" section in amanda(8).
+
 
 LABEL PRINTING
 
-AMANDA can print postscript labels describing the contents of tape(s) written
+Amanda can print postscript labels describing the contents of tape(s) written
 in a run. The labels are designed to be folded and inserted into the tape case
 along with the tape or hole punched and put in a 3-ring binder. Various label
 templates are provided to format data for different tape sizes.
@@ -69,7 +73,7 @@ the system default printer.
 
 TEMPLATES
 
-AMANDA provides label templates for the following tape types. These are pretty
+Amanda provides label templates for the following tape types. These are pretty
 generic labels and should be easy to customize for other tape types or
 particular site needs.
 

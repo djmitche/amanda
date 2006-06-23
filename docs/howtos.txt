@@ -5,25 +5,25 @@ Prev        Next
 -------------------------------------------------------------------------------
 
 
-HOWTOs
+Part III. HOWTOs
 
 
 
 How to do this?
 
 This section contains some HOWTO-style-documents which should help you to get
-AMANDA up and going with Cygwin, AFS or chg-disk ...
+Amanda up and going with Cygwin, AFS or chg-disk ...
 Table of Contents
 
 
-  12._AMANDA_on_Cygwin_HOWTO
+  12._Amanda_on_Cygwin_HOWTO
 
 
         Install_Cygwin
 
         Other_Preparation
 
-        Compile_AMANDA
+        Compile_Amanda
 
         Configure_Cygwin_files
 
@@ -35,7 +35,7 @@ Table of Contents
 
         Windows_NT/2000/XP
 
-        Notes_on_AMANDA_backup_options
+        Notes_on_Amanda_backup_options
 
 
               Compression
@@ -46,7 +46,7 @@ Table of Contents
 
 
 
-  13._How_to_use_the_AMANDA_file-driver
+  13._How_to_use_the_Amanda_file-driver
 
 
         Introduction
@@ -66,8 +66,50 @@ Table of Contents
 
   15._How_to_use_a_wrapper
 
+
+        Bert_de_Ridder's_suggestions
+
+        Paul_Bijnens's_suggestions
+
+
+  16._How_to_do_Amanda-server-side_gpg-encrypted_backups.
+
+
+        Setup
+
+        Test
+
+        Plans
+
+
+  17._How_to_use_different_auth_with_Amanda
+
+
+        Introduction
+
+        BSD
+
+        BSDTCP
+
+        BSDUDP
+
+        KRB4
+
+        KRB5
+
+        RSH
+
+        SSH
+
+
+              For_amdump:
+
+              For_amrecover:
+
+
+
 -------------------------------------------------------------------------------
 
-Prev                             Up                                 Next
-Chapter 11. Printing of Labels  Home  Chapter 12. AMANDA on Cygwin HOWTO
+Prev                                                                Next
+Chapter 11. Printing of Labels  Home  Chapter 12. Amanda on Cygwin HOWTO
 

@@ -1,10 +1,10 @@
 
-        Chapter 22. AMANDA dumper API
+        Chapter 23. Amanda dumper API
 Prev  Part V. Technical Background  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 22. AMANDA dumper API
+Chapter 23. Amanda dumper API
 
 
 Alexandre Oliva
@@ -53,23 +53,23 @@ this document.
 
  Introduction
 
-This is a proposal of a mechanism for AMANDA to support arbitrary backup
+This is a proposal of a mechanism for Amanda to support arbitrary backup
 programs, that relies on a generic backup driver and scripts or programs that
 interface with backup programs such as dump, tar, smbclient, and others. It can
 also be used to introduce pre- and post-backup commands.
 The interface is simple, but supports everything that is currently supported by
-AMANDA, and it can be consistently extended to support new abstractions that
+Amanda, and it can be consistently extended to support new abstractions that
 may be introduced in the backup driver in the future.
-This proposal does not imply any modification in the AMANDA protocol or in
-AMANDA servers; only AMANDA clients have to be modified. By AMANDA clients, we
-refer to hosts whose disks are to be backed up; an AMANDA server is a host
+This proposal does not imply any modification in the Amanda protocol or in
+Amanda servers; only Amanda clients have to be modified. By Amanda clients, we
+refer to hosts whose disks are to be backed up; an Amanda server is a host
 connected to a tape unit.
-Currently (as of release 2.4.1 of AMANDA), AMANDA clients support three
+Currently (as of release 2.4.1 of Amanda), Amanda clients support three
 operations: selfcheck, estimate and backup.
 Selfcheck is used by the server program amcheck, to check whether a client is
 responding or if there are configuration or permission problems in the client
 that might prevent the backup from taking place.
-Estimates are requested by the AMANDA planner, that runs on the server and
+Estimates are requested by the Amanda planner, that runs on the server and
 collects information about the expected sizes of backups of each disk at
 several levels. Given this information and the amount of available tape space,
 the planner can select which disks and which levels it should tell dumper to
@@ -78,7 +78,7 @@ dumper is yet another server-side program; it requests clients to perform
 dumps, as determined by planner, and stores these dumps in holding disks or
 sends them directly to the taper program. The interaction between dumper and
 taper is beyond the scope of this text.
-We are going to focus on the interaction between the AMANDA client program and
+We are going to focus on the interaction between the Amanda client program and
 wrappers of dump programs. These wrappers must implement the DUMPER API. The
 dumptype option `program' should name the wrapper that will be used to back up
 filesystems of that dumptype. One wrapper may call another, so as to extend its
@@ -106,13 +106,13 @@ on the last backup, be it a full or an incremental backup (0-inf++). Some
 support incrementals based on a timestamp (incr/date); whereas others are based
 on a limited number of incremental levels, but incrementals of the same level
 can be repeated, such as dump (0-9).
-AMANDA was originally built upon DUMP incremental levels, so this is the only
+Amanda was originally built upon DUMP incremental levels, so this is the only
 model it currently supports. Backup programs that use other incremental
 management mechanisms had to be adapted to this policy. Wrapper scripts are
 responsible for this adaptation.
 Another important issue has to do with index generation. Some backup programs
 can generate indexes, but each one lists files in its own particular format,
-but they must be stored in a common format, so that the AMANDA server can
+but they must be stored in a common format, so that the Amanda server can
 manipulate them.
 The DUMPER API must accomodate for all these variations.
 
@@ -128,16 +128,16 @@ should be printed to stderr, and the program should terminate with exit status
 
  The `support' command
 
-As a general mechanism for AMANDA to probe for features provided by a backup
+As a general mechanism for Amanda to probe for features provided by a backup
 program, a wrapper script must support at least the `support' command. Some
-features must be supported, and AMANDA won't ever ask about them. Others will
-be considered as extensions, and AMANDA will ask the wrapper whether they are
+features must be supported, and Amanda won't ever ask about them. Others will
+be considered as extensions, and Amanda will ask the wrapper whether they are
 supported before issuing the corresponding commands.
 
  The `level-incrementals' subcommand
 
 For example, before requesting for an incremental backup of a given level,
-AMANDA should ask the wrapper whether the backup program supports level-based
+Amanda should ask the wrapper whether the backup program supports level-based
 incrementals. We don't currently support backup programs that don't, but we may
 in the future, so it would be nice if wrappers already implemented the command
 `support level-incrementals', by returning a 0 exit status, printing, say, the
@@ -217,7 +217,7 @@ implying that the inquired feature is not supported.
  The `selfcheck' command
 
 We should support commands to perform self-checks, run estimates, backups and
-restores (for future extensions of the AMANDA protocol so as to support
+restores (for future extensions of the Amanda protocol so as to support
 restores)
 A selfcheck request would go like this:
 DUMP selfcheck hda0 option option=value ...
@@ -229,7 +229,7 @@ Errors should be printed as:
 ERROR [/etc/dumpdates is not writable]
 A wrapper script will certainly have to figure out either the disk device name
 or its mount point, given a filesystem name such as `hda0', as specified in the
-disklist. In order to help these scripts, AMANDA provides a helper program that
+disklist. In order to help these scripts, Amanda provides a helper program that
 can guess device names, mount points and filesystem types, when given disklist
 entries.
 The filesystem type can be useful on some operation systems, in which more than
@@ -255,7 +255,7 @@ to stdout the informations needed by the `estimate-parse' command, that should
 extract from its input the estimated size.
 The syntax of `estimate-parse' is identical to that of `estimate'.
 Both `estimate' and `estimate-parse' can output the word `KILL', after printing
-the estimate. In this case, AMANDA will send a SIGTERM signal to the process
+the estimate. In this case, Amanda will send a SIGTERM signal to the process
 group of the `estimate' process. If it does not die within a few seconds, a
 SIGKILL will be issued.
 If `estimate' or `estimate-parse' succeed, they should exit 0, otherwise exit
@@ -320,6 +320,6 @@ and/or the API. Some help on its implementation would be welcome, too.
 -------------------------------------------------------------------------------
 
 Prev                                     Up                           Next
-Chapter 21. How AMANDA uses UDP and TCP Home  Chapter 23. AMANDA Internals
+Chapter 22. How Amanda uses UDP and TCP Home  Chapter 24. Amanda Internals
 ports 
 

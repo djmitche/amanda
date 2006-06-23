@@ -1,12 +1,12 @@
 
                              amcheckdb
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-amcheckdb  check AMANDA database for tape consistency
+amcheckdb  check Amanda database for tape consistency
 
 Synopsis
 
@@ -14,9 +14,9 @@ amcheckdb config
 
 DESCRIPTION
 
-Amcheckdb verifies that every tape mentioned in the AMANDA database is still
+Amcheckdb verifies that every tape mentioned in the Amanda database is still
 valid in the tapelist file.
-See the amanda(8) man page for more details about AMANDA.
+See the amanda(8) man page for more details about Amanda.
 
 EXAMPLE
 
@@ -36,7 +36,7 @@ in the tapelist file:
 AUTHOR
 
 Adrian T. Filipi-Martin <atf3r@cs.virginia.edu>: Original text
-Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
+Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the Amanda-documentation:
 XML-conversion
 
 SEE ALSO

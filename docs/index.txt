@@ -14,7 +14,7 @@ Edited by
 Stefan G. Weichinger
 
 
-AMANDA Core Team
+Amanda Core Team
 
 -------------------------------------------------------------------------------
 Table of Contents
@@ -29,10 +29,12 @@ Table of Contents
   I._Installation
 
 
-        1._AMANDA_2.4.x_-_System-Specific_Installation_Notes
+        1._Amanda_2.5.0_-_System-Specific_Installation_Notes
 
 
               Solaris_2.6
+
+              Solaris
 
               Trusted_Solaris
 
@@ -69,14 +71,14 @@ Table of Contents
               Mac_OS_X
 
 
-        2._AMANDA_Installation_Notes
+        2._Amanda_Installation_Notes
 
 
               Before_doing_anything
 
-              Compiling_the_AMANDA_sources
+              Compiling_the_Amanda_sources
 
-              Setting_up_your_AMANDA_Configuration
+              Setting_up_your_Amanda_Configuration
 
 
                     Setting_up_the_Tape_Server_Host
@@ -113,7 +115,7 @@ Table of Contents
 
 
 
-        4._Indexing_with_AMANDA
+        4._Indexing_with_Amanda
 
 
               Database_Format
@@ -161,7 +163,7 @@ Table of Contents
 
         7._Tapetypes
 
-        8._AMANDA_Tape_Changer_Support
+        8._Amanda_Tape_Changer_Support
 
 
               Introduction
@@ -217,7 +219,7 @@ Table of Contents
 
               Notes_about_changer.conf
 
-              AMANDA's_actual_usage_of_chg-scsi
+              Amanda's_actual_usage_of_chg-scsi
 
               Configuration_notes
 
@@ -250,14 +252,14 @@ Table of Contents
   III._HOWTOs
 
 
-        12._AMANDA_on_Cygwin_HOWTO
+        12._Amanda_on_Cygwin_HOWTO
 
 
               Install_Cygwin
 
               Other_Preparation
 
-              Compile_AMANDA
+              Compile_Amanda
 
               Configure_Cygwin_files
 
@@ -269,7 +271,7 @@ Table of Contents
 
               Windows_NT/2000/XP
 
-              Notes_on_AMANDA_backup_options
+              Notes_on_Amanda_backup_options
 
 
                     Compression
@@ -280,7 +282,7 @@ Table of Contents
 
 
 
-        13._How_to_use_the_AMANDA_file-driver
+        13._How_to_use_the_Amanda_file-driver
 
 
               Introduction
@@ -301,32 +303,74 @@ Table of Contents
         15._How_to_use_a_wrapper
 
 
+              Bert_de_Ridder's_suggestions
+
+              Paul_Bijnens's_suggestions
+
+
+        16._How_to_do_Amanda-server-side_gpg-encrypted_backups.
+
+
+              Setup
+
+              Test
+
+              Plans
+
+
+        17._How_to_use_different_auth_with_Amanda
+
+
+              Introduction
+
+              BSD
+
+              BSDTCP
+
+              BSDUDP
+
+              KRB4
+
+              KRB5
+
+              RSH
+
+              SSH
+
+
+                    For_amdump:
+
+                    For_amrecover:
+
+
+
+
   IV._Various_Information
 
 
-        16._Using_AMANDA
+        18._Using_Amanda
 
 
               An_Introduction
 
-              AMANDA_Features
+              Amanda_Features
 
-              Future_Capabilities_of_AMANDA
+              Future_Capabilities_of_Amanda
 
-              AMANDA_Resources
+              Amanda_Resources
 
-              Installing_AMANDA
+              Installing_Amanda
 
 
                     Install_Related_Packages
 
                     Perform_Preliminary_Setup
 
-                    Configure_the_AMANDA_Build
+                    Configure_the_Amanda_Build
 
-                    Build_and_Install_AMANDA
+                    Build_and_Install_Amanda
 
-                    Configuring_AMANDA
+                    Configuring_Amanda
 
                     Decide_on_a_Tape_Server
 
@@ -354,7 +398,7 @@ Table of Contents
 
                     Run_amdump
 
-                    Read_AMANDA's_Reports
+                    Read_Amanda's_Reports
 
                     Monitor_Tape_and_Holding_Disk_Status
 
@@ -363,7 +407,7 @@ Table of Contents
                     Miscellanous_Operational_Notes
 
 
-              Advanced_AMANDA_Configuration
+              Advanced_Amanda_Configuration
 
 
                     Adjust_the_Backup_Cycle
@@ -375,20 +419,20 @@ Table of Contents
                     Excluding_Files
 
 
-              Restoring_with_AMANDA
+              Restoring_with_Amanda
 
 
                     Configuring_and_Using_amrecover
 
                     Using_amrestore
 
-                    Restoring_Without_AMANDA
+                    Restoring_Without_Amanda
 
 
 
-        17._AMANDA_FAQ
+        19._Amanda_FAQ
 
-        18._Collection_of_the_top_ten_AMANDA_questions._And_answers.
+        20._Collection_of_the_top_ten_Amanda_questions._And_answers.
 
 
               Reason_for_starting_this_list.
@@ -418,15 +462,13 @@ Table of Contents
               ...
 
 
-        19._AMANDA_WISHLIST
-
-        20._AMANDA_Survey_Results
+        21._Amanda_WISHLIST
 
 
   V._Technical_Background
 
 
-        21._How_AMANDA_uses_UDP_and_TCP_ports
+        22._How_Amanda_uses_UDP_and_TCP_ports
 
 
               TCP_port_allocation
@@ -440,7 +482,7 @@ Table of Contents
               Firewalls_and_NAT
 
 
-        22._AMANDA_dumper_API
+        23._Amanda_dumper_API
 
 
               Introduction
@@ -468,7 +510,7 @@ Table of Contents
               Conclusion
 
 
-        23._AMANDA_Internals
+        24._Amanda_Internals
 
 
               Protocols
@@ -482,7 +524,7 @@ Table of Contents
               taper(read)_and_taper(write)
 
 
-        24._AMANDA_Event_API
+        25._Amanda_Event_API
 
 
               Introduction
@@ -495,6 +537,8 @@ Table of Contents
                     event_release
 
                     event_loop
+
+                    event_wait
 
                     event_wakeup
 
@@ -526,7 +570,7 @@ Table of Contents
 
 
 
-        25._AMANDA_Security_API
+        26._Amanda_Security_API
 
 
               Introduction
@@ -590,12 +634,12 @@ Table of Contents
 
 
 
-        26._Virtual_Tape_API
+        27._Virtual_Tape_API
 
-        27._Using_Kerberos_with_AMANDA
+        28._Using_Kerberos_with_Amanda
 
 
-              AMANDA_2.5.0_-_KERBEROS_v4_SUPPORT_NOTES
+              Amanda_2.5.0_-_KERBEROS_v4_SUPPORT_NOTES
 
 
                     Configuration
@@ -605,7 +649,7 @@ Table of Contents
                     conf_file
 
 
-              AMANDA_2.5.0_-_KERBEROS_v5_SUPPORT_NOTES
+              Amanda_2.5.0_-_KERBEROS_v5_SUPPORT_NOTES
 
 
                     Building
@@ -622,7 +666,7 @@ Table of Contents
   VI._Historical_files
 
 
-        28._Response_to_CPIO_Security_Notice_Issue_11:
+        29._Response_to_CPIO_Security_Notice_Issue_11:
 
 
               Affected_Versions
@@ -632,12 +676,12 @@ Table of Contents
               Acknowledgements
 
 
-        29._Upgrade_Issues
+        30._Upgrade_Issues
 
-        30._What_once_was_new
+        31._What_once_was_new
 
 
-              What's_new_in_AMANDA_2.3
+              What's_new_in_Amanda_2.3
 
 
                     Indexing_backups_for_easier_restore
@@ -657,7 +701,7 @@ Table of Contents
                     amadmin_import/export
 
 
-              What's_new_in_AMANDA_2.2
+              What's_new_in_Amanda_2.2
 
 
                     Client_side_setup_has_changed
@@ -694,7 +738,7 @@ Table of Contents
 
 
 
-        31._Multitape_support_in_AMANDA_2.2
+        32._Multitape_support_in_Amanda_2.2
 
 
               Introduction
@@ -724,19 +768,87 @@ Table of Contents
 
 
 
-        32._Thoughts_about_a_Strategy_API
+        33._Thoughts_about_a_Strategy_API
 
-        33._Y2K_Compliancy
+        34._Y2K_Compliancy
 
-        34._Usage_of_floppy_tape_drives_on_Linux
+        35._Usage_of_floppy_tape_drives_on_Linux
 
 
   VII._Appendixes
 
 
-        35._The_AMANDA_Manual_Pages.
+        36._The_Amanda_Manual_Pages.
 
-        36._Web_Ressources
+
+              amadmin - administrative interface to control Amanda backups
+
+              amaespipe - wrapper program for aespipe
+
+              amanda - Advanced Maryland Automatic Network Disk Archiver
+
+              amanda.conf - Main configuration file for Amanda, the Advanced
+              Maryland Automatic Network Disk Archiver
+
+              amanda-client.conf - Client configuration file for Amanda, the
+              Advanced Maryland Automatic Network Disk Archiver
+
+              amcheck - run Amanda self-checks
+
+              amcheckdb - check Amanda database for tape consistency
+
+              amcleanup - run the Amanda cleanup process after a failure
+
+              amcrypt - reference crypt program for Amanda symmetric data
+              encryption
+
+              amcrypt-ossl - crypt program for Amanda symmetric data encryption
+              using OpenSSL
+
+              amcrypt-ossl-asym - crypt program for Amanda asymmetric data
+              encryption using OpenSSL
+
+              amdd - Amanda version of dd
+
+              amdump - back up all disks in an Amanda configuration
+
+              amfetchdump - extract backup images from multiple Amanda tapes.
+
+              amflush - flush Amanda backup files from holding disk to tape
+
+              amgetconf - look up amanda.conf variables
+
+              amlabel - label an Amanda tape
+
+              ammt - Amanda version of mt
+
+              amoverview - display file systems processed by Amanda over time
+
+              amplot - visualize the behavior of Amanda
+
+              amrecover - Amanda index database browser
+
+              amreport - generate a formatted output of statistics for an
+              Amanda run
+
+              amrestore - extract backup images from an Amanda tape
+
+              amrmtape - remove a tape from the Amanda database
+
+              amstatus - display the state of an Amanda run
+
+              amtape - user interface to Amanda tape changer controls
+
+              amtapetype - generate a tapetype definition.
+
+              amtoc - generate TOC (Table Of Contents) for an Amanda run
+
+              amverify - check an Amanda tape for errors
+
+              amverifyrun - check the tapes written by the last Amanda run
+
+
+        37._Web_Ressources
 
 
   Index
@@ -746,12 +858,42 @@ List of Tables
 
   4.1. Protocol_between_amindexd_and_amrecover
 
-  20.1. Operating_Systems_Running_on_AMANDA_Server_Hosts
-
 List of Examples
 
 
-  16.1. A_C_Program_to_Check_the_AMANDA_Service_Numbers
+  2.1. /etc/crontab
+
+  2.2. /etc/services
+
+  2.3. /etc/inetd.conf
+
+  2.4. /etc/xinetd.d/amandaidx
+
+  2.5. /etc/xinetd.d/amidxtape
+
+  2.6. /etc/amanda/supervise/amandaidx/run
+
+  2.7. /etc/amanda/supervise/amidxtape/run
+
+  2.8. /etc/services
+
+  2.9. /etc/inetd.conf
+
+  2.10. /etc/xinetd.d/amanda
+
+  2.11. /etc/amanda/supervise/amanda/run
+
+  15.1.
+
+  15.2.
+
+  16.1. /usr/local/libexec/amgtar
+
+  16.2. /usr/local/bin/amaespipe
+
+  16.3. bz2aespipe.patch
+
+  18.1. A_C_Program_to_Check_the_Amanda_Service_Numbers
 
 -------------------------------------------------------------------------------
 

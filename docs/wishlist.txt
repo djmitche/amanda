@@ -1,13 +1,13 @@
 
-         Chapter 19. AMANDA WISHLIST
+         Chapter 21. Amanda WISHLIST
 Prev  Part IV. Various Information  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 19. AMANDA WISHLIST
+Chapter 21. Amanda WISHLIST
 
 
-AMANDA Core Team
+Amanda Core Team
 
 Original text
 AMANDA Core Team
@@ -38,11 +38,11 @@ You may find more up-to-date information at http://www.amanda.org/ongoing.php.
 If you have any ideas about any of the following, please send an e-mail note to
 mailto://amanda-users@amanda.org or mailto://amanda-hackers@amanda.org.
 Jean-Louis Martineau, Stefan G. Weichinger,
-AMANDA Core Team
+Amanda Core Team
 Oct. 2004.
 
 * Samba: Ports to non-Unix platforms, specifically Macs and PCs. The hooks are
-  in the AMANDA protocol to support non-dump backup programs, but no-one has
+  in the Amanda protocol to support non-dump backup programs, but no-one has
   volunteered to implement the client side. sgw: Mac OS X is able to run the
   client, so only the PC is left, and I suggest that we should go the SAMBA-
   way, I think. Samba is working well, is documented and developed further, so
@@ -56,14 +56,14 @@ Oct. 2004.
 
 
 * Samba: multiple exclusion-patterns. Since Samba 3.0.3 smbclient supports the
-  usage of multiple exclude-patterns. This would enable AMANDA to exclude more
+  usage of multiple exclude-patterns. This would enable Amanda to exclude more
   than one pattern per SMB-share, allowing to exclude pagefile.sys AND the
   registry-files, for example.
 
 
-* Instead of hard-coding the interface with tape devices in AMANDA, there
+* Instead of hard-coding the interface with tape devices in Amanda, there
   should be a higher level interface that allowed different storage devices to
-  be used. AMANDA should also be able to retain backups in disk, even after
+  be used. Amanda should also be able to retain backups in disk, even after
   they are taped, for faster restore of recently backed up data. It should also
   be possible to store a single backup in multiple tapes, for redundancy.
 
@@ -74,7 +74,7 @@ Oct. 2004.
 
 
 * retry failed backups in a single run. If backup fails because of active
-  filesystems or lack of memory, AMANDA could throw the failed backup away and
+  filesystems or lack of memory, Amanda could throw the failed backup away and
   run it again, instead of trying it again in the next run only.
 
 
@@ -83,11 +83,11 @@ Oct. 2004.
   period of time. This could be used to back up secure hosts, for instance.
 
 
-* Backups to remote tape devices (i.e., not in the main AMANDA server), as well
+* Backups to remote tape devices (i.e., not in the main Amanda server), as well
   as to remote filesystems should be supported.
 
 
-* multi-tape : AMANDA should be able to write to many tape at the same time.
+* multi-tape : Amanda should be able to write to many tape at the same time.
   Need some criteria to select which dump should go on which tape? By level,
   host name, ???
 
@@ -110,7 +110,7 @@ Oct. 2004.
 
 * chg-disk
   This script writes to disks which can be accessed in a parallel way (contrary
-  to the serial access to tapes). This could enable AMANDA to do writes and
+  to the serial access to tapes). This could enable Amanda to do writes and
   reads to several vtapes in parallel (e.g. doing an amrestore while the
   regular amdump is running).
   It would be helpful to have a script which generates the needed directory-
@@ -127,12 +127,12 @@ Oct. 2004.
 * It should be possible to re-generate databases and indexes from tapes.
 
 
-* AMANDA could append meta-data like databases and indexes to tape, so that
+* Amanda could append meta-data like databases and indexes to tape, so that
   each tape contains its own current indexes and everything to rebuild the
   server-config.
 
 
-* AMANDA should install man-pages for installed programs only.
+* Amanda should install man-pages for installed programs only.
 
 
 * It should be possible to configure whether amidxtaped should decompress the
@@ -170,7 +170,7 @@ Oct. 2004.
 * More tools in amadmin. The administrator should be able to look at the
   database in various ways. Adding / deleting / moving disks and hosts should
   be done through amadmin instead of editing the disklist directly. This will
-  allow AMANDA to do some sanity checks for the operators, to make sure
+  allow Amanda to do some sanity checks for the operators, to make sure
   permissions are set up right, etc.
   Suggested by Chris Jones <cjones@honors.montana.edu>.
 
@@ -180,22 +180,22 @@ Oct. 2004.
   shell with a help facility (ala ckermit or gnuplot, if you've seen those).
 
 
-* A tape-verify pass after the AMANDA run (we already have one, but it doesn't
+* A tape-verify pass after the Amanda run (we already have one, but it doesn't
   work with dump as well as it does with GNU tar). Perhaps taper could
   calculate a CRC for each file and store that in the database, to be checked
   by the verifier.
 
 
-* More sophisticated tape management. Should AMANDA track tapes globally,
+* More sophisticated tape management. Should Amanda track tapes globally,
   counting the number of times tapes were used, and recommending retirement for
   tapes at the appropriate time?
 
 
 * Automatically notice that external dumps have been done. Sendsize could also
-  notice if a filesystem was dumped externally from AMANDA. Right now the
+  notice if a filesystem was dumped externally from Amanda. Right now the
   planner assumes that the incrementals it is doing are relative to the full
   dumps it is doing. If someone does a full dump of one of its filesystems (and
-  writes /etc/dumpdates) outside of AMANDA, data could be lost. Sun's Backup-
+  writes /etc/dumpdates) outside of Amanda, data could be lost. Sun's Backup-
   Copilot handles this well. We should too.
 
 
@@ -218,7 +218,7 @@ Oct. 2004.
   full [AUTOMATIC | SKIP | NOTIFY | FORCE | FIXED]
   incr [NONE | BUMP | NOBUMP]
   with the following values:
-  AUTOMATIC: follow AMANDA scheduling (allow promoted and delayed)
+  AUTOMATIC: follow Amanda scheduling (allow promoted and delayed)
   SKIP : full dump are done externally on an fixed schedule, dump nothing when
   a full is due (like skip-full).
   NOTIFY : full dumps are done externally, but are notified with the NOTIFY
@@ -231,15 +231,15 @@ Oct. 2004.
 
 
 * Remove all compiled options that can be moved to a (the?) configuration file.
-  (eg. GNU tar path, if configure can't find it, AMANDA should be able to use
+  (eg. GNU tar path, if configure can't find it, Amanda should be able to use
   GNU tar if the path is specified on a client config file) Many people would
   like this, it would maybe also bring us closer to the possibility of working
   and usable rpms?
 
 
 * Documentation:
-  There is pretty much going on with the AMANDA-docs. The docs have been
-  converted to Docbook/XML and form the new module xml-docs in the AMANDA-CVS-
+  There is pretty much going on with the Amanda-docs. The docs have been
+  converted to Docbook/XML and form the new module xml-docs in the Amanda-CVS-
   repository.
   The FAQ-O-Matic could be replaced by a Wiki. Suggested by Harlan Stenn
   <Harlan.Stenn@pfcs.com>.
@@ -250,7 +250,7 @@ Oct. 2004.
 The WISHLIST should get shortened.
 -------------------------------------------------------------------------------
 
-Prev                                   Up                                Next
-Chapter 18. Collection of the top ten Home  Chapter 20. AMANDA Survey Results
-AMANDA questions. And answers. 
+Prev                                          Up                           Next
+Chapter 20. Collection of the top ten Amanda Home  Part V. Technical Background
+questions. And answers. 
 

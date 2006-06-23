@@ -1,21 +1,22 @@
 
                               amflush
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-amflush  flush AMANDA backup files from holding disk to tape
+amflush  flush Amanda backup files from holding disk to tape
 
 Synopsis
 
-amflush [-b ] [-f ] [-s ] [ -D datestamp ...] config [ host [disk...]...]
+amflush [-b] [-f] [-s] [ -D | datestamp ]* config [ host | [disk]*]* [ -o |
+configoption ]*
 
 DESCRIPTION
 
-Amflush writes AMANDA backups from the holding disks to tape, and updates the
-AMANDA info database and tapelist accordingly. Backups may stay in a holding
+Amflush writes Amanda backups from the holding disks to tape, and updates the
+Amanda info database and tapelist accordingly. Backups may stay in a holding
 disk when something is wrong with the tape at the time amdump is run. When this
 happens, the problem must be corrected and amflush run by hand.
 
@@ -42,15 +43,21 @@ OPTIONS
       EXPRESSION" section of amanda(8) for a description. -D 20001225-7 will
       flush all dumps from 25 december 2000 to 27 december 2000.
 
+  host [disk]*
+      Specify the host and disk on which the command will work.
+
+  -o configoption
+      See the "CONFIGURATION OVERWRITE" section in amanda(8).
+
 You can specify many host/disk expressions, only disks that match an expression
 will be flushed. All disks are flushed if no expressions are given. see the
 "HOST & DISK EXPRESSION" section of amanda(8) for a description.
 Amflush will look in the holding disks specified by the amanda.conf file in /
-usr/local/etc/amanda/config for any non-empty AMANDA work directories. It then
+usr/local/etc/amanda/config for any non-empty Amanda work directories. It then
 prompts you to select a directory or to process all of the directories. The
 work directories in the holding disks are named by the date at the time amdump
 was run, e.g. 19910215.
-See the amanda(8) man page for more details about AMANDA.
+See the amanda(8) man page for more details about Amanda.
 
 EXAMPLE
 
@@ -60,10 +67,10 @@ updates the databases and sends a mail report similar to amdump(8).
 
   % amflush daily
   Scanning /amanda-hold...
-    20001113: found AMANDA directory.
-    20001114: found AMANDA directory.
+    20001113: found Amanda directory.
+    20001114: found Amanda directory.
 
-  Multiple AMANDA directories, please pick one by letter:
+  Multiple Amanda directories, please pick one by letter:
     A. 20001113
     B. 20001114
   Select directories to flush [A..B]: [ALL] all
@@ -80,7 +87,7 @@ updates the databases and sends a mail report similar to amdump(8).
 AUTHOR
 
 James da Silva, <jds@amanda.org> : Original text
-Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
+Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the Amanda-documentation:
 XML-conversion
 
 SEE ALSO
@@ -88,6 +95,6 @@ SEE ALSO
 amanda(8), amdump(8)
 -------------------------------------------------------------------------------
 
-Prev     Up        Next
-amdump  Home  amgetconf
+Prev          Up        Next
+amfetchdump  Home  amgetconf
 

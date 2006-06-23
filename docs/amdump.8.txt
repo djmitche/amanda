@@ -1,20 +1,20 @@
 
                                amdump
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-amdump  back up all disks in an AMANDA configuration
+amdump  back up all disks in an Amanda configuration
 
 Synopsis
 
-amdump config [ host [disk...]...]
+amdump config [ host | [disk]*]* [ -o | configoption ]*
 
 DESCRIPTION
 
-Amdump switches to the appropriate AMANDA configuration directory, e.g. /usr/
+Amdump switches to the appropriate Amanda configuration directory, e.g. /usr/
 local/etc/amanda/config, then attempts to back up every disk specified by the
 amanda.conf file. Amdump is normally run by cron.
 You can specify many host/disk expressions, only disks that match an expression
@@ -24,7 +24,18 @@ is removed before starting the backups. This allows scheduled backups to be
 delayed when circumstances warrant, for example, if the tape device is being
 used for some other purpose. While waiting, amdump checks for the hold file
 every minute.
-See the amanda(8) man page for more details about AMANDA.
+See the amanda(8) man page for more details about Amanda.
+
+OPTIONS
+
+
+
+  host [disk]*
+      Specify the host and disk on which the command will work.
+
+  -o configoption
+      See the "CONFIGURATION OVERWRITE" section in amanda(8).
+
 
 EXAMPLE
 
@@ -54,7 +65,7 @@ MESSAGES
 AUTHOR
 
 James da Silva, <jds@amanda.org> : Original text
-Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
+Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the Amanda-documentation:
 XML-conversion
 
 SEE ALSO
@@ -62,6 +73,6 @@ SEE ALSO
 amanda(8), amcheck(8), amcleanup(8), amrestore(8), amflush(8), cron(8)
 -------------------------------------------------------------------------------
 
-Prev   Up      Next
-amdd  Home  amflush
+Prev   Up          Next
+amdd  Home  amfetchdump
 

@@ -5,21 +5,23 @@ Prev            Next
 -------------------------------------------------------------------------------
 
 
-Installation
+Part I. Installation
 
 
 
 Initial Installation
 
-This section of the AMANDA-docs contains general info on how to install AMANDA
+This section of the Amanda-docs contains general info on how to install Amanda
 and how to configure its basic parts. Please read this!
 Table of Contents
 
 
-  1._AMANDA_2.4.x_-_System-Specific_Installation_Notes
+  1._Amanda_2.5.0_-_System-Specific_Installation_Notes
 
 
         Solaris_2.6
+
+        Solaris
 
         Trusted_Solaris
 
@@ -56,14 +58,14 @@ Table of Contents
         Mac_OS_X
 
 
-  2._AMANDA_Installation_Notes
+  2._Amanda_Installation_Notes
 
 
         Before_doing_anything
 
-        Compiling_the_AMANDA_sources
+        Compiling_the_Amanda_sources
 
-        Setting_up_your_AMANDA_Configuration
+        Setting_up_your_Amanda_Configuration
 
 
               Setting_up_the_Tape_Server_Host
@@ -100,7 +102,7 @@ Table of Contents
 
 
 
-  4._Indexing_with_AMANDA
+  4._Indexing_with_Amanda
 
 
         Database_Format
@@ -144,7 +146,7 @@ Table of Contents
 
 -------------------------------------------------------------------------------
 
-Prev           Up                                                     Next
-Attributions  Home  Chapter 1. AMANDA 2.4.x - System-Specific Installation
+Prev                                                                  Next
+Attributions  Home  Chapter 1. Amanda 2.5.0 - System-Specific Installation
                                                                      Notes
 

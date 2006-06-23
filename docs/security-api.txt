@@ -1,10 +1,10 @@
 
-      Chapter 25. AMANDA Security API
+      Chapter 26. Amanda Security API
 Prev  Part V. Technical Background  Next
 
 -------------------------------------------------------------------------------
 
-Chapter 25. AMANDA Security API
+Chapter 26. Amanda Security API
 
 
 Mike Grupenhoff
@@ -78,8 +78,6 @@ Table of Contents
 
         stream_read
 
-        stream_read_sync
-
         stream_read_cancel
 
 
@@ -92,26 +90,26 @@ of this document.
  Introduction
 
 This is a document of the API for defining and utilizing multiple security and
-transport mechanisms for the AMANDA network protocol.
+transport mechanisms for the Amanda network protocol.
 The goal of this API is to allow several different forms of communication and
-authentication to exist between the AMANDA server and its clients.
+authentication to exist between the Amanda server and its clients.
 
  The Problem
 
 There exist many potential ways that a user might wish to grant access to the
-AMANDA daemon. The two currently supported are BSD (reserved port) and Kerberos
+Amanda daemon. The two currently supported are BSD (reserved port) and Kerberos
 IV security. The current implementation of these two methods is not very
 general, and adding additional methods requires a large amount of code to be
 modified.
 Additionally, the current methods require the protocol and dump transport to be
-transmitted across the network using a pre-defined method. The AMANDA protocol
+transmitted across the network using a pre-defined method. The Amanda protocol
 currently must be sent using udp datagrams to a well-known port, and the dumps
 are transported using tcp connections between ports negotiated via the
 protocol.
 
  The API
 
-The security API was designed to be a layer in between the core logic of AMANDA
+The security API was designed to be a layer in between the core logic of Amanda
 and the transport and authentication of the protocol and dumps.
 The component server and client programs now deal with abstract concepts
 instead of concrete udp and tcp handles.
@@ -138,7 +136,7 @@ Given a security driver, and a hostname, calls back with a security_handle_t
 (section 4.2) that can be used to communicate with that host. The status arg to
 the callback is reflects the success of the request. Error messages can be had
 via security_geterror().
-This is expected to be the AMANDA server's interface for setting up connections
+This is expected to be the Amanda server's interface for setting up connections
 to clients.
 conf_fn is used to determine configuration information. If NULL, no
 configuration information is available.
@@ -151,8 +149,8 @@ Given a security driver, an input file descriptor, and an output file
 descriptor, and a callback, when new connections are detected on the given file
 descriptors, the function is called with a newly created security handle and
 the initial packet received.
-This is expected to be the AMANDA daemon's interface for setting up incoming
-connections from the AMANDA server. The file descriptors are typically 0 and 1
+This is expected to be the Amanda daemon's interface for setting up incoming
+connections from the Amanda server. The file descriptors are typically 0 and 1
 (stdin/stdout).
 This function uses the event interface, and only works properly when event_loop
 () is called later in the program.
@@ -282,15 +280,6 @@ On error, the bufsize will be negative. An error message can be retrieved by
 calling security_stream_geterror().
 This function uses the event interface. Callbacks will only be generated while
 in event_loop().
-
- security_stream_read_sync
-
-size_t security_stream_read_sync(security_stream_t *s, void **buf);
-Return a buffer of data read from the stream. This function will block until
-something can be read, but other event will be fired. A pointer to the data is returned in *buf and the size of the buffer is returned.
-On error, the size will be negative. An error message can be retrieved by
-calling security_stream_geterror().
-This function uses the event interface.
 
  security_stream_read_cancel
 
@@ -454,5 +443,5 @@ Implementation of security_stream_read_cancel.
 -------------------------------------------------------------------------------
 
 Prev                           Up                           Next
-Chapter 24. AMANDA Event API  Home  Chapter 26. Virtual Tape API
+Chapter 25. Amanda Event API  Home  Chapter 27. Virtual Tape API
 

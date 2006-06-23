@@ -43,7 +43,7 @@ document.
 
  Installation
 
-AMANDA is able to back up Microsoft Windows shared disks by using Samba, a
+Amanda is able to back up Microsoft Windows shared disks by using Samba, a
 package that implements a SMB client and server for Unix:
 http://www.samba.org
 
@@ -52,17 +52,17 @@ Note
 This is old stuff and will be (re)moved soon:
 Releases from 1.9.18p5 up to 1.9.18p10 logged information in the tar files
 produced, making them unusable! If you really must use a release prior to Samba
-2.0.6, a patch that fixes the problem is available in the AMANDA patches page:
+2.0.6, a patch that fixes the problem is available in the Amanda patches page:
 http://www.amanda.org/patches/
-AMANDA no longer supports Samba releases prior to 1.9.18. If you're using Samba
+Amanda no longer supports Samba releases prior to 1.9.18. If you're using Samba
 from 1.9.18 through 1.9.18p3, make sure you don't set a low logging/debugging
 level in smb.conf. This flag may prevent estimate sizes from printing correctly
-and AMANDA will report an estimate failure.
+and Amanda will report an estimate failure.
 This problem may also occur if you have large (>2GB) shares with Samba prior to
-2.0.4. In this case, apply samba2-largefs.patch from the AMANDA patches page
+2.0.4. In this case, apply samba2-largefs.patch from the Amanda patches page
 (http://www.amanda.org/patches/).
-After building and installing Samba, AMANDA must be configured with support for
-smbclient. AMANDA will automatically find smbclient if it is in your PATH when
+After building and installing Samba, Amanda must be configured with support for
+smbclient. Amanda will automatically find smbclient if it is in your PATH when
 you run configure, or you may add the following argument:
 
   --with-smbclient=/full/path/to/smbclient
@@ -70,13 +70,13 @@ you run configure, or you may add the following argument:
 
  Setup
 
-Once AMANDA and Samba are installed, the only difference between a Unix client/
+Once Amanda and Samba are installed, the only difference between a Unix client/
 disk and PC client/share is in how the backup disks are specified in the file
 disklist. For each PC share, the entry lists the 'samba server' host (where the
 patched Samba software is installed) and the disk field is the share name. The
 remaining fields are like any other DLE.
 A user must be created on the PC with full access rights (read/write) to the
-share. AMANDA, via the Samba server, will connect to the PC via this user. If
+share. Amanda, via the Samba server, will connect to the PC via this user. If
 the user does not have full access, incremental backups will not work and the
 whole share will be backed up every time (the archive bits are never reset).
 The file /etc/amandapass must be created by hand. It contains share name to
@@ -96,13 +96,13 @@ fields, separated by whitespace:
   password.
 * Workgroup (optional).
 
-This file must be owned by the AMANDA-user, and disallow world access
+This file must be owned by the Amanda-user, and disallow world access
 privileges. Blank lines are ignored. A "#" on a line at the start of a field
 (including start of line) causes the rest of the line to be ignored.
 
  Example
 
-The AMANDA client software and (patched) Samba is installed on host "pcserver".
+The Amanda client software and (patched) Samba is installed on host "pcserver".
 A share to be backed up called "backupc" is on PC "thepc". The share will be
 accessed via PC user "bozo" and password "f00bar" and does not require a
 workgroup.
@@ -135,7 +135,7 @@ An example dumptype in amanda.conf would be:
 
 Essentially, the entry in disklist is a 'pseudo-disk' which contains all the
 relevant information needed by smbclient to backup the disk, but in a way that
-is compatible to AMANDA.
+is compatible to Amanda.
 amcheck does a quick check to see if smbclient exists and tries to connect to
 the PC clients. It also checks for the existence and permissions of /etc/
 amandapass.
@@ -144,9 +144,9 @@ amandapass.
 
 Samba will not back up open files (such as PAGEFILE.SYS and registry files) nor
 Access Control List data. Furthermore, at restore time, smbclient is unable to
-overwrite read-only files. Hence, AMANDA+Samba is not a perfect solution for
+overwrite read-only files. Hence, Amanda+Samba is not a perfect solution for
 backing up (restoring, actually) system disks.
-Samba does not use the Windows Backup API, so configuring the AMANDA backup
+Samba does not use the Windows Backup API, so configuring the Amanda backup
 user as a member of group backup on the Windows host is useless. You will
 probably have to configure it as an Administrator, and make sure it can read
 and change permission of all files in the share.
@@ -169,7 +169,7 @@ Also the new option "exclude append" is not yet supported with smbclient.
 Note
 
 Since Samba-3.0.2a smbclient supports multiple exclusion-patterns. It is one of
-the "Ongoing Projects" to make use of this in AMANDA. Refer to http://
+the "Ongoing Projects" to make use of this in Amanda. Refer to http://
 www.amanda.org/ongoing.php for details.
 The size estimate calculation does not use the same method as the dump, so it
 may be inaccurate. It also does not support any type of exclusion ("exclude" is
@@ -184,5 +184,5 @@ filesystems.
 -------------------------------------------------------------------------------
 
 Prev                              Up                 Next
-Chapter 4. Indexing with AMANDA  Home  Chapter 6. Restore
+Chapter 4. Indexing with Amanda  Home  Chapter 6. Restore
 

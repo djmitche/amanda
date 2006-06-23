@@ -1,12 +1,12 @@
 
                                amplot
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
 Name
 
-amplot  visualize the behavior of AMANDA
+amplot  visualize the behavior of Amanda
 
 Synopsis
 
@@ -14,7 +14,7 @@ amplot [-b ] [-c ] [-e ] [-g ] [-l ] [-p ] [ -t T ] amdump_files
 
 DESCRIPTION
 
-Amplot reads an amdump output file that AMANDA generates each run (e.g.
+Amplot reads an amdump output file that Amanda generates each run (e.g.
 amdump.1) and translates the information into a picture format that may be used
 to determine how your installation is doing and if any parameters need to be
 changed. Amplot also prints out amdump lines that it either does not understand
@@ -26,7 +26,7 @@ the graph. The awk program is written in an enhanced version of awk, such as
 GNU awk (gawk version 2.15 or later) or nawk.
 During execution, amplot generates a few temporary files that gnuplot uses.
 These files are deleted at the end of execution.
-See the amanda(8) man page for more details about AMANDA.
+See the amanda(8) man page for more details about Amanda.
 
 OPTIONS
 
@@ -80,7 +80,7 @@ AUTHOR
 
 Olafur Gudmundsson <ogud@tis.com>, Trusted Information Systems, formerly at
 University of Maryland, College Park: Original text
-Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the AMANDA-documentation:
+Stefan G. Weichinger, <sgw@amanda.org>, maintainer of the Amanda-documentation:
 XML-conversion
 
 BUGS

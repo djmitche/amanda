@@ -1,10 +1,10 @@
 
-Chapter 12. AMANDA on Cygwin HOWTO
+Chapter 12. Amanda on Cygwin HOWTO
 Prev  Part III. HOWTOs        Next
 
 -------------------------------------------------------------------------------
 
-Chapter 12. AMANDA on Cygwin HOWTO
+Chapter 12. Amanda on Cygwin HOWTO
 
 
 Doug Kingston
@@ -23,7 +23,7 @@ Table of Contents
 
   Other_Preparation
 
-  Compile_AMANDA
+  Compile_Amanda
 
   Configure_Cygwin_files
 
@@ -35,7 +35,7 @@ Table of Contents
 
   Windows_NT/2000/XP
 
-  Notes_on_AMANDA_backup_options
+  Notes_on_Amanda_backup_options
 
 
         Compression
@@ -50,11 +50,11 @@ Note
 
 Refer to http://www.amanda.org/docs/howto-cygwin.html for the current version
 of this document.
-by Doug Kingston, 30 January 2003. Based on Cygwin 1.3.18, and AMANDA 2.4.3-
+by Doug Kingston, 30 January 2003. Based on Cygwin 1.3.18, and Amanda 2.4.3-
 20021027 and some fixes which will be in the official release by the time you
 see this.
 With thanks to Enrico Bernardini from whom I have borrowed some material from
-an earlier attempt at documenting the installation of AMANDA on Cygwin in 2001.
+an earlier attempt at documenting the installation of Amanda on Cygwin in 2001.
 Please send annotations and corrections to mailto://amanda-hackers@amanda.org.
 I can be reached as dpk (at) randomnotes.org (do the obvious).
 
@@ -79,7 +79,7 @@ a more specific list of what is required. If someone has a more definitive
 list, I would appreciate and email to mailto://amanda-hackers@amanda.org.
 One user reported some problems with access rights when running under Cygwin,
 which he solved by setting the CYGWIN environment variable to nontsec. I do not
-believe this is necessary if you run the AMANDA daemon as System (see below).
+believe this is necessary if you run the Amanda daemon as System (see below).
 
  Other Preparation
 
@@ -87,7 +87,7 @@ When doing backups on a NT, Windows 2000 or Windows XP system, the choice of
 user and group will be important if you are to properly interact with the
 security mechanisms of these more modern Microsoft product. For Windows 95/98/
 ME this is probably a non-issue. The most privileged account on the Windows
-systems is 'System', and I have chosen to use this account for AMANDA backups
+systems is 'System', and I have chosen to use this account for Amanda backups
 to ensure that I can access the widest set of files. On Unix we would run as
 root, with equivalent access permissions. I have also chose to run under the
 'Administrators' group, another standard Windows group. Ensure these exist
@@ -105,10 +105,10 @@ relevant lines from my file /etc/passwd are:
   root:*:18:18:,S-1-5-18:/home/root:
 
 
- Compile AMANDA
+ Compile Amanda
 
-After installing Cygwin, unpack the AMANDA sources, typically in /usr/src/
-AMANDA or something similar. In the AMANDA directory, you will need to execute:
+After installing Cygwin, unpack the Amanda sources, typically in /usr/src/
+Amanda or something similar. In the Amanda directory, you will need to execute:
 
   automake  # this may not be necessary in the official release
   autoconf  # this may not be necessary in the official release
@@ -150,7 +150,7 @@ You have to modify some config files:
 * create _/home/root/.amandahosts_ (or whereever System's home directory is):
   <amanda server> <amanda user>
 
-Then create the following AMANDA directories and the file amandates:
+Then create the following Amanda directories and the file amandates:
 
        mkdir -p /usr/local/var/amanda/gnutar-lists
 
@@ -165,9 +165,9 @@ Update the Windows services list
 
 * WINDIR\Services: add
 
-               amanda 	10080/udp	# AMANDA backup services
-               amandaidx 	10082/tcp	# AMANDA backup services
-               amidxtape 	10083/tcp	# AMANDA backup services
+               amanda 	10080/udp	# Amanda backup services
+               amandaidx 	10082/tcp	# Amanda backup services
+               amidxtape 	10083/tcp	# Amanda backup services
 
 
 where WINDIR is C:\WINNT\system32\drivers\etc or something similar. The last
@@ -220,7 +220,7 @@ Then, to start/stop the inetd service use the Services control panel or the
 following Windows command:
 net start/stop inetd
 
- Notes on AMANDA backup options
+ Notes on Amanda backup options
 
 
  Compression
@@ -229,15 +229,15 @@ Currently, client side compression does not work, probably due to problems in
 pipe emulation in Cygwin. I have not tried to debug this yet. This may be
 addressed in a subsequent release, or it could be fixed in later releases of
 Cygwin. Due to this issue, we recommend that if you want compressed dumps from
-Windows clients, you configure AMANDA for server compression in amanda.conf on
-your AMANDA server:
+Windows clients, you configure Amanda for server compression in amanda.conf on
+your Amanda server:
 
   define dumptype srv-comp-tar {
       global
       comment "partitions dumped via tar with server compression"
       program "GNUTAR"
       compress server fast
-      exclude list ".AMANDA.exclude"
+      exclude list ".Amanda.exclude"
   }
 
 
@@ -252,10 +252,10 @@ something similar if you want to get the Windows files and the Cygwin files. '/
 
  Debugging Files
 
-AMANDA will leave debugging files in /tmp/amanda if it exists. I have
+Amanda will leave debugging files in /tmp/amanda if it exists. I have
 recommended to create this directory above.
 -------------------------------------------------------------------------------
 
 Prev               Up                                            Next
-Part III. HOWTOs  Home  Chapter 13. How to use the AMANDA file-driver
+Part III. HOWTOs  Home  Chapter 13. How to use the Amanda file-driver
 

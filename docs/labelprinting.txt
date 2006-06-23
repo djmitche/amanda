@@ -31,14 +31,14 @@ of this document.
 
  The New Feature
 
-AMANDA now has the ability to print postscript paper tape labels. The labels
+Amanda now has the ability to print postscript paper tape labels. The labels
 have what machines, partitions, and the level of the dump the tape has on it.
 This is achieved by adding the lbl-templ field to the tapetype definition.
 Since the labels are specific to the type of tape you have, that seemed to most
 logical place to add it.
 You can also specify an alternate "printer" definition to print the label to
 other than the system default printer.
-If you don't add this line to your tapetype definition, AMANDA works as it
+If you don't add this line to your tapetype definition, Amanda works as it
 always has.
 
  Labels provided
@@ -56,12 +56,12 @@ Others are encouraged to do so.
 
 At the University of Colorado at Boulder, we used to use some dump scripts that
 printed out paper tape labels that went with the tape. When we started using
-AMANDA for our dumps, my boss insisted we still generate them, in case we
-weren't able to access the AMANDA database. The thought was that as long as we
+Amanda for our dumps, my boss insisted we still generate them, in case we
+weren't able to access the Amanda database. The thought was that as long as we
 had an amrestore binary on a machine, we could just look at the label, grab the
 tapes, and do the restore.
 As a result of this we have had to hack this feature into every version of
-AMANDA from 2.1.1 through 2.4.0-prerelease.
+Amanda from 2.1.1 through 2.4.0-prerelease.
 Our hope in adding this feature is that others find it as useful as we have.
 
  How it works

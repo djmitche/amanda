@@ -1,6 +1,6 @@
 
                             amtapetype
-Prev  Chapter 35. The AMANDA Manual Pages.  Next
+Prev  Chapter 36. The Amanda Manual Pages.  Next
 
 -------------------------------------------------------------------------------
 
@@ -15,7 +15,7 @@ t typename]
 
 DESCRIPTION
 
-amtapetype generates a tapetype entry for AMANDA.
+amtapetype generates a tapetype entry for Amanda.
 
 OPTIONS
 
@@ -29,7 +29,7 @@ OPTIONS
       takes a few minutes only.
 
   -o
-      Overwrite the tape, even if it's an AMANDA tape.
+      Overwrite the tape, even if it's an Amanda tape.
 
   -bblocksize
       record block size (default: 32k)

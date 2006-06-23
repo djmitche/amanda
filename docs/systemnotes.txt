@@ -1,13 +1,13 @@
 
-Chapter 1. AMANDA 2.4.x - System-Specific Installation Notes
+Chapter 1. Amanda 2.5.0 - System-Specific Installation Notes
 Prev  Part I. Installation                              Next
 
 -------------------------------------------------------------------------------
 
-Chapter 1. AMANDA 2.4.x - System-Specific Installation Notes
+Chapter 1. Amanda 2.5.0 - System-Specific Installation Notes
 
 
-AMANDA Core Team
+Amanda Core Team
 
 Original text
 AMANDA Core Team
@@ -21,6 +21,8 @@ Table of Contents
 
 
   Solaris_2.6
+
+  Solaris
 
   Trusted_Solaris
 
@@ -64,7 +66,7 @@ this document.
 Please read the notes that correspond to the architectures you are installing
 for. If you find additional gotchas, or anything incorrect in these notes,
 please send your updates to mailto://amanda-hackers@amanda.org after checking
-that they are not known/fixed problems in the AMANDA patches page: http://
+that they are not known/fixed problems in the Amanda patches page: http://
 www.amanda.org/patches/.
 
  Solaris 2.6
@@ -76,6 +78,12 @@ must rebuild gcc if you get this kind of trouble. Note, however, that gcc
 2.7.2.3 does not support Solaris 2.6, you should upgrade to 2.8.0 or higher, or
 egcs.
 
+ Solaris
+
+You may get errors running make: Assure that you use the BSD-version of make,
+usually /usr/ccs/bin/make. Add /usr/ccs/bin to the path before running
+configure.
+
  Trusted Solaris
 
 According to Julian Stevens <julian.stevens@baedsl.co.uk>, the format of inetd
@@ -83,15 +91,14 @@ on Trusted Solaris 1.2 is a bit different. Just before the user name, you
 should insert the word `untrusted':
 
   amanda dgram udp wait untrusted amuser /usr/local/libexec/amandad amandad
-  	
 
 The patch-system script is *NOT* aware of this detail; you must fix it
 yourself.
 
  SunOS 4.x
 
-A bug in GNUtar 1.12 causes it to miscalculate (in fact, to misreport) the size
-of filesystems. A patch for GNUtar is available in the patches directory.
+A bug in GNU-tar 1.12 causes it to miscalculate (in fact, to misreport) the
+size of filesystems. A patch for GNU-tar is available in the patches directory.
 
  Ultrix
 
@@ -104,8 +111,8 @@ enabled by default. If you find rundump is not necessary for you, just run
 
 The Ultrix restore program will fail if it is not connected to a tty. Since the
 restore program is invoked in the clients in order to create index files, and
-it the client is not connected to a tty, index creation will fail. Using GNUTAR
-instead of DUMP is an option. Thanks to Edwin Wiles
+it the client is not connected to a tty, index creation will fail. Using GNU-
+tar instead of DUMP is an option. Thanks to Edwin Wiles
 <ewiles@mclean.sterling.com> for the investigation. Another alternative
 proposed by Martyn Johnson <Martyn.Johnson@cl.cam.ac.uk> is to use a modified
 restore program: use a binary program editor and replace `/dev/tty' with `/dev/
@@ -116,9 +123,8 @@ preserve a copy of the original restore program, it will be rewritten by
 running this script!):
 
   perl -pi -e 'BEGIN { $/ = "/dev/tty" } s-$/-/dev/nul-' restore
-  	
 
-The Ultrix C compiler seems to be too broken to compile AMANDA. You are likely
+The Ultrix C compiler seems to be too broken to compile Amanda. You are likely
 to need gcc or egcs.
 
  HP/UX
@@ -127,7 +133,6 @@ You may run into an internal /bin/sh limit when running the configure script.
 The error message is:
 
   ./configure: sh internal 2K buffer overflow
-  	
 
 Using /bin/posix/sh usually works around the problem. Another solution is to
 install GNU bash and use it instead of /bin/sh.
@@ -140,12 +145,12 @@ stock mt. The work-around is to install GNU cpio, that contains an
 implementation of mt, and edit amverify so that MT points to GNU mt and MTOPT
 is `-f', or reconfigure and rebuild amanda from scratch, making sure it finds
 GNU mt before the stock mt in the PATH.
-If you have vxfs filesystems to back up, AMANDA will pick vxdump automatically.
-GNU tar 1.12 will incorrectly report the size of backups. There's a patch in
+If you have vxfs filesystems to back up, Amanda will pick vxdump automatically.
+GNU-tar 1.12 will incorrectly report the size of backups. There's a patch in
 the patches directory that fixes this problem.
 The use of `amhpfixdevs' is deprecated, since you can list mount-points or full
 device names in the disklist. The script may be removed in future releases of
-AMANDA.
+Amanda.
 Sometimes you may get the error message `Link severed' from an HP/UX client.
 This is just a cute name the developers of HP/UX found for `Network error'.
 Reported by Michael Brehl <mbr@condor.de>
@@ -159,14 +164,14 @@ Note, however, that DUMP for Linux has been quite unreliable, sometimes being
 unable to perform backups, producing weird error messages such as `master/slave
 protocol botched', and sometimes creating unrestorable dump images, especially
 of active filesystems. The first problem can sometimes be fixed by cleaning up
-outdated entries in /etc/dumpdates, but your best bet is probably GNU tar.
+outdated entries in /etc/dumpdates, but your best bet is probably GNU-tar.
 Make sure the user that runs configure has permission to run the dump program,
 otherwise configure may misdetect an ability of dump to accept a -E (for
 estimates) switch.
-GNUtar 1.11.8, distributed with some Linux versions, will cause index failures
-(Index returned -1). Upgrading to GNUtar 1.12 fixes this problem. This is not a
-Linux-specific problem, but it is quite common in this platform.
-AMANDA now supports the ftape driver version 3.04d. It adjusts the blocksize
+GNU-tar 1.11.8, distributed with some Linux versions, will cause index failures
+(Index returned -1). Upgrading to GNU-tar 1.12 fixes this problem. This is not
+a Linux-specific problem, but it is quite common in this platform.
+Amanda now supports the ftape driver version 3.04d. It adjusts the blocksize
 automatically to 32k and supports QIC volume tables. More details con be found
 in the file ZFTAPE in this directory.
 Some releases of dump for Linux, such as the one distributed with Debian 2.0,
@@ -179,26 +184,26 @@ case, you should create a link to it in /etc. Suggested by David Wolfskill
 According to Michael Galloway <mgx@spruce.lsd.ornl.gov>, the stock DUX4 dump is
 broken. There is a patch available at ftp://ftp.service.digital.com/public/
 dunix/v4.0b/duv40bas00005-19970926.README
-When both dump and vdump are available, AMANDA will use vdump for backing up
+When both dump and vdump are available, Amanda will use vdump for backing up
 advfs filesystems only, and dump will be used for the rest. If you'd rather
 back up all filesystems with vdump, #undef DUMP in config/config.h after
 running configure.
 Unfortunately, the output of `dump -E' incorrectly matches a line of output
-from SAMBA, which gets AMANDA's estimate process confused. client-src/
+from SAMBA, which gets Amanda's estimate process confused. client-src/
 sendsize.c will refuse to compile if both HAVE_DUMP_ESTIMATE and SAMBA_CLIENT
-are defined in config/config.h. AMANDA will work correctly if you undefine
+are defined in config/config.h. Amanda will work correctly if you undefine
 HAVE_DUMP_ESTIMATE in config/config.h; if you prefer to have incorrect
 estimates for SAMBA backups, follow the instructions in client-src/sendsize.c
 on removing the compile-time error.
 According to Oren Laadan <orenl@cs.huji.ac.il>, DEC compiler version "DEC C
 V5.2-033 on Digital UNIX V4.0 (Rev. 564)" (obtained with "cc -V") does not
-build AMANDA properly, in particular, taper.c. Using gcc is OK.
+build Amanda properly, in particular, taper.c. Using gcc is OK.
 
  Sinix 5.43 (Reliant Unix)
 
 The use of `amsinixfixdevs' is deprecated, since you can list mount-points or
 full device names in the disklist. The script may be removed in future releases
-of AMANDA.
+of Amanda.
 Sinix port originally by Michael Schmitz <mschmitz@iname.com>.
 
  IRIX (all)
@@ -206,14 +211,13 @@ Sinix port originally by Michael Schmitz <mschmitz@iname.com>.
 When setting the tape device name in either amanda.conf or one of the changer
 configuration files, make sure you specify the "variable" device name, which
 has a 'v' on the end. If not, IRIX will write 4KByte blocks instead of the
-32KByte blocks AMANDA tells it to. This apparantly works OK unless you take the
+32KByte blocks Amanda tells it to. This apparantly works OK unless you take the
 tape to a non-IRIX system, where amrestore will complain about a short (4096)
 read.
 If you do end up in this situation, the dd command to use to pipe into your
 system restore program is:
 
   dd if=/dev/whatever bs=4k skip=8 | ...
-  	
 
 Jean-Francois Malouin <Jean-Francois.Malouin@bic.mni.mcgill.ca> reports that,
 if you are going to use an IRIX host as the tape server, you *must* patch your
@@ -230,13 +234,13 @@ always performed twice. According to Mike Acar <mike@kentinfoworks.com>, patch
 Seems like SGI make program is a bit broken, in a way that causes it to rebuild
 some files if doesn't have to if you happen to run make again. Using GNU make
 fixes this problem.
-If you have xfs filesystems to back up, AMANDA will pick xfsdump automatically.
+If you have xfs filesystems to back up, Amanda will pick xfsdump automatically.
 
  IRIX 6.5.x
 
 Luc Lalonde <Luc.Lalonde@polymtl.ca> contributed the following notes:
 If you use a jukebox, you must set the ownership of the robot-changer device to
-the AMANDA operator:group in /etc/ioperms. Here's my configuration:
+the Amanda operator:group in /etc/ioperms. Here's my configuration:
 
   /etc/ioperms: /dev/scsi/sc8d6l0 0600 amanda backup
 
@@ -244,14 +248,14 @@ Otherwise the ownership:group is changed to "root:sys" after each reboot. When
 you do upgrades, check the file /var/sysgen/master.d/scsi to see if it has
 changed. Otherwise your jukebox could be rendered unuseable. In particular,
 check if it has been replaced by a new version and renamed to "./scsi.O/.".
-If you use the AMANDA package provided by freeware.sgi.com, you are not
-affected by the first question since at compile time the AMANDA operator is
+If you use the Amanda package provided by freeware.sgi.com, you are not
+affected by the first question since at compile time the Amanda operator is
 "root:sys".
 
  SCO
 
-Jens Krause <jens@transcom.de> has reported some problems with GNUtar 1.12 on
-SCO Release 5. Although the `sparse' files patch was applied, GNU tar would
+Jens Krause <jens@transcom.de> has reported some problems with GNU-tar 1.12 on
+SCO Release 5. Although the `sparse' files patch was applied, GNU-tar would
 consistently crash. GNUtar had to be built linked with malloc-libraries, and
 the `--sparse' switches had to be removed from client-src/sendbackup-gnutar.c
 and client-src/sendsize.c.
@@ -265,13 +269,13 @@ instead.
  FreeBSD 4.9
 
 Sep. 28th, 2004: Jason Miller <jwm@interlinc.net> reported problems with
-setting up the AMANDA-client on FreeBSD 4.9. He wrote:
-Due to the need for read permissions for AMANDA-client the default user and
+setting up the Amanda-client on FreeBSD 4.9. He wrote:
+Due to the need for read permissions for Amanda-client the default user and
 group for this on FreeBSD 4.9 is "operator:operator" which I found a write up
 on that as well. Just a note the port wanted to install it with these user
 permissions by default and I initially changed them to match my Redhat 9.0
 install. So just doing a
-make distclean uninstall install AMANDA_SERVER=servername
+make distclean uninstall install Amanda_SERVER=servername
 fixed that for me. Then I just followed the below instructions and everything
 was good to go.
 Refer to this link for more details: http://www.freebsd.org/cgi/query-
@@ -290,18 +294,17 @@ but this won't last until the next reboot.
 To make it permanent, just add this line:
 
   net.inet.udp.maxdgram=65535
-  	
 
 in the file /etc/sysctl.conf.
 
  AIX
 
 sendsize is reported to coredump on AIX 4.3.3, this is a linking problem, try
-configuring AMANDA with the option "--disable-shared".
+configuring Amanda with the option "--disable-shared".
 
  Microsoft Windows
 
-Although AMANDA won't run standalone on MS-Windows hosts, it is possible to use
+Although Amanda won't run standalone on MS-Windows hosts, it is possible to use
 it to back up their disks, by using SAMBA. Please read Backup_PC_hosts_using
 Samba for more information.
 SAMBA may be unable to back up some files due to file locking restrictions.
@@ -314,12 +317,12 @@ separately. Thanks to Ernie Oporto <ernie_oporto@mentorg.com> for the tip.
 
  Mac OS X
 
-For notes on how to setup AMANDA under Apple's OS X, please refer to http://
+For notes on how to setup Amanda under Apple's OS X, please refer to http://
 web.brandeis.edu/pages/view/Bio/AmandaMacOSXCompileNotes, written by Steven
 Karel<karel@brandeis.edu>. Thanks to Jose L.Hales-Garcia <jose@stat.ucla.edu>
 for the tip.
 -------------------------------------------------------------------------------
 
 Prev                   Up                                   Next
-Part I. Installation  Home  Chapter 2. AMANDA Installation Notes
+Part I. Installation  Home  Chapter 2. Amanda Installation Notes
 
