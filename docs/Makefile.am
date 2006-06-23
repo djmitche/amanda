@@ -2,14 +2,19 @@
 pkgdata_DATA = \
 	Appendix.txt \
 	amadmin.8.txt \
+	amaespipe.8.txt
 	amanda.8.txt \
 	amanda.conf.5.txt \
 	amanda-client.conf.5.txt \
 	amcheck.8.txt \
 	amcheckdb.8.txt \
 	amcleanup.8.txt \
+	amcrypt.8.txt \
+	amcrypt-asym-ossl.8.txt \
+	amcrypt-ossl.8.txt \
 	amdd.8.txt \
 	amdump.8.txt \
+	amfetchdump.8.txt \
 	amflush.8.txt \
 	amgetconf.8.txt \
 	amlabel.8.txt \
