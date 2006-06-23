@@ -1,4 +1,7 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* recover-src/extract_list.c: check_file_overwite.
+
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/extract_list.c: Do the cleanup of the extract list
 				      at the extraction time
 	* oldrecover-src/extract_list.c: Ditto.

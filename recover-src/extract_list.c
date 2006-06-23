@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.110 2006/06/23 20:08:01 martinea Exp $
+ * $Id: extract_list.c,v 1.111 2006/06/23 20:10:11 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -109,6 +109,7 @@ void add_regex(char *regex);
 void clear_extract_list(void);
 void clean_tape_list(EXTRACT_LIST *tape_list);
 void clean_extract_list(void);
+void check_file_overwite(char *filename);
 void delete_file(char *path, char *regex);
 void delete_glob(char *glob);
 void delete_regex(char *regex);
@@ -399,6 +400,40 @@ clean_extract_list(void)
 
     for (this = extract_list; this != NULL; this = this->next)
 	clean_tape_list(this);
+}
+
+
+void
+check_file_overwite(
+    char *dir)
+{
+    EXTRACT_LIST      *this;
+    EXTRACT_LIST_ITEM *fn;
+    struct stat        stat_buf;
+    char              *filename;
+
+    for (this = extract_list; this != NULL; this = this->next) {
+	for (fn = this->files; fn != NULL ; fn = fn->next) {
+	    filename = stralloc2(dir, fn->path);
+	    if (stat(filename, &stat_buf) == 0) {
+		if(S_ISDIR(stat_buf.st_mode)) {
+		    if(!is_empty_dir(filename)) {
+			printf("WARNING: All existing files in %s "
+			       "will be deleted.\n", filename);
+		    }
+		} else if(S_ISREG(stat_buf.st_mode)) {
+		    printf("WARNING: Existing file %s will be overwritten\n",
+			   filename);
+		} else {
+		    printf("WARNING: Existing entry %s will be overwritten\n",
+			   filename);
+		}
+	    } else if (errno != ENOENT) {
+		printf("Can't stat %s: %s\n", filename, strerror(errno));
+	    }
+	    amfree(filename);
+	}
+    }
 }
 
 
@@ -2015,10 +2050,7 @@ extract_files(void)
     }
 
     printf("Restoring files into directory %s\n", buf);
-    if (!is_empty_dir(buf)) {
-	printf("WARNING: Directory %s is not empty.\n"
-	       "         All existing files will be deleted.\n", buf);
-    }
+    check_file_overwite(buf);
 
 #ifdef SAMBA_CLIENT
     if (samba_extract_method == SAMBA_SMBCLIENT)
