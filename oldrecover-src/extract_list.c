@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.2 2006/05/25 01:47:13 johnfranks Exp $
+ * $Id: extract_list.c,v 1.3 2006/06/23 20:08:00 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -87,6 +87,8 @@ void add_file(char *path, char *regex);
 void add_glob(char *glob);
 void add_regex(char *regex);
 void clear_extract_list(void);
+void clean_tape_list(EXTRACT_LIST *tape_list);
+void clean_extract_list(void);
 void delete_file(char *path, char *regex);
 void delete_glob(char *glob);
 void delete_regex(char *regex);
@@ -309,6 +311,79 @@ clear_extract_list(void)
 }
 
 
+void
+clean_tape_list(
+    EXTRACT_LIST *tape_list)
+{
+    EXTRACT_LIST_ITEM *fn1, *pfn1, *ofn1;
+    EXTRACT_LIST_ITEM *fn2, *pfn2;
+    int remove_fn1;
+    int remove_fn2;
+
+    pfn1 = NULL;
+    fn1 = tape_list->files;
+    while (fn1 != NULL) {
+	remove_fn1 = 0;
+
+	pfn2 = fn1;
+	fn2 = fn1->next;
+	while (fn2 != NULL && remove_fn1 == 0) {
+	    remove_fn2 = 0;
+	    if(strcmp(fn1->path, fn2->path) == 0) {
+		remove_fn2 = 1;
+	    } else if (strncmp(fn1->path, fn2->path, strlen(fn1->path)) == 0 &&
+		       ((strlen(fn2->path) > strlen(fn1->path) &&
+			 fn2->path[strlen(fn1->path)] == '/') ||
+		       (fn1->path[strlen(fn1->path)-1] == '/'))) {
+		remove_fn2 = 1;
+	    } else if (strncmp(fn2->path, fn1->path, strlen(fn2->path)) == 0 &&
+		       ((strlen(fn1->path) > strlen(fn2->path) &&
+			 fn1->path[strlen(fn2->path)] == '/')  ||
+		       (fn2->path[strlen(fn2->path)-1] == '/'))) {
+		remove_fn1 = 1;
+		break;
+	    }
+
+	    if (remove_fn2) {
+		dbprintf(("removing path %s, it is included in %s\n", fn2->path, fn1->path));
+		fn2 = fn2->next;
+		amfree(pfn2->next->path);
+		amfree(pfn2->next);
+	    }
+	    else {
+		pfn2 = fn2;
+		fn2 = fn2->next;
+	    }
+	}
+
+	if(remove_fn1 != 0) {
+	    dbprintf(("removing path %s, it is included in %s\n", fn1->path, fn2->path));
+	    if(pfn1 == NULL)
+		tape_list->files = fn1->next;
+	    else
+		pfn1->next = fn1->next;
+	    ofn1 = fn1;
+	    fn1 = fn1->next;
+            amfree(ofn1->path);
+	    amfree(ofn1);
+	} else {
+	    pfn1 = fn1;
+	    fn1 = fn1->next;
+	}
+    }
+}
+
+
+void
+clean_extract_list(void)
+{
+    EXTRACT_LIST *this;
+
+    for (this = extract_list; this != NULL; this = this->next)
+	clean_tape_list(this);
+}
+
+
 /* returns -1 if error */
 /* returns  0 on succes */
 /* returns  1 if already added */
@@ -511,7 +586,6 @@ void add_file(
     int ch;
     int found_one;
     int dir_entries;
-    int subdir_entries;
 
     if (disk_path == NULL) {
 	printf("Must select directory before adding files\n");
@@ -521,10 +595,11 @@ void add_file(
 
     dbprintf(("add_file: Looking for \"%s\"\n", regex));
 
-    if ((strcmp(regex, "[^/]*[/]*$") == 0)  		/* "*" */
-	    || (strcmp(regex, "\\.[/]*$") == 0)  	/* "." */
-	    || (strcmp(regex, "/[/]*$") == 0)) {  	/* "/" */
-	/* Looking for * . or / find everything but single . */
+    if(strcmp(regex, "/[/]*$") == 0) {	/* "/" behave like "." */
+	regex = "\\.[/]*$";
+    }
+    else if(strcmp(regex, "[^/]*[/]*$") == 0) {		/* "*" */
+	//regex = 
 	regex = "([^/.]|\\.[^/]+|[^/.][^/]*)[/]*$";
     } else {
 	/* remove "/" at end of path */
@@ -602,7 +677,6 @@ void add_file(
                 lditem.path = newstralloc(lditem.path, ditem->path);
 		/* skip the last line -- duplicate of the preamble */
 
-		subdir_entries = 0;
 		while ((i = get_reply_line()) != 0) {
 		    if (i == -1) {
 			amfree(ditem_path);
@@ -682,42 +756,6 @@ void add_file(
 		    dir_undo_ch = *dir_undo;
 		    *dir_undo = '\0';
 
-		    if (strcmp(ditem->path, dir) == 0) {
-			/* Don't add the directory itself */
-		        dbprintf(("Reject subdir entry=%s ditem->path='%s'\n",
-				  dir, ditem->path));
-			continue;
-		    }
-		    dbprintf(("Adding subdir entry=%s\n", dir));
-		    lditem.path = newstralloc(lditem.path, dir);
-		    subdir_entries++;
-
-		    switch(add_extract_item(&lditem)) {
-		    case -1:
-			printf("System error\n");
-			dbprintf(("add_file: (Failed) System error\n"));
-			break;
-
-		    case  0:
-			quoted = quote_string(dir);
-			printf("Added dir %s at date %s\n",
-			       quoted, lditem.date);
-			dbprintf(("add_file: (Successful) Added dir %s at date %s\n",
-				  quoted, lditem.date));
-			amfree(quoted);
-			added=1;
-			break;
-
-		    case  1:
-			break;
-		    }
-		}
-		if (subdir_entries == 0) {
-		    /*
-		     * Directory was empty * so we need to
-		     * add the directory itself...
-		     */
-		    lditem.path = ditem->path;
 		    switch(add_extract_item(&lditem)) {
 		    case -1:
 			printf("System error\n");
@@ -2027,6 +2065,8 @@ extract_files(void)
 	printf("Extract list empty - No files to extract!\n");
 	return;
     }
+
+    clean_extract_list();
 
     /* get tape device name from index server if none specified */
     if (tape_server_name == NULL) {
