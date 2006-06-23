@@ -1,3 +1,33 @@
+Changes in release 2.5.1
+
+* Open SSL encryption support
+* amfetchdump -o is replaced by -O.
+* amrecover_do_fsf default to yes
+* amrecover_check_label default to yes
+* amcheck -w will do all test including the tape writable test.
+  use amcheck -t -w if you want only the tape writable test.
+* usetimestamps
+* bsdudp/bsdtcp, 2 new auth.
+* Unlimited number of DLE on a client with bsdtcp/rsh or ssh auth.
+* docs/howto-auth.txt
+* amandad_path, client_username and ssh_keys (for ssh/rsh)
+* client config file (see man amanda-client.conf)
+  Only use by amrecover.
+* amrecover use the security-api
+* amoldrecover which use the old amindexd/amidxtaped protocol
+* -o option to overwrite config option
+  (see in man amanda, the CONFIGURATION OVERWRITE section)
+* new format of .amandahosts
+* new format of xinetd.d/amanda
+
+Changes in release 2.5.0p2
+
+* listhost subcommand in amrecover
+
+Changes in release 2.5.0p1
+
+* Add the 'amtape update' command.
+
 Changes in release 2.5.0
 
 * Communication security/authentication: Kerberos 4/5, OpenSSH

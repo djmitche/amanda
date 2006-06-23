@@ -1,4 +1,8 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* NEWS: Add new features.
+	* ReleasesNotes: New files.
+
+2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* docs/Makefile.am (pkgdata_DATA): Add amaespipe.8.txt amcrypt.8.txt
 	  amcrypt-asym-ossl.8.txt amcrypt-ossl.8.txt amfetchdump.8.txt
 	* docs/amaespipe.8.txt: New file.
