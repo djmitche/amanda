@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.32 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: genversion.c,v 1.33 2006/06/27 19:22:53 martinea Exp $
  *
  * dump the current Amanda version info
  */
@@ -284,7 +284,10 @@ main(
     prvar("DEFAULT_SERVER", DEFAULT_SERVER);
     prvar("DEFAULT_CONFIG", DEFAULT_CONFIG);
     prvar("DEFAULT_TAPE_SERVER", DEFAULT_TAPE_SERVER);
+
+#ifdef DEFAULT_TAPE_DEVICE
     prvar("DEFAULT_TAPE_DEVICE", DEFAULT_TAPE_DEVICE);
+#endif
 
 #ifdef AIX_BACKUP
     prstr("AIX_BACKUP");

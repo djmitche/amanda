@@ -1,4 +1,11 @@
 2006-06-27  Jean-Louis Martineau <martineau@zmanda.com>
+	* configure.in: Don't set DEFAULT_TAPE_DEVICE if it is not set.
+	* client-src/clientconf.c: Work DEFAULT_TAPE_DEVICE not set.
+	* common-src/genversion.c: Work DEFAULT_TAPE_DEVICE not set.
+	* recover-src/amrecover.c: Work DEFAULT_TAPE_DEVICE not set.
+	* server-src/getconf.c:    Work DEFAULT_TAPE_DEVICE not set.
+
+2006-06-27  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by Paul Bijnens
 	* server-src/amcheck.c: Check for access(hdp->diskdir, X_OK).
 

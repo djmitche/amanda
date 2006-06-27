@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.21 2006/06/06 14:48:29 martinea Exp $
+ * $Id: getconf.c,v 1.22 2006/06/27 19:22:55 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -69,7 +69,9 @@ static struct build_info {
     { "DEFAULT_SERVER",			DEFAULT_SERVER },
     { "DEFAULT_CONFIG",			DEFAULT_CONFIG },
     { "DEFAULT_TAPE_SERVER",		DEFAULT_TAPE_SERVER },
-    { "DEFAULT_TAPE_DEVICE",		DEFAULT_TAPE_SERVER },
+#ifdef DEFAULT_TAPE_DEVICE
+    { "DEFAULT_TAPE_DEVICE",		DEFAULT_TAPE_DEVICE },
+#endif
     { "CLIENT_LOGIN",			CLIENT_LOGIN },
 
     { "BUILT_DATE",

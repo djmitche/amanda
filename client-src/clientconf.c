@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.10 2006/06/27 19:06:58 martinea Exp $
+ * $Id: clientconf.c,v 1.11 2006/06/27 19:22:53 martinea Exp $
  *
  * read configuration file
  */
@@ -247,7 +247,7 @@ init_defaults(void)
 #ifdef DEFAULT_TAPE_DEVICE
     s = DEFAULT_TAPE_DEVICE;
 #else
-    s = "/dev/nst0";
+    s = NULL;
 #endif
     conf_init_string(&client_conf[CLN_TAPEDEV], s);
 

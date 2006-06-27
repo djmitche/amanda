@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.66 2006/06/16 12:25:10 martinea Exp $
+ * $Id: amrecover.c,v 1.67 2006/06/27 19:22:53 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -417,7 +417,9 @@ main(
     tape_server_name = stralloc(tape_server_name);
 
     amfree(tape_device_name);
-    tape_device_name = stralloc(client_getconf_str(CLN_TAPEDEV));
+    tape_device_name = client_getconf_str(CLN_TAPEDEV);
+    if (tape_device_name)
+	tape_device_name = stralloc(tape_device_name);
 
     authopt = stralloc(client_getconf_str(CLN_AUTH));
 

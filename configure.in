@@ -567,8 +567,8 @@ AC_ARG_WITH(tape-device,
 	    dnl bytes are returned upon reading to the next tape mark,
 	    dnl instead of returning an error.  Look for devices that have
 	    dnl a 'b' in their name.
-	    tape_dev=null:
-	    nr_tape_dev=null:
+	    tape_dev=
+	    nr_tape_dev=
 	    if test -d /dev/rmt; then
 
 		dnl See if we can find two devices, one being the norewind
@@ -602,12 +602,10 @@ AC_ARG_WITH(tape-device,
     ]
 )
 
-if test -z "$DEFAULT_TAPE_DEVICE"; then
-    DEFAULT_TAPE_DEVICE=/dev/null
+if test ! -z "$DEFAULT_TAPE_DEVICE"; then
+    AC_DEFINE_UNQUOTED(DEFAULT_TAPE_DEVICE,"$DEFAULT_TAPE_DEVICE",[This is the default no-rewinding tape device. ])
+    AC_SUBST(DEFAULT_TAPE_DEVICE)
 fi
-
-AC_DEFINE_UNQUOTED(DEFAULT_TAPE_DEVICE,"$DEFAULT_TAPE_DEVICE",[This is the default no-rewinding tape device. ])
-AC_SUBST(DEFAULT_TAPE_DEVICE)
 
 AC_ARG_WITH(ftape-raw-device,
     [  --with-ftape-rawdevice=ARG raw device on tape server HOST's if using Linux ftape >=3.04d],
