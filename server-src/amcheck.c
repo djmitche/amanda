@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.141 2006/06/27 19:12:55 martinea Exp $
+ * $Id: amcheck.c,v 1.142 2006/06/27 21:19:57 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -856,7 +856,7 @@ start_server_check(
 	    }
 	    else {
 		assert(holdingdisk_get_disksize(hdp) < (off_t)0);
-		if((fs.avail + holdingdisk_get_disksize(hdp)) > (off_t)0) {
+		if((fs.avail + holdingdisk_get_disksize(hdp)) <= (off_t)0) {
 		    fprintf(outf,
 			    "WARNING: holding disk %s: "
 			    "only " OFF_T_FMT " %sB free, using nothing\n",

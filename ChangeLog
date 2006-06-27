@@ -1,4 +1,7 @@
 2006-06-27  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amcheck.c: Fix test for holdingdisk negative size.
+
+2006-06-27  Jean-Louis Martineau <martineau@zmanda.com>
 	* configure.in: Don't set DEFAULT_TAPE_DEVICE if it is not set.
 	* client-src/clientconf.c: Work DEFAULT_TAPE_DEVICE not set.
 	* common-src/genversion.c: Work DEFAULT_TAPE_DEVICE not set.
