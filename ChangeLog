@@ -1,4 +1,8 @@
 2006-06-27  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by Paul Bijnens
+	* server-src/amcheck.c: Check for access(hdp->diskdir, X_OK).
+
+2006-06-27  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/conffile.c (getconf_byname): Check for kt->keyword != NULL.
 	* client-src/clientconf.c (client_getconf_byname): Ditto
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.140 2006/06/22 20:41:32 martinea Exp $
+ * $Id: amcheck.c,v 1.141 2006/06/27 19:12:55 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -819,6 +819,11 @@ start_server_check(
 	    }
 	    else if(access(holdingdisk_get_diskdir(hdp), W_OK) == -1) {
 		fprintf(outf, "ERROR: holding disk %s: not writable: %s.\n",
+			quoted, strerror(errno));
+		disklow = 1;
+	    }
+	    else if(access(holdingdisk_get_diskdir(hdp), X_OK) == -1) {
+		fprintf(outf, "ERROR: holding disk %s: not searcheable: %s.\n",
 			quoted, strerror(errno));
 		disklow = 1;
 	    }
