@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.9 2006/06/22 17:07:40 martinea Exp $
+ * $Id: clientconf.c,v 1.10 2006/06/27 19:06:58 martinea Exp $
  *
  * read configuration file
  */
@@ -132,7 +132,7 @@ client_getconf_byname(
     }
 
     for(kt = client_keytab; kt->token != CONF_UNKNOWN; kt++)
-	if(strcmp(kt->keyword, tmpstr) == 0) break;
+	if(kt->keyword && strcmp(kt->keyword, tmpstr) == 0) break;
 
     if(kt->token == CONF_UNKNOWN) return NULL;
 

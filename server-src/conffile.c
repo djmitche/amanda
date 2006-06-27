@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.149 2006/06/22 17:07:40 martinea Exp $
+ * $Id: conffile.c,v 1.150 2006/06/27 19:06:58 martinea Exp $
  *
  * read configuration file
  */
@@ -565,7 +565,7 @@ getconf_byname(
 	    s[-1] = (char)toupper(ch);
     }
     for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++) {
-	if(strcmp(kt->keyword, tmpstr) == 0)
+	if(kt->keyword && strcmp(kt->keyword, tmpstr) == 0)
 	    break;
     }
 

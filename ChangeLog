@@ -1,3 +1,7 @@
+2006-06-27  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/conffile.c (getconf_byname): Check for kt->keyword != NULL.
+	* client-src/clientconf.c (client_getconf_byname): Ditto
+
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/extract_list.c: check_file_overwite.
 
