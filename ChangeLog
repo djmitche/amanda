@@ -1,3 +1,6 @@
+2006-06-28  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/security-util.c: Improve message for .amandahosts.
+
 2006-06-27  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amcheck.c: Fix test for holdingdisk negative size.
 

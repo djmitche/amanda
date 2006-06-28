@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.15 2006/06/20 17:32:24 martinea Exp $
+ * $Id: security-util.c,v 1.16 2006/06/28 21:57:52 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -1913,10 +1913,9 @@ check_user(
     r = check_user_amandahosts(rh->hostname, pwd, remoteuser, service);
 #endif
     if (r != NULL) {
-	result = vstralloc("access as ", localuser, " not allowed",
-			   " from ", remoteuser, "@", rh->hostname,
-			   ": ", r,
-			   NULL);
+	result = vstralloc("user ", remoteuser, " from ", rh->hostname,
+			   " is not allowed to execute the service ",
+			   service, ": ", r, NULL);
 	amfree(r);
     }
     amfree(localuser);
@@ -2206,10 +2205,21 @@ check_user_amandahosts(
 	amfree(line);
     }
     if (! found) {
-	result = vstralloc(ptmp, ": ",
-			   "\"", host, " ", remoteuser, "\"",
-			   " entry not found",
-			   NULL);
+	if (strcmp(service, "amindexd") == 0 ||
+	    strcmp(service, "amidxtaped") == 0) {
+	    result = vstralloc("Please add \"amindexd amidxtaped\" to "
+			       "the line in ", ptmp, NULL);
+	} else if (strcmp(service, "amdump") == 0 ||
+		   strcmp(service, "noop") == 0 ||
+		   strcmp(service, "selfcheck") == 0 ||
+		   strcmp(service, "sendsize") == 0 ||
+		   strcmp(service, "sendbackup") == 0) {
+	    result = vstralloc("Please add \"amdump\" to the line in ",
+			       ptmp, NULL);
+	} else {
+	    result = vstralloc(ptmp, ": ",
+			       "invalid service ", service, NULL);
+	}
     }
 
 common_exit:
