@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.40 2006/06/22 17:16:39 martinea Exp $
+ * $Id: restore.c,v 1.41 2006/06/29 17:31:26 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1227,6 +1227,9 @@ restore(
     return (bytes_read);
 }
 
+/* return NULL if the label is not the expected one                     */
+/* return the label if it is the expected one, and set *tapefd to a     */
+/* file descriptor to the tapedev                                       */
 char *
 label_of_current_slot(
     char         *cur_tapedev,
@@ -1276,6 +1279,7 @@ label_of_current_slot(
 		send_message(prompt_out, flags, their_features,
 				 "Label mismatch, got %s and expected %s",
 				 file->name, desired_tape->label);
+		tapefd_close(*tapefd);
 	    }
 	    else {
 		label = stralloc(file->name);
