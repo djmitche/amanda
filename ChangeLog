@@ -1,3 +1,9 @@
+2006-06-29  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/find.c (strip_failed_chunks):
+	  - Get a **output_find as parameter.
+	  - Check the label before remove a valid chunk.
+	  - Memory management fix.
+
 2006-06-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/security-util.c: Improve message for .amandahosts.
 

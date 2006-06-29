@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.31 2006/06/01 20:11:35 martinea Exp $
+ * $Id: find.c,v 1.32 2006/06/29 14:31:23 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -39,7 +39,7 @@
 int find_match(char *host, char *disk);
 int search_logfile(find_result_t **output_find, char *label, char *datestamp, char *logfile);
 void search_holding_disk(find_result_t **output_find);
-void strip_failed_chunks(find_result_t *output_find);
+void strip_failed_chunks(find_result_t **output_find);
 char *find_nicedate(char *datestamp);
 static int find_compare(const void *, const void *);
 static int parse_taper_datestamp_log(char *logline, char **datestamp, char **level);
@@ -114,7 +114,7 @@ find_dump(
 
     search_holding_disk(&output_find);
 
-    strip_failed_chunks(output_find);
+    strip_failed_chunks(&output_find);
     
     return(output_find);
 }
@@ -202,20 +202,20 @@ find_log(void)
  * Remove CHUNK entries from dumps that ultimately failed from our report.
  */
 void strip_failed_chunks(
-    find_result_t *output_find)
+    find_result_t **output_find)
 {
     find_result_t *cur, *prev = NULL, *failed = NULL, *failures = NULL;
 
     /* Generate a list of failures */
-    for(cur=output_find; cur; cur=cur->next) {
-	if(!cur->hostname || !cur->diskname) continue;
+    for(cur=*output_find; cur; cur=cur->next) {
+	if(!cur->hostname  || !cur->diskname ||
+	   !cur->timestamp || !cur->label)
+	    continue;
 
 	if(strcmp(cur->status, "OK")){
 	    failed = alloc(SIZEOF(find_result_t));
 	    memcpy(failed, cur, SIZEOF(find_result_t));
 	    failed->next = failures;
-	    failed->diskname = stralloc(cur->diskname);
-	    failed->hostname = stralloc(cur->hostname);
 	    failures = failed;
 	}
     }
@@ -223,41 +223,43 @@ void strip_failed_chunks(
     /* Now if a CHUNK matches the parameters of a failed dump, remove it */
     for(failed=failures; failed; failed=failed->next) {
 	prev = NULL;
-	cur = output_find;
+	cur = *output_find;
 	while (cur != NULL) {
-	    if(!cur->hostname || !cur->diskname ||
-	          !strcmp(cur->partnum, "--") || strcmp(cur->status, "OK")){
+	    find_result_t *next = cur->next;
+	    if(!cur->hostname  || !cur->diskname || 
+	       !cur->timestamp || !cur->label    || !cur->partnum ||
+	       !strcmp(cur->partnum, "--") || strcmp(cur->status, "OK")) {
 	        prev = cur;
-		cur = cur->next;
+		cur = next;
 		continue;
 	    }
-
 	    if(!strcmp(cur->hostname, failed->hostname) &&
 	         !strcmp(cur->diskname, failed->diskname) &&
 	         !strcmp(cur->timestamp, failed->timestamp) &&
+	         !strcmp(cur->label, failed->label) &&
 	         cur->level == failed->level){
-		find_result_t *next = cur->next;
 		amfree(cur->diskname);
 		amfree(cur->hostname);
-		next = cur->next;
+		amfree(cur->label);
+		amfree(cur->timestamp);
+		amfree(cur->partnum);
+		amfree(cur->status);
 		amfree(cur);
-		if(prev){
+		if (prev)
   		    prev->next = next;
-		    cur = next;
-		    continue;
-		}
-		else output_find = next;
+		else
+		    *output_find = next;
 	    }
-            else prev = cur;
+            else {
+		prev = cur;
+	    }
 
-	    cur = cur->next;
+	    cur = next;
 	}
     }
 
     for(failed=failures; failed;) {
 	find_result_t *fai = failed->next;
-	amfree(failed->diskname);
-	amfree(failed->hostname);
 	fai = failed->next;
 	amfree(failed);
 	failed=fai;
