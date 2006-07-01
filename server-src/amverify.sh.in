@@ -1,6 +1,6 @@
-#! /bin/sh
+#! @SHELL@
 #
-#	$Id: amverify.sh.in,v 1.36 2006/05/25 01:47:19 johnfranks Exp $
+#	$Id: amverify.sh.in,v 1.37 2006/07/01 00:10:38 paddy_s Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)

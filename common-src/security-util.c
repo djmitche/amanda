@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.16 2006/06/28 21:57:52 martinea Exp $
+ * $Id: security-util.c,v 1.17 2006/07/01 00:10:38 paddy_s Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -43,7 +43,7 @@
 #include "stream.h"
 #include "version.h"
 
-/*#define	SEC_DEBUG */
+/* #define	SEC_DEBUG */
 #define	SHOW_SECURITY_DETAIL
 
 #ifdef SEC_DEBUG
@@ -1910,7 +1910,7 @@ check_user(
 #ifndef USE_AMANDAHOSTS
     r = check_user_ruserok(rh->hostname, pwd, remoteuser);
 #else
-    r = check_user_amandahosts(rh->hostname, pwd, remoteuser, service);
+    r = check_user_amandahosts(rh->hostname, rh->peer.sin_addr, pwd, remoteuser, service);
 #endif
     if (r != NULL) {
 	result = vstralloc("user ", remoteuser, " from ", rh->hostname,
@@ -2059,6 +2059,7 @@ check_user_ruserok(
 char *
 check_user_amandahosts(
     const char *	host,
+    struct in_addr      addr,
     struct passwd *	pwd,
     const char *	remoteuser,
     const char *	service)
@@ -2139,6 +2140,16 @@ check_user_amandahosts(
 	}
 
 	hostmatch = (strcasecmp(filehost, host) == 0);
+	/*  ok if addr=127.0.0.1 and
+        *  either localhost or localhost.domain is in .amandahost */
+       if ( !hostmatch ) {
+         if (strcmp(inet_ntoa(addr), "127.0.0.1")== 0  &&
+             (strcasecmp(filehost, "localhost")== 0 ||
+	      strcasecmp(filehost, "localhost.localdomain")== 0))
+           {
+             hostmatch = 1;
+           }
+       }
 	usermatch = (strcasecmp(fileuser, remoteuser) == 0);
 #if defined(SHOW_SECURITY_DETAIL)				/* { */
 	secprintf(("%s: bsd: comparing \"%s\" with\n", debug_prefix(NULL), filehost));
@@ -2386,7 +2397,7 @@ check_security(
 #ifndef USE_AMANDAHOSTS
     s = check_user_ruserok(remotehost, pwptr, remoteuser);
 #else
-    s = check_user_amandahosts(remotehost, pwptr, remoteuser, NULL);
+    s = check_user_amandahosts(remotehost, addr->sin_addr, pwptr, remoteuser, NULL);
 #endif
 
     if (s != NULL) {

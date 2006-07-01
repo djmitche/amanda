@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.150 2006/06/27 19:06:58 martinea Exp $
+ * $Id: conffile.c,v 1.151 2006/07/01 00:10:38 paddy_s Exp $
  *
  * read configuration file
  */
@@ -139,142 +139,124 @@ static void get_exclude (t_conf_var *, val_t *);
 static void get_taperalgo(t_conf_var *, val_t *);
 
 keytab_t server_keytab[] = {
+    { "AMANDAD_PATH", CONF_AMANDAD_PATH },
+    { "AMRECOVER_CHANGER", CONF_AMRECOVER_CHANGER },
+    { "AMRECOVER_CHECK_LABEL", CONF_AMRECOVER_CHECK_LABEL },
+    { "AMRECOVER_DO_FSF", CONF_AMRECOVER_DO_FSF },
+    { "APPEND", CONF_APPEND },
+    { "AUTH", CONF_AUTH },
+    { "AUTOFLUSH", CONF_AUTOFLUSH },
+    { "BEST", CONF_BEST },
+    { "BLOCKSIZE", CONF_BLOCKSIZE },
     { "BUMPDAYS", CONF_BUMPDAYS },
     { "BUMPMULT", CONF_BUMPMULT },
-    { "BUMPSIZE", CONF_BUMPSIZE },
     { "BUMPPERCENT", CONF_BUMPPERCENT },
-    { "DEFINE", CONF_DEFINE },
-    { "DISKFILE", CONF_DISKFILE },
-    { "DUMPCYCLE", CONF_DUMPCYCLE },
-    { "RUNSPERCYCLE", CONF_RUNSPERCYCLE },
-    { "DUMPTYPE", CONF_DUMPTYPE },
-    { "DUMPUSER", CONF_DUMPUSER },
-    { "PRINTER", CONF_PRINTER },
-    { "HOLDINGDISK", CONF_HOLDING },
-    { "INCLUDEFILE", CONF_INCLUDEFILE },
-    { "INDEXDIR", CONF_INDEXDIR },
-    { "INFOFILE", CONF_INFOFILE },
-    { "INPARALLEL", CONF_INPARALLEL },
-    { "DUMPORDER", CONF_DUMPORDER },
-    { "INTERFACE", CONF_INTERFACE },
-    { "LABELSTR", CONF_LABELSTR },
-    { "LOGDIR", CONF_LOGDIR },
-    { "MAILTO", CONF_MAILTO },
-    { "MAXDUMPS", CONF_MAXDUMPS },
-    { "NETUSAGE", CONF_NETUSAGE },	/* XXX - historical */
-    { "ORG", CONF_ORG },
-    { "RUNTAPES", CONF_RUNTAPES },
-    { "TAPECYCLE", CONF_TAPECYCLE },
-    { "TAPEDEV", CONF_TAPEDEV },
-    { "TAPELIST", CONF_TAPELIST },
-    { "TAPETYPE", CONF_TAPETYPE },
-    { "TPCHANGER", CONF_TPCHANGER },
+    { "BUMPSIZE", CONF_BUMPSIZE },
+    { "CALCSIZE", CONF_CALCSIZE },
     { "CHANGERDEV", CONF_CHNGRDEV },
     { "CHANGERFILE", CONF_CHNGRFILE },
-    { "ETIMEOUT", CONF_ETIMEOUT },
-    { "DTIMEOUT", CONF_DTIMEOUT },
-    { "CTIMEOUT", CONF_CTIMEOUT },
-    { "TAPEBUFS", CONF_TAPEBUFS },
-    { "RAWTAPEDEV", CONF_RAWTAPEDEV },
-    { "AUTOFLUSH", CONF_AUTOFLUSH },
-    { "RESERVE", CONF_RESERVE },
-    { "MAXDUMPSIZE", CONF_MAXDUMPSIZE },
-    { "COLUMNSPEC", CONF_COLUMNSPEC },
-    { "AMRECOVER_DO_FSF", CONF_AMRECOVER_DO_FSF },
-    { "AMRECOVER_CHECK_LABEL", CONF_AMRECOVER_CHECK_LABEL },
-    { "AMRECOVER_CHANGER", CONF_AMRECOVER_CHANGER },
-    { "TAPERALGO", CONF_TAPERALGO },
-    { "DISPLAYUNIT", CONF_DISPLAYUNIT },
-    { "KRB5KEYTAB", CONF_KRB5KEYTAB },
-    { "KRB5PRINCIPAL", CONF_KRB5PRINCIPAL },
-    { "LABEL_NEW_TAPES", CONF_LABEL_NEW_TAPES },
-    { "USETIMESTAMPS", CONF_USETIMESTAMPS },
-    { "DIRECTORY", CONF_DIRECTORY },
-    { "COMMENT", CONF_COMMENT },
-    { "USE", CONF_USE },
     { "CHUNKSIZE", CONF_CHUNKSIZE },
-    { "AUTH", CONF_AUTH },
-    { "BUMPDAYS", CONF_BUMPDAYS },
-    { "BUMPSIZE", CONF_BUMPSIZE },
-    { "BUMPPERCENT", CONF_BUMPPERCENT },
+    { "CLIENT", CONF_CLIENT },
+    { "CLIENT_CUSTOM_COMPRESS", CONF_CLNTCOMPPROG },
+    { "CLIENT_DECRYPT_OPTION", CONF_CLNT_DECRYPT_OPT },
+    { "CLIENT_ENCRYPT", CONF_CLNT_ENCRYPT },
+    { "CLIENT_USERNAME", CONF_CLIENT_USERNAME },
+    { "COLUMNSPEC", CONF_COLUMNSPEC },
+    { "COMMENT", CONF_COMMENT },
     { "COMPRATE", CONF_COMPRATE },
     { "COMPRESS", CONF_COMPRESS },
-    { "ENCRYPT", CONF_ENCRYPT },
-    { "SERVER_DECRYPT_OPTION", CONF_SRV_DECRYPT_OPT },
-    { "CLIENT_DECRYPT_OPTION", CONF_CLNT_DECRYPT_OPT },
+    { "CTIMEOUT", CONF_CTIMEOUT },
+    { "CUSTOM", CONF_CUSTOM },
+    { "DEFINE", CONF_DEFINE },
+    { "DIRECTORY", CONF_DIRECTORY },
+    { "DISKFILE", CONF_DISKFILE },
+    { "DISPLAYUNIT", CONF_DISPLAYUNIT },
+    { "DTIMEOUT", CONF_DTIMEOUT },
     { "DUMPCYCLE", CONF_DUMPCYCLE },
+    { "DUMPORDER", CONF_DUMPORDER },
+    { "DUMPTYPE", CONF_DUMPTYPE },
+    { "DUMPUSER", CONF_DUMPUSER },
+    { "ENCRYPT", CONF_ENCRYPT },
+    { "ESTIMATE", CONF_ESTIMATE },
+    { "ETIMEOUT", CONF_ETIMEOUT },
     { "EXCLUDE", CONF_EXCLUDE },
+    { "EXCLUDE-FILE", CONF_EXCLUDE_FILE },
+    { "EXCLUDE-LIST", CONF_EXCLUDE_LIST },
+    { "FALLBACK_SPLITSIZE", CONF_FALLBACK_SPLITSIZE },
+    { "FAST", CONF_FAST },
+    { "FILE", CONF_EFILE },
+    { "FILE-PAD", CONF_FILE_PAD },
+    { "FILEMARK", CONF_FILEMARK },
+    { "FIRST", CONF_FIRST },
+    { "FIRSTFIT", CONF_FIRSTFIT },
+    { "HANOI", CONF_HANOI },
+    { "HIGH", CONF_HIGH },
     { "HOLDINGDISK", CONF_HOLDING },
     { "IGNORE", CONF_IGNORE },
     { "INCLUDE", CONF_INCLUDE },
+    { "INCLUDEFILE", CONF_INCLUDEFILE },
+    { "INCRONLY", CONF_INCRONLY },
     { "INDEX", CONF_INDEX },
+    { "INDEXDIR", CONF_INDEXDIR },
+    { "INFOFILE", CONF_INFOFILE },
+    { "INPARALLEL", CONF_INPARALLEL },
+    { "INTERFACE", CONF_INTERFACE },
     { "KENCRYPT", CONF_KENCRYPT },
-    { "MAXDUMPS", CONF_MAXDUMPS },
-    { "MAXPROMOTEDAY", CONF_MAXPROMOTEDAY },
-    { "PRIORITY", CONF_PRIORITY },
-    { "PROGRAM", CONF_PROGRAM },
-    { "RECORD", CONF_RECORD },
-    { "SKIP-FULL", CONF_SKIP_FULL },
-    { "SKIP-INCR", CONF_SKIP_INCR },
-    { "STARTTIME", CONF_STARTTIME },
-    { "STRATEGY", CONF_STRATEGY },
-    { "TAPE_SPLITSIZE", CONF_TAPE_SPLITSIZE },
-    { "SPLIT_DISKBUFFER", CONF_SPLIT_DISKBUFFER },
-    { "FALLBACK_SPLITSIZE", CONF_FALLBACK_SPLITSIZE },
-    { "ESTIMATE", CONF_ESTIMATE },
-    { "SERVER_CUSTOM_COMPRESS", CONF_SRVCOMPPROG },
-    { "CLIENT_CUSTOM_COMPRESS", CONF_CLNTCOMPPROG },
-    { "SERVER_ENCRYPT", CONF_SRV_ENCRYPT },
-    { "CLIENT_ENCRYPT", CONF_CLNT_ENCRYPT },
-    { "AMANDAD_PATH", CONF_AMANDAD_PATH },
-    { "CLIENT_USERNAME", CONF_CLIENT_USERNAME },
-    { "SSH_KEYS", CONF_SSH_KEYS },
-    { "LBL-TEMPL", CONF_LBL_TEMPL },
-    { "BLOCKSIZE", CONF_BLOCKSIZE },
-    { "FILE-PAD", CONF_FILE_PAD },
-    { "FILEMARK", CONF_FILEMARK },
-    { "LENGTH", CONF_LENGTH },
-    { "SPEED", CONF_SPEED },
-    { "USE", CONF_USE },
-    { "COMPRESS", CONF_COMPRESS },
-    { "ENCRYPT", CONF_ENCRYPT },
-    { "INDEX", CONF_INDEX },
-    { "EXCLUDE-FILE", CONF_EXCLUDE_FILE },
-    { "EXCLUDE-LIST", CONF_EXCLUDE_LIST },
-    { "KENCRYPT", CONF_KENCRYPT },
-    { "SKIP-FULL", CONF_SKIP_FULL },
-    { "SKIP-INCR", CONF_SKIP_INCR },
-    { "BEST", CONF_BEST },
-    { "CLIENT", CONF_CLIENT },
-    { "FAST", CONF_FAST },
-    { "NONE", CONF_NONE },
-    { "SERVER", CONF_SERVER },
-    { "CUSTOM", CONF_CUSTOM },
-    { "NONE", CONF_NONE },
-    { "CLIENT", CONF_CLIENT },
-    { "SERVER", CONF_SERVER },
-    { "FIRST", CONF_FIRST },
-    { "FIRSTFIT", CONF_FIRSTFIT },
+    { "KRB5KEYTAB", CONF_KRB5KEYTAB },
+    { "KRB5PRINCIPAL", CONF_KRB5PRINCIPAL },
+    { "LABELSTR", CONF_LABELSTR },
+    { "LABEL_NEW_TAPES", CONF_LABEL_NEW_TAPES },
     { "LARGEST", CONF_LARGEST },
     { "LARGESTFIT", CONF_LARGESTFIT },
-    { "SMALLEST", CONF_SMALLEST },
     { "LAST", CONF_LAST },
-    { "HIGH", CONF_HIGH },
+    { "LBL-TEMPL", CONF_LBL_TEMPL },
+    { "LENGTH", CONF_LENGTH },
+    { "LIST", CONF_LIST },
+    { "LOGDIR", CONF_LOGDIR },
     { "LOW", CONF_LOW },
+    { "MAILTO", CONF_MAILTO },
+    { "MAXDUMPS", CONF_MAXDUMPS },
+    { "MAXDUMPSIZE", CONF_MAXDUMPSIZE },
+    { "MAXPROMOTEDAY", CONF_MAXPROMOTEDAY },
     { "MEDIUM", CONF_MEDIUM },
-    { "HANOI", CONF_HANOI },
+    { "NETUSAGE", CONF_NETUSAGE },	/* XXX - historical */
     { "NOFULL", CONF_NOFULL },
     { "NOINC", CONF_NOINC },
-    { "SKIP", CONF_SKIP },
-    { "STANDARD", CONF_STANDARD },
-    { "INCRONLY", CONF_INCRONLY },
-    { "CLIENT", CONF_CLIENT },
-    { "SERVER", CONF_SERVER },
-    { "CALCSIZE", CONF_CALCSIZE },
-    { "LIST", CONF_LIST },
-    { "FILE", CONF_EFILE },
-    { "APPEND", CONF_APPEND },
+    { "NONE", CONF_NONE },
     { "OPTIONAL", CONF_OPTIONAL },
+    { "ORG", CONF_ORG },
+    { "PRINTER", CONF_PRINTER },
+    { "PRIORITY", CONF_PRIORITY },
+    { "PROGRAM", CONF_PROGRAM },
+    { "RAWTAPEDEV", CONF_RAWTAPEDEV },
+    { "RECORD", CONF_RECORD },
+    { "RESERVE", CONF_RESERVE },
+    { "RUNSPERCYCLE", CONF_RUNSPERCYCLE },
+    { "RUNTAPES", CONF_RUNTAPES },
+    { "SERVER", CONF_SERVER },
+    { "SERVER_CUSTOM_COMPRESS", CONF_SRVCOMPPROG },
+    { "SERVER_DECRYPT_OPTION", CONF_SRV_DECRYPT_OPT },
+    { "SERVER_ENCRYPT", CONF_SRV_ENCRYPT },
+    { "SKIP", CONF_SKIP },
+    { "SKIP-FULL", CONF_SKIP_FULL },
+    { "SKIP-INCR", CONF_SKIP_INCR },
+    { "SMALLEST", CONF_SMALLEST },
+    { "SPEED", CONF_SPEED },
+    { "SPLIT_DISKBUFFER", CONF_SPLIT_DISKBUFFER },
+    { "SSH_KEYS", CONF_SSH_KEYS },
+    { "STANDARD", CONF_STANDARD },
+    { "STARTTIME", CONF_STARTTIME },
+    { "STRATEGY", CONF_STRATEGY },
+    { "TAPEBUFS", CONF_TAPEBUFS },
+    { "TAPECYCLE", CONF_TAPECYCLE },
+    { "TAPEDEV", CONF_TAPEDEV },
+    { "TAPELIST", CONF_TAPELIST },
+    { "TAPERALGO", CONF_TAPERALGO },
+    { "TAPETYPE", CONF_TAPETYPE },
+    { "TAPE_SPLITSIZE", CONF_TAPE_SPLITSIZE },
+    { "TPCHANGER", CONF_TPCHANGER },
+    { "USE", CONF_USE },
+    { "USETIMESTAMPS", CONF_USETIMESTAMPS },
     { NULL, CONF_IDENT },
     { NULL, CONF_UNKNOWN }
 };
@@ -300,7 +282,7 @@ t_conf_var server_var [] = {
    { CONF_RUNTAPES             , CONFTYPE_INT      , read_int     , CNF_RUNTAPES             , validate_positive0 },
    { CONF_TAPECYCLE            , CONFTYPE_INT      , read_int     , CNF_TAPECYCLE            , validate_positive1 },
    { CONF_BUMPDAYS             , CONFTYPE_INT      , read_int     , CNF_BUMPDAYS             , validate_positive1 },
-   { CONF_BUMPSIZE             , CONFTYPE_INT      , read_int     , CNF_BUMPSIZE             , validate_positive1 },
+   { CONF_BUMPSIZE             , CONFTYPE_AM64     , read_am64    , CNF_BUMPSIZE             , validate_positive1 },
    { CONF_BUMPPERCENT          , CONFTYPE_INT      , read_int     , CNF_BUMPPERCENT          , validate_bumppercent },
    { CONF_BUMPMULT             , CONFTYPE_REAL     , read_real    , CNF_BUMPMULT             , validate_bumpmult },
    { CONF_NETUSAGE             , CONFTYPE_INT      , read_int     , CNF_NETUSAGE             , validate_positive1 },
@@ -514,7 +496,7 @@ validate_use(
     val_t        *val)
 {
     np = np;
-    val->v.i = am_floor(val->v.i, DISK_BLOCK_KB);
+    val->v.am64 = am_floor(val->v.am64, DISK_BLOCK_KB);
 }
 
 void
@@ -523,13 +505,13 @@ validate_chunksize(
     val_t        *val)
 {
     np = np;
-    if(val->v.l == 0) {
-	val->v.l = ((INT_MAX / 1024) - (2 * DISK_BLOCK_KB));
+    if(val->v.am64 == 0) {
+	val->v.am64 = ((AM64_MAX / 1024) - (2 * DISK_BLOCK_KB));
     }
-    else if(val->v.l < 0) {
-	conf_parserror("Negative chunksize (%ld) is no longer supported", val->v.l);
+    else if(val->v.am64 < 0) {
+	conf_parserror("Negative chunksize (%lld) is no longer supported", val->v.am64);
     }
-    val->v.l = am_floor(val->v.l, DISK_BLOCK_KB);
+    val->v.am64 = am_floor(val->v.am64, (off_t)DISK_BLOCK_KB);
 }
 
 void
@@ -781,7 +763,7 @@ init_defaults(
     conf_init_int      (&server_conf[CNF_INPARALLEL]           , 10);
     conf_init_string   (&server_conf[CNF_DUMPORDER]            , "ttt");
     conf_init_int      (&server_conf[CNF_BUMPPERCENT]          , 0);
-    conf_init_int      (&server_conf[CNF_BUMPSIZE]             , 10*1024);
+    conf_init_am64     (&server_conf[CNF_BUMPSIZE]             , 10*1024LL);
     conf_init_real     (&server_conf[CNF_BUMPMULT]             , 1.5);
     conf_init_int      (&server_conf[CNF_BUMPDAYS]             , 2);
     conf_init_string   (&server_conf[CNF_TPCHANGER]            , "");
@@ -1026,8 +1008,8 @@ read_confline(
 t_conf_var holding_var [] = {
    { CONF_DIRECTORY, CONFTYPE_STRING, read_string, HOLDING_DISKDIR  , NULL },
    { CONF_COMMENT  , CONFTYPE_STRING, read_string, HOLDING_COMMENT  , NULL },
-   { CONF_USE      , CONFTYPE_INT   , read_int   , HOLDING_DISKSIZE , validate_use },
-   { CONF_CHUNKSIZE, CONFTYPE_INT   , read_int   , HOLDING_CHUNKSIZE, validate_chunksize },
+   { CONF_USE      , CONFTYPE_AM64  , read_am64  , HOLDING_DISKSIZE , validate_use },
+   { CONF_CHUNKSIZE, CONFTYPE_AM64  , read_am64  , HOLDING_CHUNKSIZE, validate_chunksize },
    { CONF_UNKNOWN  , CONFTYPE_INT   , NULL       , HOLDING_HOLDING  , NULL }
 };
 
@@ -1053,7 +1035,7 @@ get_holdingdisk(
     amfree(prefix);
     get_conftoken(CONF_NL);
 
-    hdcur.disksize = holdingdisk_get_disksize((&hdcur));
+    hdcur.disksize = holdingdisk_get_disksize(&hdcur);
     save_holdingdisk();
 
     allow_overwrites = save_overwrites;
@@ -1065,12 +1047,12 @@ init_holdingdisk_defaults(
 {
     conf_init_string(&hdcur.value[HOLDING_COMMENT]  , "");
     conf_init_string(&hdcur.value[HOLDING_DISKDIR]  , "");
-    conf_init_am64  (&hdcur.value[HOLDING_DISKSIZE] , (off_t)0);
+    conf_init_am64(&hdcur.value[HOLDING_DISKSIZE] , (off_t)0);
                     /* 1 Gb = 1M counted in 1Kb blocks */
-    conf_init_am64  (&hdcur.value[HOLDING_CHUNKSIZE], (off_t)1024*1024);
+    conf_init_am64(&hdcur.value[HOLDING_CHUNKSIZE], (off_t)1024*1024);
 
     hdcur.up = (void *)0;
-    hdcur.disksize = 0l;
+    hdcur.disksize = 0LL;
 }
 
 static void
@@ -1093,7 +1075,7 @@ t_conf_var dumptype_var [] = {
    { CONF_AUTH              , CONFTYPE_STRING   , read_string , DUMPTYPE_SECURITY_DRIVER   , NULL },
    { CONF_BUMPDAYS          , CONFTYPE_INT      , read_int    , DUMPTYPE_BUMPDAYS          , NULL },
    { CONF_BUMPMULT          , CONFTYPE_REAL     , read_real   , DUMPTYPE_BUMPMULT          , NULL },
-   { CONF_BUMPSIZE          , CONFTYPE_INT      , read_int    , DUMPTYPE_BUMPSIZE          , NULL },
+   { CONF_BUMPSIZE          , CONFTYPE_AM64     , read_am64   , DUMPTYPE_BUMPSIZE          , NULL },
    { CONF_BUMPPERCENT       , CONFTYPE_INT      , read_int    , DUMPTYPE_BUMPPERCENT       , NULL },
    { CONF_COMPRATE          , CONFTYPE_REAL     , get_comprate, DUMPTYPE_COMPRATE          , NULL },
    { CONF_COMPRESS          , CONFTYPE_INT      , get_compress, DUMPTYPE_COMPRESS          , NULL },
@@ -1114,7 +1096,7 @@ t_conf_var dumptype_var [] = {
    { CONF_SKIP_INCR         , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_SKIP_INCR         , NULL },
    { CONF_STARTTIME         , CONFTYPE_TIME     , read_time   , DUMPTYPE_START_T           , NULL },
    { CONF_STRATEGY          , CONFTYPE_INT      , get_strategy, DUMPTYPE_STRATEGY          , NULL },
-   { CONF_TAPE_SPLITSIZE    , CONFTYPE_INT      , read_int    , DUMPTYPE_TAPE_SPLITSIZE    , validate_positive0 },
+   { CONF_TAPE_SPLITSIZE    , CONFTYPE_AM64     , read_am64   , DUMPTYPE_TAPE_SPLITSIZE    , validate_positive0 },
    { CONF_SPLIT_DISKBUFFER  , CONFTYPE_STRING   , read_string , DUMPTYPE_SPLIT_DISKBUFFER  , NULL },
    { CONF_ESTIMATE          , CONFTYPE_INT      , get_estimate, DUMPTYPE_ESTIMATE          , NULL },
    { CONF_SRV_ENCRYPT       , CONFTYPE_STRING   , read_string , DUMPTYPE_SRV_ENCRYPT       , NULL },
@@ -1124,7 +1106,7 @@ t_conf_var dumptype_var [] = {
    { CONF_SSH_KEYS          , CONFTYPE_STRING   , read_string , DUMPTYPE_SSH_KEYS          , NULL },
    { CONF_SRVCOMPPROG       , CONFTYPE_STRING   , read_string , DUMPTYPE_SRVCOMPPROG       , NULL },
    { CONF_CLNTCOMPPROG      , CONFTYPE_STRING   , read_string , DUMPTYPE_CLNTCOMPPROG      , NULL },
-   { CONF_FALLBACK_SPLITSIZE, CONFTYPE_INT      , read_int    , DUMPTYPE_FALLBACK_SPLITSIZE, NULL },
+   { CONF_FALLBACK_SPLITSIZE, CONFTYPE_AM64     , read_am64   , DUMPTYPE_FALLBACK_SPLITSIZE, NULL },
    { CONF_SRV_DECRYPT_OPT   , CONFTYPE_STRING   , read_string , DUMPTYPE_SRV_DECRYPT_OPT   , NULL },
    { CONF_CLNT_DECRYPT_OPT  , CONFTYPE_STRING   , read_string , DUMPTYPE_CLNT_DECRYPT_OPT  , NULL },
    { CONF_UNKNOWN           , CONFTYPE_INT      , NULL        , DUMPTYPE_DUMPTYPE          , NULL }
@@ -1221,7 +1203,7 @@ init_dumptype_defaults(void)
     conf_init_int      (&dpcur.value[DUMPTYPE_MAXDUMPS]          , server_conf[CNF_MAXDUMPS].v.i);
     conf_init_int      (&dpcur.value[DUMPTYPE_MAXPROMOTEDAY]     , 10000);
     conf_init_int      (&dpcur.value[DUMPTYPE_BUMPPERCENT]       , server_conf[CNF_BUMPPERCENT].v.i);
-    conf_init_int      (&dpcur.value[DUMPTYPE_BUMPSIZE]          , server_conf[CNF_BUMPSIZE].v.i);
+    conf_init_am64     (&dpcur.value[DUMPTYPE_BUMPSIZE]          , server_conf[CNF_BUMPSIZE].v.am64);
     conf_init_int      (&dpcur.value[DUMPTYPE_BUMPDAYS]          , server_conf[CNF_BUMPDAYS].v.i);
     conf_init_real     (&dpcur.value[DUMPTYPE_BUMPMULT]          , server_conf[CNF_BUMPMULT].v.r);
     conf_init_time     (&dpcur.value[DUMPTYPE_START_T]           , 0);
@@ -1232,8 +1214,8 @@ init_dumptype_defaults(void)
     conf_init_string   (&dpcur.value[DUMPTYPE_SRV_DECRYPT_OPT]   , "-d");
     conf_init_string   (&dpcur.value[DUMPTYPE_CLNT_DECRYPT_OPT]  , "-d");
     conf_init_rate     (&dpcur.value[DUMPTYPE_COMPRATE]          , 0.50, 0.50);
-    conf_init_long     (&dpcur.value[DUMPTYPE_TAPE_SPLITSIZE]    , 0);
-    conf_init_long     (&dpcur.value[DUMPTYPE_FALLBACK_SPLITSIZE], 10 * 1024);
+    conf_init_am64     (&dpcur.value[DUMPTYPE_TAPE_SPLITSIZE]    , 0LL);
+    conf_init_am64     (&dpcur.value[DUMPTYPE_FALLBACK_SPLITSIZE], 10 * 1024LL);
     conf_init_string   (&dpcur.value[DUMPTYPE_SPLIT_DISKBUFFER]  , NULL);
     conf_init_bool     (&dpcur.value[DUMPTYPE_RECORD]            , 1);
     conf_init_bool     (&dpcur.value[DUMPTYPE_SKIP_INCR]         , 0);

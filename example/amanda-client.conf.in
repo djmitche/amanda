@@ -16,16 +16,16 @@
 
 conf "@DEFAULT_CONFIG@"		# your config name
 
-index_server "@INDEX_SERVER@"	# your amindexd server
-tape_server  "@TAPE_SERVER@"	# your amidxtaped server
-tapedev "@TAPEDEV@"		# your tape device
+index_server "@DEFAULT_SERVER@"	# your amindexd server
+tape_server  "@DEFAULT_TAPE_SERVER@"	# your amidxtaped server
+tapedev      "@DEFAULT_TAPE_DEVICE@"		# your tape device
 
 #   auth	- authentication scheme to use between server and client.
 #		  Valid values are "bsd", "krb4", "krb5" and "ssh".  
 #		  Default: [auth "bsd"]
 auth "bsd"
 
-ssk_keys ""			# your ssh keys file if you use ssh auth
+ssh_keys ""			# your ssh keys file if you use ssh auth
 
 # You may include other amanda configuration files, so you can share
 # dumptypes, tapetypes and interface definitions among several

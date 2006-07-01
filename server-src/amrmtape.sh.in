@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@SHELL@
 #
 # amrmtape.sh
 # Time-stamp: <96/10/23 12:07:21 adrian>

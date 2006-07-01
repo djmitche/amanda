@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: fileheader.c,v 1.39 2006/06/22 17:16:38 martinea Exp $
+ * $Id: fileheader.c,v 1.40 2006/07/01 00:10:38 paddy_s Exp $
  */
 
 #include "amanda.h"
@@ -546,7 +546,7 @@ validate_parts(
 	    /*NOTREACHED*/
 	}
 
-	if (partnum > totalparts) {
+	if (partnum > totalparts && totalparts >= 0) {
 	    error("Invalid partnum (%d) > totalparts (%d)\n",
 			partnum, totalparts);
 	    /*NOTREACHED*/

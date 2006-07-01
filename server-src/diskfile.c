@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.88 2006/06/22 20:41:33 martinea Exp $
+ * $Id: diskfile.c,v 1.89 2006/07/01 00:10:38 paddy_s Exp $
  *
  * read disklist file
  */
@@ -584,12 +584,18 @@ parse_diskline(
     disk->ssh_keys           = dumptype_get_ssh_keys(dtype);
     disk->comprate[0]	     = dumptype_get_comprate(dtype)[0];
     disk->comprate[1]	     = dumptype_get_comprate(dtype)[1];
-    disk->record	     = dumptype_get_record(dtype) == 1;
-    disk->skip_incr	     = dumptype_get_skip_incr(dtype) == 1;
-    disk->skip_full	     = dumptype_get_skip_full(dtype) == 1;
-    disk->to_holdingdisk     = dumptype_get_to_holdingdisk(dtype) == 1;
-    disk->kencrypt	     = dumptype_get_kencrypt(dtype) == 1;
-    disk->index		     = dumptype_get_index(dtype) == 1;
+
+    /*
+     * Boolean parameters with no value (Appears here as value 2) defaults
+     * to TRUE for backward compatibility and for logical consistency.
+     */
+    disk->record	     = dumptype_get_record(dtype) != 0;
+    disk->skip_incr	     = dumptype_get_skip_incr(dtype) != 0;
+    disk->skip_full	     = dumptype_get_skip_full(dtype) != 0;
+    disk->to_holdingdisk     = dumptype_get_to_holdingdisk(dtype) != 0;
+    disk->kencrypt	     = dumptype_get_kencrypt(dtype) != 0;
+    disk->index		     = dumptype_get_index(dtype) != 0; 
+
     disk->todo		     = 1;
 
     skip_whitespace(s, ch);

@@ -1,18 +1,20 @@
-#!/bin/sh
+#!@SHELL@
 #
-# amsslcrypt - crypto helper using OpenSSL
-# Usage: amsslcrypt [-d]
+# amcrypt-ossl.sh - crypto helper using OpenSSL
+# Usage: amcrypt-ossl.sh [-d]
 #
 
 # change these as needed
-OPENSSL=/usr/bin/openssl	# whatever's in $PATH
+OPENSSL=			# whatever's in $PATH
 CIPHER=aes-256-cbc		# see `openssl help` for more ciphers
-AMANDA_HOME=~@CLIENT_LOGIN@
+AMANDA_HOME=~amandabackup
+RANDFILE=$AMANDA_HOME/.rnd
+export RANDFILE
 PASSPHRASE=$AMANDA_HOME/.am_passphrase	# required
 
-PATH=/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/bin
+# where might openssl be?
+PATH=/bin:/usr/bin:/usr/local/bin:/usr/ssl/bin:/usr/local/ssl/bin
 export PATH
-
 ME=`basename "$0"`
 
 if [ -z "${OPENSSL:=`which openssl`}" ]; then

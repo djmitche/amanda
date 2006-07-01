@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.67 2006/06/06 23:13:26 paddy_s Exp $
+ * $Id: conffile.h,v 1.68 2006/07/01 00:10:38 paddy_s Exp $
  *
  * interface for config file reading code
  */
@@ -274,12 +274,12 @@ typedef struct holdingdisk_s {
     off_t disksize;
 } holdingdisk_t;
 
-#define holdingdisk_get_name(holdingdisk) holdingdisk->name
-#define holdingdisk_get_seen(holdingdisk) holdingdisk->seen
-#define holdingdisk_get_comment(holdingdisk) holdingdisk->value[HOLDING_COMMENT].v.s
-#define holdingdisk_get_diskdir(holdingdisk) holdingdisk->value[HOLDING_DISKDIR].v.s
-#define holdingdisk_get_disksize(holdingdisk) holdingdisk->value[HOLDING_DISKSIZE].v.am64
-#define holdingdisk_get_chunksize(holdingdisk) holdingdisk->value[HOLDING_CHUNKSIZE].v.am64
+#define holdingdisk_get_name(holdingdisk) (holdingdisk)->name
+#define holdingdisk_get_seen(holdingdisk) (holdingdisk)->seen
+#define holdingdisk_get_comment(holdingdisk) (holdingdisk)->value[HOLDING_COMMENT].v.s
+#define holdingdisk_get_diskdir(holdingdisk) (holdingdisk)->value[HOLDING_DISKDIR].v.s
+#define holdingdisk_get_disksize(holdingdisk) (holdingdisk)->value[HOLDING_DISKSIZE].v.am64
+#define holdingdisk_get_chunksize(holdingdisk) (holdingdisk)->value[HOLDING_CHUNKSIZE].v.am64
 
 /* for each column we define some values on how to
  * format this column element

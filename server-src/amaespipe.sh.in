@@ -1,4 +1,4 @@
-#! /bin/sh
+#! @SHELL@
 #
 # Copyright (c) 2005 Zmanda Inc.  All Rights Reserved.
 # 

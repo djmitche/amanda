@@ -1,6 +1,6 @@
 2006-06-29  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c (label_of_current_slot): Close the tapefd if
-							 the label mismatch.
+	                                                 the label mismatch.
 
 2006-06-29  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/find.c (strip_failed_chunks):
@@ -10,6 +10,10 @@
 
 2006-06-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/security-util.c: Improve message for .amandahosts.
+
+2006-06-27  Ian Turner <ian@zmanda.com>
+	* common-src/fileheader.c: Fix a bug where spanned dumps would 
+	  always fail.
 
 2006-06-27  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amcheck.c: Fix test for holdingdisk negative size.
@@ -34,7 +38,7 @@
 
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/extract_list.c: Do the cleanup of the extract list
-				      at the extraction time
+	                              at the extraction time
 	* oldrecover-src/extract_list.c: Ditto.
 
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
@@ -62,7 +66,7 @@
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/extract_list.c (is_empty_dir): New function.
 	* recover-src/extract_list.c: Print a warning if cwd is not empty.
-	
+
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amadmin.c: Allow 'p' and 'P' in --sort argument.
 
@@ -77,15 +81,15 @@
 
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amindexd.c (uncompress_file): Set LC_ALL=C before
-						   executing sort.
+	                                           executing sort.
 
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c (wait_children, kill_children): New function.
 	* server-src/driver.c (wait_for_children): Use wait_children and
-						   kill_children.
+	                                           kill_children.
 	* server-src/driver.c (main): Use wait_children.
 	* server-src/driverio.c (taper_cmd, chunker_cmd): Close socket on QUIT
-							  or ABORT command.
+	                                                  or ABORT command.
 
 2006-06-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/amfeatures.c (am_init_feature_set): Set
@@ -106,21 +110,72 @@
 	* client-src/clientconf.c (parse_client_conf): Fix segmentation fault.
 	* server-src/conffile.c (parse_server_conf): Fix segmentation fault.
 
-2006-06-20  Jean-Louis Martineau <martineau@zmanda.com>
-	* common-src/security-util.c: ignore EINTR in net_writev.
+2006-06-21  Kevin Till <ktill@zmanda.com>
+        * changer-src/chg-juke.sh.in
+        * changer-src/chg-manual.sh.in
+        * changer-src/chg-mcutil.sh.in
+        * changer-src/chg-multi.sh.in
+        * changer-src/chg-mtx.sh.in
+        * changer-src/chg-rait.sh.in
+        * changer-src/chg-disk.sh.in
+        * changer-src/chg-zd-mtx.sh.in
+        * changer-src/chg-null.sh.in
+        * changer-src/chg-chs.sh.in
+        * client-src/patch-system.sh.in
+        * amplot/amplot.sh.in
+        * server-src/amcrypt-ossl.sh.in
+        * server-src/amrmtape.sh.in
+        * server-src/amcleanup.sh.in
+        * server-src/amverifyrun.sh.in
+        * server-src/amaespipe.sh.in
+        * server-src/amdump.sh.in
+        * server-src/amcrypt.sh.in
+        * server-src/amcrypt-ossl-asym.sh.in
+        * server-src/amcheckdb.sh.in
+        * server-src/amfreetapes.sh.in
+        * server-src/amverify.sh.in
+         change /bin/sh to @SHELL@ for configure to pick up the correct
+         shell. Sourceforge bug 1466655
+	* man/xml-source/amcrypt-ossl-asym.8.xml: it's backup-privkey.pem
+
+2006-06-20  Kevin Till <ktill@zmanda.com>
+        * common-src/security-util.c: ignore EINTR in net_writev
+	  patch by Jean-Louis Martineau.
+
+2006-06-20  John Franks <jrfranks@zmanda.com>
+	* server-src/conffile.c:
+		Remove Duplicate keyword table entries and alphabetize
+		to make future duplicates easier to spot...
+
+	* server-src/taper.c:
+		Fix compiler warnings when no mmap function is present.
+
+2006-06-20  John Franks <jrfranks@zmanda.com>
+	* server-src/diskfile.c:
+		Default boolean values without parameters to yes if
+		no value is present in configuration file.  This
+		maintains backward compatibility and is logical since
+		a value such as "index" reads as an assertion of fact.
 
 2006-06-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* docs/wishlist.txt: Remove features done in 2.5.0/2.5.1
 
 2006-06-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/xml-source/amanda.conf.5.xml: amrecover_check_label and
-					    amrecover_do_fsf default to yes.
+	                                    amrecover_do_fsf default to yes.
 	* server-src/conffile (init_dumptype_defaults): DUMPTYPE_INDEX set to 1.
 	* server-src/diskfile.c (parse_diskline): index set from
-						  dumptype_get_index.
+	                                          dumptype_get_index.
 
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amstatus.pl.in: Match quotes in DONE line.
+
+2006-06-16  Kevin Till <ktill@zmanda.com>
+        * example/amanda-client.conf.in:
+         correct DEFAULT_TAPE_SERVER/DEFAULT_SERVER
+	* server-src/amcrypt-ossl-asym.sh.in:
+          set RANDFILE for openssl to place entropy file.
+        * server-src/amcrypt-ossl.sh.in: ditto
 
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c   : Use strcasecmp to compare auth.
@@ -136,7 +191,7 @@
 
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/bsd-security.c (stream_read_callback): Send error to the
-							    callback.
+	                                                    callback.
 
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/extract_list.c: Typo.
@@ -154,27 +209,33 @@
 
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/amfeatures.c (am_init_feature_set): Set
-							 fe_amrecover_message.
+	                                                 fe_amrecover_message.
 	* common-src/amfeatures.h (am_feature_e): Add fe_amrecover_message.
 	* common-src/arglist.h (printf_arglist_function3): Prototype.
 
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c (send_message): New function that send message
-						to stderr and/or amrecover.
+	                                        to stderr and/or amrecover.
 	* restore-src/restore.c: Call send_message on some error path.
 
 2006-06-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/event.c (event_loop_wait, event_wait): Take an
-					 event_handle_t * as parameter.
+	                                 event_handle_t * as parameter.
 	* common-src/event.h: New prototype.
 	* common-src/bsd-security.c: Call event_wait(bs->ev_read).
 	* common-src/krb4-security.c: Call event_wait(ks->ev_read).
 	* common-src/krb5-security.c: Call event_wait(ks->ev_read).
 	* common-src/security-util.c: Call event_wait(ss->ev_read).
 
+2006-06-15  Kevin Till <ktill@zmanda.com>
+        * man/xml-source/amcrypt-ossl-asym.8.xml: it's .am_passphrase
+	* server-src/amcrypt-ossl-asym.sh.in: export PATH
+        * server-src/amcrypt-ossl.sh.in: export PATH
+
+
 2006-06-15  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amcheck.c: -w doesn't change the test selection.
-	* man/xml-source/amcheck.8.xml: Document.
+	* man/xml-source/amcheck.8.xml
 
 2006-06-15  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/planner.c: Log empty disklist and no DLE selected.
@@ -185,16 +246,16 @@
 
 2006-06-14  Jean-Louis Martineau <martineau@zmanda.com>
 	* changer-src/chg-disk.sh.in: Return the number of slot in output of
-				      the -info command.
+	                              the -info command.
 	* changer-src/chg-zd-mtx.sh.in: Ditto.
 
 2006-06-14  Jean-Louis Martineau <martineau@zmanda.com>
 	* changer-src/chg-zd-mtx.sh.in: Accept changerfile that already
-					have the .conf suffix.
+	                                have the .conf suffix.
 
 2006-06-13  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c (s_ackwait): Resend the REP on receive of a
-					     duplicate REQ.
+	                                     duplicate REQ.
 
 2006-06-13  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/security-util.c (bsd_recv_security_ok): Set error only
@@ -203,11 +264,16 @@
 2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c: usetimestamps is a warning.
 
+2006-06-12  Kevin Till <ktill@zmanda.com>
+        * common-src/security-util.c: if host is 127.0.0.1 and either
+          localhost or localhost.domain is in .amandahost, hostmatch passes.
+        * common-src/security-util.h: update check_user_amandahosts prototype
+
 2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c (process_writenetfd): Close the pipe if the
-						      security_stream is closed.
+	                                              security_stream is closed.
 	* recover-src/extract_list.c: Improve message if we don't get thei
-				      FEATURE line from amidxtaped.
+	                              FEATURE line from amidxtaped.
 
 2006-06-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/amrecover.c: Read amanda-client.conf and
@@ -238,12 +304,12 @@
 
 2006-06-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/stream.c (stream_client_internal): Get errno set
-							correctly.
-	* server-src/driver.c (handle_chunker_result): Don't asserti(0) on
-			      receive of a TRYAGAIN from a chunker, but set
-			      chunker->result.
+	                                                correctly.
+	* server-src/driver.c (handle_chunker_result): Don't assert(0) on
+	                      receive of a TRYAGAIN from a chunker, but set
+	                      chunker->result.
 	* server-src/dumper.c: Try gethostbyname("localhost") before calling
-			       stream_client and log appropriate message.
+	                       stream_client and log appropriate message.
 
 2006-06-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amcheck.c: Report ERROR if gethostbyname("localhost")

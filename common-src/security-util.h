@@ -28,7 +28,7 @@
  */
 
 /*
- * $Id: security-util.h,v 1.4 2006/06/01 14:54:39 martinea Exp $
+ * $Id: security-util.h,v 1.5 2006/07/01 00:10:38 paddy_s Exp $
  *
  */
 
@@ -241,6 +241,7 @@ char *	check_user_ruserok    (const char *host,
 				struct passwd *pwd,
 				const char *user);
 char *	check_user_amandahosts(const char *host,
+			        struct in_addr addr,
 				struct passwd *pwd,
 				const char *user,
 				const char *service);

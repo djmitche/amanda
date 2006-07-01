@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.133 2006/06/12 15:34:49 martinea Exp $
+/* $Id: taper.c,v 1.134 2006/07/01 00:10:38 paddy_s Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -473,9 +473,6 @@ create_split_buffer(
     char *id_string)
 {
     char *buff_err = NULL;
-    void *nulls = NULL;
-    char *quoted;
-    off_t c;
     
     /* don't bother if we're not actually splitting */
     if (splitsize <= (off_t)0) {
@@ -487,6 +484,10 @@ create_split_buffer(
 #ifdef HAVE_MMAP
 #ifdef HAVE_SYS_MMAN_H
     if (strcmp(split_diskbuffer, "NULL")) {
+	void *nulls = NULL;
+	char *quoted;
+	off_t c;
+
 	splitbuffer_path = vstralloc(split_diskbuffer,
 				     "/splitdump_buffer_XXXXXX",
 				     NULL);
@@ -537,10 +538,12 @@ create_split_buffer(
 	buff_err = stralloc("no split_diskbuffer specified");
     }
 #else
+    (void)split_diskbuffer;	/* Quite unused parameter warning */
     buff_err = stralloc("mman.h not available");
     goto fallback;
 #endif
 #else
+    (void)split_diskbuffer;	/* Quite unused parameter warning */
     buff_err = stralloc("mmap not available");
     goto fallback;
 #endif

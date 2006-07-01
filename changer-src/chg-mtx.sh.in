@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!@SHELL@ 
 #
 # Exit Status:
 # 0 Alles Ok
