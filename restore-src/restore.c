@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.43 2006/07/05 11:25:33 martinea Exp $
+ * $Id: restore.c,v 1.44 2006/07/05 11:27:35 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1354,7 +1354,9 @@ load_manual_tape(
 		/*NOTREACHED*/
 	    } else if (strcmp("OK\r", input) == 0) {
 	    } else if (strncmp("TAPE ", input, 5) == 0) {
-		if (sscanf(input, "TAPE %s\r", *cur_tapedev) != 1) {
+		amfree(*cur_tapedev);
+		*cur_tapedev = alloc(1025);
+		if (sscanf(input, "TAPE %1024s\r", *cur_tapedev) != 1) {
 		    error("Got bad response from amrecover: %s", input);
 		    /*NOTREACHED*/
 		}
