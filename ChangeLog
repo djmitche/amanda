@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 410
+	* restore-src/restore.c (restore): Check for tmp_filename.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 234
 	* server-src/driver.c: Check for h and activehd >= 0.
 

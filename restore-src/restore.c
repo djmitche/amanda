@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.46 2006/07/05 14:52:25 martinea Exp $
+ * $Id: restore.c,v 1.47 2006/07/05 15:50:47 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1181,7 +1181,8 @@ restore(
 		}
 		else{
 		    fprintf(stderr, "Older restore is larger, using that\n");
-		    unlink(tmp_filename);
+		    if (tmp_filename)
+			unlink(tmp_filename);
 		    amfree(tempdump->file);
 		    amfree(tempdump);
 		    amfree(tmp_filename);
