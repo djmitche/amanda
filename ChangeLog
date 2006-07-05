@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 20
+	* server-src/amadmin.c (tape): Limit nb_days to 10000.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 21
 	* server-src/amadmin.c (balance): Test 'later' after it is set.
 

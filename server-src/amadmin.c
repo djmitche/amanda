@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.116 2006/07/05 11:03:33 martinea Exp $
+ * $Id: amadmin.c,v 1.117 2006/07/05 11:05:40 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -822,6 +822,8 @@ tape(
 	    printf("days must be an integer bigger than 0\n");
 	    return;
 	}
+	if (nb_days > 10000)
+	    nb_days = 10000;
     }
 
     runtapes = getconf_int(CNF_RUNTAPES);
