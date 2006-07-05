@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.117 2006/07/05 11:05:40 martinea Exp $
+ * $Id: amadmin.c,v 1.118 2006/07/05 11:15:57 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -278,8 +278,12 @@ seqdatestr(
 
     tm = localtime(&t);
 
-    snprintf(str, SIZEOF(str),
-		"%2d/%02d %3s", tm->tm_mon+1, tm->tm_mday, dow[tm->tm_wday]);
+    if (tm)
+	snprintf(str, SIZEOF(str),
+		 "%2d/%02d %3s", tm->tm_mon+1, tm->tm_mday, dow[tm->tm_wday]);
+    else
+	strcpy(str, "BAD DATE");
+
     return str;
 }
 

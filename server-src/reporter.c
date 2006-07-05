@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.121 2006/07/05 11:08:01 martinea Exp $
+ * $Id: reporter.c,v 1.122 2006/07/05 11:15:57 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -2243,8 +2243,12 @@ handle_success(
 
 	get_info(hostname, diskname, &inf);
         tm = localtime(&inf.inf[level].date);
-        Idatestamp = 10000*(tm->tm_year+1900) +
-                      100*(tm->tm_mon+1) + tm->tm_mday;
+	if (tm) {
+            Idatestamp = 10000*(tm->tm_year+1900) +
+			 100*(tm->tm_mon+1) + tm->tm_mday;
+	} else {
+	    Idatestamp = 19000101;
+	}
 
 	if(atoi(datestamp) == Idatestamp) {
 	    /* grab original size from record */

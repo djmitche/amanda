@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.34 2006/06/09 17:29:10 martinea Exp $
+ * $Id: util.c,v 1.35 2006/07/05 11:15:56 martinea Exp $
  */
 
 #include "amanda.h"
@@ -403,6 +403,9 @@ construct_datestamp(
 	when = *t;
     }
     tm = localtime(&when);
+    if (!tm)
+	return stralloc("19000101");
+
     snprintf(datestamp, SIZEOF(datestamp),
              "%04d%02d%02d", tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
     return stralloc(datestamp);
@@ -425,6 +428,9 @@ construct_timestamp(
 	when = *t;
     }
     tm = localtime(&when);
+    if (!tm)
+	return stralloc("19000101000000");
+
     snprintf(timestamp, SIZEOF(timestamp),
 	     "%04d%02d%02d%02d%02d%02d",
 	     tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
@@ -1857,7 +1863,12 @@ conf_print(
 
     case CONFTYPE_TIME:
 	stm = localtime(&val->v.t);
-	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print), "%d%02d%02d",stm->tm_hour, stm->tm_min, stm->tm_sec);
+	if (stm) {
+	    snprintf(buffer_conf_print, SIZEOF(buffer_conf_print),
+		     "%d%02d%02d", stm->tm_hour, stm->tm_min, stm->tm_sec);
+	} else {
+	    strcpy(buffer_conf_print, "00000");
+	}
 	break;
 
     case CONFTYPE_SL:

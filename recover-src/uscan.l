@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uscan.l,v 1.26 2006/05/25 01:47:14 johnfranks Exp $
+ * $Id: uscan.l,v 1.27 2006/07/05 11:15:56 martinea Exp $
  *
  * lexer for amrecover interactive language
  */
@@ -184,14 +184,16 @@ ll_parse_date(
 {
     time_t now;
     struct tm *t;
-    int y, m, d, h=0, mi=0, s=0;
+    int y=2000, m=0, d=1, h=0, mi=0, s=0;
     int ret;
 
     now = time((time_t *)NULL);
     t = localtime(&now);
-    y = 1900+t->tm_year;
-    m = t->tm_mon+1;
-    d = t->tm_mday;
+    if (t) {
+	y = 1900+t->tm_year;
+	m = t->tm_mon+1;
+	d = t->tm_mday;
+    }
     switch(type) {
     case 1:
 	if (sscanf(text, "---%d", &d) != 1) {

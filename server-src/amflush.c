@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.86 2006/06/22 20:41:33 martinea Exp $
+ * $Id: amflush.c,v 1.87 2006/07/05 11:15:57 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -91,6 +91,7 @@ main(
     int    new_argc,   my_argc;
     char **new_argv, **my_argv;
     char *errstr;
+    struct tm *tm;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -281,7 +282,11 @@ main(
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
     today = time(NULL);
-    strftime(date_string, 100, "%a %b %e %H:%M:%S %Z %Y", localtime (&today));
+    tm = localtime(&today);
+    if (tm)
+	strftime(date_string, 100, "%a %b %e %H:%M:%S %Z %Y", tm);
+    else
+	error("BAD DATE"); /* should never happen */
     fprintf(stderr, "amflush: start at %s\n", date_string);
     fprintf(stderr, "amflush: datestamp %s\n", amflush_timestamp);
     log_add(L_START, "date %s", amflush_timestamp);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.67 2006/06/27 19:22:53 martinea Exp $
+ * $Id: amrecover.c,v 1.68 2006/07/05 11:15:56 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -305,6 +305,7 @@ main(
     int response_error;
     int new_argc;
     char **new_argv;
+    struct tm *tm;
 
     safe_fd(-1, 0);
 
@@ -511,7 +512,12 @@ main(
 
     /* set the date of extraction to be today */
     (void)time(&timer);
-    strftime(dump_date, sizeof(dump_date), "%Y-%m-%d", localtime(&timer));
+    tm = localtime(&timer);
+    if (tm) 
+	strftime(dump_date, sizeof(dump_date), "%Y-%m-%d", localtime(&timer));
+    else
+	error("BAD DATE");
+
     printf("Setting restore date to today (%s)\n", dump_date);
     line = stralloc2("DATE ", dump_date);
     if (converse(line) == -1) {

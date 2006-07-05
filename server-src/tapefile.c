@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: tapefile.c,v 1.35 2006/06/06 23:13:26 paddy_s Exp $
+ * $Id: tapefile.c,v 1.36 2006/07/05 11:15:57 martinea Exp $
  *
  * routines to read and write the amanda active tape list
  */
@@ -418,7 +418,7 @@ static time_t
 stamp2time(
     char *datestamp)
 {
-    struct tm tm;
+    struct tm *tm;
     time_t now;
     char date[9];
     int dateint;
@@ -427,11 +427,22 @@ stamp2time(
     date[8] = '\0';
     dateint = atoi(date);
     now = time(0);
-    tm = *localtime(&now);	/* initialize sec/min/hour & gmtoff */
+    tm = localtime(&now);	/* initialize sec/min/hour & gmtoff */
 
-    tm.tm_year = ( dateint          / 10000) - 1900;
-    tm.tm_mon  = ((dateint % 10000) /   100) - 1;
-    tm.tm_mday = ((dateint %   100)        );
+    if (!tm) {
+	tm = alloc(SIZEOF(struct tm));
+	tm->tm_sec   = 0;
+	tm->tm_min   = 0;
+	tm->tm_hour  = 0;
+	tm->tm_wday  = 0;
+	tm->tm_yday  = 0;
+	tm->tm_isdst = 0;
+    }
 
-    return mktime(&tm);
+
+    tm->tm_year = ( dateint          / 10000) - 1900;
+    tm->tm_mon  = ((dateint % 10000) /   100) - 1;
+    tm->tm_mday = ((dateint %   100)        );
+
+    return mktime(tm);
 }
