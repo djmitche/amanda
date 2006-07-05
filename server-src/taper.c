@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.134 2006/07/01 00:10:38 paddy_s Exp $
+/* $Id: taper.c,v 1.135 2006/07/05 19:52:25 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -814,6 +814,11 @@ file_reader_side(
 	        /*NOTREACHED*/
 	    }
 
+	    if (fallback_splitsize < 128 ||
+		fallback_splitsize > 64 * 1024 * 1024) {
+		error("error [bad value for fallback_splitsize]");
+		/*NOTREACHED*/
+	    }
 	    snprintf(level_str, SIZEOF(level_str), "%d", level);
 	    id_string = newvstralloc(id_string, hostname, ":", qdiskname, ".",
 				     level_str, NULL);
