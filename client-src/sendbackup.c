@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.81 2006/06/16 19:05:31 martinea Exp $
+ * $Id: sendbackup.c,v 1.82 2006/07/05 14:54:20 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -356,6 +356,15 @@ main(
     }
     amfree(line);
 
+    if (prog       == NULL ||
+	disk       == NULL ||
+	amdevice   == NULL ||
+	dumpdate   == NULL ||
+	stroptions == NULL) {
+	err_extra = "no valid sendbackup request";
+	goto err;
+    }
+	
     dbprintf(("  parsed request as: program `%s'\n", prog));
     dbprintf(("                     disk `%s'\n", qdisk));
     dbprintf(("                     device `%s'\n", qamdevice));

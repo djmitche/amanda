@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 447 and 449
+	* restore-src/restore.c: Check for valid sendbackup request.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 407
 	* restore-src/restore.c (restore): Set statinfo.st_size.
 
