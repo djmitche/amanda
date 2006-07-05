@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 282
+	* common-src/file.c (rmpdir): Check for p == NULL.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 524
 	* common-src/dgram.c (dgram_send_addr): Set addr_save earlier.
 

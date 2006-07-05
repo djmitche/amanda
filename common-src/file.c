@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.37 2006/07/05 14:51:04 martinea Exp $
+ * $Id: file.c,v 1.38 2006/07/05 19:56:09 martinea Exp $
  *
  * file and directory bashing routines
  */
@@ -143,10 +143,10 @@ rmpdir(
     dir = stralloc(file);
 
     p = strrchr(dir, '/');
-    if(p == dir) rc = 0; /* no /'s */
-    else {
+    if (p == NULL || p == dir) {
+        rc = 0;
+    } else {
 	*p = '\0';
-
 	rc = rmpdir(dir, topdir);
     }
 
