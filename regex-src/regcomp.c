@@ -1060,8 +1060,9 @@ allocset(
 			p->g->setbits = (uch *)realloc((char *)p->g->setbits,
 								nbytes);
 			/* xxx this isn't right if setbits is now NULL */
-			for (i = 0; i < no; i++)
-				p->g->sets[i].ptr = p->g->setbits + css*(i/CHAR_BIT);
+			if (p->g->sets && p->g->setbits)
+				for (i = 0; i < no; i++)
+					p->g->sets[i].ptr = p->g->setbits + css*(i/CHAR_BIT);
 		}
 		if (p->g->sets != NULL && p->g->setbits != NULL)
 			(void) memset((char *)p->g->setbits + (nbytes - css),

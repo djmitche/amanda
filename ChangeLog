@@ -1,4 +1,9 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 551
+	* regex-src/regcomp.c (allocset): Check for p->g->sets
+						and p->g->setbits
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 169, 170, 181
 	* changer-src/chg-scsi.c: Validate input.
 
