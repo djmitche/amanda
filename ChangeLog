@@ -1,4 +1,9 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 17, 32
+	* server-src/amadmin.c (disklist_one): Check localtime return NULL.
+	* server-src/amadmin.c (info_one)    : Ditto.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 2, 83, 128, 384, 478, 504, 505, 506, 517, 566, 567
 	* server-src/amadmin.c (seqdatestr): Check localtime return NULL.
 	* common-src/util.c (construct_datestamp, construct_timestamp,

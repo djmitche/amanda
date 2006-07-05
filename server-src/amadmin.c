@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.118 2006/07/05 11:15:57 martinea Exp $
+ * $Id: amadmin.c,v 1.119 2006/07/05 11:20:41 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -736,14 +736,25 @@ info_one(
     for(lev = 0, sp = &info.inf[0]; lev < 9; lev++, sp++) {
 	if(sp->date < (time_t)0 && sp->label[0] == '\0') continue;
 	tm = localtime(&sp->date);
-	printf("          %d  %04d%02d%02d  %-15s  "
-	       OFF_T_FMT " " OFF_T_FMT " " OFF_T_FMT " " TIME_T_FMT "\n",
-	       lev, tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
-	       sp->label,
-	       (OFF_T_FMT_TYPE)sp->filenum,
-	       (OFF_T_FMT_TYPE)sp->size,
-	       (OFF_T_FMT_TYPE)sp->csize,
-	       (TIME_T_FMT_TYPE)sp->secs);
+	if (tm) {
+	    printf("          %d  %04d%02d%02d  %-15s  "
+		   OFF_T_FMT " " OFF_T_FMT " " OFF_T_FMT " " TIME_T_FMT "\n",
+		   lev, tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
+		   sp->label,
+		   (OFF_T_FMT_TYPE)sp->filenum,
+		   (OFF_T_FMT_TYPE)sp->size,
+		   (OFF_T_FMT_TYPE)sp->csize,
+		   (TIME_T_FMT_TYPE)sp->secs);
+	} else {
+	    printf("          %d  BAD-DATE  %-15s  "
+		   OFF_T_FMT " " OFF_T_FMT " " OFF_T_FMT " " TIME_T_FMT "\n",
+		   lev,
+		   sp->label,
+		   (OFF_T_FMT_TYPE)sp->filenum,
+		   (OFF_T_FMT_TYPE)sp->size,
+		   (OFF_T_FMT_TYPE)sp->csize,
+		   (TIME_T_FMT_TYPE)sp->secs);
+	}
     }
 }
 
@@ -1871,8 +1882,11 @@ disklist_one(
     st = dp->start_t;
         if(st) {
             stm = localtime(&st);
-            printf("        starttime %d:%02d:%02d\n",
-              stm->tm_hour, stm->tm_min, stm->tm_sec);
+	    if (stm) 
+		printf("        starttime %d:%02d:%02d\n",
+		       stm->tm_hour, stm->tm_min, stm->tm_sec);
+	    else
+		printf("        starttime BAD DATE\n");
         }
    
     if(dp->tape_splitsize > (off_t)0) {
