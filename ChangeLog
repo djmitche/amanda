@@ -1,4 +1,9 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 236
+	* server-src/driver.c (handle_dumper_result): Check for
+						      dumper->ev_read != NULL.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 553
 	* restore-src/restore.c (search_a_tape): Check for desired_tape == NULL.
 

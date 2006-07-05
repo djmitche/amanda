@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.185 2006/06/22 17:21:56 martinea Exp $
+ * $Id: driver.c,v 1.186 2006/07/05 13:34:32 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -787,7 +787,6 @@ start_some_dumps(
 	}
 
 	if (dumper->ev_read != NULL) {
-/*	    assert(dumper->ev_read == NULL);*/
 	    event_release(dumper->ev_read);
 	    dumper->ev_read = NULL;
 	}
@@ -1514,8 +1513,10 @@ handle_dumper_result(
 	    /* either EOF or garbage from dumper.  Turn it off */
 	    log_add(L_WARNING, "%s pid %ld is messed up, ignoring it.\n",
 		    dumper->name, (long)dumper->pid);
-	    event_release(dumper->ev_read);
-	    dumper->ev_read = NULL;
+	    if (dumper->ev_read) {
+		event_release(dumper->ev_read);
+		dumper->ev_read = NULL;
+	    }
 	    aclose(dumper->fd);
 	    dumper->busy = 0;
 	    dumper->down = 1;	/* mark it down so it isn't used again */
