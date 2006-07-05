@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 521
+	* client-src/clientconf.c (add_client_conf): Check result of realloc.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 447 and 449
 	* restore-src/restore.c: Check for valid sendbackup request.
 

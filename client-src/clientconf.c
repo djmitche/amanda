@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.11 2006/06/27 19:22:53 martinea Exp $
+ * $Id: clientconf.c,v 1.12 2006/07/05 14:56:07 martinea Exp $
  *
  * read configuration file
  */
@@ -571,6 +571,10 @@ add_client_conf(
 	client_options_size *= 2;
 	client_options = realloc(client_options,
 			        client_options_size * SIZEOF(*client_options));
+	if (client_options == NULL) {
+	    error("Can't realloc client_options: %s\n", strerror(errno));
+	    /*NOTREACHED*/
+	}
 	for(command_option = client_options; command_option->name != NULL;
 							command_option++) {
 	}
