@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.156 2006/07/05 11:09:40 martinea Exp $
+ * $Id: sendsize.c,v 1.157 2006/07/05 13:20:43 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -795,6 +795,10 @@ generic_calc_estimates(
     amfree(cmd);
 
     dumpout = fdopen(pipefd,"r");
+    if (!dumpout) {
+	error("Can't fdopen: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
     match_expr = vstralloc(est->qamname," %d SIZE " OFF_T_FMT, NULL);
     for(size = (off_t)-1; (line = agets(dumpout)) != NULL; free(line)) {
 	if (line[0] == '\0')
@@ -1269,6 +1273,10 @@ getsize_dump(
     if (killctl[0] != -1)
 	aclose(killctl[0]);
     dumpout = fdopen(pipefd[0],"r");
+    if (!dumpout) {
+	error("Can't fdopen: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
 
     for(size = (off_t)-1; (line = agets(dumpout)) != NULL; free(line)) {
 	if (line[0] == '\0')
@@ -1532,6 +1540,10 @@ getsize_smbtar(
     amfree(subdir);
     amfree(error_pn);
     dumpout = fdopen(pipefd,"r");
+    if (!dumpout) {
+	error("Can't fdopen: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
 
     for(size = (off_t)-1; (line = agets(dumpout)) != NULL; free(line)) {
 	if (line[0] == '\0')
@@ -1801,6 +1813,14 @@ getsize_gnutar(
     amfree(file_include);
 
     dumpout = fdopen(pipefd,"r");
+    if (!dumpout) {
+	error("Can't fdopen: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
+    if (!dumpout) {
+	error("Can't fdopen: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
 
     for(size = (off_t)-1; (line = agets(dumpout)) != NULL; free(line)) {
 	if (line[0] == '\0')
@@ -1962,6 +1982,10 @@ getsize_wrapper(
 
     aclose(pipefd[1]);
     dumpout = fdopen(pipefd[0],"r");
+    if (!dumpout) {
+	error("Can't fdopen: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
 
     for(size = (off_t)-1; (line = agets(dumpout)) != NULL; free(line)) {
 	if (line[0] == '\0')

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.142 2006/06/27 21:19:57 martinea Exp $
+ * $Id: amcheck.c,v 1.143 2006/07/05 13:20:44 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -486,6 +486,10 @@ main(
 	}
 	aclose(mailfd);
 	ferr = fdopen(errfd, "r");
+	if (!ferr) {
+	    error("Can't fdopen: %s", strerror(errno));
+	    /*NOTREACHED*/
+	}
 	for(; (line = agets(ferr)) != NULL; free(line)) {
 	    if (line[0] == '\0')
 		continue;

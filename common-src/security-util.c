@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.17 2006/07/01 00:10:38 paddy_s Exp $
+ * $Id: security-util.c,v 1.18 2006/07/05 13:20:43 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -1967,6 +1967,10 @@ check_user_ruserok(
 
 	close(fd[0]);
 	fError = fdopen(fd[1], "w");
+	if (!fError) {
+	    error("Can't fdopen: %s", strerror(errno));
+	    /*NOTREACHED*/
+	}
 	/* pamper braindead ruserok's */
 	if (chdir(pwd->pw_dir) != 0) {
 	    fprintf(fError, "chdir(%s) failed: %s",
@@ -2014,6 +2018,10 @@ check_user_ruserok(
     }
     close(fd[1]);
     fError = fdopen(fd[0], "r");
+    if (!fError) {
+	error("Can't fdopen: %s", strerror(errno));
+	/*NOTREACHED*/
+    }
 
     result = NULL;
     while ((es = agets(fError)) != NULL) {
