@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.88 2006/07/05 13:20:44 martinea Exp $
+ * $Id: amflush.c,v 1.89 2006/07/05 13:22:46 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -323,6 +323,10 @@ main(
 	get_dumpfile(holding_file->name, &file);
 
 	dp = lookup_disk(file.name, file.disk);
+	if (!dp) {
+	    error("dp == NULL");
+	    /*NOTREACHED*/
+	}
 	if (dp->todo == 0) continue;
 
 	fprintf(stderr,

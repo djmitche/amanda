@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 84
+	* server-src/amflush.c (main): Check return of lookup_disk.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 62, 85, 459, 463, 466, 469, 555, 559
 	* common-src/security-util.c: Check result of fdopen.
 	* client-src/sendsize.c     : Ditto.
