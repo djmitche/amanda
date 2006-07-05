@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 372
+	* server-src/reporter.c (nicedate): Check month value.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 20
 	* server-src/amadmin.c (tape): Limit nb_days to 10000.
 

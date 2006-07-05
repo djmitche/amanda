@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.120 2006/06/22 20:41:34 martinea Exp $
+ * $Id: reporter.c,v 1.121 2006/07/05 11:08:01 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1514,6 +1514,8 @@ nicedate(
     year  = numdate / 10000;
     day   = numdate % 100;
     month = (numdate / 100) % 100;
+    if (month > 12 )
+	month = 0;
 
     snprintf(nice, SIZEOF(nice), "%s %d, %d", months[month], day, year);
 
