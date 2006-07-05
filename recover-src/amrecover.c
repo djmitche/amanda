@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.68 2006/07/05 11:15:56 martinea Exp $
+ * $Id: amrecover.c,v 1.69 2006/07/05 13:18:20 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -188,7 +188,7 @@ send_command(
      */
     char *buffer;
 
-    buffer = malloc(strlen(cmd)+3);
+    buffer = alloc(strlen(cmd)+3);
     strncpy(buffer, cmd, strlen(cmd));
     buffer[strlen(cmd)] = '\r';
     buffer[strlen(cmd)+1] = '\n';

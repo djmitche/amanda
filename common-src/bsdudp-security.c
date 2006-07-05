@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsdudp-security.c,v 1.6 2006/06/14 18:56:05 martinea Exp $
+ * $Id: bsdudp-security.c,v 1.7 2006/07/05 13:18:20 martinea Exp $
  *
  * "BSD" security module
  */
@@ -179,7 +179,7 @@ bsdudp_connect(
 	port = (in_port_t)se->s_port;
     amanda_gettimeofday(&sequence_time, &dontcare);
     sequence = (int)sequence_time.tv_sec ^ (int)sequence_time.tv_usec;
-    handle=malloc(15);
+    handle=alloc(15);
     snprintf(handle,14,"000-%08x", newhandle++);
     if (udp_inithandle(&netfd, bh, he, port, handle, sequence) < 0) {
 	(*fn)(arg, &bh->sech, S_ERROR);

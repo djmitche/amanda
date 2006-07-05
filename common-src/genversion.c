@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.33 2006/06/27 19:22:53 martinea Exp $
+ * $Id: genversion.c,v 1.34 2006/07/05 13:18:20 martinea Exp $
  *
  * dump the current Amanda version info
  */
@@ -85,7 +85,11 @@ prvar(
     if(new_len > buf_len) {
 	free(buf);
 	buf_len = new_len;
-	buf = malloc(new_len);		/* let it die if malloc() fails */
+	buf = malloc(new_len);
+	if (!buf) {
+	    error("Not enoug memory");
+	    /*NOTREACH*/
+	}
     }
     snprintf(buf, buf_len, "%s=\\\"%s\\\"", var, val);	/* safe */
     prstr(buf);

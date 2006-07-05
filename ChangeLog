@@ -1,4 +1,13 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 159, 375, 377, 379, 508, 509, 513, 519
+	* common-src/bsd-security.c:    Replace malloc by alloc.
+	* common-src/bsdudp-security.c: Ditto
+	* common-src/genversion.c:      Ditto
+	* recover-src/amrecover.c:      Ditto
+	* restore-src/amidxtaped.c:     Ditto
+	* server-src/reporter.c:        Ditto
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 562 and 475
 	* recover-src/set_commands.c (cd_dir): Check result of rindex.
 	* oldrecover-src/set_commands.c (cd_dir): ditto.

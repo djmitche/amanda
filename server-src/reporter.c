@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.122 2006/07/05 11:15:57 martinea Exp $
+ * $Id: reporter.c,v 1.123 2006/07/05 13:18:21 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -2591,7 +2591,7 @@ prefixstrange (
     static char *str = NULL;
 
     snprintf(number, SIZEOF(number), "%d", level);
-    h=malloc(len_host+1);
+    h=alloc(len_host+1);
     if(host) {
 	strncpy(h, host, len_host);
     } else {
@@ -2601,7 +2601,7 @@ prefixstrange (
     for(l = strlen(h); l < len_host; l++) {
 	h[l] = ' ';
     }
-    d=malloc(len_disk+1);
+    d=alloc(len_disk+1);
     if(disk) {
 	strncpy(d, disk, len_disk);
     } else {
@@ -2632,7 +2632,7 @@ addtostrange (
 {
     strange_t *strange;
 
-    strange = malloc(SIZEOF(strange_t));
+    strange = alloc(SIZEOF(strange_t));
     strange->hostname = stralloc(host);
     strange->diskname = stralloc(disk);
     strange->level    = level;
