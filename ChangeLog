@@ -1,4 +1,9 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 556 and 557
+	* common-src/security-util.c (bsd_recv_security_ok): Check result of
+	  strtok, check service == NULL.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 161
 	* client-src/calcsize.c (calc_load_file): Return NULL if fopen fail.
 	* client-src/calcsize.c (main):  check NULL result from calc_load_file.

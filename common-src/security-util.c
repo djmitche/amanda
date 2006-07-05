@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.18 2006/07/05 13:20:43 martinea Exp $
+ * $Id: security-util.c,v 1.19 2006/07/05 13:29:38 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -854,7 +854,7 @@ bsd_recv_security_ok(
     pkt_t *		pkt)
 {
     char *tok, *security, *body, *result;
-    char *service = NULL, *serviceX;
+    char *service = NULL, *serviceX, *serviceY;
     char *security_line;
     size_t len;
 
@@ -891,7 +891,9 @@ bsd_recv_security_ok(
      */
     if (strncmp(body, "SERVICE", SIZEOF("SERVICE") - 1) == 0) {
 	serviceX = stralloc(body + strlen("SERVICE "));
-	service  = stralloc(strtok(serviceX, "\n"));
+	serviceY = strtok(serviceX, "\n");
+	if (serviceY)
+	    service  = stralloc(serviceY);
 	amfree(serviceX);
     }
 
@@ -908,6 +910,12 @@ bsd_recv_security_ok(
 	    security_seterror(&rh->sech,
 		"host %s: port %d not secure", rh->hostname,
 		ntohs(rh->peer.sin_port));
+	    return (-1);
+	}
+
+	if (!service) {
+	    security_seterror(&rh->sech,
+			      "packet as no SERVICE line");
 	    return (-1);
 	}
 
