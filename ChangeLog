@@ -1,4 +1,9 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 161
+	* client-src/calcsize.c (calc_load_file): Return NULL if fopen fail.
+	* client-src/calcsize.c (main):  check NULL result from calc_load_file.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 84
 	* server-src/amflush.c (main): Check return of lookup_disk.
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.38 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: calcsize.c,v 1.39 2006/07/05 13:24:52 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -243,6 +243,11 @@ main(
 	    use_gtar_excl = use_star_excl = 0;
 	} else {
 	    exclude_sl = calc_load_file(filename);
+	    if (!exclude_sl) {
+		fprintf(stderr,"Cannot open exclude file %s: %s\n", qfilename,
+			strerror(errno));
+		use_gtar_excl = use_star_excl = 0;
+	    }
 	}
 	amfree(qfilename);
 	amfree(filename);
@@ -262,6 +267,11 @@ main(
 	    use_gtar_excl = use_star_excl = 0;
 	} else {
 	    include_sl = calc_load_file(filename);
+	    if (!include_sl) {
+		fprintf(stderr,"Cannot open include file %s: %s\n", qfilename,
+			strerror(errno));
+		use_gtar_excl = use_star_excl = 0;
+	    }
 	}
 	amfree(qfilename);
 	amfree(filename);
@@ -651,6 +661,10 @@ calc_load_file(
     sl_t *sl_list = new_sl();
 
     FILE *file = fopen(filename, "r");
+
+    if (!file) {
+	return NULL;
+    }
 
     while(fgets(pattern, 1025, file)) {
 	if(strlen(pattern)>0 && pattern[strlen(pattern)-1] == '\n')
