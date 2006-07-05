@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.2 2006/05/25 01:47:13 johnfranks Exp $
+ * $Id: set_commands.c,v 1.3 2006/07/05 13:14:58 martinea Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -360,10 +360,12 @@ cd_dir(
 		    dir[strlen(dir)-1] = '\0'; /* remove last / */
 		/* remove everything before the last / */
 		dir1 = rindex(dir,'/');
-		dir1++;
-		dir2 = stralloc(dir1);
-		amfree(dir);
-		dir = dir2;
+		if (dir1) {
+		    dir1++;
+		    dir2 = stralloc(dir1);
+		    amfree(dir);
+		    dir = dir2;
+		}
 	    }
 	}
     }

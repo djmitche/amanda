@@ -1,4 +1,9 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 562 and 475
+	* recover-src/set_commands.c (cd_dir): Check result of rindex.
+	* oldrecover-src/set_commands.c (cd_dir): ditto.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 552
 	* restore-src/restore.c (load_manual_tape): Alloc space for cur_tapedev.
 
