@@ -2,8 +2,7 @@
 
 INCLUDES =	-I$(top_builddir)/common-src \
 		-I$(top_srcdir)/common-src   \
-		-I$(top_srcdir)/client-src   \
-		-I$(top_srcdir)/tape-src
+		-I$(top_srcdir)/client-src
 
 LINT=@AMLINT@
 LINTFLAGS=@AMLINTFLAGS@
@@ -25,12 +24,9 @@ endif
 
 LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
 	@LEXLIB@ \
-	../client-src/libamclient.$(LIB_EXTENSION)
-if WANT_SERVER
-LDADD += ../tape-src/libamtape.$(LIB_EXTENSION)
-endif
-LDADD += ../common-src/libamanda.$(LIB_EXTENSION) \
+	../client-src/libamclient.$(LIB_EXTENSION) \
 	$(READLINE_LIBS)
+	../common-src/libamanda.$(LIB_EXTENSION)
 
 amoldrecover_CSRC =	amrecover.c					\
 			display_commands.c		extract_list.c	\
@@ -72,8 +68,6 @@ lint:
 	f="$$f "`cat ../common-src/listlibsrc.output`;				\
 	(cd ../server-src; make listlibsrc);					\
 	f="$$f "`cat ../server-src/listlibsrc.output`;				\
-	(cd ../tape-src; make listlibsrc);					\
-	f="$$f "`cat ../tape-src/listlibsrc.output`;				\
 	echo $(LINT) $$f;							\
 	$(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config $(INCLUDES) $$f;\
 	if [ $$? -ne 0 ]; then							\

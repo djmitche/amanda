@@ -1,8 +1,7 @@
 # Makefile for Amanda client programs.
 
 INCLUDES =	-I$(top_builddir)/common-src \
-		-I$(top_srcdir)/common-src \
-		-I$(top_srcdir)/tape-src
+		-I$(top_srcdir)/common-src
 
 LINT=@AMLINT@
 LINTFLAGS=@AMLINTFLAGS@
@@ -29,11 +28,8 @@ noinst_HEADERS  = amandad.h
 ###
 
 LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
-	libamandad.$(LIB_EXTENSION)
-#if WANT_SERVER
-#LDADD += ../tape-src/libamtape.$(LIB_EXTENSION)
-#endif
-LDADD += ../common-src/libamanda.$(LIB_EXTENSION)
+	libamandad.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
 
 install-exec-hook:
 	@list="$(libexec_PROGRAMS) $(libexec_SCRIPTS)"; \
@@ -52,8 +48,6 @@ lint:
 		f="$$f "`cat ../common-src/listlibsrc.output`;			\
 		(cd ../server-src; make listlibsrc);				\
 		f="$$f "`cat ../server-src/listlibsrc.output`;			\
-		(cd ../tape-src; make listlibsrc);				\
-		f="$$f "`cat ../tape-src/listlibsrc.output`;			\
 		echo $(LINT) $$f;						\
 		$(LINT) $(LINTFLAGS) $(CPPFLAGS) $(DEFS) -I. -I../config	\
 		    $(INCLUDES) $$f;						\

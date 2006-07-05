@@ -39,11 +39,8 @@ libamclient_la_LDFLAGS = -release $(VERSION)
 
 LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
 	libamclient.$(LIB_EXTENSION) \
-	../amandad-src/libamandad.$(LIB_EXTENSION)
-if WANT_SERVER
-LDADD += ../tape-src/libamtape.$(LIB_EXTENSION)
-endif
-LDADD += ../common-src/libamanda.$(LIB_EXTENSION)
+	../amandad-src/libamandad.$(LIB_EXTENSION) \
+	../common-src/libamanda.$(LIB_EXTENSION)
 
 SUFFIXES =		.sh .pl
 
