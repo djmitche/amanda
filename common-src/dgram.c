@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.31 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: dgram.c,v 1.32 2006/07/05 19:54:20 martinea Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -212,6 +212,7 @@ dgram_send_addr(
 #endif
     }
 
+    memcpy(&addr_save, &addr, SIZEOF(addr));
     if(s < 0 || s >= FD_SETSIZE) {
 	dbprintf(("%s: dgram_send_addr: socket out of range: %d\n",
 		  debug_prefix(NULL),
@@ -219,7 +220,6 @@ dgram_send_addr(
 	errno = EMFILE;				/* out of range */
 	rc = -1;
     } else {
-	memcpy(&addr_save, &addr, SIZEOF(addr));
 	max_wait = 300 / 5;				/* five minutes */
 	wait_count = 0;
 	rc = 0;
