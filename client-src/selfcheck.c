@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.82 2006/06/16 19:05:30 martinea Exp $
+ * $Id: selfcheck.c,v 1.83 2006/07/05 14:59:52 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -340,7 +340,11 @@ check_options(
 	amfree(file_include);
 
 	need_calcsize=1;
-	myprogram = calcprog;
+	if (calcprog == NULL) {
+	    printf("ERROR [no program name for calcsize]\n");
+	} else {
+	    myprogram = calcprog;
+	}
     }
 
     if(strcmp(myprogram,"GNUTAR") == 0) {
@@ -491,6 +495,8 @@ check_disk(
 
     (void)level;	/* Quiet unused parameter warning */
 
+    dbprintf(("%s: checking disk %s\n", debug_prefix_time(NULL), qdisk));
+
     if(strcmp(myprogram,"CALCSIZE") == 0) {
 	if(amdevice[0] == '/' && amdevice[1] == '/') {
 	    err = vstralloc("Can't use CALCSIZE for samba estimate,",
@@ -501,8 +507,6 @@ check_disk(
 	}
 	myprogram = calcprog;
     }
-
-    dbprintf(("%s: checking disk %s\n", debug_prefix_time(NULL), qdisk));
 
     if (strcmp(myprogram, "GNUTAR")==0) {
         if(amdevice[0] == '/' && amdevice[1] == '/') {
