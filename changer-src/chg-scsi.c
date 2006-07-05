@@ -1,4 +1,4 @@
-static char rcsid[] = "$Id: chg-scsi.c,v 1.46 2006/05/25 01:47:07 johnfranks Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.47 2006/07/05 19:57:39 martinea Exp $";
 /*
  * 
  *
@@ -350,6 +350,10 @@ read_config(
             init_changer_struct(chg, numconf);
           } else {
             numconf = (value != NULL) ? atoi(value) : 0;
+	    if (numconf < 1 || numconf > 100) {
+		fprintf(stderr,"numconf %d is bad\n", numconf);
+		numconf = 1;
+	    }
             init_changer_struct(chg, numconf);
           }
           init_flag=1;
@@ -391,6 +395,10 @@ read_config(
           break;
         case CHANGERIDENT:
           chg->conf[drivenum].changerident = stralloc(value);
+	  if (drivenum < 0 || drivenum > 100) {
+	    fprintf(stderr,"drivenum %d is bad\n", drivenum);
+	    drivenum = 0;
+	  }
           p = chg->conf[drivenum].changerident;
           while (*p != '\0')
           {
@@ -521,6 +529,9 @@ get_current_slot(
       retval = -1;
     }
 
+  if (retval < 0 || retval > 10000) {
+    retval = -1;
+  }
   return retval;
 }
 
