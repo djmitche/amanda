@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.115 2006/06/22 20:43:33 martinea Exp $
+ * $Id: amadmin.c,v 1.116 2006/07/05 11:03:33 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -894,7 +894,6 @@ balance(
     conf_dumpcycle = getconf_int(CNF_DUMPCYCLE);
     conf_runspercycle = getconf_int(CNF_RUNSPERCYCLE);
     later = conf_dumpcycle;
-    if(later > 10000) later = 10000;
     overdue = 0;
     max_overdue = 0;
 
@@ -902,6 +901,7 @@ balance(
 	later = atoi(argv[4]);
 	if(later < 0) later = conf_dumpcycle;
     }
+    if(later > 10000) later = 10000;
 
     if(conf_runspercycle == 0) {
 	runs_per_cycle = conf_dumpcycle;

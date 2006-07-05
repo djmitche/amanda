@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 21
+	* server-src/amadmin.c (balance): Test 'later' after it is set.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/alloc.c (internal_vstralloc): Don't return NULL.
 
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
