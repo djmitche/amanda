@@ -1,4 +1,9 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 338 and 390
+	* server-src/reporter.c (handle_partial, handle_strange): Check result
+	  of handle_success.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 558
 	* client-src/selfcheck.c (check_options, check_disk): Check for
 							      calcprog == NULL
