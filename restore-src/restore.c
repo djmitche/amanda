@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.45 2006/07/05 13:32:27 martinea Exp $
+ * $Id: restore.c,v 1.46 2006/07/05 14:52:25 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1136,6 +1136,8 @@ restore(
 	if(tmp_filename && stat(tmp_filename, &statinfo) < 0){
 	    error("Can't stat the file I just created (%s)!", tmp_filename);
 	    /*NOTREACHED*/
+	} else {
+	    statinfo.st_size = (off_t)0;
 	}
 	if (check_for_aborted && final_filename) {
 	    char *old_dump = final_filename;

@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 407
+	* restore-src/restore.c (restore): Set statinfo.st_size.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 189
 	* common-src/file.c (sanitise_filename): Never return NULL.
 
