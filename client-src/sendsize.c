@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.155 2006/06/01 14:54:39 martinea Exp $
+ * $Id: sendsize.c,v 1.156 2006/07/05 11:09:40 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -535,6 +535,11 @@ add_diskest(
     amandates_t *amdp;
     int dumplev, estlev;
     time_t dumpdate;
+
+    if (level < 0)
+	level = 0;
+    if (level >= DUMP_LEVELS)
+	level = DUMP_LEVELS - 1;
 
     for(curp = est_list; curp != NULL; curp = curp->next) {
 	if(strcmp(curp->amname, disk) == 0) {

@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 470
+	* client-src/sendsize.c (add_diskest): Check for level value.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 372
 	* server-src/reporter.c (nicedate): Check month value.
 
