@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.60 2006/06/02 00:56:06 paddy_s Exp $
+ * $Id: infofile.c,v 1.61 2006/07/05 10:39:02 martinea Exp $
  *
  * manage current info file
  */
@@ -64,22 +64,24 @@ open_txinfofile(
     char *	mode)
 {
     FILE *infof;
+    char *myhost;
+    char *mydisk;
 
     assert(infofile == (char *)0);
 
     writing = (*mode == 'w');
 
-    host = sanitise_filename(host);
-    disk = sanitise_filename(disk);
+    myhost = sanitise_filename(host);
+    mydisk = sanitise_filename(disk);
 
     infofile = vstralloc(infodir,
-			 "/", host,
-			 "/", disk,
+			 "/", myhost,
+			 "/", mydisk,
 			 "/info",
 			 NULL);
 
-    amfree(host);
-    amfree(disk);
+    amfree(myhost);
+    amfree(mydisk);
 
     /* create the directory structure if in write mode */
     if (writing) {

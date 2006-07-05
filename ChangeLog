@@ -1,3 +1,6 @@
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/infofile.c (open_txinfofile): Use local variable.
+
 2006-06-29  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c (label_of_current_slot): Close the tapefd if
 	                                                 the label mismatch.
