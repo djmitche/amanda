@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.44 2006/07/05 11:27:35 martinea Exp $
+ * $Id: restore.c,v 1.45 2006/07/05 13:32:27 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1421,12 +1421,16 @@ search_a_tape(
     if(desired_tape && desired_tape->numfiles > 0)
 	tapefile_idx = 0;
 
-    dbprintf(("search_a_tape: desired_tape=%p label=%s\n",
-	desired_tape, desired_tape->label));
-    dbprintf(("tape:   numfiles = %d\n", desired_tape->numfiles));
-    for (i=0; i < desired_tape->numfiles; i++) {
-	dbprintf(("tape:   files[%d] = " OFF_T_FMT "\n",
-		  i, (OFF_T_FMT_TYPE)desired_tape->files[i]));
+    if (desired_tape) {
+	dbprintf(("search_a_tape: desired_tape=%p label=%s\n",
+		  desired_tape, desired_tape->label));
+	dbprintf(("tape:   numfiles = %d\n", desired_tape->numfiles));
+	for (i=0; i < desired_tape->numfiles; i++) {
+	    dbprintf(("tape:   files[%d] = " OFF_T_FMT "\n",
+		      i, (OFF_T_FMT_TYPE)desired_tape->files[i]));
+	}
+    } else {
+	dbprintf(("search_a_tape: no desired_tape\n"));
     }
     dbprintf(("current tapefile_idx = %d\n", tapefile_idx));
 	

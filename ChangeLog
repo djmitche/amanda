@@ -1,4 +1,8 @@
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 553
+	* restore-src/restore.c (search_a_tape): Check for desired_tape == NULL.
+
+2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 556 and 557
 	* common-src/security-util.c (bsd_recv_security_ok): Check result of
 	  strtok, check service == NULL.
