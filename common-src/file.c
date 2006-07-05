@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.36 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: file.c,v 1.37 2006/07/05 14:51:04 martinea Exp $
  *
  * file and directory bashing routines
  */
@@ -394,10 +394,7 @@ sanitise_filename(
 	}
 	*d++ = (char)ch;
     }
-    if(d >= buf + buf_size) {
-	amfree(buf);
-	return NULL;				/* cannot happen */
-    }
+    assert(d < buf + buf_size);
     *d = '\0';
 
     return buf;
