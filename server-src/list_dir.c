@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: list_dir.c,v 1.18 2006/05/25 01:47:20 johnfranks Exp $
+/* $Id: list_dir.c,v 1.19 2006/07/05 11:22:49 martinea Exp $
  *
  * manage directory listings from index files
  */
@@ -121,7 +121,7 @@ add_dir_list_item(
 	    cur_list=cur_list->next;
 	}
 
-	if(strcmp(path,cur_list->next->path) == 0)
+	if (cur_list->next && strcmp(path, cur_list->next->path) == 0)
 	{
 	    cur_list=cur_list->next;
 	    return 0; /* found */
