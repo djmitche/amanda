@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: alloc.c,v 1.36 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: alloc.c,v 1.37 2006/07/05 10:41:32 martinea Exp $
  *
  * Memory allocators with error handling.  If the allocation fails,
  * errordump() is called, relieving the caller from checking the return
@@ -281,7 +281,8 @@ internal_vstralloc(
     size_t l;
 
     if (str == NULL) {
-	return NULL;				/* probably will not happen */
+	errordump("internal_vstralloc: str is NULL");
+	/*NOTREACHED*/
     }
 
     a = 0;
