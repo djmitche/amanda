@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.186 2006/07/05 13:34:32 martinea Exp $
+ * $Id: driver.c,v 1.187 2006/07/05 15:49:05 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1645,7 +1645,10 @@ handle_chunker_result(
 	    break;
 
 	case NO_ROOM: /* NO-ROOM <handle> <missing_size> */
-	    assert( h && activehd >= 0 );
+	    if (!h || activehd < 0) { /* should never happen */
+		error("!h || activehd < 0");
+		/*NOTREACHED*/
+	    }
 	    h[activehd]->used -= OFF_T_ATOI(result_argv[3]);
 	    h[activehd]->reserved -= OFF_T_ATOI(result_argv[3]);
 	    holdalloc(h[activehd]->disk)->allocated_space -= OFF_T_ATOI(result_argv[3]);
@@ -1653,7 +1656,10 @@ handle_chunker_result(
 	    break;
 
 	case RQ_MORE_DISK: /* RQ-MORE-DISK <handle> */
-	    assert( h && activehd >= 0 );
+	    if (!h || activehd < 0) { /* should never happen */
+		error("!h || activehd < 0");
+		/*NOTREACHED*/
+	    }
 	    holdalloc(h[activehd]->disk)->allocated_dumpers--;
 	    h[activehd]->used = h[activehd]->reserved;
 	    if( h[++activehd] ) { /* There's still some allocated space left.
@@ -1705,7 +1711,10 @@ handle_chunker_result(
 
 	    if(dp) {
 		/* if it was dumping something, zap it and try again */
-		assert( h && activehd >= 0 );
+		if (!h || activehd < 0) { /* should never happen */
+		    error("!h || activehd < 0");
+		    /*NOTREACHED*/
+		}
 		qname = quote_string(dp->name);
 		if(sched(dp)->attempted) {
 		    log_add(L_FAIL, "%s %s %s %d [%s died]",
