@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: display_commands.c,v 1.21 2006/05/25 01:47:14 johnfranks Exp $
+ * $Id: display_commands.c,v 1.22 2006/07/05 19:42:17 martinea Exp $
  *
  * implements the directory-display related commands in amrecover
  */
@@ -272,7 +272,8 @@ suck_dir_list_from_server(void)
 	if(*err) {
 	    puts(err);
 	}
-	puts(cmd);
+	if (cmd)
+	    puts(cmd);
 	clear_dir_list();
     }
     amfree(cmd);
