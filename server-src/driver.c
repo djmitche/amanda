@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.187 2006/07/05 15:49:05 martinea Exp $
+ * $Id: driver.c,v 1.188 2006/07/06 13:13:15 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -541,8 +541,10 @@ wait_children(int count)
 		    who = stralloc("unknown");
 		}
 		if(who && what) {
-		    log_add(L_WARNING, "%s pid %d exited with %s %d\n", who, pid, what, code);
-		    printf("driver: %s pid %d exited with %s %d\n", who, pid, what, code);
+		    log_add(L_WARNING, "%s pid %u exited with %s %d\n", who, 
+			    (unsigned)pid, what, code);
+		    printf("driver: %s pid %u exited with %s %d\n", who,
+			   (unsigned)pid, what, code);
 		}
 		amfree(who);
 	    }
@@ -563,13 +565,14 @@ kill_children(int signal)
     if(!nodump) {
         for(dumper = dmptable; dumper < dmptable + inparallel; dumper++) {
 	    if (!dumper->down && dumper->pid > 1) {
-		printf("driver: sending signal %d to %s pid %d\n", signal,
-		       dumper->name, dumper->pid);
+		printf("driver: sending signal %d to %s pid %u\n", signal,
+		       dumper->name, (unsigned)dumper->pid);
 		if (kill(dumper->pid, signal) == -1 && errno == ESRCH)
 		    dumper->chunker->pid = 0;
 		if (dumper->chunker && dumper->chunker->pid > 1) {
-		    printf("driver: sending signal %d to %s pid %d\n", signal,
-			   dumper->chunker->name, dumper->chunker->pid);
+		    printf("driver: sending signal %d to %s pid %u\n", signal,
+			   dumper->chunker->name,
+			   (unsigned)dumper->chunker->pid);
 		    if (kill(dumper->chunker->pid, signal) == -1 &&
 			errno == ESRCH)
 			dumper->chunker->pid = 0;
@@ -579,8 +582,8 @@ kill_children(int signal)
     }
 
     if(taper_pid > 1)
-	printf("driver: sending signal %d to %s pid %d\n", signal,
-	       "taper", taper_pid);
+	printf("driver: sending signal %d to %s pid %u\n", signal,
+	       "taper", (unsigned)taper_pid);
 	if (kill(taper_pid, signal) == -1 && errno == ESRCH)
 	    taper_pid = 0;
 }

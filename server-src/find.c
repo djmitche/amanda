@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: find.c,v 1.32 2006/06/29 14:31:23 martinea Exp $
+ * $Id: find.c,v 1.33 2006/07/06 13:13:15 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -231,9 +231,8 @@ void strip_failed_chunks(
 	       !strcmp(cur->partnum, "--") || strcmp(cur->status, "OK")) {
 	        prev = cur;
 		cur = next;
-		continue;
 	    }
-	    if(!strcmp(cur->hostname, failed->hostname) &&
+	    else if(!strcmp(cur->hostname, failed->hostname) &&
 	         !strcmp(cur->diskname, failed->diskname) &&
 	         !strcmp(cur->timestamp, failed->timestamp) &&
 	         !strcmp(cur->label, failed->label) &&
@@ -244,17 +243,20 @@ void strip_failed_chunks(
 		amfree(cur->timestamp);
 		amfree(cur->partnum);
 		amfree(cur->status);
-		amfree(cur);
-		if (prev)
+		cur = next;
+		if (prev) {
+		    amfree(prev->next);
   		    prev->next = next;
-		else
+		} else {
+		    amfree(*output_find);
 		    *output_find = next;
+		}
 	    }
             else {
 		prev = cur;
+		cur = next;
 	    }
 
-	    cur = next;
 	}
     }
 

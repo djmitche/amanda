@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.112 2006/07/06 11:57:29 martinea Exp $
+ * $Id: extract_list.c,v 1.113 2006/07/06 13:13:15 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -335,7 +335,7 @@ clean_tape_list(
     EXTRACT_LIST *tape_list)
 {
     EXTRACT_LIST_ITEM *fn1, *pfn1, *ofn1;
-    EXTRACT_LIST_ITEM *fn2, *pfn2;
+    EXTRACT_LIST_ITEM *fn2, *pfn2, *ofn2;
     int remove_fn1;
     int remove_fn2;
 
@@ -364,28 +364,33 @@ clean_tape_list(
 	    }
 
 	    if (remove_fn2) {
-		dbprintf(("removing path %s, it is included in %s\n", fn2->path, fn1->path));
+		dbprintf(("removing path %s, it is included in %s\n",
+			  fn2->path, fn1->path));
+		ofn2 = fn2;
 		fn2 = fn2->next;
-		amfree(pfn2->next->path);
-		amfree(pfn2->next);
+		amfree(ofn2->path);
+		amfree(ofn2);
 		pfn2->next = fn2;
-	    }
-	    else {
+	    } else if (remove_fn1 == 0) {
 		pfn2 = fn2;
 		fn2 = fn2->next;
 	    }
 	}
 
 	if(remove_fn1 != 0) {
-	    dbprintf(("removing path %s, it is included in %s\n", fn1->path, fn2->path));
-	    if(pfn1 == NULL)
-		tape_list->files = fn1->next;
-	    else
-		pfn1->next = fn1->next;
+	    /* fn2->path is always valid */
+	    /*@i@*/ dbprintf(("removing path %s, it is included in %s\n",
+	    /*@i@*/	      fn1->path, fn2->path));
 	    ofn1 = fn1;
 	    fn1 = fn1->next;
-            amfree(ofn1->path);
-	    amfree(ofn1);
+	    amfree(ofn1->path);
+	    if(pfn1 == NULL) {
+		amfree(tape_list->files);
+		tape_list->files = fn1;
+	    } else {
+		amfree(pfn1->next);
+		pfn1->next = fn1;
+	    }
 	} else {
 	    pfn1 = fn1;
 	    fn1 = fn1->next;

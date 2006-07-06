@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.151 2006/07/01 00:10:38 paddy_s Exp $
+ * $Id: conffile.c,v 1.152 2006/07/06 13:13:15 martinea Exp $
  *
  * read configuration file
  */
@@ -763,7 +763,7 @@ init_defaults(
     conf_init_int      (&server_conf[CNF_INPARALLEL]           , 10);
     conf_init_string   (&server_conf[CNF_DUMPORDER]            , "ttt");
     conf_init_int      (&server_conf[CNF_BUMPPERCENT]          , 0);
-    conf_init_am64     (&server_conf[CNF_BUMPSIZE]             , 10*1024LL);
+    conf_init_am64     (&server_conf[CNF_BUMPSIZE]             , (off_t)10*1024);
     conf_init_real     (&server_conf[CNF_BUMPMULT]             , 1.5);
     conf_init_int      (&server_conf[CNF_BUMPDAYS]             , 2);
     conf_init_string   (&server_conf[CNF_TPCHANGER]            , "");
@@ -777,7 +777,7 @@ init_defaults(
     conf_init_string   (&server_conf[CNF_PRINTER]              , "");
     conf_init_bool     (&server_conf[CNF_AUTOFLUSH]            , 0);
     conf_init_int      (&server_conf[CNF_RESERVE]              , 100);
-    conf_init_am64     (&server_conf[CNF_MAXDUMPSIZE]          , -1);
+    conf_init_am64     (&server_conf[CNF_MAXDUMPSIZE]          , (off_t)-1);
     conf_init_string   (&server_conf[CNF_COLUMNSPEC]           , "");
     conf_init_bool     (&server_conf[CNF_AMRECOVER_DO_FSF]     , 1);
     conf_init_string   (&server_conf[CNF_AMRECOVER_CHANGER]    , "");
@@ -1214,8 +1214,8 @@ init_dumptype_defaults(void)
     conf_init_string   (&dpcur.value[DUMPTYPE_SRV_DECRYPT_OPT]   , "-d");
     conf_init_string   (&dpcur.value[DUMPTYPE_CLNT_DECRYPT_OPT]  , "-d");
     conf_init_rate     (&dpcur.value[DUMPTYPE_COMPRATE]          , 0.50, 0.50);
-    conf_init_am64     (&dpcur.value[DUMPTYPE_TAPE_SPLITSIZE]    , 0LL);
-    conf_init_am64     (&dpcur.value[DUMPTYPE_FALLBACK_SPLITSIZE], 10 * 1024LL);
+    conf_init_am64     (&dpcur.value[DUMPTYPE_TAPE_SPLITSIZE]    , (off_t)0);
+    conf_init_am64     (&dpcur.value[DUMPTYPE_FALLBACK_SPLITSIZE], (off_t)10 * 1024);
     conf_init_string   (&dpcur.value[DUMPTYPE_SPLIT_DISKBUFFER]  , NULL);
     conf_init_bool     (&dpcur.value[DUMPTYPE_RECORD]            , 1);
     conf_init_bool     (&dpcur.value[DUMPTYPE_SKIP_INCR]         , 0);
@@ -1317,8 +1317,8 @@ init_tapetype_defaults(void)
     conf_init_string(&tpcur.value[TAPETYPE_COMMENT]  , "");
     conf_init_string(&tpcur.value[TAPETYPE_LBL_TEMPL], "");
     conf_init_size  (&tpcur.value[TAPETYPE_BLOCKSIZE], DISK_BLOCK_KB);
-    conf_init_am64  (&tpcur.value[TAPETYPE_LENGTH]   , 2000 * 1024);
-    conf_init_am64  (&tpcur.value[TAPETYPE_FILEMARK] , 1000);
+    conf_init_am64  (&tpcur.value[TAPETYPE_LENGTH]   , (off_t)2000 * 1024);
+    conf_init_am64  (&tpcur.value[TAPETYPE_FILEMARK] , (off_t)1000);
     conf_init_int   (&tpcur.value[TAPETYPE_SPEED]    , 200);
     conf_init_bool  (&tpcur.value[TAPETYPE_FILE_PAD] , 1);
 }

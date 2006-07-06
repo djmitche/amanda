@@ -1,4 +1,13 @@
 2006-07-06  Jean-Louis Martineau <martineau@zmanda.com>
+	Fix splint warning
+	* oldrecover-src/extract_list.c (clean_tape_list): Cleanup for splint.
+	* recover-src/extract_list.c (clean_tape_list): Cleanup for splint.
+	* server-src/amindexd.c: Add a /*@i@*/.
+	* server-src/conffile.c: Cast to off_t for conf_init_am64.
+	* server-src/driver.c: Cast to unsigned to print pid_t.
+	* server-src/find.c (strip_failed_chunks): Cleanup for splint.
+
+2006-07-06  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 114
 	* server-src/amindexd.c: Free their_feature_string.
 	Klocwork bug 130
