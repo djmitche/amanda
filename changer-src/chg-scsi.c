@@ -1,4 +1,4 @@
-static char rcsid[] = "$Id: chg-scsi.c,v 1.48 2006/07/06 11:57:28 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.49 2006/07/06 18:17:28 martinea Exp $";
 /*
  * 
  *
@@ -417,8 +417,12 @@ read_config(
           break;
         case DRIVE:
           drivenum = atoi(value);
-          if(drivenum >= numconf){
+          if (drivenum < 0) {
+            fprintf(stderr,"Error: drive must be >= 0\n");
+	    drivenum = 0;
+          } else if (drivenum >= numconf) {
             fprintf(stderr,"Error: drive must be less than number_drives\n");
+	    drivenum = numconf;
           }
           break;
         case DRIVENUM:
@@ -541,6 +545,9 @@ put_current_slot(
     int slot)
 {
   FILE *inf;
+
+  if (!count_file)
+    return;
 
   if ((inf=fopen(count_file,"w")) == NULL) {
     fprintf(stderr, "%s: unable to open current slot file (%s)\n",

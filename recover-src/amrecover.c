@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.69 2006/07/05 13:18:20 martinea Exp $
+ * $Id: amrecover.c,v 1.70 2006/07/06 18:17:28 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -514,7 +514,7 @@ main(
     (void)time(&timer);
     tm = localtime(&timer);
     if (tm) 
-	strftime(dump_date, sizeof(dump_date), "%Y-%m-%d", localtime(&timer));
+	strftime(dump_date, sizeof(dump_date), "%Y-%m-%d", tm);
     else
 	error("BAD DATE");
 

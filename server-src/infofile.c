@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.61 2006/07/05 10:39:02 martinea Exp $
+ * $Id: infofile.c,v 1.62 2006/07/06 18:17:28 martinea Exp $
  *
  * manage current info file
  */
@@ -503,18 +503,20 @@ delete_txinfofile(
 {
     char *fn = NULL, *fn_new = NULL;
     int rc;
+    char *myhost;
+    char *mydisk;
 
-    host = sanitise_filename(host);
-    disk = sanitise_filename(disk);
+    myhost = sanitise_filename(host);
+    mydisk = sanitise_filename(disk);
     fn = vstralloc(infodir,
-		   "/", host,
-		   "/", disk,
+		   "/", myhost,
+		   "/", mydisk,
 		   "/info",
 		   NULL);
     fn_new = stralloc2(fn, ".new");
 
-    amfree(host);
-    amfree(disk);
+    amfree(myhost);
+    amfree(mydisk);
 
     unlink(fn_new);
     amfree(fn_new);

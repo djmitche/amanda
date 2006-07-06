@@ -1,4 +1,12 @@
 2006-07-06  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 128, 170, 182, 470, 517
+	* changer-src/chg-scsi.c: Validate drivenum, check count_file.
+	* client-src/sendsize.c: Validate level.
+	* oldrecover-src/amrecover.c: Use tm.
+	* recover-src/amrecover.c: Use tm.
+	* server-src/infofile.c (delete_txinfofile): Use local variable.
+
+2006-07-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taper.c: Check for cur_filename.
 	* tape-src/output-file.c: Use vstrextend.
 	* tape-src/tapeio.c: Check for r.
