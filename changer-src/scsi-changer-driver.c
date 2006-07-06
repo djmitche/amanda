@@ -1,4 +1,4 @@
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.50 2006/05/25 01:47:07 johnfranks Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.51 2006/07/06 11:57:28 martinea Exp $";
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
  *
@@ -1386,6 +1386,11 @@ OpenDevice(
   extern OpenFiles_T *pDev;
   char tmpstr[15];
   ChangerCMD_T *p = (ChangerCMD_T *)&ChangerIO;
+
+  if (!ConfigName)
+	return 1;
+  if (!DeviceName)
+	return 1;
 
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"##### START OpenDevice\n");
   DebugPrint(DEBUG_INFO, SECTION_SCSI,"OpenDevice : %s\n", DeviceName);

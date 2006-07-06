@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.111 2006/06/23 20:10:11 martinea Exp $
+ * $Id: extract_list.c,v 1.112 2006/07/06 11:57:29 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -368,6 +368,7 @@ clean_tape_list(
 		fn2 = fn2->next;
 		amfree(pfn2->next->path);
 		amfree(pfn2->next);
+		pfn2->next = fn2;
 	    }
 	    else {
 		pfn2 = fn2;
@@ -834,8 +835,10 @@ add_file(
 		if(!server_happy()) {
 		    puts(reply_line());
 		} else if(err) {
-		    puts(err);
-		    puts(cmd);
+		    if (*err)
+			puts(err);
+		    if (cmd)
+			puts(cmd);
 		} else if(added == 0) {
 		    quoted = quote_string(ditem_path);
 		    printf("dir %s already added\n", quoted);
@@ -1146,10 +1149,10 @@ delete_file(
 		if(!server_happy()) {
 		    puts(reply_line());
 		} else if(err) {
-		    if(*err) {
+		    if (*err)
 			puts(err);
-		    }
-		    puts(cmd);
+		    if (cmd)
+			puts(cmd);
 		} else if(deleted == 0) {
 		    printf("Warning - dir '%s' not on tape list\n",
 			   ditem_path);

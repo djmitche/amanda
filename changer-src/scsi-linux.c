@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.29 2006/05/25 01:47:08 johnfranks Exp $
+ * $Id: scsi-linux.c,v 1.30 2006/07/06 11:57:28 martinea Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -83,7 +83,7 @@ extern OpenFiles_T *pDev;
 void SCSI_OS_Version(void)
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-linux.c,v 1.29 2006/05/25 01:47:08 johnfranks Exp $";
+   static char rcsid[] = "$Id: scsi-linux.c,v 1.30 2006/07/06 11:57:28 martinea Exp $";
    DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -133,12 +133,12 @@ int SCSI_OpenDevice(int ip)
               if (S_ISLNK(pstat.st_mode) == 1)
                 {
                   DebugPrint(DEBUG_INFO, SECTION_SCSI,"SCSI_OpenDevice : is a link, checking destination\n");
-                  if ((buffer = (char *)malloc(512)) == NULL)
+                  if ((buffer = (char *)malloc(513)) == NULL)
                     {
                       DebugPrint(DEBUG_ERROR, SECTION_SCSI,"SCSI_OpenDevice : malloc failed\n");
                       return(0);
                     }
-                  memset(buffer, 0, 512);
+                  memset(buffer, 0, 513);
                   if (( i = readlink(pDev[ip].dev, buffer, 512)) == -1)
                     {
                       if (errno == ENAMETOOLONG )

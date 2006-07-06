@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.59 2006/05/26 11:08:37 martinea Exp $
+ * $Id: amrestore.c,v 1.60 2006/07/06 11:57:29 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -150,6 +150,12 @@ main(
 	    }
 	    if(rst_flags->blocksize < DISK_BLOCK_BYTES) {
 		error("minimum block size is %dk", DISK_BLOCK_BYTES / 1024);
+		/*NOTREACHED*/
+	    }
+	    if(rst_flags->blocksize > MAX_TAPE_BLOCK_KB * 1024) {
+		fprintf(stderr,"maximum block size is %dk, using it\n",
+			MAX_TAPE_BLOCK_KB);
+		rst_flags->blocksize = MAX_TAPE_BLOCK_KB * 1024;
 		/*NOTREACHED*/
 	    }
 	    break;

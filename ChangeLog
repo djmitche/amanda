@@ -1,3 +1,27 @@
+2006-07-06  Jean-Louis Martineau <martineau@zmanda.com>
+	Klocwork bug 114
+	* server-src/amindexd.c: Free their_feature_string.
+	Klocwork bug 130
+	* restore-src/amrestore.c: Test maximum value for rst_flags->blocksize.
+	Klocwork bug 294
+	* common-src/genversion.c: Check NULL result of malloc.
+	Klocwork bug 294
+	* client-src/selfcheck.c: Check NULL result of fdopen.
+	Klocwork bug 539, 542
+	* oldrecover-src/extract_list.c: Fix pfn2->next = fn2.
+	* recover-src/extract_list.c   : Ditto
+	Klocwork bug 268, 272, 543, 544
+	* oldrecover-src/extract_list.c: Check for cmd != NULL.
+	* recover-src/extract_list.c   : Ditto
+	Klocwork bug 510
+	* restore-src/amidxtaped.c: Check for argv != NULL.
+	Klocwork bug 435
+	* changer-src/scsi-linux.c: Make buffer one larger.
+	Klocwork bug 520
+	* changer-src/scsi-changer-driver.c (OpenDevice): Validate parameters.
+	Klocwork bug 182
+	* changer-src/chg-scsi.c (clean_tape): Check usagetime != NULL.
+
 2006-07-05  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 551
 	* regex-src/regcomp.c (allocset): Check for p->g->sets

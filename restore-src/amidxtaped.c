@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.67 2006/07/05 13:18:20 martinea Exp $
+/* $Id: amidxtaped.c,v 1.68 2006/07/06 11:57:29 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -274,7 +274,7 @@ main(
 
     set_pname(pgm);
 
-    if(argv[1] && strcmp(argv[1], "amandad") == 0) {
+    if(argv && argv[1] && strcmp(argv[1], "amandad") == 0) {
 	from_amandad = 1;
 	if(argv[2])
 	    amandad_auth = argv[2];

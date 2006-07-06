@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.83 2006/07/05 14:59:52 martinea Exp $
+ * $Id: selfcheck.c,v 1.84 2006/07/06 11:57:28 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -598,6 +598,10 @@ check_disk(
 	    amfree(user_and_password);
 	    aclose(passwdfd);
 	    ferr = fdopen(checkerr, "r");
+	    if (!ferr) {
+		error("Can't fdopen: %s", strerror(errno));
+		/*NOTREACHED*/
+	    }
 	    sep = "";
 	    errdos = 0;
 	    for(sep = ""; (line = agets(ferr)) != NULL; free(line)) {

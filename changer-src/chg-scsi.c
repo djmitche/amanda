@@ -1,4 +1,4 @@
-static char rcsid[] = "$Id: chg-scsi.c,v 1.47 2006/07/05 19:57:39 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.48 2006/07/06 11:57:28 martinea Exp $";
 /*
  * 
  *
@@ -1129,7 +1129,8 @@ clean_tape(
 
   if (drive_loaded(fd, drivenum))
     unload(fd, drivenum, cleancart);  
-  unlink(usagetime);
+  if (usagetime)
+    unlink(usagetime);
 }
 /* ----------------------------------------------------------------------*/
 

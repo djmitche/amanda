@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.34 2006/07/05 13:18:20 martinea Exp $
+ * $Id: genversion.c,v 1.35 2006/07/06 11:57:29 martinea Exp $
  *
  * dump the current Amanda version info
  */
@@ -87,8 +87,8 @@ prvar(
 	buf_len = new_len;
 	buf = malloc(new_len);
 	if (!buf) {
-	    error("Not enoug memory");
-	    /*NOTREACH*/
+	    error("Not enough memory");
+	    /*NOTREACHED*/
 	}
     }
     snprintf(buf, buf_len, "%s=\\\"%s\\\"", var, val);	/* safe */
@@ -109,6 +109,10 @@ prundefvar(
 	free(buf);
 	buf_len = new_len;
 	buf = malloc(new_len);		/* let it die if malloc() fails */
+	if (!buf) {
+	    error("Not enough memory");
+	    /*NOTREACHED*/
+	}
     }
     snprintf(buf, buf_len, "%s=UNDEF", var);	/* safe */
     prstr(buf);
@@ -132,6 +136,10 @@ prnum(
 	free(buf);
 	buf_len = new_len;
 	buf = malloc(new_len);		/* let it die if malloc() fails */
+	if (!buf) {
+	    error("Not enough memory");
+	    /*NOTREACHED*/
+	}
     }
     snprintf(buf, buf_len, "%s=%s", var, number);		/* safe */
     prstr(buf);
@@ -156,6 +164,10 @@ main(
     v = version();
     v_len = SIZEOF("Amanda-") + strlen(v) + 1;
     verstr = malloc(v_len);
+    if (!verstr) {
+	error("Not enough memory");
+	/*NOTREACHED*/
+    }
     snprintf(verstr, v_len, "Amanda-%s", v);		/* safe */
     prvar("VERSION", verstr);
     free(verstr);

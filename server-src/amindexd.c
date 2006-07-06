@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.100 2006/06/22 17:25:24 martinea Exp $
+ * $Id: amindexd.c,v 1.101 2006/07/06 11:57:29 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -1454,7 +1454,7 @@ main(
 	    am_release_feature_set(their_features);
 	    our_features = am_init_feature_set();
 	    our_feature_string = am_feature_to_string(our_features);
-	    their_feature_string = newstralloc(target_date, arg);
+	    their_feature_string = newstralloc(their_feature_string, arg);
 	    their_features = am_string_to_feature(their_feature_string);
 	    reply(200, "FEATURES %s", our_feature_string);
 	    amfree(our_feature_string);
