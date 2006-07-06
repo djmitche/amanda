@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: tapeio.c,v 1.56 2006/06/02 00:56:06 paddy_s Exp $
+ * $Id: tapeio.c,v 1.57 2006/07/06 15:04:18 martinea Exp $
  *
  * implements generic tape I/O functions
  */
@@ -889,7 +889,8 @@ tapefd_rdlabel(
 	}
     }
     amfree(buffer);
-    errstr = newvstralloc(errstr, r, NULL);
+    if (r)
+	errstr = newvstralloc(errstr, r, NULL);
     return r;
 }
 
@@ -914,7 +915,8 @@ tape_rdlabel(
     if(fd >= 0) {
         tapefd_close(fd);
     }
-    errstr = newvstralloc(errstr, r, NULL);
+    if (r)
+	errstr = newvstralloc(errstr, r, NULL);
     return r;
 }
 

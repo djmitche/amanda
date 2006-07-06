@@ -1,4 +1,9 @@
 2006-07-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taper.c: Check for cur_filename.
+	* tape-src/output-file.c: Use vstrextend.
+	* tape-src/tapeio.c: Check for r.
+
+2006-07-06  Jean-Louis Martineau <martineau@zmanda.com>
 	Fix splint warning
 	* oldrecover-src/extract_list.c (clean_tape_list): Cleanup for splint.
 	* recover-src/extract_list.c (clean_tape_list): Cleanup for splint.

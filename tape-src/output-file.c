@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-file.c,v 1.13 2006/06/02 00:56:06 paddy_s Exp $
+ * $Id: output-file.c,v 1.14 2006/07/06 15:04:18 martinea Exp $
  *
  * tapeio.c virtual tape interface for a file device.
  *
@@ -301,7 +301,7 @@ file_open(
 		    if (f == NULL) {
 			f = stralloc(disk);
 		    } else {
-			f = newvstralloc(f, f, ".", disk, NULL);
+			vstrextend(&f, ".", disk, NULL);
 		    }
 		    amfree(disk);
 		}
@@ -309,7 +309,7 @@ file_open(
 		    if (f == NULL) {
 			f = stralloc(number);
 		    } else {
-			f = newvstralloc(f, f, ".", number, NULL);
+			vstrextend(&f, ".", number, NULL);
 		    }
 		}
 		if (f == NULL) {
