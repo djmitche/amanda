@@ -1,4 +1,8 @@
 2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/security-util.c (stream_read_sync_callback): Remove bogus
+	  call of callback.
+
+2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.c (get_conftoken): Remove duplicate conftoken_ungetc.
 
 2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>

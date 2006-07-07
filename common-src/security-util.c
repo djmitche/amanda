@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.20 2006/07/07 13:26:53 martinea Exp $
+ * $Id: security-util.c,v 1.21 2006/07/07 18:51:29 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -1634,7 +1634,6 @@ stream_read_sync_callback(
 	if(rs->closed_by_me == 0 && rs->closed_by_network == 0)
 	    sec_tcp_conn_put(rs->rc);
 	rs->closed_by_network = 1;
-	(*rs->fn)(rs->arg, NULL, rs->rc->pktlen);
 	return;
     }
     secprintf((
