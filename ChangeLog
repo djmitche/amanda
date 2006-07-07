@@ -1,4 +1,7 @@
 2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/security-util.c: Validate and report big packet size.
+
+2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* oldrecover-src/Makefile.am: Typo.
 
 2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>

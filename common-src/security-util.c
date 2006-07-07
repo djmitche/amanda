@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.19 2006/07/05 13:29:38 martinea Exp $
+ * $Id: security-util.c,v 1.20 2006/07/07 13:26:53 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -510,6 +510,14 @@ tcpm_recv_token(
     }
 
     *size = (ssize_t)ntohl(netint[0]);
+    if (*size > NETWORK_BLOCK_BYTES) {
+	*errmsg = newvstralloc(*errmsg, "tcpm_recv_token: invalid size",
+				   NULL);
+	dbprintf(("%s: tcpm_recv_token: invalid size %d\n",
+		   debug_prefix_time(NULL), *size));
+	*size = -1;
+	return -1;
+    }
     amfree(*buf);
     *buf = alloc((size_t)*size);
     *handle = (int)ntohl(netint[1]);
@@ -517,6 +525,8 @@ tcpm_recv_token(
     if(*size == 0) {
 	secprintf(("%s: tcpm_recv_token: read EOF from %d\n",
 		   debug_prefix_time(NULL), *handle));
+	*errmsg = newvstralloc(*errmsg, "EOF",
+				   NULL);
 	return 0;
     }
     switch (net_read(fd, *buf, (size_t)*size, timeout)) {
@@ -1547,6 +1557,8 @@ recvpkt_callback(
 
     assert(rh != NULL);
 
+    secprintf(("%s: sec: recvpkt_callback: %d\n",
+	       debug_prefix_time(NULL), bufsize));
     /*
      * We need to cancel the recvpkt request before calling
      * the callback because the callback may reschedule us.
@@ -1615,13 +1627,15 @@ stream_read_sync_callback(
      */
     tcpm_stream_read_cancel(rs);
 
-    if (rs->rc->pktlen == 0) {
-        secprintf(("%s: sec: stream_read_callback_sync: EOF\n",
-		   debug_prefix_time(NULL)));
+    if (rs->rc->pktlen <= 0) {
+	secprintf(("%s: sec: stream_read_sync_callback: %s\n",
+		   debug_prefix_time(NULL), rs->rc->errmsg));
+	security_stream_seterror(&rs->secstr, rs->rc->errmsg);
 	if(rs->closed_by_me == 0 && rs->closed_by_network == 0)
 	    sec_tcp_conn_put(rs->rc);
 	rs->closed_by_network = 1;
-        return;
+	(*rs->fn)(rs->arg, NULL, rs->rc->pktlen);
+	return;
     }
     secprintf((
 	     "%s: sec: stream_read_callback_sync: read %ld bytes from %s:%d\n",
@@ -1665,13 +1679,14 @@ stream_read_callback(
      */
     tcpm_stream_read_cancel(rs);
 
-    if (rs->rc->pktlen == 0) {
-	secprintf(("%s: sec: stream_read_callback: EOF\n",
-		   debug_prefix_time(NULL)));
+    if (rs->rc->pktlen <= 0) {
+	secprintf(("%s: sec: stream_read_callback: %s\n",
+		   debug_prefix_time(NULL), rs->rc->errmsg));
+	security_stream_seterror(&rs->secstr, rs->rc->errmsg);
 	if(rs->closed_by_me == 0 && rs->closed_by_network == 0)
 	    sec_tcp_conn_put(rs->rc);
 	rs->closed_by_network = 1;
-	(*rs->fn)(rs->arg, NULL, 0);
+	(*rs->fn)(rs->arg, NULL, rs->rc->pktlen);
 	return;
     }
     secprintf(("%s: sec: stream_read_callback: read %ld bytes from %s:%d\n",
@@ -1707,10 +1722,10 @@ sec_tcp_conn_read_callback(
     secprintf(("%s: sec: conn_read_callback: tcpm_recv_token returned %d\n",
 	       debug_prefix_time(NULL), rval));
     if (rval < 0 || rc->handle == H_EOF) {
-	rc->pktlen = 0;
+	rc->pktlen = rval;
 	rc->handle = H_EOF;
 	revent = event_wakeup((event_id_t)rc);
-	secprintf(("%s: H_EOF sec: conn_read_callback: event_wakeup return %d\n",
+	secprintf(("%s: sec: conn_read_callback: event_wakeup return %d\n",
 		   debug_prefix_time(NULL), revent));
 	/* delete our 'accept' reference */
 	if (rc->accept_fn != NULL) {
