@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.35 2006/07/05 11:15:56 martinea Exp $
+ * $Id: util.c,v 1.36 2006/07/07 14:02:32 martinea Exp $
  */
 
 #include "amanda.h"
@@ -1377,7 +1377,6 @@ get_conftoken(
 		ch = conftoken_getc();
 	    } while(isalnum(ch) || ch == '_' || ch == '-');
 
-	    conftoken_ungetc(ch);
 	    if (conftoken_ungetc(ch) == EOF) {
 		if (ferror(conf_conf)) {
 		    conf_parserror("Pushback of '%c' failed: %s",
