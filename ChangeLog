@@ -1,3 +1,6 @@
+2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/sendsize.c: Typo.
+
 2006-07-06  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 128, 170, 182, 470, 517
 	* changer-src/chg-scsi.c: Validate drivenum, check count_file.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.158 2006/07/06 18:17:28 martinea Exp $
+ * $Id: sendsize.c,v 1.159 2006/07/07 10:39:26 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -280,7 +280,7 @@ main(
 	    err_extra = stralloc("bad level");
 	    goto err;				/* bad level */
 	}
-	if (level < 0 || level >= DUMP_LEVELS) 
+	if (level < 0 || level >= DUMP_LEVELS) {
 	    err_extra = stralloc("bad level");
 	    goto err;
 	}
