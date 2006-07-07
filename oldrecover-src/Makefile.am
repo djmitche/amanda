@@ -25,7 +25,7 @@ endif
 LDADD = ../common-src/libamanda.$(LIB_EXTENSION) \
 	@LEXLIB@ \
 	../client-src/libamclient.$(LIB_EXTENSION) \
-	$(READLINE_LIBS)
+	$(READLINE_LIBS) \
 	../common-src/libamanda.$(LIB_EXTENSION)
 
 amoldrecover_CSRC =	amrecover.c					\

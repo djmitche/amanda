@@ -1,4 +1,7 @@
 2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>
+	* oldrecover-src/Makefile.am: Typo.
+
+2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/sendsize.c: Typo.
 
 2006-07-06  Jean-Louis Martineau <martineau@zmanda.com>
