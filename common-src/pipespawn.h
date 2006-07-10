@@ -18,10 +18,5 @@ pid_t pipespawn(char *prog, int pipedef,
 pid_t pipespawnv(char *prog, int pipedef,
 		  int *stdinfd, int *stdoutfd, int *stderrfd,
 		  char **my_argv);
-pid_t pipespawnv_passwd(char *prog, int pipedef,
-		  int *stdinfd, int *stdoutfd, int *stderrfd,
-		  char *passwdvar, int *passwdfd,
-		  char **my_argv);
-
 
 #endif /* PIPESPAWN_H */

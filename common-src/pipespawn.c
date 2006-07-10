@@ -6,6 +6,11 @@
 
 char skip_argument[1];
 
+pid_t pipespawnv_passwd(char *prog, int pipedef,
+                  int *stdinfd, int *stdoutfd, int *stderrfd,
+                  char **my_argv);
+
+
 /*
  * this used to be a function in it's own write but became a wrapper around
  * pipespawnv to eliminate redundancy...
@@ -44,7 +49,7 @@ pipespawn(
     }
     arglist_end(ap);
 
-    pid = pipespawnv_passwd(prog, pipedef, stdinfd, stdoutfd, stderrfd, NULL, NULL, argv);
+    pid = pipespawnv_passwd(prog, pipedef, stdinfd, stdoutfd, stderrfd, argv);
     amfree(argv);
     return pid;
 }
@@ -59,7 +64,7 @@ pipespawnv(
     char **	my_argv)
 {
     return pipespawnv_passwd(prog, pipedef, stdinfd, stdoutfd, stderrfd,
-	NULL, NULL, my_argv);
+	my_argv);
 }
 
 pid_t
@@ -69,8 +74,6 @@ pipespawnv_passwd(
     int *	stdinfd,
     int *	stdoutfd,
     int *	stderrfd,
-    char *	passwdvar,
-    int *	passwdfd,
     char **	my_argv)
 {
     int argc;
@@ -81,6 +84,8 @@ pipespawnv_passwd(
     char *e;
     char **env;
     char **newenv;
+    char *passwdvar;
+    int  *passwdfd;
 
     /*
      * Log the command line and count the args.
@@ -89,7 +94,7 @@ pipespawnv_passwd(
     dbprintf(("%s: argument list:", debug_prefix(NULL)));
     if ((pipedef & PASSWD_PIPE) != 0) {
 	passwdvar = *my_argv++;
-	memcpy(passwdfd, my_argv++, SIZEOF(passwdfd));
+	passwdfd  = (int *)*my_argv++;
     }
     memset(inpipe, -1, SIZEOF(inpipe));
     memset(outpipe, -1, SIZEOF(outpipe));

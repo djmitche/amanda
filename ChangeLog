@@ -1,3 +1,12 @@
+2006-07-10  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/pipespawn.c (pipespawnv_passwd): Add prototype.
+	* common-src/pipespawn.c (pipespawn, pipespawn): Remove 2 NULL
+	   parameters to the pipespawnv_passwd call.
+	* common-src/pipespawn.c (pipespawnv_passwd): Remove passwdvar and
+	   passwdfd parameters, add passwdvar and local variable.
+	   Don't use memcpy to set passwdfd.
+	* common-src/pipespawn.h (pipespawnv_passwd): Remove prototype.
+
 2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/security-util.c (stream_read_sync_callback): Remove bogus
 	  call of callback.
