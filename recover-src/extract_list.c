@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.113 2006/07/06 13:13:15 martinea Exp $
+ * $Id: extract_list.c,v 1.114 2006/07/10 12:58:48 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -409,6 +409,71 @@ clean_extract_list(void)
 }
 
 
+int add_to_unlink_list(char *path);
+int do_unlink_list(void);
+void free_unlink_list(void);
+
+typedef struct s_unlink_list {
+    char *path;
+    struct s_unlink_list *next;
+} t_unlink_list;
+t_unlink_list *unlink_list = NULL;
+
+int
+add_to_unlink_list(
+    char *path)
+{
+    t_unlink_list *ul;
+
+    if (!unlink_list) {
+	unlink_list = alloc(SIZEOF(*unlink_list));
+	unlink_list->path = stralloc(path);
+	unlink_list->next = NULL;
+    } else {
+	for (ul = unlink_list; ul != NULL; ul = ul->next) {
+	    if (strcmp(ul->path, path) == 0)
+		return 0;
+	}
+	ul = alloc(SIZEOF(*ul));
+	ul->path = stralloc(path);
+	ul->next = unlink_list;
+	unlink_list = ul;
+    }
+    return 1;
+}
+
+int
+do_unlink_list(void)
+{
+    t_unlink_list *ul;
+    int ret = 1;
+
+    for (ul = unlink_list; ul != NULL; ul = ul->next) {
+	if (unlink(ul->path) < 0) {
+	    fprintf(stderr,"Can't unlink %s: %s\n", ul->path, strerror(errno));
+	    ret = 0;
+	}
+    }
+    return ret;
+}
+
+
+void
+free_unlink_list(void)
+{
+    t_unlink_list *ul, *ul1;
+
+    for (ul = unlink_list; ul != NULL; ul = ul1) {
+	amfree(ul->path);
+	ul1 = ul->next;
+	amfree(ul);
+    }
+
+    unlink_list = NULL;
+}
+
+
+
 void
 check_file_overwite(
     char *dir)
@@ -417,11 +482,12 @@ check_file_overwite(
     EXTRACT_LIST_ITEM *fn;
     struct stat        stat_buf;
     char              *filename;
+    char              *path, *s;
 
     for (this = extract_list; this != NULL; this = this->next) {
 	for (fn = this->files; fn != NULL ; fn = fn->next) {
 	    filename = stralloc2(dir, fn->path);
-	    if (stat(filename, &stat_buf) == 0) {
+	    if (lstat(filename, &stat_buf) == 0) {
 		if(S_ISDIR(stat_buf.st_mode)) {
 		    if(!is_empty_dir(filename)) {
 			printf("WARNING: All existing files in %s "
@@ -431,13 +497,36 @@ check_file_overwite(
 		    printf("WARNING: Existing file %s will be overwritten\n",
 			   filename);
 		} else {
-		    printf("WARNING: Existing entry %s will be overwritten\n",
-			   filename);
+		    if (add_to_unlink_list(filename)) {
+			printf("WARNING: Existing entry %s will be deleted\n",
+			       filename);
+		    }
 		}
 	    } else if (errno != ENOENT) {
 		printf("Can't stat %s: %s\n", filename, strerror(errno));
 	    }
 	    amfree(filename);
+
+	    path = stralloc(fn->path);
+	    while((s = strrchr(path,'/'))) {
+		*s = '\0';
+		filename = stralloc2(dir, path);
+		if (lstat(filename, &stat_buf) == 0) {
+		    if(!S_ISDIR(stat_buf.st_mode)) {
+			if (add_to_unlink_list(filename)) {
+			    printf("WARNING: %s is not a directory, "
+				   "it will be deleted.\n",
+				   filename);
+			}
+		    }
+		}
+		else if (errno != ENOENT) {
+		    printf("Can't stat %s: %s\n", filename, strerror(errno));
+		}
+		amfree(filename);
+	    }
+	    amfree(path);
+
 	}
     }
 }
@@ -1975,7 +2064,7 @@ void
 extract_files(void)
 {
     EXTRACT_LIST *elist;
-    char buf[STR_SIZE];
+    char cwd[STR_SIZE];
     char *l;
     int first;
     int otc;
@@ -2052,13 +2141,13 @@ extract_files(void)
     }
     printf("\n");
 
-    if (getcwd(buf, sizeof(buf)) == NULL) {
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
 	perror("extract_list: Current working directory unavailable");
 	exit(1);
     }
 
-    printf("Restoring files into directory %s\n", buf);
-    check_file_overwite(buf);
+    printf("Restoring files into directory %s\n", cwd);
+    check_file_overwite(cwd);
 
 #ifdef SAMBA_CLIENT
     if (samba_extract_method == SAMBA_SMBCLIENT)
@@ -2067,6 +2156,13 @@ extract_files(void)
     if (!okay_to_continue(0,0,0))
 	return;
     printf("\n");
+
+    if (!do_unlink_list()) {
+	fprintf(stderr, "Can't recover because I can't cleanup the cwd (%s)\n",
+		cwd);
+	return;
+    }
+    free_unlink_list();
 
     while ((elist = first_tape_list()) != NULL)
     {

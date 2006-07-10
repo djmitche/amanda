@@ -1,4 +1,13 @@
 2006-07-10  Jean-Louis Martineau <martineau@zmanda.com>
+	* recover-src/extract_list.c (add_to_unlink_list, do_unlink_list,
+	              free_unlink_list): New function to manage unlink_list.
+	* recover-src/extract_list.c (check_file_overwite): Check all
+	  component of an EXTRACT_LIST_ITEM, if a component is not a
+	  directory, add it to the unlink_list.
+	* recover-src/extract_list.c (extract_files): Call do_unlink_list and
+	  free_unlink_list, rename buf to cwd.
+
+2006-07-10  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/pipespawn.c (pipespawnv_passwd): Add prototype.
 	* common-src/pipespawn.c (pipespawn, pipespawn): Remove 2 NULL
 	   parameters to the pipespawnv_passwd call.
