@@ -672,6 +672,7 @@ export TAPE					# for mtx command
 conf_match=`expr "$changerfile" : .\*\.conf\$`
 if [ $conf_match -ge 6 ]; then
 	configfile=$changerfile
+	changerfile=`echo $changerfile | sed 's/.conf$//g'`
 else
 	configfile=$changerfile.conf
 fi

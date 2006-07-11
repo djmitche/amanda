@@ -1,4 +1,7 @@
 2006-07-11  Jean-Louis Martineau <martineau@zmanda.com>
+	* changer-src/chg-zd-mtx.sh.in: Remove .conf from changerfile.
+
+2006-07-11  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/extract_list.c (check_file_overwrite): Renamed from
 							  check_file_overwite.
 	* recover-src/extract_list.c (check_file_overwrite): Do the path check
