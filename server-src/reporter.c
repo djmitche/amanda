@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.124 2006/07/05 15:47:36 martinea Exp $
+ * $Id: reporter.c,v 1.125 2006/07/11 18:05:37 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -328,6 +328,7 @@ main(
     char *mailto = NULL;
     int    new_argc,   my_argc;
     char **new_argv, **my_argv;
+    char *lbl_templ;
 
     safe_fd(-1, 0);
 
@@ -633,7 +634,9 @@ main(
 	/* if the postscript_label_template (tp->lbl_templ) field is not */
 	/* the empty string (i.e. it is set to something), open the      */
 	/* postscript debugging file for writing.                        */
-	if ((strcmp(tapetype_get_lbl_templ(tp), "")) != 0) {
+	if (tp)
+	    lbl_templ = tapetype_get_lbl_templ(tp);
+	if (tp && lbl_templ && strcmp(lbl_templ, "") != 0) {
 	    if ((postscript = fopen(psfname, "w")) == NULL) {
 		curlog = L_ERROR;
 		curprog = P_REPORTER;
@@ -659,8 +662,9 @@ main(
 	    /* print to the default printer */
 	    printer_cmd = vstralloc(LPRCMD, NULL);
 #endif
-
-	if ((strcmp(tapetype_get_lbl_templ(tp), "")) != 0) {
+	if (tp)
+	    lbl_templ = tapetype_get_lbl_templ(tp);
+	if (tp && lbl_templ && strcmp(lbl_templ, "") != 0) {
 #ifdef LPRCMD
 	    if ((postscript = popen(printer_cmd, "w")) == NULL) {
 		curlog = L_ERROR;
@@ -807,8 +811,13 @@ output_stats(void)
     off_t marksize;
     int lv, first;
 
-    tapesize = tapetype_get_length(tp);
-    marksize = tapetype_get_filemark(tp);
+    if (tp) {
+	tapesize = tapetype_get_length(tp);
+	marksize = tapetype_get_filemark(tp);
+    } else {
+	tapesize = 100 * 1024 * 1024;
+	marksize = 1   * 1024 * 1024;
+    }
 
     stats[2].dumpdisks   = stats[0].dumpdisks   + stats[1].dumpdisks;
     stats[2].tapedisks   = stats[0].tapedisks   + stats[1].tapedisks;
@@ -2756,8 +2765,13 @@ do_postscript_output(void)
     off_t tapesize;
     off_t marksize;
 
-    tapesize = tapetype_get_length(tp);
-    marksize = tapetype_get_filemark(tp);
+    if (tp) {
+	tapesize = tapetype_get_length(tp);
+	marksize = tapetype_get_filemark(tp);
+    } else {
+	tapesize = 100 * 1024 * 1024;
+	marksize = 1   * 1024 * 1024;
+    }
 
     for(current_tape = stats_by_tape; current_tape != NULL;
 	    current_tape = current_tape->next) {

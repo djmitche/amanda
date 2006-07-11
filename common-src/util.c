@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.36 2006/07/07 14:02:32 martinea Exp $
+ * $Id: util.c,v 1.37 2006/07/11 18:05:37 martinea Exp $
  */
 
 #include "amanda.h"
@@ -1299,7 +1299,7 @@ conftoken_ungetc(
 	return ungetc(c, conf_conf);
     else if(conf_char > conf_line) {
 	if(c == -1)
-	    return EOF;
+	    return c;
 	conf_char--;
 	if(*conf_char != c) {
 	    error("*conf_char != c   : %c %c", *conf_char, c);
@@ -1377,7 +1377,7 @@ get_conftoken(
 		ch = conftoken_getc();
 	    } while(isalnum(ch) || ch == '_' || ch == '-');
 
-	    if (conftoken_ungetc(ch) == EOF) {
+	    if (ch != EOF && conftoken_ungetc(ch) == EOF) {
 		if (ferror(conf_conf)) {
 		    conf_parserror("Pushback of '%c' failed: %s",
 				   ch, strerror(ferror(conf_conf)));
@@ -1433,7 +1433,7 @@ negative_number: /* look for goto negative_number below sign is set there */
 		tok = CONF_REAL;
 	    }
 
-	    if (conftoken_ungetc(ch) == EOF) {
+	    if (ch != EOF &&  conftoken_ungetc(ch) == EOF) {
 		if (ferror(conf_conf)) {
 		    conf_parserror("Pushback of '%c' failed: %s",
 				   ch, strerror(ferror(conf_conf)));
@@ -1494,7 +1494,7 @@ negative_number: /* look for goto negative_number below sign is set there */
 		goto negative_number;
 	    }
 	    else {
-		if (conftoken_ungetc(ch) == EOF) {
+		if (ch != EOF && conftoken_ungetc(ch) == EOF) {
 		    if (ferror(conf_conf)) {
 			conf_parserror("Pushback of '%c' failed: %s",
 				       ch, strerror(ferror(conf_conf)));

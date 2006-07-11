@@ -1,4 +1,8 @@
 2006-07-11  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c: Don't conftoken_ungetc(ch) if ch == EOF.
+	* server-src/reporter.c: Check tp == NULL.
+
+2006-07-11  Jean-Louis Martineau <martineau@zmanda.com>
 	* tape-src/tapetype.c: Make -e an needed argument.
 	* man/xml-source/amtapetype.8.xml: Update man page.
 
