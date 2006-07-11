@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.25 2006/05/25 01:47:27 johnfranks Exp $
+ * $Id: tapetype.c,v 1.26 2006/07/11 18:01:21 martinea Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -180,7 +180,7 @@ usage(void)
   fputs(" [-c]", stderr);
   fputs(" [-o]", stderr);
   fputs(" [-b blocksize]", stderr);
-  fputs(" [-e estsize]", stderr);
+  fputs(" -e estsize", stderr);
   fputs(" [-f tapedev]", stderr);
   fputs(" [-t typename]", stderr);
   fputc('\n', stderr);
@@ -194,7 +194,7 @@ help(void)
   	"-c			run hardware compression detection test only\n"
   	"-o			overwrite amanda tape\n"
   	"-b blocksize		record block size (default: 32k)\n"
-  	"-e estsize		estimated tape size (default: 1g == 1024m)\n"
+  	"-e estsize		estimated tape size (No default!)\n"
   	"-f tapedev		tape device name (default: $TAPE)\n"
   	"-t typename		tapetype name (default: unknown-tapetype)\n"
   	"\n"
@@ -363,7 +363,7 @@ main(
   /* Don't die when child closes pipe */
   signal(SIGPIPE, SIG_IGN);
 
-  estsize = (off_t)(1024 * 1024);		/* assume 1 GByte for now */
+  estsize = (off_t)0;
   tapedev = getenv("TAPE");
   typename = "unknown-tapetype";
 
@@ -429,10 +429,26 @@ main(
   }
   blocksize = blockkb * 1024;
 
-  if (tapedev == NULL || optind < argc) {
+  if (tapedev == NULL) {
+    fprintf(stderr, "%s: No tapedev specified\n", sProgName);
     usage();
     return 1;
   }
+  if (optind < argc) {
+    usage();
+    return 1;
+  }
+
+  if (estsize == 0) {
+    if (comprtstonly) {
+      estsize = (off_t)(1024 * 1024);		/* assume 1 GByte for now */
+    } else {
+      fprintf(stderr, "%s: please specify estimated tape capacity (e.g. '-e 4g')\n", sProgName);
+      usage();
+      return 1;
+    }
+  }
+
 
 /* verifier tape */
 

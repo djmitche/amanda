@@ -27,7 +27,7 @@
     <arg choice='opt'>-c </arg>
     <arg choice='opt'>-o </arg>
     <arg choice='opt'>-b <replaceable>blocksize</replaceable></arg>
-    <arg choice='opt'>-e <replaceable>estsize</replaceable></arg>
+    <arg choice='plain'>-e <replaceable>estsize</replaceable></arg>
     <arg choice='opt'>-f <replaceable>tapedev</replaceable></arg>
     <arg choice='opt'>-t <replaceable>typename</replaceable></arg>
 </cmdsynopsis>
@@ -94,7 +94,7 @@ The device to perform the test.</para>
 
 <!-- .RS -->
 <literallayout remap='.nf'>
-% amtapetype -f /dev/nst0
+% amtapetype -f /dev/nst0 -e 150G
 </literallayout></refsect1>
 
 <refsect1><title>NOTES</title>
