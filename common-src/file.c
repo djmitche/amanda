@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.38 2006/07/05 19:56:09 martinea Exp $
+ * $Id: file.c,v 1.39 2006/07/11 11:01:20 martinea Exp $
  *
  * file and directory bashing routines
  */
@@ -486,8 +486,6 @@ debug_agets(
      * Return what we got even if there was not a newline.
      * Only report done (NULL) when no data was processed.
      */
-    dbprintf(("%s: agets(fd=%d) returns <%s>\n", debug_prefix(NULL),
-		fileno(stream), ((line == NULL) ? "NULL" : line)));
     return line;
 }
 
