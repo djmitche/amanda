@@ -1,4 +1,7 @@
 2006-07-11  Jean-Louis Martineau <martineau@zmanda.com>
+	* man/xml-source/amtapetype.8.xml: No default value for -e.
+
+2006-07-11  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.c: Don't conftoken_ungetc(ch) if ch == EOF.
 	* server-src/reporter.c: Check tp == NULL.
 
