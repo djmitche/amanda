@@ -1,4 +1,10 @@
 2006-07-11  Jean-Louis Martineau <martineau@zmanda.com>
+	* recover-src/extract_list.c (check_file_overwrite): Renamed from
+							  check_file_overwite.
+	* recover-src/extract_list.c (check_file_overwrite): Do the path check
+	  in the correct order (from left ro right).
+
+2006-07-11  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/file.c (debug_agets): Remove call to dbprintf.
 
 2006-07-10  Jean-Louis Martineau <martineau@zmanda.com>

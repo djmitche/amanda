@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.114 2006/07/10 12:58:48 martinea Exp $
+ * $Id: extract_list.c,v 1.115 2006/07/11 14:53:24 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -109,7 +109,7 @@ void add_regex(char *regex);
 void clear_extract_list(void);
 void clean_tape_list(EXTRACT_LIST *tape_list);
 void clean_extract_list(void);
-void check_file_overwite(char *filename);
+void check_file_overwrite(char *filename);
 void delete_file(char *path, char *regex);
 void delete_glob(char *glob);
 void delete_regex(char *regex);
@@ -475,7 +475,7 @@ free_unlink_list(void)
 
 
 void
-check_file_overwite(
+check_file_overwrite(
     char *dir)
 {
     EXTRACT_LIST      *this;
@@ -486,7 +486,41 @@ check_file_overwite(
 
     for (this = extract_list; this != NULL; this = this->next) {
 	for (fn = this->files; fn != NULL ; fn = fn->next) {
+
+	    /* Check path component of fn->path */
+
+	    path = stralloc2(dir, fn->path);
+	    if (path[strlen(path)-1] == '/') {
+		path[strlen(path)-1] = '\0';
+	    }
+
+	    s = path + strlen(dir) + 1;
+	    while((s = strchr(s, '/'))) {
+		*s = '\0';
+		if (lstat(path, &stat_buf) == 0) {
+		    if(!S_ISDIR(stat_buf.st_mode)) {
+			if (add_to_unlink_list(path)) {
+			    printf("WARNING: %s is not a directory, "
+				   "it will be deleted.\n",
+				   path);
+			}
+		    }
+		}
+		else if (errno != ENOENT) {
+		    printf("Can't stat %s: %s\n", path, strerror(errno));
+		}
+		*s = '/';
+		s++;
+	    }
+	    amfree(path);
+
+	    /* Check fn->path */
+
 	    filename = stralloc2(dir, fn->path);
+	    if (filename[strlen(filename)-1] == '/') {
+		filename[strlen(filename)-1] = '\0';
+	    }
+
 	    if (lstat(filename, &stat_buf) == 0) {
 		if(S_ISDIR(stat_buf.st_mode)) {
 		    if(!is_empty_dir(filename)) {
@@ -506,27 +540,6 @@ check_file_overwite(
 		printf("Can't stat %s: %s\n", filename, strerror(errno));
 	    }
 	    amfree(filename);
-
-	    path = stralloc(fn->path);
-	    while((s = strrchr(path,'/'))) {
-		*s = '\0';
-		filename = stralloc2(dir, path);
-		if (lstat(filename, &stat_buf) == 0) {
-		    if(!S_ISDIR(stat_buf.st_mode)) {
-			if (add_to_unlink_list(filename)) {
-			    printf("WARNING: %s is not a directory, "
-				   "it will be deleted.\n",
-				   filename);
-			}
-		    }
-		}
-		else if (errno != ENOENT) {
-		    printf("Can't stat %s: %s\n", filename, strerror(errno));
-		}
-		amfree(filename);
-	    }
-	    amfree(path);
-
 	}
     }
 }
@@ -2147,7 +2160,7 @@ extract_files(void)
     }
 
     printf("Restoring files into directory %s\n", cwd);
-    check_file_overwite(cwd);
+    check_file_overwrite(cwd);
 
 #ifdef SAMBA_CLIENT
     if (samba_extract_method == SAMBA_SMBCLIENT)
