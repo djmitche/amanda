@@ -1,4 +1,8 @@
 2006-07-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c (free_new_argv): Move out of
+					     #ifndef HAVE_LIBREADLINE.
+
+2006-07-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amadmin.c (tape): Report the number of new tapes instead
 				       of "a new tape" for each tapes.
 	* server-src/reporter.c (output_tapeinfo): Ditto.

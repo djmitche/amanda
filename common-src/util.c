@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.37 2006/07/11 18:05:37 martinea Exp $
+ * $Id: util.c,v 1.38 2006/07/12 17:35:33 martinea Exp $
  */
 
 #include "amanda.h"
@@ -2385,6 +2385,18 @@ command_overwrite(
     }
 }
 
+void
+free_new_argv(
+    int new_argc,
+    char **new_argv)
+{
+    int i;
+    for(i=0; i<new_argc; i++)
+	amfree(new_argv[i]);
+    amfree(new_argv);
+}
+
+
 #ifndef HAVE_LIBREADLINE
 /*
  * simple readline() replacements
@@ -2405,16 +2417,5 @@ add_history(
     const char *line)
 {
     (void)line; 	/* Quite unused parameter warning */
-}
-
-void
-free_new_argv(
-    int new_argc,
-    char **new_argv)
-{
-    int i;
-    for(i=0; i<new_argc; i++)
-	amfree(new_argv[i]);
-    amfree(new_argv);
 }
 #endif
