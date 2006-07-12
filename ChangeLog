@@ -1,4 +1,9 @@
 2006-07-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amadmin.c (tape): Report the number of new tapes instead
+				       of "a new tape" for each tapes.
+	* server-src/reporter.c (output_tapeinfo): Ditto.
+
+2006-07-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taperscan.c (changer_taper_scan): Report error from
 						       changer_find.
 
