@@ -1,3 +1,7 @@
+2006-07-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taperscan.c (changer_taper_scan): Report error from
+						       changer_find.
+
 2006-07-11  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/xml-source/amtapetype.8.xml: No default value for -e.
 

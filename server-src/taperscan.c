@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.16 2006/06/12 15:34:49 martinea Exp $
+ * $Id: taperscan.c,v 1.17 2006/07/12 12:28:19 martinea Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -285,6 +285,8 @@ changer_taper_scan(
 
     /* Didn't find a tape. :-( */
     assert(local_data.tape_status <= 0);
+    taperscan_output_callback(data, "changer problem: ");
+    taperscan_output_callback(data, changer_resultstr);
     return -1;
 }
 
