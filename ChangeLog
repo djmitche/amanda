@@ -1,4 +1,7 @@
 2006-07-13  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/stream.c (stream_accept): Loop 5 times on select error.
+
+2006-07-13  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/dumper.c: The datafd is not scheduled at start,
 			       add test for it.
 	* common-src/stream.c (tcpm_recv_token): Set error_msg.
