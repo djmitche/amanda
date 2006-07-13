@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.127 2006/06/01 19:27:51 martinea Exp $
+ * $Id: amanda.h,v 1.128 2006/07/13 03:22:20 paddy_s Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1003,7 +1003,7 @@ extern int ioctl(int fildes, int request, ...);
 
 #ifndef isnormal
 #ifndef HAVE_ISNORMAL
-#define	isnormal(f) ((f) != 0.0)
+#define	isnormal(f) (((f) < 0.0) || ((f) > 0.0))
 #endif
 #endif
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: genversion.c,v 1.35 2006/07/06 11:57:29 martinea Exp $
+ * $Id: genversion.c,v 1.36 2006/07/13 03:22:20 paddy_s Exp $
  *
  * dump the current Amanda version info
  */
@@ -87,7 +87,8 @@ prvar(
 	buf_len = new_len;
 	buf = malloc(new_len);
 	if (!buf) {
-	    error("Not enough memory");
+	    fprintf(stderr, "genversion: Not enough memory");
+	    abort();
 	    /*NOTREACHED*/
 	}
     }
@@ -110,7 +111,8 @@ prundefvar(
 	buf_len = new_len;
 	buf = malloc(new_len);		/* let it die if malloc() fails */
 	if (!buf) {
-	    error("Not enough memory");
+	    fprintf(stderr, "genversion: Not enough memory");
+	    abort();
 	    /*NOTREACHED*/
 	}
     }
@@ -137,7 +139,8 @@ prnum(
 	buf_len = new_len;
 	buf = malloc(new_len);		/* let it die if malloc() fails */
 	if (!buf) {
-	    error("Not enough memory");
+	    fprintf(stderr, "genversion: Not enough memory");
+	    abort();
 	    /*NOTREACHED*/
 	}
     }
@@ -165,7 +168,8 @@ main(
     v_len = SIZEOF("Amanda-") + strlen(v) + 1;
     verstr = malloc(v_len);
     if (!verstr) {
-	error("Not enough memory");
+	fprintf(stderr, "genversion: Not enough memory");
+	abort();
 	/*NOTREACHED*/
     }
     snprintf(verstr, v_len, "Amanda-%s", v);		/* safe */

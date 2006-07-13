@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: bsdtcp-security.c,v 1.6 2006/06/01 14:54:39 martinea Exp $
+ * $Id: bsdtcp-security.c,v 1.7 2006/07/13 03:22:20 paddy_s Exp $
  *
  * bsdtcp-security.c - security and transport over bsdtcp or a bsdtcp-like command.
  *
@@ -236,8 +236,8 @@ runbsdtcp(
 
     server_socket = stream_client_privileged(rc->hostname,
 				     (in_port_t)(ntohs((in_port_t)sp->s_port)),
-				     -1,
-				     -1,
+				     STREAM_BUFSIZE,
+				     STREAM_BUFSIZE,
 				     &my_port,
 				     0);
 

@@ -11,6 +11,13 @@
 	* server-src/taperscan.c (changer_taper_scan): Report error from
 						       changer_find.
 
+2006-07-11  John Franks jrfranks@zmanda.com
+	* configure.in: Fix multiple definition of readline during cygwin
+	  compile.
+
+2006-07-11  Paddy Sreenivasan <paddy@zmanda.com>
+	* common-src/pipespawn.c : Fixed compiler warning
+
 2006-07-11  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/xml-source/amtapetype.8.xml: No default value for -e.
 
@@ -56,6 +63,13 @@
 	* common-src/security-util.c (stream_read_sync_callback): Remove bogus
 	  call of callback.
 
+2006-07-07  Kevin Till  <ktill@zmanda.com>
+	* common-src/bsd-security.c: use STREAM_BUFSIZE instead of -1
+	* common-src/bsdtcp-security.c: ditto
+	* common-src/krb4-security.c: ditto 
+	* common-src/security-util.c: ditto
+	* restore-src/amidxtaped.c: ditto
+
 2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.c (get_conftoken): Remove duplicate conftoken_ungetc.
 
@@ -67,6 +81,11 @@
 
 2006-07-07  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/sendsize.c: Typo.
+
+2006-07-06  John Franks	<jrfranks@zmanda.com>
+	* common-src/genversion.c:
+		Remove reference to error().  This causes a compile
+		error on cygwin.
 
 2006-07-06  Jean-Louis Martineau <martineau@zmanda.com>
 	Klocwork bug 128, 170, 182, 470, 517

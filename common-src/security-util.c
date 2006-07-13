@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.21 2006/07/07 18:51:29 martinea Exp $
+ * $Id: security-util.c,v 1.22 2006/07/13 03:22:20 paddy_s Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -722,7 +722,8 @@ tcp1_stream_server(
 	rh->rc = sec_tcp_conn_get(rh->hostname, 1);
 	rh->rc->driver = rh->sech.driver;
 	rs->rc = rh->rc;
-	rs->socket = stream_server(&rs->port, STREAM_BUFSIZE, STREAM_BUFSIZE, 0);
+	rs->socket = stream_server(&rs->port, STREAM_BUFSIZE, 
+		STREAM_BUFSIZE, 0);
 	if (rs->socket < 0) {
 	    security_seterror(&rh->sech,
 			    "can't create server stream: %s", strerror(errno));
@@ -753,7 +754,7 @@ tcp1_stream_accept(
     assert(bs->fd < 0);
 
     if (bs->socket > 0) {
-	bs->fd = stream_accept(bs->socket, 30, -1, -1);
+	bs->fd = stream_accept(bs->socket, 30, STREAM_BUFSIZE, STREAM_BUFSIZE);
 	if (bs->fd < 0) {
 	    security_stream_seterror(&bs->secstr,
 				     "can't accept new stream connection: %s",

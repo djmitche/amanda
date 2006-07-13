@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.73 2006/07/05 13:18:20 martinea Exp $
+ * $Id: bsd-security.c,v 1.74 2006/07/13 03:22:20 paddy_s Exp $
  *
  * "BSD" security module
  */
@@ -327,7 +327,7 @@ bsd_stream_accept(
     assert(bs->socket != -1);
     assert(bs->fd < 0);
 
-    bs->fd = stream_accept(bs->socket, 30, -1, -1);
+    bs->fd = stream_accept(bs->socket, 30, STREAM_BUFSIZE, STREAM_BUFSIZE);
     if (bs->fd < 0) {
 	security_stream_seterror(&bs->secstr,
 	    "can't accept new stream connection: %s", strerror(errno));

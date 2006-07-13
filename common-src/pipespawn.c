@@ -84,8 +84,8 @@ pipespawnv_passwd(
     char *e;
     char **env;
     char **newenv;
-    char *passwdvar;
-    int  *passwdfd;
+    char *passwdvar = NULL;
+    int  *passwdfd = NULL;
 
     /*
      * Log the command line and count the args.
