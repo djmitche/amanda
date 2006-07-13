@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.22 2006/07/13 03:22:20 paddy_s Exp $
+ * $Id: security-util.c,v 1.23 2006/07/13 11:46:14 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -502,6 +502,7 @@ tcpm_recv_token(
     case 0:
 	*size = 0;
 	*handle = H_EOF;
+	*errmsg = newvstralloc(*errmsg, "SOCKET_EOF", NULL);
 	secprintf(("%s: tcpm_recv_token: A return(0)\n",
 		   debug_prefix_time(NULL)));
 	return (0);
@@ -539,6 +540,7 @@ tcpm_recv_token(
 	return (-1);
     case 0:
 	*size = 0;
+	*errmsg = newvstralloc(*errmsg, "SOCKET_EOF", NULL);
 	secprintf(("%s: tcpm_recv_token: B return(0)\n",
 		   debug_prefix_time(NULL)));
 	return (0);
