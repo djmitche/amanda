@@ -3137,7 +3137,7 @@ AM_CONDITIONAL(HAVE_XSLTPROC, test "x$USE_XSLTPROC" = "xyes")
 #### Enforce amanda code cleanliness rules.
 #### Done here to allow configuration code to remain intact.
 if test "x$CC" = "xgcc"; then
-  AM_CFLAGS="$AM_CFLAGS -Wall -Werror"
+  AM_CFLAGS="$AM_CFLAGS -Wall"
   $CC -v --help 2>&1 | $GREP -- '-Wextra ' 2>&1 > /dev/null
   if test $? -eq 0; then
     AM_CFLAGS="$AM_CFLAGS -Wextra"

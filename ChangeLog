@@ -1,4 +1,8 @@
 2006-07-14  Jean-Louis Martineau <martineau@zmanda.com>
+	* Amanda 2.5.1b1 released.
+	* configure.in: Remove -Werror.
+
+2006-07-14  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/sendsize.c: Use read/write to copy tar snapshot file.
 	* client-src/sendbackup-gnutar.c: Ditto.
 
