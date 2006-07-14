@@ -1,3 +1,7 @@
+2006-07-14  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/sendsize.c: Use read/write to copy tar snapshot file.
+	* client-src/sendbackup-gnutar.c: Ditto.
+
 2006-07-13  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/stream.c (stream_accept): Loop 5 times on select error.
 

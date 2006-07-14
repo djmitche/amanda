@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.159 2006/07/07 10:39:26 martinea Exp $
+ * $Id: sendsize.c,v 1.160 2006/07/14 11:56:31 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1638,7 +1638,10 @@ getsize_gnutar(
     char *file_exclude = NULL;
     char *file_include = NULL;
     times_t start_time;
-    char *qdisk = quote_string(disk);;
+    int infd, outfd;
+    ssize_t nb;
+    char buf[32768];
+    char *qdisk = quote_string(disk);
 
     if(options->exclude_file) nb_exclude += options->exclude_file->nb_element;
     if(options->exclude_list) nb_exclude += options->exclude_list->nb_element;
@@ -1682,7 +1685,8 @@ getsize_gnutar(
 	 * be true for a level 0), arrange to read from /dev/null.
 	 */
 	baselevel = level;
-	while (in == NULL) {
+	infd = -1;
+	while (infd == -1) {
 	    if (--baselevel >= 0) {
 		snprintf(number, SIZEOF(number), "%d", baselevel);
 		inputname = newvstralloc(inputname,
@@ -1690,7 +1694,7 @@ getsize_gnutar(
 	    } else {
 		inputname = newstralloc(inputname, "/dev/null");
 	    }
-	    if ((in = fopen(inputname, "r")) == NULL) {
+	    if ((infd = open(inputname, O_RDONLY)) == -1) {
 		int save_errno = errno;
 
 		dbprintf(("%s: gnutar: error opening %s: %s\n",
@@ -1704,42 +1708,36 @@ getsize_gnutar(
 	/*
 	 * Copy the previous listed incremental file to the new one.
 	 */
-	if ((out = fopen(incrname, "w")) == NULL) {
+	if ((outfd = open(incrname, O_WRONLY|O_CREAT, 0600)) == -1) {
 	    dbprintf(("%s: opening %s: %s\n",
 		      debug_prefix(NULL), incrname, strerror(errno)));
 	    goto common_exit;
 	}
 
-	for (; (line = agets(in)) != NULL; free(line)) {
-	    if (line[0] == '\0')
-		continue;
-	    if (fputs(line, out) == EOF || putc('\n', out) == EOF) {
+	while ((nb = read(infd, &buf, SIZEOF(buf))) > 0) {
+	    if (fullwrite(outfd, &buf, nb) < nb) {
 		dbprintf(("%s: writing to %s: %s\n",
 			   debug_prefix(NULL), incrname, strerror(errno)));
 		goto common_exit;
 	    }
 	}
-	amfree(line);
 
-	if (ferror(in)) {
+	if (nb < 0) {
 	    dbprintf(("%s: reading from %s: %s\n",
 		      debug_prefix(NULL), inputname, strerror(errno)));
 	    goto common_exit;
 	}
-	if (fclose(in) == EOF) {
+
+	if (close(infd) != 0) {
 	    dbprintf(("%s: closing %s: %s\n",
 		      debug_prefix(NULL), inputname, strerror(errno)));
-	    in = NULL;
 	    goto common_exit;
 	}
-	in = NULL;
-	if (fclose(out) == EOF) {
+	if (close(outfd) != 0) {
 	    dbprintf(("%s: closing %s: %s\n",
 		      debug_prefix(NULL), incrname, strerror(errno)));
-	    out = NULL;
 	    goto common_exit;
 	}
-	out = NULL;
 
 	amfree(inputname);
 	amfree(basename);
