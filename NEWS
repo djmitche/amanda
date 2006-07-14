@@ -1,5 +1,6 @@
-Changes in release 2.5.1
+Changes in release 2.5.1b1
 
+* work with tar-1.15.91
 * Open SSL encryption support
 * amfetchdump -o is replaced by -O.
 * amrecover_do_fsf default to yes
