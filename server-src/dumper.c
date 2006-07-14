@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.180 2006/06/09 10:39:55 martinea Exp $
+/* $Id: dumper.c,v 1.181 2006/07/14 11:44:46 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -99,6 +99,7 @@ static char *dumpdate = NULL;
 static char *dumper_timestamp = NULL;
 static time_t conf_dtimeout;
 static int indexfderror;
+static int set_datafd;
 
 static dumpfile_t file;
 
@@ -1109,6 +1110,7 @@ do_dump(
      * the header, we will start processing data too.
      */
     security_stream_read(streams[MESGFD].fd, read_mesgfd, db);
+    set_datafd = 0;
 
     /*
      * Setup a read timeout
@@ -1280,7 +1282,8 @@ read_mesgfd(
 	/*
 	 * If the data fd and index fd has also shut down, then we're done.
 	 */
-	if (streams[DATAFD].fd == NULL && streams[INDEXFD].fd == NULL)
+	if ((set_datafd == 0 || streams[DATAFD].fd == NULL) && 
+	    streams[INDEXFD].fd == NULL)
 	    stop_dump();
 	return;
 
@@ -1329,6 +1332,7 @@ read_mesgfd(
 	    }
 	}
 	security_stream_read(streams[DATAFD].fd, read_datafd, db);
+	set_datafd = 1;
     }
 }
 
@@ -1427,7 +1431,8 @@ read_indexfd(
 	/*
 	 * If the mesg fd has also shut down, then we're done.
 	 */
-	if (streams[DATAFD].fd == NULL && streams[MESGFD].fd == NULL)
+	if ((set_datafd == 0 || streams[DATAFD].fd == NULL) &&
+	     streams[MESGFD].fd == NULL)
 	    stop_dump();
 	return;
     }

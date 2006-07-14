@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.37 2006/06/09 10:39:55 martinea Exp $
+ * $Id: stream.c,v 1.38 2006/07/14 11:44:46 martinea Exp $
  *
  * functions for managing stream sockets
  */
@@ -334,43 +334,50 @@ stream_accept(
     struct timeval tv;
     int nfound, connected_socket;
     int save_errno;
+    int ntries = 0;
 
     assert(server_socket >= 0);
 
-    memset(&tv, 0, SIZEOF(tv));
-    tv.tv_sec = timeout;
-    memset(&readset, 0, SIZEOF(readset));
-    FD_ZERO(&readset);
-    FD_SET(server_socket, &readset);
-    nfound = select(server_socket+1, &readset, NULL, NULL, &tv);
-    if(nfound <= 0 || !FD_ISSET(server_socket, &readset)) {
-	save_errno = errno;
-	if(nfound < 0) {
-	    dbprintf(("%s: stream_accept: select() failed: %s\n",
+    do {
+	ntries++;
+	memset(&tv, 0, SIZEOF(tv));
+	tv.tv_sec = timeout;
+	memset(&readset, 0, SIZEOF(readset));
+	FD_ZERO(&readset);
+	FD_SET(server_socket, &readset);
+	nfound = select(server_socket+1, &readset, NULL, NULL, &tv);
+	if(nfound <= 0 || !FD_ISSET(server_socket, &readset)) {
+	    save_errno = errno;
+	    if(nfound < 0) {
+		dbprintf(("%s: stream_accept: select() failed: %s\n",
 		      debug_prefix_time(NULL),
 		      strerror(save_errno)));
-	} else if(nfound == 0) {
-	    dbprintf(("%s: stream_accept: timeout after %d second%s\n",
+	    } else if(nfound == 0) {
+		dbprintf(("%s: stream_accept: timeout after %d second%s\n",
 		      debug_prefix_time(NULL),
 		      timeout,
 		      (timeout == 1) ? "" : "s"));
-	    save_errno = ENOENT;			/* ??? */
-	} else if (!FD_ISSET(server_socket, &readset)) {
-	    int i;
+		errno = ENOENT;			/* ??? */
+		return -1;
+	    } else if (!FD_ISSET(server_socket, &readset)) {
+		int i;
 
-	    for(i = 0; i < server_socket + 1; i++) {
-		if(FD_ISSET(i, &readset)) {
-		    dbprintf(("%s: stream_accept: got fd %d instead of %d\n",
+		for(i = 0; i < server_socket + 1; i++) {
+		    if(FD_ISSET(i, &readset)) {
+			dbprintf(("%s: stream_accept: got fd %d instead of %d\n",
 			      debug_prefix_time(NULL),
 			      i,
 			      server_socket));
+		    }
 		}
+	        save_errno = EBADF;
 	    }
-	    save_errno = EBADF;
-	}
-	errno = save_errno;
-	return -1;
-    }
+	    if (ntries < 5) {
+		errno = save_errno;
+		return -1;
+	    }
+        }
+    } while (nfound <= 0);
 
     while(1) {
 	addrlen = (socklen_t)sizeof(struct sockaddr);
