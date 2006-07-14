@@ -38,6 +38,7 @@ SUBDIRS = \
 	man docs example
 
 pkgdata_DATA = \
+	ReleaseNotes			\
 	COPYRIGHT			\
 	COPYRIGHT-APACHE		\
 	COPYRIGHT-REGEX

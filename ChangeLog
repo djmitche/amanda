@@ -1,4 +1,7 @@
 2006-07-14  Jean-Louis Martineau <martineau@zmanda.com>
+	* Makefile.am (pkgdata_DATA): add ReleaseNotes.
+
+2006-07-14  Jean-Louis Martineau <martineau@zmanda.com>
 	* Amanda 2.5.1b1 released.
 	* configure.in: Remove -Werror.
 
