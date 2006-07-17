@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.31 2006/06/06 23:13:26 paddy_s Exp $
+/* $Id: chunker.c,v 1.32 2006/07/17 11:23:53 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -312,7 +312,8 @@ main(
 		double rt;
 
 		runtime = stopclock();
-		rt = (double)(runtime.r.tv_sec + runtime.r.tv_usec)/1000000.0;
+		rt = (double)(runtime.r.tv_sec) +
+		     ((double)(runtime.r.tv_usec) / 1000000.0);
 		snprintf(kb_str, SIZEOF(kb_str), OFF_T_FMT,
 			 (OFF_T_FMT_TYPE)(dumpsize - (off_t)headersize));
 		snprintf(kps_str, SIZEOF(kps_str), "%3.1lf",

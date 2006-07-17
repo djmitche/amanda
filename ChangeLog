@@ -1,4 +1,9 @@
 2006-07-17  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/chunker.c: Fix rt computation.
+	* server-src/dumper.c: Fix dumptime computation.
+	* server-src/taper.c: Fix rt computation.
+
+2006-07-17  Jean-Louis Martineau <martineau@zmanda.com>
 	* NEWS: Klocwork defects fixed.
 	* NEWS: Coverity defect fixed.
 

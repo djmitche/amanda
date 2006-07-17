@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.181 2006/07/14 11:44:46 martinea Exp $
+/* $Id: dumper.c,v 1.182 2006/07/17 11:23:53 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1127,7 +1127,8 @@ do_dump(
 	goto failed;
 
     runtime = stopclock();
-    dumptime = (double)(runtime.r.tv_sec + runtime.r.tv_usec) / 1000000.0;
+    dumptime = (double)(runtime.r.tv_sec) +
+	       ((double)(runtime.r.tv_usec) / 1000000.0);
 
     dumpsize -= headersize;		/* don't count the header */
     if (dumpsize < (off_t)0)		/* XXX - maybe this should be fatal? */
