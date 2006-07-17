@@ -1,5 +1,7 @@
 Changes in release 2.5.1b1
 
+* Klocwork defects fixed.
+* Coverity defect fixed.
 * work with tar-1.15.91
 * Open SSL encryption support
 * amfetchdump -o is replaced by -O.
