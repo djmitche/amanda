@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.102 2006/07/06 13:13:15 martinea Exp $
+ * $Id: amindexd.c,v 1.103 2006/07/19 17:41:16 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -1065,7 +1065,7 @@ main(
 
 #endif	/* FORCE_USERID */
 
-    dbopen();
+    dbopen("server");
     dbprintf(("%s: version %s\n", get_pname(), version()));
 
     if(argv == NULL) {

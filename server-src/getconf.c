@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.22 2006/06/27 19:22:55 martinea Exp $
+ * $Id: getconf.c,v 1.23 2006/07/19 17:41:17 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -523,7 +523,7 @@ main(
 	    pname++;
 	}
 	set_pname(pname);
-	dbopen();
+	dbopen("server");
 	if((dbname = dbfn()) == NULL) {
 	    result = stralloc("/dev/null");
 	} else {

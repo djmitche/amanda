@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: runtar.c,v 1.18 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: runtar.c,v 1.19 2006/07/19 17:41:14 martinea Exp $
  *
  * runs GNUTAR program as root
  */
@@ -55,7 +55,7 @@ main(
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
-    dbopen();
+    dbopen("client");
     dbprintf(("runtar: version %s\n", version()));
 
 #ifndef GNUTAR

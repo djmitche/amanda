@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.29 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: rundump.c,v 1.30 2006/07/19 17:41:14 martinea Exp $
  *
  * runs DUMP program as root
  */
@@ -69,7 +69,7 @@ main(
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
-    dbopen();
+    dbopen("client");
     dbprintf(("%s: version %s\n", argv[0], version()));
 
 #ifdef ERRMSG							/* { */

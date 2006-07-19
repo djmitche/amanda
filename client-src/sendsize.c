@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.160 2006/07/14 11:56:31 martinea Exp $
+ * $Id: sendsize.c,v 1.161 2006/07/19 17:41:14 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -160,7 +160,7 @@ main(
 #endif
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
-    dbopen();
+    dbopen("client");
     startclock();
     dbprintf(("%s: version %s\n", get_pname(), version()));
 

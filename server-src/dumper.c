@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.182 2006/07/17 11:23:53 martinea Exp $
+/* $Id: dumper.c,v 1.183 2006/07/19 17:41:17 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -251,7 +251,7 @@ main(
 
     set_pname("dumper");
 
-    dbopen();
+    dbopen("server");
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);

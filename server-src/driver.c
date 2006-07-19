@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.188 2006/07/06 13:13:15 martinea Exp $
+ * $Id: driver.c,v 1.189 2006/07/19 17:41:16 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -166,7 +166,7 @@ main(
 
     set_pname("driver");
 
-    dbopen();
+    dbopen("server");
 
     atexit(wait_for_children);
 

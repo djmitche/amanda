@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.196 2006/06/22 20:41:33 martinea Exp $
+ * $Id: planner.c,v 1.197 2006/07/19 17:41:17 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 
     set_pname("planner");
 
-    dbopen();
+    dbopen("server");
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);

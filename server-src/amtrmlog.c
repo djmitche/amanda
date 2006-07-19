@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmlog.c,v 1.14 2006/06/06 14:48:29 martinea Exp $
+ * $Id: amtrmlog.c,v 1.15 2006/07/19 17:41:16 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -95,7 +95,7 @@ main(
 	return 1;
     }
 
-    dbopen();
+    dbopen("server");
     dbprintf(("%s: version %s\n", my_argv[0], version()));
 
     config_name = my_argv[1];

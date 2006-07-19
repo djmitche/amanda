@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.60 2006/07/06 11:57:29 martinea Exp $
+ * $Id: amrestore.c,v 1.61 2006/07/19 17:41:16 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -122,7 +122,7 @@ main(
 
     set_pname("amrestore");
 
-    dbopen();
+    dbopen("server");
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);

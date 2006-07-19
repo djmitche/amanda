@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: statfs.c,v 1.14 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: statfs.c,v 1.15 2006/07/19 17:41:15 martinea Exp $
  *
  * a generic statfs-like routine
  */
@@ -168,7 +168,7 @@ main(
 
     set_pname(argv[0]);
 
-    dbopen();
+    dbopen(NULL);
 
     if(argc < 2) {
 	fprintf(stderr, "Usage: %s files ...\n", get_pname());

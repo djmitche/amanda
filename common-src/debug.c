@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.37 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: debug.c,v 1.38 2006/07/19 17:41:15 martinea Exp $
  *
  * debug log subroutines
  */
@@ -51,7 +51,7 @@ static char *db_filename = NULL;
 
 static pid_t debug_prefix_pid = 0;
 static char *get_debug_name(time_t t, int n);
-static void debug_setup_1(void);
+static void debug_setup_1(char *subdir);
 static void debug_setup_2(char *s, int fd, char *notation);
 
 /*
@@ -115,7 +115,8 @@ static char *dbgdir = NULL;
 static time_t curtime;
 
 static void
-debug_setup_1(void)
+debug_setup_1(
+    char *subdir)
 {
     struct passwd *pwent;
     char *pname;
@@ -146,7 +147,10 @@ debug_setup_1(void)
      * Create the debug directory if it does not yet exist.
      */
     amfree(dbgdir);
-    dbgdir = stralloc2(AMANDA_DBGDIR, "/");
+    if (subdir)
+	dbgdir = vstralloc(AMANDA_DBGDIR, "/", subdir, "/", NULL);
+    else
+	dbgdir = stralloc2(AMANDA_DBGDIR, "/");
     if(mkpdir(dbgdir, 02700, client_uid, client_gid) == -1) {
         error("create debug directory \"%s\": %s",
 	      AMANDA_DBGDIR, strerror(errno));
@@ -269,7 +273,7 @@ debug_setup_2(
 }
 
 void
-debug_open(void)
+debug_open(char *subdir)
 {
     char *dbfilename;
     int fd = -1;
@@ -280,7 +284,7 @@ debug_open(void)
     /*
      * Do initial setup.
      */
-    debug_setup_1();
+    debug_setup_1(subdir);
 
     /*
      * Create the new file with a unique sequence number.
@@ -332,7 +336,7 @@ debug_reopen(
     /*
      * Do initial setup.
      */
-    debug_setup_1();
+    debug_setup_1(NULL);
 
     /*
      * Reopen the file.

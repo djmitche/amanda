@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: killpgrp.c,v 1.13 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: killpgrp.c,v 1.14 2006/07/19 17:41:14 martinea Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -61,7 +61,7 @@ int main(
 
     set_pname("killpgrp");
 
-    dbopen();
+    dbopen("client");
     dbprintf(("%s: version %s\n", argv[0], version()));
 
     if(client_uid == (uid_t) -1) {

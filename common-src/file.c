@@ -23,7 +23,7 @@
  * Author: AMANDA core development group.
  */
 /*
- * $Id: file.c,v 1.39 2006/07/11 11:01:20 martinea Exp $
+ * $Id: file.c,v 1.40 2006/07/19 17:41:15 martinea Exp $
  *
  * file and directory bashing routines
  */
@@ -686,7 +686,7 @@ main(
 
 	set_pname("file test");
 
-	dbopen();
+	dbopen(NULL);
 
 	/* Don't die when child closes pipe */
 	signal(SIGPIPE, SIG_IGN);

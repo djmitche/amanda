@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.39 2006/07/05 13:24:52 martinea Exp $
+ * $Id: calcsize.c,v 1.40 2006/07/19 17:41:14 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -128,7 +128,7 @@ main(
 
     set_pname("calcsize");
 
-    dbopen();
+    dbopen(NULL);
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
@@ -161,7 +161,7 @@ main(
 
     set_pname("calcsize");
 
-    dbopen();
+    dbopen("client");
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

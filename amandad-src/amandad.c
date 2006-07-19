@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.15 2006/06/16 19:05:30 martinea Exp $
+ * $Id: amandad.c,v 1.16 2006/07/19 17:41:13 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -226,7 +226,7 @@ main(
 	    pgm = basename(argv[0]);	/* Strip of leading path get debug name */
     }
     set_pname(pgm);
-    dbopen();
+    dbopen("amandad");
 
     if(argv == NULL) {
 	error("argv == NULL\n");

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: token.c,v 1.31 2006/05/25 17:35:34 martinea Exp $
+ * $Id: token.c,v 1.32 2006/07/19 17:41:15 martinea Exp $
  *
  * token bashing routines
  */
@@ -423,7 +423,7 @@ main(
 
 	set_pname("token test");
 
-	dbopen();
+	dbopen(NULL);
 
 	/* Don't die when child closes pipe */
 	signal(SIGPIPE, SIG_IGN);

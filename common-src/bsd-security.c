@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.74 2006/07/13 03:22:20 paddy_s Exp $
+ * $Id: bsd-security.c,v 1.75 2006/07/19 17:41:14 martinea Exp $
  *
  * "BSD" security module
  */
@@ -699,7 +699,7 @@ main (
     } while (remotehost[0] == '\0');
 
     set_pname("security");
-    dbopen();
+    dbopen(NULL);
 
     startclock();
 

@@ -1,3 +1,50 @@
+2006-07-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c: Call dbopen("amandad").
+	* changer-src/chg-scsi.c: Call dbopen("server").
+	* changer-src/chg-scsi-chio.c: Call dbopen("server").
+	* client-src/calcsize.c: Call dbopen("client").
+	* client-src/getfsent.c: Call dbopen(NULL).
+	* client-src/killpgrp.c: Call dbopen("client").
+	* client-src/rundump.c: Call dbopen("client").
+	* client-src/runstar.c: Call dbopen("client").
+	* client-src/runtar.c: Call dbopen("client").
+	* client-src/selfcheck.c: Call dbopen("client").
+	* client-src/sendbackup.c: Call dbopen("client").
+	* client-src/sendsize.c: Call dbopen("client").
+	* common-src/amanda.h (dbopen, debug_open): Take a 'char * subdir'
+						    argument.
+	* common-src/bsd-security.c: Call dbopen(NULL).
+	* common-src/debug.c (debug_open): Call debug_setup_1(subdir)
+	* common-src/debug.c (debug_setup_1): Take a subdir argument,
+					      add it to dbgdir.
+	* common-src/file.c: Call dbopen(NULL).
+	* common-src/statfs.c: Call dbopen(NULL).
+	* common-src/token.c: Call dbopen(NULL).
+	* oldrecover-src/amrecover.c: Call dbopen("client").
+	* recover-src/amrecover.c: Call dbopen("client").
+	* restore-src/amfetchdump.c: Call dbopen("server").
+	* restore-src/amidxtaped.c: Call dbopen("server").
+	* restore-src/amrestore.c: Call dbopen("server").
+	* server-src/amadmin.c: Call dbopen("server").
+	* server-src/amcheck.c: Call dbopen("server").
+	* server-src/amcleanupdisk.c: Call dbopen("server").
+	* server-src/amflush.c: Call dbopen("server").
+	* server-src/amindexd.c: Call dbopen("server").
+	* server-src/amlabel.c: Call dbopen("server").
+	* server-src/amlogroll.c: Call dbopen("server").
+	* server-src/amtape.c: Call dbopen("server").
+	* server-src/amtrmidx.c: Call dbopen("server").
+	* server-src/amtrmlog.c: Call dbopen("server").
+	* server-src/chunker.c: Call dbopen("server").
+	* server-src/diskfile.c: Call dbopen("server").
+	* server-src/driver.c: Call dbopen("server").
+	* server-src/dumper.c: Call dbopen("server").
+	* server-src/getconf.c: Call dbopen("server").
+	* server-src/infofile.c: Call dbopen("server").
+	* server-src/planner.c: Call dbopen("server").
+	* server-src/reporter.c: Call dbopen("server").
+	* server-src/taper.c: Call dbopen("server").
+
 2006-07-17  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/chunker.c: Fix rt computation.
 	* server-src/dumper.c: Fix dumptime computation.

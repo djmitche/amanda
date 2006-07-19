@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.70 2006/07/06 18:17:28 martinea Exp $
+ * $Id: amrecover.c,v 1.71 2006/07/19 17:41:15 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -314,7 +314,7 @@ main(
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
-    dbopen();
+    dbopen("client");
 
 #ifndef IGNORE_UID_CHECK
     if (geteuid() != 0) {

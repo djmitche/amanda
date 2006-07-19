@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.84 2006/07/06 11:57:28 martinea Exp $
+ * $Id: selfcheck.c,v 1.85 2006/07/19 17:41:14 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -117,7 +117,7 @@ main(
 #endif
 
     erroutput_type = (ERR_INTERACTIVE|ERR_SYSLOG);
-    dbopen();
+    dbopen("client");
     startclock();
     dbprintf(("%s: version %s\n", get_pname(), version()));
 

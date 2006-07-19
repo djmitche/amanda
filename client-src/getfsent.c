@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: getfsent.c,v 1.37 2006/06/02 00:56:05 paddy_s Exp $
+ * $Id: getfsent.c,v 1.38 2006/07/19 17:41:14 martinea Exp $
  *
  * generic version of code to read fstab
  */
@@ -656,7 +656,7 @@ main(
 
     set_pname("getfsent");
 
-    dbopen();
+    dbopen(NULL);
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
