@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.83 2006/07/19 17:41:14 martinea Exp $
+ * $Id: sendbackup.c,v 1.84 2006/07/19 17:50:31 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -38,6 +38,7 @@
 #include "arglist.h"
 #include "getfsent.h"
 #include "version.h"
+#include "clientconf.h"
 
 #define TIMEOUT 30
 
@@ -184,6 +185,7 @@ main(
     char *line = NULL;
     char *err_extra = NULL;
     char *s;
+    char *conffile;
     int i;
     int ch;
     unsigned long malloc_hist_1, malloc_size_1;
@@ -225,6 +227,13 @@ main(
     our_features = am_init_feature_set();
     our_feature_string = am_feature_to_string(our_features);
 
+    conffile = vstralloc(CONFIG_DIR, "/", "amanda-client.conf", NULL);
+    if (read_clientconf(conffile) > 0) {
+	error("error reading conffile: %s", conffile);
+	/*NOTREACHED*/
+    }
+    amfree(conffile);
+
     if(interactive) {
 	/*
 	 * In interactive (debug) mode, the backup data is sent to
@@ -258,6 +267,16 @@ main(
 		g_options->hostname = alloc(MAX_HOSTNAME_LENGTH+1);
 		gethostname(g_options->hostname, MAX_HOSTNAME_LENGTH);
 		g_options->hostname[MAX_HOSTNAME_LENGTH] = '\0';
+	    }
+
+	    if (g_options->config) {
+		conffile = vstralloc(CONFIG_DIR, "/", g_options->config, "/",
+				     "amanda-client.conf", NULL);
+		if (read_clientconf(conffile) > 0) {
+		    error("error reading conffile: %s", conffile);
+		    /*NOTREACHED*/
+		}
+		amfree(conffile);
 	    }
 	    continue;
 	}

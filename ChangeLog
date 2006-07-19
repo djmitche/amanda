@@ -1,4 +1,9 @@
 2006-07-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/selfcheck.c : Read client config file.
+	* client-src/sendbackup.c: Read client config file.
+	* client-src/sendsize.c  : Read client config file.
+
+2006-07-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.h (g_option_t): Add 'char *config';
 	* amandad-src/amandad_util.c (parse_g_options): Parse 'config='.
 	* common-src/amfeatures.h (fe_req_options_config): New amfeature.

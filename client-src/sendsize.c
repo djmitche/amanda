@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.161 2006/07/19 17:41:14 martinea Exp $
+ * $Id: sendsize.c,v 1.162 2006/07/19 17:50:31 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -38,6 +38,7 @@
 #include "getfsent.h"
 #include "version.h"
 #include "client_util.h"
+#include "clientconf.h"
 #include "amandad.h"
 
 #ifdef SAMBA_CLIENT
@@ -137,6 +138,7 @@ main(
     char *qlist = NULL;
     char *amdevice = NULL;
     char *qamdevice = NULL;
+    char *conffile;
 #if defined(USE_DBMALLOC)
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
@@ -169,6 +171,13 @@ main(
 
     set_debug_prefix_pid(getpid());
 
+    conffile = vstralloc(CONFIG_DIR, "/", "amanda-client.conf", NULL);
+    if (read_clientconf(conffile) > 0) {
+	error("error reading conffile: %s", conffile);
+	/*NOTREACHED*/
+    }
+    amfree(conffile);
+
     /* handle all service requests */
 
     if(!start_amandates(0))
@@ -199,6 +208,17 @@ main(
 	    }
 	    printf("\n");
 	    fflush(stdout);
+
+	    if (g_options->config) {
+		conffile = vstralloc(CONFIG_DIR, "/", g_options->config, "/",
+				     "amanda-client.conf", NULL);
+		if (read_clientconf(conffile) > 0) {
+		    error("error reading conffile: %s", conffile);
+		    /*NOTREACHED*/
+		}
+		amfree(conffile);
+	    }
+
 	    continue;
 	}
 

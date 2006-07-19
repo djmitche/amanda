@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.85 2006/07/19 17:41:14 martinea Exp $
+ * $Id: selfcheck.c,v 1.86 2006/07/19 17:50:31 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -40,6 +40,7 @@
 #include "pipespawn.h"
 #include "amfeatures.h"
 #include "client_util.h"
+#include "clientconf.h"
 #include "amandad.h"
 
 #ifdef SAMBA_CLIENT
@@ -95,6 +96,7 @@ main(
     char *optstr = NULL;
     char *err_extra = NULL;
     char *s, *fp;
+    char *conffile;
     option_t *options;
     int ch;
 #if defined(USE_DBMALLOC)
@@ -124,6 +126,13 @@ main(
     if(argc > 2 && strcmp(argv[1], "amandad") == 0) {
 	amandad_auth = stralloc(argv[2]);
     }
+
+    conffile = vstralloc(CONFIG_DIR, "/", "amanda-client.conf", NULL);
+    if (read_clientconf(conffile) > 0) {
+	error("error reading conffile: %s", conffile);
+	/*NOTREACHED*/
+    }
+    amfree(conffile);
 
     our_features = am_init_feature_set();
     our_feature_string = am_feature_to_string(our_features);
@@ -155,6 +164,17 @@ main(
 	    }
 	    printf("\n");
 	    fflush(stdout);
+
+	    if (g_options->config) {
+		conffile = vstralloc(CONFIG_DIR, "/", g_options->config, "/",
+				     "amanda-client.conf", NULL);
+		if (read_clientconf(conffile) > 0) {
+		    error("error reading conffile: %s", conffile);
+		    /*NOTREACHED*/
+		}
+		amfree(conffile);
+	    }
+
 	    continue;
 	}
 
