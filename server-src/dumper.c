@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.183 2006/07/19 17:41:17 martinea Exp $
+/* $Id: dumper.c,v 1.184 2006/07/19 17:46:08 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1899,6 +1899,7 @@ startup_dump(
     int has_features;
     int has_hostname;
     int has_device;
+    int has_config;
 
     (void)disk;			/* Quiet unused parameter warning */
     (void)amandad_path;		/* Quiet unused parameter warning */
@@ -1907,6 +1908,7 @@ startup_dump(
 
     has_features = am_has_feature(their_features, fe_req_options_features);
     has_hostname = am_has_feature(their_features, fe_req_options_hostname);
+    has_config   = am_has_feature(their_features, fe_req_options_config);
     has_device   = am_has_feature(their_features, fe_sendbackup_req_device);
 
     /*
@@ -1946,6 +1948,9 @@ startup_dump(
 		    has_hostname ? "hostname=" : "",
 		    has_hostname ? hostname : "",
 		    has_hostname ? ";" : "",
+		    has_config   ? "config=" : "",
+		    has_config   ? config_name : "",
+		    has_config   ? ";" : "",
 		    "\n",
 		    dumper_api, progname,
 		    " ", qdiskname,

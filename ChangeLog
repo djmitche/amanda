@@ -1,4 +1,14 @@
 2006-07-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.h (g_option_t): Add 'char *config';
+	* amandad-src/amandad_util.c (parse_g_options): Parse 'config='.
+	* common-src/amfeatures.h (fe_req_options_config): New amfeature.
+	* common-src/amfeatures.c (am_init_feature_set):
+						    set fe_req_options_config.
+	* server-src/amcheck.c: Send 'config=' in global options.
+	* server-src/dumper.c: Send 'config=' in global options.
+	* server-src/planner.c: Send 'config=' in global options.
+
+2006-07-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c: Call dbopen("amandad").
 	* changer-src/chg-scsi.c: Call dbopen("server").
 	* changer-src/chg-scsi-chio.c: Call dbopen("server").

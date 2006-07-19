@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.144 2006/07/19 17:41:16 martinea Exp $
+ * $Id: amcheck.c,v 1.145 2006/07/19 17:46:08 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1372,6 +1372,8 @@ start_host(
 					  fe_req_options_hostname);
 	int has_maxdumps = am_has_feature(hostp->features,
 					  fe_req_options_maxdumps);
+	int has_config   = am_has_feature(hostp->features,
+					  fe_req_options_config);
 
 	if(!am_has_feature(hostp->features, fe_selfcheck_req) &&
 	   !am_has_feature(hostp->features, fe_selfcheck_req_device)) {
@@ -1420,6 +1422,9 @@ start_host(
 			has_hostname ? "hostname=" : "",
 			has_hostname ? hostp->hostname : "",
 			has_hostname ? ";" : "",
+			has_config   ? "config=" : "",
+			has_config   ? config_name : "",
+			has_config   ? ";" : "",
 			"\n",
 			NULL);
 

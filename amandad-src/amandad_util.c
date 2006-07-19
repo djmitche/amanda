@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: amandad_util.c,v 1.4 2006/06/08 11:44:25 martinea Exp $
+ * $Id: amandad_util.c,v 1.5 2006/07/19 17:46:07 martinea Exp $
  *
  */
 
@@ -42,6 +42,7 @@ init_g_options(
     g_options->hostname = NULL;
     g_options->auth     = NULL;
     g_options->maxdumps = 0;
+    g_options->config   = NULL;
 }
 
 
@@ -131,6 +132,24 @@ parse_g_options(
 		}
 	    }
 	}
+	else if(strncmp(tok,"config=", 7) == 0) {
+	    if(g_options->config != NULL) {
+		dbprintf(("%s: multiple config option\n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [multiple config option]\n");
+		}
+	    }
+	    g_options->config = stralloc(tok+7);
+	    if (strchr(g_options->config, '/')) {
+		amfree(g_options->config);
+		dbprintf(("%s: invalid character in config option\n",
+			  debug_prefix(NULL)));
+		if(verbose) {
+		    printf("ERROR [invalid character in config option]\n");
+		}
+	    }
+	}
 	else {
 	    dbprintf(("%s: unknown option \"%s\"\n",
                                   debug_prefix(NULL), tok));
@@ -157,5 +176,6 @@ free_g_options(
     am_release_feature_set(g_options->features);
     amfree(g_options->hostname);
     amfree(g_options->auth);
+    amfree(g_options->config);
     amfree(g_options);
 }

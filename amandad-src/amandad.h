@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: amandad.h,v 1.4 2006/06/08 11:44:25 martinea Exp $
+ * $Id: amandad.h,v 1.5 2006/07/19 17:46:07 martinea Exp $
  *
  */
 
@@ -45,6 +45,7 @@ typedef struct g_option_s {
     char *hostname;
     char *auth;
     int maxdumps;
+    char *config;
 } g_option_t;
 
 

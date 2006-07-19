@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.h,v 1.20 2006/06/22 17:16:38 martinea Exp $
+ * $Id: amfeatures.h,v 1.21 2006/07/19 17:46:07 martinea Exp $
  *
  * Define feature test related items.
  */
@@ -168,6 +168,8 @@ typedef enum {
 
     fe_amrecover_message,
     fe_amrecover_feedme_tape,
+
+    fe_req_options_config,
 
     /*
      * All new features must be inserted immediately *before* this entry.

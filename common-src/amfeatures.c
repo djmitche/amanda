@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amfeatures.c,v 1.23 2006/06/22 17:16:38 martinea Exp $
+ * $Id: amfeatures.c,v 1.24 2006/07/19 17:46:07 martinea Exp $
  *
  * Feature test related code.
  */
@@ -142,6 +142,8 @@ am_init_feature_set(void)
 
 	am_add_feature(f, fe_amrecover_message);
 	am_add_feature(f, fe_amrecover_feedme_tape);
+
+	am_add_feature(f, fe_req_options_config);
 
     }
     return f;
