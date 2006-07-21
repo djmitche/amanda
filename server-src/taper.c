@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.138 2006/07/19 17:41:17 martinea Exp $
+/* $Id: taper.c,v 1.139 2006/07/21 00:25:52 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -456,7 +456,7 @@ int read_file(int fd, char *handle,
 ssize_t taper_fill_buffer(int fd, buffer_t *bp, size_t buflen);
 void dumpbufs(char *str1);
 void dumpstatus(buffer_t *bp);
-ssize_t get_next_holding_file(int fd, buffer_t *bp, char *strclosing, size_t rc);
+ssize_t get_next_holding_file(int fd, buffer_t *bp, char **strclosing, size_t rc);
 int predict_splits(char *filename);
 void create_split_buffer(char *split_diskbuffer, size_t fallback_splitsize, char *id_string);
 void free_split_buffer(void);
@@ -1114,7 +1114,7 @@ ssize_t
 get_next_holding_file(
     int fd,
     buffer_t *bp,
-    char *strclosing,
+    char **strclosing,
     size_t rc)
 {
     int save_fd;
@@ -1132,15 +1132,18 @@ get_next_holding_file(
     } else if (stat(file.cont_filename, &stat_file) != 0) {
  	err = errno;
  	ret = -1;
- 	strclosing = newvstralloc(strclosing,"can't stat: ",file.cont_filename,NULL);
+ 	*strclosing = newvstralloc(*strclosing, "can't stat: ",
+				   file.cont_filename, NULL);
     } else if ((fd = open(file.cont_filename,O_RDONLY)) == -1) {
  	err = errno;
  	ret = -1;
- 	strclosing = newvstralloc(strclosing,"can't open: ",file.cont_filename,NULL);
+ 	*strclosing = newvstralloc(*strclosing, "can't open: ",
+				   file.cont_filename, NULL);
     } else if ((fd != save_fd) && dup2(fd, save_fd) == -1) {
  	err = errno;
  	ret = -1;
- 	strclosing = newvstralloc(strclosing,"can't dup2: ",file.cont_filename,NULL);
+ 	*strclosing = newvstralloc(*strclosing, "can't dup2: ",
+				   file.cont_filename, NULL);
     } else {
  	buffer_t bp1;
 	char *quoted;
@@ -1166,10 +1169,10 @@ get_next_holding_file(
  	    amfree(bp1.buffer);
  	    err = (rc1 < 0) ? errno : 0;
  	    ret = -1;
- 	    strclosing = newvstralloc(strclosing,
- 				      "Can't read header: ",
- 				      file.cont_filename,
- 				      NULL);
+ 	    *strclosing = newvstralloc(*strclosing,
+ 				       "Can't read header: ",
+ 				       file.cont_filename,
+ 				       NULL);
  	} else {
  	    parse_file_header(bp1.buffer, &file, (size_t)rc1);
 	    
@@ -1181,10 +1184,10 @@ get_next_holding_file(
  		err = (rc1 < 0) ? errno : 0;
  		ret = -1;
  		if (rc1 < 0) {
- 	    	    strclosing = newvstralloc(strclosing,
- 					      "Can't read data: ",
-					      file.cont_filename,
- 					      NULL);
+ 	    	    *strclosing = newvstralloc(*strclosing,
+ 					       "Can't read data: ",
+					       file.cont_filename,
+ 					       NULL);
  		}
  	    } else {
  		ret = rc1;
@@ -1192,7 +1195,7 @@ get_next_holding_file(
  	    }
  	}
     }
-    
+
     return(ret);
 }
 
@@ -1478,7 +1481,8 @@ read_file(
  	    } else if ((rc = taper_fill_buffer(fd, bp, buflen)) < 0) {
  		err = errno;
  		closing = 1;
- 		strclosing = newvstralloc(strclosing,"Can't read data: ",NULL);
+ 		strclosing = newvstralloc(strclosing,"Can't read data: ",
+					  NULL);
  		if (syncpipe_put('C', 0) == -1) {
 		    put_syncpipe_fault_result(handle);
 		    return (-1);
@@ -1492,7 +1496,7 @@ read_file(
  		    if (file.cont_filename[0] != '\0') {
  		    	cur_filename = newvstralloc(cur_filename, file.cont_filename, NULL);
  		    }
- 		    ret = get_next_holding_file(fd, bp, strclosing, (size_t)rc);
+ 		    ret = get_next_holding_file(fd, bp, &strclosing, (size_t)rc);
  		    if (ret <= 0) {
  			need_closing = 1;
 		    } else {

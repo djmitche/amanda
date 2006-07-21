@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.103 2006/07/19 17:41:16 martinea Exp $
+ * $Id: amindexd.c,v 1.104 2006/07/21 00:25:51 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -478,6 +478,7 @@ is_disk_valid(
 	qdisk = quote_string(disk);
 	reply(501, "No index records for disk: %s. Invalid?", qdisk);
 	amfree(fn);
+	amfree(qdisk);
 	return -1;
     }
 

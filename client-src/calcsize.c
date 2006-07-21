@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.40 2006/07/19 17:41:14 martinea Exp $
+ * $Id: calcsize.c,v 1.41 2006/07/21 00:25:51 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
  */
@@ -658,13 +658,15 @@ calc_load_file(
 {
     char pattern[1025];
 
-    sl_t *sl_list = new_sl();
+    sl_t *sl_list;
 
     FILE *file = fopen(filename, "r");
 
     if (!file) {
 	return NULL;
     }
+
+    sl_list = new_sl();
 
     while(fgets(pattern, 1025, file)) {
 	if(strlen(pattern)>0 && pattern[strlen(pattern)-1] == '\n')

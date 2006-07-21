@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.90 2006/07/19 17:41:16 martinea Exp $
+ * $Id: diskfile.c,v 1.91 2006/07/21 00:25:52 martinea Exp $
  *
  * read disklist file
  */
@@ -742,8 +742,8 @@ optionstr(
     char *auth_opt = NULL;
     char *kencrypt_opt = "";
     char *compress_opt = "";
-    char *encrypt_opt = "";
-    char *decrypt_opt ="";
+    char *encrypt_opt = stralloc("");
+    char *decrypt_opt = stralloc("");
     char *record_opt = "";
     char *index_opt = "";
     char *exclude_file = NULL;
@@ -1116,12 +1116,16 @@ optionstr(
     amfree(include_file);
     amfree(include_list);
     amfree(exc);
+    amfree(decrypt_opt);
+    amfree(encrypt_opt);
 
     /* result contains at least 'auth=...' */
-    if ( err )
-      return NULL;
-    else
-      return result;
+    if ( err ) {
+	amfree(result);
+	return NULL;
+    } else {
+	return result;
+    }
 }
 
  

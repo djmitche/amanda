@@ -1,4 +1,4 @@
-static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.51 2006/07/06 11:57:28 martinea Exp $";
+static char rcsid[] = "$Id: scsi-changer-driver.c,v 1.52 2006/07/21 00:25:50 martinea Exp $";
 /*
  * Interface to control a tape robot/library connected to the SCSI bus
  *
@@ -1595,7 +1595,7 @@ Tape_Ready(
 	      break;
 	    case SENSE_ABORT:
 	      DebugPrint(DEBUG_ERROR, SECTION_SCSI,"TapeReady (TestUnitReady) SENSE_ABORT\n");
-	      free(pRequestSense);
+	      amfree(pRequestSense);
 	      return(-1);
 	      /*NOTREACHED*/
 	    case SENSE_RETRY:
@@ -1626,6 +1626,7 @@ Tape_Ready(
       cnt++;
     }
 
+  amfree(pRequestSense);
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"Tape_Ready after %d sec\n", cnt);
   DebugPrint(DEBUG_INFO, SECTION_TAPE,"##### STOP Tape_Ready\n");
   return(0);

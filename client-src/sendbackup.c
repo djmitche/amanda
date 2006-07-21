@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.84 2006/07/19 17:50:31 martinea Exp $
+ * $Id: sendbackup.c,v 1.85 2006/07/21 00:25:51 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -149,6 +149,7 @@ optionstr(
 	    strappend(exclude_list_opt, exc);
 	}
     }
+    amfree(exc);
     optstr = newvstralloc(optstr,
 			  compress_opt,
 			  encrypt_opt,

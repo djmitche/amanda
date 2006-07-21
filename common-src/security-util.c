@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.23 2006/07/13 11:46:14 martinea Exp $
+ * $Id: security-util.c,v 1.24 2006/07/21 00:25:51 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -923,12 +923,14 @@ bsd_recv_security_ok(
 	    security_seterror(&rh->sech,
 		"host %s: port %d not secure", rh->hostname,
 		ntohs(rh->peer.sin_port));
+	    amfree(security_line);
 	    return (-1);
 	}
 
 	if (!service) {
 	    security_seterror(&rh->sech,
 			      "packet as no SERVICE line");
+	    amfree(security_line);
 	    return (-1);
 	}
 
@@ -2060,6 +2062,7 @@ check_user_ruserok(
 	    strappend(result, ": ");
 	}
 	strappend(result, es);
+	amfree(es);
     }
     close(fd[0]);
 

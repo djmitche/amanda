@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amandates.c,v 1.19 2006/06/06 23:13:25 paddy_s Exp $
+ * $Id: amandates.c,v 1.20 2006/07/21 00:25:51 martinea Exp $
  *
  * manage amandates file, that mimics /etc/dumpdates, but stores
  * GNUTAR dates
@@ -118,10 +118,12 @@ start_amandates(
 
 	skip_whitespace(s, ch);
 	if(ch == '\0' || sscanf(s - 1, "%d %ld", &level, &ldate) != 2) {
+	    amfree(name);
 	    continue;				/* no more fields */
 	}
 
 	if(level < 0 || level >= DUMP_LEVELS) {
+	    amfree(name);
 	    continue;
 	}
 

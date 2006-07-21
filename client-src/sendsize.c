@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.162 2006/07/19 17:50:31 martinea Exp $
+ * $Id: sendsize.c,v 1.163 2006/07/21 00:25:51 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -374,6 +374,10 @@ main(
 		options = alloc(SIZEOF(option_t));
 		init_options(options);
 	    }
+	}
+	else {
+	    options = alloc(SIZEOF(option_t));
+	    init_options(options);
 	}
 
 	/*@ignore@*/
@@ -1064,6 +1068,7 @@ getsize_dump(
 	amfree(fstype);
 	amfree(device);
 	amfree(qdevice);
+	amfree(qdisk);
 	return(-1);
     }
     pipefd[0] = pipefd[1] = killctl[0] = killctl[1] = -1;
@@ -1075,6 +1080,7 @@ getsize_dump(
 	amfree(fstype);
 	amfree(device);
 	amfree(qdevice);
+	amfree(qdisk);
 	return(-1);
     }
 
@@ -1192,6 +1198,7 @@ getsize_dump(
 	amfree(rundump_cmd);
 	amfree(device);
 	amfree(qdevice);
+	amfree(qdisk);
 	amfree(name);
 	amfree(fstype);
 	return -1;
@@ -1399,6 +1406,7 @@ getsize_dump(
 
     amfree(device);
     amfree(qdevice);
+    amfree(qdisk);
     amfree(fstype);
 
     amfree(cmd);
@@ -1830,10 +1838,6 @@ getsize_gnutar(
 
     dumppid = pipespawnv(cmd, STDERR_PIPE, &nullfd, &nullfd, &pipefd, my_argv);
 
-    amfree(cmd);
-    amfree(file_exclude);
-    amfree(file_include);
-
     dumpout = fdopen(pipefd,"r");
     if (!dumpout) {
 	error("Can't fdopen: %s", strerror(errno));
@@ -1906,6 +1910,9 @@ common_exit:
     amfree(inputname);
     amfree(my_argv);
     amfree(qdisk);
+    amfree(cmd);
+    amfree(file_exclude);
+    amfree(file_include);
 
     aclose(nullfd);
     afclose(dumpout);

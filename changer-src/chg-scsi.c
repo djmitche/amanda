@@ -1,4 +1,4 @@
-static char rcsid[] = "$Id: chg-scsi.c,v 1.50 2006/07/19 17:41:14 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.51 2006/07/21 00:25:50 martinea Exp $";
 /*
  * 
  *
@@ -349,7 +349,7 @@ read_config(
           if (token != NUMDRIVE){
             init_changer_struct(chg, numconf);
           } else {
-            numconf = (value != NULL) ? atoi(value) : 0;
+            numconf = atoi(value);
 	    if (numconf < 1 || numconf > 100) {
 		fprintf(stderr,"numconf %d is bad\n", numconf);
 		numconf = 1;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.127 2006/07/19 17:41:17 martinea Exp $
+ * $Id: reporter.c,v 1.128 2006/07/21 00:25:52 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -2432,6 +2432,7 @@ handle_failed(void)
     skip_whitespace(s, ch);
     if(ch == '\0') {
 	bogus_line(s - 1);
+	amfree(diskname);
 	return;
     }
     fp = s - 1;
@@ -2448,6 +2449,7 @@ handle_failed(void)
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
 	    bogus_line(s - 1);
 	    amfree(datestamp);
+	    amfree(diskname);
 	    return;
 	}
 	skip_integer(s, ch);
@@ -2457,6 +2459,7 @@ handle_failed(void)
     if(ch == '\0') {
 	bogus_line(s - 1);
 	amfree(datestamp);
+	amfree(diskname);
 	return;
     }
     errstr = s - 1;
@@ -2770,13 +2773,11 @@ do_postscript_output(void)
     off_t tapesize;
     off_t marksize;
 
-    if (tp) {
-	tapesize = tapetype_get_length(tp);
-	marksize = tapetype_get_filemark(tp);
-    } else {
-	tapesize = 100 * 1024 * 1024;
-	marksize = 1   * 1024 * 1024;
-    }
+    if (!tp)
+	return;
+
+    tapesize = tapetype_get_length(tp);
+    marksize = tapetype_get_filemark(tp);
 
     for(current_tape = stats_by_tape; current_tape != NULL;
 	    current_tape = current_tape->next) {

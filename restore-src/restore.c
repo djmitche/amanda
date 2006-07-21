@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.47 2006/07/05 15:50:47 martinea Exp $
+ * $Id: restore.c,v 1.48 2006/07/21 00:25:51 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -449,18 +449,24 @@ flush_open_outputs(
 		/* is it a continuation of one we've been writing? */
 		if(main_file && cur_file->partnum > lastpartnum &&
 			headers_equal(cur_file, main_file, 1)){
+		    char *cur_filename;
+		    char *main_filename;
 
 		    /* effectively changing filehandles */
 		    aclose(cur_out->outfd);
 		    cur_out->outfd = outfd;
 
+		    cur_filename  = make_filename(cur_file);
+		    main_filename = make_filename(main_file);
 		    fprintf(stderr, "Merging %s with %s\n",
-		            make_filename(cur_file), make_filename(main_file));
-		    append_file_to_fd(make_filename(cur_file), outfd);
-		    if(unlink(make_filename(cur_file)) < 0){
+		            cur_filename, main_filename);
+		    append_file_to_fd(cur_filename, outfd);
+		    if(unlink(cur_filename) < 0){
 			fprintf(stderr, "Failed to unlink %s: %s\n",
-			             make_filename(cur_file), strerror(errno));
+			             cur_filename, strerror(errno));
 		    }
+		    amfree(cur_filename);
+		    amfree(main_filename);
 		}
 		/* or a new file? */
 		else{
@@ -720,7 +726,9 @@ restore(
 	blocksize = DISK_BLOCK_BYTES;
 
     if(already_have_dump(file)){
-	fprintf(stderr, " *** Duplicate file %s, one is probably an aborted write\n", make_filename(file));
+	char *filename = make_filename(file);
+	fprintf(stderr, " *** Duplicate file %s, one is probably an aborted write\n", filename);
+	amfree(filename);
 	check_for_aborted = 1;
     }
 

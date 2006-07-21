@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.189 2006/07/19 17:41:16 martinea Exp $
+ * $Id: driver.c,v 1.190 2006/07/21 00:25:52 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -567,8 +567,10 @@ kill_children(int signal)
 	    if (!dumper->down && dumper->pid > 1) {
 		printf("driver: sending signal %d to %s pid %u\n", signal,
 		       dumper->name, (unsigned)dumper->pid);
-		if (kill(dumper->pid, signal) == -1 && errno == ESRCH)
-		    dumper->chunker->pid = 0;
+		if (kill(dumper->pid, signal) == -1 && errno == ESRCH) {
+		    if (dumper->chunker)
+			dumper->chunker->pid = 0;
+		}
 		if (dumper->chunker && dumper->chunker->pid > 1) {
 		    printf("driver: sending signal %d to %s pid %u\n", signal,
 			   dumper->chunker->name,
@@ -1844,6 +1846,7 @@ read_flush(void)
 	if( file.type != F_DUMPFILE) {
 	    if( file.type != F_CONT_DUMPFILE )
 		log_add(L_INFO, "%s: ignoring cruft file.", destname);
+	    amfree(diskname);
 	    continue;
 	}
 
@@ -1852,8 +1855,10 @@ read_flush(void)
 	   strcmp(datestamp, file.datestamp) != 0) {
 	    log_add(L_INFO, "disk %s:%s not consistent with file %s",
 		    hostname, diskname, destname);
+	    amfree(diskname);
 	    continue;
 	}
+	amfree(diskname);
 
 	dp = lookup_disk(file.name, file.disk);
 
@@ -2107,6 +2112,7 @@ read_schedule(
 	    log_add(L_WARNING,
 		    "schedule line %d: %s:'%s' not in disklist, ignored",
 		    line, hostname, qname);
+	    amfree(diskname);
 	    continue;
 	}
 

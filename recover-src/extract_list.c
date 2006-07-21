@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.115 2006/07/11 14:53:24 martinea Exp $
+ * $Id: extract_list.c,v 1.116 2006/07/21 00:25:51 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -1594,6 +1594,9 @@ extract_files_setup(
 	} else {
 	    fprintf(stderr, "amrecover - expecting FEATURES line from amidxtaped\n");
 	    stop_amidxtaped();
+	    amfree(disk_regex);
+	    amfree(host_regex);
+	    amfree(clean_datestamp);
 	    return -1;
 	}
 	am_release_feature_set(tapesrv_features);

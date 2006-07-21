@@ -1,3 +1,14 @@
+2006-07-20  Jean-Louis Martineau <martineau@zmanda.com>
+	* changer-src/chg-scsi.c, changer-src/scsi-changer-driver.c,
+	  client-src/amandates.c, client-src/calcsize.c,
+	  client-src/selfcheck.c, client-src/sendbackup.c,
+	  client-src/sendsize.c, common-src/security-util.c,
+	  recover-src/extract_list.c, restore-src/restore.c,
+	  server-src/amindexd.c, server-src/diskfile.c,
+	  server-src/driver.c, server-src/reporter.c,
+	  server-src/tapefile.c, server-src/taper.c: Fix memory leak found
+						     by coverity.
+
 2006-07-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/selfcheck.c : Read client config file.
 	* client-src/sendbackup.c: Read client config file.
