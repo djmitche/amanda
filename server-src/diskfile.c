@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.92 2006/07/22 12:04:48 martinea Exp $
+ * $Id: diskfile.c,v 1.93 2006/07/22 23:06:26 martinea Exp $
  *
  * read disklist file
  */
@@ -888,7 +888,8 @@ optionstr(
 	  }
 	 if(dp->clnt_decrypt_opt) {
 	   if(am_has_feature(their_features, fe_options_client_decrypt_option)) {
-	     decrypt_opt = vstralloc("client-decrypt-option=", dp->clnt_decrypt_opt, ";", NULL);
+	     decrypt_opt = newvstralloc(decrypt_opt, "client-decrypt-option=",
+					dp->clnt_decrypt_opt, ";", NULL);
 	   }
 	   else if(fdout) {
 	    fprintf(fdout,
