@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.139 2006/07/21 00:25:52 martinea Exp $
+/* $Id: taper.c,v 1.140 2006/07/22 12:50:48 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -77,7 +77,12 @@ static vtbl_lbls vtbl_entry[MAX_VOLUMES];
  * XXX label is being read twice?
  */
 static off_t splitsize = (off_t)0; /* max size of dumpfile before split (Kb) */
+static off_t mmap_splitsize = (off_t)0;
+static char *mmap_filename = NULL;
+static char *mmap_splitbuf = NULL;
+static char *mem_splitbuf = NULL;
 static char *splitbuf = NULL;
+static off_t mem_splitsize = (off_t)0;
 static char *splitbuf_wr_ptr = NULL; /* the number of Kb we've written into splitbuf */
 int orig_holdfile = -1;
 
@@ -91,8 +96,7 @@ static char *holdfile_path = NULL;
 static char *holdfile_path_thischunk = NULL;
 static int num_holdfile_chunks = 0;
 static off_t holdfile_offset_thischunk = (off_t)0;
-static int splitbuffer_fd = -1;
-static char *splitbuffer_path = NULL;
+static int mmap_splitbuffer_fd = -1;
 
 #define MODE_NONE 0
 #define MODE_FILE_WRITE 1
@@ -473,6 +477,8 @@ create_split_buffer(
     char *id_string)
 {
     char *buff_err = NULL;
+    off_t offset;
+    char *splitbuffer_path = NULL;
     
     /* don't bother if we're not actually splitting */
     if (splitsize <= (off_t)0) {
@@ -489,39 +495,76 @@ create_split_buffer(
 	off_t c;
 
 	splitbuffer_path = vstralloc(split_diskbuffer,
-				     "/splitdump_buffer_XXXXXX",
+				     "/splitdump_buffer",
 				     NULL);
-#ifdef HAVE_MKSTEMP
-	splitbuffer_fd = mkstemp(splitbuffer_path);
-#else
-	log_add(L_INFO, "mkstemp not available, using plain open() for split buffer- make sure %s has safe permissions", split_diskbuffer);
-	splitbuffer_fd = open(splitbuffer_path, O_RDWR|O_CREAT, 0600);
-#endif
-	if (splitbuffer_fd == -1) {
-	    buff_err = newvstralloc(buff_err, "mkstemp/open of ", 
-				    splitbuffer_path, "failed (",
-				    strerror(errno), ")", NULL);
-	    goto fallback;
+	/* different file, munmap the previous */
+	if (mmap_filename && strcmp(mmap_filename, splitbuffer_path) != 0) {
+	    dbprintf(("create_split_buffer: new file %s\n", splitbuffer_path));
+	    munmap(splitbuf, (size_t)mmap_splitsize);
+	    aclose(mmap_splitbuffer_fd);
+	    mmap_splitbuf = NULL;
+	    amfree(mmap_filename);
+	    mmap_splitsize = 0;
 	}
-	nulls = alloc(1024); /* lame */
-	memset(nulls, 0, 1024);
-	for (c = (off_t)0; c < splitsize ; c += (off_t)1) {
-	    if (fullwrite(splitbuffer_fd, nulls, 1024) < 1024) {
-		buff_err = newvstralloc(buff_err, "write to ", splitbuffer_path,
-					"failed (", strerror(errno), ")", NULL);
-		free_split_buffer();
+	if (!mmap_filename) {
+	    dbprintf(("create_split_buffer: open file %s\n",
+		      splitbuffer_path));
+	    mmap_splitbuffer_fd = open(splitbuffer_path, O_RDWR|O_CREAT, 0600);
+	    if (mmap_splitbuffer_fd == -1) {
+		buff_err = newvstralloc(buff_err, "open of ", 
+					splitbuffer_path, "failed (",
+					strerror(errno), ")", NULL);
 		goto fallback;
+	    }
+	}
+	offset = lseek(mmap_splitbuffer_fd, (off_t)0, SEEK_END) / 1024;
+	if (offset < splitsize) { /* Increase file size */
+	    dbprintf(("create_split_buffer: increase file size of %s to "
+		      OFF_T_FMT "kb\n",
+		      splitbuffer_path, (OFF_T_FMT_TYPE)splitsize));
+	    if (mmap_filename) {
+		dbprintf(("create_split_buffer: munmap old file %s\n",
+			  mmap_filename));
+		munmap(splitbuf, (size_t)mmap_splitsize);
+		mmap_splitsize = 0;
+		mmap_splitbuf = NULL;
+	    }
+	    nulls = alloc(1024); /* lame */
+	    memset(nulls, 0, 1024);
+	    for (c = offset; c < splitsize ; c += (off_t)1) {
+		if (fullwrite(mmap_splitbuffer_fd, nulls, 1024) < 1024) {
+		    buff_err = newvstralloc(buff_err, "write to ",
+					    splitbuffer_path,
+					    "failed (", strerror(errno),
+					    ")", NULL);
+		    c -= 1;
+		    if (c <= (off_t)fallback_splitsize) {
+			goto fallback;
+		    }
+		    splitsize = c;
+		    break;
+		}
 	    }
 	}
 	amfree(nulls);
 
-        splitbuf = mmap(NULL, (size_t)splitsize*1024, PROT_READ|PROT_WRITE,
-			MAP_SHARED, splitbuffer_fd, (off_t)0);
-	if (splitbuf == (char*)-1) {
-	    buff_err = newvstralloc(buff_err, "mmap failed (", strerror(errno),
-				    ")", NULL);
-	    free_split_buffer();
-	    goto fallback;
+	if (mmap_splitsize < splitsize*1024) {
+	    mmap_splitsize = splitsize*1024;
+	    mmap_filename = stralloc(splitbuffer_path);
+	    dbprintf(("create_split_buffer: mmap file %s for " OFF_T_FMT "kb\n",
+			  mmap_filename,(OFF_T_FMT_TYPE)splitsize));
+            mmap_splitbuf = mmap(NULL, (size_t)mmap_splitsize,
+				 PROT_READ|PROT_WRITE,
+				 MAP_SHARED, mmap_splitbuffer_fd, (off_t)0);
+	    if (mmap_splitbuf == (char*)-1) {
+		buff_err = newvstralloc(buff_err, "mmap failed (",
+					strerror(errno), ")", NULL);
+		aclose(mmap_splitbuffer_fd);
+		amfree(mmap_filename);
+		mmap_splitsize = 0;
+		mmap_splitbuf = NULL;
+		goto fallback;
+	    }
 	}
 	quoted = quote_string(splitbuffer_path);
 	fprintf(stderr,
@@ -531,7 +574,9 @@ create_split_buffer(
 	dbprintf(("taper: r: buffering " OFF_T_FMT
 		"kb split chunks in mmapped file %s\n",
 		(OFF_T_FMT_TYPE)splitsize, quoted));
+	amfree(splitbuffer_path);
 	amfree(quoted);
+	splitbuf = mmap_splitbuf;
 	splitbuf_wr_ptr = splitbuf;
 	return;
     } else {
@@ -552,11 +597,21 @@ create_split_buffer(
       Buffer split dumps in memory, if we can't use a file.
     */
     fallback:
+	amfree(splitbuffer_path);
         splitsize = (off_t)fallback_splitsize;
+	dbprintf(("create_split_buffer: fallback size " OFF_T_FMT "\n",
+		  (OFF_T_FMT_TYPE)splitsize));
 	log_add(L_INFO,
 	        "%s: using fallback split size of %dkb to buffer %s in-memory",
 		buff_err, splitsize, id_string);
-	splitbuf = alloc(fallback_splitsize * 1024);
+	if (splitsize > mem_splitsize) {
+	    amfree(splitbuf);
+	    mem_splitbuf = alloc(fallback_splitsize * 1024);
+	    mem_splitsize = fallback_splitsize;
+	    dbprintf(("create_split_buffer: alloc buffer size " OFF_T_FMT "\n",
+			  (OFF_T_FMT_TYPE)splitsize *1024));
+	}
+	splitbuf = mem_splitbuf;
 	splitbuf_wr_ptr = splitbuf;
 }
 
@@ -566,25 +621,20 @@ create_split_buffer(
 void
 free_split_buffer(void)
 {
-    if (splitbuffer_fd != -1) {
+    if (mmap_splitbuffer_fd != -1) {
 #ifdef HAVE_MMAP
 #ifdef HAVE_SYS_MMAN_H
 	if (splitbuf != NULL)
-	    munmap(splitbuf, (size_t)splitsize * 1024);
+	    munmap(splitbuf, (size_t)mmap_splitsize);
 #endif
 #endif
-	aclose(splitbuffer_fd);
-	splitbuffer_fd = -1;
-
-	if (unlink(splitbuffer_path) == -1) {
-	    log_add(L_WARNING, "Failed to unlink %s: %s",
-	            splitbuffer_path, strerror(errno));
-	}
-	amfree(splitbuffer_path);
-	splitbuffer_path = NULL;
-    } else if (splitbuf) {
+	aclose(mmap_splitbuffer_fd);
+	amfree(mmap_filename);
+	mmap_splitsize = 0;
+    }
+    if (mem_splitbuf) {
 	amfree(splitbuf);
-	splitbuf = NULL;
+	mem_splitsize = 0;
     }
 }
 
@@ -857,7 +907,6 @@ file_reader_side(
 		(void)fd;  /* Quiet lint */
 
 	    aclose(data_socket);
-	    free_split_buffer();
 	    break;
 
 	case FILE_WRITE:
@@ -988,6 +1037,7 @@ file_reader_side(
 		fflush(stderr);
 	    }
 
+	    free_split_buffer();
 	    amfree(datestamp);
 	    clear_tapelist();
 	    free_server_config();

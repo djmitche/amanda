@@ -1,4 +1,7 @@
-2006-07-20  Jean-Louis Martineau <martineau@zmanda.com>
+2006-07-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taper.c: Fix split_buffer allocation problem.
+
+2006-07-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/selfcheck.c, common-src/security-util.c,
 	  restore-src/restore.c, server-src/diskfile.c: Fix memory leak found
 							by coverity.
