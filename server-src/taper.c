@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.141 2006/07/22 23:06:26 martinea Exp $
+/* $Id: taper.c,v 1.142 2006/07/22 23:30:01 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -607,7 +607,7 @@ create_split_buffer(
 		buff_err, splitsize, id_string);
 	amfree(buff_err);
 	if (splitsize > mem_splitsize) {
-	    amfree(splitbuf);
+	    amfree(mem_splitbuf);
 	    mem_splitbuf = alloc(fallback_splitsize * 1024);
 	    mem_splitsize = fallback_splitsize;
 	    dbprintf(("create_split_buffer: alloc buffer size " OFF_T_FMT "\n",

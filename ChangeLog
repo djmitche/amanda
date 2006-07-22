@@ -1,4 +1,7 @@
 2006-07-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taper.c: Fix amfree(mem_splitbuf).
+
+2006-07-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/diskfile.c, server-src/taper.c: Fix memory leak found
 						     by coverity.
 2006-07-22  Jean-Louis Martineau <martineau@zmanda.com>
