@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.91 2006/07/21 00:25:52 martinea Exp $
+ * $Id: diskfile.c,v 1.92 2006/07/22 12:04:48 martinea Exp $
  *
  * read disklist file
  */
@@ -867,7 +867,8 @@ optionstr(
     switch(dp->encrypt) {
     case ENCRYPT_CUST:
       if(am_has_feature(their_features, fe_options_encrypt_cust)) {
-	 encrypt_opt = vstralloc("encrypt-cust=", dp->clnt_encrypt, ";", NULL);
+	 encrypt_opt = newvstralloc(encrypt_opt, "encrypt-cust=",
+				    dp->clnt_encrypt, ";", NULL);
 	 if (BSTRNCMP(encrypt_opt, "encrypt-cust=;") == 0) {
 	    if(fdout) {
 	      fprintf(fdout,
@@ -904,7 +905,8 @@ optionstr(
 	 break;
     case ENCRYPT_SERV_CUST:
       if(am_has_feature(their_features, fe_options_encrypt_serv_cust)) {
-	 encrypt_opt = vstralloc("encrypt-serv-cust=", dp->srv_encrypt, ";", NULL);
+	 encrypt_opt = newvstralloc(encrypt_opt, "encrypt-serv-cust=",
+				    dp->srv_encrypt, ";", NULL);
 	 if (BSTRNCMP(encrypt_opt, "encrypt-serv-cust=;") == 0){
 	    if(fdout) {
 	      fprintf(fdout,
@@ -915,7 +917,8 @@ optionstr(
 	  }
 	 if(dp->srv_decrypt_opt) {
 	   if(am_has_feature(their_features, fe_options_server_decrypt_option)) {
-	     decrypt_opt = vstralloc("server-decrypt-option=", dp->srv_decrypt_opt, ";", NULL);
+	     decrypt_opt = newvstralloc(decrypt_opt, "server-decrypt-option=",
+					dp->srv_decrypt_opt, ";", NULL);
 	   }
 	   else if(fdout) {
 	    fprintf(fdout,

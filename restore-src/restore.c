@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.48 2006/07/21 00:25:51 martinea Exp $
+ * $Id: restore.c,v 1.49 2006/07/22 12:04:48 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -469,18 +469,21 @@ flush_open_outputs(
 		    amfree(main_filename);
 		}
 		/* or a new file? */
-		else{
+		else {
 		    if(outfd >= 0) aclose(outfd);
 		    amfree(main_file);
 		    main_file = alloc(SIZEOF(dumpfile_t));
 		    memcpy(main_file, cur_file, SIZEOF(dumpfile_t));
 		    outfd = cur_out->outfd;
-		    if(outfd < 0){
-			if((outfd = open(make_filename(cur_file), O_RDWR|O_APPEND)) < 0){
+		    if(outfd < 0) {
+			char *cur_filename = make_filename(cur_file);
+			open(cur_filename, O_RDWR|O_APPEND);
+			if (outfd < 0) {
 			  error("Couldn't open %s for appending: %s",
-			        make_filename(cur_file), strerror(errno));
+			        cur_filename, strerror(errno));
 			  /*NOTREACHED*/
 			}
+			amfree(cur_filename);
 		    }
 		}
 		lastpartnum = cur_file->partnum;
@@ -774,8 +777,11 @@ restore(
 
 
     if(is_continuation && flags->pipe_to_fd == -1){
+	char *filename;
+	filename = make_filename(myout->file);
 	fprintf(stderr, "%s:      appending to %s\n", get_pname(),
-		    make_filename(myout->file));
+		filename);
+	amfree(filename);
     }
 
     /* adjust compression flag */
@@ -1532,7 +1538,7 @@ search_a_tape(
 		    get_pname(), (OFF_T_FMT_TYPE)filenum);
 	    print_header(stderr, file);
 	    *read_result = restore(file, filename, tapefd, isafile, flags);
-	    filenum ++;
+	    filenum++;
 	    amfree(filename);
 	}
 

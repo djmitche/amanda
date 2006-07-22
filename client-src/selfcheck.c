@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.87 2006/07/21 00:25:51 martinea Exp $
+ * $Id: selfcheck.c,v 1.88 2006/07/22 12:04:47 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -731,6 +731,7 @@ check_disk(
 	}
 	fflush(stdout);fflush(stdin);
 	amfree(qamdevice);
+	amfree(qdisk);
 	return;
     }
 
