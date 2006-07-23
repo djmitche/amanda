@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.94 2006/07/14 11:56:31 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.95 2006/07/23 12:16:44 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -288,7 +288,7 @@ start_backup(
 	}
 
 	while ((nb = read(infd, &buf, SIZEOF(buf))) > 0) {
-	    if (fullwrite(outfd, &buf, nb) < nb) {
+	    if (fullwrite(outfd, &buf, (size_t)nb) < nb) {
 		error("error [writing to '%s': %s]", incrname,
 		       strerror(errno));
 		/*NOTREACHED*/

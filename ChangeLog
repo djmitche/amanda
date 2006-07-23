@@ -1,3 +1,7 @@
+2006-07-23  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/sendbackup-gnutar.c: Fix bug found by splint.
+	* client-src/sendsize.c: Fix bug found by splint.
+
 2006-07-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taper.c: Fix amfree(mem_splitbuf).
 

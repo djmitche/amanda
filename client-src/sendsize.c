@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.163 2006/07/21 00:25:51 martinea Exp $
+ * $Id: sendsize.c,v 1.164 2006/07/23 12:16:44 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1743,7 +1743,7 @@ getsize_gnutar(
 	}
 
 	while ((nb = read(infd, &buf, SIZEOF(buf))) > 0) {
-	    if (fullwrite(outfd, &buf, nb) < nb) {
+	    if (fullwrite(outfd, &buf, (size_t)nb) < nb) {
 		dbprintf(("%s: writing to %s: %s\n",
 			   debug_prefix(NULL), incrname, strerror(errno)));
 		goto common_exit;
