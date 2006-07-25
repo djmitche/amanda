@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.70 2006/07/25 19:06:46 martinea Exp $
+ * $Id: conffile.h,v 1.71 2006/07/25 19:36:48 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -114,7 +114,7 @@ typedef struct tapetype_s {
 #define tapetype_get_length(tapetype)    get_conftype_am64  (&tapetype->value[TAPETYPE_LENGTH])
 #define tapetype_get_filemark(tapetype)  get_conftype_am64  (&tapetype->value[TAPETYPE_FILEMARK])
 #define tapetype_get_speed(tapetype)     get_conftype_int   (&tapetype->value[TAPETYPE_SPEED])
-#define tapetype_get_file_pad(tapetype)  get_conftype_int   (&tapetype->value[TAPETYPE_FILE_PAD])
+#define tapetype_get_file_pad(tapetype)  get_conftype_bool  (&tapetype->value[TAPETYPE_FILE_PAD])
 
 /* Dump strategies */
 #define DS_SKIP		0	/* Don't do any dumps at all */
@@ -326,6 +326,7 @@ time_t getconf_time(confparm_t parameter);
 off_t getconf_am64(confparm_t parameter);
 double getconf_real(confparm_t parameter);
 char *getconf_str(confparm_t parameter);
+int getconf_taperalgo(confparm_t parameter);
 char *getconf_byname(char *confname);
 dumptype_t *lookup_dumptype(char *identifier);
 dumptype_t *read_dumptype(char *name, FILE *from, char *fname, int *linenum);

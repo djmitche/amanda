@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.39 2006/07/25 18:43:36 martinea Exp $
+ * $Id: util.c,v 1.40 2006/07/25 19:36:48 martinea Exp $
  */
 
 #include "amanda.h"
@@ -2131,7 +2131,7 @@ conf_init_size(
     ssize_t   sz)
 {
     val->seen = 0;
-    val->type = CONFTYPE_LONG;
+    val->type = CONFTYPE_SIZE;
     val->v.size = sz;
 }
 

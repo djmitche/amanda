@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.154 2006/07/25 19:06:46 martinea Exp $
+ * $Id: conffile.c,v 1.155 2006/07/25 19:36:48 martinea Exp $
  *
  * read configuration file
  */
@@ -695,6 +695,19 @@ getconf_str(
 	/*NOTREACHED*/
     }
     return(server_conf[np->parm].v.s);
+}
+
+int
+getconf_taperalgo(
+    confparm_t parm)
+{
+    t_conf_var *np;
+    np = get_np(server_var, parm);
+    if (np->type != CONFTYPE_TAPERALGO) {
+	error("getconf_taperalgo: np is not a CONFTYPE_TAPERALGO");
+	/*NOTREACHED*/
+    }
+    return(server_conf[np->parm].v.i);
 }
 
 holdingdisk_t *

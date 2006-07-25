@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.16 2006/07/25 19:06:46 martinea Exp $
+ * $Id: clientconf.c,v 1.17 2006/07/25 19:36:48 martinea Exp $
  *
  * read configuration file
  */
@@ -295,12 +295,7 @@ init_defaults(void)
 #else
     conf_init_string(&client_conf[CLN_GNUTAR_LIST_DIR], NULL);
 #endif
-#ifdef AMANDATES_FILE
-    conf_init_string(&client_conf[CLN_AMANDATES], AMANDATES_FILE);
-#else
-    conf_init_string(&client_conf[CLN_AMANDATES], NULL);
-#endif
-
+    conf_init_string(&client_conf[CLN_AMANDATES], "/etc/amandates");
     /* defaults for internal variables */
 
     conf_line_num = got_parserror = 0;

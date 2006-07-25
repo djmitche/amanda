@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.192 2006/07/25 18:27:57 martinea Exp $
+ * $Id: driver.c,v 1.193 2006/07/25 19:36:48 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -264,7 +264,7 @@ main(
     chunker_program = vstralloc(libexecdir, "/", "chunker", versionsuffix(),
 			       NULL);
 
-    conf_taperalgo = getconf_int(CNF_TAPERALGO);
+    conf_taperalgo = getconf_taperalgo(CNF_TAPERALGO);
     conf_tapetype = getconf_str(CNF_TAPETYPE);
     conf_runtapes = getconf_int(CNF_RUNTAPES);
     tape = lookup_tapetype(conf_tapetype);
