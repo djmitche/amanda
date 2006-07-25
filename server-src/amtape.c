@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.45 2006/07/19 17:41:16 martinea Exp $
+ * $Id: amtape.c,v 1.46 2006/07/25 18:18:48 martinea Exp $
  *
  * tape changer interface program
  */
@@ -134,7 +134,7 @@ main(
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
-    dbopen("server");
+    dbopen(DBG_SUBDIR_SERVER);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

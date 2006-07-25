@@ -1,4 +1,26 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/amanda.h: Define DBG_SUBDIR_SERVER, DBG_SUBDIR_CLIENT
+			       and DBG_SUBDIR_CLIENT.
+	* amandad-src/amandad.c, changer-src/chg-scsi.c,
+	  changer-src/chg-scsi-chio.c, client-src/calcsize.c,
+	  client-src/killpgrp.c, client-src/rundump.c, client-src/runtar.c,
+	  client-src/selfcheck.c, client-src/sendbackup.c,
+	  client-src/sendsize.c,
+	  oldrecover-src/amrecover.c, recover-src/amrecover.c,
+	  restore-src/amfetchdump.c, restore-src/amidxtaped.c,
+	  restore-src/amrestore.c, server-src/amadmin.c,
+	  server-src/amcheck.c, server-src/amcleanupdisk.c,
+	  server-src/amflush.c, server-src/amindexd.c,
+	  server-src/amlabel.c, server-src/amlogroll.c,
+	  server-src/amtape.c, server-src/amtrmidx.c,
+	  server-src/amtrmlog.c, server-src/chunker.c,
+	  server-src/diskfile.c, server-src/driver.c,
+	  server-src/dumper.c, server-src/getconf.c,
+	  server-src/infofile.c, server-src/planner.c,
+	  server-src/reporter.c (dbopen): Use DBG_SUBDIR_SERVER,
+					 DBG_SUBDIR_CLIENT or DBG_SUBDIR_CLIENT.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/calcsize.c: Get config on argument.
 	* client-src/killpgrp.c: Get config on argument.
 	* client-src/rundump.c: Get config on argument.

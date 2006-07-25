@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.51 2006/07/19 17:41:16 martinea Exp $
+ * $Id: amlabel.c,v 1.52 2006/07/25 18:18:48 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -93,7 +93,7 @@ main(
 
     set_pname("amlabel");
 
-    dbopen("server");
+    dbopen(DBG_SUBDIR_SERVER);
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);

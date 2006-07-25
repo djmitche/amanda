@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.20 2006/07/19 17:41:16 martinea Exp $
+ * $Id: amcleanupdisk.c,v 1.21 2006/07/25 18:18:48 martinea Exp $
  */
 #include "amanda.h"
 
@@ -61,7 +61,7 @@ main(
 
     set_pname("amcleanupdisk");
 
-    dbopen("server");
+    dbopen(DBG_SUBDIR_SERVER);
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);

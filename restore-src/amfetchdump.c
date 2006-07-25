@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.13 2006/07/19 17:41:16 martinea Exp $
+ * $Id: amfetchdump.c,v 1.14 2006/07/25 18:18:47 martinea Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -289,7 +289,7 @@ main(
 
     set_pname("amfetchdump");
 
-    dbopen("server");
+    dbopen(DBG_SUBDIR_SERVER);
 
 #ifdef FORCE_USERID
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: infofile.c,v 1.63 2006/07/19 17:41:17 martinea Exp $
+ * $Id: infofile.c,v 1.64 2006/07/25 18:18:48 martinea Exp $
  *
  * manage current info file
  */
@@ -989,7 +989,7 @@ main(
 
   set_pname("infofile");
 
-  dbopen("server");
+  dbopen(DBG_SUBDIR_SERVER);
 
   malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.93 2006/07/22 23:06:26 martinea Exp $
+ * $Id: diskfile.c,v 1.94 2006/07/25 18:18:48 martinea Exp $
  *
  * read disklist file
  */
@@ -1284,7 +1284,7 @@ main(
 
   set_pname("diskfile");
 
-  dbopen("server");
+  dbopen(DBG_SUBDIR_SERVER);
 
   /* Don't die when child closes pipe */
   signal(SIGPIPE, SIG_IGN);

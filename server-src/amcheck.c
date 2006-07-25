@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.145 2006/07/19 17:46:08 martinea Exp $
+ * $Id: amcheck.c,v 1.146 2006/07/25 18:18:48 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -119,7 +119,7 @@ main(
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
-    dbopen("server");
+    dbopen(DBG_SUBDIR_SERVER);
 
     memset(buffer, 0, sizeof(buffer));
     malloc_size_1 = malloc_inuse(&malloc_hist_1);

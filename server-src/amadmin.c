@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.121 2006/07/19 17:41:16 martinea Exp $
+ * $Id: amadmin.c,v 1.122 2006/07/25 18:18:47 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -147,7 +147,7 @@ main(
 
     set_pname("amadmin");
 
-    dbopen("server");
+    dbopen(DBG_SUBDIR_SERVER);
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);

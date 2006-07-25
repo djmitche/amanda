@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.12 2006/07/19 17:41:16 martinea Exp $
+ * $Id: amlogroll.c,v 1.13 2006/07/25 18:18:48 martinea Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 
     set_pname("amlogroll");
 
-    dbopen("server");
+    dbopen(DBG_SUBDIR_SERVER);
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 

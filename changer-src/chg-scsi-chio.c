@@ -1,5 +1,5 @@
 /*
- *  $Id: chg-scsi-chio.c,v 1.11 2006/07/19 17:41:13 martinea Exp $
+ *  $Id: chg-scsi-chio.c,v 1.12 2006/07/25 18:18:46 martinea Exp $
  *
  *  chg-scsi-chio.c -- generic SCSI changer driver
  *
@@ -730,7 +730,7 @@ main(
   /* Don't die when child closes pipe */
   signal(SIGPIPE, SIG_IGN);
 
-  dbopen("server");
+  dbopen(DBG_SUBDIR_SERVER);
   parse_args(argc,argv,&com);
 
   changer = alloc(SIZEOF(changer_t));

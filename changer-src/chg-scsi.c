@@ -1,4 +1,4 @@
-static char rcsid[] = "$Id: chg-scsi.c,v 1.51 2006/07/21 00:25:50 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.52 2006/07/25 18:18:46 martinea Exp $";
 /*
  * 
  *
@@ -1207,7 +1207,7 @@ main(
   /* Don't die when child closes pipe */
   signal(SIGPIPE, SIG_IGN);
 
-  dbopen("server");
+  dbopen(DBG_SUBDIR_SERVER);
 
   dbprintf(("chg-scsi: %s\n", rcsid));
   ChangerDriverVersion();

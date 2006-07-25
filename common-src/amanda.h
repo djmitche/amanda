@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.129 2006/07/19 17:41:14 martinea Exp $
+ * $Id: amanda.h,v 1.130 2006/07/25 18:18:47 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1449,5 +1449,9 @@ void	add_history(const char *line);
 #endif
 
 #define BIND_CYCLE_RETRIES	120		/* Total of 30 minutes */
+
+#define DBG_SUBDIR_SERVER  "server"
+#define DBG_SUBDIR_CLIENT  "client"
+#define DBG_SUBDIR_AMANDAD "amandad"
 
 #endif	/* !AMANDA_H */
