@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.167 2006/07/25 18:27:56 martinea Exp $
+ * $Id: sendsize.c,v 1.168 2006/07/25 18:32:14 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1718,6 +1718,7 @@ getsize_gnutar(
     ssize_t nb;
     char buf[32768];
     char *qdisk = quote_string(disk);
+    char *gnutar_list_dir;
 
     if(options->exclude_file) nb_exclude += options->exclude_file->nb_element;
     if(options->exclude_list) nb_exclude += options->exclude_list->nb_element;
@@ -1730,14 +1731,16 @@ getsize_gnutar(
     my_argv = alloc(SIZEOF(char *) * 22);
     i = 0;
 
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-    {
+    gnutar_list_dir = client_getconf_str(CLN_GNUTAR_LIST_DIR);
+    if (strlen(gnutar_list_dir) == 0)
+	gnutar_list_dir = NULL;
+    if (gnutar_list_dir) {
 	char number[NUM_STR_SIZE];
 	char *s;
 	int ch;
 	int baselevel;
 
-	basename = vstralloc(GNUTAR_LISTED_INCREMENTAL_DIR,
+	basename = vstralloc(gnutar_list_dir,
 			     "/",
 			     g_options->hostname,
 			     disk,
@@ -1746,7 +1749,7 @@ getsize_gnutar(
 	 * The loop starts at the first character of the host name,
 	 * not the '/'.
 	 */
-	s = basename + SIZEOF(GNUTAR_LISTED_INCREMENTAL_DIR);
+	s = basename + strlen(gnutar_list_dir) + 1;
 	while((ch = *s++) != '\0') {
 	    if(ch == '/' || isspace(ch)) s[-1] = '_';
 	}
@@ -1818,7 +1821,6 @@ getsize_gnutar(
 	amfree(inputname);
 	amfree(basename);
     }
-#endif
 
     gmtm = gmtime(&dumpsince);
     snprintf(dumptimestr, SIZEOF(dumptimestr),
@@ -1848,14 +1850,14 @@ getsize_gnutar(
     my_argv[i++] = "--directory";
     my_argv[i++] = dirname;
     my_argv[i++] = "--one-file-system";
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-    my_argv[i++] = "--listed-incremental";
-    my_argv[i++] = incrname;
-#else
-    my_argv[i++] = "--incremental";
-    my_argv[i++] = "--newer";
-    my_argv[i++] = dumptimestr;
-#endif
+    if (gnutar_list_dir) {
+	    my_argv[i++] = "--listed-incremental";
+	    my_argv[i++] = incrname;
+    } else {
+	my_argv[i++] = "--incremental";
+	my_argv[i++] = "--newer";
+	my_argv[i++] = dumptimestr;
+    }
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
     /* --atime-preserve causes gnutar to call
      * utime() after reading files in order to

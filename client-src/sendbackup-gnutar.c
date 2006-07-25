@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.96 2006/07/25 18:10:07 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.97 2006/07/25 18:32:14 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -36,6 +36,7 @@
 #include "util.h"
 #include "getfsent.h"			/* for amname_to_dirname lookup */
 #include "version.h"
+#include "clientconf.h"
 
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
@@ -123,9 +124,9 @@ int cur_level;
 char *cur_disk;
 time_t cur_dumptime;
 
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+static char *gnutar_list_dir = NULL;
 static char *incrname = NULL;
-#endif
+
 /*
  *  doing similar to $ gtar | compression | encryption 
  */
@@ -215,13 +216,16 @@ start_backup(
 	comppid = -1;
     }
 
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR					/* { */
+    gnutar_list_dir = client_getconf_str(CLN_GNUTAR_LIST_DIR);
+    if (strlen(gnutar_list_dir) == 0)
+	gnutar_list_dir = NULL;
+
 #ifdef SAMBA_CLIENT							/* { */
     if (amdevice[0] == '/' && amdevice[1]=='/')
 	amfree(incrname);
     else
 #endif									/* } */
-    {
+    if (gnutar_list_dir) {
 	char *basename = NULL;
 	char number[NUM_STR_SIZE];
 	char *s;
@@ -229,7 +233,7 @@ start_backup(
 	char *inputname = NULL;
 	int baselevel;
 
-	basename = vstralloc(GNUTAR_LISTED_INCREMENTAL_DIR,
+	basename = vstralloc(gnutar_list_dir,
 			     "/",
 			     host,
 			     disk,
@@ -238,7 +242,7 @@ start_backup(
 	 * The loop starts at the first character of the host name,
 	 * not the '/'.
 	 */
-	s = basename + SIZEOF(GNUTAR_LISTED_INCREMENTAL_DIR);
+	s = basename + strlen(gnutar_list_dir) + 1;
 	while((ch = *s++) != '\0') {
 	    if(ch == '/')
 		s[-1] = '_';
@@ -322,7 +326,6 @@ start_backup(
 	amfree(inputname);
 	amfree(basename);
     }
-#endif									/* } */
 
     /* find previous dump time */
 
@@ -546,14 +549,14 @@ start_backup(
 	my_argv[i++] = "--directory";
 	my_argv[i++] = dirname;
 	my_argv[i++] = "--one-file-system";
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	my_argv[i++] = "--listed-incremental";
-	my_argv[i++] = incrname;
-#else
-	my_argv[i++] = "--incremental";
-	my_argv[i++] = "--newer";
-	my_argv[i++] = dumptimestr;
-#endif
+	if (gnutar_list_dir && incrname) {
+	    my_argv[i++] = "--listed-incremental";
+	    my_argv[i++] = incrname;
+	} else {
+	    my_argv[i++] = "--incremental";
+	    my_argv[i++] = "--newer";
+	    my_argv[i++] = dumptimestr;
+	}
 #ifdef ENABLE_GNUTAR_ATIME_PRESERVE
 	/* --atime-preserve causes gnutar to call
 	 * utime() after reading files in order to
@@ -613,7 +616,6 @@ end_backup(
     int		goterror)
 {
     if(!options->no_record && !goterror) {
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
 	if (incrname != NULL && strlen(incrname) > 4) {
 	    char *nodotnew;
 	
@@ -626,7 +628,6 @@ end_backup(
 	    amfree(nodotnew);
 	    amfree(incrname);
 	}
-#endif
 
         if(!start_amandates(1)) {
 	    fprintf(stderr, "%s: warning [opening %s: %s]", get_pname(),

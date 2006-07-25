@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.h,v 1.6 2006/06/08 13:55:28 martinea Exp $
+ * $Id: clientconf.h,v 1.7 2006/07/25 18:32:14 martinea Exp $
  *
  * interface for client config file reading code
  */
@@ -45,6 +45,7 @@ typedef enum conf_e {
     CLN_SSH_KEYS,
     CLN_AMANDAD_PATH,
     CLN_CLIENT_USERNAME,
+    CLN_GNUTAR_LIST_DIR,
     CLN_CLN
 } cconfparm_t;
 

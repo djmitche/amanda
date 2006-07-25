@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.12 2006/07/05 14:56:07 martinea Exp $
+ * $Id: clientconf.c,v 1.13 2006/07/25 18:32:14 martinea Exp $
  *
  * read configuration file
  */
@@ -65,6 +65,7 @@ keytab_t client_keytab[] = {
     { "SSH_KEYS", CONF_SSH_KEYS },
     { "AMANDAD_PATH", CONF_AMANDAD_PATH },
     { "CLIENT_USERNAME", CONF_CLIENT_USERNAME },
+    { "GNUTAR_LIST_DIR", CONF_GNUTAR_LIST_DIR },
     { "INCLUDEFILE", CONF_INCLUDEFILE },
     { NULL, CONF_UNKNOWN },
 };
@@ -78,6 +79,7 @@ t_conf_var client_var [] = {
    { CONF_SSH_KEYS       , CONFTYPE_STRING, read_string, CLN_SSH_KEYS       , NULL },
    { CONF_AMANDAD_PATH   , CONFTYPE_STRING, read_string, CLN_AMANDAD_PATH   , NULL },
    { CONF_CLIENT_USERNAME, CONFTYPE_STRING, read_string, CLN_CLIENT_USERNAME, NULL },
+   { CONF_GNUTAR_LIST_DIR, CONFTYPE_STRING, read_string, CLN_GNUTAR_LIST_DIR, NULL },
    { CONF_UNKNOWN        , CONFTYPE_INT   , NULL       , CLN_CLN            , NULL }
 };
 
@@ -255,6 +257,12 @@ init_defaults(void)
     conf_init_string(&client_conf[CLN_SSH_KEYS], "");
     conf_init_string(&client_conf[CLN_AMANDAD_PATH], "");
     conf_init_string(&client_conf[CLN_CLIENT_USERNAME], "");
+#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
+    conf_init_string(&client_conf[CLN_GNUTAR_LIST_DIR],
+		     GNUTAR_LISTED_INCREMENTAL_DIR);
+#else
+    conf_init_string(&client_conf[CLN_GNUTAR_LIST_DIR], NULL);
+#endif
 
     /* defaults for internal variables */
 
@@ -470,6 +478,8 @@ generic_client_get_security_conf(
 		return(client_getconf_str(CLN_AMANDAD_PATH));
 	} else if(strcmp(string, "client_username")==0) {
 		return(client_getconf_str(CLN_CLIENT_USERNAME));
+	} else if(strcmp(string, "gnutar_list_dir")==0) {
+		return(client_getconf_str(CLN_GNUTAR_LIST_DIR));
 /*
 	} else if(strcmp(string, "krb5principal")==0) {
 		return(client_getconf_str(CNF_KRB5PRINCIPAL));

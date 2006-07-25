@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.90 2006/07/25 18:27:56 martinea Exp $
+ * $Id: selfcheck.c,v 1.91 2006/07/25 18:32:14 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -799,6 +799,7 @@ check_overall(void)
     char *cmd;
     struct stat buf;
     int testfd;
+    char *gnutar_list_dir;
 
     if( need_runtar )
     {
@@ -889,9 +890,11 @@ check_overall(void)
 #ifdef AMANDATES_FILE
 	check_file(AMANDATES_FILE, R_OK|W_OK);
 #endif
-#ifdef GNUTAR_LISTED_INCREMENTAL_DIR
-	check_dir(GNUTAR_LISTED_INCREMENTAL_DIR,R_OK|W_OK);
-#endif
+	gnutar_list_dir = client_getconf_str(CLN_GNUTAR_LIST_DIR);
+	if (strlen(gnutar_list_dir) == 0)
+	    gnutar_list_dir = NULL;
+	if (gnutar_list_dir) 
+	    check_dir(gnutar_list_dir, R_OK|W_OK);
     }
 
     if( need_calcsize ) {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.13 2006/06/06 23:13:25 paddy_s Exp $
+ * $Id: util.h,v 1.14 2006/07/25 18:32:15 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -154,7 +154,7 @@ typedef enum {
 
     /* client conf */
     CONF_CONF,			CONF_INDEX_SERVER,	CONF_TAPE_SERVER,
-    CONF_SSH_KEYS,
+    CONF_SSH_KEYS,		CONF_GNUTAR_LIST_DIR,
 
     /* network interface */
     /* COMMENT, */		/* USE, */

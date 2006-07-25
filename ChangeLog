@@ -1,4 +1,13 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/clientconf.c: New GNUTAR_LIST_DIR client config option.
+	* client-src/clientconf.h: New GNUTAR_LIST_DIR client config option.
+	* client-src/selfcheck.c: Use GNUTAR_LIST_DIR.
+	* client-src/sendbackup-gnutar.c: Use GNUTAR_LIST_DIR.
+	* client-src/sendsize.c: Use GNUTAR_LIST_DIR.
+	* common-src/util.h: New CONF_GNUTAR_LIST_DIR.
+	* man/xml-source/amanda-client.conf.5.xml: Document it.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/calcsize.c, client-src/killpgrp.c,
 	  client-src/rundump.c, client-src/runtar.c,
 	  client-src/selfcheck.c, client-src/sendbackup.c,

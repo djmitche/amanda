@@ -212,6 +212,15 @@ The key file the ssh auth will use, it must be the private key. If this paramete
   </listitem>
   </varlistentry>
 
+  <varlistentry>
+  <term><emphasis remap='B'>gnutar_list_dir</emphasis> <emphasis remap='I'> string</emphasis></term>
+  <listitem>
+<para>Default from configure 
+<emphasis remap='I'>--with-gnutar-listdir=DIR</emphasis>.
+The directory where gnutar keep its state file.</para>
+  </listitem>
+  </varlistentry>
+
 </variablelist>
 </refsect2>
 </refsect1>
