@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.146 2006/07/25 18:18:48 martinea Exp $
+ * $Id: amcheck.c,v 1.147 2006/07/25 18:27:57 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -209,6 +209,8 @@ main(
 	error("errors processing config file \"%s\"", conffile);
 	/*NOTREACHED*/
     }
+
+    dbrename(config_name, DBG_SUBDIR_SERVER);
 
     report_bad_conf_arg();
 

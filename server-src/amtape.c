@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.46 2006/07/25 18:18:48 martinea Exp $
+ * $Id: amtape.c,v 1.47 2006/07/25 18:27:57 martinea Exp $
  *
  * tape changer interface program
  */
@@ -150,6 +150,8 @@ main(
 	error("errors processing config file \"%s\"", conffile);
 	/*NOTREACHED*/
     }
+
+    dbrename(config_name, DBG_SUBDIR_SERVER);
 
     conf_tapelist = getconf_str(CNF_TAPELIST);
     if (*conf_tapelist == '/') {

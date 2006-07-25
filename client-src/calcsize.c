@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.43 2006/07/25 18:18:46 martinea Exp $
+ * $Id: calcsize.c,v 1.44 2006/07/25 18:27:56 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
  *
@@ -185,6 +185,9 @@ main(
     }
 
     dbprintf(("config: %s\n", *argv));
+    if (strcmp(*argv, "NOCONFIG") != 0) {
+	dbrename(*argv, DBG_SUBDIR_CLIENT);
+    }
     argc--;
     argv++;
 

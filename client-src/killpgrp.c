@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: killpgrp.c,v 1.16 2006/07/25 18:18:46 martinea Exp $
+ * $Id: killpgrp.c,v 1.17 2006/07/25 18:27:56 martinea Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
@@ -70,6 +70,8 @@ int main(
     }
     dbprintf(("%s: version %s\n", debug_prefix(NULL), version()));
     dbprintf(("config: %s\n", argv[1]));
+    if (strcmp(argv[1], "NOCONFIG") != 0)
+	dbrename(argv[1], DBG_SUBDIR_CLIENT);
 
     if(client_uid == (uid_t) -1) {
 	error("error [cannot find user %s in passwd file]", CLIENT_LOGIN);

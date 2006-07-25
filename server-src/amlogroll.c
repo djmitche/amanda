@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.13 2006/07/25 18:18:48 martinea Exp $
+ * $Id: amlogroll.c,v 1.14 2006/07/25 18:27:57 martinea Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -93,6 +93,8 @@ int main(int argc, char **argv)
 	/*NOTREACHED*/
     }
     amfree(conffile);
+
+    dbrename(config_name, DBG_SUBDIR_SERVER);
 
     report_bad_conf_arg();
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.38 2006/07/19 17:41:15 martinea Exp $
+ * $Id: debug.c,v 1.39 2006/07/25 18:27:56 martinea Exp $
  *
  * debug log subroutines
  */
@@ -47,11 +47,12 @@ int debug = 1;
 
 static int db_fd = 2;			/* default is stderr */
 static FILE *db_file = NULL;		/* stderr may not be a constant */
-static char *db_filename = NULL;
+static char *db_name  = NULL;		/* filename */
+static char *db_filename = NULL;	/* /path/to/filename */
 
 static pid_t debug_prefix_pid = 0;
 static char *get_debug_name(time_t t, int n);
-static void debug_setup_1(char *subdir);
+static void debug_setup_1(char *config, char *subdir);
 static void debug_setup_2(char *s, int fd, char *notation);
 
 /*
@@ -115,8 +116,7 @@ static char *dbgdir = NULL;
 static time_t curtime;
 
 static void
-debug_setup_1(
-    char *subdir)
+debug_setup_1(char *config, char *subdir)
 {
     struct passwd *pwent;
     char *pname;
@@ -131,6 +131,7 @@ debug_setup_1(
     size_t d_name_len;
     struct stat sbuf;
     char *dbfilename = NULL;
+    char *sane_config = NULL;
     int i;
 
     memset(&sbuf, 0, SIZEOF(sbuf));
@@ -147,7 +148,14 @@ debug_setup_1(
      * Create the debug directory if it does not yet exist.
      */
     amfree(dbgdir);
-    if (subdir)
+    if (config)
+	sane_config = sanitise_filename(config);
+    if (sane_config && subdir)
+	dbgdir = vstralloc(AMANDA_DBGDIR, "/", subdir, "/", sane_config,
+			   "/", NULL);
+    else if (sane_config)
+	dbgdir = vstralloc(AMANDA_DBGDIR, "/", sane_config, "/", NULL);
+    else if (subdir)
 	dbgdir = vstralloc(AMANDA_DBGDIR, "/", subdir, "/", NULL);
     else
 	dbgdir = stralloc2(AMANDA_DBGDIR, "/");
@@ -156,6 +164,7 @@ debug_setup_1(
 	      AMANDA_DBGDIR, strerror(errno));
         /*NOTREACHED*/
     }
+    amfree(sane_config);
 
     /*
      * Clean out old debug files.  We also rename files with old style
@@ -248,15 +257,17 @@ debug_setup_2(
      * Move the file descriptor up high so it stays out of the way
      * of other processing, e.g. sendbackup.
      */
-    i = 0;
-    fd_close[i++] = fd;
-    while((db_fd = dup(fd)) < MIN_DB_FD) {
-	fd_close[i++] = db_fd;
+    if (fd >= 0) {
+	i = 0;
+	fd_close[i++] = fd;
+	while((db_fd = dup(fd)) < MIN_DB_FD) {
+	    fd_close[i++] = db_fd;
+	}
+	while(--i >= 0) {
+	    close(fd_close[i]);
+	}
+	db_file = fdopen(db_fd, "a");
     }
-    while(--i >= 0) {
-	close(fd_close[i]);
-    }
-    db_file = fdopen(db_fd, "a");
 
     if (notation) {
 	/*
@@ -275,7 +286,6 @@ debug_setup_2(
 void
 debug_open(char *subdir)
 {
-    char *dbfilename;
     int fd = -1;
     int i;
     char *s = NULL;
@@ -284,23 +294,23 @@ debug_open(char *subdir)
     /*
      * Do initial setup.
      */
-    debug_setup_1(subdir);
+    debug_setup_1(NULL, subdir);
 
     /*
      * Create the new file with a unique sequence number.
      */
     mask = (mode_t)umask((mode_t)0037); /* Allow the group read bit through */
     for(i = 0; fd < 0; i++) {
-        if ((dbfilename = get_debug_name(curtime, i)) == NULL) {
+	amfree(db_name);
+	if ((db_name = get_debug_name(curtime, i)) == NULL) {
 	    error("Cannot create %s debug file", get_pname());
-            /*NOTREACHED*/
+	    /*NOTREACHED*/
         }
 
-        if ((s = newvstralloc(s, dbgdir, dbfilename, NULL)) == NULL) {
+	if ((s = newvstralloc(s, dbgdir, db_name, NULL)) == NULL) {
 	    error("Cannot allocate %s debug file name memory", get_pname());
-            /*NOTREACHED*/
-        }
-        amfree(dbfilename);
+	    /*NOTREACHED*/
+	}
 
         if ((fd = open(s, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0640)) < 0) {
             if (errno != EEXIST) {
@@ -336,7 +346,7 @@ debug_reopen(
     /*
      * Do initial setup.
      */
-    debug_setup_1(NULL);
+    debug_setup_1(NULL, NULL);
 
     /*
      * Reopen the file.
@@ -357,6 +367,63 @@ debug_reopen(
      * Note: we release control of the string 's' points to.
      */
     debug_setup_2(s, fd, notation);
+}
+
+void
+debug_rename(
+    char *config,
+    char *subdir)
+{
+    int fd = -1;
+    int i;
+    char *s = NULL;
+    mode_t mask;
+
+    if (!db_filename)
+	return;
+
+    /*
+     * Do initial setup.
+     */
+    debug_setup_1(config, subdir);
+
+    s = newvstralloc(s, dbgdir, db_name, NULL);
+
+    if (strcmp(db_filename, s) == 0)
+	return;
+
+    mask = (mode_t)umask((mode_t)0037);
+    /* check if a file with the same name already exist */
+    if ((fd = open(s, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0640)) < 0) {
+	for(i = 0; fd < 0; i++) {
+	    amfree(db_name);
+	    if ((db_name = get_debug_name(curtime, i)) == NULL) {
+		dbprintf(("Cannot create %s debug file", get_pname()));
+		break;
+	    }
+
+	    s = newvstralloc(s, dbgdir, db_name, NULL);
+	    if ((fd = open(s, O_WRONLY|O_CREAT|O_EXCL|O_APPEND, 0640)) < 0) {
+		if (errno != EEXIST) {
+		    dbprintf(("Cannot create %s debug file: %s", get_pname(),
+			      strerror(errno)));
+		    break;
+		}
+	    }
+	}
+    }
+
+    if (fd >= 0 && s) {
+	rename(db_filename, s);
+    }
+    (void)umask(mask); /* Restore mask */
+    close(fd);
+    /*
+     * Finish setup.
+     *
+     * Note: we release control of the string 's' points to.
+     */
+    debug_setup_2(s, -1, "rename");
 }
 
 void

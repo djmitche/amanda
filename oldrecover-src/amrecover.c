@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.6 2006/07/25 18:18:47 martinea Exp $
+ * $Id: amrecover.c,v 1.7 2006/07/25 18:27:57 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -441,6 +441,8 @@ main(
     localhost[MAX_HOSTNAME_LENGTH] = '\0';
 
     config = newstralloc(config, DEFAULT_CONFIG);
+
+    dbrename(config, DBG_SUBDIR_CLIENT);
 
     amfree(server_name);
     server_name = getenv("AMANDA_SERVER");

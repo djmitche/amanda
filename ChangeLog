@@ -1,4 +1,21 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/calcsize.c, client-src/killpgrp.c,
+	  client-src/rundump.c, client-src/runtar.c,
+	  client-src/selfcheck.c, client-src/sendbackup.c,
+	  client-src/sendsize.c, common-src/amanda.h,
+	  common-src/debug.c, oldrecover-src/amrecover.c,
+	  recover-src/amrecover.c, restore-src/amfetchdump.c,
+	  restore-src/amidxtaped.c, server-src/amadmin.c,
+	  server-src/amcheck.c, server-src/amcleanupdisk.c,
+	  server-src/amflush.c, server-src/amindexd.c,
+	  server-src/amlabel.c, server-src/amlogroll.c,
+	  server-src/amtape.c, server-src/amtrmidx.c,
+	  server-src/amtrmlog.c, server-src/chunker.c,
+	  server-src/driver.c, server-src/dumper.c,
+	  server-src/getconf.c, server-src/planner.c,
+	  server-src/reporter.c, server-src/taper.c: dbrename ot the config dir.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/amanda.h: Define DBG_SUBDIR_SERVER, DBG_SUBDIR_CLIENT
 			       and DBG_SUBDIR_CLIENT.
 	* amandad-src/amandad.c, changer-src/chg-scsi.c,

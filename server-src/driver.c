@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.191 2006/07/25 18:18:48 martinea Exp $
+ * $Id: driver.c,v 1.192 2006/07/25 18:27:57 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -218,6 +218,8 @@ main(
 	/*NOTREACHED*/
     }
     amfree(conffile);
+
+    dbrename(config_name, DBG_SUBDIR_SERVER);
 
     report_bad_conf_arg();
 

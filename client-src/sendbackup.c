@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.87 2006/07/25 18:18:46 martinea Exp $
+ * $Id: sendbackup.c,v 1.88 2006/07/25 18:27:56 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -278,6 +278,8 @@ main(
 		    /*NOTREACHED*/
 		}
 		amfree(conffile);
+
+		dbrename(g_options->config, DBG_SUBDIR_CLIENT);
 	    }
 	    continue;
 	}

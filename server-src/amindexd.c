@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.105 2006/07/25 18:18:48 martinea Exp $
+ * $Id: amindexd.c,v 1.106 2006/07/25 18:27:57 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -537,6 +537,8 @@ is_config_valid(
 	return -1;
     }
     amfree(conf_tapelist);
+
+    dbrename(config, DBG_SUBDIR_SERVER);
 
     output_find = find_dump(1, &disk_list);
     sort_find_result("DLKHpB", &output_find);

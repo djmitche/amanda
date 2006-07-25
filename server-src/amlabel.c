@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.52 2006/07/25 18:18:48 martinea Exp $
+ * $Id: amlabel.c,v 1.53 2006/07/25 18:27:57 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -130,6 +130,8 @@ main(
 	error("errors processing config file \"%s\"", conffile);
 	/*NOTREACHED*/
     }
+
+    dbrename(config_name, DBG_SUBDIR_SERVER);
 
     report_bad_conf_arg();
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.122 2006/07/25 18:18:47 martinea Exp $
+ * $Id: amadmin.c,v 1.123 2006/07/25 18:27:57 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -166,6 +166,7 @@ main(
     }
 
     config_name = new_argv[1];
+
     config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
     conffile = stralloc2(config_dir, CONFFILE_NAME);
 
@@ -173,6 +174,8 @@ main(
 	error("errors processing config file \"%s\"", conffile);
 	/*NOTREACHED*/
     }
+
+    dbrename(config_name, DBG_SUBDIR_SERVER);
 
     report_bad_conf_arg();
 

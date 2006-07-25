@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.34 2006/07/25 18:18:48 martinea Exp $
+/* $Id: chunker.c,v 1.35 2006/07/25 18:27:57 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -165,6 +165,8 @@ main(
 	/*NOTREACHED*/
     }
     amfree(conffile);
+
+    dbrename(config_name, DBG_SUBDIR_SERVER);
 
     report_bad_conf_arg();
 

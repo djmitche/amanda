@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.166 2006/07/25 18:18:46 martinea Exp $
+ * $Id: sendsize.c,v 1.167 2006/07/25 18:27:56 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -217,6 +217,8 @@ main(
 		    /*NOTREACHED*/
 		}
 		amfree(conffile);
+
+		dbrename(g_options->config, DBG_SUBDIR_CLIENT);
 	    }
 
 	    continue;

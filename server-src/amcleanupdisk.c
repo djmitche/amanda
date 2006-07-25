@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.21 2006/07/25 18:18:48 martinea Exp $
+ * $Id: amcleanupdisk.c,v 1.22 2006/07/25 18:27:57 martinea Exp $
  */
 #include "amanda.h"
 
@@ -81,6 +81,8 @@ main(
 	/*NOTREACHED*/
     }
     amfree(conffile);
+
+    dbrename(config_name, DBG_SUBDIR_SERVER);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.14 2006/07/25 18:18:47 martinea Exp $
+ * $Id: amfetchdump.c,v 1.15 2006/07/25 18:27:57 martinea Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -405,6 +405,7 @@ main(
     }
     amfree(conffile);
 
+    dbrename(config_name, DBG_SUBDIR_SERVER);
 
     if((my_argc - optind) < 1 && !rst_flags->inventory_log){
 	fprintf(stderr, "Not enough arguments\n\n");

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.129 2006/07/25 18:18:48 martinea Exp $
+ * $Id: reporter.c,v 1.130 2006/07/25 18:27:58 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -452,6 +452,9 @@ main(
     /* Ignore error from read_conffile */
     read_conffile(conffile);
     amfree(conffile);
+
+    dbrename(config_name, DBG_SUBDIR_SERVER);
+
     report_bad_conf_arg();
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {

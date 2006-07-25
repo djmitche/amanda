@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.72 2006/07/25 18:18:47 martinea Exp $
+ * $Id: amrecover.c,v 1.73 2006/07/25 18:27:57 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -404,6 +404,8 @@ main(
 	/*NOTREACHED*/
     }
     amfree(conffile);
+
+    dbrename(config, DBG_SUBDIR_CLIENT);
 
     report_bad_client_arg();
 

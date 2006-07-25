@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.24 2006/07/25 18:18:48 martinea Exp $
+ * $Id: getconf.c,v 1.25 2006/07/25 18:27:58 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -567,6 +567,7 @@ main(
 	    /*NOTREACHED*/
 	}
 	amfree(conffile);
+	dbrename(config_name, DBG_SUBDIR_SERVER);
 	report_bad_conf_arg();
 	result = getconf_byname(parmname);
     }

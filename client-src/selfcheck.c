@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.89 2006/07/25 18:18:46 martinea Exp $
+ * $Id: selfcheck.c,v 1.90 2006/07/25 18:27:56 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -173,6 +173,8 @@ main(
 		    /*NOTREACHED*/
 		}
 		amfree(conffile);
+
+		dbrename(g_options->config, DBG_SUBDIR_CLIENT);
 	    }
 
 	    continue;

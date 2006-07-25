@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.32 2006/07/25 18:18:46 martinea Exp $
+ * $Id: rundump.c,v 1.33 2006/07/25 18:27:56 martinea Exp $
  *
  * runs DUMP program as root
  *
@@ -115,6 +115,8 @@ main(
     argv++;
 
     dbprintf(("config: %s\n", argv[0]));
+    if (strcmp(argv[0], "NOCONFIG") != 0)
+	dbrename(argv[0], DBG_SUBDIR_CLIENT);
     argc--;
     argv++;
 
