@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.h,v 1.19 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: sendbackup.h,v 1.20 2006/07/25 18:10:07 martinea Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
@@ -34,6 +34,7 @@
 #include "amanda.h"
 #include "pipespawn.h"
 #include "client_util.h"
+#include "amandad.h"
 
 void info_tapeheader(void);
 void start_index(int createindex, int input, int mesg, 
@@ -74,6 +75,7 @@ typedef struct regex_s {
 extern pid_t  comppid, dumppid, encpid, tarpid;
 extern pid_t indexpid;
 extern option_t *options;
+extern g_option_t *g_options;
 
 typedef struct backup_program_s {
     char *name, *backup_name, *restore_name;

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.95 2006/07/23 12:16:44 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.96 2006/07/25 18:10:07 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -527,13 +527,18 @@ start_backup(
 	if(nb_exclude > 0) file_exclude = build_exclude(disk, amdevice, options, 0);
 	if(nb_include > 0) file_include = build_include(disk, amdevice, options, 0);
 
-	my_argv = alloc(SIZEOF(char *) * (17 + (nb_exclude*2)+(nb_include*2)));
+	my_argv = alloc(SIZEOF(char *) * (22 + (nb_exclude*2)+(nb_include*2)));
 
 	cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 	info_tapeheader();
 
 	start_index(options->createindex, dumpout, mesgf, indexf, indexcmd);
 
+        my_argv[i++] = "runtar";
+	if (g_options->config)
+	    my_argv[i++] = g_options->config;
+	else
+	    my_argv[i++] = "NOCONFIG";
 	my_argv[i++] = "gtar";
 	my_argv[i++] = "--create";
 	my_argv[i++] = "--file";

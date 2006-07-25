@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.85 2006/07/21 00:25:51 martinea Exp $
+ * $Id: sendbackup.c,v 1.86 2006/07/25 18:10:07 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -54,6 +54,7 @@ int mesgfd;
 int indexfd;
 
 option_t *options;
+g_option_t *g_options = NULL;
 
 long dump_size = -1;
 
@@ -61,7 +62,6 @@ backup_program_t *program = NULL;
 
 static am_feature_t *our_features = NULL;
 static char *our_feature_string = NULL;
-static g_option_t *g_options = NULL;
 static char *amandad_auth = NULL;
 
 /* local functions */

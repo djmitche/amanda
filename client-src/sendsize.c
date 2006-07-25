@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.164 2006/07/23 12:16:44 martinea Exp $
+ * $Id: sendsize.c,v 1.165 2006/07/25 18:10:07 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -743,7 +743,7 @@ generic_calc_estimates(
 {
     int pipefd = -1, nullfd = -1;
     char *cmd;
-    char *my_argv[DUMP_LEVELS*2+20];
+    char *my_argv[DUMP_LEVELS*2+22];
     char number[NUM_STR_SIZE];
     int i, level, my_argc, status;
     pid_t calcpid;
@@ -760,7 +760,13 @@ generic_calc_estimates(
     cmd = vstralloc(libexecdir, "/", "calcsize", versionsuffix(), NULL);
 
     my_argc = 0;
+
     my_argv[my_argc++] = stralloc("calcsize");
+    if (g_options->config)
+	my_argv[my_argc++] = stralloc(g_options->config);
+    else
+	my_argv[my_argc++] = stralloc("NOCONFIG");
+
     my_argv[my_argc++] = stralloc(est->calcprog);
 
     my_argv[my_argc++] = stralloc(est->amname);
@@ -1043,6 +1049,8 @@ getsize_dump(
     times_t start_time;
     char *qdisk = quote_string(disk);
     char *qdevice;
+    char *config;
+    int is_rundump = 1;
 
     (void)options;	/* Quiet unused parameter warning */
 
@@ -1059,7 +1067,10 @@ getsize_dump(
 
     cmd = vstralloc(libexecdir, "/rundump", versionsuffix(), NULL);
     rundump_cmd = stralloc(cmd);
-
+    if (g_options->config)
+        config = g_options->config;
+    else
+        config = "NOCONFIG";
     if ((stdoutfd = nullfd = open("/dev/null", O_RDWR)) == -1) {
 	dbprintf(("getsize_dump could not open /dev/null: %s\n",
 		  strerror(errno)));
@@ -1109,6 +1120,8 @@ getsize_dump(
 #else
 	name = stralloc("");
 	cmd = newstralloc(cmd, VXDUMP);
+	config = skip_argument;
+	is_rundump = 0;
 #endif
 	dumpkeys = vstralloc(level_str, "s", "f", NULL);
 	dbprintf(("%s: running \"%s%s %s 1048576 - %s\"\n",
@@ -1145,6 +1158,8 @@ getsize_dump(
 # else							/* } { */
 	name = stralloc("");
 	cmd = newstralloc(cmd, DUMP);
+        config = skip_argument;
+	is_rundump = 0;
 # endif							/* } */
 
 # ifdef AIX_BACKUP					/* { */
@@ -1218,6 +1233,7 @@ getsize_dump(
 
 	    default:
 	    {
+		char *config;
 		char *killpgrp_cmd = vstralloc(libexecdir, "/killpgrp",
 					       versionsuffix(), NULL);
 		dbprintf(("%s: running %s\n",
@@ -1229,7 +1245,12 @@ getsize_dump(
 		close(pipefd[1]);
 		close(killctl[1]);
 		close(nullfd);
-		execle(killpgrp_cmd, killpgrp_cmd, (char *)0, safe_env());
+		if (g_options->config)
+		    config = g_options->config;
+		else
+		    config = "NOCONFIG";
+		execle(killpgrp_cmd, killpgrp_cmd, config, (char *)0,
+		       safe_env());
 		dbprintf(("%s: cannot execute %s: %s\n",
 			  debug_prefix(NULL), killpgrp_cmd, strerror(errno)));
 		exit(-1);
@@ -1255,8 +1276,12 @@ getsize_dump(
 #else
 	if (1)
 #endif
-	    execle(cmd, "xfsdump", "-F", "-J", "-l", level_str, "-", device,
-		   (char *)0, safe_env());
+	    if (is_rundump)
+		execle(cmd, "rundump", config, "xfsdump", "-F", "-J", "-l",
+		       level_str, "-", device, (char *)0, safe_env());
+	    else
+		execle(cmd, "xfsdump", "-F", "-J", "-l",
+		       level_str, "-", device, (char *)0, safe_env());
 	else
 #endif
 #ifdef VXDUMP
@@ -1265,8 +1290,12 @@ getsize_dump(
 #else
 	if (1)
 #endif
-	    execle(cmd, "vxdump", dumpkeys, "1048576", "-", device, (char *)0,
-		   safe_env());
+	    if (is_rundump)
+		execle(cmd, "rundump", config, "vxdump", dumpkeys, "1048576",
+		       "-", device, (char *)0, safe_env());
+	    else
+		execle(cmd, "vxdump", dumpkeys, "1048576", "-",
+		       device, (char *)0, safe_env());
 	else
 #endif
 #ifdef VDUMP
@@ -1275,20 +1304,37 @@ getsize_dump(
 #else
 	if (1)
 #endif
-	    execle(cmd, "vdump", dumpkeys, "60", "-", device, (char *)0,
-		   safe_env());
+	    if (is_rundump)
+		execle(cmd, "rundump", config, "vdump", dumpkeys, "60", "-",
+		       device, (char *)0, safe_env());
+	    else
+		execle(cmd, "vdump", dumpkeys, "60", "-",
+		       device, (char *)0, safe_env());
 	else
 #endif
 #ifdef DUMP
 # ifdef AIX_BACKUP
-	    execle(cmd, "backup", dumpkeys, "-", device, (char *)0, safe_env());
+	    if (is_rundump)
+		execle(cmd, "rundump", config, "backup", dumpkeys, "-",
+		       device, (char *)0, safe_env());
+	    else
+		execle(cmd, "backup", dumpkeys, "-",
+		       device, (char *)0, safe_env());
 # else
-	    execle(cmd, "dump", dumpkeys, 
+	    if (is_rundump) {
+		execle(cmd, "rundump", config, "dump", dumpkeys, 
 #ifdef HAVE_HONOR_NODUMP
-		   "0",
+		       "0",
 #endif
-		   "1048576", "-", device, (char *)0, safe_env());
+		       "1048576", "-", device, (char *)0, safe_env());
+	    } else {
+		execle(cmd, "dump", dumpkeys, 
+#ifdef HAVE_HONOR_NODUMP
+		       "0",
+#endif
+		       "1048576", "-", device, (char *)0, safe_env());
 # endif
+	    }
 #endif
 	{
 	    error("exec %s failed or no dump program available: %s",
@@ -1679,7 +1725,7 @@ getsize_gnutar(
     if(nb_exclude > 0) file_exclude = build_exclude(disk, amdevice, options, 0);
     if(nb_include > 0) file_include = build_include(disk, amdevice, options, 0);
 
-    my_argv = alloc(SIZEOF(char *) * 21);
+    my_argv = alloc(SIZEOF(char *) * 22);
     i = 0;
 
 #ifdef GNUTAR_LISTED_INCREMENTAL_DIR
@@ -1781,10 +1827,15 @@ getsize_gnutar(
     dirname = amname_to_dirname(amdevice);
 
 
-
-#ifdef GNUTAR
     cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
 
+    my_argv[i++] = "runtar";
+    if (g_options->config)
+	my_argv[i++] = g_options->config;
+    else
+	my_argv[i++] = "NOCONFIG";
+
+#ifdef GNUTAR
     my_argv[i++] = GNUTAR;
 #else
     my_argv[i++] = "tar";

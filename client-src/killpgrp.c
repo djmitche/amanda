@@ -24,10 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: killpgrp.c,v 1.14 2006/07/19 17:41:14 martinea Exp $
+ * $Id: killpgrp.c,v 1.15 2006/07/25 18:10:07 martinea Exp $
  *
  * if it is the process group leader, it kills all processes in its
  * process group when it is killed itself.
+ *
+ * argv[0] is the killpgrp program name
+ * argv[1] is the config name or NOCONFIG
+ *
  */
 #include "amanda.h"
 #include "version.h"
@@ -54,15 +58,18 @@ int main(
     int ch;
     amwait_t status;
 
-    (void)argc;	/* Quiet unused parameter warning */
-
     safe_fd(-1, 0);
     safe_cd();
 
     set_pname("killpgrp");
 
     dbopen("client");
-    dbprintf(("%s: version %s\n", argv[0], version()));
+    if (argc < 2) {
+	error("%s: Need at least 2 arguments\n", debug_prefix(NULL));
+	/*NOTREACHED*/
+    }
+    dbprintf(("%s: version %s\n", debug_prefix(NULL), version()));
+    dbprintf(("config: %s\n", argv[1]));
 
     if(client_uid == (uid_t) -1) {
 	error("error [cannot find user %s in passwd file]", CLIENT_LOGIN);

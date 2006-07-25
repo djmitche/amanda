@@ -24,9 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.30 2006/07/19 17:41:14 martinea Exp $
+ * $Id: rundump.c,v 1.31 2006/07/25 18:10:07 martinea Exp $
  *
  * runs DUMP program as root
+ *
+ * argv[0] is the rundump program name
+ * argv[1] is the config name or NOCONFIG
+ * argv[2] will be argv[0] of the DUMP program
+ * ...
  */
 #include "amanda.h"
 #include "version.h"
@@ -59,8 +64,6 @@ main(
     char *e;
 #endif /* ERRMSG */
 
-    (void)argc;	/* Quiet unused parameter warning */
-
     safe_fd(-1, 0);
     safe_cd();
 
@@ -70,7 +73,12 @@ main(
     signal(SIGPIPE, SIG_IGN);
 
     dbopen("client");
-    dbprintf(("%s: version %s\n", argv[0], version()));
+    if (argc < 3) {
+	error("%s: Need at least 3 arguments\n", debug_prefix(NULL));
+	/*NOTREACHED*/
+    }
+
+    dbprintf(("%s: version %s\n", debug_prefix(NULL), version()));
 
 #ifdef ERRMSG							/* { */
 
@@ -101,6 +109,14 @@ main(
 #if !defined (DONT_SUID_ROOT)
     setuid(0);
 #endif
+
+    /* skip argv[0] */
+    argc--;
+    argv++;
+
+    dbprintf(("config: %s\n", argv[0]));
+    argc--;
+    argv++;
 
 #ifdef XFSDUMP
 

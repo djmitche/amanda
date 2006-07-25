@@ -24,12 +24,16 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.41 2006/07/21 00:25:51 martinea Exp $
+ * $Id: calcsize.c,v 1.42 2006/07/25 18:10:06 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
+ *
+ * argv[0] is the calcsize program name
+ * argv[1] is the config name or NOCONFIG
  */
 #include "amanda.h"
 #include "statfs.h"
+#include "version.h"
 #include "sl.h"
 #include "util.h"
 
@@ -162,6 +166,7 @@ main(
     set_pname("calcsize");
 
     dbopen("client");
+    dbprintf(("%s: version %s\n", debug_prefix(NULL), version()));
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
@@ -173,11 +178,15 @@ main(
 
     /* need at least program, amname, and directory name */
 
-    if(argc < 3) {
-	error("Usage: %s [DUMP|GNUTAR] name dir [-X exclude-file] [-I include-file] [level date]*",
+    if(argc < 4) {
+	error("Usage: %s config [DUMP|GNUTAR] name dir [-X exclude-file] [-I include-file] [level date]*",
 	      get_pname());
         /*NOTREACHED*/
     }
+
+    dbprintf(("config: %s\n", *argv));
+    argc--;
+    argv++;
 
     /* parse backup program name */
 

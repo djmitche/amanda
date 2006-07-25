@@ -24,9 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: runtar.c,v 1.19 2006/07/19 17:41:14 martinea Exp $
+ * $Id: runtar.c,v 1.20 2006/07/25 18:10:07 martinea Exp $
  *
  * runs GNUTAR program as root
+ *
+ * argv[0] is the runtar program name
+ * argv[1] is the config name or NOCONFIG
+ * argv[2] will be argv[0] of the gtar program
+ * ...
  */
 #include "amanda.h"
 #include "version.h"
@@ -56,7 +61,12 @@ main(
     signal(SIGPIPE, SIG_IGN);
 
     dbopen("client");
-    dbprintf(("runtar: version %s\n", version()));
+    if (argc < 3) {
+	error("%s: Need at least 3 arguments\n", debug_prefix(NULL));
+	/*NOTREACHED*/
+    }
+
+    dbprintf(("%s: version %s\n", debug_prefix(NULL), version()));
 
 #ifndef GNUTAR
 
@@ -68,7 +78,7 @@ main(
 #else
 
     /*
-     * Print out version information for star.
+     * Print out version information for tar.
      */
     do {
 	FILE *	version_file;
@@ -109,6 +119,15 @@ main(
 #if !defined (DONT_SUID_ROOT)
     setuid(0);
 #endif
+
+    /* skip argv[0] */
+    argc--;
+    argv++;
+
+    dbprintf(("config: %s\n", argv[0]));
+    argc--;
+    argv++;
+
 
     dbprintf(("running: %s: ",GNUTAR));
     for (i=0; argv[i]; i++) {
