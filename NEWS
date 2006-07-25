@@ -1,3 +1,10 @@
+Changes in release 2.5.1b2
+
+* debug file are seperated in subdir client/server/amandad with the config name.
+* amandates client config option.
+* gnutar_list-dir client config option.
+* works on solaris 10 64bits.
+
 Changes in release 2.5.1b1
 
 * Klocwork defects fixed.
