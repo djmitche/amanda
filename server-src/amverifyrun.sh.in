@@ -17,7 +17,7 @@ else
 fi
 
 getparm() {
-        $AMGETCONF $CONFIG $1 2>/dev/null | grep -v BUGGY
+        $AMGETCONF $CONFIG $1 2>/dev/null
 }
 
 CONFIG=$1

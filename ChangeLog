@@ -1,4 +1,13 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/getconf.c: Don't print BUGGY.
+	* changer-src/chg-chio.pl.in: Don't parse BUGGY.
+	* changer-src/chg-iomega.pl.in: Don't parse BUGGY.
+	* changer-src/chg-zd-mtx.sh.in: Don't parse BUGGY.
+	* man/xml-source/amgetconf.8.xml: Don't parse BUGGY.
+	* server-src/amverifyrun.sh.in: Don't parse BUGGY.
+	* server-src/amverify.sh.in: Don't parse BUGGY.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c: Cleanup.
 	* restore-src/amrestore.c: Don't fsf if the last read return 0.
 

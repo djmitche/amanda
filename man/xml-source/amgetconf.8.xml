@@ -142,9 +142,7 @@ is not a known keyword
 (e.g. not a valid
 <emphasis remap='I'>amanda.conf</emphasis>
 keyword).
-In this case,
-<command>amgetconf</command>
-will write &quot;<emphasis remap='B'>BUGGY</emphasis>&quot; to stdout as the value.</para>
+</para>
   </listitem>
   </varlistentry>
 </variablelist>

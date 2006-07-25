@@ -632,20 +632,20 @@ else
 	SUF=
 fi
 
-DBGFILE=`amgetconf$SUF dbopen.$argv0 2>/dev/null | grep -v BUGGY`
+DBGFILE=`amgetconf$SUF dbopen.$argv0 2>/dev/null`
 if [ -z "$DBGFILE" ]
 then
 	DBGFILE=/dev/null			# will try this again below
 fi
 
-changerfile=`amgetconf$SUF changerfile 2>/dev/null | grep -v BUGGY`
+changerfile=`amgetconf$SUF changerfile 2>/dev/null`
 if [ -z "$changerfile" ]; then
 	Exit 2 \
 	     "<none>" \
 	     "changerfile must be specified in amanda.conf"
 fi
 
-tape=`amgetconf$SUF tapedev 2>/dev/null | grep -v BUGGY`
+tape=`amgetconf$SUF tapedev 2>/dev/null`
 if [ -z "$tape" ]; then
 	Exit 2 \
 	     "<none>" \
@@ -655,7 +655,7 @@ elif [ $tape = "/dev/null" -o `expr "$tape" : 'null:'` -eq 5 ]; then
 	     "<none>" \
 	     "tapedev ($tape) may not be the null device"
 fi
-TAPE=`amgetconf$SUF changerdev 2>/dev/null | grep -v BUGGY`
+TAPE=`amgetconf$SUF changerdev 2>/dev/null`
 if [ -z "$TAPE" ]; then
 	Exit 2 \
 	     "<none>" \

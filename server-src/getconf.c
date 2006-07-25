@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.25 2006/07/25 18:27:58 martinea Exp $
+ * $Id: getconf.c,v 1.26 2006/07/25 19:00:56 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -571,14 +571,14 @@ main(
 	report_bad_conf_arg();
 	result = getconf_byname(parmname);
     }
-    if(result == NULL) {
-	result = stralloc("BUGGY");
+
+    if (result == NULL) {
 	fprintf(stderr, "%s: no such parameter \"%s\"\n",
 		get_pname(), parmname);
 	fflush(stderr);
+    } else {
+	puts(result);
     }
-
-    puts(result);
 
     free_new_argv(new_argc, new_argv);
     free_server_config();

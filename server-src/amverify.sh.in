@@ -1,6 +1,6 @@
 #! @SHELL@
 #
-#	$Id: amverify.sh.in,v 1.37 2006/07/01 00:10:38 paddy_s Exp $
+#	$Id: amverify.sh.in,v 1.38 2006/07/25 19:00:56 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -64,7 +64,7 @@ report() {
 }
 
 getparm() {
-	$AMGETCONF $CONFIG $1 2>/dev/null | grep -v BUGGY
+	$AMGETCONF $CONFIG $1 2>/dev/null
 }
 
 sendreport() {
