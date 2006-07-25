@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.38 2006/07/12 17:35:33 martinea Exp $
+ * $Id: util.c,v 1.39 2006/07/25 18:43:36 martinea Exp $
  */
 
 #include "amanda.h"
@@ -2258,6 +2258,195 @@ conf_set_strategy(
     val->type = CONFTYPE_STRATEGY;
     val->v.i = i;
 }
+
+
+int
+get_conftype_int(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_INT) {
+	error("get_conftype_int: val.type is not CONFTYPE_INT");
+	/*NOTREACHED*/
+    }
+    return val->v.i;
+}
+
+long
+get_conftype_long(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_LONG) {
+	error("get_conftype_long: val.type is not CONFTYPE_LONG");
+	/*NOTREACHED*/
+    }
+    return val->v.l;
+}
+
+off_t
+get_conftype_am64(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_AM64) {
+	error("get_conftype_am64: val.type is not CONFTYPE_AM64");
+	/*NOTREACHED*/
+    }
+    return val->v.am64;
+}
+
+double
+get_conftype_real(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_REAL) {
+	error("get_conftype_real: val.type is not CONFTYPE_REAL");
+	/*NOTREACHED*/
+    }
+    return val->v.r;
+}
+
+char *
+get_conftype_string(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_STRING) {
+	error("get_conftype_string: val.type is not CONFTYPE_STRING");
+	/*NOTREACHED*/
+    }
+    return val->v.s;
+}
+
+char *
+get_conftype_ident(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_IDENT) {
+	error("get_conftype_ident: val.type is not CONFTYPE_IDENT");
+	/*NOTREACHED*/
+    }
+    return val->v.s;
+}
+
+time_t
+get_conftype_time(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_TIME) {
+	error("get_conftype_time: val.type is not CONFTYPE_TIME");
+	/*NOTREACHED*/
+    }
+    return val->v.t;
+}
+
+ssize_t
+get_conftype_size(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_SIZE) {
+	error("get_conftype_size: val.type is not CONFTYPE_SIZE");
+	/*NOTREACHED*/
+    }
+    return val->v.size;
+}
+
+sl_t *
+get_conftype_sl(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_SL) {
+	error("get_conftype_size: val.type is not CONFTYPE_SL");
+	/*NOTREACHED*/
+    }
+    return val->v.sl;
+}
+
+int
+get_conftype_bool(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_BOOL) {
+	error("get_conftype_bool: val.type is not CONFTYPE_BOOL");
+	/*NOTREACHED*/
+    }
+    return val->v.i;
+}
+
+int
+get_conftype_compress(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_COMPRESS) {
+	error("get_conftype_compress: val.type is not CONFTYPE_COMPRESS");
+	/*NOTREACHED*/
+    }
+    return val->v.i;
+}
+
+int
+get_conftype_encrypt(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_ENCRYPT) {
+	error("get_conftype_encrypt: val.type is not CONFTYPE_ENCRYPT");
+	/*NOTREACHED*/
+    }
+    return val->v.i;
+}
+
+int
+get_conftype_estimate(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_ESTIMATE) {
+	error("get_conftype_extimate: val.type is not CONFTYPE_ESTIMATE");
+	/*NOTREACHED*/
+    }
+    return val->v.i;
+}
+
+int
+get_conftype_strategy(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_STRATEGY) {
+	error("get_conftype_strategy: val.type is not CONFTYPE_STRATEGY");
+	/*NOTREACHED*/
+    }
+    return val->v.i;
+}
+
+int
+get_conftype_taperalgo(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_TAPERALGO) {
+	error("get_conftype_taperalgo: val.type is not CONFTYPE_TAPERALGO");
+	/*NOTREACHED*/
+    }
+    return val->v.i;
+}
+
+int
+get_conftype_priority(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_PRIORITY) {
+	error("get_conftype_priority: val.type is not CONFTYPE_PRIORITY");
+	/*NOTREACHED*/
+    }
+    return val->v.i;
+}
+
+exinclude_t
+get_conftype_exinclude(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_EXINCLUDE) {
+	error("get_conftype_exinclude: val.type is not CONFTYPE_EXINCLUDE");
+	/*NOTREACHED*/
+    }
+    return val->v.exinclude;
+}
+
 
 void
 dump_sockaddr(

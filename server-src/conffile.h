@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.68 2006/07/01 00:10:38 paddy_s Exp $
+ * $Id: conffile.h,v 1.69 2006/07/25 18:43:36 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -108,13 +108,13 @@ typedef struct tapetype_s {
 #define tapetype_get(tapetype, field) (tapetype->field)
 #define tapetype_get_name(tapetype) tapetype->name
 #define tapetype_get_seen(tapetype) tapetype->seen
-#define tapetype_get_comment(tapetype) tapetype->value[TAPETYPE_COMMENT].v.s
-#define tapetype_get_lbl_templ(tapetype) tapetype->value[TAPETYPE_LBL_TEMPL].v.s
-#define tapetype_get_blocksize(tapetype) tapetype->value[TAPETYPE_BLOCKSIZE].v.size
-#define tapetype_get_length(tapetype) tapetype->value[TAPETYPE_LENGTH].v.am64
-#define tapetype_get_filemark(tapetype) tapetype->value[TAPETYPE_FILEMARK].v.am64
-#define tapetype_get_speed(tapetype) tapetype->value[TAPETYPE_SPEED].v.i
-#define tapetype_get_file_pad(tapetype) tapetype->value[TAPETYPE_FILE_PAD].v.i
+#define tapetype_get_comment(tapetype)   get_conftype_string(&tapetype->value[TAPETYPE_COMMENT])
+#define tapetype_get_lbl_templ(tapetype) get_conftype_string(&tapetype->value[TAPETYPE_LBL_TEMPL])
+#define tapetype_get_blocksize(tapetype) get_conftype_size  (&tapetype->value[TAPETYPE_BLOCKSIZE])
+#define tapetype_get_length(tapetype)    get_conftype_am64  (&tapetype->value[TAPETYPE_LENGTH])
+#define tapetype_get_filemark(tapetype)  get_conftype_am64  (&tapetype->value[TAPETYPE_FILEMARK])
+#define tapetype_get_speed(tapetype)     get_conftype_int   (&tapetype->value[TAPETYPE_SPEED])
+#define tapetype_get_file_pad(tapetype)  get_conftype_int   (&tapetype->value[TAPETYPE_FILE_PAD])
 
 /* Dump strategies */
 #define DS_SKIP		0	/* Don't do any dumps at all */
@@ -190,46 +190,46 @@ typedef struct dumptype_s {
 
 #define dumptype_get_name(dumptype) dumptype->name
 #define dumptype_get_seen(dumptype) dumptype->seen
-#define dumptype_get_comment(dumptype) dumptype->value[DUMPTYPE_COMMENT].v.s
-#define dumptype_get_program(dumptype) dumptype->value[DUMPTYPE_PROGRAM].v.s
-#define dumptype_get_srvcompprog(dumptype) dumptype->value[DUMPTYPE_SRVCOMPPROG].v.s
-#define dumptype_get_clntcompprog(dumptype) dumptype->value[DUMPTYPE_CLNTCOMPPROG].v.s
-#define dumptype_get_srv_encrypt(dumptype) dumptype->value[DUMPTYPE_SRV_ENCRYPT].v.s
-#define dumptype_get_clnt_encrypt(dumptype) dumptype->value[DUMPTYPE_CLNT_ENCRYPT].v.s
-#define dumptype_get_amandad_path(dumptype) dumptype->value[DUMPTYPE_AMANDAD_PATH].v.s
-#define dumptype_get_client_username(dumptype) dumptype->value[DUMPTYPE_CLIENT_USERNAME].v.s
-#define dumptype_get_ssh_keys(dumptype) dumptype->value[DUMPTYPE_SSH_KEYS].v.s
-#define dumptype_get_security_driver(dumptype) dumptype->value[DUMPTYPE_SECURITY_DRIVER].v.s
-#define dumptype_get_exclude(dumptype) dumptype->value[DUMPTYPE_EXCLUDE].v.exinclude
-#define dumptype_get_include(dumptype) dumptype->value[DUMPTYPE_INCLUDE].v.exinclude
-#define dumptype_get_priority(dumptype) dumptype->value[DUMPTYPE_PRIORITY].v.i
-#define dumptype_get_dumpcycle(dumptype) dumptype->value[DUMPTYPE_DUMPCYCLE].v.i
-#define dumptype_get_maxcycle(dumptype) dumptype->value[DUMPTYPE_MAXCYCLE].v.i
-#define dumptype_get_frequency(dumptype) dumptype->value[DUMPTYPE_FREQUENCY].v.i
-#define dumptype_get_maxdumps(dumptype) dumptype->value[DUMPTYPE_MAXDUMPS].v.i
-#define dumptype_get_maxpromoteday(dumptype) dumptype->value[DUMPTYPE_MAXPROMOTEDAY].v.i
-#define dumptype_get_bumppercent(dumptype) dumptype->value[DUMPTYPE_BUMPPERCENT].v.i
-#define dumptype_get_bumpsize(dumptype) dumptype->value[DUMPTYPE_BUMPSIZE].v.am64
-#define dumptype_get_bumpdays(dumptype) dumptype->value[DUMPTYPE_BUMPDAYS].v.i
-#define dumptype_get_bumpmult(dumptype) dumptype->value[DUMPTYPE_BUMPMULT].v.r
-#define dumptype_get_start_t(dumptype) dumptype->value[DUMPTYPE_START_T].v.t
-#define dumptype_get_strategy(dumptype) dumptype->value[DUMPTYPE_STRATEGY].v.i
-#define dumptype_get_estimate(dumptype) dumptype->value[DUMPTYPE_ESTIMATE].v.i
-#define dumptype_get_compress(dumptype) dumptype->value[DUMPTYPE_COMPRESS].v.i
-#define dumptype_get_encrypt(dumptype) dumptype->value[DUMPTYPE_ENCRYPT].v.i
-#define dumptype_get_srv_decrypt_opt(dumptype) dumptype->value[DUMPTYPE_SRV_DECRYPT_OPT].v.s
-#define dumptype_get_clnt_decrypt_opt(dumptype) dumptype->value[DUMPTYPE_CLNT_DECRYPT_OPT].v.s
-#define dumptype_get_comprate(dumptype) dumptype->value[DUMPTYPE_COMPRATE].v.rate
-#define dumptype_get_tape_splitsize(dumptype) dumptype->value[DUMPTYPE_TAPE_SPLITSIZE].v.am64
-#define dumptype_get_fallback_splitsize(dumptype) dumptype->value[DUMPTYPE_FALLBACK_SPLITSIZE].v.am64
-#define dumptype_get_split_diskbuffer(dumptype) dumptype->value[DUMPTYPE_SPLIT_DISKBUFFER].v.s
-#define dumptype_get_record(dumptype) dumptype->value[DUMPTYPE_RECORD].v.i
-#define dumptype_get_skip_incr(dumptype) dumptype->value[DUMPTYPE_SKIP_INCR].v.i
-#define dumptype_get_skip_full(dumptype) dumptype->value[DUMPTYPE_SKIP_FULL].v.i
-#define dumptype_get_to_holdingdisk(dumptype) dumptype->value[DUMPTYPE_HOLDINGDISK].v.i
-#define dumptype_get_kencrypt(dumptype) dumptype->value[DUMPTYPE_KENCRYPT].v.i
-#define dumptype_get_ignore(dumptype) dumptype->value[DUMPTYPE_IGNORE].v.i
-#define dumptype_get_index(dumptype) dumptype->value[DUMPTYPE_INDEX].v.i
+#define dumptype_get_comment(dumptype)            get_conftype_string   (&dumptype->value[DUMPTYPE_COMMENT])
+#define dumptype_get_program(dumptype)            get_conftype_string   (&dumptype->value[DUMPTYPE_PROGRAM])
+#define dumptype_get_srvcompprog(dumptype)        get_conftype_string   (&dumptype->value[DUMPTYPE_SRVCOMPPROG])
+#define dumptype_get_clntcompprog(dumptype)       get_conftype_string   (&dumptype->value[DUMPTYPE_CLNTCOMPPROG])
+#define dumptype_get_srv_encrypt(dumptype)        get_conftype_string   (&dumptype->value[DUMPTYPE_SRV_ENCRYPT])
+#define dumptype_get_clnt_encrypt(dumptype)       get_conftype_string   (&dumptype->value[DUMPTYPE_CLNT_ENCRYPT])
+#define dumptype_get_amandad_path(dumptype)       get_conftype_string   (&dumptype->value[DUMPTYPE_AMANDAD_PATH])
+#define dumptype_get_client_username(dumptype)    get_conftype_string   (&dumptype->value[DUMPTYPE_CLIENT_USERNAME])
+#define dumptype_get_ssh_keys(dumptype)           get_conftype_string   (&dumptype->value[DUMPTYPE_SSH_KEYS])
+#define dumptype_get_security_driver(dumptype)    get_conftype_string   (&dumptype->value[DUMPTYPE_SECURITY_DRIVER])
+#define dumptype_get_exclude(dumptype)            get_conftype_exinclude(&dumptype->value[DUMPTYPE_EXCLUDE])
+#define dumptype_get_include(dumptype)            get_conftype_exinclude(&dumptype->value[DUMPTYPE_INCLUDE])
+#define dumptype_get_priority(dumptype)           get_conftype_priority (&dumptype->value[DUMPTYPE_PRIORITY])
+#define dumptype_get_dumpcycle(dumptype)          get_conftype_int      (&dumptype->value[DUMPTYPE_DUMPCYCLE])
+#define dumptype_get_maxcycle(dumptype)           get_conftype_int      (&dumptype->value[DUMPTYPE_MAXCYCLE])
+#define dumptype_get_frequency(dumptype)          get_conftype_int      (&dumptype->value[DUMPTYPE_FREQUENCY])
+#define dumptype_get_maxdumps(dumptype)           get_conftype_int      (&dumptype->value[DUMPTYPE_MAXDUMPS])
+#define dumptype_get_maxpromoteday(dumptype)      get_conftype_int      (&dumptype->value[DUMPTYPE_MAXPROMOTEDAY])
+#define dumptype_get_bumppercent(dumptype)        get_conftype_int      (&dumptype->value[DUMPTYPE_BUMPPERCENT])
+#define dumptype_get_bumpsize(dumptype)           get_conftype_am64     (&dumptype->value[DUMPTYPE_BUMPSIZE])
+#define dumptype_get_bumpdays(dumptype)           get_conftype_int      (&dumptype->value[DUMPTYPE_BUMPDAYS])
+#define dumptype_get_bumpmult(dumptype)           get_conftype_real     (&dumptype->value[DUMPTYPE_BUMPMULT])
+#define dumptype_get_start_t(dumptype)            get_conftype_time     (&dumptype->value[DUMPTYPE_START_T])
+#define dumptype_get_strategy(dumptype)           get_conftype_strategy (&dumptype->value[DUMPTYPE_STRATEGY])
+#define dumptype_get_estimate(dumptype)           get_conftype_estimate (&dumptype->value[DUMPTYPE_ESTIMATE])
+#define dumptype_get_compress(dumptype)           get_conftype_compress (&dumptype->value[DUMPTYPE_COMPRESS])
+#define dumptype_get_encrypt(dumptype)            get_conftype_encrypt  (&dumptype->value[DUMPTYPE_ENCRYPT])
+#define dumptype_get_srv_decrypt_opt(dumptype)    get_conftype_string   (&dumptype->value[DUMPTYPE_SRV_DECRYPT_OPT])
+#define dumptype_get_clnt_decrypt_opt(dumptype)   get_conftype_string   (&dumptype->value[DUMPTYPE_CLNT_DECRYPT_OPT])
+#define dumptype_get_comprate(dumptype)                                   dumptype->value[DUMPTYPE_COMPRATE].v.rate
+#define dumptype_get_tape_splitsize(dumptype)     get_conftype_am64     (&dumptype->value[DUMPTYPE_TAPE_SPLITSIZE])
+#define dumptype_get_fallback_splitsize(dumptype) get_conftype_am64     (&dumptype->value[DUMPTYPE_FALLBACK_SPLITSIZE])
+#define dumptype_get_split_diskbuffer(dumptype)   get_conftype_string   (&dumptype->value[DUMPTYPE_SPLIT_DISKBUFFER])
+#define dumptype_get_record(dumptype)             get_conftype_bool     (&dumptype->value[DUMPTYPE_RECORD])
+#define dumptype_get_skip_incr(dumptype)          get_conftype_bool     (&dumptype->value[DUMPTYPE_SKIP_INCR])
+#define dumptype_get_skip_full(dumptype)          get_conftype_bool     (&dumptype->value[DUMPTYPE_SKIP_FULL])
+#define dumptype_get_to_holdingdisk(dumptype)     get_conftype_bool     (&dumptype->value[DUMPTYPE_HOLDINGDISK])
+#define dumptype_get_kencrypt(dumptype)           get_conftype_bool     (&dumptype->value[DUMPTYPE_KENCRYPT])
+#define dumptype_get_ignore(dumptype)             get_conftype_bool     (&dumptype->value[DUMPTYPE_IGNORE])
+#define dumptype_get_index(dumptype)              get_conftype_bool     (&dumptype->value[DUMPTYPE_INDEX])
 
 /* A network interface */
 typedef enum interface_e  {
@@ -251,8 +251,8 @@ typedef struct interface_s {
 
 #define interface_get_name(interface) interface->name
 #define interface_get_seen(interface) interface->seen
-#define interface_get_comment(interface) interface->value[INTER_COMMENT].v.s
-#define interface_get_maxusage(interface) interface->value[INTER_MAXUSAGE].v.i
+#define interface_get_comment(interface)  get_conftype_string(&interface->value[INTER_COMMENT])
+#define interface_get_maxusage(interface) get_conftype_int   (&interface->value[INTER_MAXUSAGE])
 
 /* A holding disk */
 typedef enum holdingdisk_e  {
@@ -276,10 +276,10 @@ typedef struct holdingdisk_s {
 
 #define holdingdisk_get_name(holdingdisk) (holdingdisk)->name
 #define holdingdisk_get_seen(holdingdisk) (holdingdisk)->seen
-#define holdingdisk_get_comment(holdingdisk) (holdingdisk)->value[HOLDING_COMMENT].v.s
-#define holdingdisk_get_diskdir(holdingdisk) (holdingdisk)->value[HOLDING_DISKDIR].v.s
-#define holdingdisk_get_disksize(holdingdisk) (holdingdisk)->value[HOLDING_DISKSIZE].v.am64
-#define holdingdisk_get_chunksize(holdingdisk) (holdingdisk)->value[HOLDING_CHUNKSIZE].v.am64
+#define holdingdisk_get_comment(holdingdisk)   get_conftype_string(&(holdingdisk)->value[HOLDING_COMMENT])
+#define holdingdisk_get_diskdir(holdingdisk)   get_conftype_string(&(holdingdisk)->value[HOLDING_DISKDIR])
+#define holdingdisk_get_disksize(holdingdisk)  get_conftype_am64  (&(holdingdisk)->value[HOLDING_DISKSIZE])
+#define holdingdisk_get_chunksize(holdingdisk) get_conftype_am64  (&(holdingdisk)->value[HOLDING_CHUNKSIZE])
 
 /* for each column we define some values on how to
  * format this column element

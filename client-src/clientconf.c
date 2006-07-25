@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.14 2006/07/25 18:35:21 martinea Exp $
+ * $Id: clientconf.c,v 1.15 2006/07/25 18:43:36 martinea Exp $
  *
  * read configuration file
  */
@@ -178,6 +178,11 @@ client_getconf_int(
 {
     t_conf_var *np;
     np = get_np(client_var, parm);
+    if (np->type != CONFTYPE_INT) {
+	error("client_getconf_int: np is not a CONFTYPE_INT");
+	/*NOTREACHED*/
+    }
+
     return(client_conf[np->parm].v.i);
 }
 
@@ -187,6 +192,10 @@ client_getconf_am64(
 {
     t_conf_var *np;
     np = get_np(client_var, parm);
+    if (np->type != CONFTYPE_AM64) {
+	error("client_getconf_am64: np is not a CONFTYPE_AM64");
+	/*NOTREACHED*/
+    }
     return(client_conf[np->parm].v.am64);
 }
 
@@ -196,6 +205,10 @@ client_getconf_real(
 {
     t_conf_var *np;
     np = get_np(client_var, parm);
+    if (np->type != CONFTYPE_REAL) {
+	error("client_getconf_real: np is not a CONFTYPE_REAL");
+	/*NOTREACHED*/
+    }
     return(client_conf[np->parm].v.r);
 }
 
@@ -205,6 +218,10 @@ client_getconf_str(
 {
     t_conf_var *np;
     np = get_np(client_var, parm);
+    if (np->type != CONFTYPE_STRING) {
+	error("client_getconf_string: np is not a CONFTYPE_STRING");
+	/*NOTREACHED*/
+    }
     return(client_conf[np->parm].v.s);
 }
 

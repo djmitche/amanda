@@ -1,4 +1,11 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/clientconf.c: client_getconf* validate the type.
+	* common-src/util.c (get_conftype_*): New function.
+	* common-src/util.h (get_conftype_*): Prototype.
+	* server-src/conffile.c: getconf* validate the type.
+	* server-src/conffile.h: Use get_conftype_* function.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/clientconf.c: New AMANDATES client config option.
 	* client-src/clientconf.h: New AMANDATES client config option.
 	* client-src/amandates.c: Use AMANDATES.

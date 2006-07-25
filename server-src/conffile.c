@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.152 2006/07/06 13:13:15 martinea Exp $
+ * $Id: conffile.c,v 1.153 2006/07/25 18:43:36 martinea Exp $
  *
  * read configuration file
  */
@@ -289,9 +289,9 @@ t_conf_var server_var [] = {
    { CONF_INPARALLEL           , CONFTYPE_INT      , read_int     , CNF_INPARALLEL           , validate_inparallel },
    { CONF_DUMPORDER            , CONFTYPE_STRING   , read_string  , CNF_DUMPORDER            , NULL },
    { CONF_MAXDUMPS             , CONFTYPE_INT      , read_int     , CNF_MAXDUMPS             , validate_positive1 },
-   { CONF_ETIMEOUT             , CONFTYPE_INT      , read_int     , CNF_ETIMEOUT             , NULL },
-   { CONF_DTIMEOUT             , CONFTYPE_INT      , read_int     , CNF_DTIMEOUT             , validate_positive1 },
-   { CONF_CTIMEOUT             , CONFTYPE_INT      , read_int     , CNF_CTIMEOUT             , validate_positive1 },
+   { CONF_ETIMEOUT             , CONFTYPE_TIME     , read_time    , CNF_ETIMEOUT             , NULL },
+   { CONF_DTIMEOUT             , CONFTYPE_TIME     , read_time    , CNF_DTIMEOUT             , validate_positive1 },
+   { CONF_CTIMEOUT             , CONFTYPE_TIME     , read_time    , CNF_CTIMEOUT             , validate_positive1 },
    { CONF_TAPEBUFS             , CONFTYPE_INT      , read_int     , CNF_TAPEBUFS             , validate_positive1 },
    { CONF_RAWTAPEDEV           , CONFTYPE_STRING   , read_string  , CNF_RAWTAPEDEV           , NULL },
    { CONF_COLUMNSPEC           , CONFTYPE_STRING   , read_string  , CNF_COLUMNSPEC           , NULL },
@@ -599,6 +599,10 @@ getconf_int(
 {
     t_conf_var *np;
     np = get_np(server_var, parm);
+    if (np->type != CONFTYPE_INT) {
+	error("getconf_int: np is not a CONFTYPE_INT");
+	/*NOTREACHED*/
+    }
     return(server_conf[np->parm].v.i);
 }
 
@@ -608,6 +612,10 @@ getconf_long(
 {
     t_conf_var *np;
     np = get_np(server_var, parm);
+    if (np->type != CONFTYPE_LONG) {
+	error("getconf_long: np is not a CONFTYPE_LONG");
+	/*NOTREACHED*/
+    }
     return(server_conf[np->parm].v.l);
 }
 
@@ -617,6 +625,10 @@ getconf_time(
 {
     t_conf_var *np;
     np = get_np(server_var, parm);
+    if (np->type != CONFTYPE_TIME) {
+	error("getconf_time: np is not a CONFTYPE_TIME");
+	/*NOTREACHED*/
+    }
     return(server_conf[np->parm].v.t);
 }
 
@@ -626,6 +638,10 @@ getconf_size(
 {
     t_conf_var *np;
     np = get_np(server_var, parm);
+    if (np->type != CONFTYPE_SIZE) {
+	error("getconf_size: np is not a CONFTYPE_SIZE");
+	/*NOTREACHED*/
+    }
     return(server_conf[np->parm].v.size);
 }
 
@@ -635,6 +651,10 @@ getconf_am64(
 {
     t_conf_var *np;
     np = get_np(server_var, parm);
+    if (np->type != CONFTYPE_AM64) {
+	error("getconf_am64: np is not a CONFTYPE_AM64");
+	/*NOTREACHED*/
+    }
     return(server_conf[np->parm].v.am64);
 }
 
@@ -644,6 +664,10 @@ getconf_real(
 {
     t_conf_var *np;
     np = get_np(server_var, parm);
+    if (np->type != CONFTYPE_REAL) {
+	error("getconf_real: np is not a CONFTYPE_REAL");
+	/*NOTREACHED*/
+    }
     return(server_conf[np->parm].v.r);
 }
 
@@ -653,6 +677,10 @@ getconf_str(
 {
     t_conf_var *np;
     np = get_np(server_var, parm);
+    if (np->type != CONFTYPE_STRING && np->type != CONFTYPE_IDENT) {
+	error("getconf_str: np is not a CONFTYPE_STRING|CONFTYPE_IDENT: %d", parm);
+	/*NOTREACHED*/
+    }
     return(server_conf[np->parm].v.s);
 }
 
@@ -769,9 +797,9 @@ init_defaults(
     conf_init_string   (&server_conf[CNF_TPCHANGER]            , "");
     conf_init_int      (&server_conf[CNF_RUNTAPES]             , 1);
     conf_init_int      (&server_conf[CNF_MAXDUMPS]             , 1);
-    conf_init_time     (&server_conf[CNF_ETIMEOUT]             , 300);
-    conf_init_time     (&server_conf[CNF_DTIMEOUT]             , 1800);
-    conf_init_time     (&server_conf[CNF_CTIMEOUT]             , 30);
+    conf_init_time     (&server_conf[CNF_ETIMEOUT]             , (time_t)300);
+    conf_init_time     (&server_conf[CNF_DTIMEOUT]             , (time_t)1800);
+    conf_init_time     (&server_conf[CNF_CTIMEOUT]             , (time_t)30);
     conf_init_int      (&server_conf[CNF_TAPEBUFS]             , 20);
     conf_init_string   (&server_conf[CNF_RAWTAPEDEV]           , s);
     conf_init_string   (&server_conf[CNF_PRINTER]              , "");
@@ -1206,7 +1234,7 @@ init_dumptype_defaults(void)
     conf_init_am64     (&dpcur.value[DUMPTYPE_BUMPSIZE]          , server_conf[CNF_BUMPSIZE].v.am64);
     conf_init_int      (&dpcur.value[DUMPTYPE_BUMPDAYS]          , server_conf[CNF_BUMPDAYS].v.i);
     conf_init_real     (&dpcur.value[DUMPTYPE_BUMPMULT]          , server_conf[CNF_BUMPMULT].v.r);
-    conf_init_time     (&dpcur.value[DUMPTYPE_START_T]           , 0);
+    conf_init_time     (&dpcur.value[DUMPTYPE_START_T]           , (time_t)0);
     conf_init_strategy (&dpcur.value[DUMPTYPE_STRATEGY]          , DS_STANDARD);
     conf_init_estimate (&dpcur.value[DUMPTYPE_ESTIMATE]          , ES_CLIENT);
     conf_init_compress (&dpcur.value[DUMPTYPE_COMPRESS]          , COMP_FAST);

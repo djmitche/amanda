@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.15 2006/07/25 18:35:22 martinea Exp $
+ * $Id: util.h,v 1.16 2006/07/25 18:43:36 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -302,6 +302,24 @@ void conf_set_bool(val_t *, int);
 void conf_set_compress(val_t *, comp_t);
 void conf_set_encrypt(val_t *, encrypt_t);
 void conf_set_strategy(val_t *, int);
+int          get_conftype_int      (val_t *);
+long         get_conftype_long     (val_t *);
+off_t        get_conftype_am64     (val_t *);
+double       get_conftype_real     (val_t *);
+char        *get_conftype_string   (val_t *);
+char        *get_conftype_ident    (val_t *);
+time_t       get_conftype_time     (val_t *);
+ssize_t      get_conftype_size     (val_t *);
+sl_t        *get_conftype_sl       (val_t *);
+int          get_conftype_bool     (val_t *);
+int          get_conftype_compress (val_t *);
+int          get_conftype_encrypt  (val_t *);
+int          get_conftype_estimate (val_t *);
+int          get_conftype_strategy (val_t *);
+int          get_conftype_taperalgo(val_t *);
+int          get_conftype_priority (val_t *);
+float       *get_conftype_rate     (val_t *);
+exinclude_t  get_conftype_exinclude(val_t *);
 
 void read_block(command_option_t *command_options, t_conf_var *read_var,
 		keytab_t *keytab, val_t *valarray, char *prefix, char *errormsg,
