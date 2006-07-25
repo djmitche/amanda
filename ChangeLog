@@ -1,4 +1,8 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/restore.c: Cleanup.
+	* restore-src/amrestore.c: Don't fsf if the last read return 0.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/selfcheck.c: Fix bug found by klocwork.
 	* common-src/rsh-security.c: Fix bug found by klocwork.
 	* common-src/ssh-security.c: Fix bug found by klocwork.

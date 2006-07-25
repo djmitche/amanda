@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.49 2006/07/22 12:04:48 martinea Exp $
+ * $Id: restore.c,v 1.50 2006/07/25 18:58:10 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -644,7 +644,7 @@ read_file_header(
 
     bytes_read = get_block(tapefd, buffer, isafile);
     if(bytes_read < 0) {
-	fprintf(stderr, "%s: error reading file header: %s",
+	fprintf(stderr, "%s: error reading file header: %s\n",
 		get_pname(), strerror(errno));
 	file->type = F_UNKNOWN;
     } else if((size_t)bytes_read < blocksize) {

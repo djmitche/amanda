@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.62 2006/07/25 18:18:47 martinea Exp $
+ * $Id: amrestore.c,v 1.63 2006/07/25 18:58:10 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -368,7 +368,7 @@ main(
 	 * not a holding disk file, so we can call the tape functions
 	 * without checking.
 	 */
-	if(!found_match && (read_result == 0)) {
+	if(read_result == 0) {
 	    /*
 	     * If the last read got EOF, how to get to the next
 	     * file depends on how the tape device driver is acting.
