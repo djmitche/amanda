@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.72 2006/07/25 18:27:57 martinea Exp $
+/* $Id: amidxtaped.c,v 1.73 2006/07/25 19:06:46 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -519,12 +519,12 @@ main(
     }
 
     if(rst_flags->fsf && re_config &&
-       getconf_int(CNF_AMRECOVER_DO_FSF) == 0) {
+       getconf_boolean(CNF_AMRECOVER_DO_FSF) == 0) {
 	rst_flags->fsf = (off_t)0;
     }
 
     if (!use_changer && re_config &&
-	getconf_int(CNF_AMRECOVER_CHECK_LABEL) == 0) {
+	getconf_boolean(CNF_AMRECOVER_CHECK_LABEL) == 0) {
 	rst_flags->check_labels = 0;
     }
 

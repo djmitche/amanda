@@ -1,4 +1,13 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/clientconf.c (client_getconf_boolean): New function.
+	* client-src/clientconf.h (client_getconf_boolean): Prototype.
+	* server-src/conffile.c (getconf_boolean): New function.
+	* server-src/conffile.h (getconf_boolean): Prototype.
+	* restore-src/amidxtaped.c: Use getconf_boolean.
+	* server-src/amflush.c: Use getconf_boolean.
+	* server-src/planner.c: Use getconf_boolean.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/getconf.c: Don't print BUGGY.
 	* changer-src/chg-chio.pl.in: Don't parse BUGGY.
 	* changer-src/chg-iomega.pl.in: Don't parse BUGGY.

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.69 2006/07/25 18:43:36 martinea Exp $
+ * $Id: conffile.h,v 1.70 2006/07/25 19:06:46 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -318,6 +318,7 @@ void free_server_config(void);
 
 int read_conffile(char *filename);
 int getconf_seen(confparm_t parameter);
+int getconf_boolean(confparm_t parameter);
 int getconf_int(confparm_t parameter);
 long getconf_long(confparm_t parameter);
 ssize_t getconf_size(confparm_t parameter);

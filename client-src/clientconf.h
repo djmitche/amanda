@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.h,v 1.8 2006/07/25 18:35:21 martinea Exp $
+ * $Id: clientconf.h,v 1.9 2006/07/25 19:06:46 martinea Exp $
  *
  * interface for client config file reading code
  */
@@ -58,6 +58,7 @@ int  add_client_conf(cconfparm_t parm, char *value);
 void report_bad_client_arg(void);
 int read_clientconf(char *filename);
 int client_getconf_seen(cconfparm_t parameter);
+int client_getconf_boolean(cconfparm_t parameter);
 int client_getconf_int(cconfparm_t parameter);
 off_t client_getconf_am64(cconfparm_t parameter);
 double client_getconf_real(cconfparm_t parameter);

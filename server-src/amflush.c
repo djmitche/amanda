@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.92 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amflush.c,v 1.93 2006/07/25 19:06:46 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -188,7 +188,7 @@ main(
     }
     amfree(conf_tapelist);
 
-    conf_usetimestamps = getconf_int(CNF_USETIMESTAMPS);
+    conf_usetimestamps = getconf_boolean(CNF_USETIMESTAMPS);
 
     amflush_datestamp = construct_datestamp(NULL);
     if(conf_usetimestamps == 0) {

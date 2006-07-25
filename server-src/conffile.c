@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.153 2006/07/25 18:43:36 martinea Exp $
+ * $Id: conffile.c,v 1.154 2006/07/25 19:06:46 martinea Exp $
  *
  * read configuration file
  */
@@ -565,7 +565,7 @@ getconf_byname(
 	snprintf(number, sizeof(number), "%d", server_conf[np->parm].v.i);
 	tmpstr = newstralloc(tmpstr, number);
     } else if(np->type == CONFTYPE_BOOL) {
-	if(getconf_int(np->parm) == 0) {
+	if(getconf_boolean(np->parm) == 0) {
 	    tmpstr = newstralloc(tmpstr, "off");
 	} else {
 	    tmpstr = newstralloc(tmpstr, "on");
@@ -591,6 +591,19 @@ getconf_seen(
     t_conf_var *np;
     np = get_np(server_var, parm);
     return(server_conf[np->parm].seen);
+}
+
+int
+getconf_boolean(
+    confparm_t parm)
+{
+    t_conf_var *np;
+    np = get_np(server_var, parm);
+    if (np->type != CONFTYPE_BOOL) {
+	error("getconf_boolean: np is not a CONFTYPE_BOOL");
+	/*NOTREACHED*/
+    }
+    return(server_conf[np->parm].v.i != 0);
 }
 
 int
