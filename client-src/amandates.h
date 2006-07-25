@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amandates.h,v 1.4 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: amandates.h,v 1.5 2006/07/25 18:35:21 martinea Exp $
  *
  * interface for amandates file
  */
@@ -46,7 +46,7 @@ typedef struct amandates_s {
     time_t dates[DUMP_LEVELS];		/* dump dates */
 } amandates_t;
 
-int  start_amandates (int open_readwrite);
+int  start_amandates (char *amandates_file, int open_readwrite);
 void finish_amandates (void);
 void free_amandates (void);
 amandates_t *amandates_lookup (char *name);

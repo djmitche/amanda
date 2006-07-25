@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.91 2006/07/25 18:32:14 martinea Exp $
+ * $Id: selfcheck.c,v 1.92 2006/07/25 18:35:21 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -800,6 +800,7 @@ check_overall(void)
     struct stat buf;
     int testfd;
     char *gnutar_list_dir;
+    int   need_amandates;
 
     if( need_runtar )
     {
@@ -887,9 +888,7 @@ check_overall(void)
 #else
 	printf("ERROR [GNUTAR program not available]\n");
 #endif
-#ifdef AMANDATES_FILE
-	check_file(AMANDATES_FILE, R_OK|W_OK);
-#endif
+	need_amandates = 1;
 	gnutar_list_dir = client_getconf_str(CLN_GNUTAR_LIST_DIR);
 	if (strlen(gnutar_list_dir) == 0)
 	    gnutar_list_dir = NULL;
@@ -897,6 +896,11 @@ check_overall(void)
 	    check_dir(gnutar_list_dir, R_OK|W_OK);
     }
 
+    if (need_amandates) {
+	char *amandates_file;
+	amandates_file = client_getconf_str(CLN_AMANDATES);
+	check_file(amandates_file, R_OK|W_OK);
+    }
     if( need_calcsize ) {
 	char *cmd;
 

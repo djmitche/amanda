@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amandates.c,v 1.20 2006/07/21 00:25:51 martinea Exp $
+ * $Id: amandates.c,v 1.21 2006/07/25 18:35:21 martinea Exp $
  *
  * manage amandates file, that mimics /etc/dumpdates, but stores
  * GNUTAR dates
@@ -39,13 +39,15 @@
 static amandates_t *amandates_list = NULL;
 static FILE *amdf = NULL;
 static int updated, readonly;
+static char *g_amandates_file = NULL;
 static void import_dumpdates(amandates_t *);
 static void enter_record(char *, int , time_t);
 static amandates_t *lookup(char *name, int import);
 
 int
 start_amandates(
-    int		open_readwrite)
+    char *amandates_file,
+    int	  open_readwrite)
 {
     int rc, level = 0;
     long ldate = 0L;
@@ -55,6 +57,8 @@ start_amandates(
     int ch;
     char *qname;
 
+    if (amandates_file == NULL)
+	return 0;
 
     /* clean up from previous invocation */
 
@@ -62,6 +66,7 @@ start_amandates(
 	finish_amandates();
     if(amandates_list != NULL)
 	free_amandates();
+    amfree(g_amandates_file);
 
     /* initialize state */
 
@@ -69,35 +74,35 @@ start_amandates(
     readonly = !open_readwrite;
     amdf = NULL;
     amandates_list = NULL;
-
+    g_amandates_file = stralloc(amandates_file);
     /* open the file */
 
-    if (access(AMANDATES_FILE,F_OK))
+    if (access(amandates_file,F_OK))
 	/* not yet existing */
-	if ( (rc = open(AMANDATES_FILE,(O_CREAT|O_RDWR),0644)) != -1 )
+	if ( (rc = open(amandates_file,(O_CREAT|O_RDWR),0644)) != -1 )
 	    /* open/create successfull */
 	    aclose(rc);
 
     if(open_readwrite)
-	amdf = fopen(AMANDATES_FILE, "r+");
+	amdf = fopen(amandates_file, "r+");
     else
-	amdf = fopen(AMANDATES_FILE, "r");
+	amdf = fopen(amandates_file, "r");
 
     /* create it if we need to */
 
     if(amdf == NULL && (errno == EINTR || errno == ENOENT) && open_readwrite)
-	amdf = fopen(AMANDATES_FILE, "w");
+	amdf = fopen(amandates_file, "w");
 
     if(amdf == NULL)
 	return 0;
 
     if(open_readwrite)
-	rc = amflock(fileno(amdf), "amandates");
+	rc = amflock(fileno(amdf), amandates_file);
     else
-	rc = amroflock(fileno(amdf), "amandates");
+	rc = amroflock(fileno(amdf), amandates_file);
 
     if(rc == -1) {
-	error("could not lock %s: %s", AMANDATES_FILE, strerror(errno));
+	error("could not lock %s: %s", amandates_file, strerror(errno));
 	/*NOTREACHED*/
     }
 
@@ -132,7 +137,7 @@ start_amandates(
     }
 
     if(ferror(amdf)) {
-	error("reading %s: %s", AMANDATES_FILE, strerror(errno));
+	error("reading %s: %s", amandates_file, strerror(errno));
 	/*NOTREACHED*/
     }
 
@@ -168,12 +173,12 @@ finish_amandates(void)
 	}
     }
 
-    if(amfunlock(fileno(amdf), "amandates") == -1) {
-	error("could not unlock %s: %s", AMANDATES_FILE, strerror(errno));
+    if(amfunlock(fileno(amdf), g_amandates_file) == -1) {
+	error("could not unlock %s: %s", g_amandates_file, strerror(errno));
 	/*NOTREACHED*/
     }
     if (fclose(amdf) == EOF) {
-	error("error [closing %s: %s]", AMANDATES_FILE, strerror(errno));
+	error("error [closing %s: %s]", g_amandates_file, strerror(errno));
 	/*NOTREACHED*/
     }
     amdf = NULL;

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.13 2006/07/25 18:32:14 martinea Exp $
+ * $Id: clientconf.c,v 1.14 2006/07/25 18:35:21 martinea Exp $
  *
  * read configuration file
  */
@@ -66,6 +66,7 @@ keytab_t client_keytab[] = {
     { "AMANDAD_PATH", CONF_AMANDAD_PATH },
     { "CLIENT_USERNAME", CONF_CLIENT_USERNAME },
     { "GNUTAR_LIST_DIR", CONF_GNUTAR_LIST_DIR },
+    { "AMANDATES", CONF_AMANDATES },
     { "INCLUDEFILE", CONF_INCLUDEFILE },
     { NULL, CONF_UNKNOWN },
 };
@@ -80,6 +81,7 @@ t_conf_var client_var [] = {
    { CONF_AMANDAD_PATH   , CONFTYPE_STRING, read_string, CLN_AMANDAD_PATH   , NULL },
    { CONF_CLIENT_USERNAME, CONFTYPE_STRING, read_string, CLN_CLIENT_USERNAME, NULL },
    { CONF_GNUTAR_LIST_DIR, CONFTYPE_STRING, read_string, CLN_GNUTAR_LIST_DIR, NULL },
+   { CONF_AMANDATES      , CONFTYPE_STRING, read_string, CLN_AMANDATES      , NULL },
    { CONF_UNKNOWN        , CONFTYPE_INT   , NULL       , CLN_CLN            , NULL }
 };
 
@@ -262,6 +264,11 @@ init_defaults(void)
 		     GNUTAR_LISTED_INCREMENTAL_DIR);
 #else
     conf_init_string(&client_conf[CLN_GNUTAR_LIST_DIR], NULL);
+#endif
+#ifdef AMANDATES_FILE
+    conf_init_string(&client_conf[CLN_AMANDATES], AMANDATES_FILE);
+#else
+    conf_init_string(&client_conf[CLN_AMANDATES], NULL);
 #endif
 
     /* defaults for internal variables */
@@ -480,6 +487,8 @@ generic_client_get_security_conf(
 		return(client_getconf_str(CLN_CLIENT_USERNAME));
 	} else if(strcmp(string, "gnutar_list_dir")==0) {
 		return(client_getconf_str(CLN_GNUTAR_LIST_DIR));
+	} else if(strcmp(string, "amandates")==0) {
+		return(client_getconf_str(CLN_AMANDATES));
 /*
 	} else if(strcmp(string, "krb5principal")==0) {
 		return(client_getconf_str(CNF_KRB5PRINCIPAL));

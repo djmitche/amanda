@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.97 2006/07/25 18:32:14 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.98 2006/07/25 18:35:21 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -126,7 +126,7 @@ time_t cur_dumptime;
 
 static char *gnutar_list_dir = NULL;
 static char *incrname = NULL;
-
+static char *amandates_file;
 /*
  *  doing similar to $ gtar | compression | encryption 
  */
@@ -329,8 +329,9 @@ start_backup(
 
     /* find previous dump time */
 
-    if(!start_amandates(0)) {
-	error("error [opening %s: %s]", AMANDATES_FILE, strerror(errno));
+    amandates_file = client_getconf_str(CLN_AMANDATES);
+    if(!start_amandates(amandates_file, 0)) {
+	error("error [opening %s: %s]", amandates_file, strerror(errno));
 	/*NOTREACHED*/
     }
 
@@ -629,9 +630,9 @@ end_backup(
 	    amfree(incrname);
 	}
 
-        if(!start_amandates(1)) {
+        if(!start_amandates(amandates_file, 1)) {
 	    fprintf(stderr, "%s: warning [opening %s: %s]", get_pname(),
-		    AMANDATES_FILE, strerror(errno));
+		    amandates_file, strerror(errno));
 	}
 	else {
 	    amandates_updateone(cur_disk, cur_level, cur_dumptime);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.168 2006/07/25 18:32:14 martinea Exp $
+ * $Id: sendsize.c,v 1.169 2006/07/25 18:35:22 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -139,6 +139,7 @@ main(
     char *amdevice = NULL;
     char *qamdevice = NULL;
     char *conffile;
+    char *amandates_file;
 #if defined(USE_DBMALLOC)
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
@@ -180,8 +181,9 @@ main(
 
     /* handle all service requests */
 
-    if(!start_amandates(0))
-        error("error [opening %s: %s]", AMANDATES_FILE, strerror(errno));
+    amandates_file = client_getconf_str(CLN_AMANDATES);
+    if(!start_amandates(amandates_file, 0))
+        error("error [opening %s: %s]", amandates_file, strerror(errno));
 
     for(; (line = agets(stdin)) != NULL; free(line)) {
 	if (line[0] == '\0')

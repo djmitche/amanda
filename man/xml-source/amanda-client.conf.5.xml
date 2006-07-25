@@ -221,6 +221,15 @@ The directory where gnutar keep its state file.</para>
   </listitem>
   </varlistentry>
 
+  <varlistentry>
+  <term><emphasis remap='B'>amandates</emphasis> <emphasis remap='I'> string</emphasis></term>
+  <listitem>
+<para>Default: 
+<emphasis remap='I'>/etc/amandates</emphasis>.
+The file where amanda keep the last date of each dumplevel.</para>
+  </listitem>
+  </varlistentry>
+
 </variablelist>
 </refsect2>
 </refsect1>

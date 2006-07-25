@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.h,v 1.7 2006/07/25 18:32:14 martinea Exp $
+ * $Id: clientconf.h,v 1.8 2006/07/25 18:35:21 martinea Exp $
  *
  * interface for client config file reading code
  */
@@ -46,6 +46,7 @@ typedef enum conf_e {
     CLN_AMANDAD_PATH,
     CLN_CLIENT_USERNAME,
     CLN_GNUTAR_LIST_DIR,
+    CLN_AMANDATES,
     CLN_CLN
 } cconfparm_t;
 
