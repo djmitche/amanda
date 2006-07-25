@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.29 2006/06/01 14:54:39 martinea Exp $
+ * $Id: rsh-security.c,v 1.30 2006/07/25 18:53:41 martinea Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -212,13 +212,13 @@ runrsh(
     memset(rpipe, -1, SIZEOF(rpipe));
     memset(wpipe, -1, SIZEOF(wpipe));
     if (pipe(rpipe) < 0 || pipe(wpipe) < 0) {
-	rc->errmsg = newvstralloc("pipe: ", strerror(errno), NULL);
+	rc->errmsg = newvstralloc(rc->errmsg, "pipe: ", strerror(errno), NULL);
 	return (-1);
     }
 
     switch (rc->pid = fork()) {
     case -1:
-	rc->errmsg = newvstralloc("fork: ", strerror(errno), NULL);
+	rc->errmsg = newvstralloc(rc->errmsg, "fork: ", strerror(errno), NULL);
 	aclose(rpipe[0]);
 	aclose(rpipe[1]);
 	aclose(wpipe[0]);

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.200 2006/07/25 18:27:58 martinea Exp $
+ * $Id: planner.c,v 1.201 2006/07/25 18:53:42 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1395,27 +1395,29 @@ static void getsize(
 			    exclude1 = " exclude-file=";
 			    exclude2 =
 				quote_string(dp->exclude_file->first->name);
+			    excludefree = exclude2;
 			}
 			else if(dp->exclude_list &&
 				dp->exclude_list->nb_element == 1) {
 			    exclude1 = " exclude-list=";
 			    exclude2 =
 				quote_string(dp->exclude_list->first->name);
+			    excludefree = exclude2;
 			}
-		        excludefree = exclude2;
 			if(dp->include_file &&
 			   dp->include_file->nb_element == 1) {
 			    include1 = " include-file=";
 			    include2 =
 				quote_string(dp->include_file->first->name);
+			    includefree = include2;
 			}
 			else if(dp->include_list &&
 				dp->include_list->nb_element == 1) {
 			    include1 = " include-list=";
 			    include2 =
 				quote_string(dp->include_list->first->name);
+			    includefree = include2;
 			}
-			includefree = include2;
 		    }
 
 		    if(dp->estimate == ES_CALCSIZE &&

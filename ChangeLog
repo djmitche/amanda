@@ -1,4 +1,10 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/selfcheck.c: Fix bug found by klocwork.
+	* common-src/rsh-security.c: Fix bug found by klocwork.
+	* common-src/ssh-security.c: Fix bug found by klocwork.
+	* server-src/planner.c: Fix bug found by klocwork.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* tape-src/output-tape.c (tape_tape_open): mt is declared inside #ifdef.
 
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
