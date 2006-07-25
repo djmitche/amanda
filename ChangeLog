@@ -1,4 +1,7 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amcheck.c: Fix quoting.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/clientconf.c: client_getconf* validate the type.
 	* common-src/util.c (get_conftype_*): New function.
 	* common-src/util.h (get_conftype_*): Prototype.

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.147 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amcheck.c,v 1.148 2006/07/25 18:45:38 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1451,7 +1451,8 @@ start_host(
 	    }
 	    qname = quote_string(dp->name); 
 	    qdevice = quote_string(dp->device); 
-	    if((qname[0] == '"') || (qdevice[0] == '"')) {
+	    if ((dp->name && qname[0] == '"') || 
+		(dp->device && qdevice[0] == '"')) {
 		if(!am_has_feature(hostp->features, fe_interface_quoted_text)) {
 		    fprintf(outf,
 			    "WARNING: %s:%s:%s host does not support quoted text\n",
