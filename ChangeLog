@@ -1,4 +1,7 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amflush.c: Correct test for driver_stream.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/clientconf.c: Default CLN_AMANDATES to /etc/amandates.
 	* common-src/util.c (conf_init_size): Type is CONFTYPE_SIZE.
 	* server-src/conffile.c (getconf_taperalgo): New function.

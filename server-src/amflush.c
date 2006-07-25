@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.93 2006/07/25 19:06:46 martinea Exp $
+ * $Id: amflush.c,v 1.94 2006/07/25 20:26:05 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -314,8 +314,8 @@ main(
 	/*NOTREACHED*/
     }
     driver_stream = fdopen(driver_pipe[1], "w");
-    if (driver_stream) {
-	error("Can't fdopen: %s", strerror(errno));
+    if (!driver_stream) {
+	error("XXX Can't fdopen: %s", strerror(errno));
 	/*NOTREACHED*/
     }
 
