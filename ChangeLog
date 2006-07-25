@@ -1,4 +1,7 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amflush.c: Typo.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amflush.c: Correct test for driver_stream.
 
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
