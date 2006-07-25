@@ -1,4 +1,7 @@
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
+	* tape-src/output-tape.c (tape_tape_open): mt is declared inside #ifdef.
+
+2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amcheck.c: Fix quoting.
 
 2006-07-25  Jean-Louis Martineau <martineau@zmanda.com>

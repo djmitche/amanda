@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.16 2006/05/25 01:47:27 johnfranks Exp $
+ * $Id: output-tape.c,v 1.17 2006/07/25 18:47:27 martinea Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -472,7 +472,6 @@ tape_tape_open(
     int ret;
     time_t timeout = 200;
     unsigned delay = 2;
-    struct mtget mt;
 
     if ((flags & 3) != O_RDONLY) {
 	flags &= ~3;
@@ -509,22 +508,25 @@ tape_tape_open(
 
 #ifdef MTIOCGET
     /* Now check that we opened a tape device. */
-    memset(&mt, 0, SIZEOF(mt));
-    if (ioctl(ret, MTIOCGET, &mt) < 0) {
-	close(ret);
-	fprintf(stderr, "tapedev %s is not a tape device!\n", filename);
-	return -1;
-    }
+    {
+	struct mtget mt;
+
+	memset(&mt, 0, SIZEOF(mt));
+	if (ioctl(ret, MTIOCGET, &mt) < 0) {
+	    close(ret);
+	    fprintf(stderr, "tapedev %s is not a tape device!\n", filename);
+	    return -1;
+	}
 
 #ifdef GMT_ONLINE
-    if (!GMT_ONLINE(mt.mt_gstat)) {
-	close(ret);
-	fprintf(stderr, "tapedev %s is offline or has no loaded tape.\n",
-	    filename);
-	return -1;
-    }
+	if (!GMT_ONLINE(mt.mt_gstat)) {
+	    close(ret);
+	    fprintf(stderr, "tapedev %s is offline or has no loaded tape.\n",
+		    filename);
+	    return -1;
+	}
 #endif /* GMT_ONLINE */
-
+    }
 #endif /* MTIOCGET */
 
 
