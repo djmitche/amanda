@@ -1,4 +1,17 @@
 2006-07-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.h (CONFTYPE_HOLDING): New conftype.
+	* common-src/util.c (conf_init_holding, conf_set_holding,
+			     get_conftype_hold): New fonction.
+	* example/amanda.conf.in: Example of new holdingdisk value.
+	* man/xml-source/amanda.8.xml: Example.
+	* man/xml-source/amanda.conf.5.xml: Document it.
+	* server-src/amadmin.c (disklist_one): Print holdingdisk value.
+	* server-src/conffile.c: Parse new CONF_HOLDING type.
+	* server-src/conffile.h (dumptype_get_to_holdingdisk): Change macro.
+	* server-src/diskfile.c (parse_diskline): dumptype_get_to_holdingdisk.
+	* server-src/driver.c: Use new CONFTYPE_HOLDING value.
+
+2006-07-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/selfcheck.c: Fix bug found by coverity.
 	* common-src/debug.c: Fix bug found by coverity.
 

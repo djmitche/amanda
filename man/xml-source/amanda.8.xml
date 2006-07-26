@@ -629,7 +629,7 @@ a new dumptype:</para>
 <programlisting>
 <emphasis remap='I'>hostname diskname</emphasis> [ <emphasis remap='I'>diskdevice</emphasis> ] {
   normal
-  holdingdisk no
+  holdingdisk never
 } [ <emphasis remap='I'>spindle</emphasis> [ <emphasis remap='I'>interface</emphasis> ] ]
 </programlisting>
 

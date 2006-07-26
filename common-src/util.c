@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.40 2006/07/25 19:36:48 martinea Exp $
+ * $Id: util.c,v 1.41 2006/07/26 15:17:36 martinea Exp $
  */
 
 #include "amanda.h"
@@ -1217,9 +1217,13 @@ get_bool(void)
 	break;
 
     case CONF_NL:
-    default:
 	unget_conftoken();
 	val = 2; /* no argument - most likely TRUE */
+	break;
+    default:
+	unget_conftoken();
+	val = 3; /* a bad argument - most likely TRUE */
+	conf_parserror("YES, NO, TRUE, FALSE, ON, OFF expected");
 	break;
     }
 
@@ -1700,6 +1704,7 @@ copy_val_t(
 	case CONFTYPE_BOOL:
 	case CONFTYPE_COMPRESS:
 	case CONFTYPE_ENCRYPT:
+	case CONFTYPE_HOLDING:
 	case CONFTYPE_ESTIMATE:
 	case CONFTYPE_STRATEGY:
 	case CONFTYPE_TAPERALGO:
@@ -1759,6 +1764,7 @@ free_val_t(
 	case CONFTYPE_BOOL:
 	case CONFTYPE_COMPRESS:
 	case CONFTYPE_ENCRYPT:
+	case CONFTYPE_HOLDING:
 	case CONFTYPE_ESTIMATE:
 	case CONFTYPE_STRATEGY:
 	case CONFTYPE_SIZE:
@@ -1985,6 +1991,22 @@ conf_print(
 	}
 	break;
 
+     case CONFTYPE_HOLDING:
+	switch(val->v.i) {
+	case HOLD_NEVER:
+	    strncpy(buffer_conf_print, "NEVER", SIZEOF(buffer_conf_print));
+	    break;
+
+	case HOLD_AUTO:
+	    strncpy(buffer_conf_print, "AUTO", SIZEOF(buffer_conf_print));
+	    break;
+
+	case HOLD_REQUIRED:
+	    strncpy(buffer_conf_print, "REQUIRED", SIZEOF(buffer_conf_print));
+	    break;
+	}
+	break;
+
      case CONFTYPE_TAPERALGO:
 	strncpy(buffer_conf_print, taperalgo2str(val->v.i), SIZEOF(buffer_conf_print));
 	break;
@@ -2112,6 +2134,16 @@ conf_init_encrypt(
 {
     val->seen = 0;
     val->type = CONFTYPE_ENCRYPT;
+    val->v.i = (int)i;
+}
+
+void
+conf_init_holding(
+    val_t              *val,
+    dump_holdingdisk_t  i)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_HOLDING;
     val->v.i = (int)i;
 }
 
@@ -2250,6 +2282,16 @@ conf_set_encrypt(
 }
 
 void
+conf_set_holding(
+    val_t              *val,
+    dump_holdingdisk_t  i)
+{
+    val->seen = -1;
+    val->type = CONFTYPE_HOLDING;
+    val->v.i = (int)i;
+}
+
+void
 conf_set_strategy(
     val_t *val,
     int    i)
@@ -2365,6 +2407,17 @@ get_conftype_bool(
 {
     if (val->type != CONFTYPE_BOOL) {
 	error("get_conftype_bool: val.type is not CONFTYPE_BOOL");
+	/*NOTREACHED*/
+    }
+    return val->v.i;
+}
+
+int
+get_conftype_hold(
+    val_t *val)
+{
+    if (val->type != CONFTYPE_HOLDING) {
+	error("get_conftype_hold: val.type is not CONFTYPE_HOLDING");
 	/*NOTREACHED*/
     }
     return val->v.i;

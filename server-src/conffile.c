@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.155 2006/07/25 19:36:48 martinea Exp $
+ * $Id: conffile.c,v 1.156 2006/07/26 15:17:37 martinea Exp $
  *
  * read configuration file
  */
@@ -131,6 +131,7 @@ static void copy_interface(void);
 static void get_comprate(t_conf_var *, val_t *);
 static void get_compress(t_conf_var *, val_t *);
 static void get_encrypt (t_conf_var *, val_t *);
+static void get_holding (t_conf_var *, val_t *);
 static void get_priority(t_conf_var *, val_t *);
 static void get_strategy(t_conf_var *, val_t *);
 static void get_estimate(t_conf_var *, val_t *);
@@ -145,6 +146,7 @@ keytab_t server_keytab[] = {
     { "AMRECOVER_DO_FSF", CONF_AMRECOVER_DO_FSF },
     { "APPEND", CONF_APPEND },
     { "AUTH", CONF_AUTH },
+    { "AUTO", CONF_AUTO },
     { "AUTOFLUSH", CONF_AUTOFLUSH },
     { "BEST", CONF_BEST },
     { "BLOCKSIZE", CONF_BLOCKSIZE },
@@ -220,6 +222,7 @@ keytab_t server_keytab[] = {
     { "MAXPROMOTEDAY", CONF_MAXPROMOTEDAY },
     { "MEDIUM", CONF_MEDIUM },
     { "NETUSAGE", CONF_NETUSAGE },	/* XXX - historical */
+    { "NEVER", CONF_NEVER },
     { "NOFULL", CONF_NOFULL },
     { "NOINC", CONF_NOINC },
     { "NONE", CONF_NONE },
@@ -230,6 +233,7 @@ keytab_t server_keytab[] = {
     { "PROGRAM", CONF_PROGRAM },
     { "RAWTAPEDEV", CONF_RAWTAPEDEV },
     { "RECORD", CONF_RECORD },
+    { "REQUIRED", CONF_REQUIRED },
     { "RESERVE", CONF_RESERVE },
     { "RUNSPERCYCLE", CONF_RUNSPERCYCLE },
     { "RUNTAPES", CONF_RUNTAPES },
@@ -934,7 +938,7 @@ init_defaults(
     init_dumptype_defaults();
     dpcur.name = stralloc("NO-HOLD");
     dpcur.seen = -1;
-    conf_set_bool(&dpcur.value[DUMPTYPE_HOLDINGDISK], 0);
+    conf_set_holding(&dpcur.value[DUMPTYPE_HOLDINGDISK], HOLD_NEVER);
     save_dumptype();
 
     init_dumptype_defaults();
@@ -1138,7 +1142,7 @@ t_conf_var dumptype_var [] = {
    { CONF_EXCLUDE           , CONFTYPE_EXINCLUDE, get_exclude , DUMPTYPE_EXCLUDE           , NULL },
    { CONF_INCLUDE           , CONFTYPE_EXINCLUDE, get_exclude , DUMPTYPE_INCLUDE           , NULL },
    { CONF_IGNORE            , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_IGNORE            , NULL },
-   { CONF_HOLDING           , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_HOLDINGDISK       , NULL },
+   { CONF_HOLDING           , CONFTYPE_HOLDING  , get_holding , DUMPTYPE_HOLDINGDISK       , NULL },
    { CONF_INDEX             , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_INDEX             , NULL },
    { CONF_KENCRYPT          , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_KENCRYPT          , NULL },
    { CONF_MAXDUMPS          , CONFTYPE_INT      , read_int    , DUMPTYPE_MAXDUMPS          , validate_positive1 },
@@ -1274,7 +1278,7 @@ init_dumptype_defaults(void)
     conf_init_bool     (&dpcur.value[DUMPTYPE_RECORD]            , 1);
     conf_init_bool     (&dpcur.value[DUMPTYPE_SKIP_INCR]         , 0);
     conf_init_bool     (&dpcur.value[DUMPTYPE_SKIP_FULL]         , 0);
-    conf_init_bool     (&dpcur.value[DUMPTYPE_HOLDINGDISK]       , 1);
+    conf_init_holding  (&dpcur.value[DUMPTYPE_HOLDINGDISK]       , HOLD_AUTO);
     conf_init_bool     (&dpcur.value[DUMPTYPE_KENCRYPT]          , 0);
     conf_init_bool     (&dpcur.value[DUMPTYPE_IGNORE]            , 0);
     conf_init_bool     (&dpcur.value[DUMPTYPE_INDEX]             , 1);
@@ -1649,6 +1653,45 @@ get_encrypt(
    }
 
    val->v.i = (int)encrypt;
+}
+
+static void
+get_holding(
+    t_conf_var *np,
+    val_t *val)
+{
+   dump_holdingdisk_t holding;
+
+   np = np;
+   ckseen(&val->seen);
+
+   get_conftoken(CONF_ANY);
+   switch(tok) {
+   case CONF_NEVER:  
+     holding = HOLD_NEVER; 
+     break;
+
+   case CONF_AUTO:  
+     holding = HOLD_AUTO;
+     break;
+
+   case CONF_REQUIRED: 
+     holding = HOLD_REQUIRED;
+     break;
+
+   default: /* can be a BOOLEAN */
+     unget_conftoken();
+     holding =  (dump_holdingdisk_t)get_bool();
+     if (holding == 0)
+	holding = HOLD_NEVER;
+     else if (holding == 1 || holding == 2)
+	holding = HOLD_AUTO;
+     else
+	conf_parserror("NEVER, AUTO or REQUIRED expected");
+     break;
+   }
+
+   val->v.i = (int)holding;
 }
 
 static void

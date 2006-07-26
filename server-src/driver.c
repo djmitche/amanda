@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.193 2006/07/25 19:36:48 martinea Exp $
+ * $Id: driver.c,v 1.194 2006/07/26 15:17:37 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -419,7 +419,13 @@ main(
 
     while(!empty(runq) && taper > 0) {
 	diskp = dequeue_disk(&runq);
-	if(!degraded_mode) {
+	if (diskp->to_holdingdisk == HOLD_REQUIRED) {
+	    log_add(L_FAIL, "%s %s %s %d [%s]",
+		diskp->host->hostname, diskp->name, sched(diskp)->datestamp,
+		sched(diskp)->level,
+		"can't dump required holdingdisk");
+	}
+	else if (!degraded_mode) {
 	    int rc = dump_to_tape(diskp);
 	    if(rc == 1)
 		log_add(L_INFO,
@@ -438,7 +444,7 @@ main(
 	    log_add(L_FAIL, "%s %s %s %d [%s]",
 		diskp->host->hostname, diskp->name, sched(diskp)->datestamp,
 		sched(diskp)->level,
-		diskp->to_holdingdisk ?
+		diskp->to_holdingdisk == HOLD_AUTO ?
 		    "no more holding disk space" :
 		    "can't dump no-hold disk in degraded mode");
     }
@@ -854,12 +860,12 @@ start_some_dumps(
 		cur_idle = max(cur_idle, IDLE_NO_BANDWIDTH);
 	    } else if(sched(diskp)->no_space) {
 		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
+	    } else if (diskp->to_holdingdisk == HOLD_NEVER) {
+		free_assignedhd(holdp);
+		cur_idle = max(cur_idle, IDLE_NO_HOLD);
 	    } else if ((holdp =
 		find_diskspace(sched(diskp)->est_size, &cur_idle, NULL)) == NULL) {
 		cur_idle = max(cur_idle, IDLE_NO_DISKSPACE);
-	    } else if (!diskp->to_holdingdisk) {
-		free_assignedhd(holdp);
-		cur_idle = max(cur_idle, IDLE_NO_HOLD);
 	    } else if (client_constrained(diskp)) {
 		free_assignedhd(holdp);
 		cur_idle = max(cur_idle, IDLE_CLIENT_CONSTRAINED);

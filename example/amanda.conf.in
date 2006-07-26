@@ -396,7 +396,10 @@ define tapetype MIMSY-MEGATAPE {
 #		  going to be backed up.
 #		  Default: include all files
 #   holdingdisk	- should the holding disk be used for this dump.  Useful for
-#		  dumping the holding disk itself.  Default: [holdingdisk yes]
+#		  dumping the holding disk itself.  Default: [holdingdisk auto]
+#		  "never"    - Never use the holding disk.
+#		  "auto"     - Use the holding disk if possible.
+#		  "required" - Always use the holding disk.
 #   ignore	- do not back this filesystem up.  Useful for sharing a single
 #		  disklist in several configurations.
 #   index	- keep an index of the files backed up.  Default: [index no]
@@ -541,7 +544,7 @@ define dumptype comp-user-tar-span {
 define dumptype holding-disk {
     global
     comment "The master-host holding disk itself"
-    holdingdisk no # do not use the holding disk
+    holdingdisk never # do not use the holding disk
     priority medium
 }
 

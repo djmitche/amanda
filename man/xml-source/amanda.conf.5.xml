@@ -1298,17 +1298,39 @@ for a backup of <filename>/var</filename>,
 </varlistentry>
 
   <varlistentry>
-  <term><emphasis remap='B'>holdingdisk</emphasis> <emphasis remap='I'> boolean</emphasis></term>
+  <term><emphasis remap='B'>holdingdisk</emphasis> [ <emphasis remap='I'>never|auto|required]</emphasis> ]</term>
   <listitem>
 <para>Default:
-<emphasis remap='I'>yes</emphasis>.
+<emphasis remap='I'>auto</emphasis>.
 Whether a holding disk should be used for these backups or whether they should go directly to tape.
 If the holding disk is a portion of another file system that &A;
 is backing up, that file system should refer to a dumptype with
 <emphasis remap='B'>holdingdisk</emphasis>
 set to
-<emphasis remap='I'>no</emphasis>
+<emphasis remap='I'>never</emphasis>
 to avoid backing up the holding disk into itself.</para>
+
+  <variablelist remap='TP'>
+  <varlistentry>
+  <term><emphasis remap='B'>never</emphasis>|no|false|off</term>
+  <listitem>
+  <para>Never use a holdingdisk, the dump will always go directly to tape. There will be no dump if you have a tape error.</para>
+  </listitem>
+  </varlistentry>
+  <varlistentry>
+  <term><emphasis remap='B'>auto</emphasis>|yes|true|on</term>
+  <listitem>
+  <para>Use the holding disk, unless there is a problem with the holding disk, the dump won't fit there or the medium doesn't require spooling (e.g., VFS device)</para>
+  </listitem>
+  </varlistentry>
+  <varlistentry>
+  <term><emphasis remap='B'>required</emphasis></term>
+  <listitem>
+  <para>Always dump to holdingdisk, never directly to tape. There will be no dump if it doesn't fit on holdingdisk</para>
+  </listitem>
+  </varlistentry>
+  </variablelist>
+
   </listitem>
   </varlistentry>
 

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.71 2006/07/25 19:36:48 martinea Exp $
+ * $Id: conffile.h,v 1.72 2006/07/26 15:17:37 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -226,7 +226,7 @@ typedef struct dumptype_s {
 #define dumptype_get_record(dumptype)             get_conftype_bool     (&dumptype->value[DUMPTYPE_RECORD])
 #define dumptype_get_skip_incr(dumptype)          get_conftype_bool     (&dumptype->value[DUMPTYPE_SKIP_INCR])
 #define dumptype_get_skip_full(dumptype)          get_conftype_bool     (&dumptype->value[DUMPTYPE_SKIP_FULL])
-#define dumptype_get_to_holdingdisk(dumptype)     get_conftype_bool     (&dumptype->value[DUMPTYPE_HOLDINGDISK])
+#define dumptype_get_to_holdingdisk(dumptype)     get_conftype_hold     (&dumptype->value[DUMPTYPE_HOLDINGDISK])
 #define dumptype_get_kencrypt(dumptype)           get_conftype_bool     (&dumptype->value[DUMPTYPE_KENCRYPT])
 #define dumptype_get_ignore(dumptype)             get_conftype_bool     (&dumptype->value[DUMPTYPE_IGNORE])
 #define dumptype_get_index(dumptype)              get_conftype_bool     (&dumptype->value[DUMPTYPE_INDEX])

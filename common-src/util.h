@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.16 2006/07/25 18:43:36 martinea Exp $
+ * $Id: util.h,v 1.17 2006/07/26 15:17:36 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -46,6 +46,7 @@ typedef enum {
     CONFTYPE_BOOL,
     CONFTYPE_COMPRESS,
     CONFTYPE_ENCRYPT,
+    CONFTYPE_HOLDING,
     CONFTYPE_ESTIMATE,
     CONFTYPE_STRATEGY,
     CONFTYPE_TAPERALGO,
@@ -71,6 +72,13 @@ typedef enum {
     ENCRYPT_CUST,               /* Custom encryption on client */
     ENCRYPT_SERV_CUST,          /* Custom encryption on server */
 } encrypt_t;
+
+/* holdingdisk types */
+typedef enum {
+    HOLD_NEVER,			/* Always direct to tape  */
+    HOLD_AUTO,			/* If possible            */
+    HOLD_REQUIRED		/* Always to holding disk */
+} dump_holdingdisk_t;
 
 /* Dump strategies */
 #define DS_SKIP		0	/* Don't do any dumps at all */
@@ -166,6 +174,9 @@ typedef enum {
     CONF_NONE,			CONF_FAST,		CONF_BEST,
     CONF_SERVER,		CONF_CLIENT,		CONF_CALCSIZE,
     CONF_CUSTOM,
+
+    /* holdingdisk */
+    CONF_NEVER,			CONF_AUTO,		CONF_REQUIRED,
 
     /* priority */
     CONF_LOW,			CONF_MEDIUM,		CONF_HIGH,
@@ -288,6 +299,7 @@ void conf_init_priority(val_t *, int);
 void conf_init_strategy(val_t *, int);
 void conf_init_compress(val_t *, comp_t);
 void conf_init_encrypt(val_t *, encrypt_t);
+void conf_init_holding(val_t *, dump_holdingdisk_t);
 void conf_init_long(val_t *, long);
 void conf_init_size(val_t *, ssize_t);
 void conf_init_am64(val_t *, off_t);
@@ -301,6 +313,7 @@ void conf_set_int(val_t *, int);
 void conf_set_bool(val_t *, int);
 void conf_set_compress(val_t *, comp_t);
 void conf_set_encrypt(val_t *, encrypt_t);
+void conf_set_holding(val_t *, dump_holdingdisk_t);
 void conf_set_strategy(val_t *, int);
 int          get_conftype_int      (val_t *);
 long         get_conftype_long     (val_t *);
@@ -312,6 +325,7 @@ time_t       get_conftype_time     (val_t *);
 ssize_t      get_conftype_size     (val_t *);
 sl_t        *get_conftype_sl       (val_t *);
 int          get_conftype_bool     (val_t *);
+int          get_conftype_hold     (val_t *);
 int          get_conftype_compress (val_t *);
 int          get_conftype_encrypt  (val_t *);
 int          get_conftype_estimate (val_t *);
