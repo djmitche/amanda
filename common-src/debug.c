@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.39 2006/07/25 18:27:56 martinea Exp $
+ * $Id: debug.c,v 1.40 2006/07/26 11:49:32 martinea Exp $
  *
  * debug log subroutines
  */
@@ -389,8 +389,10 @@ debug_rename(
 
     s = newvstralloc(s, dbgdir, db_name, NULL);
 
-    if (strcmp(db_filename, s) == 0)
+    if (strcmp(db_filename, s) == 0) {
+	amfree(s);
 	return;
+    }
 
     mask = (mode_t)umask((mode_t)0037);
     /* check if a file with the same name already exist */
@@ -413,7 +415,7 @@ debug_rename(
 	}
     }
 
-    if (fd >= 0 && s) {
+    if (fd >= 0) {
 	rename(db_filename, s);
     }
     (void)umask(mask); /* Restore mask */

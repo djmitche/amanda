@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.93 2006/07/25 18:53:41 martinea Exp $
+ * $Id: selfcheck.c,v 1.94 2006/07/26 11:49:32 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -571,6 +571,7 @@ check_disk(
 	    }
 	    *pwtext++ = '\0';
 	    pwtext_len = (size_t)strlen(pwtext);
+	    amfree(device);
 	    if ((device = makesharename(share, 0)) == NULL) {
 		err = stralloc2("cannot make share name of ", share);
 		goto common_exit;
@@ -675,6 +676,7 @@ check_disk(
 	    goto common_exit;
 	}
 	amode = F_OK;
+	amfree(device);
 	device = amname_to_dirname(amdevice);
     } else if (strcmp(program, "DUMP") == 0) {
 	if(amdevice[0] == '/' && amdevice[1] == '/') {
@@ -691,11 +693,13 @@ check_disk(
 	if (1)
 #endif									/* } */
 	{
+	    amfree(device);
 	    device = amname_to_dirname(amdevice);
 	    amode = F_OK;
 	} else
 #endif									/* } */
 	{
+	    amfree(device);
 	    device = amname_to_devname(amdevice);
 #ifdef USE_RUNDUMP
 	    amode = F_OK;
@@ -732,6 +736,7 @@ check_disk(
 	    }
 	}
 	fflush(stdout);fflush(stdin);
+	amfree(device);
 	amfree(qamdevice);
 	amfree(qdisk);
 	return;
@@ -800,7 +805,7 @@ check_overall(void)
     struct stat buf;
     int testfd;
     char *gnutar_list_dir;
-    int   need_amandates;
+    int   need_amandates = 0;
 
     if( need_runtar )
     {
