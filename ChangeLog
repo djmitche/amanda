@@ -1,4 +1,7 @@
 2006-07-26  Jean-Louis Martineau <martineau@zmanda.com>
+	* NEWS: for 2.5.1b2.
+
+2006-07-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.h (CONFTYPE_HOLDING): New conftype.
 	* common-src/util.c (conf_init_holding, conf_set_holding,
 			     get_conftype_hold): New fonction.
