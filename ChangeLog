@@ -1,3 +1,7 @@
+2006-07-27  Jean-Louis Martineau <martineau@zmanda.com>
+	* man/xml-source/amanda.conf.5.xml: Tell which file are loaded.
+	* man/xml-source/amanda-client.conf.5.xml: Ditto.
+
 2006-07-26  Jean-Louis Martineau <martineau@zmanda.com>
 	* NEWS: for 2.5.1b2.
 

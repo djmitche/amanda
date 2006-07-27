@@ -5,6 +5,7 @@ Changes in release 2.5.1b2
 * gnutar_list-dir client config option.
 * dumptype holdingdisk get new value: NEVER, AUTO, REQUIRED
 * amgetconf doesn't write the BUGGY message.
+* all client program use the client configuration file amanda-client.conf
 
 Changes in release 2.5.1b1
 

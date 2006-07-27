@@ -22,6 +22,7 @@
 <refsect1><title>DESCRIPTION</title>
 <para>&amclientconf; is the client configuration file for &A;. This manpage lists the
 relevant sections and parameters of this file for quick reference.</para> 
+<para> The files <emphasis remap='B'>&lt;CONFIG_DIR&gt;/amanda-client.conf</emphasis> and <emphasis remap='B'>&lt;CONFIG_DIR&gt;/&lt;config&gt;/amanda-client.conf</emphasis> are loaded.</para>
 </refsect1>
 
 <refsect1><title>PARAMETERS</title>
