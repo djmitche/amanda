@@ -1,4 +1,7 @@
 2006-07-27  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/clock.c (timesub): Don't make a negative time.
+
+2006-07-27  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/xml-source/amanda.conf.5.xml: Tell which file are loaded.
 	* man/xml-source/amanda-client.conf.5.xml: Ditto.
 

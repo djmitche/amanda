@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.c,v 1.6 2006/05/25 01:47:11 johnfranks Exp $
+ * $Id: clock.c,v 1.7 2006/07/27 18:12:10 martinea Exp $
  *
  * timing functions
  */
@@ -153,7 +153,8 @@ timesub(
     struct timeval diff;
 
     if(end.tv_usec < start.tv_usec) { /* borrow 1 sec */
-	end.tv_sec -= 1;
+	if (end.tv_sec > 0)
+	    end.tv_sec -= 1;
 	end.tv_usec += 1000000;
     }
     diff.tv_usec = end.tv_usec - start.tv_usec;
