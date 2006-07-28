@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.204 2006/07/28 12:48:02 martinea Exp $
+ * $Id: planner.c,v 1.205 2006/07/28 15:50:30 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -776,17 +776,19 @@ setup_estimate(
     /* adjust priority levels */
 
     /* warn if dump will be overwritten */
-    overwrite_runs = when_overwrite(info.inf[0].label);
-    if(overwrite_runs == 0) {
-	log_add(L_WARNING, "Last full dump of %s:%s "
-		"on tape %s overwritten on this run.",
-		dp->host->hostname, qname, info.inf[0].label);
-    }
-    else if(overwrite_runs <= RUNS_REDZONE) {
-	log_add(L_WARNING, "Last full dump of %s:%s on "
-		"tape %s overwritten in %d run%s.",
-		dp->host->hostname, qname, info.inf[0].label,
-		overwrite_runs, overwrite_runs == 1? "" : "s");
+    if(ep->last_level > -1) {
+	overwrite_runs = when_overwrite(info.inf[0].label);
+	if(overwrite_runs == 0) {
+	    log_add(L_WARNING, "Last full dump of %s:%s "
+		    "on tape %s overwritten on this run.",
+		    dp->host->hostname, qname, info.inf[0].label);
+	}
+	else if(overwrite_runs <= RUNS_REDZONE) {
+	    log_add(L_WARNING, "Last full dump of %s:%s on "
+		    "tape %s overwritten in %d run%s.",
+		    dp->host->hostname, qname, info.inf[0].label,
+		    overwrite_runs, overwrite_runs == 1? "" : "s");
+	}
     }
 
     if(ep->next_level0 < 0) {
