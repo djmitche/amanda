@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.194 2006/07/26 15:17:37 martinea Exp $
+ * $Id: driver.c,v 1.195 2006/07/28 17:46:56 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1683,6 +1683,8 @@ handle_chunker_result(
 		sched(dp)->act_size = sched(dp)->est_size; /* not quite true */
 		sched(dp)->est_size = (sched(dp)->act_size/(off_t)20) * (off_t)21; /* +5% */
 		sched(dp)->est_size = am_round(sched(dp)->est_size, (off_t)DISK_BLOCK_KB);
+		if (sched(dp)->est_size < sched(dp)->act_size + 2*DISK_BLOCK_KB)
+		    sched(dp)->est_size += 2 * DISK_BLOCK_KB;
 		h = find_diskspace( sched(dp)->est_size - sched(dp)->act_size,
 				    &dummy,
 				    h[activehd-1] );
@@ -2275,6 +2277,8 @@ find_diskspace(
 
     (void)cur_idle;	/* Quiet unused parameter warning */
 
+    if (size < 2*DISK_BLOCK_KB)
+	size = 2*DISK_BLOCK_KB;
     size = am_round(size, (off_t)DISK_BLOCK_KB);
 
 #ifdef HOLD_DEBUG
