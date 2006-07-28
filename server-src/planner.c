@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.203 2006/07/28 12:47:02 martinea Exp $
+ * $Id: planner.c,v 1.204 2006/07/28 12:48:02 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -2246,6 +2246,7 @@ static void delay_dumps(void)
     info_t	info;
     int		delete;
     char *	message;
+    off_t	full_size;
 
     biq.head = biq.tail = NULL;
 
@@ -2266,6 +2267,16 @@ static void delay_dumps(void)
 	    avail_tapes = conf_runtapes;
 
 	ndp = dp->next; /* remove_disk zaps this */
+
+	full_size = est_tape_size(dp, 0);
+	if (full_size > tapetype_get_length(tape) * (off_t)avail_tapes) {
+	    char *qname = quote_string(dp->name);
+	    log_add(L_WARNING, "disk %s:%s, full dump (" OFF_T_FMT 
+		    "KB) will be larger than available tape space",
+		    dp->host->hostname, qname,
+		    (OFF_T_FMT_TYPE)full_size);
+	    amfree(qname);
+	}
 
 	if (est(dp)->dump_csize == (off_t)-1 ||
 	    est(dp)->dump_csize <= tapetype_get_length(tape) * (off_t)avail_tapes) {
@@ -2302,8 +2313,8 @@ static void delay_dumps(void)
 	    delete = 1;
 	    message = "skipping incremental";
 	}
-	delay_one_dump(dp, delete, "dump larger than available tape space,", est_kb,
-		       message, NULL);
+	delay_one_dump(dp, delete, "dump larger than available tape space,",
+		       est_kb, message, NULL);
     }
 
     /*

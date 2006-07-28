@@ -1,4 +1,8 @@
 2006-07-28  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/planner.c: Always log if full size estimate is larger
+				than the available tape space.
+
+2006-07-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/planner.c: Always log if the latest full dump will be
 				overwritten soon.
 
