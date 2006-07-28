@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.202 2006/07/25 19:06:46 martinea Exp $
+ * $Id: planner.c,v 1.203 2006/07/28 12:47:02 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -698,6 +698,7 @@ setup_estimate(
     info_t info;
     int i;
     char *qname;
+    int overwrite_runs;
 
     assert(dp && dp->host);
 
@@ -774,26 +775,25 @@ setup_estimate(
 
     /* adjust priority levels */
 
+    /* warn if dump will be overwritten */
+    overwrite_runs = when_overwrite(info.inf[0].label);
+    if(overwrite_runs == 0) {
+	log_add(L_WARNING, "Last full dump of %s:%s "
+		"on tape %s overwritten on this run.",
+		dp->host->hostname, qname, info.inf[0].label);
+    }
+    else if(overwrite_runs <= RUNS_REDZONE) {
+	log_add(L_WARNING, "Last full dump of %s:%s on "
+		"tape %s overwritten in %d run%s.",
+		dp->host->hostname, qname, info.inf[0].label,
+		overwrite_runs, overwrite_runs == 1? "" : "s");
+    }
+
     if(ep->next_level0 < 0) {
 	fprintf(stderr,"%s:%s overdue %d day%s for level 0\n",
 		dp->host->hostname, qname,
 		- ep->next_level0, ((- ep->next_level0) == 1) ? "" : "s");
 	ep->dump_priority -= ep->next_level0;
-	/* warn if dump will be overwritten */
-	if(ep->last_level > -1) {
-	    int overwrite_runs = when_overwrite(info.inf[0].label);
-	    if(overwrite_runs == 0) {
-		log_add(L_WARNING, "Last full dump of %s:%s "
-			"on tape %s overwritten on this run.",
-			dp->host->hostname, qname, info.inf[0].label);
-	    }
-	    else if(overwrite_runs < RUNS_REDZONE) {
-		log_add(L_WARNING, "Last full dump of %s:%s on "
-			"tape %s overwritten in %d run%s.",
-			dp->host->hostname, qname, info.inf[0].label,
-			overwrite_runs, overwrite_runs == 1? "" : "s");
-	    }
-	}
     }
     else if (ISSET(info.command, FORCE_FULL))
 	ep->dump_priority += 1;
@@ -1010,7 +1010,7 @@ static int when_overwrite(
 
     if((tp = lookup_tapelabel(label)) == NULL)
 	return 1;	/* "shouldn't happen", but trigger warning message */
-    else if(!reusable_tape(tp))
+    else if(tp->reuse == 0)
 	return 1024;
     else if(lookup_nb_tape() > conf_tapecycle)
 	return (lookup_nb_tape() - tp->position) / runtapes;
