@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.169 2006/07/25 18:35:22 martinea Exp $
+ * $Id: sendsize.c,v 1.170 2006/08/10 23:57:27 paddy_s Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1832,9 +1832,7 @@ getsize_gnutar(
 
     dirname = amname_to_dirname(amdevice);
 
-
     cmd = vstralloc(libexecdir, "/", "runtar", versionsuffix(), NULL);
-
     my_argv[i++] = "runtar";
     if (g_options->config)
 	my_argv[i++] = g_options->config;
@@ -1896,10 +1894,6 @@ getsize_gnutar(
     dumppid = pipespawnv(cmd, STDERR_PIPE, &nullfd, &nullfd, &pipefd, my_argv);
 
     dumpout = fdopen(pipefd,"r");
-    if (!dumpout) {
-	error("Can't fdopen: %s", strerror(errno));
-	/*NOTREACHED*/
-    }
     if (!dumpout) {
 	error("Can't fdopen: %s", strerror(errno));
 	/*NOTREACHED*/

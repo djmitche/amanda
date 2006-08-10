@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.205 2006/07/28 15:50:30 martinea Exp $
+ * $Id: planner.c,v 1.206 2006/08/10 23:57:27 paddy_s Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -2917,7 +2917,7 @@ static void output_scheduleline(
     features = am_feature_to_string(dp->host->features);
     schedline = vstralloc("DUMP ",dp->host->hostname,
 			  " ", features,
-			  " ", dp->name,
+			  " ", qname,
 			  " ", planner_timestamp,
 			  " ", dump_priority_str,
 			  " ", dump_level_str,
