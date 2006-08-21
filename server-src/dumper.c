@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.186 2006/07/25 18:27:58 martinea Exp $
+/* $Id: dumper.c,v 1.187 2006/08/21 20:17:10 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1563,7 +1563,7 @@ runcompress(
 	safe_fd(-1, 0);
 	if (comptype != COMP_SERV_CUST) {
 	    execlp(COMPRESS_PATH, COMPRESS_PATH, (  comptype == COMP_BEST ?
-		COMPRESS_BEST_OPT : COMPRESS_FAST_OPT), NULL);
+		COMPRESS_BEST_OPT : COMPRESS_FAST_OPT), (char *)NULL);
 	    error("error: couldn't exec %s: %s", COMPRESS_PATH, strerror(errno));
 	    /*NOTREACHED*/
 	} else if (*srvcompprog) {

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.22 2006/07/25 18:53:41 martinea Exp $
+ * $Id: ssh-security.c,v 1.23 2006/08/21 20:17:10 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -258,12 +258,12 @@ runssh(
     if(!ssh_keys || strlen(ssh_keys) <= 1) {
 	execlp(SSH_PATH, SSH_PATH, SSH_ARGS, "-l", xclient_username,
 	       rc->hostname, xamandad_path, "-auth=ssh", "amdump", "amindexd",
-	       "amidxtaped", NULL);
+	       "amidxtaped", (char *)NULL);
     }
     else {
 	execlp(SSH_PATH, SSH_PATH, SSH_ARGS, "-l", xclient_username,
 	       "-i", xssh_keys, rc->hostname, xamandad_path, "-auth=ssh",
-	       "amdump", "amindexd", "amidxtaped", NULL);
+	       "amdump", "amindexd", "amidxtaped", (char *)NULL);
     }
     error("error: couldn't exec %s: %s", SSH_PATH, strerror(errno));
 

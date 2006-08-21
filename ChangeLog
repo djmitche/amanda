@@ -1,4 +1,9 @@
 2006-08-21  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c, common-src/rsh-security.c,
+	  common-src/ssh-security.c, restore-src/restore.c,
+	  server-src/changer.c, server-src/dumper.c: Fix sentinel warning.
+
+2006-08-21  Jean-Louis Martineau <martineau@zmanda.com>
 	* example/amanda.conf.in: Typo.
 
 2006-08-21  Jean-Louis Martineau <martineau@zmanda.com>

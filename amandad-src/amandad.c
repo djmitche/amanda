@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.17 2006/07/25 18:18:46 martinea Exp $
+ * $Id: amandad.c,v 1.18 2006/08/21 20:17:09 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1471,7 +1471,7 @@ service_new(
 	safe_fd(DATA_FD_OFFSET, DATA_FD_COUNT*2);
 	close(2);
 
-	execle(cmd, cmd, "amandad", auth, NULL, safe_env());
+	execle(cmd, cmd, "amandad", auth, (char *)NULL, safe_env());
 	error("could not exec service %s: %s\n", cmd, strerror(errno));
 	/*NOTREACHED*/
     }

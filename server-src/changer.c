@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.34 2006/06/12 15:34:49 martinea Exp $
+ * $Id: changer.c,v 1.35 2006/08/21 20:17:10 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -434,9 +434,10 @@ changer_command(
 	    exit(1);
 	}
 	if(arg) {
-	    execle(tapechanger, tapechanger, cmd, arg, NULL, safe_env());
+	    execle(tapechanger, tapechanger, cmd, arg, (char *)NULL,
+		   safe_env());
 	} else {
-	    execle(tapechanger, tapechanger, cmd, NULL, safe_env());
+	    execle(tapechanger, tapechanger, cmd, (char *)NULL, safe_env());
 	}
 	changer_resultstr = vstralloc ("<error> ",
 				       "could not exec \"",

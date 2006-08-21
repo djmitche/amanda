@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.50 2006/07/25 18:58:10 martinea Exp $
+ * $Id: restore.c,v 1.51 2006/08/21 20:17:10 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -962,12 +962,12 @@ restore(
 	safe_fd(-1, 0);
 	if (*file->srv_encrypt) {
 	  (void) execlp(file->srv_encrypt, file->srv_encrypt,
-			file->srv_decrypt_opt, NULL);
+			file->srv_decrypt_opt, (char *)NULL);
 	  error("could not exec %s: %s", file->srv_encrypt, strerror(errno));
 	  /*NOTREACHED*/
 	}  else if (*file->clnt_encrypt) {
 	  (void) execlp(file->clnt_encrypt, file->clnt_encrypt,
-			file->clnt_decrypt_opt, NULL);
+			file->clnt_decrypt_opt, (char *)NULL);
 	  error("could not exec %s: %s", file->clnt_encrypt, strerror(errno));
 	  /*NOTREACHED*/
 	}
@@ -1049,19 +1049,23 @@ restore(
 
 	    safe_fd(-1, 0);
 	    if (*file->srvcompprog) {
-	      (void) execlp(file->srvcompprog, file->srvcompprog, "-d", NULL);
-	      error("could not exec %s: %s", file->srvcompprog, strerror(errno));
+	      (void) execlp(file->srvcompprog, file->srvcompprog, "-d",
+			    (char *)NULL);
+	      error("could not exec %s: %s", file->srvcompprog,
+		    strerror(errno));
 	      /*NOTREACHED*/
 	    } else if (*file->clntcompprog) {
-	      (void) execlp(file->clntcompprog, file->clntcompprog, "-d", NULL);
-	      error("could not exec %s: %s", file->clntcompprog, strerror(errno));
+	      (void) execlp(file->clntcompprog, file->clntcompprog, "-d",
+			    (char *)NULL);
+	      error("could not exec %s: %s", file->clntcompprog,
+		    strerror(errno));
 	      /*NOTREACHED*/
 	    } else {
 	      (void) execlp(UNCOMPRESS_PATH, UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
 			  UNCOMPRESS_OPT,
 #endif
-			  (char *)0);
+			  (char *)NULL);
 	      error("could not exec %s: %s", UNCOMPRESS_PATH, strerror(errno));
 	      /*NOTREACHED*/
 	    }
