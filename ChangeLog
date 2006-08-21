@@ -1,3 +1,6 @@
+2006-08-21  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driver.c (start_some_dumps): Remove bogus free_assignedhd.
+
 2006-07-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* Amanda 2.5.1b2 released.
 	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.1b2).
