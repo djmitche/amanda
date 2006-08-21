@@ -1,4 +1,7 @@
 2006-08-21  Jean-Louis Martineau <martineau@zmanda.com>
+	* example/amanda.conf.in: Typo.
+
+2006-08-21  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driverio.c: Fix bogus "(unsigned long)-1".
 
 2006-08-21  Jean-Louis Martineau <martineau@zmanda.com>

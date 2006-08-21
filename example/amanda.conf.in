@@ -205,7 +205,7 @@ autoflush no #
 infofile "@CONFIG_DIR@/@DEFAULT_CONFIG@/curinfo"	# database DIRECTORY
 logdir   "@CONFIG_DIR@/@DEFAULT_CONFIG@"		# log directory
 indexdir "@CONFIG_DIR@/@DEFAULT_CONFIG@/index"		# index directory
-#tapelist "@CONFIG_DIR/@DEFAULT_CONFIG@/tapelist"	# list of used tapes
+#tapelist "@CONFIG_DIR@/@DEFAULT_CONFIG@/tapelist"	# list of used tapes
 # tapelist is stored, by default, in the directory that contains amanda.conf
 
 # tapetypes
