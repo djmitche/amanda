@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.89 2006/06/22 17:21:56 martinea Exp $
+ * $Id: driverio.c,v 1.90 2006/08/21 15:33:41 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -766,7 +766,7 @@ update_info_dumper(
       infp = &info.inf[i];
       infp->size = (off_t)-1;
       infp->csize = (off_t)-1;
-      infp->secs = (unsigned long)-1;
+      infp->secs = (time_t)-1;
       infp->date = (time_t)-1;
       infp->label[0] = '\0';
       infp->filenum = 0;
