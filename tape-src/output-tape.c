@@ -26,7 +26,7 @@
  */
 
 /*
- * $Id: output-tape.c,v 1.17 2006/07/25 18:47:27 martinea Exp $
+ * $Id: output-tape.c,v 1.18 2006/08/22 14:19:39 martinea Exp $
  *
  * tapeio.c virtual tape interface for normal tape drives.
  */
@@ -211,7 +211,11 @@ tape_tapefd_fsf(
     struct stop st;
 
     if ((count > (off_t)INT_MAX) || (count < (off_t)INT_MIN)) {
-	errno = EOVERFLOW;
+#ifdef EOVERFLOW
+    	    errno = EOVERFLOW;
+#else
+	    errno = EINVAL;
+#endif
 	return -1;
     }
 
@@ -233,7 +237,11 @@ tape_tapefd_weof(
     struct stop st;
 
     if ((count > (off_t)INT_MAX) || (count < (off_t)INT_MIN)) {
-	errno = EOVERFLOW;
+#ifdef EOVERFLOW
+    	    errno = EOVERFLOW;
+#else
+	    errno = EINVAL;
+#endif
 	return -1;
     }
 
@@ -405,7 +413,11 @@ tape_tapefd_fsf(
     struct mtop mt;
 
     if ((count > (off_t)INT_MAX) || (count < (off_t)INT_MIN)) {
-	errno = EOVERFLOW;
+#ifdef EOVERFLOW
+    	    errno = EOVERFLOW;
+#else
+	    errno = EINVAL;
+#endif
 	return -1;
     }
 
@@ -429,7 +441,11 @@ tape_tapefd_weof(
     struct mtop mt;
 
     if ((count > (off_t)INT_MAX) || (count < (off_t)INT_MIN)) {
-	errno = EOVERFLOW;
+#ifdef EOVERFLOW
+    	    errno = EOVERFLOW;
+#else
+	    errno = EINVAL;
+#endif
 	return -1;
     }
 

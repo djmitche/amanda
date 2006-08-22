@@ -1,3 +1,6 @@
+2006-08-22  Jean-Louis Martineau <martineau@zmanda.com>
+	* tape-src/output-tape.c: Works if EOVERFLOW is not defined.
+
 2006-08-21  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c, common-src/rsh-security.c,
 	  common-src/ssh-security.c, restore-src/restore.c,
