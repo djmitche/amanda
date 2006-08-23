@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.196 2006/08/21 15:30:04 martinea Exp $
+ * $Id: driver.c,v 1.197 2006/08/23 19:08:28 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1427,6 +1427,8 @@ dumper_result(
     chunker->down = 1;
     
     dp = NULL;
+    if (chunker->result = ABORT_FINISHED)
+	pending_aborts--;
     continue_port_dumps();
     /*
      * Wakeup any dumpers that are sleeping because of network
@@ -1554,7 +1556,8 @@ handle_dumper_result(
         amfree(qname);
 
 	/* send the dumper result to the chunker */
-	if(dumper->chunker->down == 0 && dumper->chunker->fd != -1) {
+	if(dumper->chunker->down == 0 && dumper->chunker->fd != -1 &&
+	   dumper->chunker->result == LAST_TOK) {
 	    if(cmd == DONE) {
 		chunker_cmd(dumper->chunker, DONE, dp);
 	    }

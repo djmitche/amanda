@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.90 2006/08/21 15:33:41 martinea Exp $
+ * $Id: driverio.c,v 1.91 2006/08/23 19:08:28 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -481,7 +481,7 @@ dumper_cmd(
 	    amfree(cmdline);
 	    return 0;
 	}
-	if(cmd == QUIT || cmd == ABORT) aclose(dumper->fd);
+	if (cmd == QUIT) aclose(dumper->fd);
     }
     amfree(cmdline);
     return 1;
@@ -608,7 +608,7 @@ chunker_cmd(
 	amfree(cmdline);
 	return 0;
     }
-    if(cmd == QUIT || cmd == ABORT) aclose(chunker->fd);
+    if (cmd == QUIT) aclose(chunker->fd);
     amfree(cmdline);
     return 1;
 }

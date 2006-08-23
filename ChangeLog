@@ -1,4 +1,12 @@
 2006-08-23  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/driver.c (dumper_result): Decrement pendings_aborts.
+	* server-src/driver.c (handle_dumper_result): Don't send duper result
+	  to chunker if we aborted it.
+	* server-src/driverio.c (dumper_cmd, chunker_cmd): Don't close the fd
+	  on ABORT.
+	* server-src/dumper.c: Accept ABORT command.
+
+2006-08-23  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c (restore): Set bytes_read to the return value
 	  of read_file_header.
 

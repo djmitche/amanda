@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.187 2006/08/21 20:17:10 martinea Exp $
+/* $Id: dumper.c,v 1.188 2006/08/23 19:08:28 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -339,6 +339,9 @@ main(
 	    if(cmdargs.argc <  2)
 		error("error [dumper START: not enough args: timestamp]");
 	    dumper_timestamp = newstralloc(dumper_timestamp, cmdargs.argv[2]);
+	    break;
+
+	case ABORT:
 	    break;
 
 	case QUIT:
