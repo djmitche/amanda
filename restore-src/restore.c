@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.51 2006/08/21 20:17:10 martinea Exp $
+ * $Id: restore.c,v 1.52 2006/08/23 11:41:54 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -842,7 +842,6 @@ restore(
      */
     if(flags->raw || (flags->headers && !is_continuation)) {
 	ssize_t w;
-	char *cont_filename;
 	dumpfile_t tmp_hdr;
 
 	if(flags->compress && !file_is_compressed) {
@@ -864,7 +863,6 @@ restore(
 	memcpy(&tmp_hdr, file, SIZEOF(dumpfile_t));
 
 	/* remove CONT_FILENAME from header */
-	cont_filename = stralloc(file->cont_filename);
 	memset(file->cont_filename,'\0',SIZEOF(file->cont_filename));
 	file->blocksize = DISK_BLOCK_BYTES;
 
@@ -889,11 +887,7 @@ restore(
 	    }
 	}
 	amfree(buffer);
-	/* add CONT_FILENAME to header */
-#if 0
-//	strncpy(file->cont_filename, cont_filename, SIZEOF(file->cont_filename));
-#endif
-	amfree(cont_filename);
+
 	memcpy(file, &tmp_hdr, SIZEOF(dumpfile_t));
     }
  
@@ -1134,7 +1128,7 @@ restore(
 		    /*NOTREACHED*/
 		}
 	    }
-	    read_file_header(file, tapefd, isafile, flags);
+	    bytes_read = read_file_header(file, tapefd, isafile, flags);
 	    if(file->type != F_DUMPFILE && file->type != F_CONT_DUMPFILE
 		    && file->type != F_SPLIT_DUMPFILE) {
 		fprintf(stderr, "unexpected header type: ");

@@ -1,3 +1,7 @@
+2006-08-23  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/restore.c (restore): Set bytes_read to the return value
+	  of read_file_header.
+
 2006-08-22  Jean-Louis Martineau <martineau@zmanda.com>
 	* tape-src/output-tape.c: Works if EOVERFLOW is not defined.
 
