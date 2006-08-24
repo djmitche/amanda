@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: statfs.c,v 1.15 2006/07/19 17:41:15 martinea Exp $
+ * $Id: statfs.c,v 1.16 2006/08/24 17:05:35 martinea Exp $
  *
  * a generic statfs-like routine
  */
@@ -127,7 +127,18 @@
 # endif
 #endif
 
-#define scale(r,s)  (((unsigned long)(r) == ULONG_MAX) ? (off_t)-1 : ((off_t)(r)*((off_t)(s)/(off_t)1024)))
+
+off_t scale(off_t r, off_t s);
+
+off_t
+scale(
+    off_t r,
+    off_t s)
+{
+    if (r == (off_t)-1)
+	return (off_t)-1;
+    return r*(s/(off_t)1024);
+}
 
 int
 get_fs_stats(
@@ -141,9 +152,12 @@ get_fs_stats(
 
     /* total, avail, free: converted to kbytes, rounded down */
 
-    sp->total = scale(STATFS_TOTAL(statbuf), STATFS_SCALE(statbuf));
-    sp->avail = scale(STATFS_AVAIL(statbuf), STATFS_SCALE(statbuf));
-    sp->free  = scale(STATFS_FREE(statbuf),  STATFS_SCALE(statbuf));
+    sp->total = scale((off_t)STATFS_TOTAL(statbuf),
+		      (off_t)STATFS_SCALE(statbuf));
+    sp->avail = scale((off_t)STATFS_AVAIL(statbuf),
+		      (off_t)STATFS_SCALE(statbuf));
+    sp->free  = scale((off_t)STATFS_FREE(statbuf),
+		      (off_t)STATFS_SCALE(statbuf));
 
     /* inode stats */
 
