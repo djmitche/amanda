@@ -5,6 +5,9 @@
 	* server-src/chunker.c: Use STREAM_BUFSIZE for stream_accept.
 	* server-src/taper.c: Use STREAM_BUFSIZE for stream_accept.
 
+2006-08-24  Maitreyee Karmarkar <maitreyee.zmanda.com>
+	* man/xml-source/amcheck.8.xml: amcheck xml man page change 
+
 2006-08-23  Kevin Till <ktill@zmanda.com>
 	*  server-src/driver.c: fix typo
 
