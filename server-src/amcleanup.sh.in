@@ -65,6 +65,9 @@ else
 	if test $# -ne 1 ; then
 		echo "Usage: amcleanup conf"
 		exit 1
+	else
+		conf=$1
+		KILL_ENABLE=0
 	fi
 fi
 

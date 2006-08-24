@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: tapetype.c,v 1.26 2006/07/11 18:01:21 martinea Exp $
+ * $Id: tapetype.c,v 1.27 2006/08/24 01:57:16 paddy_s Exp $
  *
  * tests a tape in a given tape unit and prints a tapetype entry for
  * it.  */
@@ -676,17 +676,14 @@ main(
   if (tapefd_rewind(fd) == -1) {
     fprintf(stderr, "%s: could not rewind %s: %s\n",
 	    sProgName, tapedev, strerror(errno));
-    free(randombytes);
     return 1;
   }
 
   if (tapefd_close(fd) == -1) {
     fprintf(stderr, "%s: could not close %s: %s\n",
 	    sProgName, tapedev, strerror(errno));
-    free(randombytes);
     return 1;
   }
 
-  free(randombytes);
   return 0;
 }

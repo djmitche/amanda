@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.148 2006/07/25 18:45:38 martinea Exp $
+ * $Id: amcheck.c,v 1.149 2006/08/24 01:57:16 paddy_s Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1646,7 +1646,7 @@ start_client_checks(
 
     for(dp = origq.head; dp != NULL; dp = dp->next) {
 	hostp = dp->host;
-	if(hostp->up == HOST_READY) {
+	if(hostp->up == HOST_READY && dp->todo == 1) {
 	    start_host(hostp);
 	    hostcount++;
 	    protocol_check();

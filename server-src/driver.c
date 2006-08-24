@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.197 2006/08/23 19:08:28 martinea Exp $
+ * $Id: driver.c,v 1.198 2006/08/24 01:57:16 paddy_s Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1427,7 +1427,7 @@ dumper_result(
     chunker->down = 1;
     
     dp = NULL;
-    if (chunker->result = ABORT_FINISHED)
+    if (chunker->result == ABORT_FINISHED)
 	pending_aborts--;
     continue_port_dumps();
     /*

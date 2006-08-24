@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.91 2006/08/23 19:08:28 martinea Exp $
+ * $Id: driverio.c,v 1.92 2006/08/24 01:57:16 paddy_s Exp $
  *
  * I/O-related functions for driver program
  */
@@ -90,12 +90,12 @@ startup_tape_process(
 	error("taper pipe: %s", strerror(errno));
 	/*NOTREACHED*/
     }
-    if(fd[0] < 0 || fd[0] >= FD_SETSIZE) {
+    if(fd[0] < 0 || fd[0] >= (int)FD_SETSIZE) {
 	error("taper socketpair 0: descriptor %d out of range (0 .. %d)\n",
 	      fd[0], FD_SETSIZE-1);
         /*NOTREACHED*/
     }
-    if(fd[1] < 0 || fd[1] >= FD_SETSIZE) {
+    if(fd[1] < 0 || fd[1] >= (int)FD_SETSIZE) {
 	error("taper socketpair 1: descriptor %d out of range (0 .. %d)\n",
 	      fd[1], FD_SETSIZE-1);
         /*NOTREACHED*/

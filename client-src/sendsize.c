@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.170 2006/08/10 23:57:27 paddy_s Exp $
+ * $Id: sendsize.c,v 1.171 2006/08/24 01:57:15 paddy_s Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1054,7 +1054,9 @@ getsize_dump(
     char *qdisk = quote_string(disk);
     char *qdevice;
     char *config;
+#ifdef DUMP
     int is_rundump = 1;
+#endif
 
     (void)options;	/* Quiet unused parameter warning */
 

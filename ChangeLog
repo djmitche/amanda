@@ -1,3 +1,6 @@
+2006-08-23  Kevin Till <ktill@zmanda.com>
+	*  server-src/driver.c: fix typo
+
 2006-08-23  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c (dumper_result): Decrement pendings_aborts.
 	* server-src/driver.c (handle_dumper_result): Don't send duper result
@@ -26,6 +29,31 @@
 
 2006-08-21  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c (start_some_dumps): Remove bogus free_assignedhd.
+
+2006-08-21  Maitreyee Karmarkar <maitreyee.zmanda.com>
+	* server-src/amcheck.c: Check specific clients
+	* man/amcheck.8: add the multiple client check format
+
+2006-08-18  Ian Turner <ian@zmanda.com>
+	* tape-src/amtapetype.c: Don't crash on exit
+
+2006-08-17  Paddy Sreenivasan <paddy@zmanda.com>
+        * server-src/driverio.c:
+        * server-src/changer.c:
+        * restore-src/amfetchdump.c:
+        * recover-src/extract_list.c:
+        * oldrecover-src/extract_list.c:
+        * common-src/util.c:
+        * common-src/stream.c:
+        * common-src/file.c:
+        * common-src/dgram.c: Fix warnings
+
+2006-08-17  Kevin Till <ktill@zmanda.com>
+	* common-src/stream.c: Loop 5 times (ntries > 5) on select error
+
+2006-08-14  Paddy Sreenivasan <paddy@zmanda.com>
+        * client-src/sendsize.c: Fix warning
+        * server-src/reporter.c: Fix warnings
 
 2006-07-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* Amanda 2.5.1b2 released.

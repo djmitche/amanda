@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.130 2006/07/25 18:27:58 martinea Exp $
+ * $Id: reporter.c,v 1.131 2006/08/24 01:57:16 paddy_s Exp $
  *
  * nightly Amanda Report generator
  */
@@ -328,7 +328,7 @@ main(
     char *mailto = NULL;
     int    new_argc,   my_argc;
     char **new_argv, **my_argv;
-    char *lbl_templ;
+    char *lbl_templ = NULL;
 
     safe_fd(-1, 0);
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.116 2006/07/21 00:25:51 martinea Exp $
+ * $Id: extract_list.c,v 1.117 2006/08/24 01:57:15 paddy_s Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -172,7 +172,7 @@ read_buffer(
     ssize_t spaceleft;
     int nfound;
 
-    if(datafd < 0 || datafd >= FD_SETSIZE) {
+    if(datafd < 0 || datafd >= (int)FD_SETSIZE) {
 	errno = EMFILE;					/* out of range */
 	return -1;
     }

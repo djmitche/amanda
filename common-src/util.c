@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.41 2006/07/26 15:17:36 martinea Exp $
+ * $Id: util.c,v 1.42 2006/08/24 01:57:15 paddy_s Exp $
  */
 
 #include "amanda.h"
@@ -139,7 +139,7 @@ make_socket(void)
         errno = save_errno;
         return -1;
     }
-    if (s < 0 || s >= FD_SETSIZE) {
+    if (s < 0 || s >= (int)FD_SETSIZE) {
         aclose(s);
         errno = EMFILE;                         /* out of range */
         return -1;

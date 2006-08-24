@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.38 2006/07/14 11:44:46 martinea Exp $
+ * $Id: stream.c,v 1.39 2006/08/24 01:57:15 paddy_s Exp $
  *
  * functions for managing stream sockets
  */
@@ -65,7 +65,7 @@ stream_server(
 	errno = save_errno;
 	return -1;
     }
-    if(server_socket < 0 || server_socket >= FD_SETSIZE) {
+    if(server_socket < 0 || server_socket >= (int)FD_SETSIZE) {
 	aclose(server_socket);
 	errno = EMFILE;				/* out of range */
 	save_errno = errno;
@@ -372,7 +372,7 @@ stream_accept(
 		}
 	        save_errno = EBADF;
 	    }
-	    if (ntries < 5) {
+	    if (ntries > 5) {
 		errno = save_errno;
 		return -1;
 	    }

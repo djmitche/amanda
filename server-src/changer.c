@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.35 2006/08/21 20:17:10 martinea Exp $
+ * $Id: changer.c,v 1.36 2006/08/24 01:57:16 paddy_s Exp $
  *
  * interface routines for tape changers
  */
@@ -367,7 +367,7 @@ changer_command(
 	fd[0] = a;
     }
 
-    if(fd[0] < 0 || fd[0] >= FD_SETSIZE) {
+    if(fd[0] < 0 || fd[0] >= (int)FD_SETSIZE) {
 	snprintf(num1, SIZEOF(num1), "%d", fd[0]);
 	snprintf(num2, SIZEOF(num2), "%d", FD_SETSIZE-1);
 	changer_resultstr = vstralloc ("<error> ",
@@ -383,7 +383,7 @@ changer_command(
 	exitcode = 2;
 	goto done;
     }
-    if(fd[1] < 0 || fd[1] >= FD_SETSIZE) {
+    if(fd[1] < 0 || fd[1] >= (int)FD_SETSIZE) {
 	snprintf(num1, SIZEOF(num1), "%d", fd[1]);
 	snprintf(num2, SIZEOF(num2), "%d", FD_SETSIZE-1);
 	changer_resultstr = vstralloc ("<error> ",

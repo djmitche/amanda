@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: runtar.c,v 1.22 2006/07/25 18:27:56 martinea Exp $
+ * $Id: runtar.c,v 1.23 2006/08/24 01:57:15 paddy_s Exp $
  *
  * runs GNUTAR program as root
  *
@@ -49,8 +49,6 @@ main(
     char *e;
     char *dbf;
 #endif
-
-    (void)argc;	/* Quiet unused parameter warning */
 
     safe_fd(-1, 0);
     safe_cd();

@@ -45,6 +45,17 @@ must be run some time later (usually during system boot).</para>
 man page for more details about &A;.</para>
 </refsect1>
 
+<refsect1><title>OPTIONS</title>
+<variablelist remap='TP'>
+  <varlistentry>
+  <term><option>-k</option></term>
+  <listitem>
+   <para>Kill all Amanda processes.</para>
+  </listitem>
+  </varlistentry>
+</variablelist>
+</refsect1>
+
 <refsect1><title>EXAMPLES</title>
 <para>This example runs the &A; cleanup process by hand after
 a failure.</para>

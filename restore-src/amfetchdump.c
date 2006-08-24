@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.15 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amfetchdump.c,v 1.16 2006/08/24 01:57:15 paddy_s Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -277,7 +277,7 @@ main(
     int    new_argc,   my_argc;
     char **new_argv, **my_argv;
 
-    for(fd = 3; fd < FD_SETSIZE; fd++) {
+    for(fd = 3; fd < (int)FD_SETSIZE; fd++) {
 	/*
 	 * Make sure nobody spoofs us with a lot of extra open files
 	 * that would cause an open we do to get a very high file
