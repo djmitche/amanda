@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.35 2006/07/25 18:27:57 martinea Exp $
+/* $Id: chunker.c,v 1.36 2006/08/24 11:23:32 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -444,7 +444,7 @@ startup_chunker(
 
     putresult(PORT, "%d\n", data_port);
 
-    infd = stream_accept(data_socket, CONNECT_TIMEOUT, 0, NETWORK_BLOCK_BYTES);
+    infd = stream_accept(data_socket, CONNECT_TIMEOUT, 0, STREAM_BUFSIZE);
     if(infd == -1) {
 	errstr = stralloc2("error accepting stream: ", strerror(errno));
 	return -1;

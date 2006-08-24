@@ -1,3 +1,7 @@
+2006-08-24  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/chunker.c: Use STREAM_BUFSIZE for stream_accept.
+	* server-src/taper.c: Use STREAM_BUFSIZE for stream_accept.
+
 2006-08-23  Kevin Till <ktill@zmanda.com>
 	*  server-src/driver.c: fix typo
 

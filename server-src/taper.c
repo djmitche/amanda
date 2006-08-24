@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.143 2006/07/25 18:27:58 martinea Exp $
+/* $Id: taper.c,v 1.144 2006/08/24 11:23:32 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -898,7 +898,7 @@ file_reader_side(
 	    putresult(PORT, "%d\n", data_port);
 
 	    if ((fd = stream_accept(data_socket, CONNECT_TIMEOUT,
-				   0, NETWORK_BLOCK_BYTES)) == -1) {
+				   0, STREAM_BUFSIZE)) == -1) {
 		q = squote("[port connect timeout]");
 		putresult(TAPE_ERROR, "%s %s\n", handle, q);
 		aclose(data_socket);
