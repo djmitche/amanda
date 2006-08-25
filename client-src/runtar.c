@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: runtar.c,v 1.23 2006/08/24 01:57:15 paddy_s Exp $
+ * $Id: runtar.c,v 1.24 2006/08/25 11:41:31 martinea Exp $
  *
  * runs GNUTAR program as root
  *
@@ -65,6 +65,12 @@ main(
     }
 
     dbprintf(("%s: version %s\n", debug_prefix(NULL), version()));
+
+    if (strcmp(argv[3], "--create") != 0) {
+	error("%s: Can only be used to create tar archives\n",
+	      debug_prefix(NULL));
+	/*NOTREACHED*/
+    }
 
 #ifndef GNUTAR
 
