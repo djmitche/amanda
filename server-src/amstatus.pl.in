@@ -376,6 +376,7 @@ while(<AMDUMP>) {
 		}
 		$running_dumper{$2} = $hostpart;
 		$error{$hostpart}="";
+		$size{$hostpart} = 0;
 		$dumpers_active++;
 		if(! defined($dumpers_active[$dumpers_active])) {
 			$dumpers_active[$dumpers_active]=0;
@@ -433,6 +434,7 @@ while(<AMDUMP>) {
 		}
 		$running_dumper{$2} = $hostpart;
 		$error{$hostpart}="";
+		$size{$hostpart} = 0;
 		$dumpers_active++;
 		if(! defined($dumpers_active[$dumpers_active])) {
 			$dumpers_active[$dumpers_active]=0;
@@ -466,6 +468,7 @@ while(<AMDUMP>) {
 		}
 		$running_dumper{$2} = $hostpart;
 		$error{$hostpart}="";
+		$size{$hostpart} = 0;
 		$dumpers_active++;
 		if(! defined($dumpers_active[$dumpers_active])) {
 			$dumpers_active[$dumpers_active]=0;
@@ -521,7 +524,12 @@ while(<AMDUMP>) {
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}="";
 		$dumpers_active--;
-		$partial{$hostpart}=1 if $3 eq "PARTIAL" ;
+		if ($3 eq "PARTIAL") {
+			$partial{$hostpart} = 1;
+		}
+		else {
+			$partial{$hostpart} = 0;
+		}
 	}
 	elsif(/driver: result time (\S+) from (chunker\d+): (DONE|PARTIAL) (\d+-\d+) (\d+) "?\[.*\]"?/) {
 		$current_time=$1;
@@ -534,7 +542,12 @@ while(<AMDUMP>) {
 		$running_dumper{$2} = "0";
 		$dump_time{$hostpart}=$1;
 		$error{$hostpart}="";
-		$partial{$hostpart}=1 if $3 eq "PARTIAL" ;
+		if ($3 eq "PARTIAL") {
+			$partial{$hostpart} = 1;
+		}
+		else {
+			$partial{$hostpart} = 0;
+		}
 	}
 	elsif(/driver: result time (\S+) from (dumper\d+): ABORT-FINISHED (\d+-\d+)/) {
 		$current_time=$1;
@@ -653,7 +666,12 @@ while(<AMDUMP>) {
 		else {
 			$ntesize{$nb_tape} += $size{$hostpart};
 		}
-		$partial{$hostpart}=1 if $3 eq "PARTIAL" ;
+		if ($3 eq "PARTIAL") {
+			$partial{$hostpart} = 1;
+		}
+		else {
+			$partial{$hostpart} = 0;
+		}
 	}
 	elsif(/driver: result time (\S+) from taper: (TRY-AGAIN|TAPE-ERROR) (\d+-\d+) (.+)/) {
 		$current_time=$1;
@@ -793,7 +811,8 @@ foreach $host (sort @hosts) {
 			$hostpart=&make_hostpart($host,$partition,$datestamp);
 			next if(!defined $estimate{$hostpart} && !defined $flush{$hostpart});
 			$nb_partition++;
-			if( !defined $size{$hostpart} && defined $holding_file{$hostpart}) {
+			if( (!defined $size{$hostpart} || $size{$hostpart} == 0) &&
+				 defined $holding_file{$hostpart}) {
 				$size{$hostpart} = &dump_size($holding_file{$hostpart}) / (1024 * $unitdivisor);
 			}
 			$in_flush=0;
@@ -962,7 +981,8 @@ foreach $host (sort @hosts) {
 							if( defined $starttime ) {
 								print " (", &showtime($taper_time{$hostpart}), ")";
 							}
-							print ", PARTIAL" if defined $partial{$hostpart};
+							print ", PARTIAL" if defined $partial{$hostpart} &&
+													   $partial{$hostpart} == 1;
 							print "\n";
 						}
 						$tpartition++;
@@ -1049,7 +1069,8 @@ foreach $host (sort @hosts) {
 								print " (", &showtime($dump_time{$hostpart}), ")";
 							}
 							print ", wait for writing to tape";
-						   print ", PARTIAL" if defined $partial{$hostpart};
+						   print ", PARTIAL" if defined $partial{$hostpart} &&
+														$partial{$hostpart} == 1;;
 							print "\n";
 						}
 						$dpartition++;
@@ -1071,7 +1092,8 @@ foreach $host (sort @hosts) {
 						printf "%-${maxnamelength}s%2d", "$host:$partition", $level{$hostpart};
 						printf "%9d$unit", $size{$hostpart};
 						print " waiting to flush";
-						print ", PARTIAL" if defined $partial{$hostpart};
+						print ", PARTIAL" if defined $partial{$hostpart} &&
+												   $partial{$hostpart} == 1;
 						print "\n";
 					}
 					$wfpartition++;
