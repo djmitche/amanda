@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.188 2006/08/23 19:08:28 martinea Exp $
+/* $Id: dumper.c,v 1.189 2006/08/28 17:04:47 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -907,7 +907,7 @@ log_msgout(
     char *line;
 
     fflush(errf);
-    if (fseek(errf, 0L, SEEK_END) < 0) {
+    if (fseek(errf, 0L, SEEK_SET) < 0) {
 	dbprintf(("log_msgout: warning - seek failed: %s\n", strerror(errno)));
     }
     while ((line = agets(errf)) != NULL) {

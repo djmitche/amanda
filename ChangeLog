@@ -1,4 +1,7 @@
 2006-08-28  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/dumper.c (log_msgout): Seek to begining of file.
+
+2006-08-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/reporter.c: Report if a dump was successfully retried.
 
 2006-08-28  Jean-Louis Martineau <martineau@zmanda.com>
