@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.131 2006/08/24 01:57:16 paddy_s Exp $
+ * $Id: reporter.c,v 1.132 2006/08/28 17:02:48 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -2162,7 +2162,6 @@ handle_success(
     skip_quoted_string(s, ch);
     s[-1] = '\0';
     diskname = unquote_string(qdiskname);
-    s[-1] = (char)ch;
 
     skip_whitespace(s, ch);
     if(ch == '\0') {
@@ -2274,6 +2273,12 @@ handle_success(
 	else
 	    origkb = 0.0;
     }
+
+    if (curprog == P_DUMPER &&
+	(sp->result == L_FAIL || sp->result == L_PARTIAL)) {
+	addtostrange(hostname, qdiskname, level, "was successfully retried");
+    }
+
     amfree(hostname);
     amfree(diskname);
     amfree(datestamp);

@@ -1,4 +1,7 @@
 2006-08-28  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/reporter.c: Report if a dump was successfully retried.
+
+2006-08-28  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amstatus.pl.in: Correct size for retried dump.
 
 2006-08-25  Jean-Louis Martineau <martineau@zmanda.com>
