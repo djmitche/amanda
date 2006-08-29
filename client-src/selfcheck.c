@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.94 2006/07/26 11:49:32 martinea Exp $
+ * $Id: selfcheck.c,v 1.95 2006/08/29 11:21:00 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -129,6 +129,7 @@ main(
 
     conffile = vstralloc(CONFIG_DIR, "/", "amanda-client.conf", NULL);
     if (read_clientconf(conffile) > 0) {
+	printf("ERROR [reading conffile: %s]\n", conffile);
 	error("error reading conffile: %s", conffile);
 	/*NOTREACHED*/
     }
@@ -169,6 +170,7 @@ main(
 		conffile = vstralloc(CONFIG_DIR, "/", g_options->config, "/",
 				     "amanda-client.conf", NULL);
 		if (read_clientconf(conffile) > 0) {
+		    printf("ERROR [reading conffile: %s]\n", conffile);
 		    error("error reading conffile: %s", conffile);
 		    /*NOTREACHED*/
 		}
@@ -622,6 +624,7 @@ check_disk(
 	    aclose(passwdfd);
 	    ferr = fdopen(checkerr, "r");
 	    if (!ferr) {
+		printf("ERROR [Can't fdopen: %s]\n", strerror(errno));
 		error("Can't fdopen: %s", strerror(errno));
 		/*NOTREACHED*/
 	    }
@@ -713,6 +716,7 @@ check_disk(
 	fflush(stdout);fflush(stdin);
 	switch (pid_wrapper = fork()) {
 	case -1:
+	    printf("ERROR [fork: %s]\n", strerror(errno));
 	    error("fork: %s", strerror(errno));
 	    /*NOTREACHED*/
 
