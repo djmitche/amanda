@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.189 2006/08/28 17:04:47 martinea Exp $
+/* $Id: dumper.c,v 1.190 2006/08/30 19:53:57 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -374,13 +374,13 @@ main(
 	    handle = newstralloc(handle, cmdargs.argv[a++]);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: port]");
 		/*NOTREACHED*/
 	    }
 	    taper_port = (in_port_t)atoi(cmdargs.argv[a++]);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: hostname]");
 		/*NOTREACHED*/
 	    }
 	    hostname = newstralloc(hostname, cmdargs.argv[a++]);
@@ -393,7 +393,7 @@ main(
 	    their_features = am_string_to_feature(cmdargs.argv[a++]);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: diskname]");
 		/*NOTREACHED*/
 	    }
 	    qdiskname = newstralloc(qdiskname, cmdargs.argv[a++]);
@@ -402,7 +402,7 @@ main(
 	    diskname = unquote_string(qdiskname);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: device]");
 		/*NOTREACHED*/
 	    }
 	    device = newstralloc(device, cmdargs.argv[a++]);
@@ -410,41 +410,41 @@ main(
 		amfree(device);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: level]");
 		/*NOTREACHED*/
 	    }
 	    level = atoi(cmdargs.argv[a++]);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: dumpdate]");
 		/*NOTREACHED*/
 	    }
 	    dumpdate = newstralloc(dumpdate, cmdargs.argv[a++]);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: program]");
 		/*NOTREACHED*/
 	    }
 	    progname = newstralloc(progname, cmdargs.argv[a++]);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: amandad_path]");
 		/*NOTREACHED*/
 	    }
 	    amandad_path = newstralloc(amandad_path, cmdargs.argv[a++]);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: client_username]");
 	    }
 	    client_username = newstralloc(client_username, cmdargs.argv[a++]);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: ssh_keys]");
 	    }
 	    ssh_keys = newstralloc(ssh_keys, cmdargs.argv[a++]);
 
 	    if(a >= cmdargs.argc) {
-		error("error [dumper PORT-DUMP: not enough args: handle]");
+		error("error [dumper PORT-DUMP: not enough args: options]");
 	    }
 	    options = newstralloc(options, cmdargs.argv[a++]);
 
