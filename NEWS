@@ -1,36 +1,45 @@
-Changes in release 2.5.1b2
+Changes in release 2.5.1
 
-* debug file are seperated in subdir client/server/amandad with the config name.
-* amandates client config option.
-* gnutar_list-dir client config option.
-* dumptype holdingdisk get new value: NEVER, AUTO, REQUIRED
-* amgetconf doesn't write the BUGGY message.
-* all client program use the client configuration file amanda-client.conf
+   * Defects found by Coverity scan and Klocwork K7 analysis tools fixed.
+   * Works with GNU tar 1.15.91 - work with new gtar state file format.
+   * Open SSL encryption support
+   * Two new authentication methods: bsdtcp, bsdudp.
+   * Unlimited number of DLEs on a client with bsdtcp, rsh and ssh
+     authentication methods.
+   * Recovery process amrecover uses Secure API. amoldrecover command
+     (same syntax and functionality as amrecover command) is provided for
+     compatibility with old Amanda releases. amoldrecover command uses old
+     amidxtaped/amindexd protocol.
+   * Amanda debug files are separated into client/server/amandad and
+     are also classified based on Amanda configuration name.
 
-Changes in release 2.5.1b1
+   * Amanda command changes
+         o amfetchdump -o is replaced by -O.
+         o amcheck -w option does all tests including the tape writable test.
+           Use amcheck -t -w to do only the tape writable test.
+         o -o command option to override Amanda configuration. See amanda man
+           page for details.
+         o amgetconf command doesn't write the BUGGY message when a entry
+           is not found in the configuration file.
 
-* Klocwork defects fixed.
-* Coverity defect fixed.
-* work with tar-1.15.91
-* Open SSL encryption support
-* amfetchdump -o is replaced by -O.
-* amrecover_do_fsf default to yes
-* amrecover_check_label default to yes
-* amcheck -w will do all test including the tape writable test.
-  use amcheck -t -w if you want only the tape writable test.
-* usetimestamps
-* bsdudp/bsdtcp, 2 new auth.
-* Unlimited number of DLE on a client with bsdtcp/rsh or ssh auth.
-* docs/howto-auth.txt
-* amandad_path, client_username and ssh_keys (for ssh/rsh)
-* client config file (see man amanda-client.conf)
-  Only use by amrecover.
-* amrecover use the security-api
-* amoldrecover which use the old amindexd/amidxtaped protocol
-* -o option to overwrite config option
-  (see in man amanda, the CONFIGURATION OVERWRITE section)
-* new format of .amandahosts
-* new format of xinetd.d/amanda
+   * Amanda configuration file changes
+         o amanda.conf changes
+               + amrecover_do_fsf in amanda.conf defaults to yes
+               + amrecover_check_label in amanda.conf defaults to yes
+               + usetimestamps in amanda.conf to support multiple
+                 backup runs in a calendar day.
+               + holdingdisk in amanda.conf supports new values:
+                 NEVER, AUTO, REQUIRED.
+               + amandad_path, client_username and ssh_keys in
+                 amanda.conf for ssh/rsh authentication.
+         o New amanda client configuration file - amanda-client.conf.
+           Different client configuration file can be used for each Amanda
+           configuration.
+               + gnutar_list-dir and amandates can be specified in
+                 Amanda client configuration file - amanda-client.conf
+         o .amandahosts format changes to allow use of secure API for recovery.
+         o Amanda service entries in xinetd configuration has changed. 
+
 
 Changes in release 2.5.0p2
 
