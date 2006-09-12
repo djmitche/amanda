@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42 2006/08/24 01:57:15 paddy_s Exp $
+ * $Id: util.c,v 1.42.2.1 2006/09/12 10:40:38 martinea Exp $
  */
 
 #include "amanda.h"
@@ -56,7 +56,7 @@ static int make_socket(void);
 static int connect_port(struct sockaddr_in *addrp, in_port_t port, char *proto,
 			struct sockaddr_in *svaddr, int nonblock);
 
-char conftoken_getc(void);
+int conftoken_getc(void);
 int conftoken_ungetc(int c);
 
 /*
@@ -1285,7 +1285,7 @@ unget_conftoken(void)
     return;
 }
 
-char
+int
 conftoken_getc(void)
 {
     if(conf_line == NULL)
