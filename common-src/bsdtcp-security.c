@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: bsdtcp-security.c,v 1.7 2006/07/13 03:22:20 paddy_s Exp $
+ * $Id: bsdtcp-security.c,v 1.7.2.1 2006/09/12 14:30:47 martinea Exp $
  *
  * bsdtcp-security.c - security and transport over bsdtcp or a bsdtcp-like command.
  *
@@ -227,7 +227,7 @@ runbsdtcp(
     uid_t		euid;
     struct tcp_conn *	rc = rh->rc;
 
-    if ((sp = getservbyname("amanda", "tcp")) == NULL) {
+    if ((sp = getservbyname(AMANDA_SERVICE_NAME, "tcp")) == NULL) {
 	error("%s/tcp unknown protocol", "amanda");
     }
 
