@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42.2.1 2006/09/12 10:40:38 martinea Exp $
+ * $Id: util.c,v 1.42.2.2 2006/09/18 12:06:49 martinea Exp $
  */
 
 #include "amanda.h"
@@ -2505,8 +2505,9 @@ void
 dump_sockaddr(
 	struct sockaddr_in *	sa)
 {
-	dbprintf(("%s: (sockaddr_in *)%p = { %d, %hd, %s }\n",
-		debug_prefix(NULL), sa, sa->sin_family, sa->sin_port,
+	dbprintf(("%s: (sockaddr_in *)%p = { %d, %d, %s }\n",
+		debug_prefix_time(NULL), sa, sa->sin_family,
+		(int)ntohs(sa->sin_port),
 		inet_ntoa(sa->sin_addr)));
 }
 
