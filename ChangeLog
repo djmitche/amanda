@@ -1,4 +1,7 @@
 2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/dgram.c (dgram_bind): Remove unused variables.
+
+2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/dgram.c (dgram_bind): Don't set SO_REUSEADDR on socket.
 
 2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
