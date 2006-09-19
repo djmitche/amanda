@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.32.2.1 2006/09/18 12:06:49 martinea Exp $
+ * $Id: dgram.c,v 1.32.2.2 2006/09/19 10:39:52 martinea Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -83,16 +83,6 @@ dgram_bind(
     memset(&name, 0, SIZEOF(name));
     name.sin_family = (sa_family_t)AF_INET;
     name.sin_addr.s_addr = INADDR_ANY;
-
-#ifdef USE_REUSEADDR
-    r = setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
-	(void *)&on, (socklen_t)sizeof(on));
-    if (r < 0) {
-	dbprintf(("%s: dgram_bind: setsockopt(SO_REUSEADDR) failed: %s\n",
-		  debug_prefix(NULL),
-		  strerror(errno)));
-    }
-#endif
 
     /*
      * If a port range was specified, we try to get a port in that
