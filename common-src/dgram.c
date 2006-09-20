@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: dgram.c,v 1.32.2.2 2006/09/19 10:39:52 martinea Exp $
+ * $Id: dgram.c,v 1.32.2.3 2006/09/20 12:48:54 martinea Exp $
  *
  * library routines to marshall/send, recv/unmarshall UDP packets
  */
@@ -57,10 +57,6 @@ dgram_bind(
     socklen_t len;
     struct sockaddr_in name;
     int save_errno;
-#if defined(USE_REUSEADDR)
-    const int on = 1;
-    int r;
-#endif
 
     *portp = (in_port_t)0;
     if((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
