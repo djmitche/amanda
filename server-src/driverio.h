@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.h,v 1.35 2006/05/25 01:47:19 johnfranks Exp $
+ * $Id: driverio.h,v 1.37 2006/11/07 12:39:51 martinea Exp $
  *
  * driver-related helper functions
  */
@@ -34,10 +34,9 @@
 
 #include "event.h"
 
+#include "amanda.h"
 #include "holding.h"
 #include "server_util.h"
-
-#define MAX_DUMPERS 63
 
 #ifndef GLOBAL
 #define GLOBAL extern

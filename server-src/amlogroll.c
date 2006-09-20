@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amlogroll.c,v 1.14 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amlogroll.c,v 1.16 2006/11/07 12:39:50 martinea Exp $
  *
  * rename a live log file to the datestamped name.
  */
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 	/*NOTREACHED*/
     }
 
-    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    parse_conf(argc, argv, &new_argc, &new_argv);
     my_argc = new_argc;
     my_argv = new_argv;
 

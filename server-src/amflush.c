@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.95 2006/07/25 21:41:24 martinea Exp $
+ * $Id: amflush.c,v 1.96 2006/09/20 13:59:45 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -110,7 +110,7 @@ main(
 
     /* process arguments */
 
-    parse_server_conf(main_argc, main_argv, &new_argc, &new_argv);
+    parse_conf(main_argc, main_argv, &new_argc, &new_argv);
     my_argc = new_argc;
     my_argv = new_argv;
 

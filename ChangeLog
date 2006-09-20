@@ -1,3 +1,111 @@
+2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/find.c (search_logfile): Count 'PARTIAL taper line'.
+
+2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
+	Patch by Paul Bijens
+	* server-src/amcheck.c: Print "tapelist" instead of "tapefile".
+
+2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/dgram.c (dgram_bind): Remove unused variables.
+
+2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/conffile.c, common-src/conffile.h: Add debug_amandad,
+	  debug_amidxtaped, debug_amindexd, debug_amrecover, debug_auth,
+	  debug_event, debug_holding, debug_protocol, debug_planner,
+	  debug_driver, debug_dumper, debug_chunker, debug_taper,
+	  debug_selfcheck, debug_sendsize, debug_sendbackup
+	  configurations options.
+	* common-sc/debug.c: Use it's own clock function.
+	* amandad-src/amandad.c, amandad-src/amandad_util.c,
+	  client-src/calcsize.c, client-src/client_util.c,
+	  client-src/killpgrp.c, client-src/rundump.c,
+	  client-src/runtar.c, client-src/selfcheck.c,
+	  client-src/sendbackup.c, client-src/sendsize.c,
+	  common-src/bsd-security.c, common-src/bsdtcp-security.c,
+	  common-src/bsdudp-security.c, common-src/debug.c,
+	  common-src/dgram.c, common-src/event.c,
+	  common-src/krb5-security.c, common-src/pipespawn.c,
+	  common-src/protocol.c, common-src/rsh-security.c,
+	  common-src/security.c, common-src/security-util.c,
+	  common-src/security-util.h, common-src/ssh-security.c,
+	  common-src/stream.c, common-src/util.c,
+	  recover-src/amrecover.c, restore-src/amidxtaped.c,
+	  server-src/amindexd.c, server-src/chunker.c,
+	  server-src/driver.c, server-src/dumper.c,
+	  server-src/planner.c,
+	  server-src/taper.c: Use the debug_* configuration options.
+			      Use debug_prefix_time to print the time on
+			      all debugging message.
+
+2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c: Use CNF_REP_TRIES.
+	* common-src/conffile.c: New CONNECT_TRIES, REQ_TRIES, REP_TRIES
+	                         configuration options.
+	* common-src/conffile.h: New CONNECT_TRIES, REQ_TRIES, REP_TRIES
+	                         configuration options.
+	* common-src/protocol.c: Use CNF_CONNECT_TRIES and CNF_REQ_TRIES.
+	* common-src/protocol.c: Rename reqtries to resettries.
+	                         Rename acktries to reqtries.
+	* man/xml-source/amanda-client.conf.5.xml: Document new options.
+	* man/xml-source/amanda.conf.5.xml: Document new options.
+
+2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c: Read client configuratrion file.
+	* client-src/client_util.c, client-src/selfcheck.c,
+	  client-src/sendbackup.c, client-src/sendbackup-dump.c,
+	  client-src/sendbackup-gnutar.c, client-src/sendsize.c,
+	  recover-src/amrecover.c, recover-src/extract_list.c,
+	  restore-src/amfetchdump.c, server-src/amadmin.c,
+	  server-src/amcheck.c, server-src/amflush.c,
+	  server-src/amflush.c, server-src/amlabel.c,
+	  server-src/amlogroll.c, server-src/amtrmidx.c,
+	  server-src/amtrmlog.c, server-src/chunker.c,
+	  server-src/diskfile.c, server-src/driver.c,
+	  server-src/dumper.c, server-src/getconf.c,
+	  server-src/planner.c, server-src/reporter.c,
+	  server-src/taper.c: Use generic macro/functions instead of
+	                      client/server functions.
+	* client-src/client_util.h: Remove unuse macro.
+	* client-src/Makefile.am: Remove clientconf.? files.
+	* common-src/amanda.h: Define MAX_DUMPERS.
+	* common-src/conffile.c: New file, merge of client-src/clientconf.c
+	                                        and server-src/conffile.c
+	* common-src/conffile.h: New file, merge of client-src/clientconf.c
+	                                        and server-src/conffile.c
+	* common-src/Makefile.am (libamanda_la_SOURCES): Add conffile.c
+	* common-src/Makefile.am (noinst_HEADERS): Add conffile.h
+	* common-src/util.c: Move many thing to common-src/conffile.c.
+	* common-src/util.h: Move many thing to common-src/conffile.h.
+	* server-src/driverio.h: Remove MAX_DUMPERS define.
+	* server-src/Makefile.am: Remove conffile.[hc].
+
+2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/dgram.c (dgram_bind): Don't set SO_REUSEADDR on socket.
+
+2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c (connect_port): Make EHOSTUNREACH and ENETUNREACH
+					    fatal error.
+
+2006-09-18  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c(dump_sockaddr): Convert from network to machine
+	                                    bytes order before printing.
+	* common-src/dgram.c (dgram_recv): Print the fromaddr.
+
+2006-09-15  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c: Correct order of close/dup.
+
+2006-09-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/bsdtcp-security.c: Use AMANDA_SERVICE_NAME.
+
+2006-09-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amstatus.pl.in: Check that $dumpers_active is defined.
+
+2006-09-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c (conftoken_getc): Return an int.
+
+2006-09-11  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/sendbackup-dump.c: Works if rundump is not used.
+
 2006-09-05  Jean-Louis Martineau <martineau@zmanda.com>
 	* Amanda 2.5.1 released.
 	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.1).

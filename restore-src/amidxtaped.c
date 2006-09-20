@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.73 2006/07/25 19:06:46 martinea Exp $
+/* $Id: amidxtaped.c,v 1.74 2006/09/20 13:59:45 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -44,6 +44,12 @@
 #include "amfeatures.h"
 #include "stream.h"
 #include "amandad.h"
+
+#define amidxtaped_debug(i,x) do {	\
+	if ((i) <= debug_amidxtaped) {	\
+	    dbprintf(x);		\
+	}				\
+} while (0)
 
 #define TIMEOUT 30
 
@@ -187,7 +193,7 @@ check_security_buffer(
     char *errstr = NULL;
 
     dbprintf(("%s: check_security_buffer(buffer='%s')\n",
-		debug_prefix(NULL), buffer));
+		debug_prefix_time(NULL), buffer));
 
     i = SIZEOF(addr);
     if (getpeername(0, (struct sockaddr *)&addr, &i) == -1) {

@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.124 2006/07/26 15:17:37 martinea Exp $
+ * $Id: amadmin.c,v 1.125 2006/09/20 13:59:45 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -156,7 +156,7 @@ main(
 
     erroutput_type = ERR_INTERACTIVE;
 
-    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    parse_conf(argc, argv, &new_argc, &new_argv);
 
     if(new_argc < 3) usage();
 
@@ -1855,10 +1855,10 @@ disklist_one(
     case COMP_BEST:
 	printf("CLIENT BEST\n");
 	break;
-    case COMP_SERV_FAST:
+    case COMP_SERVER_FAST:
 	printf("SERVER FAST\n");
 	break;
-    case COMP_SERV_BEST:
+    case COMP_SERVER_BEST:
 	printf("SERVER BEST\n");
 	break;
     }

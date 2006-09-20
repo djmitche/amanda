@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.106 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amindexd.c,v 1.107 2006/09/20 13:59:45 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -57,6 +57,12 @@
 #include "amandad.h"
 
 #include <grp.h>
+
+#define amindexd_debug(i,x) do {	\
+	if ((i) <= debug_amindexd) {	\
+	    dbprintf(x);		\
+	}				\
+} while (0)
 
 typedef struct REMOVE_ITEM
 {

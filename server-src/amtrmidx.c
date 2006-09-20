@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtrmidx.c,v 1.42 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amtrmidx.c,v 1.44 2006/11/07 12:39:50 martinea Exp $
  *
  * trims number of index files to only those still in system.  Well
  * actually, it keeps a few extra, plus goes back to the last level 0
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
     dbopen(DBG_SUBDIR_SERVER);
     dbprintf(("%s: version %s\n", argv[0], version()));
 
-    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    parse_conf(argc, argv, &new_argc, &new_argv);
     my_argc = new_argc;
     my_argv = new_argv;
 

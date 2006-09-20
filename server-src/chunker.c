@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: chunker.c,v 1.36 2006/08/24 11:23:32 martinea Exp $
+/* $Id: chunker.c,v 1.38 2006/11/07 12:39:50 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -44,6 +44,12 @@
 #include "server_util.h"
 #include "util.h"
 #include "holding.h"
+
+#define chunker_debug(i,x) do {		\
+	if ((i) <= debug_chunker) {	\
+	    dbprintf(x);		\
+	}				\
+} while (0)
 
 #ifndef SEEK_SET
 #define SEEK_SET 0
@@ -137,7 +143,7 @@ main(
     erroutput_type = (ERR_AMANDALOG|ERR_INTERACTIVE);
     set_logerror(logerror);
 
-    parse_server_conf(main_argc, main_argv, &new_argc, &new_argv);
+    parse_conf(main_argc, main_argv, &new_argc, &new_argv);
     my_argc = new_argc;
     my_argv = new_argv;
 

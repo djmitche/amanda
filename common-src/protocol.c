@@ -24,17 +24,22 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.45 2006/05/25 17:07:31 martinea Exp $
+ * $Id: protocol.c,v 1.47 2006/11/07 12:39:48 martinea Exp $
  *
  * implements amanda protocol
  */
 #include "amanda.h"
+#include "conffile.h"
 #include "event.h"
 #include "packet.h"
 #include "security.h"
 #include "protocol.h"
 
-/*#define	PROTO_DEBUG*/
+#define proto_debug(i,x) do {				\
+	if ((i) <= debug_protocol) {	\
+	    dbprintf(x);				\
+	}						\
+} while (0)
 
 /*
  * Valid actions that can be passed to the state machine
@@ -73,19 +78,17 @@ typedef struct proto {
     time_t origtime;			/* orig start time of this request */
     time_t curtime;			/* time when this attempt started */
     int connecttries;			/* times we'll retry a connect */
-    int reqtries;			/* times we'll resend a REQ */
-    int acktries;			/* times we'll wait for an a ACK */
+    int resettries;			/* times we'll resend a REQ */
+    int reqtries;			/* times we'll wait for an a ACK */
     pkt_t req;				/* the actual wire request */
     protocol_sendreq_callback continuation; /* call when req dies/finishes */
     void *datap;			/* opaque cookie passed to above */
     char *(*conf_fn)(char *, void *);	/* configuration function */
 } proto_t;
 
-#define	CONNECT_TRIES	3	/* num retries after connect errors */
 #define	CONNECT_WAIT	5	/* secs between connect attempts */
 #define ACK_WAIT	10	/* time (secs) to wait for ACK - keep short */
-#define ACK_TRIES	3	/* num retries after ACK_WAIT timeout */
-#define REQ_TRIES	2	/* num restarts (reboot/crash) */
+#define RESET_TRIES	2	/* num restarts (reboot/crash) */
 #define CURTIME	(time(0) - proto_init_time) /* time relative to start */
 
 /* if no reply in an hour, just forget it */
@@ -101,10 +104,8 @@ static time_t proto_init_time;
 
 /* local functions */
 
-#ifdef PROTO_DEBUG
 static const char *action2str(p_action_t);
 static const char *pstate2str(pstate_t);
-#endif
 
 static void connect_callback(void *, security_handle_t *, security_status_t);
 static void connect_wait_callback(void *);
@@ -154,9 +155,9 @@ protocol_sendreq(
     p->repwait = repwait;
     p->origtime = CURTIME;
     /* p->curtime set in the sendreq state */
-    p->connecttries = CONNECT_TRIES;
-    p->reqtries = REQ_TRIES;
-    p->acktries = ACK_TRIES;
+    p->connecttries = getconf_int(CNF_CONNECT_TRIES);
+    p->resettries = RESET_TRIES;
+    p->reqtries = getconf_int(CNF_REQ_TRIES);
     p->conf_fn = conf_fn;
     pkt_init(&p->req, P_REQ, req);
 
@@ -169,10 +170,8 @@ protocol_sendreq(
     p->continuation = continuation;
     p->datap = datap;
 
-#ifdef PROTO_DEBUG
-    dbprintf(("%s: security_connect: host %s -> p %p\n", 
-	      debug_prefix_time(": protocol"), hostname, p));
-#endif
+    proto_debug(1, ("%s: security_connect: host %s -> p %p\n", 
+		    debug_prefix_time(": protocol"), hostname, p));
 
     security_connect(p->security_driver, p->hostname, conf_fn, connect_callback,
 			 p, p->datap);
@@ -197,10 +196,8 @@ connect_callback(
     assert(p != NULL);
     p->security_handle = security_handle;
 
-#ifdef PROTO_DEBUG
-    dbprintf(("%s: connect_callback: p %p\n",
-	      debug_prefix_time(": protocol"), p));
-#endif
+    proto_debug(1, ("%s: connect_callback: p %p\n",
+		    debug_prefix_time(": protocol"), p));
 
     switch (status) {
     case S_OK:
@@ -220,10 +217,8 @@ connect_callback(
 	if (--p->connecttries == 0) {
 	    state_machine(p, PA_ABORT, NULL);
 	} else {
-#ifdef PROTO_DEBUG
-    dbprintf(("%s: connect_callback: p %p: retrying %s\n",
-	      debug_prefix_time(": protocol"), p, p->hostname));
-#endif
+	    proto_debug(1, ("%s: connect_callback: p %p: retrying %s\n",
+			    debug_prefix_time(": protocol"), p, p->hostname));
 	    security_close(p->security_handle);
 	    /* XXX overload p->security handle to hold the event handle */
 	    p->security_handle =
@@ -306,30 +301,26 @@ state_machine(
     pstate_t curstate;
     p_action_t retaction;
 
-#ifdef PROTO_DEBUG
-	dbprintf(("%s: state_machine: initial: p %p action %s pkt %p\n",
-		debug_prefix_time(": protocol"),
-		p, action2str(action), NULL));
-#endif
+    proto_debug(1, ("%s: state_machine: initial: p %p action %s pkt %p\n",
+		    debug_prefix_time(": protocol"),
+		    p, action2str(action), NULL));
 
     assert(p != NULL);
     assert(action == PA_RCVDATA || pkt == NULL);
     assert(p->state != NULL);
 
     for (;;) {
-#ifdef PROTO_DEBUG
-	dbprintf(("%s: state_machine: p %p state %s action %s\n",
-		  debug_prefix_time(": protocol"),
-		  p, pstate2str(p->state), action2str(action)));
+	proto_debug(1, ("%s: state_machine: p %p state %s action %s\n",
+			debug_prefix_time(": protocol"),
+			p, pstate2str(p->state), action2str(action)));
 	if (pkt != NULL) {
-	    dbprintf(("%s: pkt: %s (t %d) orig REQ (t %d cur %d)\n",
-		      debug_prefix(": protocol"),
-		      pkt_type2str(pkt->type), (int)CURTIME,
-		      (int)p->origtime, (int)p->curtime));
-	    dbprintf(("%s: pkt contents:\n-----\n%s-----\n",
-		      debug_prefix(": protocol"), pkt->body));
+	    proto_debug(1, ("%s: pkt: %s (t %d) orig REQ (t %d cur %d)\n",
+			    debug_prefix_time(": protocol"),
+			    pkt_type2str(pkt->type), (int)CURTIME,
+			    (int)p->origtime, (int)p->curtime));
+	    proto_debug(1, ("%s: pkt contents:\n-----\n%s-----\n",
+			    debug_prefix_time(": protocol"), pkt->body));
 	}
-#endif
 
 	/*
 	 * p->state is a function pointer to the current state a request
@@ -354,11 +345,9 @@ state_machine(
 	     */
 	    retaction = (*curstate)(p, action, pkt);
 
-#ifdef PROTO_DEBUG
-	dbprintf(("%s: state_machine: p %p state %s returned %s\n",
-		  debug_prefix_time(": protocol"),
-		  p, pstate2str(p->state), action2str(retaction)));
-#endif
+	proto_debug(1, ("%s: state_machine: p %p state %s returned %s\n",
+			debug_prefix_time(": protocol"),
+			p, pstate2str(p->state), action2str(retaction)));
 
 	/*
 	 * The state function is expected to return one of the following
@@ -376,11 +365,9 @@ state_machine(
 	    /* FALLTHROUGH */
 
 	case PA_PENDING:
-#ifdef PROTO_DEBUG
-	    dbprintf(("%s: state_machine: p %p state %s: timeout %d\n",
-		      debug_prefix_time(": protocol"),
-		      p, pstate2str(p->state), (int)p->timeout));
-#endif
+	    proto_debug(1, ("%s: state_machine: p %p state %s: timeout %d\n",
+			    debug_prefix_time(": protocol"),
+			    p, pstate2str(p->state), (int)p->timeout));
 	    /*
 	     * Get the security layer to register a receive event for this
 	     * security handle on our behalf.  Have it timeout in p->timeout
@@ -396,12 +383,10 @@ state_machine(
 	 */
 	case PA_CONTINUE:
 	    assert(p->state != curstate);
-#ifdef PROTO_DEBUG
-	    dbprintf(("%s: state_machine: p %p: moved from %s to %s\n",
-		      debug_prefix_time(": protocol"),
-		      p, pstate2str(curstate),
-		      pstate2str(p->state)));
-#endif
+	    proto_debug(1, ("%s: state_machine: p %p: moved from %s to %s\n",
+			    debug_prefix_time(": protocol"),
+			    p, pstate2str(curstate),
+			    pstate2str(p->state)));
 	    continue;
 
 	/*
@@ -506,7 +491,7 @@ s_ackwait(
     if (action == PA_TIMEOUT) {
 	assert(pkt == NULL);
 
-	if (--p->acktries == 0) {
+	if (--p->reqtries == 0) {
 	    security_seterror(p->security_handle, "timeout waiting for ACK");
 	    return (PA_ABORT);
 	}
@@ -582,7 +567,7 @@ s_repwait(
 	 * If we've blown our timeout limit, free up this packet and
 	 * return.
 	 */
-	if (p->reqtries == 0 || DROP_DEAD_TIME(p->origtime)) {
+	if (p->resettries == 0 || DROP_DEAD_TIME(p->origtime)) {
 	    security_seterror(p->security_handle, "timeout waiting for REP");
 	    return (PA_ABORT);
 	}
@@ -590,9 +575,9 @@ s_repwait(
 	/*
 	 * We still have some tries left.  Resend the request.
 	 */
-	p->reqtries--;
+	p->resettries--;
 	p->state = s_sendreq;
-	p->acktries = ACK_TRIES;
+	p->reqtries = getconf_int(CNF_REQ_TRIES);
 	return (PA_CONTINUE);
     }
 
@@ -661,7 +646,6 @@ recvpkt_callback(
  * Misc functions
  */
 
-#ifdef PROTO_DEBUG
 /*
  * Convert a pstate_t into a printable form.
  */
@@ -717,4 +701,3 @@ action2str(
 	    return (actions[i].name);
     return ("BOGUS ACTION");
 }
-#endif	/* PROTO_DEBUG */

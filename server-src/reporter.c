@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.132 2006/08/28 17:02:48 martinea Exp $
+ * $Id: reporter.c,v 1.133 2006/09/20 13:59:47 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -353,7 +353,7 @@ main(
 	/*NOTREACHED*/
     }
 
-    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    parse_conf(argc, argv, &new_argc, &new_argv);
     my_argc = new_argc;
     my_argv = new_argv;
 

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.131 2006/07/25 18:27:56 martinea Exp $
+ * $Id: amanda.h,v 1.132 2006/09/20 13:59:43 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1455,5 +1455,7 @@ void	add_history(const char *line);
 #define DBG_SUBDIR_SERVER  "server"
 #define DBG_SUBDIR_CLIENT  "client"
 #define DBG_SUBDIR_AMANDAD "amandad"
+
+#define MAX_DUMPERS 63
 
 #endif	/* !AMANDA_H */

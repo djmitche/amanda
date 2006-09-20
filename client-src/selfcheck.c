@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.95 2006/08/29 11:21:00 martinea Exp $
+ * $Id: selfcheck.c,v 1.97 2006/11/07 12:39:47 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -40,12 +40,18 @@
 #include "pipespawn.h"
 #include "amfeatures.h"
 #include "client_util.h"
-#include "clientconf.h"
+#include "conffile.h"
 #include "amandad.h"
 
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
 #endif
+
+#define selfcheck_debug(i,x) do {	\
+	if ((i) <= debug_selfcheck) {	\
+	    dbprintf(x);		\
+	}				\
+} while (0)
 
 int need_samba=0;
 int need_rundump=0;
@@ -481,8 +487,8 @@ check_options(
 	    need_restore=1;
 #endif
     }
-    if ((options->compress == COMPR_BEST) || (options->compress == COMPR_FAST) 
-		|| (options->compress == COMPR_CUST)) {
+    if ((options->compress == COMP_BEST) || (options->compress == COMP_FAST) 
+		|| (options->compress == COMP_CUST)) {
 	need_compress_path=1;
     }
     if(options->auth && amandad_auth) {
@@ -898,7 +904,7 @@ check_overall(void)
 	printf("ERROR [GNUTAR program not available]\n");
 #endif
 	need_amandates = 1;
-	gnutar_list_dir = client_getconf_str(CLN_GNUTAR_LIST_DIR);
+	gnutar_list_dir = getconf_str(CNF_GNUTAR_LIST_DIR);
 	if (strlen(gnutar_list_dir) == 0)
 	    gnutar_list_dir = NULL;
 	if (gnutar_list_dir) 
@@ -907,7 +913,7 @@ check_overall(void)
 
     if (need_amandates) {
 	char *amandates_file;
-	amandates_file = client_getconf_str(CLN_AMANDATES);
+	amandates_file = getconf_str(CNF_AMANDATES);
 	check_file(amandates_file, R_OK|W_OK);
     }
     if( need_calcsize ) {

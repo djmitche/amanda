@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.206 2006/08/10 23:57:27 paddy_s Exp $
+ * $Id: planner.c,v 1.207 2006/09/20 13:59:47 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -43,6 +43,12 @@
 #include "amfeatures.h"
 #include "server_util.h"
 #include "holding.h"
+
+#define planner_debug(i,x) do {		\
+	if ((i) <= debug_planner) {	\
+	    dbprintf(x);		\
+	}				\
+} while (0)
 
 #define MAX_LEVELS		    3	/* max# of estimates per filesys */
 
@@ -178,7 +184,7 @@ int main(int argc, char **argv)
 
     setvbuf(stderr, (char *)NULL, (int)_IOLBF, 0);
 
-    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    parse_conf(argc, argv, &new_argc, &new_argv);
     my_argc = new_argc;
     my_argv = new_argv;
 

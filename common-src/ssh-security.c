@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: ssh-security.c,v 1.23 2006/08/21 20:17:10 martinea Exp $
+ * $Id: ssh-security.c,v 1.25 2006/11/07 12:39:48 martinea Exp $
  *
  * ssh-security.c - security and transport over ssh or a ssh-like command.
  *
@@ -44,21 +44,6 @@
 #include "version.h"
 
 #ifdef SSH_SECURITY
-
-/*#define	SSH_DEBUG*/
-
-#ifdef SSH_DEBUG
-int	ssh_debug = 1; 
-#else
-int	ssh_debug = 0; 
-#endif
-
-#define	sshprintf(x)				\
-	    do {				\
-		if (ssh_debug) {		\
-		    dbprintf(x);		\
-		}				\
-	    } while (0)
 
 /*
  * Path to the ssh binary.  This should be configurable.
@@ -140,8 +125,8 @@ ssh_connect(
 
     (void)conf_fn;	/* Quiet unused parameter warning */
 
-    sshprintf(("%s: ssh: ssh_connect: %s\n", debug_prefix_time(NULL),
-	       hostname));
+    auth_debug(1, ("%s: ssh: ssh_connect: %s\n", debug_prefix_time(NULL),
+		   hostname));
 
     rh = alloc(SIZEOF(*rh));
     security_handleinit(&rh->sech, &ssh_security_driver);

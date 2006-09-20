@@ -28,13 +28,21 @@
  */
 
 /*
- * $Id: security-util.h,v 1.5 2006/07/01 00:10:38 paddy_s Exp $
+ * $Id: security-util.h,v 1.7 2006/11/07 12:39:48 martinea Exp $
  *
  */
 
 #include "stream.h"
 #include "dgram.h"
 #include "queue.h"
+#include "conffile.h"
+
+#define auth_debug(i,x) do {		\
+	if ((i) <= debug_auth) {	\
+	    dbprintf(x);		\
+	}				\
+} while (0)
+
 
 struct sec_handle;
 

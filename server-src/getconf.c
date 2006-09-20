@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.26 2006/07/25 19:00:56 martinea Exp $
+ * $Id: getconf.c,v 1.28 2006/11/07 12:39:51 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -432,7 +432,7 @@ main(
 
     malloc_size_1 = malloc_inuse(&malloc_hist_1);
 
-    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    parse_conf(argc, argv, &new_argc, &new_argv);
     my_argc = new_argc;
     my_argv = new_argv;
 

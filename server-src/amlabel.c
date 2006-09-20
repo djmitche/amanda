@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.53 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amlabel.c,v 1.54 2006/09/20 13:59:45 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -102,7 +102,7 @@ main(
 
     erroutput_type = ERR_INTERACTIVE;
 
-    parse_server_conf(argc, argv, &new_argc, &new_argv);
+    parse_conf(argc, argv, &new_argc, &new_argv);
 
     if(new_argc > 1 && strcmp(new_argv[1],"-f") == 0)
 	 force=1;

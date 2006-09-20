@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: rundump.c,v 1.33 2006/07/25 18:27:56 martinea Exp $
+ * $Id: rundump.c,v 1.35 2006/11/07 12:39:47 martinea Exp $
  *
  * runs DUMP program as root
  *
@@ -74,11 +74,11 @@ main(
 
     dbopen(DBG_SUBDIR_CLIENT);
     if (argc < 3) {
-	error("%s: Need at least 3 arguments\n", debug_prefix(NULL));
+	error("%s: Need at least 3 arguments\n", debug_prefix_time(NULL));
 	/*NOTREACHED*/
     }
 
-    dbprintf(("%s: version %s\n", debug_prefix(NULL), version()));
+    dbprintf(("%s: version %s\n", debug_prefix_time(NULL), version()));
 
 #ifdef ERRMSG							/* { */
 

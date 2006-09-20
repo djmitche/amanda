@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: bsdtcp-security.c,v 1.7 2006/07/13 03:22:20 paddy_s Exp $
+ * $Id: bsdtcp-security.c,v 1.8 2006/09/20 13:59:43 martinea Exp $
  *
  * bsdtcp-security.c - security and transport over bsdtcp or a bsdtcp-like command.
  *
@@ -44,15 +44,6 @@
 #include "version.h"
 
 #ifdef BSDTCP_SECURITY
-
-/*#define	BSDTCP_DEBUG*/
-
-#ifdef BSDTCP_DEBUG
-#define	bsdtcpprintf(x)	dbprintf(x)
-#else
-#define	bsdtcpprintf(x)
-#endif
-
 
 /*
  * Number of seconds bsdtcp has to start up
@@ -120,8 +111,8 @@ bsdtcp_connect(
     (void)conf_fn;	/* Quiet unused parameter warning */
     (void)datap;	/* Quiet unused parameter warning */
 
-    bsdtcpprintf(("%s: bsdtcp: bsdtcp_connect: %s\n", debug_prefix_time(NULL),
-	       hostname));
+    auth_debug(1, ("%s: bsdtcp: bsdtcp_connect: %s\n", debug_prefix_time(NULL),
+		   hostname));
 
     rh = alloc(sizeof(*rh));
     security_handleinit(&rh->sech, &bsdtcp_security_driver);
@@ -227,7 +218,7 @@ runbsdtcp(
     uid_t		euid;
     struct tcp_conn *	rc = rh->rc;
 
-    if ((sp = getservbyname("amanda", "tcp")) == NULL) {
+    if ((sp = getservbyname(AMANDA_SERVICE_NAME, "tcp")) == NULL) {
 	error("%s/tcp unknown protocol", "amanda");
     }
 

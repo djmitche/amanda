@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.98 2006/07/25 18:35:21 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.100 2006/11/07 12:39:47 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -36,7 +36,7 @@
 #include "util.h"
 #include "getfsent.h"			/* for amname_to_dirname lookup */
 #include "version.h"
-#include "clientconf.h"
+#include "conffile.h"
 
 #ifdef SAMBA_CLIENT
 #include "findpass.h"
@@ -182,10 +182,10 @@ start_backup(
        encpid = -1;
     } 
      /*  now do the client-side compression */
-    if(options->compress == COMPR_FAST || options->compress == COMPR_BEST) {
+    if(options->compress == COMP_FAST || options->compress == COMP_BEST) {
           compopt = skip_argument;
 #if defined(COMPRESS_BEST_OPT) && defined(COMPRESS_FAST_OPT)
-	if(options->compress == COMPR_BEST) {
+	if(options->compress == COMP_BEST) {
 	    compopt = COMPRESS_BEST_OPT;
 	} else {
 	    compopt = COMPRESS_FAST_OPT;
@@ -200,7 +200,7 @@ start_backup(
 	    dbprintf((" %s", compopt));
 	}
 	dbprintf(("\n"));
-     } else if (options->compress == COMPR_CUST) {
+     } else if (options->compress == COMP_CUST) {
         compopt = skip_argument;
 	comppid = pipespawn(options->clntcompprog, STDIN_PIPE,
 			    &dumpout, &compout, &mesgf,
@@ -216,7 +216,7 @@ start_backup(
 	comppid = -1;
     }
 
-    gnutar_list_dir = client_getconf_str(CLN_GNUTAR_LIST_DIR);
+    gnutar_list_dir = getconf_str(CNF_GNUTAR_LIST_DIR);
     if (strlen(gnutar_list_dir) == 0)
 	gnutar_list_dir = NULL;
 
@@ -329,7 +329,7 @@ start_backup(
 
     /* find previous dump time */
 
-    amandates_file = client_getconf_str(CLN_AMANDATES);
+    amandates_file = getconf_str(CNF_AMANDATES);
     if(!start_amandates(amandates_file, 0)) {
 	error("error [opening %s: %s]", amandates_file, strerror(errno));
 	/*NOTREACHED*/

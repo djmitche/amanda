@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.117 2006/08/24 01:57:15 paddy_s Exp $
+ * $Id: extract_list.c,v 1.119 2006/11/07 12:39:49 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -40,7 +40,7 @@
 #include "findpass.h"
 #endif
 #include "util.h"
-#include "clientconf.h"
+#include "conffile.h"
 #include "protocol.h"
 #include "event.h"
 #include "security.h"
@@ -2546,10 +2546,10 @@ amidxtaped_client_get_security_conf(
 	return(NULL);
 
     if(strcmp(string, "auth")==0) {
-	return(client_getconf_str(CLN_AUTH));
+	return(getconf_str(CNF_AUTH));
     }
     if(strcmp(string, "ssh_keys")==0) {
-	return(client_getconf_str(CLN_SSH_KEYS));
+	return(getconf_str(CNF_SSH_KEYS));
     }
     return(NULL);
 }
