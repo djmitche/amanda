@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.17 2006/07/26 15:17:36 martinea Exp $
+ * $Id: util.h,v 1.17.2.1 2006/09/21 11:12:21 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -208,7 +208,7 @@ typedef struct {        /* token table entry */
     tok_t token;
 } keytab_t;
 
-keytab_t *keytable;
+extern keytab_t *keytable;
 
 typedef struct {
     char *name;

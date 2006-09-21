@@ -1,3 +1,7 @@
+2006-09-21  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c: Declare keytable.
+	* common-src/util.h: Declare keytable as extern.
+
 2006-09-19  Jean-Louis Martineau <martineau@zmanda.com>
 	* contrib/sst: Removed
 	* Makefile.am (EXTRA_DIST): Remove sst files.

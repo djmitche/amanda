@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42.2.3 2006/09/19 10:37:12 martinea Exp $
+ * $Id: util.c,v 1.42.2.4 2006/09/21 11:12:21 martinea Exp $
  */
 
 #include "amanda.h"
@@ -37,6 +37,7 @@ int token_pushed;
 
 tok_t tok, pushed_tok;
 val_t tokenval;
+keytab_t *keytable;
 
 int conf_line_num, got_parserror;
 FILE *conf_conf = (FILE *)NULL;
