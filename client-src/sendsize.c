@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.171 2006/08/24 01:57:15 paddy_s Exp $
+ * $Id: sendsize.c,v 1.171.2.1 2006/09/22 11:51:32 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1339,8 +1339,8 @@ getsize_dump(
 		       "0",
 #endif
 		       "1048576", "-", device, (char *)0, safe_env());
-# endif
 	    }
+# endif
 #endif
 	{
 	    error("exec %s failed or no dump program available: %s",
