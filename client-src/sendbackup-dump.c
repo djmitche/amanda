@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.90 2006/07/25 18:10:07 martinea Exp $
+ * $Id: sendbackup-dump.c,v 1.90.2.1 2006/09/23 19:19:47 martinea Exp $
  *
  * send backup data using BSD dump
  */
@@ -136,6 +136,7 @@ start_backup(
     char *device = NULL;
     char *fstype = NULL;
     char *cmd = NULL;
+    char *cmdX = NULL;
     char *indexcmd = NULL;
     char level_str[NUM_STR_SIZE];
     char *compopt  = NULL;
@@ -213,12 +214,14 @@ start_backup(
 
 #if defined(USE_RUNDUMP) || !defined(DUMP)
     cmd = vstralloc(libexecdir, "/", "rundump", versionsuffix(), NULL);
+    cmdX = cmd;
     if (g_options->config)
 	config = g_options->config;
     else
 	config = "NOCONFIG";
 #else
     cmd = stralloc(DUMP);
+    cmdX = skip_argument;
     config = skip_argument;
 #endif
 
@@ -233,6 +236,7 @@ start_backup(
     {
         char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
 					    versionsuffix(), NULL);
+	cmdX = cmd;
 	if (g_options->config)
 	    config = g_options->config;
 	else
@@ -256,7 +260,7 @@ start_backup(
 	dumpkeys = stralloc(level_str);
 	dumppid = pipespawn(progname, STDIN_PIPE,
 			    &dumpin, &dumpout, &mesgf,
-			    config, /* JLM */
+			    cmdX, config,
 			    "xfsdump",
 			    options->no_record ? "-J" : skip_argument,
 			    "-F",
@@ -277,12 +281,14 @@ start_backup(
 #ifdef USE_RUNDUMP
         char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
 					    versionsuffix(), NULL);
+	cmdX = cmd;
 	if (g_options->config)
 	    config = g_options->config;
 	else
 	    config = "NOCONFIG";
 #else
 	char *progname = cmd = newvstralloc(cmd, VXDUMP, NULL);
+	cmdX = skip_argument;
 	config = skip_argument;
 #endif
 	program->backup_name  = VXDUMP;
@@ -306,7 +312,7 @@ start_backup(
 
 	dumppid = pipespawn(progname, STDIN_PIPE,
 			    &dumpin, &dumpout, &mesgf, 
-			    progname, config, /* JLM */
+			    cmdX, config,
 			    "vxdump",
 			    dumpkeys,
 			    "1048576",
@@ -326,6 +332,7 @@ start_backup(
     {
         char *progname = cmd = newvstralloc(cmd, libexecdir, "/", "rundump",
 					    versionsuffix(), NULL);
+	cmdX = cmd;
 	if (g_options->config)
 	    config = g_options->config;
 	else
@@ -352,7 +359,7 @@ start_backup(
 
 	dumppid = pipespawn(cmd, STDIN_PIPE,
 			    &dumpin, &dumpout, &mesgf, 
-			    cmd, config,
+			    cmdX, config,
 			    "vdump",
 			    dumpkeys,
 			    "60",
@@ -390,7 +397,7 @@ start_backup(
 
 	dumppid = pipespawn(cmd, STDIN_PIPE,
 			    &dumpin, &dumpout, &mesgf, 
-			    cmd, config,
+			    cmdX, config,
 			    "dump",
 			    dumpkeys,
 			    "1048576",
@@ -422,7 +429,7 @@ start_backup(
 
     dumppid = pipespawn(cmd, STDIN_PIPE,
 			&dumpin, &dumpout, &mesgf, 
-			cmd, config,
+			cmdX, config,
 			"backup",
 			dumpkeys,
 			"-",
