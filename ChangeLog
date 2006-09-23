@@ -1,3 +1,7 @@
+2006-09-23  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amstatus.pl.in: Fix parsing of 'taper: wrote label' line.
+	* server-src/amtoc.pl.in: Fix parsing of 'START taper' line.
+
 2006-09-22  Jean-Louis Martineau <martineau@zmanda.com>
 	Patch by William Jojo
 	* client-src/sendsize.c: Fix #endif for AIX.
