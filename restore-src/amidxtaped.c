@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.73 2006/07/25 19:06:46 martinea Exp $
+/* $Id: amidxtaped.c,v 1.73.2.1 2006/09/27 12:04:09 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -60,8 +60,9 @@ static am_feature_t *their_features = NULL;
 static g_option_t *g_options = NULL;
 static int ctlfdin, ctlfdout, datafdout;
 static char *amandad_auth = NULL;
+static FILE *cmdin, *cmdout;
 
-static char *get_client_line(void);
+static char *get_client_line(FILE *in);
 static void check_security_buffer(char *);
 static char *get_client_line_fd(int);
 
@@ -73,7 +74,7 @@ int main(int argc, char **argv);
 
 /* get a line from client - line terminated by \r\n */
 static char *
-get_client_line(void)
+get_client_line(FILE *in)
 {
     static char *line = NULL;
     char *part = NULL;
@@ -81,7 +82,7 @@ get_client_line(void)
 
     amfree(line);
     while(1) {
-	if((part = agets(stdin)) == NULL) {
+	if((part = agets(in)) == NULL) {
 	    if(errno != 0) {
 		dbprintf(("%s: read error: %s\n",
 			  debug_prefix_time(NULL), strerror(errno)));
@@ -239,7 +240,6 @@ main(
     char *their_feature_string = NULL;
     rst_flags_t *rst_flags;
     int use_changer = 0;
-    FILE *prompt_stream = NULL;
     int re_end;
     char *re_config = NULL;
     char *conf_tapetype;
@@ -353,7 +353,10 @@ main(
 
 	/* do the security thing */
 	amfree(buf);
-	buf = stralloc(get_client_line());
+	fflush(stdout);
+	cmdout = stdout;
+	cmdin  = stdin;
+	buf = stralloc(get_client_line(cmdin));
 	check_security_buffer(buf);
     }
     else {
@@ -390,10 +393,16 @@ main(
 	printf("CONNECT CTL %d DATA %d\n", DATA_FD_OFFSET, DATA_FD_OFFSET+1);
 	printf("\n");
 	fflush(stdout);
-	fflush(stdin);
-	if ((dup2(ctlfdout, fileno(stdout)) < 0)
-		 || (dup2(ctlfdin, fileno(stdin)) < 0)) {
-	    error("amandad: Failed to setup stdin or stdout");
+	fclose(stdin);
+	fclose(stdout);
+	cmdout = fdopen(ctlfdout, "a");
+	if (!cmdout) {
+	    error("amidxtaped: Can't fdopen(ctlfdout): %s", strerror(errno));
+	    /*NOTREACHED*/
+	}
+	cmdin = fdopen(ctlfdin, "r");
+	if (!cmdin) {
+	    error("amidxtaped: Can't fdopen(ctlfdin): %s", strerror(errno));
 	    /*NOTREACHED*/
 	}
     }
@@ -408,7 +417,7 @@ main(
 
     for (re_end = 0; re_end == 0; ) {
 	amfree(buf);
-	buf = stralloc(get_client_line());
+	buf = stralloc(get_client_line(cmdin));
 	if(strncmp(buf, "LABEL=", 6) == 0) {
 	    tapes = unmarshal_tapelist_str(buf+6);
 	}
@@ -426,10 +435,10 @@ main(
 	    amfree(their_feature_string);
 	    our_feature_string = am_feature_to_string(our_features);
 	    if(from_amandad == 1) 
-		printf("FEATURES=%s\r\n", our_feature_string);
+		fprintf(cmdout,"FEATURES=%s\r\n", our_feature_string);
 	    else
-		printf("%s", our_feature_string);
-	    fflush(stdout);
+		fprintf(cmdout,"%s", our_feature_string);
+	    fflush(cmdout);
 	    amfree(our_feature_string);
 	}
 	else if(strncmp(buf, "DEVICE=", 7) == 0) {
@@ -532,7 +541,6 @@ main(
     if(am_has_feature(their_features, fe_recover_splits)) {
 	if(from_amandad == 1) {
 	    rst_flags->pipe_to_fd = datafdout;
-            prompt_stream = stdout;
 	}
 	else {
 	    int data_fd;
@@ -563,12 +571,11 @@ main(
 
 	    check_security_buffer(buf);
 	    rst_flags->pipe_to_fd = data_fd;
-	    prompt_stream = stdout;
 	}
     }
     else {
 	rst_flags->pipe_to_fd = fileno(stdout);
-        prompt_stream = stderr;
+        cmdout = stderr;
     }
     dbprintf(("%s: Sending output to file descriptor %d\n",
 	      get_pname(), rst_flags->pipe_to_fd));
@@ -579,7 +586,7 @@ main(
        (use_changer || (rst_flags->alt_tapedev &&
                         strcmp(rst_flags->alt_tapedev,
                                getconf_str(CNF_TAPEDEV)) == 0) ) ) {
-	send_message(prompt_stream, rst_flags, their_features,
+	send_message(cmdout, rst_flags, their_features,
 		     "%s exists: amdump or amflush is already running, "
 		     "or you must run amcleanup", 
 		     rst_conf_logfile);
@@ -592,13 +599,13 @@ main(
     if (check_rst_flags(rst_flags) == -1) {
 	if (rst_flags->pipe_to_fd != -1)
 	    aclose(rst_flags->pipe_to_fd);
-	send_message(prompt_stream, rst_flags, their_features,
+	send_message(cmdout, rst_flags, their_features,
 		     "restore flags are crazy");
 	exit(1);
     }
 
     /* actual restoration */
-    search_tapes(prompt_stream, use_changer, tapes, match_list, rst_flags,
+    search_tapes(cmdout, cmdin, use_changer, tapes, match_list, rst_flags,
 		 their_features);
     dbprintf(("%s: Restoration finished\n", debug_prefix_time(NULL)));
 
