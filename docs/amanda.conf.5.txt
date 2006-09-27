@@ -13,6 +13,7 @@ DESCRIPTION
 
 amanda.conf is the main configuration file for Amanda. This manpage lists the
 relevant sections and parameters of this file for quick reference.
+The file <CONFIG_DIR>/<config>/amanda.conf is loaded.
 
 PARAMETERS
 
@@ -308,12 +309,27 @@ The dumptype options and values are:
       the actual file used would be /var/.amanda.excludes for a backup of /var,
       /usr/local/.amanda.excludes for a backup of /usr/local, and so on.
 
-  holdingdisk boolean
-      Default: yes. Whether a holding disk should be used for these backups or
+  holdingdisk [ never|auto|required] ]
+      Default: auto. Whether a holding disk should be used for these backups or
       whether they should go directly to tape. If the holding disk is a portion
       of another file system that Amanda is backing up, that file system should
-      refer to a dumptype with holdingdisk set to no to avoid backing up the
+      refer to a dumptype with holdingdisk set to never to avoid backing up the
       holding disk into itself.
+
+
+        never|no|false|off
+            Never use a holdingdisk, the dump will always go directly to tape.
+            There will be no dump if you have a tape error.
+
+        auto|yes|true|on
+            Use the holding disk, unless there is a problem with the holding
+            disk, the dump won't fit there or the medium doesn't require
+            spooling (e.g., VFS device)
+
+        required
+            Always dump to holdingdisk, never directly to tape. There will be
+            no dump if it doesn't fit on holdingdisk
+
 
   ignore boolean
       Default: no. Whether disks associated with this backup type should be

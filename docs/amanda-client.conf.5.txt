@@ -13,6 +13,8 @@ DESCRIPTION
 
 amanda-client.conf is the client configuration file for Amanda. This manpage
 lists the relevant sections and parameters of this file for quick reference.
+The files <CONFIG_DIR>/amanda-client.conf and <CONFIG_DIR>/<config>/amanda-
+client.conf are loaded.
 
 PARAMETERS
 
@@ -103,6 +105,14 @@ PARAMETERS
       Default: No default. The key file the ssh auth will use, it must be the
       private key. If this parameter is not specified, then the deafult ssh key
       will be used.
+
+  gnutar_list_dir string
+      Default from configure --with-gnutar-listdir=DIR. The directory where
+      gnutar keep its state file.
+
+  amandates string
+      Default: /etc/amandates. The file where amanda keep the last date of each
+      dumplevel.
 
 
 AUTHOR

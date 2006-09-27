@@ -66,8 +66,7 @@ MESSAGES
 
   amgetconf: no such parameter param
       Parameter param is not a known keyword (e.g. not a valid amanda.conf
-      keyword). In this case, amgetconf will write "BUGGY" to stdout as the
-      value.
+      keyword).
 
 
 SEE ALSO

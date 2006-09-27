@@ -234,7 +234,7 @@ work instead of defining a new dumptype:
 
   hostname diskname [ diskdevice ] {
     normal
-    holdingdisk no
+    holdingdisk never
   } [ spindle [ interface ] ]
 
 
