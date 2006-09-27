@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.206 2006/08/10 23:57:27 paddy_s Exp $
+ * $Id: planner.c,v 1.206.2.1 2006/09/27 11:24:39 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1736,6 +1736,7 @@ static void handle_result(
 	       && pkt->type == P_NAK
 	       && (strcmp(t - 1, "unknown service: noop") == 0
 		   || strcmp(t - 1, "noop: invalid service") == 0)) {
+		skip_quoted_line(s, ch);
 		continue;
 	    }
 	    errbuf = vstralloc(hostp->hostname,
