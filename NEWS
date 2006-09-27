@@ -1,3 +1,13 @@
+Changes in release 2.5.1p1
+   * Many bugs fixed:
+         o Timeout waiting for ACK
+         o "illegal density" with dump
+         o IRIX: Parse config file, amrecover
+         o MacOs: compilation
+         o amrecover with FreeBSD/OpenBSD
+   * Some other small cleanup.
+   * Remove contrib/sst.
+
 Changes in release 2.5.1
 
    * Defects found by Coverity scan and Klocwork K7 analysis tools fixed.

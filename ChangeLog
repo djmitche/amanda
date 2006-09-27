@@ -1,4 +1,9 @@
 2006-09-27  Jean-Louis Martineau <martineau@zmanda.com>
+	* Amanda 2.5.1p1 released.
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.1p1).
+	* NEWS: Update for 2.5.1p1
+
+2006-09-27  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c: Improve debugging.
 	* server-src/changer.c: Make sure to dup the fd out of the 0..2 range.
 
