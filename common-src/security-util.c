@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.25.2.1 2006/09/28 18:46:08 martinea Exp $
+ * $Id: security-util.c,v 1.25.2.2 2006/09/28 19:10:23 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -1237,8 +1237,8 @@ udp_inithandle(
     /*
      * Save the hostname and port info
      */
-    secprintf(("%s: udp_inithandle port %hu handle %s sequence %d\n",
-	       debug_prefix_time(NULL), (in_port_t)ntohs(port),
+    secprintf(("%s: udp_inithandle port %u handle %s sequence %d\n",
+	       debug_prefix_time(NULL), (unsigned int)ntohs(port),
 	       handle, sequence));
     assert(he != NULL);
 
@@ -2379,8 +2379,8 @@ check_security(
     if (ntohs(addr->sin_port) >= IPPORT_RESERVED) {
 	char number[NUM_STR_SIZE];
 
-	snprintf(number, SIZEOF(number), "%hu",
-		 (in_port_t)ntohs(addr->sin_port));
+	snprintf(number, SIZEOF(number), "%u",
+		 (unsigned int)ntohs(addr->sin_port));
 	*errstr = vstralloc("[",
 			    "host ", remotehost, ": ",
 			    "port ", number, " not secure",
