@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.156 2006/07/26 15:17:37 martinea Exp $
+ * $Id: conffile.c,v 1.156.2.1 2006/10/03 10:48:00 martinea Exp $
  *
  * read configuration file
  */
@@ -792,7 +792,7 @@ init_defaults(
 #ifdef DEFAULT_TAPE_DEVICE
     s = DEFAULT_TAPE_DEVICE;
 #else
-    s = "/dev/rmt8";
+    s = NULL;
 #endif
     conf_init_string(&server_conf[CNF_TAPEDEV], s);
 #ifdef DEFAULT_CHANGER_DEVICE
