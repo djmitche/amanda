@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.53 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amlabel.c,v 1.53.2.1 2006/10/03 11:35:52 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -188,7 +188,12 @@ main(
 		    new_argv[0], conffile);
 	    usage();
 	}
-	tapename = stralloc(getconf_str(CNF_TAPEDEV));
+	tapename = getconf_str(CNF_TAPEDEV);
+	if (tapename == NULL) {
+	    error("No tapedev specified");
+	} else {
+	    tapename = stralloc(tapename);
+	}
 #ifdef HAVE_LIBVTBLC
 	rawtapedev = stralloc(getconf_str(CNF_RAWTAPEDEV));
 #endif /* HAVE_LIBVTBLC */

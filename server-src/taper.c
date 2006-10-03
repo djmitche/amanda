@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.144 2006/08/24 11:23:32 martinea Exp $
+/* $Id: taper.c,v 1.144.2.1 2006/10/03 11:35:52 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -315,7 +315,7 @@ main(
 	/*NOTREACHED*/
     }
 
-    tapedev	= stralloc(getconf_str(CNF_TAPEDEV));
+    tapedev	= getconf_str(CNF_TAPEDEV);
     tapetype    = getconf_str(CNF_TAPETYPE);
     tt		= lookup_tapetype(tapetype);
 #ifdef HAVE_LIBVTBLC
@@ -705,6 +705,15 @@ file_reader_side(
     /* pass start command on to tape writer */
 
     taper_timestamp = newstralloc(taper_timestamp, cmdargs.argv[2]);
+
+    if (tapedev == NULL) {
+	putresult(TAPE_ERROR, "[No tapedev defined]\n");
+	log_add(L_ERROR, "No tapedev defined");
+	dbprintf(("taper: No tapedev defined\n"));
+	exit(1);
+    } else {
+	tapedev = stralloc(tapedev);
+    }
 
     tape_started = 0;
     if (syncpipe_put('S', 0) == -1) {

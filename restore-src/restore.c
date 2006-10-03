@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.52.2.2 2006/09/27 14:04:27 martinea Exp $
+ * $Id: restore.c,v 1.52.2.3 2006/10/03 11:35:48 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1731,8 +1731,14 @@ search_tapes(
 
     /* Suss what tape device we're using, whether there's a changer, etc. */
     if(!use_changer || (have_changer = changer_init()) == 0) {
-	if(flags->alt_tapedev) cur_tapedev = stralloc(flags->alt_tapedev);
-	else if(!cur_tapedev) cur_tapedev = getconf_str(CNF_TAPEDEV);
+	if (flags->alt_tapedev) {
+	    cur_tapedev = stralloc(flags->alt_tapedev);
+	} else if(!cur_tapedev) {
+	    cur_tapedev = getconf_str(CNF_TAPEDEV);
+	    if (cur_tapedev == NULL) {
+		error("No tapedev specified");
+	    }
+	}
 	/* XXX oughta complain if no config is loaded */
 	fprintf(stderr, "%s: Using tapedev %s\n", get_pname(), cur_tapedev);
  	have_changer = 0;

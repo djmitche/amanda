@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.73.2.1 2006/09/27 12:04:09 martinea Exp $
+/* $Id: amidxtaped.c,v 1.73.2.2 2006/10/03 11:35:47 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -245,6 +245,7 @@ main(
     char *conf_tapetype;
     tapetype_t *tape;
     char *line;
+    char *tapedev;
 
     safe_fd(DATA_FD_OFFSET, 4);
     safe_cd();
@@ -505,11 +506,11 @@ main(
 	use_changer = 1;
     }
 
+    tapedev = getconf_str(CNF_TAPEDEV);
     /* If we'll be stepping on the tape server's devices, lock them. */
     if(re_config &&
-       (use_changer || (rst_flags->alt_tapedev &&
-                        strcmp(rst_flags->alt_tapedev,
-                               getconf_str(CNF_TAPEDEV)) == 0) ) ) {
+       (use_changer || (rst_flags->alt_tapedev && tapedev &&
+                        strcmp(rst_flags->alt_tapedev, tapedev) == 0) ) ) {
 	dbprintf(("%s: Locking devices\n", get_pname()));
 	parent_pid = getpid();
 	atexit(cleanup);
@@ -581,11 +582,11 @@ main(
 	      get_pname(), rst_flags->pipe_to_fd));
 
 
+    tapedev = getconf_str(CNF_TAPEDEV);
     if(get_lock == 0 &&
        re_config && 
-       (use_changer || (rst_flags->alt_tapedev &&
-                        strcmp(rst_flags->alt_tapedev,
-                               getconf_str(CNF_TAPEDEV)) == 0) ) ) {
+       (use_changer || (rst_flags->alt_tapedev && tapedev &&
+                        strcmp(rst_flags->alt_tapedev, tapedev) == 0) ) ) {
 	send_message(cmdout, rst_flags, their_features,
 		     "%s exists: amdump or amflush is already running, "
 		     "or you must run amcleanup", 

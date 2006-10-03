@@ -20,7 +20,7 @@
  */
 
 /*
- * $Id: taperscan.c,v 1.17 2006/07/12 12:28:19 martinea Exp $
+ * $Id: taperscan.c,v 1.17.2.1 2006/10/03 11:35:52 martinea Exp $
  *
  * This contains the implementation of the taper-scan algorithm, as it is
  * used by taper, amcheck, and amtape. See the header file taperscan.h for
@@ -314,10 +314,16 @@ int taper_scan(char* wantlabel,
     }
     else {
 	*tapedev = stralloc(getconf_str(CNF_TAPEDEV));
-	result =  scan_read_label(*tapedev, wantlabel,
-				  gotlabel, timestamp, &error_message);
-	taperscan_output_callback(data, error_message);
-	amfree(error_message);
+	if (*tapedev == NULL) {
+	    result = -1;
+	    taperscan_output_callback(data, "No tapedev spefified");
+	} else {
+	    *tapedev = stralloc(*tapedev);
+	    result =  scan_read_label(*tapedev, wantlabel,
+				      gotlabel, timestamp, &error_message);
+	    taperscan_output_callback(data, error_message);
+	    amfree(error_message);
+	}
     }
 
     return result;
