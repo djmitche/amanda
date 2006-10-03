@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcleanupdisk.c,v 1.22 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amcleanupdisk.c,v 1.22.2.1 2006/10/03 18:57:25 martinea Exp $
  */
 #include "amanda.h"
 
@@ -66,8 +66,8 @@ main(
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
 
-    if(main_argc != 2) {
-	error("Usage: amcleanupdisk%s <confdir>", versionsuffix());
+    if(main_argc < 2) {
+	error("Usage: amcleanupdisk%s <config>", versionsuffix());
 	/*NOTREACHED*/
     }
 
