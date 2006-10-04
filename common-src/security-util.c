@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.25.2.2 2006/09/28 19:10:23 martinea Exp $
+ * $Id: security-util.c,v 1.25.2.3 2006/10/04 20:48:53 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -1736,7 +1736,8 @@ sec_tcp_conn_read_callback(
 	/* delete our 'accept' reference */
 	if (rc->accept_fn != NULL) {
 	    if(rc->refcnt != 1) {
-		dbprintf(("STRANGE, rc->refcnt should be 1"));
+		dbprintf(("STRANGE, rc->refcnt should be 1, it is %d\n",
+			  rc->refcnt));
 		rc->refcnt=1;
 	    }
 	    rc->accept_fn = NULL;
