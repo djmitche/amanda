@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.198 2006/08/24 01:57:16 paddy_s Exp $
+ * $Id: driver.c,v 1.198.2.1 2006/10/10 11:40:19 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -535,7 +535,7 @@ wait_children(int count)
 			dumper->pid = -1;
 			break;
 		    }
-		    if (pid == dumper->chunker->pid) {
+		    if (dumper->chunker && pid == dumper->chunker->pid) {
 			who = stralloc(dumper->chunker->name);
 			dumper->chunker->pid = -1;
 			break;
