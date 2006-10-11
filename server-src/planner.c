@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.206.2.1 2006/09/27 11:24:39 martinea Exp $
+ * $Id: planner.c,v 1.206.2.2 2006/10/11 14:58:25 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -2274,10 +2274,18 @@ static void delay_dumps(void)
 	full_size = est_tape_size(dp, 0);
 	if (full_size > tapetype_get_length(tape) * (off_t)avail_tapes) {
 	    char *qname = quote_string(dp->name);
-	    log_add(L_WARNING, "disk %s:%s, full dump (" OFF_T_FMT 
-		    "KB) will be larger than available tape space",
-		    dp->host->hostname, qname,
-		    (OFF_T_FMT_TYPE)full_size);
+	    if (conf_runtapes > 1 && dp->tape_splitsize == (off_t)0) {
+		log_add(L_WARNING, "disk %s:%s, full dump (" OFF_T_FMT 
+			"KB) will be larger than available tape space"
+			", you could define a splitsize",
+			dp->host->hostname, qname,
+			(OFF_T_FMT_TYPE)full_size);
+	    } else {
+		log_add(L_WARNING, "disk %s:%s, full dump (" OFF_T_FMT 
+			"KB) will be larger than available tape space",
+			dp->host->hostname, qname,
+			(OFF_T_FMT_TYPE)full_size);
+	    }
 	    amfree(qname);
 	}
 
