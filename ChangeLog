@@ -1,3 +1,6 @@
+2006-10-19  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/calcsize.c: Quote amname.
+
 2006-10-16  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/dgram.c (dgram_cat),
 	  common-src/packet.c (pkt_init, pkt_cat): Works correctly with
