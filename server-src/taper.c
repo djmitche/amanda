@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.144.2.1 2006/10/03 11:35:52 martinea Exp $
+/* $Id: taper.c,v 1.144.2.2 2006/10/20 13:41:58 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -628,8 +628,10 @@ free_split_buffer(void)
     if (mmap_splitbuffer_fd != -1) {
 #ifdef HAVE_MMAP
 #ifdef HAVE_SYS_MMAN_H
-	if (splitbuf != NULL)
-	    munmap(splitbuf, (size_t)mmap_splitsize);
+	if (mmap_splitbuf != NULL) {
+	    munmap(mmap_splitbuf, (size_t)mmap_splitsize);
+	    mmap_splitbuf = NULL;
+	}
 #endif
 #endif
 	aclose(mmap_splitbuffer_fd);
@@ -637,7 +639,7 @@ free_split_buffer(void)
 	mmap_splitsize = 0;
     }
     if (mem_splitbuf) {
-	amfree(splitbuf);
+	amfree(mem_splitbuf);
 	mem_splitsize = 0;
     }
 }
