@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.156.2.1 2006/10/03 10:48:00 martinea Exp $
+ * $Id: conffile.c,v 1.156.2.2 2006/10/24 18:20:41 martinea Exp $
  *
  * read configuration file
  */
@@ -2300,6 +2300,31 @@ parse_server_conf(
 	}
 	i++;
     }
+}
+
+char **
+get_config_options(
+    int first)
+{
+    char             **config_options;
+    char	     **config_option;
+    command_option_t  *command_options;
+    int                nb_server_options = 0;
+
+    for(command_options = server_options; command_options->name != NULL;
+	command_options++) {
+	nb_server_options++;
+    }
+    config_options = alloc((first+nb_server_options+1)*SIZEOF(char *));
+    for(command_options = server_options,
+        config_option = config_options + first;
+	command_options->name != NULL; command_options++) {
+	*config_option = vstralloc("-o", command_options->name, "=",
+				   command_options->value, NULL);
+	config_option++;
+    }
+    *config_option = NULL;
+    return(config_options);
 }
 
 void

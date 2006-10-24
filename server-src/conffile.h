@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.72 2006/07/26 15:17:37 martinea Exp $
+ * $Id: conffile.h,v 1.72.2.1 2006/10/24 18:20:42 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -313,6 +313,7 @@ extern int num_holdingdisks;
 
 void parse_server_conf(int parse_argc, char **parse_argv, int *new_argc,
 		       char ***new_argv);
+char **get_config_options(int);
 void report_bad_conf_arg(void);
 void free_server_config(void);
 
