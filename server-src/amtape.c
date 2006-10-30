@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amtape.c,v 1.47.2.1 2006/10/24 18:20:41 martinea Exp $
+ * $Id: amtape.c,v 1.47.2.2 2006/10/30 12:00:19 martinea Exp $
  *
  * tape changer interface program
  */
@@ -142,7 +142,7 @@ main(
 
     erroutput_type = ERR_INTERACTIVE;
 
-    parse_conf(argc, argv, &new_argc, &new_argv);
+    parse_server_conf(argc, argv, &new_argc, &new_argv);
     if(new_argc < 3) usage();
 
     config_name = new_argv[1];

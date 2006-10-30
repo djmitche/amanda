@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.95 2006/07/26 15:17:37 martinea Exp $
+ * $Id: diskfile.c,v 1.95.2.1 2006/10/30 12:00:20 martinea Exp $
  *
  * read disklist file
  */
@@ -388,7 +388,7 @@ parse_diskline(
       hostname = stralloc(fp);
       malloc_mark(hostname);
     } else {
-      hostname = host->hostname;
+      hostname = stralloc(host->hostname);
     }
 
     skip_whitespace(s, ch);
@@ -670,6 +670,8 @@ parse_diskline(
 	host->start_t = 0;
 	host->up = NULL;
 	host->features = NULL;
+    } else {
+	amfree(hostname);
     }
 
     host->netif = netif;
