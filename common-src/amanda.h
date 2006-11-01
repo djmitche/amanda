@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.131 2006/07/25 18:27:56 martinea Exp $
+ * $Id: amanda.h,v 1.131.2.1 2006/11/01 12:26:22 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -428,6 +428,7 @@ extern char *debug_prefix_time(char *);
 #else									/* }{ */
 #   define dbopen(a)
 #   define dbreopen(a,b)
+#   define dbrename(a,b)
 #   define dbclose()
 #   define dbprintf(p)
 #   define dbfd()	(-1)

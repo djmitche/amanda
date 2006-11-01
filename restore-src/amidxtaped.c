@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: amidxtaped.c,v 1.73.2.2 2006/10/03 11:35:47 martinea Exp $
+/* $Id: amidxtaped.c,v 1.73.2.3 2006/11/01 12:26:22 martinea Exp $
  *
  * This daemon extracts a dump image off a tape for amrecover and
  * returns it over the network. It basically, reads a number of
@@ -246,6 +246,9 @@ main(
     tapetype_t *tape;
     char *line;
     char *tapedev;
+#ifndef DEBUG_CODE
+    int i;
+#endif
 
     safe_fd(DATA_FD_OFFSET, 4);
     safe_cd();

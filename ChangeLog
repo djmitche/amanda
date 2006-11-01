@@ -1,3 +1,7 @@
+2006-11-01  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/amanda.h: Define dbrename if !DEBUG_CODE.
+	* restore-src/amidxtaped.c: Declare i if !DEBUG_CODE.
+
 2006-10-25  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/amtape.c: Use parse_conf instead of parse_server_conf.
 	* server-src/diskfile.c: Correct hostname allocation.
