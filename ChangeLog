@@ -1,4 +1,8 @@
 2006-11-01  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/clientconf.c: Define AMANDATES_FILE
+	* client-src/amandates.h: Don't define AMANDATES_FILE
+
+2006-11-01  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/conffile.c: Rename DUMPTYPE_START_T to DUMPTYPE_STARTTIME.
 	* common-src/conffile.h: Rename DUMPTYPE_START_T to DUMPTYPE_STARTTIME.
 	* server-src/amadmin.c (disklist_one): Print correct starttime.

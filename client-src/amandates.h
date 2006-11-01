@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amandates.h,v 1.5 2006/07/25 18:35:21 martinea Exp $
+ * $Id: amandates.h,v 1.5.2.1 2006/11/01 15:31:06 martinea Exp $
  *
  * interface for amandates file
  */
@@ -35,10 +35,6 @@
 
 #define DUMP_LEVELS	10	/* XXX should be in amanda.h */
 #define EPOCH		((time_t)0)
-
-#ifndef AMANDATES_FILE
-#define AMANDATES_FILE "/etc/amandates"
-#endif
 
 typedef struct amandates_s {
     struct amandates_s *next;
