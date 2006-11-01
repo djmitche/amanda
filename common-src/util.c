@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42.2.4 2006/09/21 11:12:21 martinea Exp $
+ * $Id: util.c,v 1.42.2.5 2006/11/01 14:45:38 martinea Exp $
  */
 
 #include "amanda.h"
@@ -1815,9 +1815,9 @@ static char buffer_conf_print[1025];
 
 char *
 conf_print(
-    val_t *val)
+    val_t *val,
+    int    str_need_quote)
 {
-    struct tm *stm;
     int pos;
 
     buffer_conf_print[0] = '\0';
@@ -1857,26 +1857,31 @@ conf_print(
 	break;
 
     case CONFTYPE_STRING:
-	buffer_conf_print[0] = '"';
-	if(val->v.s) {
-	    strncpy(&buffer_conf_print[1], val->v.s,
-	    		SIZEOF(buffer_conf_print) - 1);
-	    buffer_conf_print[SIZEOF(buffer_conf_print) - 2] = '\0';
-	    buffer_conf_print[strlen(buffer_conf_print)] = '"';
+	if(str_need_quote) {
+	    buffer_conf_print[0] = '"';
+	    if(val->v.s) {
+		strncpy(&buffer_conf_print[1], val->v.s,
+			SIZEOF(buffer_conf_print) - 1);
+		buffer_conf_print[SIZEOF(buffer_conf_print) - 2] = '\0';
+		buffer_conf_print[strlen(buffer_conf_print)] = '"';
+	    } else {
+		buffer_conf_print[1] = '"';
+		buffer_conf_print[2] = '\0';
+	    }
 	} else {
-	    buffer_conf_print[1] = '"';
-	    buffer_conf_print[2] = '\0';
+	    if(val->v.s) {
+		strncpy(&buffer_conf_print[0], val->v.s,
+			SIZEOF(buffer_conf_print));
+		buffer_conf_print[SIZEOF(buffer_conf_print) - 1] = '\0';
+	    } else {
+		buffer_conf_print[0] = '\0';
+	    }
 	}
 	break;
 
     case CONFTYPE_TIME:
-	stm = localtime(&val->v.t);
-	if (stm) {
-	    snprintf(buffer_conf_print, SIZEOF(buffer_conf_print),
-		     "%d%02d%02d", stm->tm_hour, stm->tm_min, stm->tm_sec);
-	} else {
-	    strcpy(buffer_conf_print, "00000");
-	}
+	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print),
+		 "%2d%02d", (int)val->v.t/100, (int)val->v.t % 100);
 	break;
 
     case CONFTYPE_SL:

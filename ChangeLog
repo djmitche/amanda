@@ -1,4 +1,21 @@
 2006-11-01  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/conffile.c: Rename DUMPTYPE_START_T to DUMPTYPE_STARTTIME.
+	* common-src/conffile.h: Rename DUMPTYPE_START_T to DUMPTYPE_STARTTIME.
+	* server-src/amadmin.c (disklist_one): Print correct starttime.
+	* server-src/diskfile.c: Set start_t to starttime.
+	* server-src/diskfile.h (disk_t): Add starttime.
+	* common-src/conffile.c (conf_print): Add a parameter if we want
+	                                      CONFTYPE_STRING enclosed in ".
+	* server-src/planner.c: Use getconf_int to get etimeout value.
+	* common-src/conffile.c (CNF_CTIMEOUT, CNF_DTIMEOUT, CNF_ETIMEOUT):
+	  They are of type CONFTYPE_INT
+	  (CONFTYPE_TIME are for value parsed as "hhmm"")
+	* common-src/conffile.c (getconf_byname): Use conf_print().
+	* common-src/conffile.h: Add comment.
+	* server-src/amcheck.c, server-src/dumper.c, server-src/planner.c:
+	  Use getconf_int to get timeout value.
+
+2006-11-01  Jean-Louis Martineau <martineau@zmanda.com>
 	* changer-src/scsi-changer-driver.c: Add Tandberg SLR100,
 	                                     more debugging.
 	* changer-src/sense.c: Add Tandberg SLR100 Tape Drive "SLR100".

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.206.2.2 2006/10/11 14:58:25 martinea Exp $
+ * $Id: planner.c,v 1.206.2.3 2006/11/01 14:45:42 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -334,7 +334,7 @@ int main(int argc, char **argv)
     conf_dumpcycle = getconf_int(CNF_DUMPCYCLE);
     conf_runspercycle = getconf_int(CNF_RUNSPERCYCLE);
     conf_tapecycle = getconf_int(CNF_TAPECYCLE);
-    conf_etimeout = getconf_time(CNF_ETIMEOUT);
+    conf_etimeout = getconf_int(CNF_ETIMEOUT);
     conf_reserve  = getconf_int(CNF_RESERVE);
     conf_autoflush = getconf_boolean(CNF_AUTOFLUSH);
     conf_usetimestamps = getconf_boolean(CNF_USETIMESTAMPS);
@@ -1595,7 +1595,7 @@ static void getsize(
 	 * We use ctimeout for the "noop" request because it should be
 	 * very fast and etimeout has other side effects.
 	 */
-	timeout = getconf_time(CNF_CTIMEOUT);
+	timeout = getconf_int(CNF_CTIMEOUT);
     }
 
     secdrv = security_getdriver(hostp->disks->security_driver);

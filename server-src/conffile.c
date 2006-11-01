@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.156.2.2 2006/10/24 18:20:41 martinea Exp $
+ * $Id: conffile.c,v 1.156.2.3 2006/11/01 14:45:40 martinea Exp $
  *
  * read configuration file
  */
@@ -293,9 +293,9 @@ t_conf_var server_var [] = {
    { CONF_INPARALLEL           , CONFTYPE_INT      , read_int     , CNF_INPARALLEL           , validate_inparallel },
    { CONF_DUMPORDER            , CONFTYPE_STRING   , read_string  , CNF_DUMPORDER            , NULL },
    { CONF_MAXDUMPS             , CONFTYPE_INT      , read_int     , CNF_MAXDUMPS             , validate_positive1 },
-   { CONF_ETIMEOUT             , CONFTYPE_TIME     , read_time    , CNF_ETIMEOUT             , NULL },
-   { CONF_DTIMEOUT             , CONFTYPE_TIME     , read_time    , CNF_DTIMEOUT             , validate_positive1 },
-   { CONF_CTIMEOUT             , CONFTYPE_TIME     , read_time    , CNF_CTIMEOUT             , validate_positive1 },
+   { CONF_ETIMEOUT             , CONFTYPE_INT      , read_int     , CNF_ETIMEOUT             , NULL },
+   { CONF_DTIMEOUT             , CONFTYPE_INT      , read_int     , CNF_DTIMEOUT             , validate_positive1 },
+   { CONF_CTIMEOUT             , CONFTYPE_INT      , read_int     , CNF_CTIMEOUT             , validate_positive1 },
    { CONF_TAPEBUFS             , CONFTYPE_INT      , read_int     , CNF_TAPEBUFS             , validate_positive1 },
    { CONF_RAWTAPEDEV           , CONFTYPE_STRING   , read_string  , CNF_RAWTAPEDEV           , NULL },
    { CONF_COLUMNSPEC           , CONFTYPE_STRING   , read_string  , CNF_COLUMNSPEC           , NULL },
@@ -538,7 +538,6 @@ getconf_byname(
     char *str)
 {
     static char *tmpstr;
-    char number[NUM_STR_SIZE];
     t_conf_var *np;
     keytab_t *kt;
     char *s;
@@ -565,26 +564,7 @@ getconf_byname(
 
     if(np->token == CONF_UNKNOWN) return NULL;
 
-    if(np->type == CONFTYPE_INT) {
-	snprintf(number, sizeof(number), "%d", server_conf[np->parm].v.i);
-	tmpstr = newstralloc(tmpstr, number);
-    } else if(np->type == CONFTYPE_BOOL) {
-	if(getconf_boolean(np->parm) == 0) {
-	    tmpstr = newstralloc(tmpstr, "off");
-	} else {
-	    tmpstr = newstralloc(tmpstr, "on");
-	}
-    } else if(np->type == CONFTYPE_REAL) {
-	snprintf(number, sizeof(number), "%lf", server_conf[np->parm].v.r);
-	tmpstr = newstralloc(tmpstr, number);
-    } else if(np->type == CONFTYPE_AM64){
-	snprintf(number, sizeof(number), OFF_T_FMT, 
-		 (OFF_T_FMT_TYPE)server_conf[np->parm].v.am64);
-	tmpstr = newstralloc(tmpstr, number);
-    } else {
-	tmpstr = newstralloc(tmpstr, getconf_str(np->parm));
-    }
-
+    tmpstr = stralloc(conf_print(&server_conf[np->parm], 0));
     return tmpstr;
 }
 
@@ -827,9 +807,9 @@ init_defaults(
     conf_init_string   (&server_conf[CNF_TPCHANGER]            , "");
     conf_init_int      (&server_conf[CNF_RUNTAPES]             , 1);
     conf_init_int      (&server_conf[CNF_MAXDUMPS]             , 1);
-    conf_init_time     (&server_conf[CNF_ETIMEOUT]             , (time_t)300);
-    conf_init_time     (&server_conf[CNF_DTIMEOUT]             , (time_t)1800);
-    conf_init_time     (&server_conf[CNF_CTIMEOUT]             , (time_t)30);
+    conf_init_int      (&server_conf[CNF_ETIMEOUT]             , 300);
+    conf_init_int      (&server_conf[CNF_DTIMEOUT]             , 1800);
+    conf_init_int      (&server_conf[CNF_CTIMEOUT]             , 30);
     conf_init_int      (&server_conf[CNF_TAPEBUFS]             , 20);
     conf_init_string   (&server_conf[CNF_RAWTAPEDEV]           , s);
     conf_init_string   (&server_conf[CNF_PRINTER]              , "");
@@ -1152,7 +1132,7 @@ t_conf_var dumptype_var [] = {
    { CONF_RECORD            , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_RECORD            , NULL },
    { CONF_SKIP_FULL         , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_SKIP_FULL         , NULL },
    { CONF_SKIP_INCR         , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_SKIP_INCR         , NULL },
-   { CONF_STARTTIME         , CONFTYPE_TIME     , read_time   , DUMPTYPE_START_T           , NULL },
+   { CONF_STARTTIME         , CONFTYPE_TIME     , read_time   , DUMPTYPE_STARTTIME         , NULL },
    { CONF_STRATEGY          , CONFTYPE_INT      , get_strategy, DUMPTYPE_STRATEGY          , NULL },
    { CONF_TAPE_SPLITSIZE    , CONFTYPE_AM64     , read_am64   , DUMPTYPE_TAPE_SPLITSIZE    , validate_positive0 },
    { CONF_SPLIT_DISKBUFFER  , CONFTYPE_STRING   , read_string , DUMPTYPE_SPLIT_DISKBUFFER  , NULL },
@@ -1264,7 +1244,7 @@ init_dumptype_defaults(void)
     conf_init_am64     (&dpcur.value[DUMPTYPE_BUMPSIZE]          , server_conf[CNF_BUMPSIZE].v.am64);
     conf_init_int      (&dpcur.value[DUMPTYPE_BUMPDAYS]          , server_conf[CNF_BUMPDAYS].v.i);
     conf_init_real     (&dpcur.value[DUMPTYPE_BUMPMULT]          , server_conf[CNF_BUMPMULT].v.r);
-    conf_init_time     (&dpcur.value[DUMPTYPE_START_T]           , (time_t)0);
+    conf_init_time     (&dpcur.value[DUMPTYPE_STARTTIME]         , (time_t)0);
     conf_init_strategy (&dpcur.value[DUMPTYPE_STRATEGY]          , DS_STANDARD);
     conf_init_estimate (&dpcur.value[DUMPTYPE_ESTIMATE]          , ES_CLIENT);
     conf_init_compress (&dpcur.value[DUMPTYPE_COMPRESS]          , COMP_FAST);
@@ -2062,7 +2042,7 @@ dump_configuration(
 	if(kt->token == CONF_UNKNOWN)
 	    error("server bad token");
 
-	printf("%-21s %s\n", kt->keyword, conf_print(&server_conf[i]));
+	printf("%-21s %s\n", kt->keyword, conf_print(&server_conf[i], 1));
     }
 
     for(hp = holdingdisks; hp != NULL; hp = hp->next) {
@@ -2082,7 +2062,7 @@ dump_configuration(
 	    if(kt->token == CONF_UNKNOWN)
 		error("holding bad token");
 
-	    printf("      %-9s %s\n", kt->keyword, conf_print(&hp->value[i]));
+	    printf("      %-9s %s\n", kt->keyword, conf_print(&hp->value[i], 1));
 	}
 	printf("}\n");
     }
@@ -2100,31 +2080,34 @@ dump_configuration(
 	    if(kt->token == CONF_UNKNOWN)
 		error("tapetype bad token");
 
-	    printf("      %-9s %s\n", kt->keyword, conf_print(&tp->value[i]));
+	    printf("      %-9s %s\n", kt->keyword, conf_print(&tp->value[i], 1));
 	}
 	printf("}\n");
     }
 
     for(dp = dumplist; dp != NULL; dp = dp->next) {
-	if(dp->seen == -1)
-	    prefix = "#";
-	else
-	    prefix = "";
-	printf("\n%sDEFINE DUMPTYPE %s {\n", prefix, dp->name);
-	for(i=0; i < DUMPTYPE_DUMPTYPE; i++) {
-	    for(np=dumptype_var; np->token != CONF_UNKNOWN; np++)
-		if(np->parm == i) break;
-	    if(np->token == CONF_UNKNOWN)
-		error("dumptype bad value");
+	if (strncmp(dp->name, "custom(", 7) != 0) {
+	    if(dp->seen == -1)
+		prefix = "#";
+	    else
+		prefix = "";
+	    printf("\n%sDEFINE DUMPTYPE %s {\n", prefix, dp->name);
+	    for(i=0; i < DUMPTYPE_DUMPTYPE; i++) {
+		for(np=dumptype_var; np->token != CONF_UNKNOWN; np++)
+		    if(np->parm == i) break;
+		if(np->token == CONF_UNKNOWN)
+		    error("dumptype bad value");
 
-	    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
-		if(kt->token == np->token) break;
-	    if(kt->token == CONF_UNKNOWN)
-		error("dumptype bad token");
+		for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
+		    if(kt->token == np->token) break;
+		if(kt->token == CONF_UNKNOWN)
+		    error("dumptype bad token");
 
-	    printf("%s      %-19s %s\n", prefix, kt->keyword, conf_print(&dp->value[i]));
+		printf("%s      %-19s %s\n", prefix, kt->keyword,
+		       conf_print(&dp->value[i], 1));
+	    }
+	    printf("%s}\n", prefix);
 	}
-	printf("%s}\n", prefix);
     }
 
     for(ip = interface_list; ip != NULL; ip = ip->next) {
@@ -2144,7 +2127,7 @@ dump_configuration(
 	    if(kt->token == CONF_UNKNOWN)
 		error("interface bad token");
 
-	    printf("%s      %-9s %s\n", prefix, kt->keyword, conf_print(&ip->value[i]));
+	    printf("%s      %-9s %s\n", prefix, kt->keyword, conf_print(&ip->value[i], 1));
 	}
 	printf("%s}\n",prefix);
     }

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.149.2.3 2006/10/03 11:35:48 martinea Exp $
+ * $Id: amcheck.c,v 1.149.2.4 2006/11/01 14:45:39 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -244,7 +244,7 @@ main(
       }
     }
 
-    conf_ctimeout = getconf_time(CNF_CTIMEOUT);
+    conf_ctimeout = getconf_int(CNF_CTIMEOUT);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {

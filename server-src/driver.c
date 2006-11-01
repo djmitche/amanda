@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.198.2.1 2006/10/10 11:40:19 martinea Exp $
+ * $Id: driver.c,v 1.198.2.2 2006/11/01 14:45:41 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -921,6 +921,7 @@ start_some_dumps(
 	if (diskp == NULL && delayed_diskp != NULL) {
 	    assert(sleep_time > now);
 	    sleep_time -= now;
+dbprintf(("sleep for %d\n", sleep_time));
 	    dumpers_ev_time = event_register((event_id_t)sleep_time, EV_TIME,
 		handle_dumpers_time, &runq);
 	    return;

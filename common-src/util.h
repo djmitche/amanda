@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.17.2.1 2006/09/21 11:12:21 martinea Exp $
+ * $Id: util.h,v 1.17.2.2 2006/11/01 14:45:39 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -40,7 +40,7 @@ typedef enum {
     CONFTYPE_REAL,
     CONFTYPE_STRING,
     CONFTYPE_IDENT,
-    CONFTYPE_TIME,
+    CONFTYPE_TIME,	/* hhmm */
     CONFTYPE_SIZE,
     CONFTYPE_SL,
     CONFTYPE_BOOL,
@@ -287,7 +287,7 @@ void read_real(t_conf_var *, val_t *);
 void read_time(t_conf_var *, val_t *);
 void copy_val_t(val_t *, val_t *);
 void free_val_t(val_t *);
-char *conf_print(val_t *);
+char *conf_print(val_t *, int);
 void conf_init_string(val_t *, char *);
 void conf_init_ident(val_t *, char *);
 void conf_init_int(val_t *, int);
