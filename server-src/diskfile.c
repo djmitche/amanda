@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.95.2.2 2006/11/01 14:45:41 martinea Exp $
+ * $Id: diskfile.c,v 1.95.2.3 2006/11/01 16:01:28 martinea Exp $
  *
  * read disklist file
  */
@@ -486,7 +486,7 @@ parse_diskline(
 	amfree(line);
 
 	dtype = read_dumptype(vstralloc("custom(", hostname,
-					":", disk->name, ")", 0),
+					":", disk->name, ")", NULL),
 			      diskf, (char*)filename, line_num_p);
 	if (dtype == NULL || dup) {
 	    disk_parserror(filename, line_num,
