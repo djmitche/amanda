@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.131.2.1 2006/11/01 12:26:22 martinea Exp $
+ * $Id: amanda.h,v 1.131.2.2 2006/11/06 12:11:38 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -1342,8 +1342,16 @@ extern ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
 #  define        OFF_T_FMT       "%lld"
 #  define        OFF_T_RFMT       "lld"
 #  define        OFF_T_FMT_TYPE  long long
-#  define        OFF_T_ATOI	 (off_t)atoll
-#  define        OFF_T_STRTOL	 (off_t)strtoll
+#  ifdef HAVE_ATOLL
+#    define      OFF_T_ATOI	 (off_t)atoll
+#  else
+#    define      OFF_T_ATOI      (off_t)atol
+#  endif
+#  ifdef HAVE_STRTOLL
+#    define      OFF_T_STRTOL	 (off_t)strtoll
+#  else
+#    define      OFF_T_STRTOL      (off_t)strtol
+#  endif
 #else
 #  if SIZEOF_OFF_T == SIZEOF_LONG
 #    define        OFF_T_FMT       "%ld"
