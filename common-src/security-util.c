@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.25.2.4 2006/11/02 16:52:37 martinea Exp $
+ * $Id: security-util.c,v 1.25.2.5 2006/11/07 15:58:13 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -521,7 +521,7 @@ tcpm_recv_token(
 	    isprint((*handle >> 8 ) & 0xFF) &&
 	    isprint((*handle >> 16) & 0xFF) &&
 	    isprint((*handle >> 24) & 0xFF)) {
-	    char s[100];
+	    char s[101];
 	    int i;
 	    s[0] = (*size   >> 24) & 0xFF;
 	    s[1] = (*size   >> 16) & 0xFF;

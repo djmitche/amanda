@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.95.2.3 2006/11/01 16:01:28 martinea Exp $
+ * $Id: diskfile.c,v 1.95.2.4 2006/11/07 15:58:14 martinea Exp $
  *
  * read disklist file
  */
@@ -419,8 +419,8 @@ parse_diskline(
     /* diskdevice */
     dumptype = NULL;
     diskdevice = NULL;
-    dumptype = unquote_string(fp);
     if(fp[0] != '{') {
+	dumptype = unquote_string(fp);
 	if ((dtype = lookup_dumptype(dumptype)) == NULL) {
 	    diskdevice = dumptype;
 	    skip_whitespace(s, ch);
@@ -436,11 +436,11 @@ parse_diskline(
 	    fp = s - 1;
 	    skip_quoted_string(s, ch);
 	    s[-1] = '\0';
-	    dumptype = unquote_string(fp);
+	    if (fp[0] != '{') {
+		dumptype = unquote_string(fp);
+	    }
 	}
     }
-    else
-	amfree(dumptype);
 
     /* check for duplicate disk */
     if(host && (disk = lookup_disk(hostname, diskname)) != NULL) {
