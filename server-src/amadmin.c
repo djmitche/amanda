@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: amadmin.c,v 1.125 2006/09/20 13:59:45 martinea Exp $
+ * $Id: amadmin.c,v 1.126 2006/11/07 12:39:50 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1750,8 +1750,6 @@ disklist_one(
     am_host_t *hp;
     interface_t *ip;
     sle_t *excl;
-    time_t st;
-    struct tm *stm;
 
     hp = dp->host;
     ip = hp->netif;
@@ -1830,7 +1828,7 @@ disklist_one(
 	printf("INCRONLY\n");
 	break;
     }
-
+    printf("        ignore %s\n", (dp->ignore? "YES" : "NO"));
     printf("        estimate ");
     switch(dp->estimate) {
     case ES_CLIENT:
@@ -1901,16 +1899,7 @@ disklist_one(
 
     printf("        record %s\n", (dp->record? "YES" : "NO"));
     printf("        index %s\n", (dp->index? "YES" : "NO"));
-    st = dp->start_t;
-        if(st) {
-            stm = localtime(&st);
-	    if (stm) 
-		printf("        starttime %d:%02d:%02d\n",
-		       stm->tm_hour, stm->tm_min, stm->tm_sec);
-	    else
-		printf("        starttime BAD DATE\n");
-        }
-   
+    printf("        starttime %04d\n", (int)dp->starttime);
     if(dp->tape_splitsize > (off_t)0) {
 	printf("        tape_splitsize " OFF_T_FMT "\n",
 	       (OFF_T_FMT_TYPE)dp->tape_splitsize);

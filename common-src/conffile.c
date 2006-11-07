@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.8 2006/09/20 14:19:45 martinea Exp $
+ * $Id: conffile.c,v 1.9 2006/11/07 12:39:48 martinea Exp $
  *
  * read configuration file
  */
@@ -38,6 +38,10 @@
 
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
+#endif
+
+#ifndef AMANDATES_FILE
+#define AMANDATES_FILE "/etc/amandates"
 #endif
 
 #ifndef INT_MAX
@@ -126,18 +130,20 @@ static keytab_t *keytable = NULL;
 char *get_token_name(tok_t);
 
 
-static void validate_positive0   (t_conf_var *, val_t *);
-static void validate_positive1   (t_conf_var *, val_t *);
-static void validate_runspercycle(t_conf_var *, val_t *);
-static void validate_bumppercent (t_conf_var *, val_t *);
-static void validate_bumpmult    (t_conf_var *, val_t *);
-static void validate_inparallel  (t_conf_var *, val_t *);
-static void validate_displayunit (t_conf_var *, val_t *);
-static void validate_reserve     (t_conf_var *, val_t *);
-static void validate_use         (t_conf_var *, val_t *);
-static void validate_chunksize   (t_conf_var *, val_t *);
-static void validate_blocksize   (t_conf_var *, val_t *);
-static void validate_debug       (t_conf_var *, val_t *);
+static void validate_positive0            (t_conf_var *, val_t *);
+static void validate_positive1            (t_conf_var *, val_t *);
+static void validate_runspercycle         (t_conf_var *, val_t *);
+static void validate_bumppercent          (t_conf_var *, val_t *);
+static void validate_bumpmult             (t_conf_var *, val_t *);
+static void validate_inparallel           (t_conf_var *, val_t *);
+static void validate_displayunit          (t_conf_var *, val_t *);
+static void validate_reserve              (t_conf_var *, val_t *);
+static void validate_use                  (t_conf_var *, val_t *);
+static void validate_chunksize            (t_conf_var *, val_t *);
+static void validate_blocksize            (t_conf_var *, val_t *);
+static void validate_debug                (t_conf_var *, val_t *);
+static void validate_reserved_port_range  (t_conf_var *, val_t *);
+static void validate_unreserved_port_range(t_conf_var *, val_t *);
 
 //static t_conf_var  *get_np(t_conf_var *get_var, int parm);
 static int     get_int(void);
@@ -160,6 +166,7 @@ static void read_am64(t_conf_var *, val_t *);
 static void read_bool(t_conf_var *, val_t *);
 static void read_real(t_conf_var *, val_t *);
 static void read_time(t_conf_var *, val_t *);
+static void read_intrange(t_conf_var *, val_t *);
 static void conf_init_string(val_t *, char *);
 static void conf_init_ident(val_t *, char *);
 static void conf_init_int(val_t *, int);
@@ -177,6 +184,7 @@ static void conf_init_size(val_t *, ssize_t);
 static void conf_init_am64(val_t *, off_t);
 static void conf_init_real(val_t *, double);
 static void conf_init_rate(val_t *, double, double);
+static void conf_init_intrange(val_t *, int, int);
 static void conf_init_time(val_t *, time_t);
 //static void conf_init_sl(val_t *, sl_t *);
 static void conf_init_exinclude(val_t *);
@@ -202,7 +210,7 @@ static void read_block(command_option_t *command_options, t_conf_var *read_var,
 
 static void copy_val_t(val_t *, val_t *);
 static void free_val_t(val_t *);
-static char *conf_print(val_t *);
+static char *conf_print(val_t *, int);
 
 static void get_holdingdisk(void);
 static void init_holdingdisk_defaults(void);
@@ -253,40 +261,58 @@ keytab_t client_keytab[] = {
     { "CONNECT_TRIES", CONF_CONNECT_TRIES },
     { "REP_TRIES", CONF_REP_TRIES },
     { "REQ_TRIES", CONF_REQ_TRIES },
+    { "DEBUG_AMANDAD", CONF_DEBUG_AMANDAD },
+    { "DEBUG_AMIDXTAPED", CONF_DEBUG_AMIDXTAPED },
+    { "DEBUG_AMINDEXD", CONF_DEBUG_AMINDEXD },
+    { "DEBUG_AMRECOVER", CONF_DEBUG_AMRECOVER },
+    { "DEBUG_AUTH", CONF_DEBUG_AUTH },
+    { "DEBUG_EVENT", CONF_DEBUG_EVENT },
+    { "DEBUG_HOLDING", CONF_DEBUG_HOLDING },
+    { "DEBUG_PROTOCOL", CONF_DEBUG_PROTOCOL },
+    { "DEBUG_PLANNER", CONF_DEBUG_PLANNER },
+    { "DEBUG_DRIVER", CONF_DEBUG_DRIVER },
+    { "DEBUG_DUMPER", CONF_DEBUG_DUMPER },
+    { "DEBUG_CHUNKER", CONF_DEBUG_CHUNKER },
+    { "DEBUG_TAPER", CONF_DEBUG_TAPER },
+    { "DEBUG_SELFCHECK", CONF_DEBUG_SELFCHECK },
+    { "DEBUG_SENDSIZE", CONF_DEBUG_SENDSIZE },
+    { "DEBUG_SENDBACKUP", CONF_DEBUG_SENDBACKUP },
+    { "UNRESERVED-TCP-PORT", CONF_UNRESERVED_TCP_PORT },
     { NULL, CONF_UNKNOWN },
 };
 
 t_conf_var client_var [] = {
-   { CONF_CONF            , CONFTYPE_STRING, read_string, CNF_CONF            , NULL },
-   { CONF_INDEX_SERVER    , CONFTYPE_STRING, read_string, CNF_INDEX_SERVER    , NULL },
-   { CONF_TAPE_SERVER     , CONFTYPE_STRING, read_string, CNF_TAPE_SERVER     , NULL },
-   { CONF_TAPEDEV         , CONFTYPE_STRING, read_string, CNF_TAPEDEV         , NULL },
-   { CONF_AUTH            , CONFTYPE_STRING, read_string, CNF_AUTH            , NULL },
-   { CONF_SSH_KEYS        , CONFTYPE_STRING, read_string, CNF_SSH_KEYS        , NULL },
-   { CONF_AMANDAD_PATH    , CONFTYPE_STRING, read_string, CNF_AMANDAD_PATH    , NULL },
-   { CONF_CLIENT_USERNAME , CONFTYPE_STRING, read_string, CNF_CLIENT_USERNAME , NULL },
-   { CONF_GNUTAR_LIST_DIR , CONFTYPE_STRING, read_string, CNF_GNUTAR_LIST_DIR , NULL },
-   { CONF_AMANDATES       , CONFTYPE_STRING, read_string, CNF_AMANDATES       , NULL },
-   { CONF_CONNECT_TRIES   , CONFTYPE_INT   , read_int   , CNF_CONNECT_TRIES   , validate_positive1 },
-   { CONF_REP_TRIES       , CONFTYPE_INT   , read_int   , CNF_REP_TRIES       , validate_positive1 },
-   { CONF_REQ_TRIES       , CONFTYPE_INT   , read_int   , CNF_REQ_TRIES       , validate_positive1 },
-   { CONF_DEBUG_AMANDAD   , CONFTYPE_INT   , read_int   , CNF_DEBUG_AMANDAD   , validate_debug },
-   { CONF_DEBUG_AMIDXTAPED, CONFTYPE_INT   , read_int   , CNF_DEBUG_AMIDXTAPED, validate_debug },
-   { CONF_DEBUG_AMINDEXD  , CONFTYPE_INT   , read_int   , CNF_DEBUG_AMINDEXD  , validate_debug },
-   { CONF_DEBUG_AMRECOVER , CONFTYPE_INT   , read_int   , CNF_DEBUG_AMRECOVER , validate_debug },
-   { CONF_DEBUG_AUTH      , CONFTYPE_INT   , read_int   , CNF_DEBUG_AUTH      , validate_debug },
-   { CONF_DEBUG_EVENT     , CONFTYPE_INT   , read_int   , CNF_DEBUG_EVENT     , validate_debug },
-   { CONF_DEBUG_HOLDING   , CONFTYPE_INT   , read_int   , CNF_DEBUG_HOLDING   , validate_debug },
-   { CONF_DEBUG_PROTOCOL  , CONFTYPE_INT   , read_int   , CNF_DEBUG_PROTOCOL  , validate_debug },
-   { CONF_DEBUG_PLANNER   , CONFTYPE_INT   , read_int   , CNF_DEBUG_PLANNER   , validate_debug },
-   { CONF_DEBUG_DRIVER    , CONFTYPE_INT   , read_int   , CNF_DEBUG_DRIVER    , validate_debug },
-   { CONF_DEBUG_DUMPER    , CONFTYPE_INT   , read_int   , CNF_DEBUG_DUMPER    , validate_debug },
-   { CONF_DEBUG_CHUNKER   , CONFTYPE_INT   , read_int   , CNF_DEBUG_CHUNKER   , validate_debug },
-   { CONF_DEBUG_TAPER     , CONFTYPE_INT   , read_int   , CNF_DEBUG_TAPER     , validate_debug },
-   { CONF_DEBUG_SELFCHECK , CONFTYPE_INT   , read_int   , CNF_DEBUG_SELFCHECK , validate_debug },
-   { CONF_DEBUG_SENDSIZE  , CONFTYPE_INT   , read_int   , CNF_DEBUG_SENDSIZE  , validate_debug },
-   { CONF_DEBUG_SENDBACKUP, CONFTYPE_INT   , read_int   , CNF_DEBUG_SENDBACKUP, validate_debug },
-   { CONF_UNKNOWN         , CONFTYPE_INT   , NULL       , CNF_CNF             , NULL }
+   { CONF_CONF               , CONFTYPE_STRING  , read_string  , CNF_CONF               , NULL },
+   { CONF_INDEX_SERVER       , CONFTYPE_STRING  , read_string  , CNF_INDEX_SERVER       , NULL },
+   { CONF_TAPE_SERVER        , CONFTYPE_STRING  , read_string  , CNF_TAPE_SERVER        , NULL },
+   { CONF_TAPEDEV            , CONFTYPE_STRING  , read_string  , CNF_TAPEDEV            , NULL },
+   { CONF_AUTH               , CONFTYPE_STRING  , read_string  , CNF_AUTH               , NULL },
+   { CONF_SSH_KEYS           , CONFTYPE_STRING  , read_string  , CNF_SSH_KEYS           , NULL },
+   { CONF_AMANDAD_PATH       , CONFTYPE_STRING  , read_string  , CNF_AMANDAD_PATH       , NULL },
+   { CONF_CLIENT_USERNAME    , CONFTYPE_STRING  , read_string  , CNF_CLIENT_USERNAME    , NULL },
+   { CONF_GNUTAR_LIST_DIR    , CONFTYPE_STRING  , read_string  , CNF_GNUTAR_LIST_DIR    , NULL },
+   { CONF_AMANDATES          , CONFTYPE_STRING  , read_string  , CNF_AMANDATES          , NULL },
+   { CONF_CONNECT_TRIES      , CONFTYPE_INT     , read_int     , CNF_CONNECT_TRIES      , validate_positive1 },
+   { CONF_REP_TRIES          , CONFTYPE_INT     , read_int     , CNF_REP_TRIES          , validate_positive1 },
+   { CONF_REQ_TRIES          , CONFTYPE_INT     , read_int     , CNF_REQ_TRIES          , validate_positive1 },
+   { CONF_DEBUG_AMANDAD      , CONFTYPE_INT     , read_int     , CNF_DEBUG_AMANDAD      , validate_debug },
+   { CONF_DEBUG_AMIDXTAPED   , CONFTYPE_INT     , read_int     , CNF_DEBUG_AMIDXTAPED   , validate_debug },
+   { CONF_DEBUG_AMINDEXD     , CONFTYPE_INT     , read_int     , CNF_DEBUG_AMINDEXD     , validate_debug },
+   { CONF_DEBUG_AMRECOVER    , CONFTYPE_INT     , read_int     , CNF_DEBUG_AMRECOVER    , validate_debug },
+   { CONF_DEBUG_AUTH         , CONFTYPE_INT     , read_int     , CNF_DEBUG_AUTH         , validate_debug },
+   { CONF_DEBUG_EVENT        , CONFTYPE_INT     , read_int     , CNF_DEBUG_EVENT        , validate_debug },
+   { CONF_DEBUG_HOLDING      , CONFTYPE_INT     , read_int     , CNF_DEBUG_HOLDING      , validate_debug },
+   { CONF_DEBUG_PROTOCOL     , CONFTYPE_INT     , read_int     , CNF_DEBUG_PROTOCOL     , validate_debug },
+   { CONF_DEBUG_PLANNER      , CONFTYPE_INT     , read_int     , CNF_DEBUG_PLANNER      , validate_debug },
+   { CONF_DEBUG_DRIVER       , CONFTYPE_INT     , read_int     , CNF_DEBUG_DRIVER       , validate_debug },
+   { CONF_DEBUG_DUMPER       , CONFTYPE_INT     , read_int     , CNF_DEBUG_DUMPER       , validate_debug },
+   { CONF_DEBUG_CHUNKER      , CONFTYPE_INT     , read_int     , CNF_DEBUG_CHUNKER      , validate_debug },
+   { CONF_DEBUG_TAPER        , CONFTYPE_INT     , read_int     , CNF_DEBUG_TAPER        , validate_debug },
+   { CONF_DEBUG_SELFCHECK    , CONFTYPE_INT     , read_int     , CNF_DEBUG_SELFCHECK    , validate_debug },
+   { CONF_DEBUG_SENDSIZE     , CONFTYPE_INT     , read_int     , CNF_DEBUG_SENDSIZE     , validate_debug },
+   { CONF_DEBUG_SENDBACKUP   , CONFTYPE_INT     , read_int     , CNF_DEBUG_SENDBACKUP   , validate_debug },
+   { CONF_UNRESERVED_TCP_PORT, CONFTYPE_INTRANGE, read_intrange, CNF_UNRESERVED_TCP_PORT, validate_unreserved_port_range },
+   { CONF_UNKNOWN            , CONFTYPE_INT     , NULL         , CNF_CNF                , NULL }
 };
 
 keytab_t server_keytab[] = {
@@ -404,6 +430,8 @@ keytab_t server_keytab[] = {
     { "REQ_TRIES", CONF_REQ_TRIES },
     { "REQUIRED", CONF_REQUIRED },
     { "RESERVE", CONF_RESERVE },
+    { "RESERVED-UDP-PORT", CONF_RESERVED_UDP_PORT },
+    { "RESERVED-TCP-PORT", CONF_RESERVED_TCP_PORT },
     { "RUNSPERCYCLE", CONF_RUNSPERCYCLE },
     { "RUNTAPES", CONF_RUNTAPES },
     { "SERVER", CONF_SERVER },
@@ -428,6 +456,7 @@ keytab_t server_keytab[] = {
     { "TAPETYPE", CONF_TAPETYPE },
     { "TAPE_SPLITSIZE", CONF_TAPE_SPLITSIZE },
     { "TPCHANGER", CONF_TPCHANGER },
+    { "UNRESERVED-TCP-PORT", CONF_UNRESERVED_TCP_PORT },
     { "USE", CONF_USE },
     { "USETIMESTAMPS", CONF_USETIMESTAMPS },
     { NULL, CONF_IDENT },
@@ -462,9 +491,9 @@ t_conf_var server_var [] = {
    { CONF_INPARALLEL           , CONFTYPE_INT      , read_int     , CNF_INPARALLEL           , validate_inparallel },
    { CONF_DUMPORDER            , CONFTYPE_STRING   , read_string  , CNF_DUMPORDER            , NULL },
    { CONF_MAXDUMPS             , CONFTYPE_INT      , read_int     , CNF_MAXDUMPS             , validate_positive1 },
-   { CONF_ETIMEOUT             , CONFTYPE_TIME     , read_time    , CNF_ETIMEOUT             , NULL },
-   { CONF_DTIMEOUT             , CONFTYPE_TIME     , read_time    , CNF_DTIMEOUT             , validate_positive1 },
-   { CONF_CTIMEOUT             , CONFTYPE_TIME     , read_time    , CNF_CTIMEOUT             , validate_positive1 },
+   { CONF_ETIMEOUT             , CONFTYPE_INT      , read_int     , CNF_ETIMEOUT             , NULL },
+   { CONF_DTIMEOUT             , CONFTYPE_INT      , read_int     , CNF_DTIMEOUT             , validate_positive1 },
+   { CONF_CTIMEOUT             , CONFTYPE_INT      , read_int     , CNF_CTIMEOUT             , validate_positive1 },
    { CONF_TAPEBUFS             , CONFTYPE_INT      , read_int     , CNF_TAPEBUFS             , validate_positive1 },
    { CONF_RAWTAPEDEV           , CONFTYPE_STRING   , read_string  , CNF_RAWTAPEDEV           , NULL },
    { CONF_COLUMNSPEC           , CONFTYPE_STRING   , read_string  , CNF_COLUMNSPEC           , NULL },
@@ -499,6 +528,9 @@ t_conf_var server_var [] = {
    { CONF_DEBUG_SELFCHECK      , CONFTYPE_INT      , read_int     , CNF_DEBUG_SELFCHECK      , validate_debug },
    { CONF_DEBUG_SENDSIZE       , CONFTYPE_INT      , read_int     , CNF_DEBUG_SENDSIZE       , validate_debug },
    { CONF_DEBUG_SENDBACKUP     , CONFTYPE_INT      , read_int     , CNF_DEBUG_SENDBACKUP     , validate_debug },
+   { CONF_RESERVED_UDP_PORT    , CONFTYPE_INTRANGE , read_intrange, CNF_RESERVED_UDP_PORT    , validate_reserved_port_range },
+   { CONF_RESERVED_TCP_PORT    , CONFTYPE_INTRANGE , read_intrange, CNF_RESERVED_TCP_PORT    , validate_reserved_port_range },
+   { CONF_UNRESERVED_TCP_PORT  , CONFTYPE_INTRANGE , read_intrange, CNF_UNRESERVED_TCP_PORT  , validate_unreserved_port_range },
    { CONF_UNKNOWN              , CONFTYPE_INT      , NULL         , CNF_CNF                  , NULL }
 };
 /*
@@ -720,9 +752,13 @@ validate_chunksize(
 	val->v.am64 = ((AM64_MAX / 1024) - (2 * DISK_BLOCK_KB));
     }
     else if(val->v.am64 < 0) {
-	conf_parserror("Negative chunksize (%lld) is no longer supported", val->v.am64);
+	conf_parserror("Negative chunksize (%lld) is no longer supported",
+		       val->v.am64);
     }
     val->v.am64 = am_floor(val->v.am64, (off_t)DISK_BLOCK_KB);
+    if (val->v.am64 < 2*DISK_BLOCK_KB) {
+	conf_parserror("chunksize must be at least %dkb", 2*DISK_BLOCK_KB);
+    }
 }
 
 static void
@@ -752,12 +788,37 @@ validate_debug(
     }
 }
 
+static void
+validate_reserved_port_range(
+    struct s_conf_var *np,
+    val_t        *val)
+{
+    np = np;
+    if(val->v.intrange[0] < 1 || val->v.intrange[0] > IPPORT_RESERVED-1) {
+	conf_parserror("portrange must be between 1 and %d", IPPORT_RESERVED-1);
+    } else if(val->v.intrange[1] < 1 || val->v.intrange[1] > IPPORT_RESERVED-1) {
+	conf_parserror("portrange must be between 1 and IPPORT_RESERVED-1");
+    }
+}
+
+static void
+validate_unreserved_port_range(
+    struct s_conf_var *np,
+    val_t        *val)
+{
+    np = np;
+    if(val->v.intrange[0] < IPPORT_RESERVED+1 || val->v.intrange[0] > 65536) {
+	conf_parserror("portrange must be between %d and 65536", IPPORT_RESERVED+1);
+    } else if(val->v.intrange[1] < IPPORT_RESERVED+1 || val->v.intrange[1] > 65536) {
+	conf_parserror("portrange must be between %d and 65536", IPPORT_RESERVED+1);
+    }
+}
+
 char *
 getconf_byname(
     char *str)
 {
     static char *tmpstr;
-    char number[NUM_STR_SIZE];
     t_conf_var *np;
     keytab_t *kt;
     char *s;
@@ -784,26 +845,7 @@ getconf_byname(
 
     if(np->token == CONF_UNKNOWN) return NULL;
 
-    if(np->type == CONFTYPE_INT) {
-	snprintf(number, sizeof(number), "%d", conf_data[np->parm].v.i);
-	tmpstr = newstralloc(tmpstr, number);
-    } else if(np->type == CONFTYPE_BOOL) {
-	if(getconf_boolean(np->parm) == 0) {
-	    tmpstr = newstralloc(tmpstr, "off");
-	} else {
-	    tmpstr = newstralloc(tmpstr, "on");
-	}
-    } else if(np->type == CONFTYPE_REAL) {
-	snprintf(number, sizeof(number), "%lf", conf_data[np->parm].v.r);
-	tmpstr = newstralloc(tmpstr, number);
-    } else if(np->type == CONFTYPE_AM64){
-	snprintf(number, sizeof(number), OFF_T_FMT, 
-		 (OFF_T_FMT_TYPE)conf_data[np->parm].v.am64);
-	tmpstr = newstralloc(tmpstr, number);
-    } else {
-	tmpstr = newstralloc(tmpstr, getconf_str(np->parm));
-    }
-
+    tmpstr = stralloc(conf_print(&conf_data[np->parm], 0));
     return tmpstr;
 }
 
@@ -914,6 +956,17 @@ getconf_taperalgo(
     return(conf_data[parm].v.i);
 }
 
+int*
+getconf_intrange(
+    confparm_t parm)
+{
+    if (conf_data[parm].type != CONFTYPE_INTRANGE) {
+	error("getconf_intrange: parm is not a CONFTYPE_INTRANGE");
+	/*NOTREACHED*/
+    }
+    return(conf_data[parm].v.intrange);
+}
+
 holdingdisk_t *
 getconf_holdingdisks(
     void)
@@ -1010,12 +1063,6 @@ init_defaults(
 #endif
 #endif
     conf_init_string(&conf_data[CNF_TAPE_SERVER], s);
-#ifdef DEFAULT_TAPE_DEVICE
-    s = DEFAULT_TAPE_DEVICE;
-#else
-    s = NULL;
-#endif
-
     conf_init_string(&conf_data[CNF_AUTH], "bsd");
     conf_init_string(&conf_data[CNF_SSH_KEYS], "");
     conf_init_string(&conf_data[CNF_AMANDAD_PATH], "");
@@ -1026,7 +1073,7 @@ init_defaults(
 #else
     conf_init_string(&conf_data[CNF_GNUTAR_LIST_DIR], NULL);
 #endif
-    conf_init_string(&conf_data[CNF_AMANDATES], "/etc/amandates");
+    conf_init_string(&conf_data[CNF_AMANDATES], AMANDATES_FILE);
 
 
     conf_init_string(&conf_data[CNF_ORG], s);
@@ -1035,7 +1082,7 @@ init_defaults(
 #ifdef DEFAULT_TAPE_DEVICE
     s = DEFAULT_TAPE_DEVICE;
 #else
-    s = "/dev/rmt8";
+    s = NULL;
 #endif
     conf_init_string(&conf_data[CNF_TAPEDEV], s);
 #ifdef DEFAULT_CHANGER_DEVICE
@@ -1070,9 +1117,9 @@ init_defaults(
     conf_init_string   (&conf_data[CNF_TPCHANGER]            , "");
     conf_init_int      (&conf_data[CNF_RUNTAPES]             , 1);
     conf_init_int      (&conf_data[CNF_MAXDUMPS]             , 1);
-    conf_init_time     (&conf_data[CNF_ETIMEOUT]             , (time_t)300);
-    conf_init_time     (&conf_data[CNF_DTIMEOUT]             , (time_t)1800);
-    conf_init_time     (&conf_data[CNF_CTIMEOUT]             , (time_t)30);
+    conf_init_int      (&conf_data[CNF_ETIMEOUT]             , 300);
+    conf_init_int      (&conf_data[CNF_DTIMEOUT]             , 1800);
+    conf_init_int      (&conf_data[CNF_CTIMEOUT]             , 30);
     conf_init_int      (&conf_data[CNF_TAPEBUFS]             , 20);
     conf_init_string   (&conf_data[CNF_RAWTAPEDEV]           , s);
     conf_init_string   (&conf_data[CNF_PRINTER]              , "");
@@ -1108,7 +1155,21 @@ init_defaults(
     conf_init_int      (&conf_data[CNF_DEBUG_SELFCHECK]      , 0);
     conf_init_int      (&conf_data[CNF_DEBUG_SENDSIZE]       , 0);
     conf_init_int      (&conf_data[CNF_DEBUG_SENDBACKUP]     , 0);
-
+#ifdef UDPPORTRANGE
+    conf_init_intrange (&conf_data[CNF_RESERVED_UDP_PORT]    , UDPPORTRANGE);
+#else
+    conf_init_intrange (&conf_data[CNF_RESERVED_UDP_PORT]    , 512, 1023);
+#endif
+#ifdef LOW_TCPPORTRANGE
+    conf_init_intrange (&conf_data[CNF_RESERVED_TCP_PORT]    , LOW_TCPPORTRANGE);
+#else
+    conf_init_intrange (&conf_data[CNF_RESERVED_TCP_PORT]    , 512, 1023);
+#endif
+#ifdef TCPPORTRANGE
+    conf_init_intrange (&conf_data[CNF_UNRESERVED_TCP_PORT]  , TCPPORTRANGE);
+#else
+    conf_init_intrange (&conf_data[CNF_UNRESERVED_TCP_PORT]  , 0, 0);
+#endif
 
     /* defaults for internal variables */
 
@@ -1415,7 +1476,7 @@ t_conf_var dumptype_var [] = {
    { CONF_RECORD            , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_RECORD            , NULL },
    { CONF_SKIP_FULL         , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_SKIP_FULL         , NULL },
    { CONF_SKIP_INCR         , CONFTYPE_BOOL     , read_bool   , DUMPTYPE_SKIP_INCR         , NULL },
-   { CONF_STARTTIME         , CONFTYPE_TIME     , read_time   , DUMPTYPE_START_T           , NULL },
+   { CONF_STARTTIME         , CONFTYPE_TIME     , read_time   , DUMPTYPE_STARTTIME         , NULL },
    { CONF_STRATEGY          , CONFTYPE_INT      , get_strategy, DUMPTYPE_STRATEGY          , NULL },
    { CONF_TAPE_SPLITSIZE    , CONFTYPE_AM64     , read_am64   , DUMPTYPE_TAPE_SPLITSIZE    , validate_positive0 },
    { CONF_SPLIT_DISKBUFFER  , CONFTYPE_STRING   , read_string , DUMPTYPE_SPLIT_DISKBUFFER  , NULL },
@@ -1527,7 +1588,7 @@ init_dumptype_defaults(void)
     conf_init_am64     (&dpcur.value[DUMPTYPE_BUMPSIZE]          , conf_data[CNF_BUMPSIZE].v.am64);
     conf_init_int      (&dpcur.value[DUMPTYPE_BUMPDAYS]          , conf_data[CNF_BUMPDAYS].v.i);
     conf_init_real     (&dpcur.value[DUMPTYPE_BUMPMULT]          , conf_data[CNF_BUMPMULT].v.r);
-    conf_init_time     (&dpcur.value[DUMPTYPE_START_T]           , (time_t)0);
+    conf_init_time     (&dpcur.value[DUMPTYPE_STARTTIME]         , (time_t)0);
     conf_init_strategy (&dpcur.value[DUMPTYPE_STRATEGY]          , DS_STANDARD);
     conf_init_estimate (&dpcur.value[DUMPTYPE_ESTIMATE]          , ES_CLIENT);
     conf_init_compress (&dpcur.value[DUMPTYPE_COMPRESS]          , COMP_FAST);
@@ -1824,6 +1885,42 @@ get_comprate(
     if(tokenval.v.r < 0) {
 	conf_parserror("incremental compression rate must be >= 0");
     }
+}
+
+static void
+read_intrange(
+    t_conf_var *np,
+    val_t *val)
+{
+    np = np;
+    get_conftoken(CONF_INT);
+    val->v.intrange[0] = tokenval.v.i;
+    val->v.intrange[1] = tokenval.v.i;
+    val->seen = tokenval.seen;
+//    if(tokenval.v.r < 0) {
+//	conf_parserror("full compression rate must be >= 0");
+//    }
+
+    get_conftoken(CONF_ANY);
+    switch(tok) {
+    case CONF_NL:
+	return;
+
+    case CONF_END:
+	return;
+
+    case CONF_COMMA:
+	break;
+
+    default:
+	unget_conftoken();
+    }
+
+    get_conftoken(CONF_INT);
+    val->v.intrange[1] = tokenval.v.i;
+//    if(tokenval.v.r < 0) {
+//	conf_parserror("incremental compression rate must be >= 0");
+//    }
 }
 
 static void
@@ -2321,7 +2418,7 @@ dump_configuration(
 
 	if (kt->token != CONF_IDENT)
 	    printf("%-21s %s\n", kt->keyword,
-		   conf_print(&conf_data[np->parm]));
+		   conf_print(&conf_data[np->parm], 1));
     }
 
     for(hp = holdingdisks; hp != NULL; hp = hp->next) {
@@ -2341,7 +2438,7 @@ dump_configuration(
 	    if(kt->token == CONF_UNKNOWN)
 		error("holding bad token");
 
-	    printf("      %-9s %s\n", kt->keyword, conf_print(&hp->value[i]));
+	    printf("      %-9s %s\n", kt->keyword, conf_print(&hp->value[i], 1));
 	}
 	printf("}\n");
     }
@@ -2359,31 +2456,34 @@ dump_configuration(
 	    if(kt->token == CONF_UNKNOWN)
 		error("tapetype bad token");
 
-	    printf("      %-9s %s\n", kt->keyword, conf_print(&tp->value[i]));
+	    printf("      %-9s %s\n", kt->keyword, conf_print(&tp->value[i], 1));
 	}
 	printf("}\n");
     }
 
     for(dp = dumplist; dp != NULL; dp = dp->next) {
-	if(dp->seen == -1)
-	    prefix = "#";
-	else
-	    prefix = "";
-	printf("\n%sDEFINE DUMPTYPE %s {\n", prefix, dp->name);
-	for(i=0; i < DUMPTYPE_DUMPTYPE; i++) {
-	    for(np=dumptype_var; np->token != CONF_UNKNOWN; np++)
-		if(np->parm == i) break;
-	    if(np->token == CONF_UNKNOWN)
-		error("dumptype bad value");
+	if (strncmp(dp->name, "custom(", 7) != 0) {
+	    if(dp->seen == -1)
+		prefix = "#";
+	    else
+		prefix = "";
+	    printf("\n%sDEFINE DUMPTYPE %s {\n", prefix, dp->name);
+	    for(i=0; i < DUMPTYPE_DUMPTYPE; i++) {
+		for(np=dumptype_var; np->token != CONF_UNKNOWN; np++)
+		    if(np->parm == i) break;
+		if(np->token == CONF_UNKNOWN)
+		    error("dumptype bad value");
 
-	    for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
-		if(kt->token == np->token) break;
-	    if(kt->token == CONF_UNKNOWN)
-		error("dumptype bad token");
+		for(kt = server_keytab; kt->token != CONF_UNKNOWN; kt++)
+		    if(kt->token == np->token) break;
+		if(kt->token == CONF_UNKNOWN)
+		    error("dumptype bad token");
 
-	    printf("%s      %-19s %s\n", prefix, kt->keyword, conf_print(&dp->value[i]));
+		printf("%s      %-19s %s\n", prefix, kt->keyword,
+		       conf_print(&dp->value[i], 1));
+	    }
+	    printf("%s}\n", prefix);
 	}
-	printf("%s}\n", prefix);
     }
 
     for(ip = interface_list; ip != NULL; ip = ip->next) {
@@ -2403,7 +2503,7 @@ dump_configuration(
 	    if(kt->token == CONF_UNKNOWN)
 		error("interface bad token");
 
-	    printf("%s      %-9s %s\n", prefix, kt->keyword, conf_print(&ip->value[i]));
+	    printf("%s      %-9s %s\n", prefix, kt->keyword, conf_print(&ip->value[i], 1));
 	}
 	printf("%s}\n",prefix);
     }
@@ -2496,6 +2596,26 @@ parse_conf(
 	}
 	i++;
     }
+}
+
+char **
+get_config_options(
+    int first)
+{
+    char             **config_options;
+    char	     **config_option;
+    command_option_t  *command_options;
+
+    config_options = alloc((first+program_options_size+1)*SIZEOF(char *));
+    for(command_options = program_options,
+        config_option = config_options + first;
+	command_options->name != NULL; command_options++) {
+	*config_option = vstralloc("-o", command_options->name, "=",
+				   command_options->value, NULL);
+	config_option++;
+    }
+    *config_option = NULL;
+    return(config_options);
 }
 
 void
@@ -3908,6 +4028,12 @@ copy_val_t(
 	    valdst->v.exinclude.optional = valsrc->v.exinclude.optional;
 	    valdst->v.exinclude.sl = duplicate_sl(valsrc->v.exinclude.sl);
 	    break;
+
+	case CONFTYPE_INTRANGE:
+	    valdst->v.intrange[0] = valsrc->v.intrange[0];
+	    valdst->v.intrange[1] = valsrc->v.intrange[1];
+	    break;
+
 	}
     }
 }
@@ -3931,6 +4057,7 @@ free_val_t(
 	case CONFTYPE_AM64:
 	case CONFTYPE_REAL:
 	case CONFTYPE_RATE:
+	case CONFTYPE_INTRANGE:
 	    break;
 
 	case CONFTYPE_IDENT:
@@ -3969,9 +4096,9 @@ static char buffer_conf_print[1025];
 
 static char *
 conf_print(
-    val_t *val)
+    val_t *val,
+    int    str_need_quote)
 {
-    struct tm *stm;
     int pos;
 
     buffer_conf_print[0] = '\0';
@@ -4002,6 +4129,10 @@ conf_print(
 	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print), "%0.5f %0.5f" , val->v.rate[0], val->v.rate[1]);
 	break;
 
+    case CONFTYPE_INTRANGE:
+	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print), "%d,%d" , val->v.intrange[0], val->v.intrange[1]);
+	break;
+
     case CONFTYPE_IDENT:
 	if(val->v.s) {
 	    strncpy(buffer_conf_print, val->v.s, SIZEOF(buffer_conf_print));
@@ -4011,26 +4142,31 @@ conf_print(
 	break;
 
     case CONFTYPE_STRING:
-	buffer_conf_print[0] = '"';
-	if(val->v.s) {
-	    strncpy(&buffer_conf_print[1], val->v.s,
-	    		SIZEOF(buffer_conf_print) - 1);
-	    buffer_conf_print[SIZEOF(buffer_conf_print) - 2] = '\0';
-	    buffer_conf_print[strlen(buffer_conf_print)] = '"';
+	if(str_need_quote) {
+            buffer_conf_print[0] = '"';
+            if(val->v.s) {
+		strncpy(&buffer_conf_print[1], val->v.s,
+			SIZEOF(buffer_conf_print) - 1);
+		buffer_conf_print[SIZEOF(buffer_conf_print) - 2] = '\0';
+		buffer_conf_print[strlen(buffer_conf_print)] = '"';
+            } else {
+		buffer_conf_print[1] = '"';
+		buffer_conf_print[2] = '\0';
+            }
 	} else {
-	    buffer_conf_print[1] = '"';
-	    buffer_conf_print[2] = '\0';
+	    if(val->v.s) {
+		strncpy(&buffer_conf_print[0], val->v.s,
+			SIZEOF(buffer_conf_print));
+		buffer_conf_print[SIZEOF(buffer_conf_print) - 1] = '\0';
+	    } else {
+		buffer_conf_print[0] = '\0';
+	    }
 	}
 	break;
 
     case CONFTYPE_TIME:
-	stm = localtime(&val->v.t);
-	if (stm) {
-	    snprintf(buffer_conf_print, SIZEOF(buffer_conf_print),
-		     "%d%02d%02d", stm->tm_hour, stm->tm_min, stm->tm_sec);
-	} else {
-	    strcpy(buffer_conf_print, "00000");
-	}
+	snprintf(buffer_conf_print, SIZEOF(buffer_conf_print),
+		 "%2d%02d", (int)val->v.t/100, (int)val->v.t % 100);
 	break;
 
     case CONFTYPE_SL:
@@ -4356,6 +4492,18 @@ conf_init_rate(
     val->type = CONFTYPE_RATE;
     val->v.rate[0] = r1;
     val->v.rate[1] = r2;
+}
+
+static void
+conf_init_intrange(
+    val_t *val,
+    int    i1,
+    int    i2)
+{
+    val->seen = 0;
+    val->type = CONFTYPE_INTRANGE;
+    val->v.intrange[0] = i1;
+    val->v.intrange[1] = i2;
 }
 
 static void

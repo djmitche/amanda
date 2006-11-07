@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.7 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amrecover.c,v 1.8 2006/11/07 12:39:49 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -44,6 +44,7 @@
 #include "getfsent.h"
 #include "dgram.h"
 #include "util.h"
+#include "conffile.h"
 
 extern int process_line(char *line);
 int guess_disk(char *cwd, size_t cwd_len, char **dn_guess, char **mpt_guess);
@@ -415,6 +416,7 @@ main(
     char *service_name;
     char *line = NULL;
     struct tm *tm;
+    char *conffile;
 
     safe_fd(-1, 0);
 
@@ -453,6 +455,13 @@ main(
     tape_server_name = getenv("AMANDA_TAPESERVER");
     if(!tape_server_name) tape_server_name = DEFAULT_TAPE_SERVER;
     tape_server_name = stralloc(tape_server_name);
+
+    conffile = vstralloc(CONFIG_DIR, "/", "amanda-client.conf", NULL);
+    if (read_clientconf(conffile) > 0) {
+	error("error reading conffile: %s", conffile);
+	/*NOTREACHED*/
+    }
+    amfree(conffile);
 
     if (argc > 1 && argv[1][0] != '-')
     {

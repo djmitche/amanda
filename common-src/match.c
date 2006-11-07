@@ -24,13 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: match.c,v 1.23 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: match.c,v 1.24 2006/11/07 12:39:48 martinea Exp $
  *
  * functions for checking and matching regular expressions
  */
 
 #include "amanda.h"
-#include "regex.h"
+#include <regex.h>
 
 static int match_word(const char *glob, const char *word, const char separator);
 

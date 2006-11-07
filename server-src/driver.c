@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.199 2006/09/20 13:59:46 martinea Exp $
+ * $Id: driver.c,v 1.200 2006/11/07 12:39:51 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -168,6 +168,7 @@ main(
     char *line;
     int    new_argc,   my_argc;
     char **new_argv, **my_argv;
+    char hostname[1025];
 
     safe_fd(-1, 0);
 
@@ -249,6 +250,9 @@ main(
     driver_timestamp[14] = '\0';
     amfree(line);
     log_add(L_START,"date %s", driver_timestamp);
+
+    gethostname(hostname, SIZEOF(hostname));
+    log_add(L_STATS,"hostname %s", hostname);
 
     /* check that we don't do many dump in a day and usetimestamps is off */
     if(strlen(driver_timestamp) == 8) {
@@ -545,7 +549,7 @@ wait_children(int count)
 			dumper->pid = -1;
 			break;
 		    }
-		    if (pid == dumper->chunker->pid) {
+		    if (dumper->chunker && pid == dumper->chunker->pid) {
 			who = stralloc(dumper->chunker->name);
 			dumper->chunker->pid = -1;
 			break;

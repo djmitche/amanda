@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.89 2006/09/20 13:59:42 martinea Exp $
+ * $Id: sendbackup.c,v 1.90 2006/11/07 12:39:47 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -333,16 +333,18 @@ main(
 	if(!isdigit((int)s[-1])) {
 	    amfree(amdevice);
 	    amfree(qamdevice);
-	    amdevice = s - 1;
-	    skip_non_whitespace(s, ch);
+	    qamdevice = s - 1;
+	    ch = *qamdevice;
+	    skip_quoted_string(s, ch);
 	    s[-1] = '\0';
-	    amdevice = stralloc(amdevice);
+	    qamdevice = stralloc(qamdevice);
+	    amdevice = unquote_string(qamdevice);
 	    skip_whitespace(s, ch);		/* find level number */
 	}
 	else {
 	    amdevice = stralloc(disk);
+	    qamdevice = stralloc(qdisk);
 	}
-	qamdevice = quote_string(amdevice);
 						/* find the level number */
 	if(ch == '\0' || sscanf(s - 1, "%d", &level) != 1) {
 	    err_extra = "bad level";

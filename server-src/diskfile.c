@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.96 2006/09/20 13:59:46 martinea Exp $
+ * $Id: diskfile.c,v 1.97 2006/11/07 12:39:50 martinea Exp $
  *
  * read disklist file
  */
@@ -369,6 +369,8 @@ parse_diskline(
     int ch, dup = 0;
     char *line = *line_p;
     int line_num = *line_num_p;
+    struct tm *stm;
+    time_t st;
 
     assert(filename != NULL);
     assert(line_num > 0);
@@ -388,7 +390,7 @@ parse_diskline(
       hostname = stralloc(fp);
       malloc_mark(hostname);
     } else {
-      hostname = host->hostname;
+      hostname = stralloc(host->hostname);
     }
 
     skip_whitespace(s, ch);
@@ -484,7 +486,7 @@ parse_diskline(
 	amfree(line);
 
 	dtype = read_dumptype(vstralloc("custom(", hostname,
-					":", disk->name, ")", 0),
+					":", disk->name, ")", NULL),
 			      diskf, (char*)filename, line_num_p);
 	if (dtype == NULL || dup) {
 	    disk_parserror(filename, line_num,
@@ -568,8 +570,20 @@ parse_diskline(
     disk->bumpsize	     = dumptype_get_bumpsize(dtype);
     disk->bumpdays	     = dumptype_get_bumpdays(dtype);
     disk->bumpmult	     = dumptype_get_bumpmult(dtype);
-    disk->start_t	     = dumptype_get_start_t(dtype);
+    disk->starttime          = dumptype_get_starttime(dtype);
+    disk->start_t = 0;
+    if (disk->starttime > 0) {
+	st = time(NULL);
+	disk->start_t = st;
+	stm = localtime(&st);
+	disk->start_t -= stm->tm_sec + 60 * stm->tm_min + 3600 * stm->tm_hour;
+	disk->start_t += disk->starttime / 100 * 3600 +
+			 disk->starttime % 100 * 60;
+	if ((disk->start_t - st) < -43200)
+	    disk->start_t += 86400;
+    }
     disk->strategy	     = dumptype_get_strategy(dtype);
+    disk->ignore	     = dumptype_get_ignore(dtype);
     disk->estimate	     = dumptype_get_estimate(dtype);
     disk->compress	     = dumptype_get_compress(dtype);
     disk->srvcompprog	     = dumptype_get_srvcompprog(dtype);
@@ -647,10 +661,7 @@ parse_diskline(
     }
 
     if(dumptype_get_ignore(dtype) || dumptype_get_strategy(dtype) == DS_SKIP) {
-	amfree(hostname);
-	amfree(disk->name);
-	amfree(disk);
-	return (0);
+	disk->todo = 0;
     }
 
     /* success, add disk to lists */
@@ -670,6 +681,8 @@ parse_diskline(
 	host->start_t = 0;
 	host->up = NULL;
 	host->features = NULL;
+    } else {
+	amfree(hostname);
     }
 
     host->netif = netif;

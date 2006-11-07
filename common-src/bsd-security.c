@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.76 2006/09/20 13:59:43 martinea Exp $
+ * $Id: bsd-security.c,v 1.77 2006/11/07 12:39:48 martinea Exp $
  *
  * "BSD" security module
  */
@@ -339,7 +339,7 @@ bsd_stream_client(
 	STREAM_BUFSIZE, STREAM_BUFSIZE, &bs->port, 0);
     if (bs->fd < 0) {
 	security_seterror(&bh->sech,
-	    "can't connect stream to %s port %hd: %s", bh->hostname,
+	    "can't connect stream to %s port %d: %s", bh->hostname,
 	    id, strerror(errno));
 	amfree(bs);
 	return (NULL);

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.19 2006/09/20 13:59:41 martinea Exp $
+ * $Id: amandad.c,v 1.20 2006/11/07 12:39:46 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -728,6 +728,7 @@ state_machine(
 		pkt_type2str(pkt->type));
 	    do_sendpkt(as->security_handle, &nak);
 	    amfree(nak.body);
+	    security_recvpkt(as->security_handle, protocol_recv, as, -1);
 	    amandad_debug(1, ("%s: state_machine: %p leaving (A_SENDNAK)\n",
 			      debug_prefix_time(NULL), as));
 	    return;
@@ -819,6 +820,7 @@ s_repwait(
 	    amfree(as->rep_pkt.body);
 	    pkt_init(&as->rep_pkt, P_ACK, "");
 	    do_sendpkt(as->security_handle, &as->rep_pkt);
+	    security_recvpkt(as->security_handle, protocol_recv, as, -1);
 	    return (A_PENDING);
 	}
 	/* something unexpected.  Nak it */

@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.h,v 1.8 2006/06/22 17:16:39 martinea Exp $
+ * $Id: restore.h,v 1.9 2006/11/07 12:39:49 martinea Exp $
  *
  * 
  */
@@ -75,9 +75,9 @@ ssize_t read_file_header(dumpfile_t *file, int tapefd, int isafile,
 ssize_t restore(dumpfile_t *file, char *filename, int tapefd, int isafile,
 			rst_flags_t *flags);
 void flush_open_outputs(int reassemble, dumpfile_t *only_file);
-void search_tapes(FILE *prompt_out, int use_changer, tapelist_t *tapelist,
-                        match_list_t *restorethese, rst_flags_t *flags, 
-			am_feature_t *their_features);
+void search_tapes(FILE *prompt_out, FILE *prompt_in, int use_changer,
+		  tapelist_t *tapelist, match_list_t *restorethese,
+		  rst_flags_t *flags, am_feature_t *their_features);
 int have_all_parts(dumpfile_t *file, int upto);
 rst_flags_t *new_rst_flags(void);
 int check_rst_flags(rst_flags_t *flags);

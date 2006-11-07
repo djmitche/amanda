@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: calcsize.c,v 1.45 2006/09/20 13:59:41 martinea Exp $
+ * $Id: calcsize.c,v 1.46 2006/11/07 12:39:47 martinea Exp $
  *
  * traverse directory tree to get backup size estimates
  *
@@ -156,7 +156,9 @@ main(
     return 0;
 #else
     int i;
-    char *dirname=NULL, *amname=NULL, *filename=NULL, *qfilename = NULL;
+    char *dirname=NULL;
+    char *amname=NULL, *qamname=NULL;
+    char *filename=NULL, *qfilename = NULL;
     unsigned long malloc_hist_1, malloc_size_1;
     unsigned long malloc_hist_2, malloc_size_2;
 
@@ -225,6 +227,7 @@ main(
 
     if (argc > 0) {
 	amname = *argv;
+	qamname = quote_string(amname);
 	argc--, argv++;
     } else {
 	error("missing <name>");
@@ -327,16 +330,11 @@ main(
 
 	amflock(1, "size");
 
-	if (fseek(stderr, 0L, SEEK_END) < 0) {
-	    dbprintf(("calcsize: warning - seek failed: %s\n",
-		      strerror(errno)));
-	}
-
 	dbprintf(("calcsize: %s %d SIZE " OFF_T_FMT "\n",
-	       amname, dumplevel[i],
+	       qamname, dumplevel[i],
 	       (OFF_T_FMT_TYPE)final_size(i, dirname)));
 	fprintf(stderr, "%s %d SIZE " OFF_T_FMT "\n",
-	       amname, dumplevel[i],
+	       qamname, dumplevel[i],
 	       (OFF_T_FMT_TYPE)final_size(i, dirname));
 	fflush(stderr);
 

@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: rsh-security.c,v 1.32 2006/09/20 13:59:44 martinea Exp $
+ * $Id: rsh-security.c,v 1.33 2006/11/07 12:39:48 martinea Exp $
  *
  * rsh-security.c - security and transport over rsh or a rsh-like command.
  *
@@ -132,6 +132,7 @@ rsh_connect(
     rh->hostname = NULL;
     rh->rs = NULL;
     rh->ev_timeout = NULL;
+    rh->rc = NULL;
 
     if ((he = gethostbyname(hostname)) == NULL) {
 	security_seterror(&rh->sech,

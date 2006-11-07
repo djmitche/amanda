@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.h,v 1.6 2006/09/20 14:19:45 martinea Exp $
+ * $Id: conffile.h,v 1.7 2006/11/07 12:39:48 martinea Exp $
  *
  * interface for config file reading code
  */
@@ -112,6 +112,9 @@ typedef enum {
     CNF_DEBUG_SELFCHECK,
     CNF_DEBUG_SENDSIZE,
     CNF_DEBUG_SENDBACKUP,
+    CNF_RESERVED_UDP_PORT,
+    CNF_RESERVED_TCP_PORT,
+    CNF_UNRESERVED_TCP_PORT,
     CNF_CNF
 } confparm_t;
 
@@ -142,7 +145,8 @@ typedef enum {
 
     CONF_TAPERALGO,		CONF_FIRST,		CONF_FIRSTFIT,
     CONF_LARGEST,		CONF_LARGESTFIT,	CONF_SMALLEST,
-    CONF_LAST,			CONF_DISPLAYUNIT,
+    CONF_LAST,			CONF_DISPLAYUNIT,	CONF_RESERVED_UDP_PORT,
+    CONF_RESERVED_TCP_PORT,	CONF_UNRESERVED_TCP_PORT,
 
     /* kerberos 5 */
     CONF_KRB5KEYTAB,		CONF_KRB5PRINCIPAL,
@@ -231,7 +235,7 @@ typedef enum {
     CONFTYPE_REAL,
     CONFTYPE_STRING,
     CONFTYPE_IDENT,
-    CONFTYPE_TIME,
+    CONFTYPE_TIME,		/* hhmm */
     CONFTYPE_SIZE,
     CONFTYPE_SL,
     CONFTYPE_BOOL,
@@ -243,6 +247,7 @@ typedef enum {
     CONFTYPE_TAPERALGO,
     CONFTYPE_PRIORITY,
     CONFTYPE_RATE,
+    CONFTYPE_INTRANGE,
     CONFTYPE_EXINCLUDE,
 } conftype_t;
 
@@ -300,6 +305,7 @@ typedef struct val_s {
        time_t		t;
        float		rate[2];
        exinclude_t	exinclude;
+       int		intrange[2];
     } v;
     int seen;
     conftype_t type;
@@ -386,7 +392,7 @@ typedef enum dumptype_e  {
     DUMPTYPE_BUMPSIZE,
     DUMPTYPE_BUMPDAYS,
     DUMPTYPE_BUMPMULT,
-    DUMPTYPE_START_T,
+    DUMPTYPE_STARTTIME,
     DUMPTYPE_STRATEGY,
     DUMPTYPE_ESTIMATE,
     DUMPTYPE_COMPRESS,
@@ -439,7 +445,7 @@ typedef struct dumptype_s {
 #define dumptype_get_bumpsize(dumptype)           get_conftype_am64     (&dumptype->value[DUMPTYPE_BUMPSIZE])
 #define dumptype_get_bumpdays(dumptype)           get_conftype_int      (&dumptype->value[DUMPTYPE_BUMPDAYS])
 #define dumptype_get_bumpmult(dumptype)           get_conftype_real     (&dumptype->value[DUMPTYPE_BUMPMULT])
-#define dumptype_get_start_t(dumptype)            get_conftype_time     (&dumptype->value[DUMPTYPE_START_T])
+#define dumptype_get_starttime(dumptype)          get_conftype_time     (&dumptype->value[DUMPTYPE_STARTTIME])
 #define dumptype_get_strategy(dumptype)           get_conftype_strategy (&dumptype->value[DUMPTYPE_STRATEGY])
 #define dumptype_get_estimate(dumptype)           get_conftype_estimate (&dumptype->value[DUMPTYPE_ESTIMATE])
 #define dumptype_get_compress(dumptype)           get_conftype_compress (&dumptype->value[DUMPTYPE_COMPRESS])
@@ -549,6 +555,7 @@ int          get_conftype_taperalgo(val_t *);
 int          get_conftype_priority (val_t *);
 float       *get_conftype_rate     (val_t *);
 exinclude_t  get_conftype_exinclude(val_t *);
+int         *get_conftype_intrange (val_t *);
 
 void command_overwrite(command_option_t *command_options, t_conf_var *overwrite_var,
 		       keytab_t *keytab, val_t *valarray, char *prefix);
@@ -584,6 +591,7 @@ extern int num_holdingdisks;
 
 void parse_conf(int parse_argc, char **parse_argv, int *new_argc,
 		       char ***new_argv);
+char **get_config_options(int);
 void report_bad_conf_arg(void);
 void free_server_config(void);
 
@@ -605,6 +613,7 @@ off_t getconf_am64(confparm_t parameter);
 double getconf_real(confparm_t parameter);
 char *getconf_str(confparm_t parameter);
 int getconf_taperalgo(confparm_t parameter);
+int *getconf_intrange(confparm_t parameter);
 char *getconf_byname(char *confname);
 dumptype_t *lookup_dumptype(char *identifier);
 dumptype_t *read_dumptype(char *name, FILE *from, char *fname, int *linenum);

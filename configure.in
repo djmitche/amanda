@@ -556,56 +556,17 @@ AC_ARG_WITH(tape-device,
 	*) DEFAULT_TAPE_DEVICE="$withval"
 	  ;;
 	esac
-    ],
-    [
-	if test -z "$DEFAULT_TAPE_DEVICE"; then
-	    AC_MSG_CHECKING(for non-rewinding tape device)
-	    dnl Check for the /dev/rmt directory and use what's in there.
-	    dnl Otherwise look for tape devices in /dev.  For the devices
-	    dnl in /dev/rmt, we want to use the Berkeley behavior of
-	    dnl reading the first record of the next tape file after 0
-	    dnl bytes are returned upon reading to the next tape mark,
-	    dnl instead of returning an error.  Look for devices that have
-	    dnl a 'b' in their name.
-	    tape_dev=
-	    nr_tape_dev=
-	    if test -d /dev/rmt; then
-
-		dnl See if we can find two devices, one being the norewind
-		dnl version of the other.  Devices in this directory are
-		dnl normally a digit followed by some characters.  We also
-		dnl want the Berkely behavior, since Amanda needs it for
-		dnl amrestore.
-
-		for num in 9 8 7 6 5 4 3 2 1 0; do
-		    td=/dev/rmt/${num}b
-		    ntd=/dev/rmt/${num}bn
-		    if test -r $td -a -r $ntd; then
-			tape_dev=$td
-			nr_tape_dev=$ntd
-		    fi
-		done
-	    else
-		dnl Look for tape devices in /dev.
-		for num in 9 8 7 6 5 4 3 2 1 0; do
-		    td=/dev/rst${num}
-		    ntd=/dev/nrst${num}
-		    if test -r $td -a -r $ntd; then
-			tape_dev=$td
-			nr_tape_dev=$ntd
-		    fi
-		done
-	    fi
-	    DEFAULT_TAPE_DEVICE=$nr_tape_dev
-	    AC_MSG_RESULT($DEFAULT_TAPE_DEVICE)
-	fi
     ]
 )
 
 if test ! -z "$DEFAULT_TAPE_DEVICE"; then
     AC_DEFINE_UNQUOTED(DEFAULT_TAPE_DEVICE,"$DEFAULT_TAPE_DEVICE",[This is the default no-rewinding tape device. ])
     AC_SUBST(DEFAULT_TAPE_DEVICE)
+    EXAMPLE_TAPEDEV=$DEFAULT_TAPE_DEVICE
+else
+    EXAMPLE_TAPEDEV="/dev/null"
 fi
+AC_SUBST(EXAMPLE_TAPEDEV)
 
 AC_ARG_WITH(ftape-raw-device,
     [  --with-ftape-rawdevice=ARG raw device on tape server HOST's if using Linux ftape >=3.04d],
@@ -621,7 +582,7 @@ AC_ARG_WITH(ftape-raw-device,
     [
 	if test -z "$DEFAULT_RAW_TAPE_DEVICE"; then
 	    AC_MSG_CHECKING(for raw ftape device)
-	    dnl Look for tape devices in /dev.  
+	    dnl Look for tape devices in /dev.
 	    raw_tape_dev=/dev/null
 		dnl Look for tape devices in /dev.
 		for num in 3 2 1 0 ; do
@@ -963,7 +924,7 @@ y |  ye | yes) AC_DEFINE(BSDTCP_SECURITY,1,[Define if BSDTCP transport should be
 esac
 
 AC_ARG_WITH(bsdudp-security,
-    [  --with-bsdudp-security use tcp as a transport],
+    [  --with-bsdudp-security use udp as a transport],
     BSDUDP_SECURITY=$withval,
     : ${BSDUDP_SECURITY=yes}
 )
@@ -2728,6 +2689,8 @@ ICE_CHECK_DECL(atof,stdlib.h)
 ICE_CHECK_DECL(atoi,stdlib.h)
 ICE_CHECK_DECL(atol,stdlib.h)
 ICE_CHECK_DECL(atoll,stdlib.h)
+ICE_CHECK_DECL(strtol,stdlib.h)
+ICE_CHECK_DECL(strtoll,stdlib.h)
 AC_CHECK_FUNCS(basename)
 ICE_CHECK_DECL(bind,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(bcopy,string.h strings.h stdlib.h)
@@ -2746,7 +2709,6 @@ ICE_CHECK_DECL(fputs,stdio.h)
 ICE_CHECK_DECL(fread,stdio.h stdlib.h)
 ICE_CHECK_DECL(fseek,stdio.h)
 ICE_CHECK_DECL(fwrite,stdio.h stdlib.h)
-AC_REPLACE_FUNCS(getcwd)
 AC_CHECK_FUNCS(getfsent)
 ICE_CHECK_DECL(gethostname,unistd.h)
 AC_FUNC_GETMNTENT
@@ -2765,13 +2727,11 @@ ICE_CHECK_DECL(isnormal,math.h)
 ICE_CHECK_DECL(listen,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(lstat,sys/types.h sys/stat.h)
 ICE_CHECK_DECL(malloc,stdlib.h)
-AC_REPLACE_FUNCS(memmove)
 ICE_CHECK_DECL(memmove,string.h strings.h)
 ICE_CHECK_DECL(memset,string.h strings.h)
 AC_CHECK_FUNCS(mkdir)
 ICE_CHECK_DECL(mkstemp,stdlib.h)
 ICE_CHECK_DECL(mktemp,stdlib.h)
-AC_REPLACE_FUNCS(mktime)
 ICE_CHECK_DECL(mktime,time.h sys/time.h)
 AC_FUNC_MMAP
 dnl atexit() is prefered, sunos (maybe others?) define on_exit
@@ -2842,32 +2802,15 @@ if test "x$ac_cv_func_mmap_fixed_mapped" != xyes; then
     esac
 fi
 
-dnl Some systems have snprintf but not vsnprintf.  If either snprintf or
-dnl vsnprintf are missing, then use the snprintf.c we provide.
-ICE_CHECK_DECL(snprintf,stdio.h)
-ICE_CHECK_DECL(vsnprintf,stdio.h)
-if test x"$ice_have_snprintf" != x"yes" ||
-   test x"$ice_have_vsnprintf" != x"yes"; then
-    AC_LIBOBJ([snprintf])
-    if false; then :
-	dnl so that automake includes snprintf.c in the distribution
-	AC_REPLACE_FUNCS(snprintf) 
-    fi
-fi
-
 AC_CHECK_FUNCS(sigaction sigemptyset sigvec)
 ICE_CHECK_DECL(socket,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(socketpair,sys/types.h sys/socket.h)
 ICE_CHECK_DECL(sscanf,stdio.h)
 AC_CHECK_FUNCS(statfs statvfs)
-AC_REPLACE_FUNCS(strerror)
 ICE_CHECK_DECL(strerror,string.h strings.h)
 AC_FUNC_STRFTIME
-AC_REPLACE_FUNCS(strftime)
 ICE_CHECK_DECL(strftime,time.h sys/time.h)
-AC_REPLACE_FUNCS(strncasecmp)
 ICE_CHECK_DECL(strncasecmp,string.h strings.h)
-AC_REPLACE_FUNCS(strstr)
 ICE_CHECK_DECL(syslog,syslog.h)
 ICE_CHECK_DECL(system,stdlib.h)
 ICE_CHECK_DECL(time,time.h sys/time.h)
@@ -2879,10 +2822,8 @@ ICE_CHECK_DECL(vfprintf,stdio.h stdlib.h)
 ICE_CHECK_DECL(vprintf,stdio.h stdlib.h)
 ICE_CHECK_DECL(vsprintf,stdio.h stdlib.h)
 AC_CHECK_FUNC(wait4)
-AC_REPLACE_FUNCS(waitpid)
 AC_REPLACE_FUNCS(writev)
 ICE_CHECK_DECL(writev, unistd.h sys/uio.h)
-AC_REPLACE_FUNCS(strcasecmp)
 ICE_CHECK_DECL(strcasecmp,string.h strings.h)
 
 AC_CHECK_FUNCS(fnmatch)

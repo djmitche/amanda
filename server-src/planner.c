@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.207 2006/09/20 13:59:47 martinea Exp $
+ * $Id: planner.c,v 1.208 2006/11/07 12:39:51 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -340,7 +340,7 @@ int main(int argc, char **argv)
     conf_dumpcycle = getconf_int(CNF_DUMPCYCLE);
     conf_runspercycle = getconf_int(CNF_RUNSPERCYCLE);
     conf_tapecycle = getconf_int(CNF_TAPECYCLE);
-    conf_etimeout = getconf_time(CNF_ETIMEOUT);
+    conf_etimeout = getconf_int(CNF_ETIMEOUT);
     conf_reserve  = getconf_int(CNF_RESERVE);
     conf_autoflush = getconf_boolean(CNF_AUTOFLUSH);
     conf_usetimestamps = getconf_boolean(CNF_USETIMESTAMPS);
@@ -1306,6 +1306,7 @@ static void getsize(
     char *	dumper;
     char *	calcsize;
     char *	qname;
+    char *	qdevice;
 
     assert(hostp->disks != NULL);
 
@@ -1368,6 +1369,7 @@ static void getsize(
 	    }
 
 	    qname = quote_string(dp->name);
+	    qdevice = quote_string(dp->device);
 	    if(dp->estimate == ES_CLIENT ||
 	       dp->estimate == ES_CALCSIZE) {
 		nb_client++;
@@ -1449,7 +1451,7 @@ static void getsize(
 				  dumper,
 				  dp->program,
 				  " ", qname,
-				  " ", dp->device ? dp->device : "",
+				  " ", dp->device ? qdevice : "",
 				  " ", level,
 				  " ", est(dp)->dumpdate[i],
 				  " ", spindle,
@@ -1578,6 +1580,7 @@ static void getsize(
 		enqueue_disk(&estq, dp);
 	    }
 	    amfree(qname);
+	    amfree(qdevice);
 	}
 
 	if(estimates == 0) {
@@ -1601,7 +1604,7 @@ static void getsize(
 	 * We use ctimeout for the "noop" request because it should be
 	 * very fast and etimeout has other side effects.
 	 */
-	timeout = getconf_time(CNF_CTIMEOUT);
+	timeout = getconf_int(CNF_CTIMEOUT);
     }
 
     secdrv = security_getdriver(hostp->disks->security_driver);
@@ -1742,6 +1745,7 @@ static void handle_result(
 	       && pkt->type == P_NAK
 	       && (strcmp(t - 1, "unknown service: noop") == 0
 		   || strcmp(t - 1, "noop: invalid service") == 0)) {
+		skip_quoted_line(s, ch);
 		continue;
 	    }
 	    errbuf = vstralloc(hostp->hostname,
@@ -2279,10 +2283,18 @@ static void delay_dumps(void)
 	full_size = est_tape_size(dp, 0);
 	if (full_size > tapetype_get_length(tape) * (off_t)avail_tapes) {
 	    char *qname = quote_string(dp->name);
-	    log_add(L_WARNING, "disk %s:%s, full dump (" OFF_T_FMT 
-		    "KB) will be larger than available tape space",
-		    dp->host->hostname, qname,
-		    (OFF_T_FMT_TYPE)full_size);
+	    if (conf_runtapes > 1 && dp->tape_splitsize == (off_t)0) {
+		log_add(L_WARNING, "disk %s:%s, full dump (" OFF_T_FMT 
+			"KB) will be larger than available tape space"
+			", you could define a splitsize",
+			dp->host->hostname, qname,
+			(OFF_T_FMT_TYPE)full_size);
+	    } else {
+		log_add(L_WARNING, "disk %s:%s, full dump (" OFF_T_FMT 
+			"KB) will be larger than available tape space",
+			dp->host->hostname, qname,
+			(OFF_T_FMT_TYPE)full_size);
+	    }
 	    amfree(qname);
 	}
 

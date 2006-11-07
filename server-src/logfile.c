@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: logfile.c,v 1.31 2006/06/01 14:54:39 martinea Exp $
+ * $Id: logfile.c,v 1.32 2006/11/07 12:39:51 martinea Exp $
  *
  * common log file writing routine
  */
@@ -104,6 +104,7 @@ printf_arglist_function2(char *log_genstring, logtype_t, typ, char *, pname, cha
     arglist_start(argp, format);
     vsnprintf(linebuf, SIZEOF(linebuf)-1, format, argp);
 						/* -1 to allow for '\n' */
+    arglist_end(argp);
     return(vstralloc(leader, linebuf, "\n", NULL));
 }
 

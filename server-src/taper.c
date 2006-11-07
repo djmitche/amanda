@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.145 2006/09/20 13:59:47 martinea Exp $
+/* $Id: taper.c,v 1.146 2006/11/07 12:39:51 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -316,7 +316,9 @@ main(
 	/*NOTREACHED*/
     }
 
-    tapedev	= stralloc(getconf_str(CNF_TAPEDEV));
+    tapedev	= getconf_str(CNF_TAPEDEV);
+    if (tapedev != NULL)
+	tapedev = stralloc(tapedev);
     tapetype    = getconf_str(CNF_TAPETYPE);
     tt		= lookup_tapetype(tapetype);
 #ifdef HAVE_LIBVTBLC
@@ -629,8 +631,10 @@ free_split_buffer(void)
     if (mmap_splitbuffer_fd != -1) {
 #ifdef HAVE_MMAP
 #ifdef HAVE_SYS_MMAN_H
-	if (splitbuf != NULL)
-	    munmap(splitbuf, (size_t)mmap_splitsize);
+	if (mmap_splitbuf != NULL) {
+	    munmap(mmap_splitbuf, (size_t)mmap_splitsize);
+	    mmap_splitbuf = NULL;
+	}
 #endif
 #endif
 	aclose(mmap_splitbuffer_fd);
@@ -638,7 +642,7 @@ free_split_buffer(void)
 	mmap_splitsize = 0;
     }
     if (mem_splitbuf) {
-	amfree(splitbuf);
+	amfree(mem_splitbuf);
 	mem_splitsize = 0;
     }
 }
@@ -706,6 +710,13 @@ file_reader_side(
     /* pass start command on to tape writer */
 
     taper_timestamp = newstralloc(taper_timestamp, cmdargs.argv[2]);
+
+    if (tapedev == NULL) {
+	putresult(TAPE_ERROR, "[No tapedev defined]\n");
+	log_add(L_ERROR, "No tapedev defined");
+	dbprintf(("taper: No tapedev defined\n"));
+	exit(1);
+    }
 
     tape_started = 0;
     if (syncpipe_put('S', 0) == -1) {
@@ -2101,6 +2112,9 @@ tape_writer_side(
     syncpipe_init(getp, putp);
     tape_started = 0;
     idlewait = times_zero;
+    if (tapedev != NULL) {
+	tapedev = stralloc(tapedev);
+    }
 
     while (1) {
 	startclock();

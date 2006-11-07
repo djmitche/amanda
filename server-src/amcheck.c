@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.150 2006/09/20 13:59:45 martinea Exp $
+ * $Id: amcheck.c,v 1.151 2006/11/07 12:39:50 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -244,7 +244,7 @@ main(
       }
     }
 
-    conf_ctimeout = getconf_time(CNF_CTIMEOUT);
+    conf_ctimeout = getconf_int(CNF_CTIMEOUT);
 
     conf_diskfile = getconf_str(CNF_DISKFILE);
     if (*conf_diskfile == '/') {
@@ -803,7 +803,11 @@ start_server_check(
 	amfree(tape_dir);
 	amfree(holdfile);
 	tapename = getconf_str(CNF_TAPEDEV);
-	if (strncmp(tapename, "null:", 5) == 0) {
+	if (tapename == NULL) {
+	    fprintf(outf, "WARNING: No tapedev specified\n");
+	    testtape = 0;
+	    do_tapechk = 0;
+	} else if (strncmp(tapename, "null:", 5) == 0) {
 	    fprintf(outf,
 		    "WARNING: tapedev is %s, dumps will be thrown away\n",
 		    tapename);
@@ -840,6 +844,11 @@ start_server_check(
 			quoted, (OFF_T_FMT_TYPE)holdingdisk_get_disksize(hdp));
 		disklow = 1;
 	    }
+	    else if(holdingdisk_get_disksize(hdp) == (off_t)0) {
+		fprintf(outf, "WARNING: holding disk %s: "
+			"use nothing because 'use' is set to 0\n",
+			quoted);
+	    }
 	    else if(holdingdisk_get_disksize(hdp) > (off_t)0) {
 		if(fs.avail < holdingdisk_get_disksize(hdp)) {
 		    fprintf(outf,
@@ -855,14 +864,17 @@ start_server_check(
 		else {
 		    fprintf(outf,
 			    "Holding disk %s: " OFF_T_FMT
-			    " %sB disk space available, that's plenty\n",
-			    quoted, (OFF_T_FMT_TYPE)(fs.avail/(off_t)unitdivisor),
+			    " %sB disk space available,"
+			    " using " OFF_T_FMT " %sB as requested\n",
+			    quoted,
+			    (OFF_T_FMT_TYPE)(fs.avail/(off_t)unitdivisor),
+			    displayunit,
+			    (OFF_T_FMT_TYPE)(holdingdisk_get_disksize(hdp)/(off_t)unitdivisor),
 			    displayunit);
 		}
 	    }
 	    else {
-		assert(holdingdisk_get_disksize(hdp) < (off_t)0);
-		if((fs.avail + holdingdisk_get_disksize(hdp)) <= (off_t)0) {
+		if((fs.avail + holdingdisk_get_disksize(hdp)) < (off_t)0) {
 		    fprintf(outf,
 			    "WARNING: holding disk %s: "
 			    "only " OFF_T_FMT " %sB free, using nothing\n",
@@ -1525,7 +1537,7 @@ start_host(
 		    l = vstralloc(calcsize,
 				  dp->program, " ",
 				  qname, " ",
-				  dp->device,
+				  qdevice,
 				  " 0 OPTIONS |",
 				  o,
 				  "\n",

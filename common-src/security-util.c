@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.26 2006/09/20 13:59:44 martinea Exp $
+ * $Id: security-util.c,v 1.27 2006/11/07 12:39:48 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -499,17 +499,50 @@ tcpm_recv_token(
     }
 
     *size = (ssize_t)ntohl(netint[0]);
+    *handle = (int)ntohl(netint[1]);
     if (*size > NETWORK_BLOCK_BYTES) {
-	*errmsg = newvstralloc(*errmsg, "tcpm_recv_token: invalid size",
+	if (isprint((*size        ) & 0xFF) &&
+	    isprint((*size   >> 8 ) & 0xFF) &&
+	    isprint((*size   >> 16) & 0xFF) &&
+	    isprint((*size   >> 24) & 0xFF) &&
+	    isprint((*handle      ) & 0xFF) &&
+	    isprint((*handle >> 8 ) & 0xFF) &&
+	    isprint((*handle >> 16) & 0xFF) &&
+	    isprint((*handle >> 24) & 0xFF)) {
+	    char s[100];
+	    int i;
+	    s[0] = (*size   >> 24) & 0xFF;
+	    s[1] = (*size   >> 16) & 0xFF;
+	    s[2] = (*size   >>  8) & 0xFF;
+	    s[3] = (*size        ) & 0xFF;
+	    s[4] = (*handle >> 24) & 0xFF;
+	    s[5] = (*handle >> 16) & 0xFF;
+	    s[6] = (*handle >> 8 ) & 0xFF;
+	    s[7] = (*handle      ) & 0xFF;
+	    i = 8; s[i] = ' ';
+	    while(i<100 && isprint(s[i]) && s[i] != '\n') {
+		switch(net_read(fd, &s[i], 1, 0)) {
+		case -1: s[i] = '\0'; break;
+		case  0: s[i] = '\0'; break;
+		default: dbprintf(("read: %c\n", s[i])); i++; s[i]=' ';break;
+		}
+	    }
+	    s[i] = '\0';
+	    *errmsg = newvstralloc(*errmsg, "tcpm_recv_token: invalid size: ",
+				   s, NULL);
+	    dbprintf(("%s: tcpm_recv_token: invalid size: %s\n",
+		      debug_prefix_time(NULL), s));
+	} else {
+	    *errmsg = newvstralloc(*errmsg, "tcpm_recv_token: invalid size",
 				   NULL);
-	dbprintf(("%s: tcpm_recv_token: invalid size %d\n",
-		   debug_prefix_time(NULL), *size));
+	    dbprintf(("%s: tcpm_recv_token: invalid size %d\n",
+		      debug_prefix_time(NULL), *size));
+	}
 	*size = -1;
 	return -1;
     }
     amfree(*buf);
     *buf = alloc((size_t)*size);
-    *handle = (int)ntohl(netint[1]);
 
     if(*size == 0) {
 	auth_debug(1, ("%s: tcpm_recv_token: read EOF from %d\n",
@@ -587,7 +620,7 @@ tcpma_stream_client(
 
     if (id <= 0) {
 	security_seterror(&rh->sech,
-	    "%hd: invalid security stream id", id);
+	    "%d: invalid security stream id", id);
 	return (NULL);
     }
 
@@ -607,7 +640,7 @@ tcpma_stream_client(
 	rh->rc = rs->rc;
     }
 
-    auth_debug(1, ("%s: sec: stream_client: connected to stream %hd\n",
+    auth_debug(1, ("%s: sec: stream_client: connected to stream %d\n",
 		   debug_prefix_time(NULL), id));
 
     return (rs);
@@ -1225,8 +1258,8 @@ udp_inithandle(
     /*
      * Save the hostname and port info
      */
-    auth_debug(1, ("%s: udp_inithandle port %hd handle %s sequence %d\n",
-		   debug_prefix_time(NULL), ntohs(port),
+    auth_debug(1, ("%s: udp_inithandle port %u handle %s sequence %d\n",
+		   debug_prefix_time(NULL), (unsigned int)ntohs(port),
 		   handle, sequence));
     assert(he != NULL);
 
@@ -1728,7 +1761,8 @@ sec_tcp_conn_read_callback(
 	/* delete our 'accept' reference */
 	if (rc->accept_fn != NULL) {
 	    if(rc->refcnt != 1) {
-		dbprintf(("STRANGE, rc->refcnt should be 1"));
+		dbprintf(("STRANGE, rc->refcnt should be 1, it is %d\n",
+			  rc->refcnt));
 		rc->refcnt=1;
 	    }
 	    rc->accept_fn = NULL;
@@ -2370,7 +2404,8 @@ check_security(
     if (ntohs(addr->sin_port) >= IPPORT_RESERVED) {
 	char number[NUM_STR_SIZE];
 
-	snprintf(number, SIZEOF(number), "%hd", (short)ntohs(addr->sin_port));
+	snprintf(number, SIZEOF(number), "%u",
+		 (unsigned int)ntohs(addr->sin_port));
 	*errstr = vstralloc("[",
 			    "host ", remotehost, ": ",
 			    "port ", number, " not secure",

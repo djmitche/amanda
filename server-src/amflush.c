@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.96 2006/09/20 13:59:45 martinea Exp $
+ * $Id: amflush.c,v 1.97 2006/11/07 12:39:50 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -92,6 +92,7 @@ main(
     char **new_argv, **my_argv;
     char *errstr;
     struct tm *tm;
+    char *tapedev;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -227,6 +228,11 @@ main(
 				 NULL);
     logroll_program = vstralloc(libexecdir, "/", "amlogroll", versionsuffix(),
 				NULL);
+
+    tapedev = getconf_str(CNF_TAPEDEV);
+    if (tapedev == NULL) {
+	error("No tapedev specified");
+    }
 
     if(datearg) {
 	sle_t *dir, *next_dir;

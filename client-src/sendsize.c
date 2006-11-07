@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.172 2006/09/20 13:59:43 martinea Exp $
+ * $Id: sendsize.c,v 1.173 2006/11/07 12:39:47 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -732,11 +732,6 @@ wrapper_calc_estimates(
 
 	  amflock(1, "size");
 
-	  if (fseek(stdout, 0L, SEEK_END) < 0) {
-	      dbprintf(("wrapper_calc_estimates: warning - seek failed: %s\n",
-			strerror(errno)));
-	  }
-
 	  printf("%s %d SIZE " OFF_T_FMT "\n", est->qamname, level,
 		 (OFF_T_FMT_TYPE)size);
 	  fflush(stdout);
@@ -895,11 +890,6 @@ dump_calc_estimates(
 
 	    amflock(1, "size");
 
-	    if (fseek(stdout, 0L, SEEK_END) < 0) {
-		dbprintf(("dump_calc_estimates: warning - seek failed: %s\n",
-				strerror(errno)));
-	    }
-
 	    printf("%s %d SIZE " OFF_T_FMT "\n",
 		   est->qamname, level, (OFF_T_FMT_TYPE)size);
 	    fflush(stdout);
@@ -924,11 +914,6 @@ smbtar_calc_estimates(
 	    size = getsize_smbtar(est->amname, est->amdevice, level, est->options);
 
 	    amflock(1, "size");
-
-	    if (fseek(stdout, 0L, SEEK_END) < 0) {
-		dbprintf(("smbtar_calc_estimates: warning - seek failed: %s\n",
-				strerror(errno)));
-	    }
 
 	    printf("%s %d SIZE " OFF_T_FMT "\n",
 		   est->qamname, level, (OFF_T_FMT_TYPE)size);
@@ -956,11 +941,6 @@ gnutar_calc_estimates(
 				est->options, est->est[level].dumpsince);
 
 	  amflock(1, "size");
-
-	  if (fseek(stdout, 0L, SEEK_END) < 0) {
-	      dbprintf(("gnutar_calc_estimates: warning - seek failed: %s\n",
-				strerror(errno)));
-	  }
 
 	  printf("%s %d SIZE " OFF_T_FMT "\n",
 		 est->qamname, level, (OFF_T_FMT_TYPE)size);
@@ -1345,8 +1325,8 @@ getsize_dump(
 		       "0",
 #endif
 		       "1048576", "-", device, (char *)0, safe_env());
-# endif
 	    }
+# endif
 #endif
 	{
 	    error("exec %s failed or no dump program available: %s",
