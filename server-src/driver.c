@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.198.2.2 2006/11/01 14:45:41 martinea Exp $
+ * $Id: driver.c,v 1.198.2.3 2006/11/08 12:09:30 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -2040,6 +2040,7 @@ read_schedule(
 	s[-1] = '\0';
 
 	skip_whitespace(s, ch);			/* find the native size */
+	nsize = (off_t)0;
 	if(ch == '\0' || sscanf(s - 1, OFF_T_FMT, 
 				(OFF_T_FMT_TYPE *)&nsize) != 1) {
 	    error("schedule line %d: syntax error (bad nsize)", line);
@@ -2048,6 +2049,7 @@ read_schedule(
 	skip_integer(s, ch);
 
 	skip_whitespace(s, ch);			/* find the compressed size */
+	csize = (off_t)0;
 	if(ch == '\0' || sscanf(s - 1, OFF_T_FMT, 
 				(OFF_T_FMT_TYPE *)&csize) != 1) {
 	    error("schedule line %d: syntax error (bad csize)", line);
@@ -2089,6 +2091,7 @@ read_schedule(
 	    s[-1] = '\0';
 
 	    skip_whitespace(s, ch);		/* find the degr native size */
+	    degr_nsize = (off_t)0;
 	    if(ch == '\0'  || sscanf(s - 1, OFF_T_FMT, 
 			(OFF_T_FMT_TYPE *)&degr_nsize) != 1) {
 		error("schedule line %d: syntax error (bad degr nsize)", line);
@@ -2097,6 +2100,7 @@ read_schedule(
 	    skip_integer(s, ch);
 
 	    skip_whitespace(s, ch);		/* find the degr compressed size */
+	    degr_csize = (off_t)0;
 	    if(ch == '\0'  || sscanf(s - 1, OFF_T_FMT, 
 			(OFF_T_FMT_TYPE *)&degr_csize) != 1) {
 		error("schedule line %d: syntax error (bad degr csize)", line);
@@ -2800,6 +2804,7 @@ dump_to_tape(
 
 	free_serial(result_argv[2]);
 
+	dumpsize = (off_t)0;
 	if (*result_argv[5] == '"') {
 	    /* String was quoted */
 	    rc = sscanf(result_argv[5],"\"[sec %lf kb " OFF_T_FMT " ",

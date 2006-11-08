@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.206.2.3 2006/11/01 14:45:42 martinea Exp $
+ * $Id: planner.c,v 1.206.2.4 2006/11/08 12:09:30 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -1758,6 +1758,7 @@ static void handle_result(
 	s = t;
 	ch = tch;
 
+	size = (off_t)0;
 	if (sscanf(t - 1, "%d SIZE " OFF_T_FMT , &level,
 		   (OFF_T_FMT_TYPE *)&size) != 2) {
 	    goto bad_msg;
