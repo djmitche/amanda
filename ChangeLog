@@ -1,4 +1,12 @@
 2006-11-08  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/amanda.h, common-src/security-util.c,
+	  common-src/util.h, configure.in,
+	  oldrecover-src/amrecover.c, oldrecover-src/extract_list.c,
+	  recover-src/amrecover.c, recover-src/extract_list.c,
+	  restore-src/amrestore.c, server-src/conffile.c,
+	  server-src/dumper.c: Fix compiler error on Tru64.
+
+2006-11-08  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/driver.c: set off_t variable to 0 before sscanf.
 	* server-src/planner.c: set off_t variable to 0 before sscanf.
 

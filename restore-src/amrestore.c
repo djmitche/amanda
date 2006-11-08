@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrestore.c,v 1.63 2006/07/25 18:58:10 martinea Exp $
+ * $Id: amrestore.c,v 1.63.2.1 2006/11/08 17:11:40 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -168,7 +168,7 @@ main(
 	case 'p': rst_flags->pipe_to_fd = fileno(stdout); break;
 	case 'h': rst_flags->headers = 1; break;
 	case 'f':
-	    filefsf = (off_t)strtoll(optarg, &e, 10);
+	    filefsf = (off_t)OFF_T_STRTOL(optarg, &e, 10);
 	    /*@ignore@*/
 	    if(*e != '\0') {
 		error("invalid fileno value \"%s\"", optarg);

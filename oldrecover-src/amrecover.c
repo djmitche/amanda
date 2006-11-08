@@ -24,20 +24,13 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.7 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amrecover.c,v 1.7.2.1 2006/11/08 17:11:39 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
 
 #include "amanda.h"
 #include "version.h"
-//#ifdef HAVE_NETINET_IN_SYSTM_H
-//#include <netinet/in_systm.h>
-//#endif
-//#include <netinet/in.h>
-//#ifdef HAVE_NETINET_IP_H
-//#include <netinet/ip.h>
-//#endif
 #include "stream.h"
 #include "amfeatures.h"
 #include "amrecover.h"

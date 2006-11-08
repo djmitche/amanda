@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.156.2.4 2006/11/07 12:00:22 martinea Exp $
+ * $Id: conffile.c,v 1.156.2.5 2006/11/08 17:11:40 martinea Exp $
  *
  * read configuration file
  */
@@ -513,7 +513,7 @@ validate_chunksize(
 	val->v.am64 = ((AM64_MAX / 1024) - (2 * DISK_BLOCK_KB));
     }
     else if(val->v.am64 < 0) {
-	conf_parserror("Negative chunksize (%lld) is no longer supported",
+	conf_parserror("Negative chunksize ("OFF_T_FMT") is no longer supported",
 		       val->v.am64);
     }
     val->v.am64 = am_floor(val->v.am64, (off_t)DISK_BLOCK_KB);

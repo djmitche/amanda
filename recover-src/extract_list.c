@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: extract_list.c,v 1.117 2006/08/24 01:57:15 paddy_s Exp $
+ * $Id: extract_list.c,v 1.117.2.1 2006/11/08 17:11:39 martinea Exp $
  *
  * implements the "extract" command in amrecover
  */
@@ -762,7 +762,6 @@ add_file(
 	regex = "\\.[/]*$";
     }
     else if(strcmp(regex, "[^/]*[/]*$") == 0) {		/* "*" */
-	//regex = 
 	regex = "([^/.]|\\.[^/]+|[^/.][^/]*)[/]*$";
     } else {
 	/* remove "/" at end of path */

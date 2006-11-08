@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.73 2006/07/25 18:27:57 martinea Exp $
+ * $Id: amrecover.c,v 1.73.2.1 2006/11/08 17:11:39 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -356,22 +356,18 @@ main(
 	switch (i) {
 	    case 'C':
 		add_client_conf(CLN_CONF, optarg);
-		//config = newstralloc(config, optarg);
 		break;
 
 	    case 's':
 		add_client_conf(CLN_INDEX_SERVER, optarg);
-		//server_name = newstralloc(server_name, optarg);
 		break;
 
 	    case 't':
 		add_client_conf(CLN_TAPE_SERVER, optarg);
-		//tape_server_name = newstralloc(tape_server_name, optarg);
 		break;
 
 	    case 'd':
 		add_client_conf(CLN_TAPEDEV, optarg);
-		//tape_device_name = newstralloc(tape_device_name, optarg);
 		break;
 
 	    case 'U':

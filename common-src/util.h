@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.17.2.2 2006/11/01 14:45:39 martinea Exp $
+ * $Id: util.h,v 1.17.2.3 2006/11/08 17:11:38 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -52,7 +52,7 @@ typedef enum {
     CONFTYPE_TAPERALGO,
     CONFTYPE_PRIORITY,
     CONFTYPE_RATE,
-    CONFTYPE_EXINCLUDE,
+    CONFTYPE_EXINCLUDE
 } conftype_t;
 
 /* Compression types */
@@ -70,7 +70,7 @@ typedef enum {
 typedef enum {
     ENCRYPT_NONE,               /* No encryption */
     ENCRYPT_CUST,               /* Custom encryption on client */
-    ENCRYPT_SERV_CUST,          /* Custom encryption on server */
+    ENCRYPT_SERV_CUST           /* Custom encryption on server */
 } encrypt_t;
 
 /* holdingdisk types */

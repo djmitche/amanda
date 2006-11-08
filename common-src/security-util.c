@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.25.2.5 2006/11/07 15:58:13 martinea Exp $
+ * $Id: security-util.c,v 1.25.2.6 2006/11/08 17:11:38 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -694,8 +694,6 @@ tcpma_stream_server(
 	return (NULL);
     }
     assert(strcmp(rh->hostname, rs->rc->hostname) == 0);
-    //amfree(rh->hostname);
-    //rh->hostname = stralloc(rs->rc->hostname);
     /*
      * so as not to conflict with the amanda server's handle numbers,
      * we start at 500000 and work down
@@ -1210,7 +1208,6 @@ udp_recvpkt_callback(
 	SIZEOF(rh->udp->peer.sin_addr)) != 0 ||
 	rh->peer.sin_port != rh->udp->peer.sin_port) {
 	amfree(rh->udp->handle);
-	//rh->udp->handle = NULL;
 	return;
     }
 

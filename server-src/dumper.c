@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.190.2.1 2006/11/01 14:45:42 martinea Exp $
+/* $Id: dumper.c,v 1.190.2.2 2006/11/08 17:11:41 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1692,7 +1692,6 @@ bad_nak:
     }
 
 #if 1
-//#if defined(PACKET_DEBUG)
     fprintf(stderr, "got response:\n----\n%s\n----\n\n", pkt->body);
 #endif
 
