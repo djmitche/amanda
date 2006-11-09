@@ -1,4 +1,4 @@
-static char rcsid[] = "$Id: chg-scsi.c,v 1.52 2006/07/25 18:18:46 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.52.2.1 2006/11/09 13:20:40 martinea Exp $";
 /*
  * 
  *
@@ -399,15 +399,17 @@ read_config(
 	    fprintf(stderr,"drivenum %d is bad\n", drivenum);
 	    drivenum = 0;
 	  }
-          p = chg->conf[drivenum].changerident;
-          while (*p != '\0')
-          {
-            if (*p == '_')
+	  if (strcmp(chg->conf[drivenum].changerident,"generic_changer") != 0) {
+            p = chg->conf[drivenum].changerident;
+            while (*p != '\0')
             {
-              *p=' ';
+              if (*p == '_')
+              {
+                *p=' ';
+              }
+              p++;
             }
-            p++;
-          }
+	  }
           break;
         case TAPEIDENT:
           chg->conf[drivenum].tapeident = stralloc(value);
