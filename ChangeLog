@@ -1,4 +1,9 @@
 2006-11-09  Jean-Louis Martineau <martineau@zmanda.com>
+	* Amanda 2.5.1p2 released.
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.1p2).
+	* NEWS: Update for 2.5.1p2
+
+2006-11-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/conffile.c (getconf_byname):
 	                        Parse "DEFINE:identifer:parameter" format.
 	* server-src/conffile.c (getconf_list): New function to list a DEFINE.

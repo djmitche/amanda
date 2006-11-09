@@ -1,4 +1,19 @@
+Changes in release 2.5.1p2
+
+   * Many bugs fixed
+   * amoverview is working
+   * dumptype starttime is working
+
+   * Amanda command changes
+         o amtape accept the -o arguments
+         o amgetconf --list to list all tapetype, dumptype, holdingdisk
+           or interface
+         o amgetconf can return a value of a specific tapetype, dumptype,
+           holdingdisk or interface
+
+
 Changes in release 2.5.1p1
+
    * Many bugs fixed:
          o Timeout waiting for ACK
          o "illegal density" with dump
@@ -7,6 +22,7 @@ Changes in release 2.5.1p1
          o amrecover with FreeBSD/OpenBSD
    * Some other small cleanup.
    * Remove contrib/sst.
+
 
 Changes in release 2.5.1
 
