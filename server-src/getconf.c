@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.26 2006/07/25 19:00:56 martinea Exp $
+ * $Id: getconf.c,v 1.26.2.1 2006/11/09 14:35:10 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -424,6 +424,7 @@ main(
     char *conffile;
     char *parmname;
     int i;
+    int asklist;
     char number[NUM_STR_SIZE];
     int    new_argc,   my_argc;
     char **new_argv, **my_argv;
@@ -447,11 +448,27 @@ main(
     signal(SIGPIPE, SIG_IGN);
 
     if(my_argc < 2) {
-	fprintf(stderr, "Usage: %s [config] <parmname> [-o configoption]*\n", pgm);
+	fprintf(stderr, "Usage: %s [config] [--list] <parmname> [-o configoption]*\n", pgm);
 	exit(1);
     }
 
-    if (my_argc > 2) {
+    asklist = 0;
+    if (strcmp(my_argv[1],"--list") == 0) {
+	asklist = 1;
+	amfree(my_argv[1]);
+	my_argv[1] = my_argv[2];
+	my_argv[2] = NULL;
+	my_argc--;
+    }
+    if (my_argc > 2 && strcmp(my_argv[2],"--list") == 0) {
+	asklist = 1;
+	amfree(my_argv[2]);
+	my_argv[2] = my_argv[3];
+	my_argv[3] = NULL;
+	my_argc--;
+    }
+
+    if (my_argc > 2 && strcmp(my_argv[1],"--list") != 0) {
 	config_name = stralloc(my_argv[1]);
 	config_dir = vstralloc(CONFIG_DIR, "/", config_name, "/", NULL);
 	parmname = my_argv[2];
@@ -569,7 +586,11 @@ main(
 	amfree(conffile);
 	dbrename(config_name, DBG_SUBDIR_SERVER);
 	report_bad_conf_arg();
-	result = getconf_byname(parmname);
+	if (asklist) {
+	    result = getconf_list(parmname);
+	} else {
+	    result = getconf_byname(parmname);
+	}
     }
 
     if (result == NULL) {
