@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /* 
- * $Id: selfcheck.c,v 1.95 2006/08/29 11:21:00 martinea Exp $
+ * $Id: selfcheck.c,v 1.95.2.1 2006/11/13 19:09:53 martinea Exp $
  *
  * do self-check and send back any error messages
  */
@@ -681,7 +681,7 @@ check_disk(
 	amode = F_OK;
 	amfree(device);
 	device = amname_to_dirname(amdevice);
-    } else if (strcmp(program, "DUMP") == 0) {
+    } else if (strcmp(myprogram, "DUMP") == 0) {
 	if(amdevice[0] == '/' && amdevice[1] == '/') {
 	    err = vstralloc("The DUMP program cannot handle samba shares,",
 			    " use GNUTAR: ",
