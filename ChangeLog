@@ -1,3 +1,7 @@
+2006-11-13  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/amcheck.c: Don't ouput an warning if holdingdisk 'use'
+				is set to 0.
+
 2006-11-09  Jean-Louis Martineau <martineau@zmanda.com>
 	* Amanda 2.5.1p2 released.
 	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.1p2).

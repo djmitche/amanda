@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.149.2.4 2006/11/01 14:45:39 martinea Exp $
+ * $Id: amcheck.c,v 1.149.2.5 2006/11/13 12:41:01 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -843,11 +843,6 @@ start_server_check(
 			"available space unknown (" OFF_T_FMT" KB requested)\n",
 			quoted, (OFF_T_FMT_TYPE)holdingdisk_get_disksize(hdp));
 		disklow = 1;
-	    }
-	    else if(holdingdisk_get_disksize(hdp) == (off_t)0) {
-		fprintf(outf, "WARNING: holding disk %s: "
-			"use nothing because 'use' is set to 0\n",
-			quoted);
 	    }
 	    else if(holdingdisk_get_disksize(hdp) > (off_t)0) {
 		if(fs.avail < holdingdisk_get_disksize(hdp)) {
