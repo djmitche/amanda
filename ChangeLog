@@ -1,3 +1,7 @@
+2006-11-23  Jean-Louis Martineau <martineau@zmanda.com>
+* common-src/security-util.c (tcpm_recv_token): amanda protocol
+	  packet can be larger than NETWORK_BLOCK_BYTES
+
 2006-11-20  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/sendsize.c: Open the amandates file after the
 				 <config>/amanda-client.conf file is loaded.
