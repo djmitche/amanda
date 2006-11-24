@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-dump.c,v 1.90.2.1 2006/09/23 19:19:47 martinea Exp $
+ * $Id: sendbackup-dump.c,v 1.90.2.2 2006/11/24 18:10:38 martinea Exp $
  *
  * send backup data using BSD dump
  */
@@ -375,12 +375,15 @@ start_backup(
 #define RESTORE "restore"
 #endif
 
+#ifdef HAVE_HONOR_NODUMP
+#  define PARAM_HONOR_NODUMP "h"
+#else
+#  define PARAM_HONOR_NODUMP ""
+#endif
 	dumpkeys = vstralloc(level_str,
 			     options->no_record ? "" : "u",
 			     "s",
-#ifdef HAVE_HONOR_NODUMP
-			     "h",
-#endif
+			     PARAM_HONOR_NODUMP,
 			     "f",
 			     NULL);
 

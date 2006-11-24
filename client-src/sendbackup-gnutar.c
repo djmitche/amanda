@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup-gnutar.c,v 1.98 2006/07/25 18:35:21 martinea Exp $
+ * $Id: sendbackup-gnutar.c,v 1.98.2.1 2006/11/24 18:10:38 martinea Exp $
  *
  * send backup data using GNU tar
  */
@@ -360,12 +360,13 @@ start_backup(
     cur_dumptime = time(0);
     cur_level = level;
     cur_disk = stralloc(disk);
-    indexcmd = vstralloc(
 #ifdef GNUTAR
-			 GNUTAR,
+#  define PROGRAM_GNUTAR GNUTAR
 #else
-			 "tar",
+#  define PROGRAM_GNUTAR "tar"
 #endif
+    indexcmd = vstralloc(
+			 PROGRAM_GNUTAR,
 			 " -tf", " -",
 			 " 2>/dev/null",
 			 " | sed", " -e",

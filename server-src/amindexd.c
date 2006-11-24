@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.106.2.3 2006/11/24 18:05:06 martinea Exp $
+ * $Id: amindexd.c,v 1.106.2.4 2006/11/24 18:10:38 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -173,10 +173,13 @@ uncompress_file(
 	    return NULL;
  	}
 
-	cmd = vstralloc(UNCOMPRESS_PATH,
 #ifdef UNCOMPRESS_OPT
-			" ", UNCOMPRESS_OPT,
+#  define PARAM_UNCOMPRESS_OPT " ", UNCOMPRESS_OPT
+#else
+#  define PARAM_UNCOMPRESS_OPT ""
 #endif
+	cmd = vstralloc(UNCOMPRESS_PATH,
+			PARAM_UNCOMPRESS_OPT,
 			" \'", filename_gz, "\'",
 			" 2>/dev/null",
 			" | (LC_ALL=C; export LC_ALL ; sort) ",
