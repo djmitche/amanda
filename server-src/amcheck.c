@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.149.2.5 2006/11/13 12:41:01 martinea Exp $
+ * $Id: amcheck.c,v 1.149.2.6 2006/11/24 18:05:05 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -1089,6 +1089,11 @@ start_server_check(
 	    amfree(conf_infofile);
 	    infobad = 1;
 	} else {
+	    char *errmsg = NULL;
+	    if (check_infofile(conf_infofile, &origq, &errmsg) == -1) {
+		fprintf(outf, "ERROR: Can't copy infofile: %s\n", errmsg);
+		amfree(errmsg);
+	    }
 	    strappend(conf_infofile, "/");
 	}
 	amfree(quoted);

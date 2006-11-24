@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.17.2.3 2006/11/08 17:11:38 martinea Exp $
+ * $Id: util.h,v 1.17.2.4 2006/11/24 18:05:05 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -362,6 +362,7 @@ char *	sanitize_string(const char *str);
 char *	strquotedstr(void);
 ssize_t	hexdump(const char *buffer, size_t bytes);
 void	dump_sockaddr(struct sockaddr_in *	sa);
+int     copy_file(char *dst, char *src, char **errmsg);
 
 /*
  *   validate_email return 0 if the following characters are present

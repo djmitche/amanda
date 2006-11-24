@@ -24,13 +24,14 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: server_util.h,v 1.11 2006/05/25 01:47:20 johnfranks Exp $
+ * $Id: server_util.h,v 1.11.2.1 2006/11/24 18:05:07 martinea Exp $
  *
  */
 #ifndef SERVER_UTIL_H
 #define	SERVER_UTIL_H
 
 #include "util.h"
+#include "diskfile.h"
 
 #define MAX_ARGS 32
 
@@ -70,5 +71,6 @@ struct dumper_s;
 int dumper_cmd(struct dumper_s *dumper, cmd_t cmd, struct disk_s *dp);
 
 char *amhost_get_security_conf(char *string, void *arg);
+int check_infofile(char *infodir, disklist_t *dl, char **errmsg);
 
 #endif	/* SERVER_UTIL_H */

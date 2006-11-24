@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.106.2.2 2006/09/27 12:04:09 martinea Exp $
+ * $Id: amindexd.c,v 1.106.2.3 2006/11/24 18:05:06 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -228,6 +228,7 @@ process_ls_dump(
     char *s;
     int ch;
     size_t len_dir_slash;
+    struct stat statbuf;
 
     if (strcmp(dir, "/") == 0) {
 	dir_slash = stralloc(dir);
@@ -237,6 +238,11 @@ process_ls_dump(
 
     filename_gz = getindexfname(dump_hostname, disk_name, dump_item->date,
 			        dump_item->level);
+    if (stat(filename_gz, &statbuf) < 0 && errno == ENOENT) {
+	amfree(filename_gz);
+	filename_gz = getoldindexfname(dump_hostname, disk_name,
+				       dump_item->date, dump_item->level);
+    }
     if((filename = uncompress_file(filename_gz, emsg)) == NULL) {
 	amfree(filename_gz);
 	amfree(dir_slash);

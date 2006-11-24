@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.131.2.3 2006/11/08 17:11:38 martinea Exp $
+ * $Id: amanda.h,v 1.131.2.4 2006/11/24 18:05:04 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -853,6 +853,7 @@ extern int    amfunlock(int fd, char *resource);
 extern int    mkpdir(char *file, mode_t mode, uid_t uid, gid_t gid);
 extern int    rmpdir(char *file, char *topdir);
 extern char  *sanitise_filename(char *inp);
+extern char  *old_sanitise_filename(char *inp);
 
 /* from old bsd-security.c */
 extern int debug;
