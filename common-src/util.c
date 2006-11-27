@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42.2.6 2006/11/24 18:05:05 martinea Exp $
+ * $Id: util.c,v 1.42.2.7 2006/11/27 22:22:38 martinea Exp $
  */
 
 #include "amanda.h"
@@ -2660,6 +2660,7 @@ int copy_file(
     char   *quoted;
 
     if ((infd = open(src, O_RDONLY)) == -1) {
+	save_errno = errno;
 	quoted = quote_string(src);
 	*errmsg = vstralloc("Can't open file ", quoted, " for reading: %s",
 			    strerror(save_errno));

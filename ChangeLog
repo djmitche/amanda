@@ -1,4 +1,7 @@
 2006-11-24  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c (copy_file): Fix compilation error.
+
+2006-11-24  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/sendbackup-dump.c, client-src/sendbackup-gnutar.c,
 	  client-src/sendsize.c,
 	  server-src/amindexd.c: Patch for gcc-3.2.3 to compile the new
