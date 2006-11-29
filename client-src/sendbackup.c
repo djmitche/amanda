@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.88 2006/07/25 18:27:56 martinea Exp $
+ * $Id: sendbackup.c,v 1.88.2.1 2006/11/29 12:22:09 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -597,6 +597,11 @@ check_status(
     }
 #endif
 
+    if(pid == tarpid) {
+	if(ret == 1) {
+	    rc = 0;
+	}
+    }
 #ifdef IGNORE_TAR_ERRORS
     if(pid == tarpid) {
 	/*
