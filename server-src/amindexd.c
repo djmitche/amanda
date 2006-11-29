@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.106.2.5 2006/11/29 12:16:52 martinea Exp $
+ * $Id: amindexd.c,v 1.106.2.6 2006/11/29 12:36:16 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -975,9 +975,9 @@ tapedev_is(void)
 	return 0;
     }
 
-    dbprintf(("%s: No tapedev or changer in config site.\n",
+    dbprintf(("%s: No tapedev or tpchanger in config site.\n",
               debug_prefix_time(NULL)));
-    reply(501, "Tapedev or changer not set in config file.");
+    reply(501, "Tapedev or tpchanger not set in config file.");
     return -1;
 }
 

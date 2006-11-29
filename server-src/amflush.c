@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.95.2.1 2006/10/03 11:35:49 martinea Exp $
+ * $Id: amflush.c,v 1.95.2.2 2006/11/29 12:36:16 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -93,6 +93,7 @@ main(
     char *errstr;
     struct tm *tm;
     char *tapedev;
+    char *tpchanger;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -230,8 +231,9 @@ main(
 				NULL);
 
     tapedev = getconf_str(CNF_TAPEDEV);
-    if (tapedev == NULL) {
-	error("No tapedev specified");
+    tpchanger = getconf_str(CNF_TPCHANGER);
+    if (tapedev == NULL && tpchanger == NULL) {
+	error("No tapedev or tpchanger specified");
     }
 
     if(datearg) {
