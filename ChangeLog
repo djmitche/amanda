@@ -1,3 +1,6 @@
+2006-11-29  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/restore.c (search_tapes): Fix prompt_out setting.
+
 2006-11-24  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.c (copy_file): Fix compilation error.
 

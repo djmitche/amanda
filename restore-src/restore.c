@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.52.2.3 2006/10/03 11:35:48 martinea Exp $
+ * $Id: restore.c,v 1.52.2.4 2006/11/29 12:07:19 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1692,13 +1692,13 @@ search_tapes(
     seentapes_t *seentapes = NULL;
     int ret;
 
+    if(!prompt_out) prompt_out = stderr;
+
     dbprintf(("search_tapes(prompt_out=%d, prompt_in=%d,  use_changer=%d, "
 	      "tapelist=%p, "
 	      "match_list=%p, flags=%p, features=%p)\n",
 	      fileno(prompt_out), fileno(prompt_in), use_changer, tapelist,
 	      match_list, flags, their_features));
-
-    if(!prompt_out) prompt_out = stderr;
 
     if(flags->blocksize)
 	blocksize = (size_t)flags->blocksize;
