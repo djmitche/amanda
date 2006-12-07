@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42.2.7 2006/11/27 22:22:38 martinea Exp $
+ * $Id: util.c,v 1.42.2.8 2006/12/07 11:21:39 martinea Exp $
  */
 
 #include "amanda.h"
@@ -1271,7 +1271,7 @@ lookup_keyword(
     /* switch to binary search if performance warrants */
 
     for(kwp = keytable; kwp->keyword != NULL; kwp++) {
-	if (strcmp(kwp->keyword, str) == 0) break;
+	if (strcasecmp(kwp->keyword, str) == 0) break;
     }
     return kwp->token;
 }
@@ -1371,7 +1371,6 @@ get_conftoken(
 	    buf = tkbuf;
 	    token_overflow = 0;
 	    do {
-		if (islower(ch)) ch = toupper(ch);
 		if (buf < tkbuf+sizeof(tkbuf)-1) {
 		    *buf++ = (char)ch;
 		} else {

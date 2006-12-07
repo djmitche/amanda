@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: getconf.c,v 1.26.2.1 2006/11/09 14:35:10 martinea Exp $
+ * $Id: getconf.c,v 1.26.2.2 2006/12/07 11:21:39 martinea Exp $
  *
  * a little wrapper to extract config variables for shell scripts
  */
@@ -598,7 +598,10 @@ main(
 		get_pname(), parmname);
 	fflush(stderr);
     } else {
-	puts(result);
+	if (asklist)
+	    fputs(result, stdout); /* don't add a '\n' */
+	else
+	    puts(result); /* add a '\n' */
     }
 
     free_new_argv(new_argc, new_argv);
