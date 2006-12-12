@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42.2.8 2006/12/07 11:21:39 martinea Exp $
+ * $Id: util.c,v 1.42.2.9 2006/12/12 15:15:02 martinea Exp $
  */
 
 #include "amanda.h"
@@ -293,7 +293,7 @@ connect_port(
     if (connect(s, (struct sockaddr *)svaddr,
 		(socklen_t)sizeof(*svaddr)) == -1 && !nonblock) {
 	save_errno = errno;
-	dbprintf(("%s: connect_portrange: connect from %s.%d failed\n",
+	dbprintf(("%s: connect_portrange: connect from %s.%d failed: %s\n",
 		  debug_prefix_time(NULL),
 		  inet_ntoa(addrp->sin_addr),
 		  ntohs(addrp->sin_port),

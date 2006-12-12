@@ -1,4 +1,7 @@
 2006-12-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/util.c: Fix printf format error.
+
+2006-12-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/amanda.h: Define __attribute__ for gcc >= 3.
 	* common-src/packet.c (pkt_init): Accept NULL for fmt.
 	* amandad-src/amandad.c, common-src/protocol.c,
