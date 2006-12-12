@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.25.2.7 2006/11/23 23:29:43 martinea Exp $
+ * $Id: security-util.c,v 1.25.2.8 2006/12/12 14:56:38 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -548,7 +548,7 @@ tcpm_recv_token(
 	} else {
 	    *errmsg = newvstralloc(*errmsg, "tcpm_recv_token: invalid size",
 				   NULL);
-	    dbprintf(("%s: tcpm_recv_token: invalid size %d\n",
+	    dbprintf(("%s: tcpm_recv_token: invalid size %zd\n",
 		      debug_prefix_time(NULL), *size));
 	}
 	*size = -1;
@@ -582,7 +582,7 @@ tcpm_recv_token(
 	break;
     }
 
-    secprintf(("%s: tcpm_recv_token: read %ld bytes from %d\n",
+    secprintf(("%s: tcpm_recv_token: read %zd bytes from %d\n",
 	       debug_prefix_time(NULL), *size, *handle));
     return((*size));
 }
@@ -1297,7 +1297,7 @@ udp_inithandle(
     if (strncasecmp(rh->hostname, he->h_name, strlen(rh->hostname)) != 0) {
     secprintf(("%s: udp: cc\n", debug_prefix_time(NULL)));
 	security_seterror(&rh->sech,
-			  "%s: did not resolve to itself, it resolv to",
+			  "%s: did not resolve to itself, it resolv to %s",
 			  rh->hostname, he->h_name);
 	return (-1);
     }
@@ -1675,7 +1675,7 @@ stream_read_sync_callback(
 	return;
     }
     secprintf((
-	     "%s: sec: stream_read_callback_sync: read %ld bytes from %s:%d\n",
+	     "%s: sec: stream_read_callback_sync: read %zd bytes from %s:%d\n",
 	     debug_prefix_time(NULL),
         rs->rc->pktlen, rs->rc->hostname, rs->handle));
 }
@@ -1726,7 +1726,7 @@ stream_read_callback(
 	(*rs->fn)(rs->arg, NULL, rs->rc->pktlen);
 	return;
     }
-    secprintf(("%s: sec: stream_read_callback: read %ld bytes from %s:%d\n",
+    secprintf(("%s: sec: stream_read_callback: read %zd bytes from %s:%d\n",
 	       debug_prefix_time(NULL),
 	rs->rc->pktlen, rs->rc->hostname, rs->handle));
     (*rs->fn)(rs->arg, rs->rc->pkt, rs->rc->pktlen);
@@ -1907,7 +1907,7 @@ str2pkthdr(
     if ((tok = strtok(NULL, " ")) == NULL)
 	goto parse_error;
     amfree(pkt->body);
-    pkt_init(pkt, pkt_str2type(tok), "");
+    pkt_init(pkt, pkt_str2type(tok), NULL);
     if (pkt->type == (pktype_t)-1)    
 	goto parse_error;
 

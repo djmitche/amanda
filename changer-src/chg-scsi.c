@@ -1,4 +1,4 @@
-static char rcsid[] = "$Id: chg-scsi.c,v 1.52.2.1 2006/11/09 13:20:40 martinea Exp $";
+static char rcsid[] = "$Id: chg-scsi.c,v 1.52.2.2 2006/12/12 14:56:37 martinea Exp $";
 /*
  * 
  *
@@ -200,7 +200,7 @@ dump_changer_struct(
   dbprintf (("\traw: %d\n",chg->emubarcode));
   if (chg->debuglevel != NULL)
      dbprintf(("debug level     : %s\n", chg->debuglevel));
-  dbprintf(("Tapes need sleep: %d seconds\n",chg->sleep));
+  dbprintf(("Tapes need sleep: %d seconds\n", (int)chg->sleep));
   dbprintf(("Cleancycles     : %d\n",chg->cleanmax));
   dbprintf(("Changerdevice   : %s\n",chg->device));
   if (chg->labelfile != NULL)

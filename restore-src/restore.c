@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.52.2.4 2006/11/29 12:07:19 martinea Exp $
+ * $Id: restore.c,v 1.52.2.5 2006/12/12 14:56:38 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -231,7 +231,7 @@ append_file_to_fd(
 		error("restore: write error = %s", strerror(errno));
 		/*NOTREACHED*/
 	    }
-	    error("Short write: wrote %d bytes expected %d.", s, bytes_read);
+	    error("Short write: wrote %zd bytes expected %zd.", s, bytes_read);
 	    /*NOTREACHCED*/
 	}
 	wc += (off_t)bytes_read;
@@ -882,7 +882,7 @@ restore(
 		error("write error: %s", strerror(errno));
 		/*NOTREACHED*/
 	    } else {
-		error("write error: %d instead of %d", w, DISK_BLOCK_BYTES);
+		error("write error: %zd instead of %d", w, DISK_BLOCK_BYTES);
 		/*NOTREACHED*/
 	    }
 	}
@@ -1093,7 +1093,7 @@ restore(
 		error("restore: write error: %s", strerror(errno));
 		/* NOTREACHED */
 	    } else if (s < bytes_read) {
-		error("restore: wrote %d of %d bytes: %s",
+		error("restore: wrote %zd of %zd bytes: %s",
 		    s, bytes_read, strerror(errno));
 		/* NOTREACHED */
 	    }

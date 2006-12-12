@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.c,v 1.8.2.2 2006/10/16 18:23:53 martinea Exp $
+ * $Id: packet.c,v 1.8.2.3 2006/12/12 14:56:38 martinea Exp $
  *
  * Routines for modifying the amanda protocol packet type
  */
@@ -58,7 +58,8 @@ printf_arglist_function2(void pkt_init, pkt_t *, pkt, pktype_t, type,
 
     assert(pkt != NULL);
     assert(strcmp(pkt_type2str(type), "BOGUS") != 0);
-    assert(fmt != NULL);
+    if(fmt == NULL)
+	fmt = "";
 
     pkt->type = type;
     pkt->packet_size = 1000;

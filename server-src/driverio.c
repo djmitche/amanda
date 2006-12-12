@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: driverio.c,v 1.92.2.1 2006/10/24 18:20:42 martinea Exp $
+ * $Id: driverio.c,v 1.92.2.2 2006/12/12 14:56:39 martinea Exp $
  *
  * I/O-related functions for driver program
  */
@@ -550,7 +550,7 @@ chunker_cmd(
 	    amfree(qdest);
 	    amfree(qname);
 	} else {
-		error("Write command without disk and holding disk.\n",
+		error("%s command without disk and holding disk.\n",
 		      cmdstr[cmd]);
 		/*NOTREACHED*/
 	}

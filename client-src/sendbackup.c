@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.88.2.2 2006/11/29 14:00:18 martinea Exp $
+ * $Id: sendbackup.c,v 1.88.2.3 2006/12/12 14:56:38 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -440,7 +440,7 @@ main(
     fflush(stdout);
     if (freopen("/dev/null", "w", stdout) == NULL) {
 	dbprintf(("%s: error redirecting stdout to /dev/null: %s\n",
-	    debug_prefix_time(NULL), mesgfd, strerror(errno)));
+	    debug_prefix_time(NULL), strerror(errno)));
         exit(1);
     }
 

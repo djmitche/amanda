@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.18.2.2 2006/10/04 20:48:53 martinea Exp $
+ * $Id: amandad.c,v 1.18.2.3 2006/12/12 14:56:37 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -615,7 +615,7 @@ protocol_accept(
 		strcmp(as->arguments, arguments) == 0) {
 		    dbprintf(("%s: %s %s: already running, acking req\n",
 			debug_prefix_time(NULL), service, arguments));
-		    pkt_init(&pkt_out, P_ACK, "");
+		    pkt_init(&pkt_out, P_ACK, NULL);
 		    goto send_pkt_out_no_delete;
 	    }
     }
@@ -771,7 +771,7 @@ s_sendack(
     (void)action;	/* Quiet unused parameter warning */
     (void)pkt;		/* Quiet unused parameter warning */
 
-    pkt_init(&ack, P_ACK, "");
+    pkt_init(&ack, P_ACK, NULL);
     if (do_sendpkt(as->security_handle, &ack) < 0) {
 	dbprintf(("%s: error sending ACK: %s\n",
 	    debug_prefix_time(NULL), security_geterror(as->security_handle)));
@@ -824,7 +824,7 @@ s_repwait(
 	    dbprintf(("%s: received dup P_REQ packet, ACKing it\n",
 		debug_prefix_time(NULL)));
 	    amfree(as->rep_pkt.body);
-	    pkt_init(&as->rep_pkt, P_ACK, "");
+	    pkt_init(&as->rep_pkt, P_ACK, NULL);
 	    do_sendpkt(as->security_handle, &as->rep_pkt);
 	    security_recvpkt(as->security_handle, protocol_recv, as, -1);
 	    return (A_PENDING);
@@ -881,7 +881,7 @@ s_repwait(
 	    pkt_init(&as->rep_pkt, P_PREP, "%s", as->repbuf);
 	    do_sendpkt(as->security_handle, &as->rep_pkt);
 	    amfree(as->rep_pkt.body);
-	    pkt_init(&as->rep_pkt, P_REP, "");
+	    pkt_init(&as->rep_pkt, P_REP, NULL);
 	}
  
 	return (A_PENDING);
@@ -936,7 +936,7 @@ s_processrep(
      */
     repbuf = stralloc(as->repbuf);
     amfree(as->rep_pkt.body);
-    pkt_init(&as->rep_pkt, P_REP, "");
+    pkt_init(&as->rep_pkt, P_REP, NULL);
     tok = strtok(repbuf, " ");
     if (tok == NULL)
 	goto error;
@@ -1055,7 +1055,7 @@ s_ackwait(
 	if (dh->netfd == NULL)
 	    continue;
 	if (security_stream_accept(dh->netfd) < 0) {
-	    dbprintf(("%s: stream %d accept failed: %s\n",
+	    dbprintf(("%s: stream %ld accept failed: %s\n",
 		debug_prefix_time(NULL),
 		dh - &as->data[0], security_geterror(as->security_handle)));
 	    security_stream_close(dh->netfd);

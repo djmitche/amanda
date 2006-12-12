@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.198.2.4 2006/11/20 22:27:45 martinea Exp $
+ * $Id: driver.c,v 1.198.2.5 2006/12/12 14:56:39 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -921,7 +921,6 @@ start_some_dumps(
 	if (diskp == NULL && delayed_diskp != NULL) {
 	    assert(sleep_time > now);
 	    sleep_time -= now;
-dbprintf(("sleep for %d\n", sleep_time));
 	    dumpers_ev_time = event_register((event_id_t)sleep_time, EV_TIME,
 		handle_dumpers_time, &runq);
 	    return;
@@ -1379,7 +1378,7 @@ dumper_result(
 	update_info_dumper(dp, sched(dp)->origsize,
 			   sched(dp)->dumpsize, sched(dp)->dumptime);
 	log_add(L_STATS, "estimate %s %s %s %d [sec %ld nkb " OFF_T_FMT
-		" ckb " OFF_T_FMT " kps %d]",
+		" ckb " OFF_T_FMT " kps %lu]",
 		dp->host->hostname, dp->name, sched(dp)->datestamp,
 		sched(dp)->level,
 		sched(dp)->est_time, (OFF_T_FMT_TYPE)sched(dp)->est_nsize, 
@@ -1465,7 +1464,7 @@ handle_dumper_result(
 	    /* result_argv[2] always contains the serial number */
 	    sdp = serial2disk(result_argv[2]);
 	    if (sdp != dp) {
-		error("%s: Invalid serial number", get_pname(), result_argv[2]);
+		error("%s: Invalid serial number: %s", get_pname(), result_argv[2]);
 		/*NOTREACHED*/
 	    }
 	}
@@ -1614,7 +1613,7 @@ handle_chunker_result(
 	    /* result_argv[2] always contains the serial number */
 	    sdp = serial2disk(result_argv[2]);
 	    if (sdp != dp) {
-		error("%s: Invalid serial number", get_pname(), result_argv[2]);
+		error("%s: Invalid serial number: %s", get_pname(), result_argv[2]);
 		/*NOTREACHED*/
 	    }
 	}

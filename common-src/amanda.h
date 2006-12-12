@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amanda.h,v 1.131.2.4 2006/11/24 18:05:04 martinea Exp $
+ * $Id: amanda.h,v 1.131.2.5 2006/12/12 14:56:38 martinea Exp $
  *
  * the central header file included by all amanda sources
  */
@@ -374,7 +374,7 @@ extern int errno;
  * for printf-like functions).  Only do this in gcc 2.7 or later ...
  * it may work on earlier stuff, but why chance it.
  */
-#if !defined(__GNUC__) || __GNUC__ < 2 || __GNUC_MINOR__ < 7 || defined(S_SPLINT_S) || defined(LINT) || defined(__lint)
+#if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 7) || defined(S_SPLINT_S) || defined(LINT) || defined(__lint)
 #undef __attribute__
 #define __attribute__(__x)
 #endif
