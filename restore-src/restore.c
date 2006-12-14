@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.52.2.5 2006/12/12 14:56:38 martinea Exp $
+ * $Id: restore.c,v 1.52.2.6 2006/12/14 13:51:38 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -819,8 +819,8 @@ restore(
 	      amfree(tmp_filename);
 	      tmp_filename = tmpstr;
 	  } 
-	  final_filename = stralloc(tmp_filename); 
-	  tmp_filename = newvstralloc(tmp_filename, ".tmp", NULL);
+	  final_filename = tmp_filename; 
+	  tmp_filename = vstralloc(final_filename, ".tmp", NULL);
   	  if((dest = open(tmp_filename, (O_CREAT | O_RDWR | O_TRUNC),
 			  CREAT_MODE)) < 0) {
   	      error("could not create output file %s: %s",
