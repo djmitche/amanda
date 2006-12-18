@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.c,v 1.8.2.3 2006/12/12 14:56:38 martinea Exp $
+ * $Id: packet.c,v 1.8.2.4 2006/12/18 20:43:50 martinea Exp $
  *
  * Routines for modifying the amanda protocol packet type
  */
@@ -50,6 +50,20 @@ static const struct {
 /*
  * Initialize a packet
  */
+void pkt_init_empty(
+    pkt_t *pkt,
+    pktype_t type)
+{
+    assert(pkt != NULL);
+    assert(strcmp(pkt_type2str(type), "BOGUS") != 0);
+
+    pkt->type = type;
+    pkt->packet_size = 1000;
+    pkt->body = alloc(pkt->packet_size);
+    pkt->body[0] = '\0';
+    pkt->size = strlen(pkt->body);
+}
+
 printf_arglist_function2(void pkt_init, pkt_t *, pkt, pktype_t, type,
     const char *, fmt)
 {
@@ -58,8 +72,7 @@ printf_arglist_function2(void pkt_init, pkt_t *, pkt, pktype_t, type,
 
     assert(pkt != NULL);
     assert(strcmp(pkt_type2str(type), "BOGUS") != 0);
-    if(fmt == NULL)
-	fmt = "";
+    assert(fmt != NULL);
 
     pkt->type = type;
     pkt->packet_size = 1000;

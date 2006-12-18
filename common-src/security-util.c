@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.25.2.8 2006/12/12 14:56:38 martinea Exp $
+ * $Id: security-util.c,v 1.25.2.9 2006/12/18 20:43:51 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -1907,7 +1907,7 @@ str2pkthdr(
     if ((tok = strtok(NULL, " ")) == NULL)
 	goto parse_error;
     amfree(pkt->body);
-    pkt_init(pkt, pkt_str2type(tok), NULL);
+    pkt_init_empty(pkt, pkt_str2type(tok));
     if (pkt->type == (pktype_t)-1)    
 	goto parse_error;
 

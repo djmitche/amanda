@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: packet.h,v 1.8 2006/05/25 01:47:12 johnfranks Exp $
+ * $Id: packet.h,v 1.8.2.1 2006/12/18 20:43:51 martinea Exp $
  *
  * interfaces for modifying amanda protocol packet type
  */
@@ -42,6 +42,7 @@ typedef struct {
 /*
  * Initialize a packet
  */
+void pkt_init_empty(pkt_t *pkt, pktype_t type);
 void pkt_init(pkt_t *, pktype_t, const char *, ...)
     __attribute__ ((format (printf, 3, 4)));
 

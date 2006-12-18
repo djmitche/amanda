@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: protocol.c,v 1.45.2.1 2006/12/12 14:56:38 martinea Exp $
+ * $Id: protocol.c,v 1.45.2.2 2006/12/18 20:43:51 martinea Exp $
  *
  * implements amanda protocol
  */
@@ -607,7 +607,7 @@ s_repwait(
 	return (PA_PENDING);
 
     if(pkt->type == P_REP) {
-	pkt_init(&ack, P_ACK, NULL);
+	pkt_init_empty(&ack, P_ACK);
 	if (security_sendpkt(p->security_handle, &ack) < 0) {
 	    /* XXX should retry */
 	    amfree(ack.body);
