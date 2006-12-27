@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42.2.9 2006/12/12 15:15:02 martinea Exp $
+ * $Id: util.c,v 1.42.2.10 2006/12/27 13:47:43 martinea Exp $
  */
 
 #include "amanda.h"
@@ -496,6 +496,11 @@ quote_string(
 	    } else if (*str == '\f') {
                 *(s++) = '\\';
                 *(s++) = 'f';
+		str++;
+		continue;
+	    } else if (*str == '\\') {
+                *(s++) = '\\';
+                *(s++) = '\\';
 		str++;
 		continue;
 	    }
