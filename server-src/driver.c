@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.198.2.5 2006/12/12 14:56:39 martinea Exp $
+ * $Id: driver.c,v 1.198.2.6 2006/12/27 14:44:48 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -242,16 +242,18 @@ main(
 
     /* check that we don't do many dump in a day and usetimestamps is off */
     if(strlen(driver_timestamp) == 8) {
-	char *conf_logdir = getconf_str(CNF_LOGDIR);
-	char *logfile    = vstralloc(conf_logdir, "/log.",
-				     driver_timestamp, ".0", NULL);
-	char *oldlogfile = vstralloc(conf_logdir, "/oldlog/log.",
-				     driver_timestamp, ".0", NULL);
-	if(access(logfile, F_OK) == 0 || access(oldlogfile, F_OK) == 0) {
-	    log_add(L_WARNING, "WARNING: This is not the first amdump run today. Enable the usetimestamps option in the configuration file if you want to run amdump more than once per calendar day.");
+	if (!nodump) {
+	    char *conf_logdir = getconf_str(CNF_LOGDIR);
+	    char *logfile    = vstralloc(conf_logdir, "/log.",
+					 driver_timestamp, ".0", NULL);
+	    char *oldlogfile = vstralloc(conf_logdir, "/oldlog/log.",
+					 driver_timestamp, ".0", NULL);
+	    if(access(logfile, F_OK) == 0 || access(oldlogfile, F_OK) == 0) {
+		log_add(L_WARNING, "WARNING: This is not the first amdump run today. Enable the usetimestamps option in the configuration file if you want to run amdump more than once per calendar day.");
+	    }
+	    amfree(oldlogfile);
+	    amfree(logfile);
 	}
-	amfree(oldlogfile);
-	amfree(logfile);
 	hd_driver_timestamp = construct_timestamp(NULL);
     }
     else {
