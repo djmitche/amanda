@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.52.2.6 2006/12/14 13:51:38 martinea Exp $
+ * $Id: restore.c,v 1.52.2.7 2007/01/04 20:20:48 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -1400,7 +1400,7 @@ load_manual_tape(
 		    "enter, ^D to finish reading tapes\n");
 	}
 	fflush(prompt_out);
-	if((input = agets(stdin)) == NULL)
+	if((input = agets(prompt_in)) == NULL)
 	    ret = -1;
     }
 

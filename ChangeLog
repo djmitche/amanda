@@ -1,4 +1,7 @@
 2007-01-04  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/restore.c: Use prompt_in.
+
+2007-01-04  Jean-Louis Martineau <martineau@zmanda.com>
 	* changer-src/chg-chio.pl.in, changer-src/chg-iomega.pl.in,
 	  changer-src/chg-rth.pl.in, dumper-src/gnutar.pl.in,
 	  server-src/amoverview.pl.in, server-src/amstatus.pl.in,
