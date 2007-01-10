@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42.2.11 2007/01/10 16:18:46 martinea Exp $
+ * $Id: util.c,v 1.42.2.12 2007/01/10 16:45:51 martinea Exp $
  */
 
 #include "amanda.h"
@@ -2044,6 +2044,7 @@ conf_print_exinclude(
     sl_t  *sl;
     sle_t *excl;
 
+    (void)str_need_quote;
     buffer_conf_print[0] = '\0';
     if (val->type != CONFTYPE_EXINCLUDE) {
 	strcpy(buffer_conf_print, "ERROR: conf_print_exinclude called for type != CONFTYPE_EXINCLUDE");
