@@ -1,4 +1,7 @@
 2007-01-10  Jean-Louis Martineau <martineau@zmanda.com>
+	* amandad-src/amandad.c (do_sendpkt): Send packet if handle != NULL.
+
+2007-01-10  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/util.c, common-src/util.h, server-src/conffile.c,
 	  server-src/diskfile.c: Keep different list for exclude file and list.
 

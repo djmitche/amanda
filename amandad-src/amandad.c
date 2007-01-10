@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.18.2.4 2006/12/18 20:43:50 martinea Exp $
+ * $Id: amandad.c,v 1.18.2.5 2007/01/10 16:26:57 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1591,7 +1591,10 @@ do_sendpkt(
 {
     dbprintf(("%s: sending %s pkt:\n<<<<<\n%s>>>>>\n",
 	debug_prefix_time(NULL), pkt_type2str(pkt->type), pkt->body));
-    return security_sendpkt(handle, pkt);
+    if (handle)
+	return security_sendpkt(handle, pkt);
+    else
+	return 1;
 }
 
 #ifdef AMANDAD_DEBUG
