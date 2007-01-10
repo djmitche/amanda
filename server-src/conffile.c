@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: conffile.c,v 1.156.2.7 2006/12/18 12:11:41 martinea Exp $
+ * $Id: conffile.c,v 1.156.2.8 2007/01/10 16:18:46 martinea Exp $
  *
  * read configuration file
  */
@@ -1932,13 +1932,13 @@ get_exclude(
     if(tok == CONF_LIST) {
 	file = 0;
 	get_conftoken(CONF_ANY);
+	exclude = val->v.exinclude.sl_list;
     }
     else {
 	file = 1;
 	if(tok == CONF_EFILE) get_conftoken(CONF_ANY);
+	exclude = val->v.exinclude.sl_file;
     }
-    val->v.exinclude.type = file;
-    exclude = val->v.exinclude.sl;
     ckseen(&val->seen);
 
     if(tok == CONF_OPTIONAL) {
@@ -1963,7 +1963,10 @@ get_exclude(
 
     if(got_one == 0) { free_sl(exclude); exclude = NULL; }
 
-    val->v.exinclude.sl = exclude;
+    if (file == 0)
+	val->v.exinclude.sl_list = exclude;
+    else
+	val->v.exinclude.sl_file = exclude;
     val->v.exinclude.optional = optional;
 }
 
@@ -2238,8 +2241,15 @@ dump_configuration(
 		if(kt->token == CONF_UNKNOWN)
 		    error("dumptype bad token");
 
-		printf("%s      %-19s %s\n", prefix, kt->keyword,
-		       conf_print(&dp->value[i], 1));
+		if (dp->value[i].type == CONFTYPE_EXINCLUDE) {
+		    printf("%s      %-19s %s\n", prefix, kt->keyword,
+			   conf_print_exinclude(&dp->value[i], 1, 0));
+		    printf("%s      %-19s %s\n", prefix, kt->keyword,
+			   conf_print_exinclude(&dp->value[i], 1, 1));
+		} else {
+		    printf("%s      %-19s %s\n", prefix, kt->keyword,
+			   conf_print(&dp->value[i], 1));
+		}
 	    }
 	    printf("%s}\n", prefix);
 	}

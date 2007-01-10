@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42.2.10 2006/12/27 13:47:43 martinea Exp $
+ * $Id: util.c,v 1.42.2.11 2007/01/10 16:18:46 martinea Exp $
  */
 
 #include "amanda.h"
@@ -1754,9 +1754,9 @@ copy_val_t(
 	    break;
 
 	case CONFTYPE_EXINCLUDE:
-	    valdst->v.exinclude.type = valsrc->v.exinclude.type;
 	    valdst->v.exinclude.optional = valsrc->v.exinclude.optional;
-	    valdst->v.exinclude.sl = duplicate_sl(valsrc->v.exinclude.sl);
+	    valdst->v.exinclude.sl_list = duplicate_sl(valsrc->v.exinclude.sl_list);
+	    valdst->v.exinclude.sl_file = duplicate_sl(valsrc->v.exinclude.sl_file);
 	    break;
 	}
     }
@@ -1796,7 +1796,8 @@ free_val_t(
 	    break;
 
 	case CONFTYPE_EXINCLUDE:
-	    free_sl(val->v.exinclude.sl);
+	    free_sl(val->v.exinclude.sl_list);
+	    free_sl(val->v.exinclude.sl_file);
 	    break;
     }
     val->seen = 0;
@@ -1822,8 +1823,6 @@ conf_print(
     val_t *val,
     int    str_need_quote)
 {
-    int pos;
-
     buffer_conf_print[0] = '\0';
     switch(val->type) {
     case CONFTYPE_INT:
@@ -1893,15 +1892,7 @@ conf_print(
 	break;
 
     case CONFTYPE_EXINCLUDE:
-	buffer_conf_print[0] = '\0';
-	if(val->v.exinclude.type == 0)
-	    strncpy(buffer_conf_print, "LIST ", SIZEOF(buffer_conf_print));
-	else
-	    strncpy(buffer_conf_print, "FILE ", SIZEOF(buffer_conf_print));
-	pos = 5;
-	if(val->v.exinclude.optional == 1)
-	    strncpy(&buffer_conf_print[pos], "OPTIONAL ", SIZEOF(buffer_conf_print));
-	pos += 9;
+	strcpy(buffer_conf_print, "ERROR: use print_conf_exinclude");
 	break;
 
     case CONFTYPE_BOOL:
@@ -2039,6 +2030,53 @@ conf_print(
 	}
 	break;
     }
+    buffer_conf_print[SIZEOF(buffer_conf_print) - 1] = '\0';
+    return buffer_conf_print;
+}
+
+char *
+conf_print_exinclude(
+    val_t *val,
+    int    str_need_quote,
+    int    file)
+{
+    int    pos;
+    sl_t  *sl;
+    sle_t *excl;
+
+    buffer_conf_print[0] = '\0';
+    if (val->type != CONFTYPE_EXINCLUDE) {
+	strcpy(buffer_conf_print, "ERROR: conf_print_exinclude called for type != CONFTYPE_EXINCLUDE");
+	return buffer_conf_print;
+    }
+
+    if (file == 0) {
+	sl = val->v.exinclude.sl_list;
+	strncpy(buffer_conf_print, "LIST ", SIZEOF(buffer_conf_print));
+	pos = 5;
+    } else {
+	sl = val->v.exinclude.sl_file;
+	strncpy(buffer_conf_print, "FILE ", SIZEOF(buffer_conf_print));
+	pos = 5;
+    }
+
+    if(val->v.exinclude.optional == 1) {
+	strncpy(&buffer_conf_print[pos], "OPTIONAL ", SIZEOF(buffer_conf_print)-pos);
+	pos += 9;
+    }
+
+    if( sl != NULL) {
+	for(excl = sl->first; excl != NULL; excl = excl->next) {
+	    if (pos + 3 + strlen(excl->name) < SIZEOF(buffer_conf_print)) {
+		buffer_conf_print[pos++] = ' ';
+		buffer_conf_print[pos++] = '"';
+		strcpy(&buffer_conf_print[pos], excl->name);
+		pos += strlen(excl->name);
+		buffer_conf_print[pos++] = '"';
+	    }
+	}
+    }
+
     buffer_conf_print[SIZEOF(buffer_conf_print) - 1] = '\0';
     return buffer_conf_print;
 }
@@ -2237,9 +2275,9 @@ conf_init_exinclude(
 {
     val->seen = 0;
     val->type = CONFTYPE_EXINCLUDE;
-    val->v.exinclude.type = 0;
     val->v.exinclude.optional = 0;
-    val->v.exinclude.sl = NULL;
+    val->v.exinclude.sl_list = NULL;
+    val->v.exinclude.sl_file = NULL;
 }
 
 void

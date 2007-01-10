@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.h,v 1.17.2.4 2006/11/24 18:05:05 martinea Exp $
+ * $Id: util.h,v 1.17.2.5 2007/01/10 16:18:46 martinea Exp $
  */
 #ifndef UTIL_H
 #define	UTIL_H
@@ -217,8 +217,8 @@ typedef struct {
 } command_option_t;
 
 typedef struct exinclude_s {
-    int  type;  /* 0=list   1=file */
-    sl_t *sl;
+    sl_t *sl_list;
+    sl_t *sl_file;
     int  optional;
 } exinclude_t;
 
@@ -288,6 +288,7 @@ void read_time(t_conf_var *, val_t *);
 void copy_val_t(val_t *, val_t *);
 void free_val_t(val_t *);
 char *conf_print(val_t *, int);
+char *conf_print_exinclude(val_t *, int, int);
 void conf_init_string(val_t *, char *);
 void conf_init_ident(val_t *, char *);
 void conf_init_int(val_t *, int);
