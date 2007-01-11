@@ -1,3 +1,7 @@
+2007-01-11  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/conffile.c Set default length/filemark correctly.
+	* man/xml-source/amanda.conf.5.xml: Document they are in kbytes.
+
 2007-01-10  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c (do_sendpkt): Send packet if handle != NULL.
 
