@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amfetchdump.c,v 1.16.2.1 2006/09/27 12:04:09 martinea Exp $
+ * $Id: amfetchdump.c,v 1.16.2.2 2007/01/18 20:07:55 martinea Exp $
  *
  * retrieves specific dumps from a set of amanda tapes
  */
@@ -472,6 +472,8 @@ main(
                 usage();
 		/*NOTREACHED*/
             }
+	    arg_state = ARG_GET_HOST;
+	    break;
         }
     }
 
