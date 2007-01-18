@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.144.2.6 2007/01/10 16:02:41 martinea Exp $
+/* $Id: taper.c,v 1.144.2.7 2007/01/18 12:57:16 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -3013,8 +3013,8 @@ label_tape(void)
     }
     if ((tape_fd = tape_open(tapedev, O_WRONLY)) == -1) {
 	if (errno == EACCES) {
-	    errstr = newstralloc(errstr,
-				 "writing label: tape is write protected");
+	    errstr = newstralloc2(errstr,
+				 "writing label: tape is write protected or I don't have write permission on ", tapedev);
 	} else {
 	    errstr = newstralloc2(errstr,
 				  "writing label: ", strerror(errno));

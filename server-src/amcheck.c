@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.149.2.8 2006/12/12 14:56:38 martinea Exp $
+ * $Id: amcheck.c,v 1.149.2.9 2007/01/18 12:57:16 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -174,7 +174,7 @@ main(
 			exit(1);
 #endif
 			break;
-	case 's':	do_localchk = do_clientchk = do_tapechk = 1;
+	case 's':	do_localchk = do_tapechk = 1;
 			break;
 	case 'c':	do_clientchk = 1;
 			break;
@@ -979,6 +979,20 @@ start_server_check(
 
         tape_status = taper_scan(NULL, &label, &datestamp, &tapename,
 				 FILE_taperscan_output_callback, outf);
+	if (tapename) {
+	    if (tape_access(tapename,F_OK) == -1) {
+		fprintf(outf, "ERROR: Can't access device %s: %s\n", tapename,
+			strerror(errno));
+	    }
+	    if (tape_access(tapename,R_OK) == -1) {
+		fprintf(outf, "ERROR: Can't read device %s: %s\n", tapename,
+			strerror(errno));
+	    }
+	    if (tape_access(tapename,W_OK) == -1) {
+		fprintf(outf, "ERROR: Can't write to device %s: %s\n", tapename,
+			strerror(errno));
+	    }
+	}
         if (tape_status < 0) {
 	    tape_t *exptape = lookup_last_reusable_tape(0);
 	    fprintf(outf, "       (expecting ");
