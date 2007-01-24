@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.95.2.9 2007/01/24 11:50:48 martinea Exp $
+ * $Id: diskfile.c,v 1.95.2.10 2007/01/24 12:11:53 martinea Exp $
  *
  * read disklist file
  */
@@ -464,6 +464,7 @@ parse_diskline(
     }
 
     /* check for duplicate disk */
+    disk = NULL;
     if (host) {
 	if ((disk = lookup_disk(hostname, diskname)) != NULL) {
 	    dup = 1;
