@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.25.2.9 2006/12/18 20:43:51 martinea Exp $
+ * $Id: security-util.c,v 1.25.2.10 2007/01/24 00:35:14 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -513,7 +513,7 @@ tcpm_recv_token(
     *size = (ssize_t)ntohl(netint[0]);
     *handle = (int)ntohl(netint[1]);
     /* amanda protocol packet can be above NETWORK_BLOCK_BYTES */
-    if (*size > 128*NETWORK_BLOCK_BYTES) {
+    if (*size > 128*NETWORK_BLOCK_BYTES || *size < 0) {
 	if (isprint((*size        ) & 0xFF) &&
 	    isprint((*size   >> 8 ) & 0xFF) &&
 	    isprint((*size   >> 16) & 0xFF) &&
