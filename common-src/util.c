@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: util.c,v 1.42.2.12 2007/01/10 16:45:51 martinea Exp $
+ * $Id: util.c,v 1.42.2.13 2007/01/24 18:33:29 martinea Exp $
  */
 
 #include "amanda.h"
@@ -2638,6 +2638,7 @@ command_overwrite(
     keytab_t	     *kt;
     char	     *myprefix;
     command_option_t *command_option;
+    int	              duplicate;
 
     if(!command_options) return;
 
@@ -2650,10 +2651,15 @@ command_overwrite(
 	    /* NOTREACHED */
 	}
 
-        for(command_option = command_options; command_option->name != NULL;
+	for(command_option = command_options; command_option->name != NULL;
 							    command_option++) {
 	    myprefix = stralloc2(prefix, kt->keyword);
 	    if(strcasecmp(myprefix, command_option->name) == 0) {
+		duplicate = 0;
+		if (command_option->used == 0 &&
+		    valarray[np->parm].seen == -2) {
+		    duplicate = 1;
+		}
 		command_option->used = 1;
 		valarray[np->parm].seen = -2;
 		if(np->type == CONFTYPE_STRING &&
@@ -2671,8 +2677,12 @@ command_overwrite(
 		amfree(conf_line);
 		conf_line = conf_char = NULL;
 
-		if(np->validate)
+		if (np->validate)
 		    np->validate(np, &valarray[np->parm]);
+		if (duplicate == 1) {
+		    fprintf(stderr,"Duplicate %s option, using %s\n",
+			    command_option->name, command_option->value);
+		}
 	    }
 	    amfree(myprefix);
 	}

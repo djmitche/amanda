@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clientconf.c,v 1.17.2.1 2006/11/01 15:31:06 martinea Exp $
+ * $Id: clientconf.c,v 1.17.2.2 2007/01/24 18:33:29 martinea Exp $
  *
  * read configuration file
  */
@@ -608,9 +608,6 @@ add_client_conf(
     nb_option = 0;
     for(command_option = client_options; command_option->name != NULL;
 							command_option++) {
-	if(strcasecmp(command_option->name, kt->keyword) == 0) {
-	    return -1;
-	}
 	nb_option++;
     }
 

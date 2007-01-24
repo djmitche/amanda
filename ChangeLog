@@ -1,4 +1,9 @@
 2007-01-24  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/clientconf.c: Don;t check for duplicate -o options.
+	* common-src/util.c: Check for duplicate -o options.
+	* recover-src/amrecover.c: Change precedence of option.
+
+2007-01-24  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/diskfile.c: Fix compiler warning.
 
 2007-01-23  Jean-Louis Martineau <martineau@zmanda.com>

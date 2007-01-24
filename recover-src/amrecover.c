@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amrecover.c,v 1.73.2.1 2006/11/08 17:11:39 martinea Exp $
+ * $Id: amrecover.c,v 1.73.2.2 2007/01/24 18:33:30 martinea Exp $
  *
  * an interactive program for recovering backed-up files
  */
@@ -405,14 +405,47 @@ main(
 
     report_bad_client_arg();
 
-    amfree(server_name);
-    server_name = getenv("AMANDA_SERVER");
-    if(!server_name) server_name = client_getconf_str(CLN_INDEX_SERVER);
+    server_name = NULL;
+    if (client_getconf_seen(CLN_INDEX_SERVER) == -2) { /* command line argument */
+	server_name = client_getconf_str(CLN_INDEX_SERVER);
+    }
+    if (!server_name) {
+	server_name = getenv("AMANDA_SERVER");
+	if (server_name) {
+	    printf("Using index server from environment AMANDA_SERVER (%s)\n", server_name);
+	}
+    }
+    if (!server_name) {
+	server_name = client_getconf_str(CLN_INDEX_SERVER);
+    }
+    if (!server_name) {
+	error("No index server set");
+	/*NOTREACHED*/
+    }
     server_name = stralloc(server_name);
 
-    amfree(tape_server_name);
-    tape_server_name = getenv("AMANDA_TAPESERVER");
-    if(!tape_server_name) tape_server_name = client_getconf_str(CLN_TAPE_SERVER);
+    tape_server_name = NULL;
+    if (client_getconf_seen(CLN_TAPE_SERVER) == -2) { /* command line argument */
+	tape_server_name = client_getconf_str(CLN_TAPE_SERVER);
+    }
+    if (!tape_server_name) {
+	tape_server_name = getenv("AMANDA_TAPE_SERVER");
+	if (!tape_server_name) {
+	    tape_server_name = getenv("AMANDA_TAPESERVER");
+	    if (tape_server_name) {
+		printf("Using tape server from environment AMANDA_TAPESERVER (%s)\n", tape_server_name);
+	    }
+	} else {
+	    printf("Using tape server from environment AMANDA_TAPE_SERVER (%s)\n", tape_server_name);
+	}
+    }
+    if (!tape_server_name) {
+	tape_server_name = client_getconf_str(CLN_TAPE_SERVER);
+    }
+    if (!tape_server_name) {
+	error("No tape server set");
+	/*NOTREACHED*/
+    }
     tape_server_name = stralloc(tape_server_name);
 
     amfree(tape_device_name);
