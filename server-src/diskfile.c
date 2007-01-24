@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: diskfile.c,v 1.95.2.8 2007/01/24 00:50:48 martinea Exp $
+ * $Id: diskfile.c,v 1.95.2.9 2007/01/24 11:50:48 martinea Exp $
  *
  * read disklist file
  */
@@ -479,11 +479,13 @@ parse_diskline(
 	    }
 	    while (dup == 0 && disk != NULL);
 	}
+	if (dup == 1) {
+	    disk_parserror(filename, line_num,
+			   "duplicate disk record, previous on line %d",
+			   disk->line);
+	}
     }
-    if (dup == 1 && disk) {
-	disk_parserror(filename, line_num,
-	    "duplicate disk record, previous on line %d", disk->line);
-    } else {
+    if (!disk) {
 	disk = alloc(SIZEOF(disk_t));
 	malloc_mark(disk);
 	disk->line = line_num;
