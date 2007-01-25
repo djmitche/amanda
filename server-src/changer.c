@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: changer.c,v 1.36.2.1 2006/09/27 14:04:27 martinea Exp $
+ * $Id: changer.c,v 1.36.2.2 2007/01/25 19:47:37 martinea Exp $
  *
  * interface routines for tape changers
  */
@@ -421,7 +421,7 @@ changer_command(
 	exitcode = 2;
 	goto done;
     case 0:
-	if(dup2(fd[1], 1) == -1 || dup2(fd[1], 2) == -1) {
+	if(dup2(fd[1], 1) == -1 || dup2(dbfd(), 2) == -1) {
 	    changer_resultstr = vstralloc ("<error> ",
 				           "could not open pipe to \"",
 				           cmdstr,
