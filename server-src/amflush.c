@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.95.2.2 2006/11/29 12:36:16 martinea Exp $
+ * $Id: amflush.c,v 1.95.2.3 2007/02/01 19:25:15 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -299,6 +299,7 @@ main(
 	error("BAD DATE"); /* should never happen */
     fprintf(stderr, "amflush: start at %s\n", date_string);
     fprintf(stderr, "amflush: datestamp %s\n", amflush_timestamp);
+    fprintf(stderr, "amflush: starttime %s\n", construct_timestamp(NULL));
     log_add(L_START, "date %s", amflush_timestamp);
 
     /* START DRIVER */
