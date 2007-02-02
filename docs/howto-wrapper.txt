@@ -261,6 +261,7 @@ Example 15.1.
       /usr/local/bin/gtar "$@"
   fi
 
+
 Here is an example script in perl:
 Example 15.2. 
 
@@ -292,6 +293,7 @@ Example 15.2.
   }
 
   exit $rc;
+
 
 -------------------------------------------------------------------------------
 

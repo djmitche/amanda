@@ -10,8 +10,8 @@ amrecover  Amanda index database browser
 
 Synopsis
 
-amrecover [[-C ] | config ] [ -s | index-server ] [ -t | tape-server ] [ -d |
-tape-device ] [ -o | clientconfigoption ]*
+amrecover [-C config] [-s index-server] [-t tape-server] [-d tape-device] [ -
+o configoption]...
 
 DESCRIPTION
 
@@ -92,7 +92,7 @@ be extracted from the backup system. The following commands are available:
 
 
 
-  setdisk diskname [mountpoint]
+  setdiskdiskname [mountpoint]
       Specifies which disk to consider (default: the disk holding the working
       directory where amrecover is started). It can only be set after the host
       is set with sethost. Diskname is the device name specified in the
@@ -100,13 +100,13 @@ be extracted from the backup system. The following commands are available:
       host. If mountpoint is not specified, all pathnames will be relative to
       the (unknown) mount point instead of full pathnames.
 
-  listhost [diskdevice]
+  listhost[diskdevice]
       List all host
 
-  listdisk [diskdevice]
+  listdisk[diskdevice]
       List all diskname
 
-  settape [[server]:][tapedev|default]
+  settape[[server]:][tapedev|default]
       Specifies the host to use as the tape server, and which of its tape
       devices to use. If the server is omitted, but the colon is not, the
       server name reverts to the configure-time default. If the tape device is
@@ -132,7 +132,7 @@ be extracted from the backup system. The following commands are available:
 
 
 
-  setmode mode
+  setmodemode
       Set the extraction mode for Samba shares. If mode is smb, shares are sent
       to the Samba server to be restored back onto the PC. If mode is tar, they
       are extracted on the local machine the same way tar volumes are
@@ -156,14 +156,14 @@ be extracted from the backup system. The following commands are available:
       otherwise they are relative to the current backup working directory. The
       dir can be a shell style wildcards.
 
-  cdx dir
+  cdxdir
       Like the cd command but allow regular expression.
 
   lpwd
       Display the amrecover working directory. Files will be restored under
       this directory, relative to the backed up filesystem.
 
-  lcd path
+  lcdpath
       Change the amrecover working directory to path.
 
   ls
@@ -171,23 +171,23 @@ be extracted from the backup system. The following commands are available:
       description of the setdate command for how the view of the directory is
       built up. The backup date is shown for each file.
 
-  add item1 item2 ...
+  additem1 item2 ...
       Add the specified files or directories to the restore list. Each item may
       have shell style wildcards.
 
-  addx item1 item2 ...
+  addxitem1 item2 ...
       Add the specified files or directories to the restore list. Each item may
       be a regular expression.
 
-  delete item1 item2 ...
+  deleteitem1 item2 ...
       Delete the specified files or directories from the restore list. Each
       item may have shell style wildcards.
 
-  deletex item1 item2 ...
+  deletexitem1 item2 ...
       Delete the specified files or directories from the restore list. Each
       item may be a regular expression.
 
-  list file
+  listfile
       Display the contents of the restore list. If a file name is specified,
       the restore list is written to that file. This can be used to manually
       extract the files from the Amanda tapes with amrestore.

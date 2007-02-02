@@ -1,0 +1,281 @@
+
+Chapter 16. How to do Amanda-server-side gpg-encrypted backups.
+Prev  Part III. HOWTOs                                     Next
+
+-------------------------------------------------------------------------------
+
+Chapter 16. How to do Amanda-server-side gpg-encrypted backups.
+
+
+Stefan G. Weichinger
+
+Original text
+AMANDA Core Team
+<sgw@amanda.org>
+Table of Contents
+
+
+  Setup
+
+  Test
+
+  Plans
+
+
+Note
+
+Refer to http://www.amanda.org/docs/howto-gpg.html for the current version of
+this document.
+
+Note
+
+THIS IS *NOT* YET INTENDED FOR PRODUCTION SERVERS !!!
+Bruce Fletcher asked for a "simple" encryption method to be used with Amanda-
+server. gpg-amanda http://security.uchicago.edu/tools/gpg-amanda/ seems to
+create problems at restore-time, as it uses a wrapper for gzip.
+My solution uses a wrapper for GNU-tar instead, so there are several
+disadvantages avoided.
+
+Note
+
+This is based on a Amanda-vtape-setup with the Amanda-release 2.4.5. As this is
+still in the testing-stage, I have coded the home-dir of the Amanda-user into
+my scripts (/var/lib/amanda). This should be done with variables later, I agree
+...
+What you need:
+
+* aespipe http://loop-aes.sourceforge.net/aespipe/aespipe-v2.3b.tar.bz2 and the
+  bz2aespipe-wrapper that comes with it. It gets patched as described later.
+* the wrapper-script /usr/local/libexec/amgtar, as listed down below,
+* GNU-PG http://www.gnupg.org/(en)/download/index.html. This should be part of
+  most current operating systems already.
+* Amanda ;)
+
+
+Setup
+
+
+* Configure and compile aespipe:
+
+    tar -xjf aespipe-v2.3b.tar.bz2
+    cd aespipe-v2.3b
+    ./configure
+    make
+    make install
+
+* Generate and store the gpg-key for the Amanda-user:
+
+    # taken from the aespipe-README
+    head -c 2925 /dev/random | uuencode -m - | head -n 66 | tail -n 65 | \
+    gpg --symmetric -a > /var/lib/amanda/.gnupg/am_key.gpg
+
+  This will ask for a passphrase. Remember this passphrase as you will need it
+  in the next step.
+  Store the passphrase inside the home-directory of the Amanda-user and protect
+  it with proper permissions:
+
+    echo my_secret_passphrase > ~amanda/.am_passphrase
+    chown amanda:disk ~amanda/.am_passphrase
+    chmod 700 ~amanda/.am_passphrase
+
+  We need this file because we don't want to have to enter the passphrase
+  manually everytime we run amdump. We have to patch bz2aespipe to read the
+  passphrase from a file. I have called that file ~amanda/.am_passphrase.
+  It should NOT ;) look like this:
+
+    # cat ~amanda/.am_passphrase
+    my_secret_passphrase
+
+
+  Note
+
+  Store the key and the passphrase in some other place as well, without these
+  information you can't access any tapes that have been encrypted with it (this
+  is exactly why we are doing all this, isn't it? ;) ).
+* Create the wrapper for GNU-tar:
+  Example 16.1. /usr/local/libexec/amgtar
+
+    #!/bin/sh
+    #
+    # Original wrapper by Paul Bijnens
+    #
+    # crippled by Stefan G. Weichinger
+    # to enable gpg-encrypted dumps via aespipe
+
+    GTAR=/bin/tar
+    AM_AESPIPE=/usr/local/bin/amaespipe
+    AM_PASSPHRASE=/var/lib/amanda/.am_passphrase
+    LOG=/dev/null
+    LOG_ENABLED=1
+
+    if [ "$LOG_ENABLED" = "1" ]
+    then
+    LOG=/var/log/amanda/amgtar.debug
+    date >> $LOG
+    echo "$@" >> $LOG
+    fi
+
+    if [ "$3" = "/dev/null" ]
+    then
+    	echo "Estimate only" >> $LOG
+    	$GTAR "$@"
+    else
+    	echo "Real backup" >> $LOG
+    	$GTAR --use-compress-program="$AM_AESPIPE" "$@" 3< $AM_PASSPHRASE
+    fi
+
+    rc=$?
+    exit $rc
+
+
+* Copy the wrapper-script bz2aespipe, which comes with the aespipe-tarball, to
+  /usr/local/bin/amaespipe and edit it this way:
+  Example 16.2. /usr/local/bin/amaespipe
+
+    #! /bin/sh
+
+    # FILE FORMAT
+    # 10 bytes: constant string 'bz2aespipe'
+    # 10 bytes: itercountk digits
+    # 1 byte: '0' = AES128, '1' = AES192, '2' = AES256
+    # 1 byte: '0' = SHA256, '1' = SHA384, '2' = SHA512, '3' = RMD160
+    # 24 bytes: random seed string
+    # remaining bytes are bzip2 compressed and aespipe encrypted
+
+    # These definitions are only used when encrypting.
+    # Decryption will autodetect these definitions from archive.
+    ENCRYPTION=AES256
+    HASHFUNC=SHA256
+    ITERCOUNTK=100
+    WAITSECONDS=1
+    GPGKEY="/var/lib/amanda/.gnupg/am_key.gpg"
+    FDNUMBER=3
+
+    if test x$1 = x-d ; then
+        # decrypt
+        n=`head -c 10 - | tr -d -c 0-9a-zA-Z`
+        if test x${n} != xbz2aespipe ; then
+            echo "bz2aespipe: wrong magic - aborted" >/dev/tty
+            exit 1
+        fi
+        itercountk=`head -c 10 - | tr -d -c 0-9`
+        if test x${itercountk} = x ; then itercountk=0; fi
+        n=`head -c 1 - | tr -d -c 0-9`
+        encryption=AES128
+        if test x${n} = x1 ; then encryption=AES192; fi
+        if test x${n} = x2 ; then encryption=AES256; fi
+        n=`head -c 1 - | tr -d -c 0-9`
+        hashfunc=SHA256
+        if test x${n} = x1 ; then hashfunc=SHA384; fi
+        if test x${n} = x2 ; then hashfunc=SHA512; fi
+        if test x${n} = x3 ; then hashfunc=RMD160; fi
+        seedstr=`head -c 24 - | tr -d -c 0-9a-zA-Z+/`
+        #aespipe -K ${GPGKEY} -p ${FDNUMBER} -e ${encryption} -H ${hashfunc} -
+    S "${seedstr}" -C ${itercountk} -d | bzip2 -d -q
+        aespipe -K ${GPGKEY} -p ${FDNUMBER} -e ${encryption} -H ${hashfunc} -
+    S "${seedstr}" -C ${itercountk} -d
+    else
+        # encrypt
+        echo -n bz2aespipe
+        echo ${ITERCOUNTK} | awk '{printf "%10u", $1;}'
+        n=`echo ${ENCRYPTION} | tr -d -c 0-9`
+        aesstr=0
+        if test x${n} = x192 ; then aesstr=1; fi
+        if test x${n} = x256 ; then aesstr=2; fi
+        n=`echo ${HASHFUNC} | tr -d -c 0-9`
+        hashstr=0
+        if test x${n} = x384 ; then hashstr=1; fi
+        if test x${n} = x512 ; then hashstr=2; fi
+        if test x${n} = x160 ; then hashstr=3; fi
+        seedstr=`head -c 18 /dev/urandom | uuencode -m - | head -n 2 | tail -
+    n 1`
+        echo -n ${aesstr}${hashstr}${seedstr}
+        #bzip2 | aespipe -K ${GPGKEY} -p ${FDNUMBER} -e ${ENCRYPTION} -H $
+    {HASHFUNC} -S ${seedstr} -C ${ITERCOUNTK} -w ${WAITSECONDS}
+        aespipe -K ${GPGKEY} -p ${FDNUMBER} -e ${ENCRYPTION} -H ${HASHFUNC} -
+    S ${seedstr} -C ${ITERCOUNTK} -w ${WAITSECONDS}
+    fi
+    exit 0
+
+
+  or apply this small patch
+  Example 16.3. bz2aespipe.patch
+
+    @@ -15,3 +15,5 @@
+     ITERCOUNTK=100
+    -WAITSECONDS=10
+    +WAITSECONDS=1
+    +GPGKEY="/var/lib/amanda/.gnupg/am_key.gpg"
+    +FDNUMBER=3
+
+    @@ -36,3 +38,4 @@
+         seedstr=`head -c 24 - | tr -d -c 0-9a-zA-Z+/`
+    -    aespipe -e ${encryption} -H ${hashfunc} -S "${seedstr}" -C $
+    {itercountk} -d | bzip2 -d -q
+    +    #aespipe -K ${GPGKEY} -p ${FDNUMBER} -e ${encryption} -H ${hashfunc} -
+    S "${seedstr}" -C ${itercountk} -d | bzip2 -d -q
+    +    aespipe -K ${GPGKEY} -p ${FDNUMBER} -e ${encryption} -H ${hashfunc} -
+    S "${seedstr}" -C ${itercountk} -d
+     else
+    @@ -52,3 +55,4 @@
+         echo -n ${aesstr}${hashstr}${seedstr}
+    -    bzip2 | aespipe -e ${ENCRYPTION} -H ${HASHFUNC} -S ${seedstr} -C $
+    {ITERCOUNTK} -T -w ${WAITSECONDS}
+    +    #bzip2 | aespipe -K ${GPGKEY} -p ${FDNUMBER} -e ${ENCRYPTION} -H $
+    {HASHFUNC} -S ${seedstr} -C ${ITERCOUNTK} -w ${WAITSECONDS}
+    +    aespipe -K ${GPGKEY} -p ${FDNUMBER} -e ${ENCRYPTION} -H ${HASHFUNC} -
+    S ${seedstr} -C ${ITERCOUNTK} -w ${WAITSECONDS}
+     fi
+
+
+  Things I have changed:
+
+  o Decreased WAITSECONDS: No need to wait for 10 seconds to read the
+    passphrase.
+  o Removed bzip2 from the pipes: Amanda triggers GNU-zip-compression by
+    itself, no need to do this twice (slows down things, blows up size).
+  o Added options -K and -p: This enables aespipe to use the generated gpg-key
+    and tells it the number of the file-descriptor to read the passphrase from.
+
+
+  Note
+
+  You may set various parameters inside bz2aespipe. You may also call
+  bz2aespipe with various command-line-parameters to choose the encryption-
+  algorithm, hash-function etc. . For a start I have chosen to call bz2aespipe
+  without command-line-options.
+* Reconfigure and recompile Amanda (yes, I'm sorry ...):
+  As described in How_to_use_a_wrapper you have to run configure again with the
+  option --with-gnutar=/usr/local/libexec/amgtar, after that recompile and
+  reinstall Amanda. These steps are described in the mentioned document.
+
+
+Test
+
+Still to come ...
+
+Plans
+
+There are several wishes:
+
+* Ability to switch encryption inside a dumptype. This HOWTO describes a method
+  that enables/disables encryption for the whole installation. You might remove
+  the amgtar-wrapper and simply link to plain GNU-tar again to disable
+  encryption, but be aware that you also disable decryption with this step. You
+  will hit problems when you then try to restore encrypted tapes.
+* Ability to switch encryption-parameters inside a dumptype. Choice of
+  algorithm, hash-functions etc. I don't know if it makes sense to put it into
+  a dumptype or if it would be enough to configure it once inside amaespipe (I
+  assume the latter).
+* All this leads to the need to code this into Amanda itself: new dumptype-
+  options and corresponding calls to GNU-tar etc. inside client-src/sendbackup-
+  gnutar.c.
+
+This is it so far. Release early, release often. Feel free to contact me with
+your thoughts on this paper.
+-------------------------------------------------------------------------------
+
+Prev                               Up                                    Next
+Chapter 15. How to use a wrapper  Home  Chapter 17. How to use different auth
+                                                                  with Amanda
+

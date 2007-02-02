@@ -10,8 +10,8 @@ amcheck  run Amanda self-checks
 
 Synopsis
 
-amcheck [-am] [-w] [-sclt] [ -M | address ]* config [ host | [disk]*]* [ -o |
-configoption ]*
+amcheck [-am] [-w] [-sclt] [-M address] config [ host [disk...] ...] [ -
+o configoption]...
 
 DESCRIPTION
 

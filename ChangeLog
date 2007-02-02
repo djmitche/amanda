@@ -1,4 +1,7 @@
 2007-02-02  Jean-Louis Martineau <martineau@zmanda.com>
+	* docs/*.txt: Update from xml-docs.
+
+2007-02-02  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/Makefile.am: Use http://docbook.sourceforge.net
 	* man/xml-source/amadmin.8.xml, man/xml-source/amaespipe.8.xml,
 	  man/xml-source/amanda.8.xml, man/xml-source/amanda-client.conf.5.xml,

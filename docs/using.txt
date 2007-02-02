@@ -988,6 +988,7 @@ Example 18.1. A C Program to Check the Amanda Service Numbers
   	
   	
 
+
 Run it on both the tape server and client and make sure the port numbers match:
 
   	

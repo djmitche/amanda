@@ -278,7 +278,6 @@ The supported drivers are:
 
         tapedev tape:/dev/rmt/0mn
 
-      .
 
   null
       This driver throws away anything written to it and returns EOF for any
@@ -402,27 +401,29 @@ $  anchor at right
 ?  match exactly one character except the separator
 *  match zero or more characters except the separator
 ** match zero or more characters including the separator
+
 Some examples:
 
-EXPRESSION     WILL MATCH           WILL NOT MATCH
-hosta          hosta                hostb
-               hoSTA.dOMAIna.ORG 
-               foo.hosta.org 
-host           host                 hosta
-host?          hosta                host
-               hostb 
-ho*na          hoina                ho.aina.org
-ho**na         hoina 
-               ho.aina.org 
-^hosta         hosta                foo.hosta.org
-sda*           /dev/sda1 
-               /dev/sda12 
-/opt/          opt (disk)           opt (host)
-.opt.          opt (host)           opt (disk)
-/              /                    any other disk
-/usr           /usr 
-               /usr/opt 
-/usr$          /usr                 /usr/opt
+EXPRESSION WILL MATCH        WILL NOT MATCH
+hosta      hosta             hostb
+           hoSTA.dOMAIna.ORG  
+           foo.hosta.org      
+host       host              hosta
+host?      hosta             host
+           hostb              
+ho*na      hoina             ho.aina.org
+ho**na     hoina              
+           ho.aina.org        
+^hosta     hosta             foo.hosta.org
+sda*       /dev/sda1          
+           /dev/sda12         
+/opt       opt (disk)        opt (host)
+.opt.      opt (host)        opt (disk)
+/          /                 any other disk
+/usr       /usr               
+           /usr/opt           
+/usr$      /usr              /usr/opt
+
 
 DATESTAMP EXPRESSION
 
