@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.149.2.9 2007/01/18 12:57:16 martinea Exp $
+ * $Id: amcheck.c,v 1.149.2.10 2007/02/05 18:54:13 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -887,7 +887,7 @@ start_server_check(
 			    quoted,
 			    (OFF_T_FMT_TYPE)(fs.avail/(off_t)unitdivisor),
 			    displayunit,
-			    (OFF_T_FMT_TYPE)(fs.avail + holdingdisk_get_disksize(hdp) / (off_t)unitdivisor),
+			    (OFF_T_FMT_TYPE)((fs.avail + holdingdisk_get_disksize(hdp)) / (off_t)unitdivisor),
 			    displayunit);
 		}
 	    }
