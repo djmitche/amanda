@@ -1,3 +1,9 @@
+Changes in release 2.5.1p3
+   * Many bugs fixed
+   * amrecover improve handling of not ascii filename in index.
+   * Works with tar-1.16 and exit status of 1.
+   * Can define a LASTSLOT in a chg-disk config file.
+
 Changes in release 2.5.1p2
 
    * Many bugs fixed

@@ -1,4 +1,9 @@
 2007-02-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* Amanda 2.5.1p3 released.
+	* configure.in: AM_INIT_AUTOMAKE(amanda, 2.5.1p3).
+	* NEWS: Update for 2.5.1p3
+
+2007-02-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* man/xml-source/amcheck.8.xml,
 	  server-src/amlabel.c: Merge from zmanda.
 
