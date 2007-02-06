@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: clock.c,v 1.7 2006/07/27 18:12:10 martinea Exp $
+ * $Id: clock.c,v 1.7.2.1 2007/02/06 12:44:03 martinea Exp $
  *
  * timing functions
  */
@@ -158,7 +158,12 @@ timesub(
 	end.tv_usec += 1000000;
     }
     diff.tv_usec = end.tv_usec - start.tv_usec;
-    diff.tv_sec = end.tv_sec - start.tv_sec;
+
+    if (end.tv_sec > start.tv_sec)
+	diff.tv_sec = end.tv_sec - start.tv_sec;
+    else
+	diff.tv_sec = 0;
+
     return diff;
 }
 
