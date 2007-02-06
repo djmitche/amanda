@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amlabel.c,v 1.53.2.1 2006/10/03 11:35:52 martinea Exp $
+ * $Id: amlabel.c,v 1.53.2.2 2007/02/06 14:07:44 martinea Exp $
  *
  * write an Amanda label on a tape
  */
@@ -461,6 +461,10 @@ main(
 	        error("couldn't write tapelist: %s", strerror(errno));
 		/*NOTREACHED*/
 	    }
+
+            if (have_changer) {
+                changer_label(outslot, label);
+            }
 	} /* write tape list */
 	printf(", done.\n");
     } else {

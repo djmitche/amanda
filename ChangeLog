@@ -1,4 +1,8 @@
 2007-02-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* man/xml-source/amcheck.8.xml,
+	  server-src/amlabel.c: Merge from zmanda.
+
+2007-02-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/clock.c (timesub): The result must always be positive.
 
 2007-02-05  Jean-Louis Martineau <martineau@zmanda.com>
