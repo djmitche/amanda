@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.171.2.4 2006/12/22 14:42:42 martinea Exp $
+ * $Id: sendsize.c,v 1.171.2.5 2007/02/12 12:55:32 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -1190,7 +1190,7 @@ getsize_dump(
 #  endif
 	dumpkeys = vstralloc(level_str,
 			     PARAM_DUMP_ESTIMATE,
-			     PARAM_DUMP_ESTIMATE,
+			     PARAM_HONOR_NODUMP,
 			     "s", "f", NULL);
 
 #  ifdef HAVE_DUMP_ESTIMATE
