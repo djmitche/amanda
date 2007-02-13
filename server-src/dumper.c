@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.190.2.2 2006/11/08 17:11:41 martinea Exp $
+/* $Id: dumper.c,v 1.190.2.3 2007/02/13 19:13:22 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1815,7 +1815,7 @@ bad_nak:
 	 * with old clients.
 	 * It is wrong to delve into sech, but we have no choice here.
 	 */
-	if (strcasecmp(sech->driver->name, "krb4") != 0 && i == INDEXFD)
+	if (strcasecmp(sech->driver->name, "krb4") == 0 && i == INDEXFD)
 	    continue;
 #endif
 	if (security_stream_auth(streams[i].fd) < 0) {
