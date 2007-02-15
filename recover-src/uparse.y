@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: uparse.y,v 1.13 2006/05/25 01:47:14 johnfranks Exp $
+ * $Id: uparse.y,v 1.13.2.1 2007/02/15 12:16:58 martinea Exp $
  *
  * parser for amrecover interactive language
  */
@@ -157,9 +157,7 @@ deletex_path:
 local_command:
 	LPWD { char buf[STR_SIZE]; puts(getcwd(buf, sizeof(buf))); }
   |     LCD PATH {
-		if (chdir($2) == -1) {
-			perror($2);
-		}
+		local_cd($2);
 		amfree($2);
 	}
   ;
