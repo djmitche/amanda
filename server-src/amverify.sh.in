@@ -1,6 +1,6 @@
 #! @SHELL@
 #
-#	$Id: amverify.sh.in,v 1.38.2.1 2007/02/16 12:51:15 martinea Exp $
+#	$Id: amverify.sh.in,v 1.38.2.2 2007/02/19 11:59:09 martinea Exp $
 #
 # (C) 1996 by ICEM Systems GmbH
 # Author: Axel Zinser (fifi@icem.de)
@@ -380,7 +380,6 @@ while [ $SLOT -lt $SLOTS ]; do
 			&& report "`cat $TEMP/ammt.out`" \
 			&& report cat $TEMP/ammt.out >> $DEFECTS \
 			&& break;
-		fi
 		sleep 3
 		count=`expr $count - 3`
 	done
@@ -439,7 +438,6 @@ while [ $SLOT -lt $SLOTS ]; do
 				&& report "`cat $TEMP/ammt.out`" \
 				&& report cat $TEMP/ammt.out >> $DEFECTS \
 				&& break;
-			fi
 			sleep 3
 			count=`expr $count - 3`
 		done
