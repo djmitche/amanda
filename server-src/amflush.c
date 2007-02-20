@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.95.2.3 2007/02/01 19:25:15 martinea Exp $
+ * $Id: amflush.c,v 1.95.2.4 2007/02/20 22:41:48 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -332,6 +332,13 @@ main(
     for(holding_file=holding_list->first; holding_file != NULL;
 				   holding_file = holding_file->next) {
 	get_dumpfile(holding_file->name, &file);
+
+	if (size_holding_files(holding_file->name, 1) <= 0) {
+	    log_add(L_INFO, "%s: removing file with no data.",
+		    holding_file->name);
+	    unlink_holding_files(holding_file->name);
+	    continue;
+	}
 
 	dp = lookup_disk(file.name, file.disk);
 	if (!dp) {

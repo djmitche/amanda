@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.198.2.6 2006/12/27 14:44:48 martinea Exp $
+ * $Id: driver.c,v 1.198.2.7 2007/02/20 22:41:48 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1885,6 +1885,12 @@ read_flush(void)
 	if(file.dumplevel < 0 || file.dumplevel > 9) {
 	    log_add(L_INFO, "%s: ignoring file with bogus dump level %d.",
 		    destname, file.dumplevel);
+	    continue;
+	}
+
+	if (size_holding_files(destname,1) <= 0) {
+	    log_add(L_INFO, "%s: removing file with no data.", destname);
+	    unlink_holding_files(destname);
 	    continue;
 	}
 

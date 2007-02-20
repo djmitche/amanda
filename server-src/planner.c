@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.206.2.6 2006/11/24 18:05:06 martinea Exp $
+ * $Id: planner.c,v 1.206.2.7 2007/02/20 22:41:49 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -411,6 +411,13 @@ int main(int argc, char **argv)
 	for(holding_file=holding_list->first; holding_file != NULL;
 				       holding_file = holding_file->next) {
 	    get_dumpfile(holding_file->name, &file);
+
+	    if (size_holding_files(holding_file->name, 1) <= 0) {
+		log_add(L_INFO, "%s: removing file with no data.",
+			holding_file->name);
+		unlink_holding_files(holding_file->name);
+		continue;
+	    }
 	    
 	    log_add(L_DISK, "%s %s", file.name, file.disk);
 	    fprintf(stderr,
