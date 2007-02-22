@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.25.2.10 2007/01/24 00:35:14 martinea Exp $
+ * $Id: security-util.c,v 1.25.2.11 2007/02/22 18:28:34 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -548,7 +548,7 @@ tcpm_recv_token(
 	} else {
 	    *errmsg = newvstralloc(*errmsg, "tcpm_recv_token: invalid size",
 				   NULL);
-	    dbprintf(("%s: tcpm_recv_token: invalid size %zd\n",
+	    dbprintf(("%s: tcpm_recv_token: invalid size " SSIZE_T_FMT "\n",
 		      debug_prefix_time(NULL), *size));
 	}
 	*size = -1;
@@ -582,7 +582,7 @@ tcpm_recv_token(
 	break;
     }
 
-    secprintf(("%s: tcpm_recv_token: read %zd bytes from %d\n",
+    secprintf(("%s: tcpm_recv_token: read " SSIZE_T_FMT " bytes from %d\n",
 	       debug_prefix_time(NULL), *size, *handle));
     return((*size));
 }
@@ -1675,7 +1675,7 @@ stream_read_sync_callback(
 	return;
     }
     secprintf((
-	     "%s: sec: stream_read_callback_sync: read %zd bytes from %s:%d\n",
+	     "%s: sec: stream_read_callback_sync: read " SSIZE_T_FMT " bytes from %s:%d\n",
 	     debug_prefix_time(NULL),
         rs->rc->pktlen, rs->rc->hostname, rs->handle));
 }
@@ -1726,7 +1726,7 @@ stream_read_callback(
 	(*rs->fn)(rs->arg, NULL, rs->rc->pktlen);
 	return;
     }
-    secprintf(("%s: sec: stream_read_callback: read %zd bytes from %s:%d\n",
+    secprintf(("%s: sec: stream_read_callback: read " SSIZE_T_FMT " bytes from %s:%d\n",
 	       debug_prefix_time(NULL),
 	rs->rc->pktlen, rs->rc->hostname, rs->handle));
     (*rs->fn)(rs->arg, rs->rc->pkt, rs->rc->pktlen);

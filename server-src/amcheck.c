@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amcheck.c,v 1.149.2.10 2007/02/05 18:54:13 martinea Exp $
+ * $Id: amcheck.c,v 1.149.2.11 2007/02/22 18:28:35 martinea Exp $
  *
  * checks for common problems in server and clients
  */
@@ -481,7 +481,7 @@ main(
 		    error("mailfd write: %s", strerror(errno));
 		    /*NOTREACHED*/
 		} else {
-		    error("mailfd write: wrote %zd instead of %zd", w, r);
+		    error("mailfd write: wrote " SSIZE_T_FMT " instead of " SIZE_T_FMT, w, r);
 		    /*NOTREACHED*/
 		}
 	    }

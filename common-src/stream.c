@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.39.2.1 2006/12/12 14:56:38 martinea Exp $
+ * $Id: stream.c,v 1.39.2.2 2007/02/22 18:28:35 martinea Exp $
  *
  * functions for managing stream sockets
  */
@@ -442,12 +442,12 @@ try_socksize(
 	size -= 1024;
     }
     if(size > 1024) {
-	dbprintf(("%s: try_socksize: %s buffer size is %zu\n",
+	dbprintf(("%s: try_socksize: %s buffer size is " SIZE_T_FMT "\n",
 		  debug_prefix(NULL),
 		  (which == SO_SNDBUF) ? "send" : "receive",
 		  size));
     } else {
-	dbprintf(("%s: try_socksize: could not allocate %s buffer of %zu\n",
+	dbprintf(("%s: try_socksize: could not allocate %s buffer of " SIZE_T_FMT "\n",
 		  debug_prefix(NULL),
 		  (which == SO_SNDBUF) ? "send" : "receive",
 		  origsize));

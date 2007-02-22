@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: scsi-linux.c,v 1.30.2.1 2006/12/12 14:56:38 martinea Exp $
+ * $Id: scsi-linux.c,v 1.30.2.2 2007/02/22 18:28:34 martinea Exp $
  *
  * Interface to execute SCSI commands on Linux
  *
@@ -83,7 +83,7 @@ extern OpenFiles_T *pDev;
 void SCSI_OS_Version(void)
 {
 #ifndef lint
-   static char rcsid[] = "$Id: scsi-linux.c,v 1.30.2.1 2006/12/12 14:56:38 martinea Exp $";
+   static char rcsid[] = "$Id: scsi-linux.c,v 1.30.2.2 2007/02/22 18:28:34 martinea Exp $";
    DebugPrint(DEBUG_ERROR, SECTION_INFO, "scsi-os-layer: %s\n",rcsid);
 #endif
 }
@@ -377,7 +377,7 @@ int SCSI_ExecuteCommand(int DeviceFD,
        (psg_header->result != 0)) 
     { 
       dbprintf(("SCSI_ExecuteCommand error read \n"));
-      dbprintf(("Status %zd (%lu) %2X\n", status, SCSI_OFF + DataBufferLength,psg_header->result ));
+      dbprintf(("Status " SSIZE_T_FMT " (%lu) %2X\n", status, SCSI_OFF + DataBufferLength,psg_header->result ));
       SCSI_CloseDevice(DeviceFD);
       amfree(buffer);
       return(SCSI_ERROR);

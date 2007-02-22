@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: taper.c,v 1.144.2.9 2007/02/20 22:41:49 martinea Exp $
+/* $Id: taper.c,v 1.144.2.10 2007/02/22 18:28:35 martinea Exp $
  *
  * moves files from holding disk to tape, or from a socket to tape
  */
@@ -377,7 +377,7 @@ main(
 	if ((buffers = attach_buffers(size)) != NULL) {
 	    break;
 	}
-	log_add(L_INFO, "attach_buffers: (%d tapebuf%s: %zu bytes) %s",
+	log_add(L_INFO, "attach_buffers: (%d tapebuf%s: " SIZE_T_FMT " bytes) %s",
 			conf_tapebufs,
 			(conf_tapebufs == 1) ? "" : "s",
 			size,
