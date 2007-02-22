@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: debug.c,v 1.40 2006/07/26 11:49:32 martinea Exp $
+ * $Id: debug.c,v 1.40.2.1 2007/02/22 18:18:36 martinea Exp $
  *
  * debug log subroutines
  */
@@ -161,7 +161,7 @@ debug_setup_1(char *config, char *subdir)
 	dbgdir = stralloc2(AMANDA_DBGDIR, "/");
     if(mkpdir(dbgdir, 02700, client_uid, client_gid) == -1) {
         error("create debug directory \"%s\": %s",
-	      AMANDA_DBGDIR, strerror(errno));
+	      dbgdir, strerror(errno));
         /*NOTREACHED*/
     }
     amfree(sane_config);
@@ -172,9 +172,9 @@ debug_setup_1(char *config, char *subdir)
      * We assume no system has 17 digit PID-s :-) and that there will
      * not be a conflict between an old and new name.
      */
-    if((d = opendir(AMANDA_DBGDIR)) == NULL) {
+    if((d = opendir(dbgdir)) == NULL) {
         error("open debug directory \"%s\": %s",
-	      AMANDA_DBGDIR, strerror(errno));
+	      dbgdir, strerror(errno));
         /*NOTREACHED*/
     }
     time(&curtime);
