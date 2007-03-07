@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.132.2.2 2007/02/09 19:33:08 martinea Exp $
+ * $Id: reporter.c,v 1.132.2.3 2007/03/07 15:54:44 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1210,13 +1210,17 @@ CalcMaxWidth(void)
     disk_t *dp;
     double f;
     repdata_t *repdata;
+    char *qdevname;
+
     for(dp = sortq.head; dp != NULL; dp = dp->next) {
       if(dp->todo) {
 	for(repdata = data(dp); repdata != NULL; repdata = repdata->next) {
 	    char TimeRateBuffer[40];
 
 	    CheckStringMax(&ColumnData[HostName], dp->host->hostname);
-	    CheckStringMax(&ColumnData[Disk], dp->name);
+	    qdevname = quote_string(dp->name);
+	    CheckStringMax(&ColumnData[Disk], qdevname);
+	    amfree(qdevname);
 	    if (repdata->dumper.result == L_BOGUS && 
 		repdata->taper.result == L_BOGUS)
 		continue;
@@ -1355,6 +1359,7 @@ output_summary(void)
 	char TimeRateBuffer[40];
 	for(repdata = data(dp); repdata != NULL; repdata = repdata->next) {
 	    char *devname;
+	    char *qdevname;
 	    size_t devlen;
 
 	    cd= &ColumnData[HostName];
@@ -1364,15 +1369,17 @@ output_summary(void)
 	    cd= &ColumnData[Disk];
 	    fprintf(mailf, "%*s", cd->PrefixSpace, "");
 	    devname = sanitize_string(dp->name);
-	    devlen = strlen(devname);
+	    qdevname = quote_string(devname);
+	    devlen = strlen(qdevname);
 	    if (devlen > (size_t)cd->Width) {
 	   	fputc('-', mailf); 
 		fprintf(mailf, cd->Format, cd->Width-1, cd->Precision-1,
-		  devname+devlen - (cd->Width-1) );
+			qdevname+devlen - (cd->Width-1) );
 	    }
 	    else
-		fprintf(mailf, cd->Format, cd->Width, cd->Width, devname);
+		fprintf(mailf, cd->Format, cd->Width, cd->Width, qdevname);
 	    amfree(devname);
+	    amfree(qdevname);
 	    cd= &ColumnData[Level];
 	    if (repdata->dumper.result == L_BOGUS &&
 		repdata->taper.result  == L_BOGUS) {
