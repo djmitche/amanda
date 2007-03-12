@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: set_commands.c,v 1.3.2.1 2007/02/15 12:16:57 martinea Exp $
+ * $Id: set_commands.c,v 1.3.2.2 2007/03/12 15:27:32 martinea Exp $
  *
  * implements the "set" commands in amrecover
  */
@@ -605,7 +605,6 @@ set_tape(
     else
 	printf (".\nTape server unspecified, assumed to be %s.\n",
 		server_name);
-    amfree(tape);
 }
 
 void
