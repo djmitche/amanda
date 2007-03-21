@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: krb5-security.c,v 1.22 2006/06/16 10:55:05 martinea Exp $
+ * $Id: krb5-security.c,v 1.22.2.1 2007/03/21 12:29:57 martinea Exp $
  *
  * krb5-security.c - kerberos V5 security module
  */
@@ -437,7 +437,7 @@ krb5_connect(
 	 * Get a non-blocking socket.
 	 */
 	fd = stream_client(kh->hostname, ntohs(port), KRB5_STREAM_BUFSIZE,
-	    KRB5_STREAM_BUFSIZE, NULL, 1);
+	    KRB5_STREAM_BUFSIZE, NULL, 0);
 	if (fd < 0) {
 	    security_seterror(&kh->sech,
 		"can't connect to %s:%d: %s", hostname, ntohs(port),
@@ -1096,8 +1096,10 @@ krb5_stream_read_sync(
      * First see if there's any queued frames for this stream.
      * If so, we're done.
      */
-    if (conn_run_frameq(ks->kc, ks) > 0)
+    if (conn_run_frameq(ks->kc, ks) > 0) {
+	*buf = (void *)&ks->buf;
 	return ks->len;
+    }
 
     if (ks->ev_read != NULL)
 	event_release(ks->ev_read);
@@ -1106,7 +1108,7 @@ krb5_stream_read_sync(
 	stream_read_callback, ks);
     conn_read(ks->kc);
     event_wait(ks->ev_read);
-    buf = (void **)&ks->buf;
+    *buf = (void *)&ks->buf;
     return ks->len;
 }
 

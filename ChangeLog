@@ -1,3 +1,6 @@
+2007-03-21  Jean-Louis Martineau <martineau@zmanda.com>
+	* common-src/krb5-security.c: Fix.
+
 2007-03-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* recover-src/set_commands.c (set_tape): Don't amfree(tape).
 	* oldrecover-src/set_commands.c (set_tape): Don't amfree(tape).
