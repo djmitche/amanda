@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.18.2.5 2007/01/10 16:26:57 martinea Exp $
+ * $Id: amandad.c,v 1.18.2.6 2007/03/23 11:05:39 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -1060,6 +1060,7 @@ s_ackwait(
 		dh - &as->data[0], security_geterror(as->security_handle)));
 	    security_stream_close(dh->netfd);
 	    dh->netfd = NULL;
+	    continue;
 	}
 	/* setup an event for reads from it */
 	dh->ev_read = event_register((event_id_t)dh->fd_read, EV_READFD,
