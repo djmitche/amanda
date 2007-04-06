@@ -1,4 +1,7 @@
 2007-04-06  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/taper.c: Limit splitsize to 1G in PORT-WRITE.
+
+2007-04-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* common-src/tapelist.c (append_to_tape): Don't call dump_tapelist.
 
 2007-03-23  Jean-Louis Martineau <martineau@zmanda.com>
