@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: amandad.c,v 1.18.2.6 2007/03/23 11:05:39 martinea Exp $
+ * $Id: amandad.c,v 1.18.2.7 2007/04/12 17:27:17 martinea Exp $
  *
  * handle client-host side of Amanda network communications, including
  * security checks, execution of the proper service, and acking the
@@ -359,7 +359,6 @@ main(
 		error("can't create tcp socket: %s\n", strerror(errno));
 		/*NOTREACHED*/
 	    }
-	    n = 1;
 #ifdef USE_REUSEADDR
 	    r = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 		(void *)&on, (socklen_t)sizeof(on));
@@ -369,8 +368,6 @@ main(
 			  strerror(errno)));
 	    }
 #endif
-	    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-		(void *)&n, (socklen_t)sizeof(n));
 	    sin.sin_family = (sa_family_t)AF_INET;
 	    sin.sin_addr.s_addr = INADDR_ANY;
 	    sin.sin_port = (in_port_t)htons((in_port_t)atoi(argv[i]));

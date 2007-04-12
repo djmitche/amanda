@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: stream.c,v 1.39.2.2 2007/02/22 18:28:35 martinea Exp $
+ * $Id: stream.c,v 1.39.2.3 2007/04/12 17:27:18 martinea Exp $
  *
  * functions for managing stream sockets
  */
@@ -430,22 +430,24 @@ try_socksize(
     size_t size)
 {
     size_t origsize;
+    int isize;
 
     if (size == 0)
 	return;
 
     origsize = size;
+    isize = size;
     /* keep trying, get as big a buffer as possible */
-    while((size > 1024) &&
+    while((isize > 1024) &&
 	  (setsockopt(sock, SOL_SOCKET,
-		      which, (void *) &size, (socklen_t)sizeof(int)) < 0)) {
-	size -= 1024;
+		      which, (void *) &isize, (socklen_t)sizeof(isize)) < 0)) {
+	isize -= 1024;
     }
-    if(size > 1024) {
-	dbprintf(("%s: try_socksize: %s buffer size is " SIZE_T_FMT "\n",
+    if(isize > 1024) {
+	dbprintf(("%s: try_socksize: %s buffer size is %d\n",
 		  debug_prefix(NULL),
 		  (which == SO_SNDBUF) ? "send" : "receive",
-		  size));
+		  isize));
     } else {
 	dbprintf(("%s: try_socksize: could not allocate %s buffer of " SIZE_T_FMT "\n",
 		  debug_prefix(NULL),

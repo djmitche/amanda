@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: bsd-security.c,v 1.75.2.1 2006/09/28 18:46:08 martinea Exp $
+ * $Id: bsd-security.c,v 1.75.2.2 2007/04/12 17:27:17 martinea Exp $
  *
  * "BSD" security module
  */
@@ -349,7 +349,7 @@ bsd_stream_client(
 #ifndef TEST							/* { */
     struct sec_handle *bh = h;
 #ifdef DUMPER_SOCKET_BUFFERING
-    size_t rcvbuf = SIZEOF(bs->databuf) * 2;
+    int rcvbuf = SIZEOF(bs->databuf) * 2;
 #endif
 
     assert(bh != NULL);
