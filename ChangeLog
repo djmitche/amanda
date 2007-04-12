@@ -1,3 +1,7 @@
+2007-04-12  Jean-Louis Martineau <martineau@zmanda.com>
+	* server-src/reporter.c: Take value from chunker if it succeed and
+				 taper fail.
+
 2007-04-06  Jean-Louis Martineau <martineau@zmanda.com>
 	* server-src/taper.c: Limit splitsize to 1G in PORT-WRITE.
 

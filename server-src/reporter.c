@@ -25,7 +25,7 @@
  *			   University of Maryland at College Park
  */
 /*
- * $Id: reporter.c,v 1.132.2.3 2007/03/07 15:54:44 martinea Exp $
+ * $Id: reporter.c,v 1.132.2.4 2007/04/12 11:02:58 martinea Exp $
  *
  * nightly Amanda Report generator
  */
@@ -1421,13 +1421,14 @@ output_summary(void)
 		origsize = repdata->chunker.origsize;
 
 	    if(repdata->taper.result == L_SUCCESS ||
-	       repdata->taper.result == L_PARTIAL ||
 	       repdata->taper.result == L_CHUNKSUCCESS)
 		outsize  = repdata->taper.outsize;
 	    else if(repdata->chunker.result == L_SUCCESS ||
 		    repdata->chunker.result == L_PARTIAL ||
 		    repdata->chunker.result == L_CHUNKSUCCESS)
 		outsize  = repdata->chunker.outsize;
+	    else if (repdata->taper.result == L_PARTIAL)
+		outsize  = repdata->taper.outsize;
 	    else
 		outsize  = repdata->dumper.outsize;
 
@@ -1502,10 +1503,11 @@ output_summary(void)
 	    else
 		fprintf(mailf, "%*s", cd->Width, "N/A ");
 
-	    if(repdata->chunker.result == L_PARTIAL ||
-	       repdata->taper.result == L_PARTIAL) {
+	    if (repdata->chunker.result == L_PARTIAL)
 		fprintf(mailf, " PARTIAL");
-	    }
+	    else if(repdata->taper.result == L_PARTIAL)
+		fprintf(mailf, " TAPE-PARTIAL");
+
 	    fputc('\n', mailf);
 	}
       }
@@ -2562,13 +2564,14 @@ generate_bad_estimate(void)
 	    for(repdata = data(dp); repdata != NULL; repdata = repdata->next) {
 		if(repdata->est_csize >= 0.1) {
 		    if(repdata->taper.result == L_SUCCESS ||
-		       repdata->taper.result == L_PARTIAL ||
 		       repdata->taper.result == L_CHUNKSUCCESS)
 			outsize  = repdata->taper.outsize;
 		    else if(repdata->chunker.result == L_SUCCESS ||
 			    repdata->chunker.result == L_PARTIAL ||
 			    repdata->chunker.result == L_CHUNKSUCCESS)
 			outsize  = repdata->chunker.outsize;
+		    else if(repdata->taper.result == L_PARTIAL)
+			outsize  = repdata->taper.outsize;
 		    else
 			outsize  = repdata->dumper.outsize;
 
