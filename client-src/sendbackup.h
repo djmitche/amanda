@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.h,v 1.20 2006/07/25 18:10:07 martinea Exp $
+ * $Id: sendbackup.h,v 1.20.2.1 2007/04/13 16:13:51 martinea Exp $
  *
  * a few common decls for the sendbackup-* sources
  */
@@ -64,13 +64,14 @@ typedef struct regex_s {
     char *regex;
     int srcline;
     int scale;                  /* only used for size lines */
+    int field;
     dmpline_t typ;
 } amregex_t;
 
-#define AM_NORMAL_RE(re)	{(re), __LINE__, 0, DMP_NORMAL}
-#define AM_STRANGE_RE(re)	{(re), __LINE__, 0, DMP_STRANGE}
-#define AM_SIZE_RE(re,s)	{(re), __LINE__, (s), DMP_SIZE}
-#define AM_ERROR_RE(re)		{(re), __LINE__, 0, DMP_ERROR}
+#define AM_NORMAL_RE(re)	{(re), __LINE__, 0, 0, DMP_NORMAL}
+#define AM_STRANGE_RE(re)	{(re), __LINE__, 0, 0, DMP_STRANGE}
+#define AM_SIZE_RE(re,s,f)	{(re), __LINE__, (s), (f), DMP_SIZE}
+#define AM_ERROR_RE(re)		{(re), __LINE__, 0, 0, DMP_ERROR}
 
 extern pid_t  comppid, dumppid, encpid, tarpid;
 extern pid_t indexpid;

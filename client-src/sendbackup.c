@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.88.2.3 2006/12/12 14:56:38 martinea Exp $
+ * $Id: sendbackup.c,v 1.88.2.4 2007/04/13 16:13:51 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -76,8 +76,7 @@ void parse_backup_messages(int mesgin);
 static void process_dumpline(char *str);
 static void save_fd(int *, int);
 
-double first_num(char *str);
-
+double the_num(char *str, int pos);
 
 
 char *
@@ -803,15 +802,21 @@ parse_backup_messages(
  */
 
 double
-first_num(
-    char *	str)
+the_num(
+    char *	str,
+    int         pos)
 {
     char *num;
     int ch;
     double d;
 
-    ch = *str++;
-    while(ch && !isdigit(ch)) ch = *str++;
+    do {
+	ch = *str++;
+	while(ch && !isdigit(ch)) ch = *str++;
+	if (pos == 1) break;
+	pos--;
+	while(ch && (isdigit(ch) || ch == '.')) ch = *str++;
+    } while (ch);
     num = str - 1;
     while(isdigit(ch) || ch == '.') ch = *str++;
     str[-1] = '\0';
@@ -835,7 +840,7 @@ process_dumpline(
 	}
     }
     if(rp->typ == DMP_SIZE) {
-	dump_size = (long)((first_num(str) * rp->scale + 1023.0)/1024.0);
+	dump_size = (long)((the_num(str, rp->field)* rp->scale+1023.0)/1024.0);
     }
     switch(rp->typ) {
     case DMP_NORMAL:

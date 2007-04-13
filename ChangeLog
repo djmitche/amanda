@@ -1,3 +1,10 @@
+2007-04-13  Jean-Louis Martineau <martineau@zmanda.com>
+	* client-src/sendbackup.c (first_num): Removed function.
+	* client-src/sendbackup.c (the_num): return the nth number in a string.
+	* client-src/sendbackup.h (AM_SIZE_RE): Need a field.
+	* client-src/sendbackup-dump.c: Use new AM_SIZE_RE.
+	* client-src/sendbackup-gnutar.c: Use new AM_SIZE_RE.
+
 2007-04-12  Jean-Louis Martineau <martineau@zmanda.com>
 	* amandad-src/amandad.c: Remove duplicate setsockopt(,,SO_REUSEADDR).
 	* common-src/bsd-security.c: Use int for setsockopt.
