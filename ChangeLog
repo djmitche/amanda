@@ -1,3 +1,6 @@
+2007-04-17  Jean-Louis Martineau <martineau@zmanda.com>
+	* restore-src/restore.c: Fix restoration of split and encrypted backup.
+
 2007-04-13  Jean-Louis Martineau <martineau@zmanda.com>
 	* client-src/sendbackup.c (first_num): Removed function.
 	* client-src/sendbackup.c (the_num): return the nth number in a string.

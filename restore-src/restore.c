@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: restore.c,v 1.52.2.8 2007/02/22 18:28:35 martinea Exp $
+ * $Id: restore.c,v 1.52.2.9 2007/04/17 11:08:55 martinea Exp $
  *
  * retrieves files from an amanda tape
  */
@@ -902,7 +902,8 @@ restore(
 	  || file->type != F_SPLIT_DUMPFILE))
        need_uncompress=1;   
 
-    if(!flags->raw && file->encrypted)
+    if(!flags->raw && file->encrypted && !is_continuation
+	  && (flags->inline_assemble || file->type != F_SPLIT_DUMPFILE))
        need_decrypt=1;
    
     /* Setup pipes for decryption / compression / uncompression  */
