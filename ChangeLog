@@ -1,4 +1,7 @@
 2007-04-17  Jean-Louis Martineau <martineau@zmanda.com>
+	* changer-src/chg-disk.sh.in: Send error message to stdout.
+
+2007-04-17  Jean-Louis Martineau <martineau@zmanda.com>
 	* restore-src/restore.c: Fix restoration of split and encrypted backup.
 
 2007-04-13  Jean-Louis Martineau <martineau@zmanda.com>
