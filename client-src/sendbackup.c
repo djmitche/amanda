@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendbackup.c,v 1.88.2.4 2007/04/13 16:13:51 martinea Exp $
+ * $Id: sendbackup.c,v 1.88.2.5 2007/04/18 18:10:29 martinea Exp $
  *
  * common code for the sendbackup-* programs.
  */
@@ -658,7 +658,7 @@ info_tapeheader(void)
 #endif
 		);
 
-    fprintf(stderr, "%s -f - ...\n", program->restore_name);
+    fprintf(stderr, "%s -xpGf - ...\n", program->restore_name);
 
     if (options->compress == COMPR_FAST || options->compress == COMPR_BEST)
 	fprintf(stderr, "%s: info COMPRESS_SUFFIX=%s\n",
