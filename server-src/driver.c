@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.198.2.7 2007/02/20 22:41:48 martinea Exp $
+ * $Id: driver.c,v 1.198.2.8 2007/04/20 12:01:37 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -2213,10 +2213,16 @@ free_kps(
 	    maxusage += interface_get_maxusage(p);
 	    curusage += p->curusage;
 	}
-	res = maxusage - curusage;
+	if (maxusage >= curusage)
+	    res = maxusage - curusage;
+	else
+	    res = 0;
 #ifndef __lint
     } else {
-	res = interface_get_maxusage(ip) - ip->curusage;
+	if ((unsigned long)interface_get_maxusage(ip) >= ip->curusage)
+	    res = interface_get_maxusage(ip) - ip->curusage;
+	else
+	    res = 0;
 #endif
     }
 
