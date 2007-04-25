@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amindexd.c,v 1.106.2.9 2007/02/07 15:23:45 martinea Exp $
+ * $Id: amindexd.c,v 1.106.2.10 2007/04/25 20:45:40 martinea Exp $
  *
  * This is the server daemon part of the index client/server system.
  * It is assumed that this is launched from inetd instead of being
@@ -1202,7 +1202,7 @@ main(
     }
     else {
 	from_amandad = 0;
-	safe_fd(-1, 0);
+	safe_fd(dbfd(), 1);
     }
 
     if (argc > 0) {
