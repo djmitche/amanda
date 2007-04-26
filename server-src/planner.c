@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: planner.c,v 1.206.2.7 2007/02/20 22:41:49 martinea Exp $
+ * $Id: planner.c,v 1.206.2.8 2007/04/26 18:41:38 martinea Exp $
  *
  * backup schedule planner for the Amanda backup system.
  */
@@ -407,6 +407,7 @@ int main(int argc, char **argv)
 	dumpfile_t file;
 	sl_t *holding_list;
 	sle_t *holding_file;
+	char *qdisk, *qhname;
 	holding_list = get_flush(NULL, NULL, 0, 0);
 	for(holding_file=holding_list->first; holding_file != NULL;
 				       holding_file = holding_file->next) {
@@ -419,21 +420,25 @@ int main(int argc, char **argv)
 		continue;
 	    }
 	    
-	    log_add(L_DISK, "%s %s", file.name, file.disk);
+	    qdisk = quote_string(file.disk);
+	    qhname = quote_string(holding_file->name);
+	    log_add(L_DISK, "%s %s", file.name, qdisk);
 	    fprintf(stderr,
 		    "FLUSH %s %s %s %d %s\n",
 		    file.name,
-		    file.disk,
+		    qdisk,
 		    file.datestamp,
 		    file.dumplevel,
-		    holding_file->name);
+		    qhname);
 	    fprintf(stdout,
 		    "FLUSH %s %s %s %d %s\n",
 		    file.name,
-		    file.disk,
+		    qdisk,
 		    file.datestamp,
 		    file.dumplevel,
-		    holding_file->name);
+		    qhname);
+	    amfree(qdisk);
+	    amfree(qhname);
 	}
 	free_sl(holding_list);
 	holding_list = NULL;

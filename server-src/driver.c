@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: driver.c,v 1.198.2.8 2007/04/20 12:01:37 martinea Exp $
+ * $Id: driver.c,v 1.198.2.9 2007/04/26 18:41:38 martinea Exp $
  *
  * controlling process for the Amanda backup system
  */
@@ -1783,6 +1783,7 @@ read_flush(void)
     int ch;
     disklist_t tq;
     char *qname = NULL;
+    char *qdestname = NULL;
 
     tq.head = tq.tail = NULL;
 
@@ -1852,9 +1853,10 @@ read_flush(void)
 	    error("flush line %d: syntax error (no filename)", line);
 	    /*NOTREACHED*/
 	}
-	destname = s - 1;
-	skip_non_whitespace(s, ch);
+	qdestname = s - 1;
+	skip_quoted_string(s, ch);
 	s[-1] = '\0';
+	destname = unquote_string(qdestname);
 
 	get_dumpfile(destname, &file);
 	if( file.type != F_DUMPFILE) {

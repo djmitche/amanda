@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /*
- * $Id: amflush.c,v 1.95.2.4 2007/02/20 22:41:48 martinea Exp $
+ * $Id: amflush.c,v 1.95.2.5 2007/04/26 18:41:37 martinea Exp $
  *
  * write files from work directory onto tape
  */
@@ -94,6 +94,7 @@ main(
     struct tm *tm;
     char *tapedev;
     char *tpchanger;
+    char *qdisk, *qhname;
 
     safe_fd(-1, 0);
     safe_cd();
@@ -276,8 +277,12 @@ main(
     if(!batch) confirm();
 
     for(dp = diskq.head; dp != NULL; dp = dp->next) {
-	if(dp->todo)
-	    log_add(L_DISK, "%s %s", dp->host->hostname, dp->name);
+	if(dp->todo) {
+	    char *qname;
+	    qname = quote_string(dp->name);
+	    log_add(L_DISK, "%s %s", dp->host->hostname, qname);
+	    amfree(qname);
+	}
     }
 
     if(!foreground) { /* write it before redirecting stdout */
@@ -347,20 +352,24 @@ main(
 	}
 	if (dp->todo == 0) continue;
 
+	qdisk = quote_string(file.disk);
+	qhname = quote_string(holding_file->name);
 	fprintf(stderr,
 		"FLUSH %s %s %s %d %s\n",
 		file.name,
-		file.disk,
+		qdisk,
 		file.datestamp,
 		file.dumplevel,
-		holding_file->name);
+		qhname);
 	fprintf(driver_stream,
 		"FLUSH %s %s %s %d %s\n",
 		file.name,
-		file.disk,
+		qdisk,
 		file.datestamp,
 		file.dumplevel,
-		holding_file->name);
+		qhname);
+	amfree(qdisk);
+	amfree(qhname);
     }
     fprintf(stderr, "ENDFLUSH\n"); fflush(stderr);
     fprintf(driver_stream, "ENDFLUSH\n"); fflush(driver_stream);
