@@ -24,7 +24,7 @@
  * file named AUTHORS, in the root directory of this distribution.
  */
 /* 
- * $Id: sendsize.c,v 1.171.2.5 2007/02/12 12:55:32 martinea Exp $
+ * $Id: sendsize.c,v 1.171.2.6 2007/05/15 18:13:52 martinea Exp $
  *
  * send estimated backup sizes using dump
  */
@@ -354,19 +354,19 @@ main(
 				append_sl(options->exclude_file, qlist);
 			    amfree(qlist);
 			} else if(strncmp(s-1, "exclude-list=", 13) == 0) {
+			    qlist = unquote_string(s+12);
 			    options->exclude_list =
 				append_sl(options->exclude_list, qlist);
-			    qlist = unquote_string(s+12);
 			    amfree(qlist);
 			} else if(strncmp(s-1, "include-file=", 13) == 0) {
+			    qlist = unquote_string(s+12);
 			    options->include_file =
 				append_sl(options->include_file, qlist);
-			    qlist = unquote_string(s+12);
 			    amfree(qlist);
 			} else if(strncmp(s-1, "include-list=", 13) == 0) {
+			    qlist = unquote_string(s+12);
 			    options->include_list =
 				append_sl(options->include_list, qlist);
-			    qlist = unquote_string(s+12);
 			    amfree(qlist);
 			} else {
 			    err_extra = vstralloc("Invalid parameter (",
