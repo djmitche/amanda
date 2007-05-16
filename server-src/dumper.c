@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.190.2.3 2007/02/13 19:13:22 martinea Exp $
+/* $Id: dumper.c,v 1.190.2.4 2007/05/16 17:25:18 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1300,11 +1300,6 @@ read_mesgfd(
 	break;
     }
 
-    /*
-     * Reset the timeout for future reads
-     */
-    timeout(conf_dtimeout);
-
     if (ISSET(status, GOT_INFO_ENDLINE) && !ISSET(status, HEADER_DONE)) {
 	SET(status, HEADER_DONE);
 	/* time to do the header */
@@ -1340,6 +1335,11 @@ read_mesgfd(
 	security_stream_read(streams[DATAFD].fd, read_datafd, db);
 	set_datafd = 1;
     }
+
+    /*
+     * Reset the timeout for future reads
+     */
+    timeout(conf_dtimeout);
 }
 
 /*
@@ -1365,11 +1365,6 @@ read_datafd(
 	stop_dump();
 	return;
     }
-
-    /*
-     * Reset the timeout for future reads
-     */
-    timeout(conf_dtimeout);
 
     /* The header had better be written at this point */
     assert(ISSET(status, HEADER_DONE));
@@ -1403,6 +1398,12 @@ read_datafd(
 	stop_dump();
 	return;
     }
+
+    /*
+     * Reset the timeout for future reads
+     */
+    timeout(conf_dtimeout);
+
     security_stream_read(streams[DATAFD].fd, read_datafd, cookie);
 }
 
