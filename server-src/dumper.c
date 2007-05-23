@@ -23,7 +23,7 @@
  * Authors: the Amanda Development Team.  Its members are listed in a
  * file named AUTHORS, in the root directory of this distribution.
  */
-/* $Id: dumper.c,v 1.190.2.4 2007/05/16 17:25:18 martinea Exp $
+/* $Id: dumper.c,v 1.190.2.5 2007/05/23 12:03:21 martinea Exp $
  *
  * requests remote amandad processes to dump filesystems
  */
@@ -1653,14 +1653,14 @@ sendbackup_response(
     assert(response_error != NULL);
     assert(sech != NULL);
 
-    security_close_connection(sech, hostname);
-
     if (pkt == NULL) {
 	errstr = newvstralloc(errstr, "[request failed: ",
 	    security_geterror(sech), "]", NULL);
 	*response_error = 1;
 	return;
     }
+
+    security_close_connection(sech, hostname);
 
     extra = NULL;
     memset(ports, 0, SIZEOF(ports));
@@ -1838,7 +1838,6 @@ bad_nak:
 
     /* everything worked */
     *response_error = 0;
-    security_close_connection(sech, hostname);
     return;
 
 parse_error:
@@ -1849,13 +1848,11 @@ parse_error:
 			  NULL);
     amfree(extra);
     *response_error = 2;
-    security_close_connection(sech, hostname);
     return;
 
 connect_error:
     stop_dump();
     *response_error = 1;
-    security_close_connection(sech, hostname);
 }
 
 static char *

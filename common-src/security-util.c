@@ -25,7 +25,7 @@
  */
 
 /*
- * $Id: security-util.c,v 1.25.2.11 2007/02/22 18:28:34 martinea Exp $
+ * $Id: security-util.c,v 1.25.2.12 2007/05/23 12:03:19 martinea Exp $
  *
  * sec-security.c - security and transport over sec or a sec-like command.
  *
@@ -596,7 +596,7 @@ tcpm_close_connection(
 
     hostname = hostname;
 
-    if(rh->rc->toclose == 0) {
+    if(rh && rh->rc && rh->rc->toclose == 0) {
 	rh->rc->toclose = 1;
 	sec_tcp_conn_put(rh->rc);
     }
