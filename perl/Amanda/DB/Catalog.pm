@@ -575,7 +575,6 @@ sub get_parts_and_dumps {
 			             $write_timestamp, $find_result->{'level'});
 	    my $dump = $dumps{$dumpkey};
 	    if (!defined $dump) {
-		my $dump_status = $find_result->{'dump_status'};
 		$dump = $dumps{$dumpkey} = {
 		    dump_timestamp => $dump_timestamp,
 		    write_timestamp => $write_timestamp,
@@ -583,11 +582,11 @@ sub get_parts_and_dumps {
 		    diskname => $find_result->{'diskname'},
 		    level => $find_result->{'level'}+0,
 		    orig_kb => $find_result->{'orig_kb'},
+		    status => $find_result->{'dump_status'},
+		    message => $find_result->{'message'},
 		    # the rest of these params are unknown until we see a taper
 		    # DONE, PARTIAL, or FAIL line, although we count nparts
 		    # manually instead of relying on the logfile
-		    status => $dump_status,
-		    message => "",
 		    nparts => 0,
 		    kb => -1,
 		    sec => -1,
