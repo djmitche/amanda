@@ -14,6 +14,8 @@ typedef struct find_result_s {
     char *label;	/* holding filename for holding files */
     off_t filenum;
     char *status;
+    char *dump_status;
+    char *message;
     int partnum;	/* -1 for holding files */
     int totalparts;	/* -1 for holding files */
     double sec;		/* may be 0.0 for older log files or holding files */

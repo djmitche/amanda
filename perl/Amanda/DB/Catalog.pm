@@ -575,6 +575,7 @@ sub get_parts_and_dumps {
 			             $write_timestamp, $find_result->{'level'});
 	    my $dump = $dumps{$dumpkey};
 	    if (!defined $dump) {
+		my $dump_status = $find_result->{'dump_status'};
 		$dump = $dumps{$dumpkey} = {
 		    dump_timestamp => $dump_timestamp,
 		    write_timestamp => $write_timestamp,
@@ -585,7 +586,7 @@ sub get_parts_and_dumps {
 		    # the rest of these params are unknown until we see a taper
 		    # DONE, PARTIAL, or FAIL line, although we count nparts
 		    # manually instead of relying on the logfile
-		    status => "UNKNOWN",
+		    status => $dump_status,
 		    message => "",
 		    nparts => 0,
 		    kb => -1,
@@ -741,7 +742,6 @@ sub get_parts_and_dumps {
 		};
 	    }
 
-	    $dump->{'status'} = $status;
 	    $dump->{'message'} = $message;
 	    if ($status eq 'FAIL') {
 		$dump->{'kb'} = 0;
@@ -750,7 +750,6 @@ sub get_parts_and_dumps {
 		$dump->{'kb'} = $kb+0;
 		$dump->{'sec'} = $secs+0.0;
 	    }
-	    $dump->{'status'} = $status;
 	}
 	Amanda::Logfile::close_logfile($logh);
     }
