@@ -247,6 +247,8 @@ The final parameters, C<size> (in bytes) and C<duration> (in seconds) describe
 the total transfer, and are a sum of all of the parts written to the device.
 Note that C<duration> does not include time spent operating the changer.
 
+TODO: cancel_dump
+
 =head2 QUIT
 
 When all of the dumpfiles are transferred, call the C<quit> method to
@@ -567,6 +569,21 @@ sub start_dump {
 
     # and start the part
     $self->_start_part();
+}
+
+sub cancel_dump {
+    my $self = shift;
+    my %params = @_;
+
+    die "no xfer dest set up; call get_xfer_dest first"
+        unless defined $self->{'xdt'};
+
+    # set up the dump_cb for when this dump is done, and keep the xfer
+    $self->{'dump_cb'} = $params{'dump_cb'};
+    $self->{'xfer'} = $params{'xfer'};
+
+    # cancelling the xfer will result in a call to dump_cb via handle_xmsg.
+    $self->{'xfer'}->cancel();
 }
 
 sub get_bytes_written {

@@ -804,17 +804,13 @@ sub setup_and_start_dump {
         $self->_assert_in_state("getting_header") or return;
         $self->{'state'} = 'writing';
 
-        # if $err is set, call through to dump_cb to handle the situation, treating
-        # it as a device error
+        # if $err is set, tell the scribe to cancel the dump, and let it call dump_cb.
+        # Add $err as an input error
         if ($err) {
-	    $self->{'xfer'}->cancel();
-	    $self->{'scribe'}->{'xdt'} = undef;
-	    $self->{'input_errors'} = [ $err ],
-            return $params{'dump_cb'}->(
-                result => "FAILED",
-                device_errors => [ ],
-                size => 0,
-                duration => 0.0);
+	    push @{$self->{'input_errors'}}, $err;
+	    return $self->{'scribe'}->cancel_dump(
+		xfer => $self->{'xfer'},
+		dump_cb => $params{'dump_cb'});
         }
 
         # sanity check the header..
