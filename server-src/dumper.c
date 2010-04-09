@@ -575,6 +575,7 @@ main(
 			      ssh_keys,
 			      auth,
 			      options);
+rc = 1;
 	    if (rc != 0) {
 		q = quote_string(errstr);
 		putresult(rc == 2? FAILED : TRYAGAIN, "%s %s\n",
