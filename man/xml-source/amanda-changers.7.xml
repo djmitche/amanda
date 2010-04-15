@@ -436,6 +436,19 @@ configuration.  Just give it your Amanda configuration name:
 The script can be downloaded at <uri
 type="webpage">http://github.com/zmanda/amanda/raw/master/contrib/convert-zd-mtx-to-robot.sh</uri></para>
 
+<refsect3><title>Special Slots</title>
+
+<para>Ordinarily, Amanda considers a tape that is loaded in a drive to also
+still reside in its source slot, and will try not to refill that slot with
+another tape.  However, in changers that allow manual access, it's possible
+to fill every slot in the changer <emphasis>and</emphasis> the drives.  In
+this case, Amanda cannot cause any tape movement (because there's nowhere
+to move any tape to), but it is still possible to use the tape that is in
+the drive.  To do so, use the special slot name <command>driveN</command>
+where <command>N</command> is the drive number.</para>
+
+</refsect3>
+
 <refsect3><title>Special Operations</title>
 
 <para>A number of special operations are available for <command>chg-robot</command> via

@@ -79,6 +79,8 @@ See the amanda-changers(7) manpage for usage information.
 # The 'drives' key is also a hash by drive numbere, the values of
 # which are hashes with keys
 #   state - SLOT_FULL/SLOT_EMPTY/SLOT_UNKNOWN
+#   device_status - the status of the device
+#   f_type - The f_type of the header
 #   label - volume label
 #   barcode - volume barcode
 #   orig_slot - slot from which this tape was loaded
@@ -315,7 +317,7 @@ sub load {
 sub load_unlocked {
     my $self = shift;
     my %params = @_;
-    my ($slot, $drive, $need_unload);
+    my ($slot, $drive, $need_unload, $explicit_drive);
     my $state = $params{'state'};
 
     my $steps = define_steps
@@ -326,6 +328,10 @@ sub load_unlocked {
 	if (exists $params{'slot'}) {
 	    if ($params{'slot'} =~ /^\d+$/) {
 		$params{'slot'} = $params{'slot'}+0;
+	    } elsif ($params{'slot'} =~ /^drive\d+$/) {
+		# calculate_drive will handle this special syntax
+		$slot = $params{'slot'};
+		return $steps->{'calculate_drive'}->();
 	    } else {
 		return $self->make_error("failed", $params{'res_cb'},
 			reason => "invalid",
@@ -427,11 +433,25 @@ sub load_unlocked {
         # $slot is set
 	$need_unload = 0;
 
-	# see if the tape is already in a drive
-	$drive = $state->{'slots'}->{$slot}->{'loaded_in'};
+	# see if the tape is already in a drive (which it is, trivially, if
+	# the user specified a slot of 'driveNN'!)
+	if ($params{'slot'} and $params{'slot'} =~ /^drive(\d+)$/) {
+	    $explicit_drive = 1;
+	    $drive = $1;
+	} else {
+	    $drive = $state->{'slots'}->{$slot}->{'loaded_in'};
+	}
+
 	if (defined $drive) {
 	    $self->_debug("requested volume is already in drive $drive");
 	    my $info = $state->{'drives'}->{$drive};
+
+	    if (!defined $info) {
+		return $self->make_error("failed", $params{'res_cb'},
+			reason => "invalid",
+			slot => $slot,
+			message => "the requested drive does not exist");
+	    }
 
 	    # if it's reserved, it can't be used
 	    if ($info->{'res_info'} and $self->_res_info_verify($info->{'res_info'})) {
@@ -622,7 +642,7 @@ sub load_unlocked {
 			. $device->error_or_status());
 	}
 
-	# success!
+	# Success!
 	$steps->{'make_res'}->($device, $label);
     };
 
@@ -635,18 +655,6 @@ sub load_unlocked {
 	    $self->_debug("Expected label '$params{label}', but got '$label'");
 
 	    # update metadata with this new information
-	    $state->{'slots'}->{$slot}->{'state'} = Amanda::Changer::SLOT_FULL;
-	    $state->{'slots'}->{$slot}->{'device_status'} = $device->status;
-	    if (defined $device->{'header'}) {
-		$state->{'slots'}->{$slot}->{'f_type'} = $device->{'header'}->{type};
-	    } else {
-		$state->{'slots'}->{$slot}->{'f_type'} = undef;
-	    }
-	    $state->{'slots'}->{$slot}->{'label'} = $label;
-	    if ($state->{'slots'}->{$slot}->{'barcode'}) {
-		$state->{'bc2lb'}->{$state->{'slots'}->{$slot}->{'barcode'}} = $label;
-	    }
-
 	    return $self->make_error("failed", $params{'res_cb'},
 		    reason => "notfound",
 		    message => "Found unexpected tape '$label' while looking " .
@@ -658,12 +666,6 @@ sub load_unlocked {
 
 	    # update metadata with this new information
 	    $state->{'slots'}->{$slot}->{'state'} = Amanda::Changer::SLOT_FULL;
-	    $state->{'slots'}->{$slot}->{'device_status'} = $device->status;
-	    if (defined $device->{'header'}) {
-		$state->{'slots'}->{$slot}->{'f_type'} = $device->{'header'}->{type};
-	    } else {
-		$state->{'slots'}->{$slot}->{'f_type'} = undef;
-	    }
 	    $state->{'slots'}->{$slot}->{'label'} = undef;
 	    if ($state->{'slots'}->{$slot}->{'barcode'}) {
 		delete $state->{'bc2lb'}->{$state->{'slots'}->{$slot}->{'barcode'}};
@@ -674,23 +676,45 @@ sub load_unlocked {
 		    message => "Found unlabeled tape while looking for '$params{label}'");
 	}
 
-        my $res = Amanda::Changer::robot::Reservation->new($self, $slot, $drive,
-                                $device, $state->{'slots'}->{$slot}->{'barcode'});
+	my $barcode;
+	if ($explicit_drive) {
+	    $barcode = $state->{'drives'}->{$drive}->{'barcode'};
+	} else {
+	    $barcode = $state->{'slots'}->{$slot}->{'barcode'};
+	}
 
-	# mark this as reserved
+	# make the reservation and mark this as reserved
+        my $res = Amanda::Changer::robot::Reservation->new($self, $slot, $drive,
+							   $device, $barcode);
 	$state->{'drives'}->{$drive}->{'res_info'} = $self->_res_info_new();
 
 	# update our state before returning
-	$state->{'slots'}->{$slot}->{'loaded_in'} = $drive;
-	$state->{'drives'}->{$drive}->{'orig_slot'} = $slot;
-	$state->{'slots'}->{$slot}->{'label'} = $label;
+	my $device_status = $device->status;
+	my $f_type = (defined $device->volume_header)?
+		$device->volume_header->{'type'} : undef;
+
+	$state->{'drives'}->{$drive}->{'device_status'} = $device_status;
+	$state->{'drives'}->{$drive}->{'f_type'} = $f_type;
 	$state->{'drives'}->{$drive}->{'label'} = $label;
 	$state->{'drives'}->{$drive}->{'state'} = Amanda::Changer::SLOT_FULL;
-	$state->{'drives'}->{$drive}->{'barcode'} = $state->{'slots'}->{$slot}->{'barcode'};
-	#$state->{'slots'}->{$slot}->{'device_status'} = 9;
-	if ($label and $state->{'slots'}->{$slot}->{'barcode'}) {
-	    $state->{'bc2lb'}->{$state->{'slots'}->{$slot}->{'barcode'}} = $label;
+	$state->{'drives'}->{$drive}->{'barcode'} = $barcode;
+
+	# $slot is a fake slot name if we're using an explicit drive, so don't update
+	# any corresponding state in that case
+	unless ($explicit_drive) {
+	    $state->{'slots'}->{$slot}->{'device_status'} = $device_status;
+	    $state->{'slots'}->{$slot}->{'f_type'} = $f_type;
+	    $state->{'slots'}->{$slot}->{'state'} = Amanda::Changer::SLOT_FULL;
+	    $state->{'slots'}->{$slot}->{'label'} = $label;
+	    $state->{'slots'}->{$slot}->{'loaded_in'} = $drive;
+	    $state->{'slots'}->{$slot}->{'label'} = $label;
+	    $state->{'drives'}->{$drive}->{'orig_slot'} = $slot;
 	}
+
+	if ($barcode and $label) {
+	    $state->{'bc2lb'}->{$barcode} = $label;
+	}
+
 	if ($params{'set_current'}) {
 		$self->_debug("setting current slot to $slot");
 	    $state->{'current_slot'} = $slot;
@@ -992,8 +1016,16 @@ sub eject_unlocked {
 
     step unload => sub {
 	# find target slot and unload it - note that the target slot may not be
-	# in the USE-SLOTS list, as it may belong to another config
+	# in the USE-SLOTS list, as it may belong to another config.  However, if it's
+	# undefined then there's nowhere to put the volume, so we're stuck.
 	my $orig_slot = $drive_info->{'orig_slot'};
+	if (!defined $orig_slot) {
+	    return $self->make_error("failed", $params{'finished_cb'},
+		    reason => "driveinuse",
+		    message => "the drive already contains a tape, and there's "
+			     . "nowhere to put it");
+	}
+
 	$self->{'interface'}->unload($drive, $orig_slot, $steps->{'unload_finished'});
     };
 
@@ -1087,8 +1119,6 @@ sub update_unlocked {
 	    }
 
 	    # and add knowledge of the label to the given slot
-	    #$state->{'slots'}->{$slot}->{'device_status'} = $DEVICE_STATUS_SUCCESS;
-	    #$state->{'slots'}->{$slot}->{'f_type'} = $Amanda::Header::F_TAPESTART;
 	    $state->{'slots'}->{$slot}->{'label'} = $label;
 	    if ($state->{'slots'}->{$slot}->{'barcode'}) {
 		my $bc = $state->{'slots'}->{$slot}->{'barcode'};
@@ -1237,6 +1267,26 @@ sub inventory_unlocked {
 
 	$i->{'current'} = 1
 	    if $slot_name eq $state->{'current_slot'};
+
+	push @inv, $i;
+    }
+
+    # look for any drives with undef orig_slot, which means there is nowhere
+    # for the volume in the drive to go.  When these exist, we represent them
+    # with 'driveNN' slot names.
+    for my $drive_name (sort { $a <=> $b } keys %{ $state->{'drives'} }) {
+	my $drive = $state->{'drives'}->{$drive_name};
+	next if $drive->{'state'} == Amanda::Changer::SLOT_EMPTY;
+	next if defined $drive->{'orig_slot'};
+
+	my $i = {};
+	$i->{'slot'} = "drive$drive_name";
+	$i->{'state'} = $drive->{'state'};
+	$i->{'device_status'} = $drive->{'device_status'};
+	$i->{'f_type'} = $drive->{'f_type'};
+	$i->{'label'} = $drive->{'label'};
+	$i->{'barcode'} = $drive->{'barcode'};
+	$i->{'loaded_in'} = $drive_name;
 
 	push @inv, $i;
     }

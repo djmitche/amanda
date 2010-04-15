@@ -1,5 +1,5 @@
 #! @PERL@
-# Copyright (c) 2009 Zmanda, Inc.  All Rights Reserved.
+# Copyright (c) 2009, 2010 Zmanda, Inc.  All Rights Reserved.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 as published
@@ -35,6 +35,7 @@ use File::Path;
 #  - 'barcodes' -- does the changer have a barcode reader
 #  - 'track_orig' -- does the changer track orig_slot? (-1 = "guess" like IBM 3573-TL)
 #  - 'loaded_slots' -- hash: { slot : barcode }
+#  - 'loaded_drives' -- hash: { slot : barcode }
 #  - 'vtape_root' -- root directory for vfs devices
 
 # the 'state' key is for internal use only, and has keys:
@@ -75,6 +76,9 @@ sub load_statefile {
 	$S = $STATE->{'state'} = {};
 	$S->{'slots'} = { %{$CONFIG->{'loaded_slots'}} };
 	$S->{'drives'} = {};
+	for my $dr (keys %{$CONFIG->{'loaded_drives'}}) {
+	    $S->{'drives'}{$dr} = [ $CONFIG->{'loaded_drives'}{$dr}, -1 ];
+	}
 	setup_vtape_root($CONFIG->{'vtape_root'}) if $CONFIG->{'vtape_root'};
     } else {
 	$S = $STATE->{'state'};
@@ -99,6 +103,9 @@ sub setup_vtape_root {
     # that we subsequently shuffle around
     for my $slot (keys %{$CONFIG->{'loaded_slots'}}) {
 	mkpath("$vtape_root/slot$slot/data");
+    }
+    for my $dr (keys %{$CONFIG->{'loaded_drives'}}) {
+	mkpath("$vtape_root/drive$dr/data");
     }
 }
 

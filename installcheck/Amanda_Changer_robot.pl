@@ -16,7 +16,7 @@
 # Contact information: Zmanda Inc, 465 S. Mathilda Ave., Suite 300
 # Sunnyvale, CA 94086, USA, or: http://www.zmanda.com
 
-use Test::More tests => 321;
+use Test::More tests => 325;
 use File::Path;
 use Data::Dumper;
 use strict;
@@ -32,6 +32,7 @@ use Amanda::Paths;
 use Amanda::MainLoop;
 use Amanda::Config qw( :init :getconf config_dir_relative );
 use Amanda::Changer;
+use Amanda::Header qw( :constants );
 
 # set up debugging so debug output doesn't interfere with test results
 Amanda::Debug::dbopen("installcheck");
@@ -73,6 +74,14 @@ sub check_inventory {
 	    for (@$expected, @$inv) {
 		delete $_->{'barcode'};
 	    }
+	}
+
+	# convert device_status and f_type to strings, to work around BigInt
+	for my $elt (@$inv, @$expected) {
+	    $elt->{'device_status'} = "$elt->{device_status}"
+		if defined $elt->{'device_status'};
+	    $elt->{'f_type'} = "$elt->{f_type}"
+		if defined $elt->{'f_type'};
 	}
 
 	is_deeply($inv, $expected, $msg)
@@ -546,13 +555,16 @@ sub test_changer {
     };
 
     step inventory2 => sub {
+	my $empty_slot_status = $DEVICE_STATUS_VOLUME_ERROR
+			      | $DEVICE_STATUS_VOLUME_UNLABELED
+			      | $DEVICE_STATUS_DEVICE_ERROR;
 	check_inventory($chg, $mtx_config->{'barcodes'} > 0, $steps->{'load_slot_3'}, [
 	    { slot => 1, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '11111', reserved => 1, loaded_in => 0, current => 1,
-	      device_status => undef, f_type => undef, label => undef },
+	      device_status => $empty_slot_status, f_type => undef, label => undef },
 	    { slot => 2, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '22222', reserved => 1, loaded_in => 1,
-	      device_status => undef, f_type => undef, label => undef },
+	      device_status => $empty_slot_status, f_type => undef, label => undef },
 	    { slot => 3, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '33333',
 	      device_status => undef, f_type => undef, label => undef },
@@ -650,11 +662,11 @@ sub test_changer {
 	    { slot => 1, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '11111', reserved => 1, loaded_in => 0, current => 1,
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-1' },
+	      f_type => $F_TAPESTART, label => 'TAPE-1' },
 	    { slot => 2, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '22222', loaded_in => 1,
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-2' },
+	      f_type => $F_TAPESTART, label => 'TAPE-2' },
 	    { slot => 3, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '33333',
 	      device_status => undef, f_type => undef, label => undef },
@@ -746,19 +758,19 @@ sub test_changer {
 	    { slot => 1, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '11111',
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-1',
+	      f_type => $F_TAPESTART, label => 'TAPE-1',
 	      reserved => 1, loaded_in => 0 },
 	    { slot => 2, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '22222',
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-2' },
+	      f_type => $F_TAPESTART, label => 'TAPE-2' },
 	    { slot => 3, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '33333',
 	      device_status => undef, f_type => undef, label => undef },
 	    { slot => 4, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '44444', reserved => 1, loaded_in => 1, current => 1,
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-4' },
+	      f_type => $F_TAPESTART, label => 'TAPE-4' },
 	    { slot => 5, state => Amanda::Changer::SLOT_EMPTY,
 	      device_status => undef, f_type => undef, label => undef },
 	], "$pfx: inventory is up to date after more labelings");
@@ -987,18 +999,18 @@ sub test_changer {
 	    { slot => 1, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '11111', loaded_in => 1,
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-1' },
+	      f_type => $F_TAPESTART, label => 'TAPE-1' },
 	    { slot => 2, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '22222', loaded_in => 0,
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-2' },
+	      f_type => $F_TAPESTART, label => 'TAPE-2' },
 	    { slot => 3, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '33333',
 	      device_status => undef, f_type => undef, label => undef },
 	    { slot => 4, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '44444', current => 1,
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-4' },
+	      f_type => $F_TAPESTART, label => 'TAPE-4' },
 	    { slot => 5, state => Amanda::Changer::SLOT_EMPTY,
 	      device_status => undef, f_type => undef, label => undef },
 	], "$pfx: inventory still accurate");
@@ -1100,18 +1112,19 @@ sub test_changer {
 	    { slot => 1, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '11111',
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-1' },
+	      f_type => $F_TAPESTART, label => 'TAPE-1' },
 	    { slot => 2, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '22222',
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'SURPRISE!' },
+	      f_type => $F_TAPESTART, label => 'SURPRISE!' },
 	    { slot => 3, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '33333', loaded_in => 1,
-	      device_status => undef, f_type => undef, label => 'TAPE-3' },
+	      device_status => $DEVICE_STATUS_SUCCESS,
+	      f_type => $F_TAPESTART, label => 'TAPE-3' },
 	    { slot => 4, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '44444', loaded_in => 0, current => 1,
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-4' },
+	      f_type => $F_TAPESTART, label => 'TAPE-4' },
 	    { slot => 5, state => Amanda::Changer::SLOT_EMPTY,
 	      device_status => undef, f_type => undef, label => undef },
 	], "$pfx: inventory reflects updates");
@@ -1203,20 +1216,21 @@ sub test_changer {
 	    { slot => 1, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '11111',
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-1' },
+	      f_type => $F_TAPESTART, label => 'TAPE-1' },
 	    { slot => 2, state => Amanda::Changer::SLOT_EMPTY,
 	      device_status => undef, f_type => undef, label => undef },
 	    { slot => 3, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '33333', loaded_in => 1,
-	      device_status => undef, f_type => undef, label => 'TAPE-3' },
+	      device_status => $DEVICE_STATUS_SUCCESS,
+	      f_type => $F_TAPESTART, label => 'TAPE-3' },
 	    { slot => 4, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '44444', loaded_in => 0, current => 1,
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-4' },
+	      f_type => $F_TAPESTART, label => 'TAPE-4' },
 	    { slot => 5, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '22222',
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'SURPRISE!' },
+	      f_type => $F_TAPESTART, label => 'SURPRISE!' },
 	], "$pfx: inventory reflects the move");
     };
 
@@ -1264,20 +1278,21 @@ sub test_changer {
 	    { slot => 1, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '11111', loaded_in => 0,
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-1' },
+	      f_type => $F_TAPESTART, label => 'TAPE-1' },
 	    { slot => 2, state => Amanda::Changer::SLOT_EMPTY,
 	      device_status => undef, f_type => undef, label => undef },
 	    { slot => 3, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '33333', loaded_in => 1,
-	      device_status => undef, f_type => undef, label => 'TAPE-3' },
+	      device_status => $DEVICE_STATUS_SUCCESS,
+	      f_type => $F_TAPESTART, label => 'TAPE-3' },
 	    { slot => 4, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '44444', current => 1,
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-4' },
+	      f_type => $F_TAPESTART, label => 'TAPE-4' },
 	    { slot => 5, state => Amanda::Changer::SLOT_FULL,
 	      barcode => '22222',
 	      device_status => $DEVICE_STATUS_SUCCESS,
-	      f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-2' },
+	      f_type => $F_TAPESTART, label => 'TAPE-2' },
 	], "$pfx: inventory before updates with unknown state");
     };
 
@@ -1294,27 +1309,28 @@ sub test_changer {
 		{ slot => 1, state => Amanda::Changer::SLOT_FULL,
 		  barcode => '11111', loaded_in => 0,
 		  device_status => $DEVICE_STATUS_SUCCESS,
-		  f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-1' },
+		  f_type => $F_TAPESTART, label => 'TAPE-1' },
 		{ slot => 2, state => Amanda::Changer::SLOT_EMPTY,
 		  device_status => undef, f_type => undef, label => undef },
 		{ slot => 3, state => Amanda::Changer::SLOT_FULL,
 		  barcode => '33333', loaded_in => 1,
-		  device_status => undef, f_type => undef, label => 'TAPE-3' },
+		  device_status => $DEVICE_STATUS_SUCCESS,
+		  f_type => $F_TAPESTART, label => 'TAPE-3' },
 		{ slot => 4, state => Amanda::Changer::SLOT_FULL,
 		  barcode => '44444', current => 1,
 		  device_status => $DEVICE_STATUS_SUCCESS,
-		  f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-4' },
+		  f_type => $F_TAPESTART, label => 'TAPE-4' },
 		{ slot => 5, state => Amanda::Changer::SLOT_FULL,
 		  barcode => '22222',
 		  device_status => $DEVICE_STATUS_SUCCESS,
-		  f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-2' },
+		  f_type => $F_TAPESTART, label => 'TAPE-2' },
 	    ], "$pfx: inventory reflects updates with unknown state with barcodes");
 	} else {
 	    check_inventory($chg, $mtx_config->{'barcodes'} > 0, $steps->{'quit'}, [
 		{ slot => 1, state => Amanda::Changer::SLOT_FULL,
 		  barcode => '11111', loaded_in => 0,
 		  device_status => $DEVICE_STATUS_SUCCESS,
-		  f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-1' },
+		  f_type => $F_TAPESTART, label => 'TAPE-1' },
 		{ slot => 2, state => Amanda::Changer::SLOT_EMPTY,
 		  device_status => undef, f_type => undef, label => undef },
 		{ slot => 3, state => Amanda::Changer::SLOT_FULL,
@@ -1326,7 +1342,7 @@ sub test_changer {
 		{ slot => 5, state => Amanda::Changer::SLOT_FULL,
 		  barcode => '22222',
 		  device_status => $DEVICE_STATUS_SUCCESS,
-		  f_type => $Amanda::Header::F_TAPESTART, label => 'TAPE-2' },
+		  f_type => $F_TAPESTART, label => 'TAPE-2' },
 	    ], "$pfx: inventory reflects updates with unknown state without barcodes");
 	}
     };
@@ -1352,3 +1368,119 @@ for my $mtx_config (
     test_changer($mtx_config, \&Amanda::MainLoop::quit);
     Amanda::MainLoop::run();
 }
+
+## test that a chock-full changer returns 'driveinuse' for every load() attempt
+
+sub check_wedged_load {
+    my ($finished_cb) = @_;
+    my $vtape_root = "$Installcheck::TMP/chg-robot-vtapes";
+    my $chg;
+
+    my $steps = define_steps
+	cb_ref => \$finished_cb;
+
+    step setup => sub {
+	# clean up
+	unlink($chg_state_file) if -f $chg_state_file;
+	%Amanda::Changer::changers_by_uri_cc = ();
+
+	# set up some vtapes
+	rmtree($vtape_root);
+	mkpath($vtape_root);
+
+	# reset the mock mtx
+	$mtx_state_file = setup_mock_mtx (
+		 num_slots => 3,
+		 num_ie => 0,
+		 barcodes => 1,
+		 track_orig => 1,
+		 num_drives => 1,
+		 loaded_slots => {
+		    1 => '11111',
+		    2 => '22222',
+		    3 => '33333',
+		 },
+		 loaded_drives => {
+		    0 => '99999',
+		 },
+		 first_slot => 1,
+		 first_drive => 0,
+		 vtape_root => $vtape_root,
+	       );
+
+	my $testconf = Installcheck::Config->new();
+	$testconf->add_changer('robo', [
+	    tpchanger => "\"chg-robot:$mtx_state_file\"",
+	    changerfile => "\"$chg_state_file\"",
+
+	    property => "\"tape-device\" \"0=file:$vtape_root/drive0\"",
+	    property => "\"mtx\" \"$mock_mtx_path\"",
+	]);
+	$testconf->write();
+
+	config_uninit();
+	my $cfg_result = config_init($CONFIG_INIT_EXPLICIT_NAME, 'TESTCONF');
+	if ($cfg_result != $CFGERR_OK) {
+	    my ($level, @errors) = Amanda::Config::config_errors();
+	    die(join "\n", @errors);
+	}
+
+	$steps->{'start'}->();
+    };
+
+    step start => sub {
+	$chg = Amanda::Changer->new("robo");
+	ok(!$chg->isa("Amanda::Changer::Error"),
+	    "Create working chg-robot instance chock full of tapes")
+	    or die("no sense going on: $chg");
+
+	$chg->load(slot => 2, res_cb => $steps->{'res_cb'});
+    };
+
+    step res_cb => sub {
+	my ($err, $res) = @_;
+
+	ok(($err and $err->driveinuse),
+	    "loading a slot in a wedged changer gives DRIVEINUSE")
+	    or diag("got '$err' instead");
+
+	# but let's try loading the volume in the drive directly
+	$chg->load(slot => 'drive0', res_cb => $steps->{'res_cb2'});
+    };
+
+    step res_cb2 => sub {
+	my ($err, $res) = @_;
+	die "$err" if $err;
+
+	pass("loaded slot 'drive0'");
+
+	$res->release(finished_cb => $steps->{'get_inventory'});
+    };
+
+    step get_inventory => sub {
+	my ($err) = @_;
+	die "$err" if $err;
+
+	my $empty_slot_status = $DEVICE_STATUS_VOLUME_ERROR
+			      | $DEVICE_STATUS_VOLUME_UNLABELED
+			      | $DEVICE_STATUS_DEVICE_ERROR;
+	check_inventory($chg, 1, $finished_cb, [
+	    { slot => 1, state => Amanda::Changer::SLOT_FULL,
+	      barcode => '11111', current => 1,
+	      device_status => undef, f_type => undef, label => undef },
+	    { slot => 2, state => Amanda::Changer::SLOT_FULL,
+	      barcode => '22222',
+	      device_status => undef, f_type => undef, label => undef },
+	    { slot => 3, state => Amanda::Changer::SLOT_FULL,
+	      barcode => '33333',
+	      device_status => undef, f_type => undef, label => undef },
+	    { slot => 'drive0', state => Amanda::Changer::SLOT_FULL,
+	      barcode => '99999', loaded_in => 0,
+	      device_status => $empty_slot_status,
+	      f_type => undef, label => undef },
+	], "inventory includes 'drive0' for wedged changer");
+    };
+}
+
+check_wedged_load(\&Amanda::MainLoop::quit);
+Amanda::MainLoop::run();
