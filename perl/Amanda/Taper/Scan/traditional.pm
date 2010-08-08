@@ -32,9 +32,9 @@ C<amanda-taperscan(7)>.
 use strict;
 use warnings;
 use base qw( Amanda::Taper::Scan );
+use Amanda::Device qw( :constants );
 use Amanda::Tapelist;
 use Amanda::Config qw( :getconf );
-use Amanda::Device qw( :constants );
 use Amanda::Header;
 use Amanda::Debug qw( :logging );
 use Amanda::MainLoop;

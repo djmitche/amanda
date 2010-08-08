@@ -22,8 +22,8 @@ use strict;
 use warnings;
 use Carp;
 
-use Amanda::Xfer qw( :constants );
 use Amanda::Device qw( :constants );
+use Amanda::Xfer qw( :constants );
 use Amanda::Header;
 use Amanda::Holding;
 use Amanda::Debug qw( :logging );

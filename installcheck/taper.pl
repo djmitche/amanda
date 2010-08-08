@@ -28,11 +28,10 @@ use IO::Socket::INET;
 use POSIX ":sys_wait_h";
 use Cwd qw(abs_path);
 
-use Amanda::Paths;
+use Amanda::Device qw( :constants );
 use Amanda::Header qw( :constants );
 use Amanda::Debug;
 use Amanda::Paths;
-use Amanda::Device qw( :constants );
 
 # ABOUT THESE TESTS:
 #

@@ -25,11 +25,11 @@ use vars qw( @ISA );
 
 use File::Glob qw( :glob );
 use File::Path;
+use Amanda::Device qw( :constants );
 use Amanda::Config qw( :getconf );
 use Amanda::Debug;
 use Amanda::Changer;
 use Amanda::MainLoop;
-use Amanda::Device qw( :constants );
 
 =head1 NAME
 

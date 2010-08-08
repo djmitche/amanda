@@ -36,6 +36,8 @@
 /* Device API version. */
 #define DEVICE_API_VERSION 0
 
+/* device_api_early_init *must* be called before glib_init and before device_api_init. */
+extern void device_api_early_init(void);
 extern void device_api_init(void);
 
 /* Different access modes */

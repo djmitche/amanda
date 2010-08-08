@@ -28,24 +28,12 @@
 #include "glib-util.h"
 #include "conffile.h" /* For find_multiplier. */
 
-#ifdef HAVE_LIBCURL
-#include <curl/curl.h>
-#endif
+gboolean did_glib_init = FALSE;
 
 void
 glib_init(void) {
-    static gboolean did_glib_init = FALSE;
     if (did_glib_init) return;
     did_glib_init = TRUE;
-
-    /* set up libcurl (this must happen before threading 
-     * is initialized) */
-#ifdef HAVE_LIBCURL
-# ifdef G_THREADS_ENABLED
-    g_assert(!g_thread_supported()); /* assert threads aren't initialized yet */
-# endif
-    g_assert(curl_global_init(CURL_GLOBAL_ALL) == 0);
-#endif
 
     /* do a version check */
 #if GLIB_CHECK_VERSION(2,6,0)
@@ -62,7 +50,8 @@ glib_init(void) {
 #endif
 
     /* Initialize glib's type system.  On glib >= 2.24, this will initialize
-     * threads, so it must be done after curl is initialized. */
+     * threads, so it must be done after curl is initialized (see
+     * device_api_early_init). */
     g_type_init();
 
     /* And set up glib's threads */

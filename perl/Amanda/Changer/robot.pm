@@ -26,11 +26,11 @@ use vars qw( @ISA );
 
 use Data::Dumper;
 use File::Path;
+use Amanda::Device qw( :constants );
 use Amanda::Paths;
 use Amanda::MainLoop qw( :GIOCondition make_cb define_steps step );
 use Amanda::Config qw( :getconf );
 use Amanda::Debug qw( debug warning );
-use Amanda::Device qw( :constants );
 use Amanda::Changer;
 use Amanda::Constants;
 

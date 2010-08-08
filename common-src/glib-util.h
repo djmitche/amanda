@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007,2008,2009 Zmanda, Inc.  All Rights Reserved.
+ * Copyright (c) 2007, 2008, 2009, 2010 Zmanda, Inc.  All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -29,10 +29,12 @@
 #include <glib.h>
 #include <glib-object.h>
 
-/* Call the requisite glib init functions, including calling
- * g_init_types and setting up threading support.  This function can
- * be called multiple times with no harm, although it is not
- * re-entrant.
+/* TRUE if glib_init has been called already */
+extern gboolean did_glib_init;
+
+/* Call the glib init functions, including calling g_init_types and setting up
+ * threading support.  This function can be called multiple times with no harm,
+ * although it is not re-entrant.
  */
 void glib_init(void);
 

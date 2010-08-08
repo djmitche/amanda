@@ -23,10 +23,10 @@ use warnings;
 use Carp;
 use base 'Amanda::Changer::robot';
 
+use Amanda::Device qw( :constants );
 use Amanda::MainLoop;
 use Amanda::Config qw( :getconf );
 use Amanda::Debug qw( debug warning );
-use Amanda::Device qw( :constants );
 use Amanda::Changer;
 use Amanda::NDMP;
 

@@ -26,10 +26,10 @@ use Fcntl qw( O_RDWR O_CREAT LOCK_EX LOCK_NB );
 use Data::Dumper;
 use vars qw( @ISA );
 
+use Amanda::Device qw( :constants );
 use Amanda::Paths;
 use Amanda::Util;
 use Amanda::Config qw( :getconf string_to_boolean );
-use Amanda::Device qw( :constants );
 use Amanda::Debug qw( debug );
 use Amanda::MainLoop;
 

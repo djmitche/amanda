@@ -26,11 +26,11 @@ use vars qw( @ISA );
 use Carp;
 use File::Glob qw( :glob );
 use File::Path;
+use Amanda::Device qw( :constants );
 use Amanda::Paths;
 use Amanda::MainLoop qw( :GIOCondition );
 use Amanda::Config qw( :getconf );
 use Amanda::Debug qw( debug );
-use Amanda::Device qw( :constants );
 use Amanda::Changer;
 use Amanda::MainLoop;
 

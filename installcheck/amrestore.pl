@@ -28,11 +28,11 @@ use Installcheck::Run qw(run run_get run_get_err run_err
 		$stderr $stdout $diskname vtape_dir);
 use Installcheck::Dumpcache;
 use File::Path qw(rmtree mkpath);
+use Amanda::Device qw( :constants );
 use Amanda::Paths;
 use Amanda::Constants;
 use Amanda::Holding;
 use Amanda::Config qw( :init :getconf );
-use Amanda::Device qw( :constants );
 use Amanda::Xfer qw( :constants );
 use Amanda::MainLoop;
 use Cwd;

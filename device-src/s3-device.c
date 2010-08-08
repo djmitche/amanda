@@ -177,6 +177,7 @@ static DevicePropertyBase device_property_max_recv_speed;
  * prototypes
  */
 
+void s3_device_early_init(void);
 void s3_device_register(void);
 
 /*
@@ -644,6 +645,12 @@ delete_all_files(S3Device *self)
 /*
  * Class mechanics
  */
+
+void
+s3_device_early_init(void)
+{
+    s3_early_init();
+}
 
 void
 s3_device_register(void)

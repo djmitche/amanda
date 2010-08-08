@@ -27,7 +27,6 @@
 %include "Xfer.pod"
 
 %{
-#include "glib-util.h"
 #include "amxfer.h"
 %}
 
@@ -57,15 +56,6 @@
  * Finally, XMsgs are reflected entirely into perl hashrefs, in the interest of
  * efficiency.
  */
-
-/*
- * Initialization
- */
-
-%init %{
-    /* We need GType and GThread initialized to use xfers */
-    glib_init();
-%}
 
 /*
  * Constants

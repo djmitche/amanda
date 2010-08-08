@@ -25,6 +25,13 @@
 
 %{
 #include "amglue.h"
+#include "glib-util.h"
+%}
+
+%init %{
+    /* initialize glib, if it's not already done, when loading any SWIG module */
+    if (!did_glib_init)
+	glib_init();
 %}
 
 %include "amglue/constants.swg"

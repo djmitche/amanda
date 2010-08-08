@@ -21,11 +21,11 @@ use lib '@amperldir@';
 use strict;
 use warnings;
 
+use Amanda::Device qw( :constants );
 use Amanda::Util qw( :constants );
 use Amanda::Config qw( :init );
 use Amanda::Logfile qw( :logtype_t log_add $amanda_log_trace_log );
 use Amanda::Debug;
-use Amanda::Device qw( :constants );
 use Amanda::MainLoop;
 use Amanda::Changer;
 use Amanda::Taper::Scan;

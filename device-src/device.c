@@ -40,6 +40,7 @@
 void    null_device_register    (void);
 void	rait_device_register	(void);
 #ifdef WANT_S3_DEVICE
+void    s3_device_early_init    (void);
 void    s3_device_register    (void);
 #endif
 #ifdef WANT_TAPE_DEVICE
@@ -58,9 +59,27 @@ void    ndmp_device_register    (void);
  */
 
 static GHashTable* driverList = NULL;
+static gboolean did_device_api_early_init = FALSE;
+
+void device_api_early_init(void) {
+    if (did_device_api_early_init)
+	return;
+    did_device_api_early_init = TRUE;
+
+    g_assert(!did_glib_init); /* this must be called before did_glib_init */
+
+    /* maintainers: only add *_early_init for devices that really need it
+     * here.. */
+#ifdef WANT_S3_DEVICE
+    s3_device_early_init();
+#endif
+}
 
 void device_api_init(void) {
+    g_assert(did_device_api_early_init);
+
     glib_init();
+
     device_property_init();
     driverList = g_hash_table_new(g_str_hash, g_str_equal);
 

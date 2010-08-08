@@ -26,12 +26,6 @@
 
 %{
 #include "ndmpconnobj.h"
-#include "glib-util.h"
-%}
-
-/* initialize glib, and in particular GType */
-%init %{
-    glib_init();
 %}
 
 /* supporting typemaps */

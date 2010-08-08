@@ -170,6 +170,8 @@ use strict;
 use warnings;
 use Carp;
 
+use Amanda::Device; # initialize early..
+
 sub make_plan {
     my %params = @_;
 

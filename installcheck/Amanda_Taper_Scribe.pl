@@ -23,9 +23,9 @@ use strict;
 
 use lib "@amperldir@";
 use Installcheck::Config;
+use Amanda::Device qw( :constants );
 use Amanda::Config qw( :init );
 use Amanda::Changer;
-use Amanda::Device qw( :constants );
 use Amanda::Debug;
 use Amanda::Header;
 use Amanda::Xfer;

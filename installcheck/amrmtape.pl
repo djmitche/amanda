@@ -1,4 +1,4 @@
-# Copyright (c) 2008,2009 Zmanda, Inc.  All Rights Reserved.
+# Copyright (c) 2008, 2009, 2010 Zmanda, Inc.  All Rights Reserved.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 as published
@@ -20,8 +20,8 @@ use Test::More tests => 41;
 
 use lib "@amperldir@";
 use File::Find;
-use Amanda::Config qw( :init :getconf config_dir_relative );
 use Amanda::Device qw( :constants );
+use Amanda::Config qw( :init :getconf config_dir_relative );
 use Amanda::Paths;
 use Amanda::Tapelist;
 use Installcheck::Config;

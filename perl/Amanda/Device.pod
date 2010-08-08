@@ -26,6 +26,7 @@ Amanda::Device - interact with Amanda data-storage devices
 
 =head1 SYNOPSIS
 
+  # NOTE: Amanda::Device must be use'd before any other Amanda::* package
   use Amanda::Device qw( :constants );
 
   my $dev = Amanda::Device->new($device_name);

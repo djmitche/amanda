@@ -27,9 +27,9 @@ use vars qw( @ISA );
 use base qw(Exporter);
 our @EXPORT_OK = qw($DEFAULT_CHANGER);
 
+use Amanda::Device qw( :constants );
 use Amanda::Paths;
 use Amanda::Util;
-use Amanda::Device qw( :constants );
 use Amanda::Debug qw( debug );
 use Amanda::Changer;
 use Amanda::MainLoop;

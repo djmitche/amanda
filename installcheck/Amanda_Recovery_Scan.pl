@@ -23,8 +23,8 @@ use strict;
 
 use lib "@amperldir@";
 use Installcheck::Config;
-use Amanda::Paths;
 use Amanda::Device qw( :constants );
+use Amanda::Paths;
 use Amanda::Debug;
 use Amanda::MainLoop;
 use Amanda::Config qw( :init :getconf config_dir_relative );

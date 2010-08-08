@@ -1440,12 +1440,20 @@ compile_regexes(void)
  * Public function implementations
  */
 
+void
+s3_early_init(void)
+{
+    /* set up libcurl (this must happen before gthread is initialized) */
+# ifdef G_THREADS_ENABLED
+    g_assert(!g_thread_supported()); /* make sure threads aren't initialized yet */
+# endif
+    g_assert(curl_global_init(CURL_GLOBAL_ALL) == 0);
+}
+
 gboolean s3_init(void)
 {
     static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
     static gboolean init = FALSE, ret;
-
-    /* n.b. curl_global_init is called in common-src/glib-util.c:glib_init() */
 
     g_static_mutex_lock (&mutex);
     if (!init) {

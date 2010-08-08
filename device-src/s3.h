@@ -207,6 +207,11 @@ s3_curl_location_compat(void);
 gboolean
 s3_bucket_location_compat(const char *bucket);
 
+/* Initialize early parts of the S3 support; call this in the device_early_init
+ * process.  */
+void
+s3_early_init(void);
+
 /* Initialize S3 operation
  *
  * If an error occurs in this function, diagnostic information is
@@ -222,7 +227,7 @@ s3_init(void);
  * The concept of a bucket is defined by the Amazon S3 API.
  * See: "Components of Amazon S3" - API Version 2006-03-01 pg. 8
  *
- * @param access_key: the secret key for Amazon Web Services
+ * @param access_key: the access key for Amazon Web Services
  * @param secret_key: the secret key for Amazon Web Services
  * @param user_token: the user token for Amazon DevPay
  * @param bucket_location: the location constraint for buckets

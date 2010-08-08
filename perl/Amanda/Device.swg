@@ -19,6 +19,20 @@
  */
 
 %module "Amanda::Device"
+
+%init %{
+    if (did_glib_init) {
+	croak("'use Amanda::Device;' must appear before other Amanda::* perl modules");
+    }
+
+    /* do the device and glib initialization in the appropriate order; this must come
+     * before the include of amglue.swg, so that the resulting code appears first in
+     * SWIG's init function. */
+    device_api_early_init();
+    glib_init();
+    device_api_init();
+%}
+
 %include "amglue/amglue.swg"
 %include "exception.i"
 %import "Amanda/Header.swg";
@@ -31,11 +45,6 @@
 #include "fileheader.h"
 #include "glib-util.h"
 #include "simpleprng.h"
-%}
-
-%init %{
-    /* Initialize the Device API on load */
-    device_api_init();
 %}
 
 %{
