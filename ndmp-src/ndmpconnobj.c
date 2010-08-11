@@ -115,6 +115,8 @@ ndmp_connection_err_code(
 {
     if (self->startup_err) {
 	return NDMP4_IO_ERR;
+    } else if (self->operation_cancelled) {
+	return NDMP4_NOT_AUTHORIZED_ERR; /* close enough.. */
     } else if (self->last_rc == NDMCONN_CALL_STATUS_REPLY_ERROR) {
 	return self->conn->last_reply_error;
     } else {
@@ -128,6 +130,8 @@ ndmp_connection_err_msg(
 {
     if (self->startup_err) {
 	return g_strdup(self->startup_err);
+    } else if (self->operation_cancelled) {
+	return g_strdup("operation cancelled");
     } else if (self->last_rc == NDMCONN_CALL_STATUS_REPLY_ERROR) {
 	return g_strdup_printf("Error from NDMP server: %s",
 		    ndmp9_error_to_str(self->conn->last_reply_error));
@@ -658,7 +662,9 @@ ndmp_connection_wait_for_notify(
 	ndmp9_data_halt_reason *data_halt_reason,
 	ndmp9_mover_halt_reason *mover_halt_reason,
 	ndmp9_mover_pause_reason *mover_pause_reason,
-	guint64 *mover_pause_seek_position)
+	guint64 *mover_pause_seek_position,
+	gboolean (* prolong)(gpointer data),
+	gpointer prolong_data)
 {
     struct ndmp_msg_buf nmb;
 
@@ -678,6 +684,7 @@ ndmp_connection_wait_for_notify(
 	gboolean found = FALSE;
 	int fd;
 	SELECT_ARG_TYPE readset;
+	struct timeval tv;
 	int nfound;
 
 	/* if any desired notifications have been received, then we're
@@ -714,16 +721,28 @@ ndmp_connection_wait_for_notify(
 	fd = self->conn->chan.fd;
 	FD_ZERO(&readset);
 	FD_SET(fd, &readset);
+	memset(&tv, 0, SIZEOF(tv));
+	tv.tv_sec = 1;
 	nfound = select(fd+1, &readset, NULL, NULL, NULL);
 
 	/* fall on through, blind to any errors - presumably the same error
 	 * condition will be caught by ndmconn_recv_nmb. */
 
-	g_static_mutex_lock(&ndmlib_mutex);
-	NDMOS_MACRO_ZEROFILL(&nmb);
-	nmb.protocol_version = NDMP4VER;
-	self->last_rc = ndmconn_recv_nmb(self->conn, &nmb);
-	g_static_mutex_unlock(&ndmlib_mutex);
+	if (nfound < 0) {
+	    return FALSE;
+	} else if (nfound > 0) {
+	    /* process a packet -- or try, at least */
+	    g_static_mutex_lock(&ndmlib_mutex);
+	    NDMOS_MACRO_ZEROFILL(&nmb);
+	    nmb.protocol_version = NDMP4VER;
+	    self->last_rc = ndmconn_recv_nmb(self->conn, &nmb);
+	    g_static_mutex_unlock(&ndmlib_mutex);
+	}
+
+	if (prolong && !prolong(prolong_data)) {
+	    self->operation_cancelled = TRUE;
+	    return FALSE;
+	}
 
 	if (self->last_rc) {
 	    /* (nothing to free) */

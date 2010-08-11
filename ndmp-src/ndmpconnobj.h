@@ -62,6 +62,7 @@ typedef struct NDMPConnection_ {
     /* error info */
     int last_rc;
     gchar *startup_err;
+    gboolean operation_cancelled;
 } NDMPConnection;
 
 typedef struct NDMPConnectionClass_ {
@@ -213,7 +214,9 @@ gboolean ndmp_connection_mover_get_state(
 	/* (other state variables should be added as needed) */
 
 /* Synchronous notification interface.  This handles all types of notification,
- * returning the result in the appropriate output parameter. */
+ * returning the result in the appropriate output parameter. Returns TRUE on
+ * success.  If prolong is not NULL, it is called with prolong_data periodically,
+ * and if it returns FALSE then this function will also return FALSE.  */
 gboolean ndmp_connection_wait_for_notify(
 	NDMPConnection *self,
 	/* NDMP_NOTIFY_DATA_HALTED */
@@ -222,7 +225,9 @@ gboolean ndmp_connection_wait_for_notify(
 	ndmp9_mover_halt_reason *mover_halt_reason,
 	/* NDMP_NOTIFY_MOVER_PAUSED */
 	ndmp9_mover_pause_reason *mover_pause_reason,
-	guint64 *mover_pause_seek_position);
+	guint64 *mover_pause_seek_position,
+	gboolean (* prolong)(gpointer data),
+	gpointer prolong_data);
 
 /*
  * Constructor

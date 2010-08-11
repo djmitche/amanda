@@ -1057,10 +1057,6 @@ accept_impl(
 
     *dtcpconn = NULL;
 
-    /* TODO: support aborting this operation - maybe just always poll? */
-    prolong = prolong;
-    prolong_data = prolong_data;
-
     if (!self->for_writing) {
 	/* when reading, we don't get any kind of notification that the
 	 * connection has been established, but we can't call NDMP_MOVER_READ
@@ -1118,7 +1114,8 @@ accept_impl(
     if (!ndmp_connection_wait_for_notify(self->ndmp,
 	    NULL,
 	    NULL,
-	    &reason, &seek_position)) {
+	    &reason, &seek_position,
+	    prolong, prolong_data)) {
 	set_error_from_ndmp(self);
 	return FALSE;
     }
@@ -1228,7 +1225,8 @@ connect_impl(
     if (!ndmp_connection_wait_for_notify(self->ndmp,
 	    NULL,
 	    NULL,
-	    &reason, &seek_position)) {
+	    &reason, &seek_position,
+	    prolong, prolong_data)) {
 	set_error_from_ndmp(self);
 	return FALSE;
     }
@@ -1308,7 +1306,8 @@ write_from_connection_impl(
     if (!ndmp_connection_wait_for_notify(self->ndmp,
 	    NULL,
 	    &halt_reason,
-	    &pause_reason, NULL)) {
+	    &pause_reason, NULL,
+	    NULL, NULL)) {
 	set_error_from_ndmp(self);
 	return FALSE;
     }
@@ -1435,7 +1434,8 @@ read_to_connection_impl(
     if (!ndmp_connection_wait_for_notify(self->ndmp,
 	    NULL,
 	    &halt_reason,
-	    &pause_reason, NULL)) {
+	    &pause_reason, NULL,
+	    NULL, NULL)) {
 	set_error_from_ndmp(self);
 	return FALSE;
     }
@@ -1892,6 +1892,7 @@ directtcp_connection_ndmp_close(DirectTCPConnection *dself)
 	if (!ndmp_connection_wait_for_notify(self->ndmp,
 		NULL,
 		&reason, /* value is ignored.. */
+		NULL, NULL,
 		NULL, NULL)) {
 	    goto error;
 	}

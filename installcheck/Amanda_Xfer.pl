@@ -1208,6 +1208,48 @@ SKIP: {
 	}
     }
 
+    # test cancellation while A::X::Dest::Taper::DirectTCP is waiting for an incoming connection
+    {
+	my $dev;
+	my $xfer;
+	my @messages;
+
+	# make a starting device
+	$dev = $mkdevice->();
+
+	$xfer = Amanda::Xfer->new([
+	    Amanda::Xfer::Source::DirectTCPListen->new(),
+	    Amanda::Xfer::Dest::Taper::DirectTCP->new($dev, 32768*16),
+	]);
+
+	$xfer->start(sub {
+	    my ($src, $msg, $xfer) = @_;
+
+	    if ($msg->{'type'} == $XMSG_DONE) {
+		push @messages, "DONE";
+		Amanda::MainLoop::quit();
+	    } elsif ($msg->{'type'} == $XMSG_CANCEL) {
+		push @messages, "CANCELLED";
+	    } else {
+		push @messages, "$msg";
+	    }
+	});
+
+	# Note that the DirectTCP dest doesn't check self->cancelled until it's called
+	# the accept method, so even if we win this race and cancel the transfer before
+	# that point, this will still test the cancellation of the accept operation.
+	$xfer->cancel();
+
+	Amanda::MainLoop::run();
+
+	$dev->finish();
+
+	is_deeply([@messages],
+	    [ 'READY', 'PART-1-OK', 'PART-2-OK', 'PART-3-OK', 'DONE' ],
+	    "Amanda::Xfer::Dest::Taper::DirectTCP element produces the correct series of messages")
+	or diag(Dumper([@messages]));
+    }
+
     # Amanda::Xfer::Source::Recovery's directtcp functionality is not
     # tested here, as to do so would basically require re-implementing
     # Amanda::Recovery::Clerk; the xfer source is adequately tested by

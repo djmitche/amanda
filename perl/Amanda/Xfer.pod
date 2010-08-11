@@ -423,7 +423,7 @@ DirectTCP.  Since all DirectTCP devices support logical EOM, this class does
 not cache any data, and will never re-start an unsuccessful part.
 
 As state above, C<$first_device> must not be started when C<new> is called.
-Furthermore, no use of that device is allowed until the element sens an
+Furthermore, no use of that device is allowed until the element sends an
 C<$XMSG_READY> to indicate that it is finished with the device.  The
 C<start_part> method must not be called until this method is received either.
 

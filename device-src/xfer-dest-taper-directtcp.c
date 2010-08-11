@@ -101,6 +101,14 @@ _xdt_dbg(const char *fmt, ...)
  * Worker Thread
  */
 
+static gboolean
+accept_prolong(
+    gpointer data)
+{
+    XferElement *elt = (XferElement *)data;
+    return !elt->cancelled;
+}
+
 static gpointer
 worker_thread(
     gpointer data)
@@ -124,7 +132,7 @@ worker_thread(
 
     /* first, accept a new connection from the device */
     DBG(2, "accepting DirectTCP connection on device %s", self->device->device_name);
-    if (!device_accept(self->device, &self->conn, NULL, NULL)) {
+    if (!device_accept(self->device, &self->conn, accept_prolong, elt)) {
 	xfer_cancel_with_error(XFER_ELEMENT(self),
 	    "accepting DirectTCP connection: %s",
 	    device_error_or_status(self->device));
