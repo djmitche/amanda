@@ -4,3 +4,9 @@ What is this scribe handoff stuff?
 Scribe docs need massive updating
 
 request_volume_permission callback in taper is calling two subs?
+
+Trace logfile changes?
+
+xfer->set_callback
+  -> needs docs
+  -> timing issues?
