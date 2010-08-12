@@ -2,3 +2,5 @@ What is this scribe handoff stuff?
  - isolation violation in taper
 
 Scribe docs need massive updating
+
+request_volume_permission callback in taper is calling two subs?
