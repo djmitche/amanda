@@ -1,15 +1,26 @@
-What is this scribe handoff stuff?
- - scribe "stealing"?
+SCRIBE
+  document release method
+  request_volume_permission takes two subs??
+  one of those subs crams an object into a message?
 
-request_volume_permission callback in taper is calling two subs?
+TAPER
+  split START_TAPER into START_TAPER and START_WORKER
+  distinguish "scribe" from "worker", better worker abst (they're called 'tapers' in driver!)
+  automate delegation
+  workers should have "parent" pointer
+  taper states comment misplaced
+  taper uses $selfW/$selfC -- change back
+  fix Worker->new arg parsing
+  state assertions are commented out - covering up bugs?!
+
+What is this scribe handoff stuff?
+ - one scribe steals the dump in progress from another, without replacing the devhandling
 
 driver assert(0)?
 
 driver startaflush -- options ordered by preference?
 
 why is driverio's tapertable static?
-
-taper uses $selfW/$selfC -- change back
 
 xfer->set_callback
   -> needs docs
