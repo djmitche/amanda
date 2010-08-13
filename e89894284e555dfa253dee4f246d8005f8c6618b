@@ -7,13 +7,19 @@ driver assert(0)?
 
 driver startaflush -- options ordered by preference?
 
+why is driverio's tapertable static?
+
+taper uses $selfW/$selfC -- change back
+
+xfer->set_callback
+  -> needs docs
+  -> timing issues?
+
+reorg taper to do better message delegation
+
 DOCS
   Scribe docs need massive updating
   Trace logfile changes?
   Driver/Taper Protocol
   Manpage needs more description of multi-taper.. what are "drives"?
   $sfer->set_callback(..)
-
-xfer->set_callback
-  -> needs docs
-  -> timing issues?
