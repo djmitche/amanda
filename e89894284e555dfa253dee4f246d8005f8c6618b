@@ -1,11 +1,18 @@
 What is this scribe handoff stuff?
- - isolation violation in taper
-
-Scribe docs need massive updating
+ - scribe "stealing"?
 
 request_volume_permission callback in taper is calling two subs?
 
-Trace logfile changes?
+driver assert(0)?
+
+driver startaflush -- options ordered by preference?
+
+DOCS
+  Scribe docs need massive updating
+  Trace logfile changes?
+  Driver/Taper Protocol
+  Manpage needs more description of multi-taper.. what are "drives"?
+  $sfer->set_callback(..)
 
 xfer->set_callback
   -> needs docs
