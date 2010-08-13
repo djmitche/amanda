@@ -18,7 +18,9 @@ xfer->set_callback
 reorg taper to do better message delegation
 
 DOCS
-  Scribe docs need massive updating
+  Scribe docs need updating
+   - release method
+   - new_scribe in volume_cb
   Trace logfile changes?
   Driver/Taper Protocol
   Manpage needs more description of multi-taper.. what are "drives"?
