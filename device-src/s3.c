@@ -1703,7 +1703,7 @@ struct list_keys_thunk {
 
     gboolean is_truncated;
     gchar *next_marker;
-
+    guint64 size;
     gboolean want_text;
 
     gchar *text;
@@ -1731,6 +1731,8 @@ list_start_element(GMarkupParseContext *context G_GNUC_UNUSED,
         thunk->want_text = 1;
     } else if (g_strcasecmp(element_name, "key") == 0 && thunk->in_contents) {
         thunk->want_text = 1;
+    } else if (g_strcasecmp(element_name, "size") == 0 && thunk->in_contents) {
+        thunk->want_text = 1;
     } else if (g_strcasecmp(element_name, "istruncated")) {
         thunk->want_text = 1;
     } else if (g_strcasecmp(element_name, "nextmarker")) {
@@ -1752,6 +1754,9 @@ list_end_element(GMarkupParseContext *context G_GNUC_UNUSED,
         thunk->in_common_prefixes = 0;
     } else if (g_strcasecmp(element_name, "key") == 0 && thunk->in_contents) {
         thunk->filename_list = g_slist_prepend(thunk->filename_list, thunk->text);
+        thunk->text = NULL;
+    } else if (g_strcasecmp(element_name, "size") == 0 && thunk->in_contents) {
+        thunk->size += g_ascii_strtoull (thunk->text, NULL, 10);
         thunk->text = NULL;
     } else if (g_strcasecmp(element_name, "prefix") == 0 && thunk->in_common_prefixes) {
         thunk->filename_list = g_slist_prepend(thunk->filename_list, thunk->text);
@@ -1840,7 +1845,8 @@ s3_list_keys(S3Handle *hdl,
               const char *bucket,
               const char *prefix,
               const char *delimiter,
-              GSList **list)
+              GSList **list,
+              guint64 *total_size)
 {
     /*
      * max len of XML variables:
@@ -1861,12 +1867,12 @@ s3_list_keys(S3Handle *hdl,
     GError *err = NULL;
     s3_result_t result = S3_RESULT_FAIL;
     CurlBuffer buf = {NULL, 0, 0, MAX_RESPONSE_LEN};
-
     g_assert(list);
     *list = NULL;
     thunk.filename_list = NULL;
     thunk.text = NULL;
     thunk.next_marker = NULL;
+    thunk.size = 0;
 
     /* Loop until S3 has given us the entire picture */
     do {
@@ -1913,6 +1919,9 @@ cleanup:
         return FALSE;
     } else {
         *list = thunk.filename_list;
+	if(total_size) {
+            *total_size = thunk.size;
+        }
         return TRUE;
     }
 }
