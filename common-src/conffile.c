@@ -124,6 +124,9 @@ typedef enum {
     CONF_CLNTCOMPPROG,		CONF_SRV_ENCRYPT,	CONF_CLNT_ENCRYPT,
     CONF_SRV_DECRYPT_OPT,	CONF_CLNT_DECRYPT_OPT,	CONF_AMANDAD_PATH,
     CONF_CLIENT_USERNAME,	CONF_CLIENT_PORT,	CONF_ALLOW_SPLIT,
+    CONF_SSL_FINGERPRINT_FILE,	CONF_SSL_CERT_FILE,	CONF_SSL_KEY_FILE,
+    CONF_SSL_CA_CERT_FILE,	CONF_SSL_CIPHER_LIST,	CONF_SSL_CHECK_HOST,
+    CONF_SSL_CHECK_CERTIFICATE_HOST,
 
     /* tape type */
     /*COMMENT,*/		CONF_BLOCKSIZE,
@@ -742,6 +745,13 @@ keytab_t client_keytab[] = {
     { "AMANDAD_PATH", CONF_AMANDAD_PATH },
     { "CLIENT_USERNAME", CONF_CLIENT_USERNAME },
     { "CLIENT_PORT", CONF_CLIENT_PORT },
+    { "SSL_FINGERPRINT_FILE", CONF_SSL_FINGERPRINT_FILE },
+    { "SSL_CERT_FILE", CONF_SSL_CERT_FILE },
+    { "SSL_CHECK_HOST", CONF_SSL_CHECK_HOST },
+    { "SSL_CHECK_CERTIFICATE_HOST", CONF_SSL_CHECK_CERTIFICATE_HOST },
+    { "SSL_CIPHER_LIST", CONF_SSL_CIPHER_LIST },
+    { "SSL_KEY_FILE", CONF_SSL_KEY_FILE },
+    { "SSL_CA_CERT_FILE", CONF_SSL_CA_CERT_FILE },
     { "GNUTAR_LIST_DIR", CONF_GNUTAR_LIST_DIR },
     { "AMANDATES", CONF_AMANDATES },
     { "KRB5KEYTAB", CONF_KRB5KEYTAB },
@@ -839,6 +849,7 @@ keytab_t server_keytab[] = {
     { "CLIENT_CUSTOM_COMPRESS", CONF_CLNTCOMPPROG },
     { "CLIENT_DECRYPT_OPTION", CONF_CLNT_DECRYPT_OPT },
     { "CLIENT_ENCRYPT", CONF_CLNT_ENCRYPT },
+    { "CLIENT_PORT", CONF_CLIENT_PORT },
     { "CLIENT_USERNAME", CONF_CLIENT_USERNAME },
     { "COLUMNSPEC", CONF_COLUMNSPEC },
     { "COMMENT", CONF_COMMENT },
@@ -978,7 +989,6 @@ keytab_t server_keytab[] = {
     { "SCRIPT", CONF_SCRIPT },
     { "SCRIPT_TOOL", CONF_SCRIPT_TOOL },
     { "SEND_AMREPORT_ON", CONF_SEND_AMREPORT_ON },
-    { "CLIENT_PORT", CONF_CLIENT_PORT },
     { "SERVER", CONF_SERVER },
     { "SERVER_CUSTOM_COMPRESS", CONF_SRVCOMPPROG },
     { "SERVER_DECRYPT_OPTION", CONF_SRV_DECRYPT_OPT },
@@ -990,6 +1000,12 @@ keytab_t server_keytab[] = {
     { "SPEED", CONF_SPEED },
     { "SPLIT_DISKBUFFER", CONF_SPLIT_DISKBUFFER },
     { "SSH_KEYS", CONF_SSH_KEYS },
+    { "SSL_CA_CERT_FILE", CONF_SSL_CA_CERT_FILE },
+    { "SSL_CERT_FILE", CONF_SSL_CERT_FILE },
+    { "SSL_CIPHER_LIST", CONF_SSL_CIPHER_LIST },
+    { "SSL_FINGERPRINT_FILE", CONF_SSL_FINGERPRINT_FILE },
+    { "SSL_KEY_FILE", CONF_SSL_KEY_FILE },
+    { "SSL_CHECK_CERTIFICATE_HOST", CONF_SSL_CHECK_CERTIFICATE_HOST },
     { "STANDARD", CONF_STANDARD },
     { "STARTTIME", CONF_STARTTIME },
     { "STRANGE", CONF_STRANGE },
@@ -1091,6 +1107,13 @@ conf_var_t client_var [] = {
    { CONF_AMANDAD_PATH       , CONFTYPE_STR     , read_str     , CNF_AMANDAD_PATH       , NULL },
    { CONF_CLIENT_USERNAME    , CONFTYPE_STR     , read_str     , CNF_CLIENT_USERNAME    , NULL },
    { CONF_CLIENT_PORT        , CONFTYPE_STR     , read_int_or_str, CNF_CLIENT_PORT      , NULL },
+   { CONF_SSL_FINGERPRINT_FILE, CONFTYPE_STR    , read_str     , CNF_SSL_FINGERPRINT_FILE    , NULL },
+   { CONF_SSL_CERT_FILE      , CONFTYPE_STR     , read_str     , CNF_SSL_CERT_FILE    , NULL },
+   { CONF_SSL_KEY_FILE       , CONFTYPE_STR     , read_str     , CNF_SSL_KEY_FILE    , NULL },
+   { CONF_SSL_CA_CERT_FILE   , CONFTYPE_STR     , read_str     , CNF_SSL_CA_CERT_FILE    , NULL },
+   { CONF_SSL_CIPHER_LIST    , CONFTYPE_STR     , read_str     , CNF_SSL_CIPHER_LIST     , NULL },
+   { CONF_SSL_CHECK_HOST     , CONFTYPE_BOOLEAN , read_bool    , CNF_SSL_CHECK_HOST     , NULL },
+   { CONF_SSL_CHECK_CERTIFICATE_HOST, CONFTYPE_BOOLEAN, read_bool, CNF_SSL_CHECK_CERTIFICATE_HOST     , NULL },
    { CONF_GNUTAR_LIST_DIR    , CONFTYPE_STR     , read_str     , CNF_GNUTAR_LIST_DIR    , NULL },
    { CONF_AMANDATES          , CONFTYPE_STR     , read_str     , CNF_AMANDATES          , NULL },
    { CONF_MAILER             , CONFTYPE_STR     , read_str     , CNF_MAILER             , NULL },
@@ -1259,6 +1282,12 @@ conf_var_t dumptype_var [] = {
    { CONF_AMANDAD_PATH      , CONFTYPE_STR      , read_str      , DUMPTYPE_AMANDAD_PATH      , NULL },
    { CONF_CLIENT_USERNAME   , CONFTYPE_STR      , read_str      , DUMPTYPE_CLIENT_USERNAME   , NULL },
    { CONF_CLIENT_PORT       , CONFTYPE_STR      , read_int_or_str, DUMPTYPE_CLIENT_PORT      , NULL },
+   { CONF_SSL_FINGERPRINT_FILE, CONFTYPE_STR    , read_str      , DUMPTYPE_SSL_FINGERPRINT_FILE    , NULL },
+   { CONF_SSL_CERT_FILE     , CONFTYPE_STR      , read_str      , DUMPTYPE_SSL_CERT_FILE    , NULL },
+   { CONF_SSL_KEY_FILE      , CONFTYPE_STR      , read_str      , DUMPTYPE_SSL_KEY_FILE    , NULL },
+   { CONF_SSL_CA_CERT_FILE  , CONFTYPE_STR      , read_str      , DUMPTYPE_SSL_CA_CERT_FILE    , NULL },
+   { CONF_SSL_CIPHER_LIST   , CONFTYPE_STR      , read_str      , DUMPTYPE_SSL_CIPHER_LIST     , NULL },
+   { CONF_SSL_CHECK_CERTIFICATE_HOST, CONFTYPE_BOOLEAN, read_bool, DUMPTYPE_SSL_CHECK_CERTIFICATE_HOST, NULL },
    { CONF_SSH_KEYS          , CONFTYPE_STR      , read_str      , DUMPTYPE_SSH_KEYS          , NULL },
    { CONF_SRVCOMPPROG       , CONFTYPE_STR      , read_str      , DUMPTYPE_SRVCOMPPROG       , NULL },
    { CONF_CLNTCOMPPROG      , CONFTYPE_STR      , read_str      , DUMPTYPE_CLNTCOMPPROG      , NULL },
@@ -2234,6 +2263,12 @@ init_dumptype_defaults(void)
     conf_init_str   (&dpcur.value[DUMPTYPE_AMANDAD_PATH]      , "");
     conf_init_str   (&dpcur.value[DUMPTYPE_CLIENT_USERNAME]   , "");
     conf_init_str   (&dpcur.value[DUMPTYPE_CLIENT_PORT]       , "");
+    conf_init_str   (&dpcur.value[DUMPTYPE_SSL_FINGERPRINT_FILE], "");
+    conf_init_str   (&dpcur.value[DUMPTYPE_SSL_CERT_FILE]     , "");
+    conf_init_str   (&dpcur.value[DUMPTYPE_SSL_KEY_FILE]      , "");
+    conf_init_str   (&dpcur.value[DUMPTYPE_SSL_CA_CERT_FILE]  , "");
+    conf_init_str   (&dpcur.value[DUMPTYPE_SSL_CIPHER_LIST]   , "");
+    conf_init_bool  (&dpcur.value[DUMPTYPE_SSL_CHECK_CERTIFICATE_HOST], 1);
     conf_init_str   (&dpcur.value[DUMPTYPE_SSH_KEYS]          , "");
     conf_init_str   (&dpcur.value[DUMPTYPE_AUTH]   , "BSD");
     conf_init_exinclude(&dpcur.value[DUMPTYPE_EXCLUDE]);
@@ -4671,6 +4706,13 @@ init_defaults(
     conf_init_str(&conf_data[CNF_AMANDAD_PATH], "");
     conf_init_str(&conf_data[CNF_CLIENT_USERNAME], "");
     conf_init_str(&conf_data[CNF_CLIENT_PORT], "");
+    conf_init_str(&conf_data[CNF_SSL_FINGERPRINT_FILE], "");
+    conf_init_str(&conf_data[CNF_SSL_CERT_FILE]     , "");
+    conf_init_str(&conf_data[CNF_SSL_KEY_FILE]      , "");
+    conf_init_str(&conf_data[CNF_SSL_CA_CERT_FILE]  , "");
+    conf_init_str(&conf_data[CNF_SSL_CIPHER_LIST]   , "");
+    conf_init_bool(&conf_data[CNF_SSL_CHECK_HOST]   , 1);
+    conf_init_bool(&conf_data[CNF_SSL_CHECK_CERTIFICATE_HOST], 1);
     conf_init_str(&conf_data[CNF_GNUTAR_LIST_DIR], GNUTAR_LISTED_INCREMENTAL_DIR);
     conf_init_str(&conf_data[CNF_AMANDATES], DEFAULT_AMANDATES_FILE);
     conf_init_str(&conf_data[CNF_MAILTO], "");
@@ -6437,58 +6479,86 @@ free_val_t(
 char *
 generic_get_security_conf(
 	char *string,
-	void *arg)
+	void *arg G_GNUC_UNUSED)
 {
-	arg = arg;
+	char *result = NULL;
 	if(!string || !*string)
 		return(NULL);
 
 	if(strcmp(string, "krb5principal")==0) {
-		return(getconf_str(CNF_KRB5PRINCIPAL));
+		result = getconf_str(CNF_KRB5PRINCIPAL);
 	} else if(strcmp(string, "krb5keytab")==0) {
-		return(getconf_str(CNF_KRB5KEYTAB));
+		result = getconf_str(CNF_KRB5KEYTAB);
 	}
-	return(NULL);
+
+	if (result && strlen(result) == 0)
+	    result = NULL;
+
+	return(result);
 }
 
 char *
 generic_client_get_security_conf(
-    char *	string,
-    void *	arg)
+    char *string,
+    void *arg G_GNUC_UNUSED)
 {
-	(void)arg;	/* Quiet unused parameter warning */
+	char *result = NULL;
 
 	if(!string || !*string)
 		return(NULL);
 
 	if(strcmp(string, "conf")==0) {
-		return(getconf_str(CNF_CONF));
+		result = getconf_str(CNF_CONF);
 	} else if(strcmp(string, "index_server")==0) {
-		return(getconf_str(CNF_INDEX_SERVER));
+		result = getconf_str(CNF_INDEX_SERVER);
 	} else if(strcmp(string, "tape_server")==0) {
-		return(getconf_str(CNF_TAPE_SERVER));
+		result = getconf_str(CNF_TAPE_SERVER);
 	} else if(strcmp(string, "tapedev")==0) {
-		return(getconf_str(CNF_TAPEDEV));
+		result = getconf_str(CNF_TAPEDEV);
         } else if(strcmp(string, "auth")==0) {
-		return(getconf_str(CNF_AUTH));
+		result = getconf_str(CNF_AUTH);
 	} else if(strcmp(string, "ssh_keys")==0) {
-		return(getconf_str(CNF_SSH_KEYS));
+		result = getconf_str(CNF_SSH_KEYS);
 	} else if(strcmp(string, "amandad_path")==0) {
-		return(getconf_str(CNF_AMANDAD_PATH));
+		result = getconf_str(CNF_AMANDAD_PATH);
 	} else if(strcmp(string, "client_username")==0) {
-		return(getconf_str(CNF_CLIENT_USERNAME));
+		result = getconf_str(CNF_CLIENT_USERNAME);
 	} else if(strcmp(string, "client_port")==0) {
-		return(getconf_str(CNF_CLIENT_PORT));
+		result = getconf_str(CNF_CLIENT_PORT);
+	} else if(strcmp(string, "ssl_fingerprint_file")==0) {
+		result = getconf_str(CNF_SSL_FINGERPRINT_FILE);
+	} else if(strcmp(string, "ssl_cert_file")==0) {
+		result = getconf_str(CNF_SSL_CERT_FILE);
+	} else if(strcmp(string, "ssl_key_file")==0) {
+		result = getconf_str(CNF_SSL_KEY_FILE);
+	} else if(strcmp(string, "ssl_ca_cert_file")==0) {
+		result = getconf_str(CNF_SSL_CA_CERT_FILE);
+	} else if(strcmp(string, "ssl_cipher_list")==0) {
+		result = getconf_str(CNF_SSL_CIPHER_LIST);
+	} else if(strcmp(string, "ssl_check_host")==0) {
+		if (getconf_boolean(CNF_SSL_CHECK_HOST))
+		    result = "1";
+		else
+		    result = "0";
+	} else if(strcmp(string, "ssl_check_certificate_host")==0) {
+		if (getconf_boolean(CNF_SSL_CHECK_CERTIFICATE_HOST))
+		    result = "1";
+		else
+		    result = "0";
 	} else if(strcmp(string, "gnutar_list_dir")==0) {
-		return(getconf_str(CNF_GNUTAR_LIST_DIR));
+		result = getconf_str(CNF_GNUTAR_LIST_DIR);
 	} else if(strcmp(string, "amandates")==0) {
-		return(getconf_str(CNF_AMANDATES));
+		result = getconf_str(CNF_AMANDATES);
 	} else if(strcmp(string, "krb5principal")==0) {
-		return(getconf_str(CNF_KRB5PRINCIPAL));
+		result = getconf_str(CNF_KRB5PRINCIPAL);
 	} else if(strcmp(string, "krb5keytab")==0) {
-		return(getconf_str(CNF_KRB5KEYTAB));
+		result = getconf_str(CNF_KRB5KEYTAB);
 	}
-	return(NULL);
+
+	if (result && strlen(result) == 0)
+	    result = NULL;
+
+	return(result);
 }
 
 void

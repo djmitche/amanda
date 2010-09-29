@@ -110,6 +110,12 @@ static char *options = NULL;
 static char *progname = NULL;
 static char *amandad_path=NULL;
 static char *client_username=NULL;
+static char *ssl_fingerprint_file=NULL;
+static char *ssl_cert_file=NULL;
+static char *ssl_key_file=NULL;
+static char *ssl_ca_cert_file=NULL;
+static char *ssl_cipher_list=NULL;
+static char *ssl_check_certificate_host=NULL;
 static char *client_port=NULL;
 static char *ssh_keys=NULL;
 static char *auth=NULL;
@@ -170,6 +176,8 @@ static int	runencrypt(int, pid_t *,  encrypt_t);
 
 static void	sendbackup_response(void *, pkt_t *, security_handle_t *);
 static int	startup_dump(const char *, const char *, const char *, int,
+			const char *, const char *, const char *,
+			const char *, const char *, const char *,
 			const char *, const char *, const char *,
 			const char *, const char *, const char *,
 			const char *, const char *);
@@ -421,6 +429,12 @@ main(
 	     *   progname
 	     *   amandad_path
 	     *   client_username
+	     *   ssl_fingerprint_file
+	     *   ssl_cert_file
+	     *   ssl_key_file
+	     *   ssl_ca_cert_file
+	     *   ssl_cipher_list
+	     *   ssl_check_certificate_host
 	     *   client_port
 	     *   ssh_keys
 	     *   security_driver
@@ -504,6 +518,37 @@ main(
 	    client_username = newstralloc(client_username, cmdargs->argv[a++]);
 
 	    if(a >= cmdargs->argc) {
+		error(_("error [dumper PORT-DUMP: not enough args: ssl_fingerprint_file]"));
+	    }
+	    ssl_fingerprint_file = newstralloc(ssl_fingerprint_file, cmdargs->argv[a++]);
+
+	    if(a >= cmdargs->argc) {
+		error(_("error [dumper PORT-DUMP: not enough args: ssl_cert_file]"));
+	    }
+	    ssl_cert_file = newstralloc(ssl_cert_file, cmdargs->argv[a++]);
+
+	    if(a >= cmdargs->argc) {
+		error(_("error [dumper PORT-DUMP: not enough args: ssl_key_file]"));
+	    }
+	    ssl_key_file = newstralloc(ssl_key_file, cmdargs->argv[a++]);
+
+	    if(a >= cmdargs->argc) {
+		error(_("error [dumper PORT-DUMP: not enough args: ssl_ca_cert_file]"));
+	    }
+	    ssl_ca_cert_file = newstralloc(ssl_ca_cert_file, cmdargs->argv[a++]);
+
+	    if(a >= cmdargs->argc) {
+		error(_("error [dumper PORT-DUMP: not enough args: ssl_cipher_list]"));
+	    }
+	    ssl_cipher_list = newstralloc(ssl_cipher_list, cmdargs->argv[a++]);
+
+	    if(a >= cmdargs->argc) {
+		error(_("error [dumper PORT-DUMP: not enough args: ssl_check_certificate_host]"));
+	    }
+	    ssl_check_certificate_host = newstralloc(ssl_check_certificate_host,
+						     cmdargs->argv[a++]);
+
+	    if(a >= cmdargs->argc) {
 		error(_("error [dumper PORT-DUMP: not enough args: client_port]"));
 	    }
 	    client_port = newstralloc(client_port, cmdargs->argv[a++]);
@@ -583,6 +628,12 @@ main(
 			      progname,
 			      amandad_path,
 			      client_username,
+			      ssl_fingerprint_file,
+			      ssl_cert_file,
+			      ssl_key_file,
+			      ssl_ca_cert_file,
+			      ssl_cipher_list,
+			      ssl_check_certificate_host,
 			      client_port,
 			      ssh_keys,
 			      auth,
@@ -604,6 +655,11 @@ main(
 
 	    amfree(amandad_path);
 	    amfree(client_username);
+	    amfree(ssl_fingerprint_file);
+	    amfree(ssl_cert_file);
+	    amfree(ssl_key_file);
+	    amfree(ssl_ca_cert_file);
+	    amfree(ssl_cipher_list);
 	    amfree(client_port);
 	    amfree(device);
 	    amfree(b64device);
@@ -2180,33 +2236,47 @@ connect_error:
 
 static char *
 dumper_get_security_conf(
-    char *	string,
-    void *	arg)
+    char *string,
+    void *arg G_GNUC_UNUSED)
 {
-        (void)arg;	/* Quiet unused parameter warning */
+	char *result = NULL;
 
         if(!string || !*string)
                 return(NULL);
 
         if(strcmp(string, "krb5principal")==0) {
-                return(getconf_str(CNF_KRB5PRINCIPAL));
+                result = getconf_str(CNF_KRB5PRINCIPAL);
         } else if(strcmp(string, "krb5keytab")==0) {
-                return(getconf_str(CNF_KRB5KEYTAB));
+                result = getconf_str(CNF_KRB5KEYTAB);
         } else if(strcmp(string, "amandad_path")==0) {
-                return (amandad_path);
+                result = amandad_path;
         } else if(strcmp(string, "client_username")==0) {
-                return (client_username);
+                result = client_username;
+        } else if(strcmp(string, "ssl_fingerprint_file")==0) {
+                result = ssl_fingerprint_file;
+        } else if(strcmp(string, "ssl_cert_file")==0) {
+                result = ssl_cert_file;
+        } else if(strcmp(string, "ssl_key_file")==0) {
+                result = ssl_key_file;
+        } else if(strcmp(string, "ssl_ca_cert_file")==0) {
+                result = ssl_ca_cert_file;
+        } else if(strcmp(string, "ssl_cipher_list")==0) {
+                result = ssl_cipher_list;
+        } else if(strcmp(string, "ssl_check_certificate_host")==0) {
+                result = ssl_check_certificate_host;
         } else if(strcmp(string, "client_port")==0) {
-                return (client_port);
+                result = client_port;
         } else if(strcmp(string, "ssh_keys")==0) {
-                return (ssh_keys);
+                result = ssh_keys;
         } else if(strcmp(string, "kencrypt")==0) {
 		if (dumper_kencrypt == KENCRYPT_YES)
-                    return ("yes");
-		else
-		    return (NULL);
+                    result = "yes";
         }
-        return(NULL);
+
+	if (result && strlen(result) == 0)
+		result = NULL;
+
+        return(result);
 }
 
 static int
@@ -2219,6 +2289,12 @@ startup_dump(
     const char *progname,
     const char *amandad_path,
     const char *client_username,
+    const char *ssl_fingerprint_file,
+    const char *ssl_cert_file,
+    const char *ssl_key_file,
+    const char *ssl_ca_cert_file,
+    const char *ssl_cipher_list,
+    const char *ssl_check_certificate_host,
     const char *client_port,
     const char *ssh_keys,
     const char *auth,
@@ -2238,6 +2314,12 @@ startup_dump(
     (void)disk;			/* Quiet unused parameter warning */
     (void)amandad_path;		/* Quiet unused parameter warning */
     (void)client_username;	/* Quiet unused parameter warning */
+    (void)ssl_fingerprint_file;	/* Quiet unused parameter warning */
+    (void)ssl_cert_file;	/* Quiet unused parameter warning */
+    (void)ssl_key_file;		/* Quiet unused parameter warning */
+    (void)ssl_ca_cert_file;	/* Quiet unused parameter warning */
+    (void)ssl_cipher_list;	/* Quiet unused parameter warning */
+    (void)ssl_check_certificate_host;	/* Quiet unused parameter warning */
     (void)client_port;		/* Quiet unused parameter warning */
     (void)ssh_keys;		/* Quiet unused parameter warning */
     (void)auth;			/* Quiet unused parameter warning */

@@ -194,6 +194,8 @@ const security_driver_t krb5_security_driver = {
     tcpm_close_connection,
     k5_encrypt,
     k5_decrypt,
+    generic_data_write,
+    generic_data_read
 };
 
 static int newhandle = 1;
@@ -259,6 +261,7 @@ krb5_connect(
     rh->rc->datap = datap;
     rh->rc->recv_security_ok = NULL;
     rh->rc->prefix_packet = NULL;
+    rh->rc->need_priv_port = 0;
 
     if (rh->rs == NULL)
 	goto error;
@@ -364,6 +367,7 @@ krb5_accept(
     rc->datap = datap;
     rc->recv_security_ok = NULL;
     rc->prefix_packet = NULL;
+    rc->need_priv_port = 0;
     copy_sockaddr(&rc->peer, &sin);
     rc->read = in;
     rc->write = out;
@@ -507,7 +511,7 @@ gss_client(
 	/*
 	 * Send back the response
 	 */
-	if (send_tok.length != 0 && tcpm_send_token(rc, rc->write, rs->handle, &errmsg, send_tok.value, send_tok.length) < 0) {
+	if (send_tok.length != 0 && tcpm_send_token(rc, rs->handle, &errmsg, send_tok.value, send_tok.length) < 0) {
 	    security_seterror(&rh->sech, "%s", rc->errmsg);
 	    gss_release_buffer(&min_stat, &send_tok);
 	    goto done;
@@ -637,7 +641,7 @@ gss_server(
 	}
 	amfree(recv_tok.value);
 
-	if (send_tok.length != 0 && tcpm_send_token(rc, rc->write, 0, &errmsg, send_tok.value, send_tok.length) < 0) {
+	if (send_tok.length != 0 && tcpm_send_token(rc, 0, &errmsg, send_tok.value, send_tok.length) < 0) {
 	    strncpy(errbuf, rc->errmsg, SIZEOF(errbuf) - 1);
 	    errbuf[SIZEOF(errbuf) - 1] = '\0';
 	    amfree(rc->errmsg);
