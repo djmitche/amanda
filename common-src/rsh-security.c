@@ -66,13 +66,13 @@
  * Interface functions
  */
 static void rsh_connect(const char *, char *(*)(char *, void *),
-			void (*)(void *, security_handle_t *, security_status_t),
+			void (*)(void *, legacy_security_handle_t *, legacy_security_status_t),
 			void *, void *);
 
 /*
  * This is our interface to the outside world.
  */
-const security_driver_t rsh_security_driver = {
+const legacy_security_driver_t rsh_legacy_security_driver = {
     "RSH",
     rsh_connect,
     sec_accept,
@@ -112,7 +112,7 @@ static void
 rsh_connect(
     const char *	hostname,
     char *		(*conf_fn)(char *, void *),
-    void		(*fn)(void *, security_handle_t *, security_status_t),
+    void		(*fn)(void *, legacy_security_handle_t *, legacy_security_status_t),
     void *		arg,
     void *		datap)
 {
@@ -125,8 +125,8 @@ rsh_connect(
 
     auth_debug(1, _("rsh: rsh_connect: %s\n"), hostname);
 
-    rh = g_malloc(sizeof(*rh));
-    security_handleinit(&rh->sech, &rsh_security_driver);
+    rh = g_malloc(SIZEOF(*rh));
+    legacy_security_handleinit(&rh->sech, &rsh_legacy_security_driver);
     rh->hostname = NULL;
     rh->rs = NULL;
     rh->ev_timeout = NULL;
@@ -135,7 +135,7 @@ rsh_connect(
     /* get the canonical hostname */
     rh->hostname = NULL;
     if ((result = resolve_hostname(hostname, 0, NULL, &rh->hostname)) || rh->hostname == NULL) {
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 	    _("rsh_security could not find canonical name for '%s': %s"),
 	    hostname, gai_strerror(result));
 	(*fn)(arg, &rh->sech, S_ERROR);
@@ -160,7 +160,7 @@ rsh_connect(
     }
     if(rh->rc->read == -1) {
 	if (runrsh(rh->rs->rc, amandad_path, client_username) < 0) {
-	    security_seterror(&rh->sech, _("can't connect to %s: %s"),
+	    legacy_security_seterror(&rh->sech, _("can't connect to %s: %s"),
 			      hostname, rh->rs->rc->errmsg);
 	    goto error;
 	}

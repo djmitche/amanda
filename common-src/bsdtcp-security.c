@@ -50,19 +50,19 @@
 /*
  * Interface functions
  */
-static void bsdtcp_accept(const struct security_driver *,
+static void bsdtcp_accept(const struct legacy_security_driver *,
     char *(*)(char *, void *),
     int, int,
-    void (*)(security_handle_t *, pkt_t *),
+    void (*)(legacy_security_handle_t *, pkt_t *),
     void *);
 static void bsdtcp_connect(const char *,
     char *(*)(char *, void *), 
-    void (*)(void *, security_handle_t *, security_status_t), void *, void *);
+    void (*)(void *, legacy_security_handle_t *, legacy_security_status_t), void *, void *);
 
 /*
  * This is our interface to the outside world.
  */
-const security_driver_t bsdtcp_security_driver = {
+const legacy_security_driver_t bsdtcp_legacy_security_driver = {
     "BSDTCP",
     bsdtcp_connect,
     bsdtcp_accept,
@@ -102,7 +102,7 @@ static void
 bsdtcp_connect(
     const char *hostname,
     char *	(*conf_fn)(char *, void *),
-    void	(*fn)(void *, security_handle_t *, security_status_t),
+    void	(*fn)(void *, legacy_security_handle_t *, legacy_security_status_t),
     void *	arg,
     void *	datap)
 {
@@ -120,7 +120,7 @@ bsdtcp_connect(
     auth_debug(1, _("bsdtcp: bsdtcp_connect: %s\n"), hostname);
 
     rh = g_new0(struct sec_handle, 1);
-    security_handleinit(&rh->sech, &bsdtcp_security_driver);
+    legacy_security_handleinit(&rh->sech, &bsdtcp_legacy_security_driver);
     rh->hostname = NULL;
     rh->rs = NULL;
     rh->ev_timeout = NULL;
@@ -129,14 +129,14 @@ bsdtcp_connect(
     result = resolve_hostname(hostname, 0, NULL, &canonname);
     if(result != 0) {
 	dbprintf(_("resolve_hostname(%s): %s\n"), hostname, gai_strerror(result));
-	security_seterror(&rh->sech, _("resolve_hostname(%s): %s\n"), hostname,
+	legacy_security_seterror(&rh->sech, _("resolve_hostname(%s): %s\n"), hostname,
 			  gai_strerror(result));
 	(*fn)(arg, &rh->sech, S_ERROR);
 	return;
     }
     if (canonname == NULL) {
 	dbprintf(_("resolve_hostname(%s) did not return a canonical name\n"), hostname);
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 	        _("resolve_hostname(%s) did not return a canonical name\n"), hostname);
 	(*fn)(arg, &rh->sech, S_ERROR);
        return;
@@ -163,7 +163,7 @@ bsdtcp_connect(
     }
     port = find_port_for_service(service, "tcp");
     if (port == 0) {
-	security_seterror(&rh->sech, _("%s/tcp unknown protocol"), service);
+	legacy_security_seterror(&rh->sech, _("%s/tcp unknown protocol"), service);
 	goto error;
     }
 
@@ -204,11 +204,11 @@ error:
  */
 static void
 bsdtcp_accept(
-    const struct security_driver *driver,
+    const struct legacy_security_driver *driver,
     char *	(*conf_fn)(char *, void *),
     int		in,
     int		out,
-    void	(*fn)(security_handle_t *, pkt_t *),
+    void	(*fn)(legacy_security_handle_t *, pkt_t *),
     void       *datap)
 {
     sockaddr_union sin;
@@ -272,14 +272,14 @@ runbsdtcp(
     set_root_privs(0);
 
     if(server_socket < 0) {
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 	    "%s", strerror(errno));
 	
 	return -1;
     }
 
     if(my_port >= IPPORT_RESERVED) {
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 			  _("did not get a reserved port: %d"), my_port);
     }
 

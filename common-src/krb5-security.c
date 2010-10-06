@@ -142,14 +142,14 @@ static char myhostname[MAX_HOSTNAME_LENGTH+1];
 /*
  * Interface functions
  */
-static void krb5_accept(const struct security_driver *,
+static void krb5_accept(const struct legacy_security_driver *,
     char *(*)(char *, void *),
     int, int,
-    void (*)(security_handle_t *, pkt_t *),
+    void (*)(legacy_security_handle_t *, pkt_t *),
     void *);
 static void krb5_connect(const char *,
     char *(*)(char *, void *), 
-    void (*)(void *, security_handle_t *, security_status_t), void *, void *);
+    void (*)(void *, legacy_security_handle_t *, legacy_security_status_t), void *, void *);
 
 static void krb5_init(void);
 #ifdef BROKEN_MEMORY_CCACHE
@@ -172,7 +172,7 @@ static ssize_t krb5_tcpm_recv_token(struct tcp_conn *rc, int fd, int *handle,
 /*
  * This is our interface to the outside world.
  */
-const security_driver_t krb5_security_driver = {
+const legacy_security_driver_t krb5_legacy_security_driver = {
     "KRB5",
     krb5_connect,
     krb5_accept,
@@ -214,7 +214,7 @@ static void
 krb5_connect(
     const char *hostname,
     char *	(*conf_fn)(char *, void *),
-    void	(*fn)(void *, security_handle_t *, security_status_t),
+    void	(*fn)(void *, legacy_security_handle_t *, legacy_security_status_t),
     void *	arg,
     void *	datap)
 {
@@ -230,7 +230,7 @@ krb5_connect(
     krb5_init();
 
     rh = g_malloc(sizeof(*rh));
-    security_handleinit(&rh->sech, &krb5_security_driver);
+    legacy_security_handleinit(&rh->sech, &krb5_legacy_security_driver);
     rh->hostname = NULL;
     rh->rs = NULL;
     rh->ev_timeout = NULL;
@@ -239,14 +239,14 @@ krb5_connect(
     result = resolve_hostname(hostname, 0, NULL, &canonname);
     if(result != 0) {
 	dbprintf(_("resolve_hostname(%s): %s\n"), hostname, gai_strerror(result));
-	security_seterror(&rh->sech, _("resolve_hostname(%s): %s\n"), hostname,
+	legacy_security_seterror(&rh->sech, _("resolve_hostname(%s): %s\n"), hostname,
 			  gai_strerror(result));
 	(*fn)(arg, &rh->sech, S_ERROR);
 	return;
     }
     if (canonname == NULL) {
 	dbprintf(_("resolve_hostname(%s) did not return a canonical name\n"), hostname);
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 	        _("resolve_hostname(%s) did not return a canonical name\n"), hostname);
 	(*fn)(arg, &rh->sech, S_ERROR);
        return;
@@ -321,11 +321,11 @@ error:
  */
 static void
 krb5_accept(
-    const struct security_driver *driver,
+    const struct legacy_security_driver *driver,
     char       *(*conf_fn)(char *, void *),
     int		in,
     int		out,
-    void	(*fn)(security_handle_t *, pkt_t *),
+    void	(*fn)(legacy_security_handle_t *, pkt_t *),
     void       *datap)
 {
     sockaddr_union sin;
@@ -394,7 +394,7 @@ runkrb5(
 	port = sp->s_port;
 
     if ((err = get_tgt(keytab_name, principal_name)) != NULL) {
-        security_seterror(&rh->sech, "%s: could not get TGT: %s",
+        legacy_security_seterror(&rh->sech, "%s: could not get TGT: %s",
             rc->hostname, err);
         return -1;
     }
@@ -409,7 +409,7 @@ runkrb5(
     set_root_privs(0);
 
     if(server_socket < 0) {
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 	    "%s", strerror(errno));
 	
 	return -1;
@@ -453,7 +453,7 @@ gss_client(
     maj_stat = gss_import_name(&min_stat, &send_tok, GSS_C_NULL_OID,
 	&gss_name);
     if (maj_stat != (OM_uint32)GSS_S_COMPLETE) {
-	security_seterror(&rh->sech, _("can't import name %s: %s"),
+	legacy_security_seterror(&rh->sech, _("can't import name %s: %s"),
 	    (char *)send_tok.value, gss_error(maj_stat, min_stat));
 	amfree(send_tok.value);
 	return (-1);
@@ -498,7 +498,7 @@ gss_client(
 	    recv_tok.length = 0;
 	}
 	if (maj_stat != (OM_uint32)GSS_S_COMPLETE && maj_stat != (OM_uint32)GSS_S_CONTINUE_NEEDED) {
-	    security_seterror(&rh->sech,
+	    legacy_security_seterror(&rh->sech,
 		_("error getting gss context: %s %s"),
 		gss_error(maj_stat, min_stat), (char *)send_tok.value);
 	    goto done;
@@ -508,7 +508,7 @@ gss_client(
 	 * Send back the response
 	 */
 	if (send_tok.length != 0 && tcpm_send_token(rc, rc->write, rs->handle, &errmsg, send_tok.value, send_tok.length) < 0) {
-	    security_seterror(&rh->sech, "%s", rc->errmsg);
+	    legacy_security_seterror(&rh->sech, "%s", rc->errmsg);
 	    gss_release_buffer(&min_stat, &send_tok);
 	    goto done;
 	}
@@ -526,10 +526,10 @@ gss_client(
 				 (ssize_t *)&recv_tok.length, 60);
 	if (rvalue <= 0) {
 	    if (rvalue < 0)
-		security_seterror(&rh->sech,
+		legacy_security_seterror(&rh->sech,
 		    _("recv error in gss loop: %s"), rc->errmsg);
 	    else
-		security_seterror(&rh->sech, _("EOF in gss loop"));
+		legacy_security_seterror(&rh->sech, _("EOF in gss loop"));
 	    goto done;
 	}
     }

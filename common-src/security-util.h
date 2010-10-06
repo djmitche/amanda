@@ -68,7 +68,7 @@ struct sec_handle;
  * one connection per host.
  */
 struct tcp_conn {
-    const struct security_driver *driver;	/* MUST be first */
+    const struct legacy_security_driver *driver;	/* MUST be first */
     int			read, write;		/* pipes to sec */
     pid_t		pid;			/* pid of sec process */
     char *		pkt;			/* last pkt read */
@@ -81,7 +81,7 @@ struct tcp_conn {
     int			refcnt;			/* number of handles using */
     int			handle;			/* last proto handle read */
     int			event_id;		/* event ID fired when token read */
-    void		(*accept_fn)(security_handle_t *, pkt_t *);
+    void		(*accept_fn)(legacy_security_handle_t *, pkt_t *);
     sockaddr_union	peer;
     int			(*recv_security_ok)(struct sec_handle *, pkt_t *);
     char *		(*prefix_packet)(void *, pkt_t *);
@@ -107,14 +107,14 @@ struct sec_stream;
  * This is the private handle data.
  */
 struct sec_handle {
-    security_handle_t	sech;		/* MUST be first */
+    legacy_security_handle_t	sech;		/* MUST be first */
     char *		hostname;	/* ptr to rc->hostname */
     struct sec_stream *	rs;		/* virtual stream we xmit over */
     struct tcp_conn *	rc;		/* */
     union {
-	void (*recvpkt)(void *, pkt_t *, security_status_t);
+	void (*recvpkt)(void *, pkt_t *, legacy_security_status_t);
 					/* func to call when packet recvd */
-	void (*connect)(void *, security_handle_t *, security_status_t);
+	void (*connect)(void *, legacy_security_handle_t *, legacy_security_status_t);
 					/* func to call when connected */
     } fn;
     void *		arg;		/* argument to pass function */
@@ -127,15 +127,15 @@ struct sec_handle {
     struct sec_handle *	prev;
     struct sec_handle *	next;
     struct udp_handle *	udp;
-    void		(*accept_fn)(security_handle_t *, pkt_t *);
+    void		(*accept_fn)(legacy_security_handle_t *, pkt_t *);
     int			(*recv_security_ok)(struct sec_handle *, pkt_t *);
 };
 
 /*
- * This is the internal security_stream data for sec.
+ * This is the internal legacy_security_stream data for sec.
  */
 struct sec_stream {
-    security_stream_t	secstr;		/* MUST be first */
+    legacy_security_stream_t	secstr;		/* MUST be first */
     struct tcp_conn *	rc;		/* physical connection */
     int			handle;		/* protocol handle */
     event_handle_t *	ev_read;	/* read (EV_WAIT) event handle */
@@ -155,7 +155,7 @@ struct sec_stream {
  * per process per auth.
  */
 typedef struct udp_handle {
-    const struct security_driver *driver;	/* MUST be first */
+    const struct legacy_security_driver *driver;	/* MUST be first */
     dgram_t dgram;		/* datagram to read/write from */
     sockaddr_union peer;	/* who sent it to us */
     pkt_t pkt;			/* parsed form of dgram */
@@ -164,7 +164,7 @@ typedef struct udp_handle {
     event_handle_t *ev_read;	/* read event handle from dgram */
     int refcnt;			/* number of handles blocked for reading */
     struct sec_handle *bh_first, *bh_last;
-    void (*accept_fn)(security_handle_t *, pkt_t *);
+    void (*accept_fn)(legacy_security_handle_t *, pkt_t *);
     int (*recv_security_ok)(struct sec_handle *, pkt_t *);
     char *(*prefix_packet)(void *, pkt_t *);
 } udp_handle_t;
@@ -200,10 +200,10 @@ typedef struct udp_handle {
 
 int	sec_stream_auth(void *);
 int	sec_stream_id(void *);
-void	sec_accept(const security_driver_t *,
+void	sec_accept(const legacy_security_driver_t *,
 		   char *(*)(char *, void *),
 		   int, int,
-		   void (*)(security_handle_t *, pkt_t *),
+		   void (*)(legacy_security_handle_t *, pkt_t *),
 		   void *);
 void	sec_close(void *);
 void	sec_connect_callback(void *);
@@ -212,7 +212,7 @@ void	sec_close_connection_none(void *, char *);
 
 ssize_t	stream_sendpkt(void *, pkt_t *);
 void	stream_recvpkt(void *,
-		        void (*)(void *, pkt_t *, security_status_t),
+		        void (*)(void *, pkt_t *, legacy_security_status_t),
 		        void *, int);
 void	stream_recvpkt_timeout(void *);
 void	stream_recvpkt_cancel(void *);
@@ -242,7 +242,7 @@ int	bsd_recv_security_ok(struct sec_handle *, pkt_t *);
 
 ssize_t	udpbsd_sendpkt(void *, pkt_t *);
 void	udp_close(void *);
-void	udp_recvpkt(void *, void (*)(void *, pkt_t *, security_status_t),
+void	udp_recvpkt(void *, void (*)(void *, pkt_t *, legacy_security_status_t),
 		     void *, int);
 void	udp_recvpkt_cancel(void *);
 void	udp_recvpkt_callback(void *);
@@ -274,7 +274,7 @@ void	show_stat_info(char *a, char *b);
 int     check_name_give_sockaddr(const char *hostname, struct sockaddr *addr,
 				 char **errstr);
 in_port_t find_port_for_service(char *service, char *proto);
-char	*sec_get_authenticated_peer_name_gethostname(security_handle_t *);
-char	*sec_get_authenticated_peer_name_hostname(security_handle_t *);
+char	*sec_get_authenticated_peer_name_gethostname(legacy_security_handle_t *);
+char	*sec_get_authenticated_peer_name_hostname(legacy_security_handle_t *);
 
 #endif /* _SECURITY_INFO_H */

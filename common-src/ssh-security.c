@@ -57,17 +57,17 @@
  * Interface functions
  */
 static void	ssh_connect(const char *, char *(*)(char *, void *),
-			void (*)(void *, security_handle_t *, security_status_t),
+			void (*)(void *, legacy_security_handle_t *, legacy_security_status_t),
 			void *, void *);
-static void ssh_accept(const security_driver_t *driver, char *(*conf_fn)(char *, void *),
+static void ssh_accept(const legacy_security_driver_t *driver, char *(*conf_fn)(char *, void *),
 			int in, int out,
-			void (*fn)(security_handle_t *, pkt_t *),
+			void (*fn)(legacy_security_handle_t *, pkt_t *),
 			void *datap);
 
 /*
  * This is our interface to the outside world.
  */
-const security_driver_t ssh_security_driver = {
+const legacy_security_driver_t ssh_legacy_security_driver = {
     "SSH",
     ssh_connect,
     ssh_accept,
@@ -107,7 +107,7 @@ static void
 ssh_connect(
     const char *	hostname,
     char *		(*conf_fn)(char *, void *),
-    void		(*fn)(void *, security_handle_t *, security_status_t),
+    void		(*fn)(void *, legacy_security_handle_t *, legacy_security_status_t),
     void *		arg,
     void *		datap)
 {
@@ -122,7 +122,7 @@ ssh_connect(
     auth_debug(1, "ssh_connect: %s\n", hostname);
 
     rh = g_new0(struct sec_handle, 1);
-    security_handleinit(&rh->sech, &ssh_security_driver);
+    legacy_security_handleinit(&rh->sech, &ssh_legacy_security_driver);
     rh->hostname = NULL;
     rh->rs = NULL;
     rh->ev_timeout = NULL;
@@ -132,7 +132,7 @@ ssh_connect(
     rh->hostname = NULL;
     if ((result = resolve_hostname(hostname, 0, NULL, &rh->hostname)) != 0
 	 || rh->hostname == NULL) {
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 	    _("ssh_security could not find canonical name for '%s': %s"),
 	    hostname, gai_strerror(result));
 	(*fn)(arg, &rh->sech, S_ERROR);
@@ -166,7 +166,7 @@ ssh_connect(
     if(rh->rc->read == -1) {
 	if (runssh(rh->rs->rc, amandad_path, client_username, ssh_keys,
 		   client_port) < 0) {
-	    security_seterror(&rh->sech, _("can't connect to %s: %s"),
+	    legacy_security_seterror(&rh->sech, _("can't connect to %s: %s"),
 			      hostname, rh->rs->rc->errmsg);
 	    goto error;
 	}
@@ -197,11 +197,11 @@ error:
 /* like sec_accept, but first it gets the remote system's hostname */
 static void
 ssh_accept(
-    const security_driver_t *driver,
+    const legacy_security_driver_t *driver,
     char       *(*conf_fn)(char *, void *),
     int		in,
     int		out,
-    void	(*fn)(security_handle_t *, pkt_t *),
+    void	(*fn)(legacy_security_handle_t *, pkt_t *),
     void       *datap)
 {
     struct sec_handle *rh;
@@ -280,8 +280,8 @@ error:
 
     /* make up a fake handle for the error */
     rh = g_new0(struct sec_handle, 1);
-    security_handleinit(&rh->sech, driver);
-    security_seterror((security_handle_t*)rh, "ssh_accept: %s", errmsg);
+    legacy_security_handleinit(&rh->sech, driver);
+    legacy_security_seterror((legacy_security_handle_t*)rh, "ssh_accept: %s", errmsg);
     amfree(errmsg);
     (*fn)(&rh->sech, NULL);
 }

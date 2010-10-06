@@ -93,11 +93,11 @@ sec_stream_id(
  */
 void
 sec_accept(
-    const security_driver_t *driver,
+    const legacy_security_driver_t *driver,
     char       *(*conf_fn)(char *, void *),
     int		in,
     int		out,
-    void	(*fn)(security_handle_t *, pkt_t *),
+    void	(*fn)(legacy_security_handle_t *, pkt_t *),
     void       *datap)
 {
     struct tcp_conn *rc;
@@ -128,7 +128,7 @@ sec_close(
     if (rh->rs != NULL) {
 	/* This may be null if we get here on an error */
 	stream_recvpkt_cancel(rh);
-	security_stream_close(&rh->rs->secstr);
+	legacy_security_stream_close(&rh->rs->secstr);
     }
     /* keep us from getting here again */
     rh->sech.driver = NULL;
@@ -217,8 +217,8 @@ stream_sendpkt(
      _("sec: stream_sendpkt: %s (%d) pkt_t (len %zu) contains:\n\n\"%s\"\n\n"),
       pkt_type2str(pkt->type), pkt->type, strlen(pkt->body), pkt->body);
 
-    if (security_stream_write(&rh->rs->secstr, buf, len) < 0) {
-	security_seterror(&rh->sech, "%s", security_stream_geterror(&rh->rs->secstr));
+    if (legacy_security_stream_write(&rh->rs->secstr, buf, len) < 0) {
+	legacy_security_seterror(&rh->sech, "%s", legacy_security_stream_geterror(&rh->rs->secstr));
 	amfree(buf);
 	return (-1);
     }
@@ -233,7 +233,7 @@ stream_sendpkt(
 void
 stream_recvpkt(
     void *	cookie,
-    void	(*fn)(void *, pkt_t *, security_status_t),
+    void	(*fn)(void *, pkt_t *, legacy_security_status_t),
     void *	arg,
     int		timeout)
 {
@@ -260,7 +260,7 @@ stream_recvpkt(
     }
     rh->fn.recvpkt = fn;
     rh->arg = arg;
-    security_stream_read(&rh->rs->secstr, recvpkt_callback, rh);
+    legacy_security_stream_read(&rh->rs->secstr, recvpkt_callback, rh);
 }
 
 /*
@@ -293,7 +293,7 @@ stream_recvpkt_cancel(
 
     assert(rh != NULL);
 
-    security_stream_read_cancel(&rh->rs->secstr);
+    legacy_security_stream_read_cancel(&rh->rs->secstr);
     if (rh->ev_timeout != NULL) {
 	event_release(rh->ev_timeout);
 	rh->ev_timeout = NULL;
@@ -320,7 +320,7 @@ tcpm_stream_write(
 
     if (tcpm_send_token(rs->rc, rs->rc->write, rs->handle, &rs->rc->errmsg,
 			     buf, size)) {
-	security_stream_seterror(&rs->secstr, "%s", rs->rc->errmsg);
+	legacy_security_stream_seterror(&rs->secstr, "%s", rs->rc->errmsg);
 	return (-1);
     }
     return (0);
@@ -675,13 +675,13 @@ tcpma_stream_client(
     assert(rh != NULL);
 
     if (id <= 0) {
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 	    _("%d: invalid security stream id"), id);
 	return (NULL);
     }
 
     rs = g_new0(struct sec_stream, 1);
-    security_streaminit(&rs->secstr, rh->sech.driver);
+    legacy_security_streaminit(&rs->secstr, rh->sech.driver);
     rs->handle = id;
     rs->ev_read = NULL;
     rs->closed_by_me = 0;
@@ -715,7 +715,7 @@ tcpma_stream_server(
     assert(rh != NULL);
 
     rs = g_new0(struct sec_stream, 1);
-    security_streaminit(&rs->secstr, rh->sech.driver);
+    legacy_security_streaminit(&rs->secstr, rh->sech.driver);
     rs->closed_by_me = 0;
     rs->closed_by_network = 0;
     if (rh->rc) {
@@ -734,7 +734,7 @@ tcpma_stream_server(
 	sec_tcp_conn_put(rs->rc);
 	amfree(rs->secstr.error);
 	amfree(rs);
-	security_seterror(&rh->sech, _("lost connection to %s"), rh->hostname);
+	legacy_security_seterror(&rh->sech, _("lost connection to %s"), rh->hostname);
 	return (NULL);
     }
     assert(strcmp(rh->hostname, rs->rc->hostname) == 0);
@@ -764,10 +764,10 @@ tcpma_stream_close(
 
     if(rs->closed_by_network == 0 && rs->rc->write != -1)
 	tcpm_stream_write(rs, &buf, 0);
-    security_stream_read_cancel(&rs->secstr);
+    legacy_security_stream_read_cancel(&rs->secstr);
     if(rs->closed_by_network == 0)
 	sec_tcp_conn_put(rs->rc);
-    amfree(((security_stream_t *)rs)->error);
+    amfree(((legacy_security_stream_t *)rs)->error);
     amfree(rs);
 }
 
@@ -785,7 +785,7 @@ tcp1_stream_server(
     assert(rh != NULL);
 
     rs = g_new0(struct sec_stream, 1);
-    security_streaminit(&rs->secstr, rh->sech.driver);
+    legacy_security_streaminit(&rs->secstr, rh->sech.driver);
     rs->closed_by_me = 0;
     rs->closed_by_network = 0;
     if (rh->rc) {
@@ -801,7 +801,7 @@ tcp1_stream_server(
 	rs->socket = stream_server(SU_GET_FAMILY(&rh->udp->peer), &rs->port,
 				   STREAM_BUFSIZE, STREAM_BUFSIZE, 0);
 	if (rs->socket < 0) {
-	    security_seterror(&rh->sech,
+	    legacy_security_seterror(&rh->sech,
 			    _("can't create server stream: %s"), strerror(errno));
 	    amfree(rs->secstr.error);
 	    amfree(rs);
@@ -833,7 +833,7 @@ tcp1_stream_accept(
     if (bs->socket > 0) {
 	bs->fd = stream_accept(bs->socket, 30, STREAM_BUFSIZE, STREAM_BUFSIZE);
 	if (bs->fd < 0) {
-	    security_stream_seterror(&bs->secstr,
+	    legacy_security_stream_seterror(&bs->secstr,
 				     _("can't accept new stream connection: %s"),
 				     strerror(errno));
 	    return (-1);
@@ -858,7 +858,7 @@ tcp1_stream_client(
     assert(rh != NULL);
 
     rs = g_new0(struct sec_stream, 1);
-    security_streaminit(&rs->secstr, rh->sech.driver);
+    legacy_security_streaminit(&rs->secstr, rh->sech.driver);
     rs->handle = id;
     rs->ev_read = NULL;
     rs->closed_by_me = 0;
@@ -874,7 +874,7 @@ tcp1_stream_client(
 	rh->rc->read = stream_client(rh->hostname, (in_port_t)id,
 			STREAM_BUFSIZE, STREAM_BUFSIZE, &rs->port, 0);
 	if (rh->rc->read < 0) {
-	    security_seterror(&rh->sech,
+	    legacy_security_seterror(&rh->sech,
 			      _("can't connect stream to %s port %d: %s"),
 			       rh->hostname, id, strerror(errno));
 	    amfree(rs->secstr.error);
@@ -906,7 +906,7 @@ tcp_stream_write(
     }
 
     if (full_write(rs->fd, buf, size) < size) {
-        security_stream_seterror(&rs->secstr,
+        legacy_security_stream_seterror(&rs->secstr,
             _("write error on stream %d: %s"), rs->port, strerror(errno));
         return (-1);
     }
@@ -926,7 +926,7 @@ bsd_prefix_packet(
 	return g_strdup("");
 
     if ((pwd = getpwuid(geteuid())) == NULL) {
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 			  _("can't get login name for my uid %ld"),
 			  (long)geteuid());
 	return g_strdup("");
@@ -1008,7 +1008,7 @@ bsd_recv_security_ok(
 	 */
     port = SU_GET_PORT(&rh->peer);
 	if (port >= IPPORT_RESERVED) {
-	    security_seterror(&rh->sech,
+	    legacy_security_seterror(&rh->sech,
 		_("host %s: port %u not secure"), rh->hostname,
 		(unsigned int)port);
 	    amfree(service);
@@ -1017,7 +1017,7 @@ bsd_recv_security_ok(
 	}
 
 	if (!service) {
-	    security_seterror(&rh->sech,
+	    legacy_security_seterror(&rh->sech,
 			      _("packet as no SERVICE line"));
 	    amfree(security_line);
 	    return (-1);
@@ -1033,7 +1033,7 @@ bsd_recv_security_ok(
 
 	/* there must be some security info */
 	if (security == NULL) {
-	    security_seterror(&rh->sech,
+	    legacy_security_seterror(&rh->sech,
 		_("no bsd SECURITY for P_REQ"));
 	    amfree(service);
 	    amfree(security_line);
@@ -1042,14 +1042,14 @@ bsd_recv_security_ok(
 
 	/* second word must be USER */
 	if ((tok = strtok(security, " ")) == NULL) {
-	    security_seterror(&rh->sech,
+	    legacy_security_seterror(&rh->sech,
 		_("SECURITY line: %s"), security_line);
 	    amfree(service);
 	    amfree(security_line);
 	    return (-1);	/* default errmsg */
 	}
 	if (strcmp(tok, "USER") != 0) {
-	    security_seterror(&rh->sech,
+	    legacy_security_seterror(&rh->sech,
 		_("REQ SECURITY line parse error, expecting USER, got %s"), tok);
 	    amfree(service);
 	    amfree(security_line);
@@ -1058,14 +1058,14 @@ bsd_recv_security_ok(
 
 	/* the third word is the username */
 	if ((tok = strtok(NULL, "")) == NULL) {
-	    security_seterror(&rh->sech,
+	    legacy_security_seterror(&rh->sech,
 		_("SECURITY line: %s"), security_line);
 	    amfree(service);
 	    amfree(security_line);
 	    return (-1);	/* default errmsg */
 	}
 	if ((result = check_user(rh, tok, service)) != NULL) {
-	    security_seterror(&rh->sech, "%s", result);
+	    legacy_security_seterror(&rh->sech, "%s", result);
 	    amfree(service);
 	    amfree(result);
 	    amfree(security_line);
@@ -1120,7 +1120,7 @@ udpbsd_sendpkt(
 	 * Requests get sent with our username in the body
 	 */
 	if ((pwd = getpwuid(geteuid())) == NULL) {
-	    security_seterror(&rh->sech,
+	    legacy_security_seterror(&rh->sech,
 		_("can't get login name for my uid %ld"), (long)getuid());
 	    return (-1);
 	}
@@ -1141,7 +1141,7 @@ udpbsd_sendpkt(
       pkt_type2str(pkt->type), pkt->type, strlen(pkt->body), pkt->body);
 
     if (dgram_send_addr(&rh->peer, &rh->udp->dgram) != 0) {
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 	    _("send %s to %s failed: %s"), pkt_type2str(pkt->type),
 	    rh->hostname, strerror(errno));
 	return (-1);
@@ -1187,7 +1187,7 @@ udp_close(
 void
 udp_recvpkt(
     void *	cookie,
-    void	(*fn)(void *, pkt_t *, security_status_t),
+    void	(*fn)(void *, pkt_t *, legacy_security_status_t),
     void *	arg,
     int		timeout)
 {
@@ -1252,7 +1252,7 @@ udp_recvpkt_callback(
     void *	cookie)
 {
     struct sec_handle *rh = cookie;
-    void (*fn)(void *, pkt_t *, security_status_t);
+    void (*fn)(void *, pkt_t *, legacy_security_status_t);
     void *arg;
 
     auth_debug(1, _("udp: receive handle '%s' netfd '%s'\n"),
@@ -1299,7 +1299,7 @@ udp_recvpkt_timeout(
     void *	cookie)
 {
     struct sec_handle *rh = cookie;
-    void (*fn)(void *, pkt_t *, security_status_t);
+    void (*fn)(void *, pkt_t *, legacy_security_status_t);
     void *arg;
 
     assert(rh != NULL);
@@ -1421,20 +1421,20 @@ udp_netfd_read_callback(
     rh->proto_handle=NULL;
     rh->udp = udp;
     rh->rc = NULL;
-    security_handleinit(&rh->sech, udp->driver);
+    legacy_security_handleinit(&rh->sech, udp->driver);
 
     result = getnameinfo((struct sockaddr *)&udp->peer, SS_LEN(&udp->peer),
 			 hostname, sizeof(hostname), NULL, 0, 0);
     if (result != 0) {
 	dbprintf("getnameinfo failed: %s\n",
 		  gai_strerror(result));
-	security_seterror(&rh->sech, "getnameinfo failed: %s",
+	legacy_security_seterror(&rh->sech, "getnameinfo failed: %s",
 			  gai_strerror(result));
 	return;
     }
     if (check_name_give_sockaddr(hostname,
 				 (struct sockaddr *)&udp->peer, &errmsg) < 0) {
-	security_seterror(&rh->sech, "%s",errmsg);
+	legacy_security_seterror(&rh->sech, "%s",errmsg);
 	amfree(errmsg);
 	amfree(rh);
 	return;
@@ -1629,12 +1629,12 @@ recvpkt_callback(
 
     switch (bufsize) {
     case 0:
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 	    _("EOF on read from %s"), rh->hostname);
 	(*rh->fn.recvpkt)(rh->arg, NULL, S_ERROR);
 	return;
     case -1:
-	security_seterror(&rh->sech, "%s", security_stream_geterror(&rh->rs->secstr));
+	legacy_security_seterror(&rh->sech, "%s", legacy_security_stream_geterror(&rh->rs->secstr));
 	(*rh->fn.recvpkt)(rh->arg, NULL, S_ERROR);
 	return;
     default:
@@ -1692,7 +1692,7 @@ stream_read_sync_callback(
 
     if (rs->rc->pktlen <= 0) {
 	auth_debug(1, _("sec: stream_read_sync_callback: %s\n"), rs->rc->errmsg);
-	security_stream_seterror(&rs->secstr, "%s", rs->rc->errmsg);
+	legacy_security_stream_seterror(&rs->secstr, "%s", rs->rc->errmsg);
 	if(rs->closed_by_me == 0 && rs->closed_by_network == 0)
 	    sec_tcp_conn_put(rs->rc);
 	rs->closed_by_network = 1;
@@ -1746,7 +1746,7 @@ stream_read_callback(
 
     if (rs->rc->pktlen <= 0) {
 	auth_debug(1, _("sec: stream_read_callback: %s\n"), rs->rc->errmsg);
-	security_stream_seterror(&rs->secstr, "%s", rs->rc->errmsg);
+	legacy_security_stream_seterror(&rs->secstr, "%s", rs->rc->errmsg);
 	if(rs->closed_by_me == 0 && rs->closed_by_network == 0)
 	    sec_tcp_conn_put(rs->rc);
 	rs->closed_by_network = 1;
@@ -1836,7 +1836,7 @@ sec_tcp_conn_read_callback(
     }
 
     rh = g_new0(struct sec_handle, 1);
-    security_handleinit(&rh->sech, rc->driver);
+    legacy_security_handleinit(&rh->sech, rc->driver);
     rh->hostname = g_strdup(rc->hostname);
     rh->ev_timeout = NULL;
     rh->rc = rc;
@@ -1969,7 +1969,7 @@ str2pkthdr(
 
 parse_error:
 #if 0 /* XXX we have no way of passing this back up */
-    security_seterror(&rh->sech,
+    legacy_security_seterror(&rh->sech,
 	"parse error in packet header : '%s'", origstr);
 #endif
     amfree(str);
@@ -2666,7 +2666,7 @@ find_port_for_service(
 
 char *
 sec_get_authenticated_peer_name_gethostname(
-    security_handle_t *hdl G_GNUC_UNUSED)
+    legacy_security_handle_t *hdl G_GNUC_UNUSED)
 {
     char *server_hostname;
     server_hostname = malloc(1024);
@@ -2680,7 +2680,7 @@ sec_get_authenticated_peer_name_gethostname(
 
 char *
 sec_get_authenticated_peer_name_hostname(
-    security_handle_t *hdl)
+    legacy_security_handle_t *hdl)
 {
     char *hostname = ((struct sec_handle *)hdl)->hostname;
     if (!hostname)

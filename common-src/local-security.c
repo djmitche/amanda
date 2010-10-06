@@ -51,13 +51,13 @@
  * Interface functions
  */
 static void local_connect(const char *, char *(*)(char *, void *),
-			void (*)(void *, security_handle_t *, security_status_t),
+			void (*)(void *, legacy_security_handle_t *, legacy_security_status_t),
 			void *, void *);
 
 /*
  * This is our interface to the outside world.
  */
-const security_driver_t local_security_driver = {
+const legacy_security_driver_t local_legacy_security_driver = {
     "LOCAL",
     local_connect,
     sec_accept,
@@ -97,7 +97,7 @@ static void
 local_connect(
     const char *	hostname,
     char *		(*conf_fn)(char *, void *),
-    void		(*fn)(void *, security_handle_t *, security_status_t),
+    void		(*fn)(void *, legacy_security_handle_t *, legacy_security_status_t),
     void *		arg,
     void *		datap)
 {
@@ -112,14 +112,14 @@ local_connect(
     auth_debug(1, _("local: local_connect: %s\n"), hostname);
 
     rh = g_new0(struct sec_handle, 1);
-    security_handleinit(&rh->sech, &local_security_driver);
+    legacy_security_handleinit(&rh->sech, &local_legacy_security_driver);
     rh->hostname = NULL;
     rh->rs = NULL;
     rh->ev_timeout = NULL;
     rh->rc = NULL;
 
     if (gethostname(myhostname, MAX_HOSTNAME_LENGTH) == -1) {
-	security_seterror(&rh->sech, _("gethostname failed"));
+	legacy_security_seterror(&rh->sech, _("gethostname failed"));
 	(*fn)(arg, &rh->sech, S_ERROR);
 	return;
     }
@@ -127,7 +127,7 @@ local_connect(
 
     if (strcmp(hostname, myhostname) != 0 &&
 	match("^localhost(\\.localdomain)?$", hostname) == 0) {
-	security_seterror(&rh->sech,
+	legacy_security_seterror(&rh->sech,
 	    _("%s: is not local"), hostname);
 	(*fn)(arg, &rh->sech, S_ERROR);
 	return;
@@ -152,7 +152,7 @@ local_connect(
     }
     if(rh->rc->read == -1) {
 	if (runlocal(rh->rs->rc, amandad_path, client_username) < 0) {
-	    security_seterror(&rh->sech, _("can't connect to %s: %s"),
+	    legacy_security_seterror(&rh->sech, _("can't connect to %s: %s"),
 			      hostname, rh->rs->rc->errmsg);
 	    goto error;
 	}
