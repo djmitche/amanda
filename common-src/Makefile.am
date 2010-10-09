@@ -18,6 +18,7 @@ LINT=$(AMLINT)
 LINTFLAGS=$(AMLINTFLAGS)
 
 libamanda_la_SOURCES =		\
+	auth.c			\
 	alloc.c			\
 	amfeatures.c		\
 	amflock.c		\
@@ -99,6 +100,7 @@ libamanda_la_SOURCES += local-security.c
 libamanda_la_LDFLAGS =  -release $(VERSION) $(AS_NEEDED_FLAGS)
 
 noinst_HEADERS =		\
+	auth.h			\
 	amanda.h		\
 	amfeatures.h		\
 	ipc-binary.h		\
