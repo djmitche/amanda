@@ -32,6 +32,7 @@
 #define	SECURITY_H
 
 #include "packet.h"
+#include "security-compat.h"
 
 struct legacy_security_handle;
 
@@ -49,6 +50,7 @@ struct legacy_security_handle;
  * legacy_security_connect() callbacks. It details what the status of this callback
  * is.
  */
+#if 0
 typedef enum {
     S_OK,	/* the pkt_t was received fine */
     S_TIMEOUT,	/* no pkt_t was received within the time specified in the
@@ -56,6 +58,8 @@ typedef enum {
     S_ERROR,	/* an error occurred during reception. Call legacy_security_geterror()
 		 * for more information */
 } legacy_security_status_t;
+#endif
+typedef security_status_t legacy_security_status_t;
 
 /*
  * Drivers

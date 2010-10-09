@@ -39,6 +39,7 @@ libamanda_la_SOURCES =		\
 	protocol.c		\
 	semaphore.c		\
 	security.c		\
+	security-compat.c	\
 	security-util.c		\
 	simpleprng.c		\
 	sl.c			\
@@ -123,6 +124,7 @@ noinst_HEADERS =		\
 	protocol.h		\
 	semaphore.h		\
 	security.h		\
+	security-compat.h	\
 	security-util.h		\
 	simpleprng.h		\
 	sl.h			\
