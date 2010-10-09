@@ -1990,8 +1990,6 @@ sendbackup_response(
     assert(response_error != NULL);
     assert(sech != NULL);
 
-    security_close_connection(sech, hostname);
-
     if (pkt == NULL) {
 	errstr = newvstrallocf(errstr, _("[request failed: %s]"),
 	    security_geterror(sech));
