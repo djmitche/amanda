@@ -76,6 +76,7 @@ const legacy_security_driver_t bsd_legacy_security_driver = {
     sec_get_authenticated_peer_name_hostname,
     bsd_close,
     udpbsd_sendpkt,
+    noop_close_packet_stream,
     udp_recvpkt,
     udp_recvpkt_cancel,
     bsd_stream_server,

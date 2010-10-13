@@ -120,6 +120,11 @@ typedef struct legacy_security_driver {
      */
     ssize_t (*sendpkt)(void *, pkt_t *);
 
+    /* close the packet stream, signalling an EOF on that stream to the opposite
+     * end of the connection, without closing the connection itself. Added for
+     * auth-compat. */
+    void (*close_packet_stream)(void *);
+
     /*
      * This creates an event in the event handler for receiving pkt_t's on a
      * legacy_security_handle.  The given callback will be called with the given arg

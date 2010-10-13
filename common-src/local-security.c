@@ -64,6 +64,7 @@ const legacy_security_driver_t local_legacy_security_driver = {
     sec_get_authenticated_peer_name_gethostname,
     sec_close,
     stream_sendpkt,
+    tcpm_close_packet_stream,
     stream_recvpkt,
     stream_recvpkt_cancel,
     tcpma_stream_server,

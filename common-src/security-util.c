@@ -136,6 +136,32 @@ sec_close(
     amfree(rh);
 }
 
+/* This is a hack to allow auth-compat to signal EOF on the packet
+ * stream for a tcpm handle; this was usually accomplished by sec_close,
+ * but sec_close has some refcounting issues that this works around */
+void
+tcpm_close_packet_stream(
+    void *inst)
+{
+    struct sec_handle *rh = inst;
+
+    g_debug("indicating end of transaction using tcpm_close_packet_stream");
+
+    if (!rh->rs)
+	return;
+
+    /* we close this security stream and open a new one.. this happened accidentally
+     * due to some conincidences of callback ordering in the legacy API. */
+    legacy_security_stream_close(&rh->rs->secstr);
+    rh->rs = NULL;
+}
+
+void
+noop_close_packet_stream(
+    void *inst G_GNUC_UNUSED)
+{
+}
+
 /*
  * Called when a sec connection is finished connecting and is ready
  * to be authenticated.
@@ -694,6 +720,7 @@ tcpma_stream_client(
 	rs->rc = sec_tcp_conn_get(rh->hostname, 0);
 	rs->rc->driver = rh->sech.driver;
 	rh->rc = rs->rc;
+	rh->rc->rh = rh; /* add backpointer */
     }
 
     auth_debug(1, _("sec: stream_client: connected to stream %d\n"), id);
@@ -797,6 +824,7 @@ tcp1_stream_server(
     else {
 	rh->rc = sec_tcp_conn_get(rh->hostname, 1);
 	rh->rc->driver = rh->sech.driver;
+	rh->rc->rh = rh; /* add backpointer */
 	rs->rc = rh->rc;
 	rs->socket = stream_server(SU_GET_FAMILY(&rh->udp->peer), &rs->port,
 				   STREAM_BUFSIZE, STREAM_BUFSIZE, 0);
@@ -870,6 +898,7 @@ tcp1_stream_client(
     else {
 	rh->rc = sec_tcp_conn_get(rh->hostname, 1);
 	rh->rc->driver = rh->sech.driver;
+	rh->rc->rh = rh; /* add backpointer */
 	rs->rc = rh->rc;
 	rh->rc->read = stream_client(rh->hostname, (in_port_t)id,
 			STREAM_BUFSIZE, STREAM_BUFSIZE, &rs->port, 0);
@@ -1801,6 +1830,13 @@ sec_tcp_conn_read_callback(
 			  rc->refcnt);
 		rc->refcnt=1;
 	    }
+	    /* call it to indicate an EOF first */
+	    if (rc->rh) {
+		auth_debug(1, "calling accept_fn to indicate end of connection\n");
+		rc->accept_fn(&rc->rh->sech, NULL);
+	    } else {
+		auth_debug(1, "not calling accept_fn: no handle in this tcp_conn\n");
+	    }
 	    rc->accept_fn = NULL;
 	    sec_tcp_conn_put(rc);
 	}
@@ -1840,6 +1876,7 @@ sec_tcp_conn_read_callback(
     rh->hostname = g_strdup(rc->hostname);
     rh->ev_timeout = NULL;
     rh->rc = rc;
+    rc->rh = rh; /* add backpointer */
     rh->peer = rc->peer;
     rh->rs = tcpma_stream_client(rh, rc->handle);
 

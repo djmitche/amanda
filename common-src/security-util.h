@@ -98,6 +98,9 @@ struct tcp_conn {
     char *              buffer;
     ssize_t             size_header_read;
     ssize_t             size_buffer_read;
+
+    /* backpointer to security_handle */
+    struct sec_handle *rh;
 };
 
 
@@ -206,6 +209,8 @@ void	sec_accept(const legacy_security_driver_t *,
 		   void (*)(legacy_security_handle_t *, pkt_t *),
 		   void *);
 void	sec_close(void *);
+void	tcpm_close_packet_stream(void *inst);
+void	noop_close_packet_stream(void *inst);
 void	sec_connect_callback(void *);
 void	sec_connect_timeout(void *);
 void	sec_close_connection_none(void *, char *);

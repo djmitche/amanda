@@ -19,6 +19,7 @@ LINTFLAGS=$(AMLINTFLAGS)
 
 libamanda_la_SOURCES =		\
 	auth.c			\
+	auth-compat.c		\
 	alloc.c			\
 	amfeatures.c		\
 	amflock.c		\

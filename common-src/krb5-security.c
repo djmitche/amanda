@@ -179,6 +179,7 @@ const legacy_security_driver_t krb5_legacy_security_driver = {
     sec_get_authenticated_peer_name_hostname,
     sec_close,
     stream_sendpkt,
+    tcpm_close_packet_stream,
     stream_recvpkt,
     stream_recvpkt_cancel,
     tcpma_stream_server,
