@@ -1527,7 +1527,7 @@ read_mesgfd(
 	dumpfile_free_data(&file);
 	aclose(db->fd);
 	if (data_path == DATA_PATH_AMANDA) {
-	    g_debug(_("Sending data to %s:%d\n"), data_host, data_port);
+	    g_debug(_("Sending data to %s:%d"), data_host, data_port);
 	    db->fd = stream_client(data_host, data_port,
 				   STREAM_BUFSIZE, 0, NULL, 0);
 	    if (db->fd == -1) {
