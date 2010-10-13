@@ -39,13 +39,15 @@
 #include "amfeatures.h"
 #include "packet.h"
 #include "version.h"
-#include "security.h"
+#include "auth.h"
 #include "stream.h"
 #include "util.h"
 #include "conffile.h"
+#include "security.h"
 
+#define	REQ_TIMEOUT	(60)		/* secs for client to send request */
 #define	REP_TIMEOUT	(6*60*60)	/* secs for service to reply */
-#define	ACK_TIMEOUT  	10		/* XXX should be configurable */
+#define	ACK_TIMEOUT  	10		/* seconds to wait for an ACK to our REP */
 #define STDERR_PIPE (DATA_FD_COUNT + 1)
 
 #define amandad_debug(i, ...) do {	\
@@ -103,16 +105,16 @@ static struct services {
 /*
  * This structure describes an active running service.
  *
- * An active service is something running that we have received
- * a request for.  This structure holds info on that service, including
- * file descriptors for data, etc, as well as the security handle
- * for communications with the amanda server.
+ * An active service is something running that we have received a request for.
+ * This structure holds info on that service, including file descriptors for
+ * data, etc, as well as the auth connection for communications with the amanda
+ * server.
  */
 struct active_service {
     service_t service;			/* service name */
     char *cmd;				/* name of command we ran */
     char *arguments;			/* arguments we sent it */
-    security_handle_t *security_handle;	/* remote server */
+    AuthConn *conn;			/* remote server */
     state_t state;			/* how far this has progressed */
     pid_t pid;				/* pid of subprocess */
     int send_partial_reply;		/* send PREP packet */
@@ -139,28 +141,40 @@ struct active_service {
 	int fd_read;			/* pipe to child process */
 	int fd_write;			/* pipe to child process */
 	event_handle_t *ev_read;	/* it's read event handle */
-	event_handle_t *ev_write;	/* it's write event handle */
-	security_stream_t *netfd;	/* stream to amanda server */
+	AuthStream *stream;		/* stream to amanda server */
 	struct active_service *as;	/* pointer back to our enclosure */
     } data[DATA_FD_COUNT];
-    char databuf[NETWORK_BLOCK_BYTES];	/* buffer to relay netfd data in */
+    char databuf[NETWORK_BLOCK_BYTES];	/* buffer to relay data between pipes and streams */
 };
 
 /*
- * Queue of outstanding requests that we are running.
+ * Globals
  */
-GSList *serviceq = NULL;
 
-static int wait_30s = 1;
-static int exit_on_qlength = 1;
+/* Queue of outstanding requests that we are running.  Don't be deceived:
+ * amandad can only support one service at a time. */
+static GSList *serviceq = NULL;
+
+/* current authentication mechansim and connection */
 static char *auth = NULL;
+static AuthConn *amandad_conn = NULL;
+
+/* Timer until forced amandad exit (used for UDP-based auths) */
+static event_handle_t *exit_timer = NULL;
+
 static kencrypt_type amandad_kencrypt = KENCRYPT_NONE;
+
+/*
+ * Prototypes
+ */
 
 int main(int argc, char **argv);
 
 static int allocstream(struct active_service *, int);
-static void exit_check(void *);
-static void protocol_accept(security_handle_t *, pkt_t *);
+static void log_packet(AuthConn *conn, pkt_t *pkt);
+static void listen_callback(gpointer arg, AuthConn *conn, auth_operation_status_t status);
+static void initial_recvpkt_callback(gpointer arg, AuthConn *conn,
+    pkt_t *pkt, auth_operation_status_t status);
 static void state_machine(struct active_service *, action_t, pkt_t *);
 
 static action_t s_sendack(struct active_service *, action_t, pkt_t *);
@@ -168,20 +182,25 @@ static action_t s_repwait(struct active_service *, action_t, pkt_t *);
 static action_t s_processrep(struct active_service *, action_t, pkt_t *);
 static action_t s_sendrep(struct active_service *, action_t, pkt_t *);
 static action_t s_ackwait(struct active_service *, action_t, pkt_t *);
+static action_t s_pipewait(struct active_service *, action_t, pkt_t *);
 
 static void repfd_recv(void *);
-static void process_errfd(void *cookie);
+static void process_errfd(struct active_service *as);
 static void errfd_recv(void *);
 static void timeout_repfd(void *);
-static void protocol_recv(void *, pkt_t *, security_status_t);
-static void process_readnetfd(void *);
-static void process_writenetfd(void *, void *, ssize_t);
-static struct active_service *service_new(security_handle_t *,
+static void protocol_recv(gpointer arg, AuthConn *conn, pkt_t *pkt,
+	auth_operation_status_t status);
+static void process_pipe_to_stream(void *);
+static void process_stream_to_pipe(gpointer arg, AuthStream *stream,
+	gpointer buf, gsize size);
+static struct active_service *service_new(AuthConn *,
     const char *, service_t, const char *);
 static void service_delete(struct active_service *);
 static int writebuf(struct active_service *, const void *, size_t);
-static ssize_t do_sendpkt(security_handle_t *handle, pkt_t *pkt);
-static char *amandad_get_security_conf (char *, void *);
+static gboolean do_sendpkt(AuthConn *conn, pkt_t *pkt);
+static char *amandad_conf_getter (char *, void *);
+
+static void clear_exit_timer(void);
 
 static const char *state2str(state_t);
 static const char *action2str(action_t);
@@ -194,14 +213,9 @@ main(
     int i;
     guint j;
     int have_services;
-    int in, out;
-    const security_driver_t *secdrv;
-    int no_exit = 0;
     char *pgm = "amandad";		/* in case argv[0] is not set */
-#if defined(USE_REUSEADDR)
-    const int on = 1;
-    int r;
-#endif
+    char **auth_argv;
+    int auth_argc;
 
     /*
      * Configure program for internationalization:
@@ -232,6 +246,10 @@ main(
      * this causes argv and/or argv[0] to be NULL, so we have to be
      * careful getting our name.
      */
+    if (! (argc >= 1 && argv != NULL && argv[0] != NULL)) {
+	dbprintf(_("WARNING: argv[0] not defined: check inetd.conf\n"));
+    }
+
     if ((argv == NULL) || (argv[0] == NULL)) {
 	    pgm = "amandad";		/* in case argv[0] is not set */
     } else {
@@ -240,10 +258,7 @@ main(
     set_pname(pgm);
     dbopen(DBG_SUBDIR_AMANDAD);
 
-    if(argv == NULL) {
-	error(_("argv == NULL\n"));
-	/*NOTREACHED*/
-    }
+    g_assert(argv != NULL);
 
     /* Don't die when child closes pipe */
     signal(SIGPIPE, SIG_IGN);
@@ -251,6 +266,8 @@ main(
     /* Parse the configuration; we'll handle errors later */
     config_init(CONFIG_INIT_CLIENT, NULL);
 
+    /* use check_running_as according to how we find ourselves run; the auth
+     * mechanisms will check in more detail later */
     if (geteuid() == 0) {
 	check_running_as(RUNNING_AS_ROOT);
 	initgroups(CLIENT_LOGIN, get_client_gid());
@@ -269,25 +286,22 @@ main(
      *
      * We accept	-auth=[authentication type]
      *			-no-exit
-     *			-tcp=[port]
-     *			-udp=[port]
-     * We also add a list of services that amandad can launch
+     *			service names
+     * Anything else is passed to the auth's accept method (auth_argv/auth_argc)
      */
-    secdrv = NULL;
-    in = 0; out = 1;		/* default to stdin/stdout */
     have_services = 0;
+    auth_argv = g_new0(char *, argc);
+    auth_argc = 0;
     for (i = 1; i < argc; i++) {
 	/*
 	 * Get a driver for a security type specified after -auth=
 	 */
 	if (strncmp(argv[i], "-auth=", strlen("-auth=")) == 0) {
 	    argv[i] += strlen("-auth=");
-	    secdrv = security_getdriver(argv[i]);
 	    auth = argv[i];
-	    if (secdrv == NULL) {
-		error(_("no driver for security type '%s'\n"), argv[i]);
-                /*NOTREACHED*/
-	    }
+
+	    /* activate all services for local, rsh, or ssh */
+	    /* TODO: do not special-case this in amandad! */
 	    if (strcmp(auth, "local") == 0 ||
 		strcmp(auth, "rsh") == 0 ||
 		strcmp(auth, "ssh") == 0) {
@@ -300,112 +314,18 @@ main(
 	}
 
 	/*
-	 * If -no-exit is specified, always run even after requests have
-	 * been satisfied.
+	 * -no-exit is no longer used, but still recognized for backward-compat
 	 */
 	else if (strcmp(argv[i], "-no-exit") == 0) {
-	    no_exit = 1;
+	    g_debug("ignoring -no-exit");
 	    continue;
 	}
 
 	/*
-	 * Allow us to directly bind to a udp port for debugging.
-	 * This may only apply to some security types.
+	 * If it does not begin with a dash, it must be a service name
 	 */
-	else if (strncmp(argv[i], "-udp=", strlen("-udp=")) == 0) {
-#ifdef WORKING_IPV6
-	    struct sockaddr_in6 sin;
-#else
-	    struct sockaddr_in sin;
-#endif
-
-	    argv[i] += strlen("-udp=");
-#ifdef WORKING_IPV6
-	    in = out = socket(AF_INET6, SOCK_DGRAM, 0);
-#else
-	    in = out = socket(AF_INET, SOCK_DGRAM, 0);
-#endif
-	    if (in < 0) {
-		error(_("can't create dgram socket: %s\n"), strerror(errno));
-		/*NOTREACHED*/
-	    }
-#ifdef USE_REUSEADDR
-	    r = setsockopt(in, SOL_SOCKET, SO_REUSEADDR,
-		(void *)&on, (socklen_t_equiv)sizeof(on));
-	    if (r < 0) {
-		dbprintf(_("amandad: setsockopt(SO_REUSEADDR) failed: %s\n"),
-			  strerror(errno));
-	    }
-#endif
-
-#ifdef WORKING_IPV6
-	    sin.sin6_family = (sa_family_t)AF_INET6;
-	    sin.sin6_addr = in6addr_any;
-	    sin.sin6_port = (in_port_t)htons((in_port_t)atoi(argv[i]));
-#else
-	    sin.sin_family = (sa_family_t)AF_INET;
-	    sin.sin_addr.s_addr = INADDR_ANY;
-	    sin.sin_port = (in_port_t)htons((in_port_t)atoi(argv[i]));
-#endif
-	    if (bind(in, (struct sockaddr *)&sin, (socklen_t_equiv)sizeof(sin)) < 0) {
-		error(_("can't bind to port %d: %s\n"), atoi(argv[i]),
-		    strerror(errno));
-		/*NOTREACHED*/
-	    }
-	}
-	/*
-	 * Ditto for tcp ports.
-	 */
-	else if (strncmp(argv[i], "-tcp=", strlen("-tcp=")) == 0) {
-#ifdef WORKING_IPV6
-	    struct sockaddr_in6 sin;
-#else
-	    struct sockaddr_in sin;
-#endif
-	    int sock;
-	    socklen_t_equiv n;
-
-	    argv[i] += strlen("-tcp=");
-#ifdef WORKING_IPV6
-	    sock = socket(AF_INET6, SOCK_STREAM, 0);
-#else
-	    sock = socket(AF_INET, SOCK_STREAM, 0);
-#endif
-	    if (sock < 0) {
-		error(_("can't create tcp socket: %s\n"), strerror(errno));
-		/*NOTREACHED*/
-	    }
-#ifdef USE_REUSEADDR
-	    r = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-		(void *)&on, (socklen_t_equiv)sizeof(on));
-	    if (r < 0) {
-		dbprintf(_("amandad: setsockopt(SO_REUSEADDR) failed: %s\n"),
-			  strerror(errno));
-	    }
-#endif
-#ifdef WORKING_IPV6
-	    sin.sin6_family = (sa_family_t)AF_INET6;
-	    sin.sin6_addr = in6addr_any;
-	    sin.sin6_port = (in_port_t)htons((in_port_t)atoi(argv[i]));
-#else
-	    sin.sin_family = (sa_family_t)AF_INET;
-	    sin.sin_addr.s_addr = INADDR_ANY;
-	    sin.sin_port = (in_port_t)htons((in_port_t)atoi(argv[i]));
-#endif
-	    if (bind(sock, (struct sockaddr *)&sin, (socklen_t_equiv)sizeof(sin)) < 0) {
-		error(_("can't bind to port %d: %s\n"), atoi(argv[i]),
-		    strerror(errno));
-		/*NOTREACHED*/
-	    }
-	    listen(sock, 10);
-	    n = (socklen_t_equiv)sizeof(sin);
-	    in = out = accept(sock, (struct sockaddr *)&sin, &n);
-	}
-	/*
-	 * It must be a service name
-	 */
-	else {
-	    /* clear all services */
+	else if (argv[i][0] != '-') {
+	    /* clear the default active services */
 	    if(!have_services) {
 		for (j = 0; j < NSERVICES; j++)
 		    services[j].active = 0;
@@ -429,48 +349,20 @@ main(
 		services[j].active = 1;
 	    }
 	}
+
+	/* otherwise, pass it to the auth */
+	else {
+	    g_debug("passing %s to the authentication implementation", argv[i]);
+	    auth_argv[auth_argc++] = argv[i];
+	}
     }
 
     /*
-     * If no security type specified, use BSDTCP
+     * If no authentication type specified, use BSDTCP
      */
-    if (secdrv == NULL) {
-	secdrv = security_getdriver("BSDTCP");
+    if (auth == NULL) {
 	auth = "bsdtcp";
-	if (secdrv == NULL) {
-	    error(_("no driver for default security type 'BSDTCP'\n"));
-	    /*NOTREACHED*/
-	}
     }
-
-    if(strcasecmp(auth, "rsh") == 0 ||
-       strcasecmp(auth, "ssh") == 0 ||
-       strcasecmp(auth, "local") == 0 ||
-       strcasecmp(auth, "bsdtcp") == 0) {
-	wait_30s = 0;
-	exit_on_qlength = 1;
-    }
-
-#ifndef SINGLE_USERID
-    if (geteuid() == 0) {
-	if (strcasecmp(auth, "krb5") != 0) {
-	    struct passwd *pwd;
-	    /* lookup our local user name */
-	    if ((pwd = getpwnam(CLIENT_LOGIN)) == NULL) {
-		error(_("getpwnam(%s) failed."), CLIENT_LOGIN);
-	    }
-
-	    if (pwd->pw_uid != 0) {
-		error(_("'amandad' must be run as user '%s' when using '%s' authentication"),
-		      CLIENT_LOGIN, auth);
-	    }
-	}
-    } else {
-	if (strcasecmp(auth, "krb5") == 0) {
-	    error(_("'amandad' must be run as user 'root' when using 'krb5' authentication"));
-	}
-    }
-#endif
 
     /* initialize */
 
@@ -481,77 +373,54 @@ main(
 	dbprintf("    %s", version_info[i]);
     }
 
-    if (! (argc >= 1 && argv != NULL && argv[0] != NULL)) {
-	dbprintf(_("WARNING: argv[0] not defined: check inetd.conf\n"));
-    }
-
-    /* krb5 require the euid to be 0 */
-    if (strcasecmp(auth, "krb5") == 0) {
-	seteuid((uid_t)0);
-    }
-
     /*
-     * Schedule to call protocol_accept() when new security handles
-     * are created on stdin.
+     * Create a connection object for this invocation
      */
-    security_accept(secdrv, amandad_get_security_conf, in, out, protocol_accept, NULL);
+    auth_listen(auth, listen_callback, NULL,
+	    amandad_conf_getter, NULL, auth_argc, auth_argv);
 
-    /*
-     * Schedule an event that will try to exit every 30 seconds if there
-     * are no requests outstanding.
-     */
-    if(wait_30s)
-	(void)event_register((event_id_t)30, EV_TIME, exit_check, &no_exit);
+    /* run the event loop forever, or until someone calls event_loop_stop. */
+    event_loop_forever();
 
-    /*
-     * Call event_loop() with an arg of 0, telling it to block until all
-     * events are completed.
-     */
-    event_loop(0);
-
-    close(in);
-    close(out);
     dbclose();
     return(0);
 }
 
-/*
- * This runs periodically and checks to see if we have any active services
- * still running.  If we don't, then we quit.
- */
 static void
-exit_check(
-    void *	cookie)
+log_packet(
+    AuthConn *conn,
+    pkt_t *pkt)
 {
-    int no_exit;
-
-    assert(cookie != NULL);
-    no_exit = *(int *)cookie;
-
-    /*
-     * If things are still running, then don't exit.
-     */
-    if (g_slist_length(serviceq) > 0)
-	return;
-
-    /*
-     * If the caller asked us to never exit, then we're done
-     */
-    if (no_exit)
-	return;
-
-    dbclose();
-    exit(0);
+    amandad_debug(1, "conn %p received %s packet:\n<<<<<\n%s>>>>>",
+	conn, pkt_type2str(pkt->type), pkt->body);
 }
 
-/*
- * Handles new incoming protocol handles.  This is a callback for
- * security_accept(), which gets called when new handles are detected.
- */
 static void
-protocol_accept(
-    security_handle_t *	handle,
-    pkt_t *		pkt)
+listen_callback(
+    gpointer arg G_GNUC_UNUSED,
+    AuthConn *conn,
+    auth_operation_status_t status)
+{
+    if (status != AUTH_OK) {
+	g_warning("error listening for new connection - exiting");
+	event_loop_stop();
+	return;
+    }
+
+    AUTH_DEBUG(1, "new connection %p: authenticated peer name '%s'",
+		conn, auth_conn_get_authenticated_peer_name(conn));
+    amandad_conn = conn;
+
+    /* and start receiving a packet on it */
+    auth_conn_recvpkt(conn, initial_recvpkt_callback, NULL, REQ_TIMEOUT);
+}
+
+static void
+initial_recvpkt_callback(
+    gpointer arg G_GNUC_UNUSED,
+    AuthConn *conn,
+    pkt_t *pkt,
+    auth_operation_status_t status)
 {
     pkt_t pkt_out;
     GSList *iter;
@@ -561,14 +430,39 @@ protocol_accept(
     GSList *errlist = NULL;
     guint i;
 
-    pkt_out.body = NULL;
-
-    /*
-     * If handle is NULL, then the connection is closed.
-     */
-    if(handle == NULL) {
+    if (status == AUTH_TIMEOUT) {
+	/* for auths that cannot detect and underlying EOF, this is how we
+	 * exit.  This also provides a nice timeout for stream-based auths. */
+	g_debug("no packet received in %d seconds; exiting", REQ_TIMEOUT);
+	g_object_unref(conn);
+	event_loop_stop();
+	return;
+    } else if (status == AUTH_ERROR) {
+	g_warning("error waiting for packet on connection %p: %s",
+		conn, auth_conn_error_message(conn));
+	g_object_unref(conn);
+	return;
+    } else if (pkt == NULL) {
+	/* EOF on the underlying layer - exit cleanly */
+	g_debug("EOF from remote system; exiting");
+	g_object_unref(conn);
+	event_loop_stop();
 	return;
     }
+    g_assert(pkt != NULL);
+
+    log_packet(conn, pkt);
+
+    /* If we're already running a service, we can't run another - the packets
+     * aren't tagged to a specific service, so things would get all jumbled.
+     * This should never happen, since this callback is only registered when no
+     * service is active. */
+    if (serviceq) {
+	g_warning("a service is already active; ignoring incoming packet");
+	return;
+    }
+
+    pkt_out.body = NULL;
 
     /*
      * If we have errors (not warnings) from the config file, let the remote system
@@ -590,36 +484,9 @@ protocol_accept(
 
 	pkt_init(&pkt_out, P_NAK, "ERROR %s%s", errmsg,
 	    multiple_errors? _(" (additional errors not displayed)"):"");
-	do_sendpkt(handle, &pkt_out);
+	(void)do_sendpkt(conn, &pkt_out);
 	amfree(pkt_out.body);
-	security_close(handle);
-	return;
-    }
-
-    g_debug("authenticated peer name is '%s'", security_get_authenticated_peer_name(handle));
-
-    /*
-     * If pkt is NULL, then there was a problem with the new connection.
-     */
-    if (pkt == NULL) {
-	dbprintf(_("accept error: %s\n"), security_geterror(handle));
-	pkt_init(&pkt_out, P_NAK, "ERROR %s\n", security_geterror(handle));
-	do_sendpkt(handle, &pkt_out);
-	amfree(pkt_out.body);
-	security_close(handle);
-	return;
-    }
-
-    dbprintf(_("accept recv %s pkt:\n<<<<<\n%s>>>>>\n"),
-	pkt_type2str(pkt->type), pkt->body);
-
-    /*
-     * If this is not a REQ packet, just forget about it.
-     */
-    if (pkt->type != P_REQ) {
-	dbprintf(_("received unexpected %s packet:\n<<<<<\n%s>>>>>\n\n"),
-	    pkt_type2str(pkt->type), pkt->body);
-	security_close(handle);
+	g_object_unref(conn);
 	return;
     }
 
@@ -629,6 +496,9 @@ protocol_accept(
     /*
      * Parse out the service and arguments
      */
+
+    if (pkt->type != P_REQ)
+	goto badreq;
 
     pktbody = g_strdup(pkt->body);
 
@@ -676,6 +546,7 @@ protocol_accept(
 		    dbprintf(_("%s %s: already running, acking req\n"),
 			service, arguments);
 		    pkt_init_empty(&pkt_out, P_ACK);
+		    clear_exit_timer();
 		    goto send_pkt_out_no_delete;
 	    }
     }
@@ -685,7 +556,8 @@ protocol_accept(
      * the request pipe.
      */
     dbprintf(_("creating new service: %s\n%s\n"), service, arguments);
-    as = service_new(handle, service_path, services[i].service, arguments);
+    as = service_new(conn, service_path,
+		     services[i].service, arguments);
     if (writebuf(as, arguments, strlen(arguments)) < 0) {
 	const char *errmsg = strerror(errno);
 	dbprintf(_("error sending arguments to %s: %s\n"), service, errmsg);
@@ -710,20 +582,31 @@ protocol_accept(
 
 badreq:
     pkt_init(&pkt_out, P_NAK, _("ERROR invalid REQ\n"));
-    dbprintf(_("received invalid %s packet:\n<<<<<\n%s>>>>>\n\n"),
-	pkt_type2str(pkt->type), pkt->body);
+    dbprintf(_("%p: received invalid %s packet:\n<<<<<\n%s>>>>>\n\n"),
+	conn, pkt_type2str(pkt->type), pkt->body);
+    /* fall through */
 
 send_pkt_out:
     if(as)
 	service_delete(as);
+    /* fall through */
+
 send_pkt_out_no_delete:
     amfree(pktbody);
     amfree(service_path);
     amfree(service);
     amfree(arguments);
-    do_sendpkt(handle, &pkt_out);
-    security_close(handle);
+    (void)do_sendpkt(conn, &pkt_out);
     amfree(pkt_out.body);
+}
+
+static void
+clear_exit_timer(void)
+{
+    if (exit_timer) {
+	event_release(exit_timer);
+	exit_timer = NULL;
+    }
 }
 
 /*
@@ -774,18 +657,19 @@ state_machine(
 	    dbprintf(_("<<<<<\n%s----\n\n"), pkt->body);
 	    pkt_init(&nak, P_NAK, _("ERROR unexpected packet type %s\n"),
 		pkt_type2str(pkt->type));
-	    do_sendpkt(as->security_handle, &nak);
+	    (void)do_sendpkt(as->conn, &nak);
 	    amfree(nak.body);
-	    security_recvpkt(as->security_handle, protocol_recv, as, -1);
+	    auth_conn_recvpkt(as->conn, protocol_recv, as, 0);
 	    amandad_debug(1, _("state_machine: %p leaving (A_SENDNAK)\n"), as);
 	    return;
 
 	/*
-	 * Service is done.  Remove it and finish.
+	 * Service is done.  Remove it, and listen for a new protocol transaction
 	 */
 	case A_FINISH:
 	    amandad_debug(1, _("state_machine: %p leaving (A_FINISH)\n"), as);
 	    service_delete(as);
+	    auth_conn_recvpkt(amandad_conn, initial_recvpkt_callback, NULL, REQ_TIMEOUT);
 	    return;
 
 	default:
@@ -812,9 +696,9 @@ s_sendack(
     (void)pkt;		/* Quiet unused parameter warning */
 
     pkt_init_empty(&ack, P_ACK);
-    if (do_sendpkt(as->security_handle, &ack) < 0) {
+    if (!do_sendpkt(as->conn, &ack)) {
 	dbprintf(_("error sending ACK: %s\n"),
-	    security_geterror(as->security_handle));
+	    auth_conn_error_message(as->conn));
 	amfree(ack.body);
 	return (A_FINISH);
     }
@@ -834,7 +718,7 @@ s_sendack(
 	timeout_repfd, as);
     as->errbuf = NULL;
     as->ev_errfd = event_register((event_id_t)as->errfd, EV_READFD, errfd_recv, as);
-    security_recvpkt(as->security_handle, protocol_recv, as, -1);
+    auth_conn_recvpkt(as->conn, protocol_recv, as, 0);
     return (A_PENDING);
 }
 
@@ -908,8 +792,8 @@ s_repwait(
 	    dbprintf(_("received dup P_REQ packet, ACKing it\n"));
 	    amfree(as->rep_pkt.body);
 	    pkt_init_empty(&as->rep_pkt, P_ACK);
-	    do_sendpkt(as->security_handle, &as->rep_pkt);
-	    security_recvpkt(as->security_handle, protocol_recv, as, -1);
+	    (void)do_sendpkt(as->conn, &as->rep_pkt);
+	    auth_conn_recvpkt(as->conn, protocol_recv, as, 0);
 	    return (A_PENDING);
 	}
 	/* something unexpected.  Nak it */
@@ -920,7 +804,7 @@ s_repwait(
 	amfree(as->rep_pkt.body);
 	pkt_init(&as->rep_pkt, P_NAK, _("ERROR timeout on reply pipe\n"));
 	dbprintf(_("%s timed out waiting for REP data\n"), as->cmd);
-	do_sendpkt(as->security_handle, &as->rep_pkt);
+	(void)do_sendpkt(as->conn, &as->rep_pkt);
 	return (A_FINISH);
     }
 
@@ -941,7 +825,7 @@ s_repwait(
 	amfree(as->rep_pkt.body);
 	pkt_init(&as->rep_pkt, P_NAK, _("ERROR read error on reply pipe: %s\n"),
 		 errstr);
-	do_sendpkt(as->security_handle, &as->rep_pkt);
+	(void)do_sendpkt(as->conn, &as->rep_pkt);
 	return (A_FINISH);
     }
 
@@ -1007,7 +891,7 @@ s_repwait(
 	if (!expanded && as->send_partial_reply) {
 	    amfree(as->rep_pkt.body);
 	    pkt_init(&as->rep_pkt, P_PREP, "%s", as->repbuf);
-	    do_sendpkt(as->security_handle, &as->rep_pkt);
+	    (void)do_sendpkt(as->conn, &as->rep_pkt);
 	    amfree(as->rep_pkt.body);
 	    pkt_init_empty(&as->rep_pkt, P_REP);
 	}
@@ -1133,8 +1017,8 @@ s_sendrep(
     /*
      * Transmit it and move to the ack state.
      */
-    do_sendpkt(as->security_handle, &as->rep_pkt);
-    security_recvpkt(as->security_handle, protocol_recv, as, ACK_TIMEOUT);
+    (void)do_sendpkt(as->conn, &as->rep_pkt);
+    auth_conn_recvpkt(as->conn, protocol_recv, as, ACK_TIMEOUT);
     as->state = s_ackwait;
     return (A_PENDING);
 }
@@ -1184,14 +1068,14 @@ s_ackwait(
      * Got the ack, now open the pipes
      */
     for (dh = &as->data[0]; dh < &as->data[DATA_FD_COUNT]; dh++) {
-	if (dh->netfd == NULL)
+	if (dh->stream == NULL)
 	    continue;
 	dbprintf("opening security stream for fd %d\n", (int)(dh - as->data) + DATA_FD_OFFSET);
-	if (security_stream_accept(dh->netfd) < 0) {
+	if (auth_stream_accept(dh->stream) < 0) {
 	    dbprintf(_("stream %td accept failed: %s\n"),
-		dh - &as->data[0], security_geterror(as->security_handle));
-	    security_stream_close(dh->netfd);
-	    dh->netfd = NULL;
+		dh - &as->data[0], auth_stream_error_message(dh->stream));
+	    g_object_unref(dh->stream);
+	    dh->stream = NULL;
 	    continue;
 	}
 
@@ -1202,31 +1086,21 @@ s_ackwait(
 	 * hack, if that wasn't already obvious! */
 	if (dh != &as->data[0] || as->service != SERVICE_SENDBACKUP) {
 	    dh->ev_read = event_register((event_id_t)dh->fd_read, EV_READFD,
-					 process_readnetfd, dh);
+					 process_pipe_to_stream, dh);
 	} else {
 	    amandad_debug(1, "Skipping registration of sendbackup's data FD\n");
 	}
 
-	security_stream_read(dh->netfd, process_writenetfd, dh);
+	auth_stream_read(dh->stream, process_stream_to_pipe, dh);
 
     }
 
     /*
-     * Pipes are open, so auth them.  Count them at the same time.
+     * Pipes are open, so count them.
      */
     for (npipes = 0, dh = &as->data[0]; dh < &as->data[DATA_FD_COUNT]; dh++) {
-	if (dh->netfd == NULL)
-	    continue;
-	if (security_stream_auth(dh->netfd) < 0) {
-	    security_stream_close(dh->netfd);
-	    dh->netfd = NULL;
-	    event_release(dh->ev_read);
-	    event_release(dh->ev_write);
-	    dh->ev_read = NULL;
-	    dh->ev_write = NULL;
-	} else {
+	if (dh->stream != NULL)
 	    npipes++;
-	}
     }
 
     /*
@@ -1234,11 +1108,42 @@ s_ackwait(
      * The event handlers on all of the pipes will take it from here.
      */
     amandad_debug(1, _("at end of s_ackwait, npipes is %d\n"), npipes);
-    if (npipes == 0)
+    if (npipes == 0) {
 	return (A_FINISH);
-    else {
-	security_close(as->security_handle);
-	as->security_handle = NULL;
+    } else {
+	as->state = s_pipewait;
+	return (A_PENDING);
+    }
+}
+
+/*
+ * In this state, we are waiting for npipes to become 0, then finish.
+ */
+static action_t
+s_pipewait(
+    struct active_service *	as,
+    action_t			action,
+    pkt_t *			pkt)
+{
+    struct datafd_handle *dh;
+    int npipes;
+
+    /* we should only get A_FINISH in thi state - from process_pipe_to_stream
+     * and process_stream_to_pipe.  No recvpkt call is active. */
+    g_assert(!pkt);
+    g_assert(action == A_FINISH);
+
+    npipes = 0;
+    for (dh = &as->data[0]; dh < &as->data[DATA_FD_COUNT]; dh++) {
+	if (dh->stream)
+	    npipes++;
+    }
+    amandad_debug(1, _("s_pipewait: npipes is %d\n"), npipes);
+
+    if (npipes == 0) {
+	return (A_FINISH);
+    } else {
+	/* keep waiting */
 	return (A_PENDING);
     }
 }
@@ -1260,10 +1165,8 @@ repfd_recv(
 
 static void
 process_errfd(
-    void *cookie)
+    struct active_service *as)
 {
-    struct active_service *as = cookie;
-
     /* Process errfd before sending the REP packet */
     if (as->ev_errfd) {
 	SELECT_ARG_TYPE readset;
@@ -1376,37 +1279,38 @@ timeout_repfd(
  */
 static void
 protocol_recv(
-    void *		cookie,
-    pkt_t *		pkt,
-    security_status_t	status)
+    gpointer arg,
+    AuthConn *conn G_GNUC_UNUSED,
+    pkt_t *pkt,
+    auth_operation_status_t status)
 {
-    struct active_service *as = cookie;
+    struct active_service *as = arg;
 
     assert(as != NULL);
 
     switch (status) {
-    case S_OK:
-	dbprintf(_("received %s pkt:\n<<<<<\n%s>>>>>\n"),
-	    pkt_type2str(pkt->type), pkt->body);
+    case AUTH_OK:
+	amandad_debug(1, _("received %s pkt:\n<<<<<\n%s>>>>>\n"),
+			pkt_type2str(pkt->type), pkt->body);
 	state_machine(as, A_RECVPKT, pkt);
 	break;
-    case S_TIMEOUT:
-	dbprintf(_("timeout\n"));
+    case AUTH_TIMEOUT:
+	g_debug("recvpkt timeout");
 	state_machine(as, A_TIMEOUT, NULL);
 	break;
-    case S_ERROR:
-	dbprintf(_("receive error: %s\n"),
-	    security_geterror(as->security_handle));
+    case AUTH_ERROR:
+	g_debug("recvpkt error: %s",
+	    auth_conn_error_message(as->conn));
 	break;
     }
 }
 
 /*
  * This is a generic relay function that just reads data from one of
- * the process's pipes and passes it up the equivalent security_stream_t
+ * the process's pipes and passes it up the equivalent AuthStream
  */
 static void
-process_readnetfd(
+process_pipe_to_stream(
     void *	cookie)
 {
     pkt_t nak;
@@ -1419,6 +1323,8 @@ process_readnetfd(
     do {
 	n = read(dh->fd_read, as->databuf, sizeof(as->databuf));
     } while ((n < 0) && ((errno == EINTR) || (errno == EAGAIN)));
+
+    amandad_debug(1, "process_pipe_to_stream; read returned %zd\n", n);
 
     /*
      * Process has died.
@@ -1433,18 +1339,7 @@ process_readnetfd(
      * If all pipes are closed, shut down this service.
      */
     if (n == 0) {
-	event_release(dh->ev_read);
-	dh->ev_read = NULL;
-	if(dh->ev_write == NULL) {
-	    security_stream_close(dh->netfd);
-	    dh->netfd = NULL;
-	}
-	for (dh = &as->data[0]; dh < &as->data[DATA_FD_COUNT]; dh++) {
-	    if (dh->netfd != NULL)
-		return;
-	}
-	service_delete(as);
-	return;
+	goto close_and_bail;
     }
 
     /* Handle the special case of recognizing "sendbackup info end"
@@ -1469,50 +1364,93 @@ process_readnetfd(
 	    struct datafd_handle *dh = &as->data[0];
 	    amandad_debug(1, "Opening datafd to sendbackup (delayed until sendbackup sent header info)\n");
 	    dh->ev_read = event_register((event_id_t)dh->fd_read, EV_READFD,
-					 process_readnetfd, dh);
+					 process_pipe_to_stream, dh);
 	} else {
 	    amandad_debug(1, "sendbackup header info still not complete\n");
 	}
     }
 
-    if (security_stream_write(dh->netfd, as->databuf, (size_t)n) < 0) {
+    if (!auth_stream_write(dh->stream, as->databuf, (size_t)n)) {
 	/* stream has croaked */
+	g_object_unref(dh->stream);
+	dh->stream = NULL;
+
 	pkt_init(&nak, P_NAK, _("ERROR write error on stream %d: %s\n"),
-	    security_stream_id(dh->netfd),
-	    security_stream_geterror(dh->netfd));
+	    dh->stream->id, auth_stream_error_message(dh->stream));
 	goto sendnak;
     }
     return;
 
 sendnak:
-    do_sendpkt(as->security_handle, &nak);
-    service_delete(as);
+    (void)do_sendpkt(as->conn, &nak);
     amfree(nak.body);
+
+close_and_bail:
+    /* close down this fd and possibly the stream, and then let the state
+     * machine know things have changed*/
+
+    amandad_debug(1, "closing from-service side of fd %d\n",
+		    (int)(dh - dh->as->data) + DATA_FD_OFFSET);
+
+    if (dh->ev_read) {
+	event_release(dh->ev_read);
+	dh->ev_read = NULL;
+    }
+    aclose(dh->fd_read);
+
+    /* close the stream uncondtionally (XXX what if the client was still
+     * sending data?  This doesn't happen in current Amanda services, but it
+     * might..) */
+    if (dh->stream) {
+	g_object_unref(dh->stream);
+	dh->stream = NULL;
+    }
+
+    /* run the state machine to see if we're done */
+    state_machine(as, A_FINISH, NULL);
 }
 
 /*
  * This is a generic relay function that just read data from one of
- * the security_stream_t and passes it up the equivalent process's pipes
+ * the connections and passes it up the equivalent process's pipes
  */
 static void
-process_writenetfd(
-    void *	cookie,
-    void *	buf,
-    ssize_t	size)
+process_stream_to_pipe(
+    gpointer arg,
+    AuthStream *stream,
+    gpointer buf,
+    gsize size)
 {
-    struct datafd_handle *dh;
+    struct datafd_handle *dh = arg;
 
-    assert(cookie != NULL);
-    dh = cookie;
+    g_assert(dh != NULL);
+    g_assert(dh->stream == stream);
 
     if (dh->fd_write <= 0) {
-	dbprintf(_("process_writenetfd: dh->fd_write <= 0\n"));
+	dbprintf(_("process_stream_to_pipe: dh->fd_write <= 0\n"));
     } else if (size > 0) {
 	full_write(dh->fd_write, buf, (size_t)size);
-	security_stream_read(dh->netfd, process_writenetfd, dh);
+	auth_stream_read(dh->stream, process_stream_to_pipe, dh);
     }
     else {
+	amandad_debug(1, "got EOF; closing both sides of fd %d\n",
+			(int)(dh - dh->as->data) + DATA_FD_OFFSET);
+
+	aclose(dh->fd_read);
 	aclose(dh->fd_write);
+
+	if (dh->ev_read) {
+	    event_release(dh->ev_read);
+	    dh->ev_read = NULL;
+	}
+
+	if (dh->stream) {
+	    g_object_unref(dh->stream);
+	    dh->stream = NULL;
+	}
+
+	/* run the state machine to see if we're done */
+	state_machine(dh->as, A_FINISH, NULL);
     }
 }
 
@@ -1545,14 +1483,14 @@ allocstream(
     dh = &as->data[handle - DATA_FD_OFFSET];
 
     /* make sure we're not already using the net handle */
-    if (dh->netfd != NULL)
+    if (dh->stream != NULL)
 	return (-1);
 
-    /* allocate a stream from the security layer and return */
-    dh->netfd = security_stream_server(as->security_handle);
-    if (dh->netfd == NULL) {
-	dbprintf(_("couldn't open stream to server: %s\n"),
-	    security_geterror(as->security_handle));
+    /* allocate a stream from the auth API and return */
+    dh->stream = auth_conn_stream_listen(as->conn);
+    if (dh->stream == NULL) {
+	g_debug("couldn't open stream to server: %s",
+	    auth_conn_error_message(as->conn));
 	return (-1);
     }
 
@@ -1560,7 +1498,7 @@ allocstream(
      * convert the stream into a numeric id that can be sent to the
      * remote end.
      */
-    return (security_stream_id(dh->netfd));
+    return dh->stream->id;
 }
 
 /*
@@ -1568,10 +1506,10 @@ allocstream(
  */
 static struct active_service *
 service_new(
-    security_handle_t *	security_handle,
-    const char *	cmd,
-    service_t		service,
-    const char *	arguments)
+    AuthConn *conn,
+    const char *cmd,
+    service_t service,
+    const char *arguments)
 {
     int i;
     int data_read[DATA_FD_COUNT + 2][2];
@@ -1582,7 +1520,7 @@ service_new(
     char *peer_name;
     char *amanda_remote_host_env[2];
 
-    assert(security_handle != NULL);
+    assert(conn != NULL);
     assert(cmd != NULL);
     assert(arguments != NULL);
 
@@ -1620,7 +1558,7 @@ service_new(
 	as = g_new0(struct active_service, 1);
 	as->cmd = g_strdup(cmd);
 	as->arguments = g_strdup(arguments);
-	as->security_handle = security_handle;
+	as->conn = conn;
 	as->state = NULL;
 	as->service = service;
 	as->pid = pid;
@@ -1670,7 +1608,7 @@ service_new(
 
 	/*
 	 * read from the rest of the general-use pipes
-	 * (netfds are opened as the client requests them)
+	 * (streams are opened as the client requests them)
 	 */
 	for (i = 0; i < DATA_FD_COUNT; i++) {
 	    aclose(data_read[i + 1][1]);
@@ -1678,14 +1616,15 @@ service_new(
 	    as->data[i].fd_read = data_read[i + 1][0];
 	    as->data[i].fd_write = data_write[i + 1][1];
 	    as->data[i].ev_read = NULL;
-	    as->data[i].ev_write = NULL;
-	    as->data[i].netfd = NULL;
+	    as->data[i].stream = NULL;
 	    as->data[i].as = as;
 	}
 
 	/* add it to the service queue */
-	/* increment the active service count */
 	serviceq = g_slist_append(serviceq, (gpointer)as);
+
+	/* and stop exiting, if we were planning to */
+	clear_exit_timer();
 
 	return (as);
     case 0:
@@ -1696,7 +1635,7 @@ service_new(
 
 	/* set up the AMANDA_AUTHENTICATED_PEER env var so child services
 	 * can use it to authenticate */
-	peer_name = security_get_authenticated_peer_name(security_handle);
+	peer_name = auth_conn_get_authenticated_peer_name(conn);
 	amanda_remote_host_env[0] = NULL;
 	amanda_remote_host_env[1] = NULL;
 	if (*peer_name) {
@@ -1845,17 +1784,19 @@ service_delete(
 	aclose(dh->fd_read);
 	aclose(dh->fd_write);
 
-	if (dh->netfd != NULL)
-	    security_stream_close(dh->netfd);
+	if (dh->stream != NULL) {
+	    g_object_unref(dh->stream);
+	    dh->stream = NULL;
+	}
 
 	if (dh->ev_read != NULL)
 	    event_release(dh->ev_read);
-	if (dh->ev_write != NULL)
-	    event_release(dh->ev_write);
     }
 
-    if (as->security_handle != NULL)
-	security_close(as->security_handle);
+    /* signal the end of this protocol transaction */
+    if (!auth_conn_sendpkt(amandad_conn, NULL))
+	g_warning("error terminating protocol transaction (ignored): %s",
+		auth_conn_error_message(amandad_conn));
 
     /* try to kill the process; if this fails, then it's already dead and
      * likely some of the other zombie cleanup ate its brains, so we don't
@@ -1883,11 +1824,6 @@ service_delete(
     as->bufsize = as->repbufsize = 0;
     amfree(as->rep_pkt.body);
     amfree(as);
-
-    if(exit_on_qlength == 0 && g_slist_length(serviceq) == 0) {
-	dbclose();
-	exit(0);
-    }
 }
 
 /*
@@ -1920,17 +1856,15 @@ writebuf(
     return -1;
 }
 
-static ssize_t
+static gboolean
 do_sendpkt(
-    security_handle_t *	handle,
-    pkt_t *		pkt)
+    AuthConn *conn,
+    pkt_t *pkt)
 {
-    dbprintf(_("sending %s pkt:\n<<<<<\n%s>>>>>\n"),
+    g_assert(conn != NULL);
+    amandad_debug(1, "sending %s pkt:\n<<<<<\n%s>>>>>\n",
 	pkt_type2str(pkt->type), pkt->body);
-    if (handle)
-	return security_sendpkt(handle, pkt);
-    else
-	return 1;
+    return auth_conn_sendpkt(conn, pkt);
 }
 
 /*
@@ -1950,6 +1884,7 @@ state2str(
 	X(s_processrep),
 	X(s_sendrep),
 	X(s_ackwait),
+	X(s_pipewait),
 #undef X
     };
     int i;
@@ -1991,7 +1926,7 @@ action2str(
 }
 
 static char *
-amandad_get_security_conf(
+amandad_conf_getter(
     char *      string,
     void *      arg)
 {
