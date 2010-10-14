@@ -40,6 +40,9 @@
  * TODO: add a "protocol" object to abstract this?
  */
 
+/* TODO: explicit close methods */
+/* TODO: support half-close on streams */
+
 #ifndef AUTH_H
 #define AUTH_H
 
