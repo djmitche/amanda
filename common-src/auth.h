@@ -38,10 +38,20 @@
  *        don't let connections sit around for > REQ_TIMEOUT/2
  *
  * TODO: add a "protocol" object to abstract this?
+ *
+ * YES: this is important.  Amrecover overlaps multiple services on
+ * the server, so we need to be able to track protocol transactions through
+ * to completion, although half-open-ness is not required.
  */
 
 /* TODO: explicit close methods */
+
 /* TODO: support half-close on streams */
+
+/* TODO: once close/half-close is implemented, recheck refcounting and be more
+ * aggressive about holding refs */
+
+/* TODO: lots more state asserts in auth-compat.c */
 
 #ifndef AUTH_H
 #define AUTH_H
@@ -56,6 +66,7 @@
 
 typedef struct AuthConn AuthConn;
 typedef struct AuthStream AuthStream;
+typedef struct AuthProto AuthProto;
 
 typedef enum {
     AUTH_OK,	    /* operation complete */
@@ -71,11 +82,11 @@ typedef char *(*auth_conf_getter_t)(
     char *param_name,
     gpointer arg);
 
-/* A callback invoked when an connect or listen call is complete (either
- * success, failure, or timeout, as described by STATUS)
+/* A callback invoked when a connect call is complete (either success,
+ * failure, or timeout, as described by STATUS)
  *
  * @param arg: the argument passed along with the callback
- * @param conn: the connection (a new connection when listening)
+ * @param conn: the connection
  * @param status: the status of the operation
  */
 typedef void (*auth_connect_callback_t)(
@@ -83,17 +94,29 @@ typedef void (*auth_connect_callback_t)(
     AuthConn *conn,
     auth_operation_status_t status);
 
+/* A callback invoked when a new protocol transaction begins, or when no
+ * more protocol transactions should be expected (PROTO is NULL)
+ *
+ * @param arg: the argument passed along with the callback
+ * @param conn: the connection
+ * @param proto: the new proto
+ */
+typedef void (*auth_proto_callback_t)(
+    gpointer arg,
+    AuthConn *conn,
+    AuthProto *proto);
+
 /* A callback invoked when a recvpkt operation is complete (either success,
  * failure, or timeout, as described by STATUS).
  *
  * @param arg: the argument passed along with the callback
- * @param conn: the connection
+ * @param proto: the proto for this packet
  * @param pkt: the packet (only set if status is AUTH_OK)
  * @param status: the status of the operation
  */
 typedef void (*auth_recvpkt_callback_t)(
     gpointer arg,
-    AuthConn *conn,
+    AuthProto *proto,
     pkt_t *pkt,
     auth_operation_status_t status);
 
@@ -169,24 +192,24 @@ typedef struct {
 	auth_conf_getter_t conf,
 	gpointer conf_arg);
 
-    /* STATIC METHOD - called by amandad
+    /* STATIC METHOD - called by amandad via auth_listen
      *
-     * This creates the amandad-side AuthConn for an incoming connection.
-     * This method is accessed via auth_listen, below.
+     * This creates and returns the amandad-side AuthConn object, and begins
+     * listening for incoming protocol transactions.
      *
      * Must be implemented in subclasses.
      *
      * @param auth: the authentication name
-     * @param cb: callback made when the connection is accepted
+     * @param cb: callback made for each new proto conversation
      * @param cb_arg: arg to be passed to CB
      * @param conf: configuration getter function
      * @param conf_arg: arg to be passed to CONF
      * @param argc: count of remaining amandad command-line arguments
      * @param argv: remaining args
      */
-    void (*listen)(
+    AuthConn *(*listen)(
 	const char *auth,
-	auth_connect_callback_t cb,
+	auth_proto_callback_t cb,
 	gpointer cb_arg,
 	auth_conf_getter_t conf,
 	gpointer conf_arg,
@@ -240,41 +263,17 @@ typedef struct {
 	AuthConn *conn,
 	char *errmsg);
 
-    /* Protocol Packets */
+    /* Protocol */
 
-    /* Transmit a packet (optionally adding driver-specific metadata to it).
-     * Signal the end of a protocol transaction with a NULL packet.
+    /* Create an outgoing protocol transaction.
      *
      * Must be implemented in subclasses.
      *
-     * @param conn: connection
-     * @param packet: packet to send (remains caller's responsibility to free),
-     *	    or NULL to signal the end of a protocol transaction
-     * @returns TRUE on success, otherwise FALSE.
+     * @param conn: the conncection
+     * @returns: an AuthProto or NULL on error
      */
-    gboolean (*sendpkt)(
-	AuthConn *conn,
-	pkt_t *packet);
-
-    /* Wait for a packet from the connection and call RECVPKT_CB when one
-     * arrives or when the TIMEOUT expires.  In the case of an EOF on an
-     * underlying layer, this will call back with AUTH_OK, but a NULL packet.
-     * Note that not all authentications can detect such an EOF, and also
-     * note that such an EOF is different from the end of a transaction (which
-     * is not indicated in the API).
-     *
-     * Must be implemented in subclasses.
-     *
-     * @param conn: connection
-     * @param recvpkt_cb: callback to invoke for each incoming packet
-     * @param recvpkt_cb_arg: arg to pass to the callback
-     * @param timeout: timeout, in seconds, or 0 for no timeout
-     */
-    void (*recvpkt)(
-	AuthConn *conn,
-	auth_recvpkt_callback_t recvpkt_cb,
-	gpointer recvpkt_cb_arg,
-	int timeout);
+    AuthProto *(*proto_new)(
+	AuthConn *conn);
 
     /* Streams */
 
@@ -318,16 +317,119 @@ void auth_conn_connect(AuthConn *conn, const char *hostname,
 char *auth_conn_get_authenticated_peer_name(AuthConn *conn);
 char *auth_conn_error_message(AuthConn *conn);
 void auth_conn_set_error_message(AuthConn *conn, char *errmsg);
-gboolean auth_conn_sendpkt(AuthConn *conn, pkt_t *packet);
-void auth_conn_recvpkt(AuthConn *conn, auth_recvpkt_callback_t recvpkt_cb,
-	gpointer recvpkt_cb_arg, int timeout);
+AuthProto *auth_conn_proto_new(AuthConn *conn);
 AuthStream *auth_conn_stream_listen(AuthConn *conn);
 AuthStream *auth_conn_stream_connect(AuthConn *conn, int id);
 
 /*********
+ * AuthProto
+ *
+ * A packet-based transaction within an AuthConn
+ */
+
+GType auth_proto_get_type(void);
+#define AUTH_PROTO_TYPE (auth_proto_get_type())
+#define AUTH_PROTO(obj) G_TYPE_CHECK_INSTANCE_CAST((obj), auth_proto_get_type(), AuthProto)
+#define AUTH_PROTO_CONST(obj) G_TYPE_CHECK_INSTANCE_CAST((obj), auth_proto_get_type(), AuthProto const)
+#define AUTH_PROTO_CLASS(klass) G_TYPE_CHECK_CLASS_CAST((klass), auth_proto_get_type(), AuthProtoClass)
+#define IS_AUTH_PROTO(obj) G_TYPE_CHECK_INSTANCE_TYPE((obj), auth_proto_get_type ())
+#define AUTH_PROTO_GET_CLASS(obj) G_TYPE_INSTANCE_GET_CLASS((obj), auth_proto_get_type(), AuthProtoClass)
+
+/*
+ * Main object structure
+ */
+
+struct AuthProto {
+    GObject __parent__;
+
+    /* protected */
+
+    /* the connection housing this proto */
+    AuthConn *conn;
+
+    /* private */
+
+    /* current error message, or NULL if no error has occurred; this is returned
+     * by the default error_message method, and can be set by subclasses if they
+     * are using this method. */
+    char *errmsg;
+};
+
+/*
+ * Class definition
+ */
+
+typedef struct {
+    GObjectClass __parent__;
+
+    /* Finish constructing this object.  In particular, this adds a reference to
+     * the parent connection which will be removed when the proto is closed.
+     *
+     * @param proto: the proto
+     * @param conn: parent connection
+     */
+    void (*construct)(
+	AuthProto *proto,
+	AuthConn *conn);
+
+    /* Returns a (statically allocated) error message string.
+     *
+     * @param proto: the proto
+     * @returns: an error message (never NULL)
+     */
+    char *(*error_message)(
+	AuthProto *proto);
+
+    /* Transmit a packet (optionally adding driver-specific metadata to it).
+     * Signal the end of a protocol transaction with a NULL packet.
+     *
+     * Must be implemented in subclasses.
+     *
+     * @param proto: the proto
+     * @param packet: packet to send (remains caller's responsibility to free),
+     *	    or NULL to signal the end of a protocol transaction
+     *	    TODO: ^^^ change that to an explicit close method
+     * @returns TRUE on success, otherwise FALSE.
+     */
+    gboolean (*sendpkt)(
+	AuthProto *proto,
+	pkt_t *packet);
+
+    /* Wait for a packet in this transaction and call RECVPKT_CB when one
+     * arrives or when the TIMEOUT expires.  Note that it is up to the caller
+     * to know whether to expect a packet or not.
+     *
+     * Must be implemented in subclasses.
+     *
+     * @param proto: the proto
+     * @param recvpkt_cb: callback to invoke for each incoming packet
+     * @param recvpkt_cb_arg: arg to pass to the callback
+     * @param timeout: timeout, in seconds, or 0 for no timeout
+     */
+    void (*recvpkt)(
+	AuthProto *proto,
+	auth_recvpkt_callback_t recvpkt_cb,
+	gpointer recvpkt_cb_arg,
+	int timeout);
+
+} AuthProtoClass;
+
+/*
+ * Method stubs
+ */
+
+void auth_proto_construct(AuthProto *proto, AuthConn *conn);
+gboolean auth_proto_accept(AuthProto *proto);
+char *auth_proto_error_message(AuthProto *proto);
+gboolean auth_proto_sendpkt(AuthProto *proto, pkt_t *packet);
+void auth_proto_recvpkt(AuthProto *proto, auth_recvpkt_callback_t recvpkt_cb,
+	gpointer recvpkt_cb_arg, int timeout);
+
+
+/*********
  * AuthStream
  *
- * An Auth streamection to a remote host
+ * A bidirectional data flow within an AuthConn
  */
 
 GType auth_stream_get_type(void);
@@ -397,11 +499,11 @@ typedef struct {
 
     /* Returns a (statically allocated) error message string.
      *
-     * @param conn: the connection
+     * @param stream: the stream
      * @returns: an error message (never NULL)
      */
     char *(*error_message)(
-	AuthStream *conn);
+	AuthStream *stream);
 
     /* Write a full buffer to a stream, blocking until all bytes are written.
      * Returns FALSE on an error.
@@ -478,7 +580,7 @@ AuthConn *auth_conn_new(const char *auth, auth_conf_getter_t conf, gpointer conf
  * @param argv: remaining args
  */
 void auth_listen(const char *auth,
-	auth_connect_callback_t cb, gpointer cb_arg,
+	auth_proto_callback_t cb, gpointer cb_arg,
 	auth_conf_getter_t conf, gpointer conf_arg,
 	int argc, char **argv);
 

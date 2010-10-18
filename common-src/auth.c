@@ -65,7 +65,8 @@ static char *
 conn_error_message_impl(
     AuthConn *conn)
 {
-    return conn->errmsg;
+    return conn->errmsg?
+	conn->errmsg : "(no error)";
 }
 
 static void
@@ -187,33 +188,15 @@ auth_conn_set_error_message(
     return AUTH_CONN_GET_CLASS(conn)->set_error_message(conn, errmsg);
 }
 
-gboolean
-auth_conn_sendpkt(
-    AuthConn *conn,
-    pkt_t *packet)
+AuthProto *
+auth_conn_proto_new(
+    AuthConn *conn)
 {
     g_assert(conn != NULL);
 
-    AUTH_DEBUG(6, "auth_conn_sendpkt(%p, pkt=%p)", conn, packet);
+    AUTH_DEBUG(6, "auth_conn_proto_new(%p)", conn);
 
-    return AUTH_CONN_GET_CLASS(conn)->sendpkt(conn, packet);
-}
-
-void
-auth_conn_recvpkt(
-    AuthConn *conn,
-    auth_recvpkt_callback_t recvpkt_cb,
-    gpointer recvpkt_cb_arg,
-    int timeout)
-{
-    g_assert(conn != NULL);
-    g_assert(recvpkt_cb != NULL);
-
-    AUTH_DEBUG(6, "auth_conn_recvpkt(%p, cb=%p, arg=%p, timeout=%d)", conn,
-	    recvpkt_cb, recvpkt_cb_arg, timeout);
-
-    return AUTH_CONN_GET_CLASS(conn)->recvpkt(conn, recvpkt_cb,
-		    recvpkt_cb_arg, timeout);
+    return AUTH_CONN_GET_CLASS(conn)->proto_new(conn);
 }
 
 AuthStream *
@@ -237,6 +220,148 @@ auth_conn_stream_connect(
     AUTH_DEBUG(6, "auth_conn_stream_connect(%p, %d)", conn, id);
 
     return AUTH_CONN_GET_CLASS(conn)->stream_connect(conn, id);
+}
+
+/*
+ * AuthProto
+ */
+
+static GObjectClass *parent_proto_class = NULL;
+
+static void
+auth_proto_init(
+    AuthProto *self)
+{
+    self->errmsg = g_strdup("(no error)");
+}
+
+static void
+proto_finalize_impl(
+    GObject * obj_self)
+{
+    AuthProto *self = AUTH_PROTO(obj_self);
+
+    if (self->conn) {
+	g_object_unref(self->conn);
+	self->conn = NULL;
+    }
+
+    if (self->errmsg) {
+	g_free(self->errmsg);
+    }
+
+    G_OBJECT_CLASS(parent_proto_class)->finalize(obj_self);
+}
+
+static void
+proto_construct_impl(
+    AuthProto *self,
+    AuthConn *conn)
+{
+    g_object_ref(conn);
+    self->conn = conn;
+}
+
+static char *
+proto_error_message_impl(
+    AuthProto *proto)
+{
+    return proto->errmsg?
+	proto->errmsg : "(no error)";
+}
+
+static void
+auth_proto_class_init(
+    AuthProtoClass * klass)
+{
+    GObjectClass *goc = (GObjectClass*) klass;
+
+    goc->finalize = proto_finalize_impl;
+    klass->error_message = proto_error_message_impl;
+    klass->construct = proto_construct_impl;
+
+    parent_proto_class = g_type_class_peek_parent(goc);
+}
+
+GType
+auth_proto_get_type(void)
+{
+    static GType type = 0;
+
+    if G_UNLIKELY(type == 0) {
+        static const GTypeInfo info = {
+            sizeof (AuthProtoClass),
+            (GBaseInitFunc) NULL,
+            (GBaseFinalizeFunc) NULL,
+            (GClassInitFunc) auth_proto_class_init,
+            (GClassFinalizeFunc) NULL,
+            NULL /* class_data */,
+            sizeof (AuthProto),
+            0 /* n_preallocs */,
+            (GInstanceInitFunc) auth_proto_init,
+            NULL
+        };
+
+        type = g_type_register_static (G_TYPE_OBJECT, "AuthProto", &info,
+                                       (GTypeFlags)G_TYPE_FLAG_ABSTRACT);
+    }
+
+    return type;
+}
+
+/* method stubs */
+
+void
+auth_proto_construct(
+    AuthProto *proto,
+    AuthConn *conn)
+{
+    g_assert(proto != NULL);
+    g_assert(conn != NULL);
+
+    AUTH_DEBUG(6, "auth_proto_construct(%p, %p)", proto, conn);
+
+    return AUTH_PROTO_GET_CLASS(proto)->construct(proto, conn);
+}
+
+char *
+auth_proto_error_message(
+    AuthProto *proto)
+{
+    g_assert(proto != NULL);
+
+    AUTH_DEBUG(6, "auth_proto_error_message(%p)", proto);
+
+    return AUTH_PROTO_GET_CLASS(proto)->error_message(proto);
+}
+
+gboolean
+auth_proto_sendpkt(
+    AuthProto *proto,
+    pkt_t *packet)
+{
+    g_assert(proto != NULL);
+
+    AUTH_DEBUG(6, "auth_proto_sendpkt(%p, pkt=%p)", proto, packet);
+
+    return AUTH_PROTO_GET_CLASS(proto)->sendpkt(proto, packet);
+}
+
+void
+auth_proto_recvpkt(
+    AuthProto *proto,
+    auth_recvpkt_callback_t recvpkt_cb,
+    gpointer recvpkt_cb_arg,
+    int timeout)
+{
+    g_assert(proto != NULL);
+    g_assert(recvpkt_cb != NULL);
+
+    AUTH_DEBUG(6, "auth_proto_recvpkt(%p, cb=%p, arg=%p, timeout=%d)", proto,
+	    recvpkt_cb, recvpkt_cb_arg, timeout);
+
+    return AUTH_PROTO_GET_CLASS(proto)->recvpkt(proto, recvpkt_cb,
+		    recvpkt_cb_arg, timeout);
 }
 
 /*
@@ -283,7 +408,8 @@ static char *
 stream_error_message_impl(
     AuthStream *stream)
 {
-    return stream->errmsg;
+    return stream->errmsg?
+	stream->errmsg : "(no error)";
 }
 
 static void
@@ -468,7 +594,7 @@ auth_conn_new(
 void
 auth_listen(
     const char *auth,
-    auth_connect_callback_t cb,
+    auth_proto_callback_t cb,
     gpointer cb_arg,
     auth_conf_getter_t conf,
     gpointer conf_arg,
