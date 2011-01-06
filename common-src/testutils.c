@@ -39,23 +39,67 @@ alarm_hdlr(int sig G_GNUC_UNUSED)
 
 /*
  * Run a single test, accouting for the timeout (if timeouts are not ignored)
+ * and output runtime information (in milliseconds) at the end of the run.
+ * Output avg/min/max only if the number of runs is strictly greater than one.
  */
 
 static gboolean run_one_test(TestUtilsTest *test)
 {
     guint64 count = 0;
     gboolean ret = TRUE;
+    const char *test_name = test->name;
+    GTimer *timer;
+
+    /*
+     * A GTimer returns a gdouble to report elapsed time. We instead select to
+     * store the number of milliseconds in bigger, non decimal integers, in
+     * particular since using gdouble as an accumulator for a large number of
+     * runs may overflow, and also because manipulating integer types is easier
+     * anyway. And a guint64 contains enough milliseconds for a lifetime.
+     */
+
+    gdouble elapsed;
+    guint64 ms_total = 0, ms_thisrun, ms_min = G_MAXUINT64, ms_max = 0;
 
     signal(SIGALRM, alarm_hdlr);
+
+    timer = g_timer_new();
 
     while (count++ < occurrences) {
         if (!ignore_timeouts)
             alarm(test->timeout);
 
+        g_timer_start(timer);
         ret = test->fn();
+        g_timer_stop(timer);
+
+        elapsed = g_timer_elapsed(timer, NULL);
+        ms_thisrun = (guint64) (elapsed * 1000);
+        ms_total += ms_thisrun;
+        if (ms_min > ms_thisrun)
+            ms_min = ms_thisrun;
+        if (ms_max < ms_thisrun)
+            ms_max = ms_thisrun;
+
         if (!ret)
             break;
     }
+
+    g_timer_destroy(timer);
+
+    if (ret) {
+        g_fprintf(stderr, " PASS %s (total: %lu.%03lu", test_name,
+            ms_total / 1000, ms_total % 1000);
+        if (occurrences > 1) {
+            ms_total /= occurrences;
+            g_fprintf(stderr, ", avg/min/max: %lu.%03lu/%lu.%03lu/%lu.%03lu",
+                ms_total / 1000, ms_total % 1000, ms_min / 1000, ms_min % 1000,
+                ms_max / 1000, ms_max % 1000);
+        }
+        g_fprintf(stderr, ")\n");
+    } else
+        g_fprintf(stderr, " FAIL %s (run %lu of %lu, after %lu.%03lu secs)\n",
+            test_name, count, occurrences, ms_total / 1000, ms_total % 1000);
 
     return ret;
 }
@@ -90,12 +134,6 @@ callinfork(TestUtilsTest *test)
 		result = status == 0;
 		break;
 	}
-    }
-
-    if (result) {
-	g_fprintf(stderr, " PASS %s\n", test->name);
-    } else {
-	g_fprintf(stderr, " FAIL %s\n", test->name);
     }
 
     return result;
