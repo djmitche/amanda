@@ -574,35 +574,81 @@ static gboolean glob_is_separator_only(const char *glob, char sep) {
     }
 }
 
+/*
+ * Given a word and a separator as an argument, wrap the word with separators -
+ * if need be. For instance, if '/' is the separator, the rules are:
+ *
+ * - "" -> "/"
+ * - "/" -> "//"
+ * - "//" -> left alone
+ * - "/xxx" -> "/xxx/"
+ * - "xxx/" -> "/xxx/"
+ * - "/xxx/" -> left alone
+ *
+ * (note that xxx here may contain the separator as well)
+ *
+ * Note that the returned string is dynamically allocated: it is up to the
+ * caller to free it. Note also that the first argument MUST NOT BE NULL.
+ */
+
+static char *wrap_word(const char *word, const char sep)
+{
+    size_t len = strlen(word);
+    char *result, *p;
+    gboolean first_is_sep, last_is_sep;
+
+    /*
+     * Pathological values, which can be computed when entering the function.
+     */
+    const char *single_sep = (const char[]) { sep, 0 },
+        *double_sep = (const char[]) { sep, sep, 0 },
+        *sep_word_sep = (const char[]) { sep, *word, sep, 0 };
+
+    if (len == 0)
+        return g_strdup(single_sep);
+
+    if (len == 1) {
+        if (*word == sep)
+            return g_strdup(double_sep);
+        return g_strdup(sep_word_sep);
+    }
+
+    /*
+     * OK, we're done with pathological cases. If we are here, we know that the
+     * length of our needle is 2 or more. All we need to do is to allocate
+     * enough space for the result, to which we will prepend/append the
+     * separator if need be (don't prepend/append if there is already a
+     * separator at the beginning/end). The worst case allocation wastes two
+     * bytes, we can afford that... (yes, 3 is written below, but we must
+     * account for the final 0)
+     */
+
+    result = g_malloc(len + 3);
+    p = result;
+
+    first_is_sep = (word[0] == sep);
+    last_is_sep = (word[len - 1] == sep);
+
+    if (!first_is_sep)
+        *p++ = sep;
+
+    p = g_stpcpy(p, word);
+
+    if (!last_is_sep)
+        *p++ = sep;
+
+    *p = '\0';
+    return result;
+}
+
 static int match_word(const char *glob, const char *word, const char separator)
 {
     char *regex;
     char *dst;
     size_t  len;
-    size_t  lenword;
-    char *nword;
+    char *wrapped_word = wrap_word(word, separator);
     char *nglob;
-    const char *src;
     int ret;
-
-    lenword = strlen(word);
-    nword = (char *)g_malloc(lenword + 3);
-
-    dst = nword;
-    src = word;
-    if(lenword == 1 && *src == separator) {
-	*dst++ = separator;
-	*dst++ = separator;
-    } else {
-	if(*src != separator)
-	    *dst++ = separator;
-	while(*src != '\0')
-	    *dst++ = *src++;
-	if(*(dst-1) != separator)
-	    *dst++ = separator;
-    }
-
-    *dst = '\0';
 
     len = strlen(glob);
     nglob = g_strdup(glob);
@@ -704,9 +750,9 @@ static int match_word(const char *glob, const char *word, const char separator)
         regex = amglob_to_regex(g, begin, end, &table);
     }
 
-    ret = do_match(regex, nword, TRUE);
+    ret = do_match(regex, wrapped_word, TRUE);
 
-    g_free(nword);
+    g_free(wrapped_word);
     g_free(nglob);
     g_free(regex);
 
