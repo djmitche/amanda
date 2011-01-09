@@ -58,10 +58,8 @@
 typedef char regex_errbuf[STR_SIZE];
 
 /*
- * Structure used by amglob_to_regex() to replace particular string positions
- * and/or characters. Its fields are:
- * - begin: what the beginnin of the string should be replaced with;
- * - end: what the end of the string should be replaced with;
+ * Structure used by amglob_to_regex() to expand particular glob characters. Its
+ * fields are:
  * - question_mark: what the question mark ('?') should be replaced with;
  * - star: what the star ('*') should be replaced with;
  * - double_star: what two consecutive stars should be replaced with.
@@ -72,8 +70,6 @@ typedef char regex_errbuf[STR_SIZE];
  */
 
 struct subst_table {
-    const char *begin;
-    const char *end;
     const char *question_mark;
     const char *star;
     const char *double_star;
@@ -84,8 +80,6 @@ struct subst_table {
  */
 
 static struct subst_table glob_subst_stable = {
-    "^", /* begin */
-    "$", /* end */
     "[^/]", /* question_mark */
     "[^/]*", /* star */
     NULL /* double_star */
@@ -98,14 +92,12 @@ static size_t glob_worst_case = 5; /* star */
  */
 
 static struct subst_table tar_subst_stable = {
-    "(^|/)", /* begin */
-    "($|/)", /* end */
     "[^/]", /* question_mark */
     ".*", /* star */
     NULL /* double_star */
 };
 
-static size_t tar_worst_case = 5; /* begin or end */
+static size_t tar_worst_case = 4; /* question_mark */
 
 /*
  * REGEX FUNCTIONS
@@ -317,8 +309,8 @@ char *make_exact_host_expression(const char *host)
  * Turn a glob into a regex.
  */
 
-static char *amglob_to_regex(const char *str, struct subst_table *table,
-    size_t worst_case)
+static char *amglob_to_regex(const char *str, const char *begin,
+    const char *end, struct subst_table *table, size_t worst_case)
 {
     const char *src;
     char *result, *dst;
@@ -341,14 +333,13 @@ static char *amglob_to_regex(const char *str, struct subst_table *table,
      * - final 0.
      */
 
-    result = g_malloc(strlen(table->begin) + strlen(str) * worst_case
-        + strlen(table->end) + 1);
+    result = g_malloc(strlen(begin) + strlen(str) * worst_case + strlen(end) + 1);
 
     /*
      * Start by copying the beginning of the regex...
      */
 
-    dst = g_stpcpy(result, table->begin);
+    dst = g_stpcpy(result, begin);
 
     /*
      * ... Now to the meat of it.
@@ -451,7 +442,7 @@ straight_copy:
      */
 
     if (!in_quote)
-        dst = g_stpcpy(dst, table->end);
+        dst = g_stpcpy(dst, end);
     /*
      * Finalize, return.
      */
@@ -466,7 +457,7 @@ straight_copy:
 
 char *glob_to_regex(const char *glob)
 {
-    return amglob_to_regex(glob, &glob_subst_stable, glob_worst_case);
+    return amglob_to_regex(glob, "^", "$", &glob_subst_stable, glob_worst_case);
 }
 
 int match_glob(const char *glob, const char *str)
@@ -518,7 +509,8 @@ char *validate_glob(const char *glob)
 
 static char *tar_to_regex(const char *glob)
 {
-    return amglob_to_regex(glob, &tar_subst_stable, tar_worst_case);
+    return amglob_to_regex(glob, "(^|/)", "($|/)", &tar_subst_stable,
+        tar_worst_case);
 }
 
 int match_tar(const char *glob, const char *str)
@@ -701,13 +693,11 @@ static int match_word(const char *glob, const char *word, const char separator)
          * Fill in our substitution table and generate the regex
          */
 
-        table.begin = begin;
-        table.end = end;
         table.question_mark = MATCHWORD_QUESTIONMARK_EXPANSION(separator);
         table.star = MATCHWORD_STAR_EXPANSION(separator);
         table.double_star = MATCHWORD_DOUBLESTAR_EXPANSION;
 
-        regex = amglob_to_regex(g, &table, worst_case);
+        regex = amglob_to_regex(g, begin, end, &table, worst_case);
     }
 
     ret = do_match(regex, nword, TRUE);
