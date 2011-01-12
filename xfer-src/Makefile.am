@@ -32,7 +32,8 @@ libamxfer_la_SOURCES = \
 	source-directtcp-listen.c \
 	xfer-element.c \
 	xfer.c \
-	xmsg.c
+	xmsg.c \
+	xbuf_cache.c
 
 libamxfer_la_LDFLAGS = -release $(VERSION)
 libamxfer_la_LIBADD = \
