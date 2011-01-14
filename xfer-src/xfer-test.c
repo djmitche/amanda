@@ -27,6 +27,8 @@
 #include "event.h"
 #include "simpleprng.h"
 #include "sockaddr-util.h"
+#include "xbuf.h"
+#include "xbuf_cache.h"
 
 /* Having tests repeat exactly is an advantage, so we use a hard-coded
  * random seed. */
@@ -403,6 +405,24 @@ source_pull_pull_buffer_impl(
     return buf;
 }
 
+static struct xbuf *source_pull_pull_xbuf_impl(XferElement *elt)
+{
+    XferSourcePull *self = XFER_SOURCE_PULL(elt);
+    struct xbuf *xbuf;
+    size_t bufsiz;
+
+    if (self->nbuffers > TEST_BLOCK_COUNT)
+	return NULL;
+
+    bufsiz = (self->nbuffers != TEST_BLOCK_COUNT)? TEST_BLOCK_SIZE : TEST_BLOCK_EXTRA;
+
+    self->nbuffers++;
+
+    xbuf = xbuf_cache_get(bufsiz);
+    simpleprng_fill_buffer(&self->prng, xbuf->data, bufsiz);
+    return xbuf;
+}
+
 static gboolean
 source_pull_setup_impl(
     XferElement *elt)
@@ -421,10 +441,12 @@ source_pull_class_init(
     XferElementClass *xec = XFER_ELEMENT_CLASS(klass);
     static xfer_element_mech_pair_t mech_pairs[] = {
 	{ XFER_MECH_NONE, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) },
+	{ XFER_MECH_NONE, XFER_MECH_PULL_XBUF, XFER_NROPS(1), XFER_NTHREADS(0) },
 	{ XFER_MECH_NONE, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
     };
 
     xec->pull_buffer = source_pull_pull_buffer_impl;
+    xec->pull_xbuf = source_pull_pull_xbuf_impl;
     xec->setup = source_pull_setup_impl;
     xec->mech_pairs = mech_pairs;
 }
@@ -975,6 +997,7 @@ typedef struct XferDestPush {
 
     char *buf;
     size_t bufpos;
+    struct xbuf *xbuf;
 
     GThread *thread;
     simpleprng_state_t prng;
@@ -1006,6 +1029,24 @@ dest_push_push_buffer_impl(
     self->bufpos += size;
 }
 
+static void dest_push_push_xbuf_impl(XferElement *elt, struct xbuf *xbuf)
+{
+    XferDestPush *self = XFER_DEST_PUSH(elt);
+
+    if (xbuf == NULL) {
+	/* if we're at EOF, verify we got the right bytes */
+	g_assert(self->bufpos == TEST_XFER_SIZE);
+	if (!simpleprng_verify_buffer(&self->prng, self->xbuf->data, TEST_XFER_SIZE))
+	    g_critical("data entering XferDestPush does not match");
+        xbuf_cache_put(self->xbuf);
+	return;
+    }
+
+    g_assert(self->bufpos + xbuf->size <= TEST_XFER_SIZE);
+    memcpy(self->xbuf->data + self->bufpos, xbuf->data, xbuf->size);
+    self->bufpos += xbuf->size;
+}
+
 static gboolean
 dest_push_setup_impl(
     XferElement *elt)
@@ -1013,6 +1054,7 @@ dest_push_setup_impl(
     XferDestPush *self = XFER_DEST_PUSH(elt);
 
     self->buf = g_malloc(TEST_XFER_SIZE);
+    self->xbuf = xbuf_cache_get(TEST_XFER_SIZE);
     simpleprng_seed(&self->prng, RANDOM_SEED);
 
     return TRUE;
@@ -1025,10 +1067,12 @@ dest_push_class_init(
     XferElementClass *xec = XFER_ELEMENT_CLASS(klass);
     static xfer_element_mech_pair_t mech_pairs[] = {
 	{ XFER_MECH_PUSH_BUFFER, XFER_MECH_NONE, XFER_NROPS(1), XFER_NTHREADS(0) },
+	{ XFER_MECH_PUSH_XBUF, XFER_MECH_NONE, XFER_NROPS(1), XFER_NTHREADS(0) },
 	{ XFER_MECH_NONE, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
     };
 
     xec->push_buffer = dest_push_push_buffer_impl;
+    xec->push_xbuf = dest_push_push_xbuf_impl;
     xec->setup = dest_push_setup_impl;
     xec->mech_pairs = mech_pairs;
 }

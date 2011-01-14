@@ -54,6 +54,14 @@ typedef enum {
      * a buffer.  EOF is indicated by passing a NULL buffer. */
     XFER_MECH_PUSH_BUFFER,
 
+    /* downstream element will call elt->upstream->pull_xbuf() to
+     * pull an xbuf. EOF is indicated by returning NULL. */
+    XFER_MECH_PULL_XBUF,
+
+    /* upstream element will call elt->downstream->push_xbuf(xbuf) to push
+     * an xbuf. EOF is indicated by passing a NULL xbuf. */
+    XFER_MECH_PUSH_XBUF,
+
     /* DirectTCP: downstream sends an array of IP:PORT addresses to which a TCP
      * connection should be made, then upstream connects to one of the addreses
      * and sends the data over that connection */
@@ -262,6 +270,15 @@ typedef struct {
      */
     gpointer (*pull_buffer)(XferElement *elt, size_t *size);
 
+    /*
+     * Like pull_buffer(), but for xbufs. No need to pass the size, since it is
+     * built into the xbuf.
+     *
+     * @param elt: the XferElement
+     * @returns: xbuf pointer
+     */
+    struct xbuf *(*pull_xbuf)(XferElement *elt);
+
     /* A buffer full of data is being sent to this element for processing; this
      * function is called by the upstream element under XFER_MECH_PUSH_CALL.
      * It can block indefinitely if the data cannot be processed immediately.
@@ -273,6 +290,15 @@ typedef struct {
      * @param size: size of buffer
      */
     void (*push_buffer)(XferElement *elt, gpointer buf, size_t size);
+
+    /*
+     * Like push_buffer(), buf for xbufs. No need to pass the size, since it is
+     * built into the xbuf.
+     *
+     * @param elt: the XferElement
+     * @param xbuf: the xbuf
+     */
+    void (*push_xbuf)(XferElement *elt, struct xbuf *xbuf);
 
     /* Returns the mech_pairs that this element supports.  The default
      * implementation just returns the class attribute 'mech_pairs', but
