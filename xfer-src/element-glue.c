@@ -26,6 +26,7 @@
 #include "util.h"
 #include "sockaddr-util.h"
 #include "debug.h"
+#include "xbuf.h"
 
 /*
  * Instance definition
@@ -355,9 +356,9 @@ static void
 read_and_write(XferElementGlue *self)
 {
     XferElement *elt = XFER_ELEMENT(self);
-    /* dynamically allocate a buffer, in case this thread has
+    /* Grab an xbuf, in case this thread has
      * a limited amount of stack allocated */
-    char *buf = g_malloc(GLUE_BUFFER_SIZE);
+    struct xbuf *xbuf = xbuf_cache_get(GLUE_BUFFER_SIZE);
     int rfd = get_read_fd(self);
     int wfd = get_write_fd(self);
 
@@ -365,7 +366,7 @@ read_and_write(XferElementGlue *self)
 	size_t len;
 
 	/* read from upstream */
-	len = full_read(rfd, buf, GLUE_BUFFER_SIZE);
+	len = full_read(rfd, xbuf->data, GLUE_BUFFER_SIZE);
 	if (len < GLUE_BUFFER_SIZE) {
 	    if (errno) {
 		if (!elt->cancelled) {
@@ -380,7 +381,7 @@ read_and_write(XferElementGlue *self)
 	}
 
 	/* write the buffer fully */
-	if (full_write(wfd, buf, len) < len) {
+	if (full_write(wfd, xbuf->data, len) < len) {
 	    if (!elt->cancelled) {
 		xfer_cancel_with_error(elt,
 		    _("Could not write to fd %d: %s"), wfd, strerror(errno));
@@ -400,7 +401,7 @@ read_and_write(XferElementGlue *self)
     /* close the fd we've been writing, as an EOF signal to downstream */
     close_write_fd(self);
 
-    amfree(buf);
+    xbuf_cache_put(xbuf);
 }
 
 static void

@@ -282,17 +282,21 @@ xfer_element_drain_buffers(
     }
 }
 
+#define DRAIN_FD_BUFSZ 4096
+
 void
 xfer_element_drain_fd(
     int fd)
 {
     size_t len;
-    char buf[1024];
+    struct xbuf *xbuf = xbuf_cache_get(DRAIN_FD_BUFSZ);
 
     while (1) {
-	len = full_read(fd, buf, sizeof(buf));
-	if (len < sizeof(buf))
-	    return;
+	len = full_read(fd, xbuf->data, DRAIN_FD_BUFSZ);
+	if (len < DRAIN_FD_BUFSZ)
+            break;
     }
+
+    xbuf_cache_put(xbuf);
 }
 
