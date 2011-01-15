@@ -404,6 +404,63 @@ read_and_write(XferElementGlue *self)
     xbuf_cache_put(xbuf);
 }
 
+static void read_and_xpush(XferElementGlue *self)
+{
+    XferElement *elt = XFER_ELEMENT(self);
+    int fd = get_read_fd(self);
+
+    while (!elt->cancelled) {
+        struct xbuf *xbuf = xbuf_cache_get(GLUE_BUFFER_SIZE);
+        size_t len;
+
+        /* read a buffer from upstream */
+        len = full_read(fd, xbuf->data, GLUE_BUFFER_SIZE);
+
+        /*
+         * Gnulib's full_read() function has the following semantics: if the
+         * returned size is the requested size, this means the read was
+         * successful. Any other value means there may be an error, so we must
+         * check errno. No error and a 0 retcode means EOF.
+         *
+         * Unfortunately, that means it does not return -1 on error like
+         * read(2), so we cannot rely on errno if the call succeeds :(
+         */
+
+        if (len == GLUE_BUFFER_SIZE)
+            goto push;
+
+        if (!errno) {
+            if (len == 0)
+                goto out_putxbuf;
+            goto push;
+        }
+
+        if (!elt->cancelled) {
+            char *errstr = strerror(errno);
+            xfer_cancel_with_error(elt, _("Error reading from fd %d: %s"), fd,
+                errstr);
+            g_debug("element-glue: error reading from fd %d: %s", fd, errstr);
+            wait_until_xfer_cancelled(elt->xfer);
+        }
+
+out_putxbuf:
+        xbuf_cache_put(xbuf);
+        break;
+push:
+        xbuf_clamp_size(xbuf, len);
+        xfer_element_push_xbuf(elt->downstream, xbuf);
+    }
+
+    if (elt->cancelled && elt->expect_eof)
+        xfer_element_drain_fd(fd);
+
+    /* send an EOF indication downstream */
+    xfer_element_push_xbuf(elt->downstream, NULL);
+
+    /* close the read fd, since it's at EOF */
+    close_read_fd(self);
+}
+
 static void
 read_and_push(
     XferElementGlue *self)
@@ -489,6 +546,11 @@ worker_thread(
 	read_and_write(self);
 	break;
 
+    case mech_pair(XFER_MECH_READFD, XFER_MECH_PUSH_XBUF):
+    case mech_pair(XFER_MECH_WRITEFD, XFER_MECH_PUSH_XBUF):
+        read_and_xpush(self);
+        break;
+
     case mech_pair(XFER_MECH_READFD, XFER_MECH_PUSH_BUFFER):
     case mech_pair(XFER_MECH_WRITEFD, XFER_MECH_PUSH_BUFFER):
 	read_and_push(self);
@@ -527,6 +589,14 @@ worker_thread(
 	self->read_fdp = &self->input_data_socket;
 	read_and_write(self);
 	break;
+
+    case mech_pair(XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PUSH_XBUF):
+        if ((self->input_data_socket = do_directtcp_accept(self,
+            &self->input_listen_socket)) == -1)
+            break;
+        self->read_fdp = &self->input_data_socket;
+        read_and_xpush(self);
+        break;
 
     case mech_pair(XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PUSH_BUFFER):
 	if ((self->input_data_socket = do_directtcp_accept(self,
@@ -567,6 +637,14 @@ worker_thread(
 	self->read_fdp = &self->input_data_socket;
 	read_and_write(self);
 	break;
+
+    case mech_pair(XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PUSH_XBUF):
+        if ((self->input_data_socket = do_directtcp_connect(self,
+            elt->upstream->output_listen_addrs)) == -1)
+            break;
+        self->read_fdp = &self->input_data_socket;
+        read_and_xpush(self);
+        break;
 
     case mech_pair(XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PUSH_BUFFER):
 	if ((self->input_data_socket = do_directtcp_connect(self,
@@ -647,6 +725,7 @@ setup_impl(
 	self->need_thread = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_READFD, XFER_MECH_PUSH_XBUF):
     case mech_pair(XFER_MECH_READFD, XFER_MECH_PUSH_BUFFER):
 	/* thread will read from one fd and call push_buffer downstream */
 	self->read_fdp = &neighboring_element_fd;
@@ -680,6 +759,7 @@ setup_impl(
 	self->pipe[0] = -1; /* downstream will close this for us */
 	break;
 
+    case mech_pair(XFER_MECH_WRITEFD, XFER_MECH_PUSH_XBUF):
     case mech_pair(XFER_MECH_WRITEFD, XFER_MECH_PUSH_BUFFER):
 	/* thread will read from pipe and call downstream's push_buffer */
 	make_pipe(self);
@@ -795,6 +875,7 @@ setup_impl(
 	need_listen_input = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PUSH_XBUF):
     case mech_pair(XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PUSH_BUFFER):
 	/* thread will accept for input, then read from socket and push downstream */
 	self->need_thread = TRUE;
@@ -829,6 +910,7 @@ setup_impl(
 	self->need_thread = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PUSH_XBUF):
     case mech_pair(XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PUSH_BUFFER):
 	/* thread will connect for input, then read from socket and push downstream */
 	self->need_thread = TRUE;
@@ -1432,12 +1514,14 @@ finalize_impl(
 
 static xfer_element_mech_pair_t _pairs[] = {
     { XFER_MECH_READFD, XFER_MECH_WRITEFD, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy */
+    { XFER_MECH_READFD, XFER_MECH_PUSH_XBUF, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
     { XFER_MECH_READFD, XFER_MECH_PUSH_BUFFER, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
     { XFER_MECH_READFD, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) }, /* read on demand */
     { XFER_MECH_READFD, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy */
     { XFER_MECH_READFD, XFER_MECH_DIRECTTCP_CONNECT, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy */
 
     { XFER_MECH_WRITEFD, XFER_MECH_READFD, XFER_NROPS(0), XFER_NTHREADS(0) }, /* pipe */
+    { XFER_MECH_WRITEFD, XFER_MECH_PUSH_XBUF, XFER_NROPS(1), XFER_NTHREADS(1) }, /* pipe + read and call*/
     { XFER_MECH_WRITEFD, XFER_MECH_PUSH_BUFFER, XFER_NROPS(1), XFER_NTHREADS(1) }, /* pipe + read and call*/
     { XFER_MECH_WRITEFD, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) }, /* pipe + read on demand */
     { XFER_MECH_WRITEFD, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(2), XFER_NTHREADS(1) }, /* pipe + splice or copy*/
@@ -1459,12 +1543,14 @@ static xfer_element_mech_pair_t _pairs[] = {
 
     { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_READFD, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy + pipe */
     { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_WRITEFD, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy */
+    { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PUSH_XBUF, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
     { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PUSH_BUFFER, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
     { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) }, /* read on demand */
     { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_DIRECTTCP_CONNECT, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy */
 
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_READFD, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy + pipe */
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_WRITEFD, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy + pipe */
+    { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PUSH_XBUF, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PUSH_BUFFER, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) }, /* read on demand */
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy  */
