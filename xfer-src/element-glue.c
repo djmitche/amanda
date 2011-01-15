@@ -314,6 +314,54 @@ close_write_fd(XferElementGlue *self)
  * Worker thread utility functions
  */
 
+static void xpull_and_write(XferElementGlue *self)
+{
+    XferElement *elt = XFER_ELEMENT(self);
+    int fd = get_write_fd(self);
+    struct xbuf *xbuf;
+    size_t len, written;
+
+    self->write_fdp = NULL;
+
+    while (!elt->cancelled) {
+        /* Pull an xbuf from upstream */
+        xbuf = xfer_element_pull_xbuf(elt->upstream);
+
+        if (!xbuf)
+            break;
+
+        len = xbuf->size;
+
+        /* write it */
+        written = full_write(fd, xbuf->data, len);
+
+        xbuf_cache_put(xbuf);
+
+        /*
+         * Remember that any return value from full_write() which is different
+         * than the requested size indicates an error.
+         */
+
+        if (written == len)
+            continue;
+
+        if (!elt->cancelled) {
+            xfer_cancel_with_error(elt, _("Error writing to fd %d: %s"),
+                fd, strerror(errno));
+            wait_until_xfer_cancelled(elt->xfer);
+        }
+
+        break;
+    }
+
+    if (elt->cancelled && elt->expect_eof)
+        xfer_element_drain_xbufs(elt->upstream);
+
+    /* close the fd we've been writing, as an EOF signal to downstream, and
+     * set it to -1 to avoid accidental re-use */
+    close_write_fd(self);
+}
+
 static void
 pull_and_write(XferElementGlue *self)
 {
@@ -556,6 +604,11 @@ worker_thread(
 	read_and_push(self);
 	break;
 
+    case mech_pair(XFER_MECH_PULL_XBUF, XFER_MECH_READFD):
+    case mech_pair(XFER_MECH_PULL_XBUF, XFER_MECH_WRITEFD):
+        xpull_and_write(self);
+        break;
+
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_READFD):
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_WRITEFD):
 	pull_and_write(self);
@@ -573,6 +626,14 @@ worker_thread(
 	self->write_fdp = &self->output_data_socket;
 	read_and_write(self);
 	break;
+
+    case mech_pair(XFER_MECH_PULL_XBUF, XFER_MECH_DIRECTTCP_LISTEN):
+        if ((self->output_data_socket = do_directtcp_connect(self,
+            elt->downstream->input_listen_addrs)) == -1)
+            break;
+        self->write_fdp = &self->output_data_socket;
+        xpull_and_write(self);
+        break;
 
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_DIRECTTCP_LISTEN):
 	if ((self->output_data_socket = do_directtcp_connect(self,
@@ -653,6 +714,14 @@ worker_thread(
 	self->read_fdp = &self->input_data_socket;
 	read_and_push(self);
 	break;
+
+    case mech_pair(XFER_MECH_PULL_XBUF, XFER_MECH_DIRECTTCP_CONNECT):
+        if ((self->output_data_socket = do_directtcp_accept(self,
+            &self->output_listen_socket)) == -1)
+            break;
+        self->write_fdp = &self->output_data_socket;
+        xpull_and_write(self);
+        break;
 
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_DIRECTTCP_CONNECT):
 	if ((self->output_data_socket = do_directtcp_accept(self,
@@ -827,6 +896,7 @@ setup_impl(
 	need_listen_output = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_PULL_XBUF, XFER_MECH_READFD):
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_READFD):
 	/* thread will pull from upstream and write to pipe */
 	make_pipe(self);
@@ -836,6 +906,7 @@ setup_impl(
 	self->need_thread = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_PULL_XBUF, XFER_MECH_WRITEFD):
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_WRITEFD):
 	/* thread will pull from upstream and write to downstream */
 	self->write_fdp = &neighboring_element_fd;
@@ -847,11 +918,13 @@ setup_impl(
 	self->need_thread = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_PULL_XBUF, XFER_MECH_DIRECTTCP_LISTEN):
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_DIRECTTCP_LISTEN):
 	/* thread will connect for output, then pull from upstream and write to socket */
 	self->need_thread = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_PULL_XBUF, XFER_MECH_DIRECTTCP_CONNECT):
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_DIRECTTCP_CONNECT):
 	/* thread will accept for output, then pull from upstream and write to socket */
 	self->need_thread = TRUE;
@@ -1534,6 +1607,11 @@ static xfer_element_mech_pair_t _pairs[] = {
     { XFER_MECH_PUSH_BUFFER, XFER_MECH_PULL_BUFFER, XFER_NROPS(0), XFER_NTHREADS(0) }, /* async queue */
     { XFER_MECH_PUSH_BUFFER, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand */
     { XFER_MECH_PUSH_BUFFER, XFER_MECH_DIRECTTCP_CONNECT, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand */
+
+    { XFER_MECH_PULL_XBUF, XFER_MECH_READFD, XFER_NROPS(1), XFER_NTHREADS(1) }, /* call and write + pipe */
+    { XFER_MECH_PULL_XBUF, XFER_MECH_WRITEFD, XFER_NROPS(1), XFER_NTHREADS(1) }, /* call and write */
+    { XFER_MECH_PULL_XBUF, XFER_MECH_DIRECTTCP_CONNECT, XFER_NROPS(1), XFER_NTHREADS(1) }, /* call and write */
+    { XFER_MECH_PULL_XBUF, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(1), XFER_NTHREADS(1) }, /* call and write */
 
     { XFER_MECH_PULL_BUFFER, XFER_MECH_READFD, XFER_NROPS(1), XFER_NTHREADS(1) }, /* call and write + pipe */
     { XFER_MECH_PULL_BUFFER, XFER_MECH_WRITEFD, XFER_NROPS(1), XFER_NTHREADS(1) }, /* call and write */
