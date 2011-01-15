@@ -127,6 +127,50 @@ push_buffer_impl(
     xfer_element_push_buffer(XFER_ELEMENT(self)->downstream, buf, len);
 }
 
+static struct xbuf *
+pull_xbuf_impl(
+    XferElement *elt)
+{
+    XferFilterXor *self = (XferFilterXor *)elt;
+    struct xbuf *xbuf;
+
+    if (elt->cancelled) {
+	/* drain our upstream only if we're expecting an EOF */
+	if (elt->expect_eof) {
+	    xfer_element_drain_xbufs(XFER_ELEMENT(self)->upstream);
+	}
+
+	/* return an EOF */
+	return NULL;
+    }
+
+    /* get a buffer from upstream, xor it, and hand it back */
+    xbuf = xfer_element_pull_xbuf(XFER_ELEMENT(self)->upstream);
+    if (xbuf)
+	apply_xor(xbuf->data, xbuf->size, self->xor_key);
+    return xbuf;
+}
+
+static void
+push_xbuf_impl(
+    XferElement *elt,
+    struct xbuf *xbuf)
+{
+    XferFilterXor *self = (XferFilterXor *)elt;
+
+    /* drop the buffer if we've been cancelled */
+    if (elt->cancelled) {
+	xbuf_cache_put(xbuf);
+	return;
+    }
+
+    /* xor the given buffer and pass it downstream */
+    if (xbuf)
+	apply_xor(xbuf->data, xbuf->size, self->xor_key);
+
+    xfer_element_push_xbuf(XFER_ELEMENT(self)->downstream, xbuf);
+}
+
 static void
 instance_init(
     XferElement *elt)
@@ -140,11 +184,15 @@ class_init(
 {
     XferElementClass *klass = XFER_ELEMENT_CLASS(selfc);
     static xfer_element_mech_pair_t mech_pairs[] = {
+	{ XFER_MECH_PULL_XBUF, XFER_MECH_PULL_XBUF, XFER_NROPS(1), XFER_NTHREADS(0) },
+	{ XFER_MECH_PUSH_XBUF, XFER_MECH_PUSH_XBUF, XFER_NROPS(1), XFER_NTHREADS(0) },
 	{ XFER_MECH_PULL_BUFFER, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) },
 	{ XFER_MECH_PUSH_BUFFER, XFER_MECH_PUSH_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) },
 	{ XFER_MECH_NONE, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
     };
 
+    klass->push_xbuf = push_xbuf_impl;
+    klass->pull_xbuf = pull_xbuf_impl;
     klass->push_buffer = push_buffer_impl;
     klass->pull_buffer = pull_buffer_impl;
 
