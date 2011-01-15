@@ -21,6 +21,7 @@
 
 #include "amanda.h"
 #include "amxfer.h"
+#include "xbuf.h"
 
 /* parent class for XferElement */
 static GObjectClass *parent_class = NULL;
@@ -93,6 +94,16 @@ xfer_element_push_buffer_impl(
 {
 }
 
+static struct xbuf *xfer_element_pull_xbuf_impl(XferElement *elt G_GNUC_UNUSED)
+{
+    return NULL;
+}
+
+static void xfer_element_push_xbuf_impl(XferElement *elt G_GNUC_UNUSED,
+    struct xbuf *xbuf G_GNUC_UNUSED)
+{
+}
+
 static xfer_element_mech_pair_t *
 xfer_element_get_mech_pairs_impl(
     XferElement *elt)
@@ -149,6 +160,8 @@ xfer_element_class_init(
     klass->cancel = xfer_element_cancel_impl;
     klass->pull_buffer = xfer_element_pull_buffer_impl;
     klass->push_buffer = xfer_element_push_buffer_impl;
+    klass->pull_xbuf = xfer_element_pull_xbuf_impl;
+    klass->push_xbuf = xfer_element_push_xbuf_impl;
     klass->get_mech_pairs = xfer_element_get_mech_pairs_impl;
 
     goc->finalize = xfer_element_finalize;
@@ -259,6 +272,25 @@ xfer_element_push_buffer(
     XFER_ELEMENT_GET_CLASS(elt)->push_buffer(elt, buf, size);
 }
 
+void xfer_element_push_xbuf(XferElement *elt, struct xbuf *xbuf)
+{
+    /* There is no race condition with push_xbuf, because downstream
+     * elements are started first. */
+    XFER_ELEMENT_GET_CLASS(elt)->push_xbuf(elt, xbuf);
+}
+
+struct xbuf *xfer_element_pull_xbuf(XferElement *elt)
+{
+    /* Make sure that the xfer is running before calling upstream's
+     * pull_xbuf method; this avoids a race condition where upstream
+     * hasn't finished its xfer_element_start yet, and isn't ready for
+     * a pull */
+    if (elt->xfer->status == XFER_START)
+        wait_until_xfer_running(elt->xfer);
+
+    return XFER_ELEMENT_GET_CLASS(elt)->pull_xbuf(elt);
+}
+
 xfer_element_mech_pair_t *
 xfer_element_get_mech_pairs(
 	XferElement *elt)
@@ -280,6 +312,14 @@ xfer_element_drain_buffers(
     while ((buf =xfer_element_pull_buffer(upstream, &size))) {
 	amfree(buf);
     }
+}
+
+void xfer_element_drain_xbufs(XferElement *upstream)
+{
+    struct xbuf *xbuf;
+
+    while ((xbuf = xfer_element_pull_xbuf(upstream)) != NULL)
+        xbuf_cache_put(xbuf);
 }
 
 #define DRAIN_FD_BUFSZ 4096

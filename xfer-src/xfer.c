@@ -340,6 +340,8 @@ xfer_mech_name(
 	case XFER_MECH_NONE: return "NONE";
 	case XFER_MECH_READFD: return "READFD";
 	case XFER_MECH_WRITEFD: return "WRITEFD";
+	case XFER_MECH_PULL_XBUF: return "PULL_XBUF";
+	case XFER_MECH_PUSH_XBUF: return "PUSH_XBUF";
 	case XFER_MECH_PULL_BUFFER: return "PULL_BUFFER";
 	case XFER_MECH_PUSH_BUFFER: return "PUSH_BUFFER";
 	case XFER_MECH_DIRECTTCP_LISTEN: return "DIRECTTCP_LISTEN";

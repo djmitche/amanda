@@ -30,6 +30,7 @@
 #include "xfer.h"
 #include "amanda.h"
 #include "directtcp.h"
+#include "xbuf.h"
 
 typedef enum {
     /* sources have no input mechanisms and destinations have no output
@@ -53,6 +54,14 @@ typedef enum {
     /* upstream element will call elt->downstream->push_buffer(buf) to push
      * a buffer.  EOF is indicated by passing a NULL buffer. */
     XFER_MECH_PUSH_BUFFER,
+
+    /* downstream element will call elt->upstream->pull_xbuf() to
+     * pull an xbuf. EOF is indicated by returning NULL. */
+    XFER_MECH_PULL_XBUF,
+
+    /* upstream element will call elt->downstream->push_xbuf(xbuf) to push
+     * an xbuf. EOF is indicated by passing a NULL xbuf. */
+    XFER_MECH_PUSH_XBUF,
 
     /* DirectTCP: downstream sends an array of IP:PORT addresses to which a TCP
      * connection should be made, then upstream connects to one of the addreses
@@ -261,6 +270,15 @@ typedef struct {
      */
     gpointer (*pull_buffer)(XferElement *elt, size_t *size);
 
+    /*
+     * Like pull_buffer(), but for xbufs. No need to pass the size, since it is
+     * built into the xbuf.
+     *
+     * @param elt: the XferElement
+     * @returns: xbuf pointer
+     */
+    struct xbuf *(*pull_xbuf)(XferElement *elt);
+
     /* A buffer full of data is being sent to this element for processing; this
      * function is called by the upstream element under XFER_MECH_PUSH_CALL.
      * It can block indefinitely if the data cannot be processed immediately.
@@ -272,6 +290,15 @@ typedef struct {
      * @param size: size of buffer
      */
     void (*push_buffer)(XferElement *elt, gpointer buf, size_t size);
+
+    /*
+     * Like push_buffer(), buf for xbufs. No need to pass the size, since it is
+     * built into the xbuf.
+     *
+     * @param elt: the XferElement
+     * @param xbuf: the xbuf
+     */
+    void (*push_xbuf)(XferElement *elt, struct xbuf *xbuf);
 
     /* Returns the mech_pairs that this element supports.  The default
      * implementation just returns the class attribute 'mech_pairs', but
@@ -309,6 +336,8 @@ gboolean xfer_element_set_size(XferElement *elt, gint64 size);
 gboolean xfer_element_start(XferElement *elt);
 void xfer_element_push_buffer(XferElement *elt, gpointer buf, size_t size);
 gpointer xfer_element_pull_buffer(XferElement *elt, size_t *size);
+void xfer_element_push_xbuf(XferElement *elt, struct xbuf *xbuf);
+struct xbuf *xfer_element_pull_xbuf(XferElement *elt);
 gboolean xfer_element_cancel(XferElement *elt, gboolean expect_eof);
 xfer_element_mech_pair_t *xfer_element_get_mech_pairs(XferElement *elt);
 
@@ -323,6 +352,12 @@ xfer_element_mech_pair_t *xfer_element_get_mech_pairs(XferElement *elt);
  * @param upstream: the element to drain
  */
 void xfer_element_drain_buffers(XferElement *upstream);
+
+/* Drain UPSTREAM by pulling xbufs until EOF
+ *
+ * @param upstream: the element to drain
+ */
+void xfer_element_drain_xbufs(XferElement *upstream);
 
 /* Drain UPSTREAM by reading until EOF.  This does not close
  * the file descriptor.
