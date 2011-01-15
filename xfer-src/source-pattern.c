@@ -131,6 +131,33 @@ static gpointer pull_buffer_impl(XferElement *elt, size_t *size)
     return rval;
 }
 
+static struct xbuf *pull_xbuf_impl(XferElement *elt)
+{
+    XferSourcePattern *self = (XferSourcePattern *)elt;
+    struct xbuf *xbuf;
+    size_t size;
+
+    /* indicate EOF on an cancel */
+    if (elt->cancelled)
+        return NULL;
+
+    size = 10240;
+
+    if (self->limited_length) {
+        if (self->length == 0)
+            return NULL;
+
+        size = MIN(10240, self->length);
+        self->length -= size;
+    }
+
+    xbuf = xbuf_cache_get(size);
+
+    fill_buffer_with_pattern(self, xbuf->data, size);
+
+    return xbuf;
+}
+
 static void
 instance_init(
     XferElement *elt)
@@ -144,11 +171,13 @@ class_init(
 {
     XferElementClass *klass = XFER_ELEMENT_CLASS(selfc);
     static xfer_element_mech_pair_t mech_pairs[] = {
+	{ XFER_MECH_NONE, XFER_MECH_PULL_XBUF, XFER_NROPS(1), XFER_NTHREADS(0) },
 	{ XFER_MECH_NONE, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) },
 	{ XFER_MECH_NONE, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
     };
 
     klass->pull_buffer = pull_buffer_impl;
+    klass->pull_xbuf = pull_xbuf_impl;
 
     klass->perl_class = "Amanda::Xfer::Source::Pattern";
     klass->mech_pairs = mech_pairs;
