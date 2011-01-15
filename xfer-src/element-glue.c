@@ -553,6 +553,33 @@ read_and_push(
     close_read_fd(self);
 }
 
+static void xpull_and_xpush(XferElementGlue *self)
+{
+    XferElement *elt = XFER_ELEMENT(self);
+    gboolean eof_sent = FALSE;
+
+    while (!elt->cancelled) {
+        struct xbuf *xbuf;
+
+        /* get a buffer from upstream */
+        xbuf = xfer_element_pull_xbuf(elt->upstream);
+
+        /* and push it downstream */
+        xfer_element_push_xbuf(elt->downstream, xbuf);
+
+        if (!xbuf) {
+            eof_sent = TRUE;
+            break;
+        }
+    }
+
+    if (elt->cancelled && elt->expect_eof)
+        xfer_element_drain_xbufs(elt->upstream);
+
+    if (!eof_sent)
+        xfer_element_push_xbuf(elt->downstream, NULL);
+}
+
 static void
 pull_and_push(XferElementGlue *self)
 {
@@ -613,6 +640,10 @@ worker_thread(
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_WRITEFD):
 	pull_and_write(self);
 	break;
+
+    case mech_pair(XFER_MECH_PULL_XBUF, XFER_MECH_PUSH_XBUF):
+        xpull_and_xpush(self);
+        break;
 
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_PUSH_BUFFER):
 	pull_and_push(self);
@@ -913,6 +944,7 @@ setup_impl(
 	self->need_thread = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_PULL_XBUF, XFER_MECH_PUSH_XBUF):
     case mech_pair(XFER_MECH_PULL_BUFFER, XFER_MECH_PUSH_BUFFER):
 	/* thread will pull from upstream and push to downstream */
 	self->need_thread = TRUE;
@@ -1610,6 +1642,7 @@ static xfer_element_mech_pair_t _pairs[] = {
 
     { XFER_MECH_PULL_XBUF, XFER_MECH_READFD, XFER_NROPS(1), XFER_NTHREADS(1) }, /* call and write + pipe */
     { XFER_MECH_PULL_XBUF, XFER_MECH_WRITEFD, XFER_NROPS(1), XFER_NTHREADS(1) }, /* call and write */
+    { XFER_MECH_PULL_XBUF, XFER_MECH_PUSH_XBUF, XFER_NROPS(0), XFER_NTHREADS(1) }, /* call and call */
     { XFER_MECH_PULL_XBUF, XFER_MECH_DIRECTTCP_CONNECT, XFER_NROPS(1), XFER_NTHREADS(1) }, /* call and write */
     { XFER_MECH_PULL_XBUF, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(1), XFER_NTHREADS(1) }, /* call and write */
 
