@@ -101,19 +101,18 @@ static void fill_buffer_with_pattern(XferSourcePattern *self, char *buf,
     self->current_offset = offset;
 }
 
-static gpointer
-pull_buffer_impl(
-    XferElement *elt,
-    size_t *size)
+static gpointer pull_buffer_impl(XferElement *elt, size_t *size)
 {
     XferSourcePattern *self = (XferSourcePattern *)elt;
     char *rval;
 
     /* indicate EOF on an cancel */
-    if (elt->cancelled || (self->limited_length && self->length == 0)) {
+    if (elt->cancelled) {
 	*size = 0;
 	return NULL;
     }
+
+    *size = 10240;
 
     if (self->limited_length) {
         if (self->length == 0) {
@@ -123,8 +122,6 @@ pull_buffer_impl(
 
         *size = MIN(10240, self->length);
         self->length -= *size;
-    } else {
-	*size = 10240;
     }
 
     rval = malloc(*size);
