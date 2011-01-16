@@ -23,6 +23,9 @@
  * Author: AMANDA core development group.
  */
 
+#ifndef __AM_FILE_H__
+#define __AM_FILE_H__
+
 extern int    mkpdir(char *file, mode_t mode, uid_t uid, gid_t gid);
 extern int    rmpdir(char *file, char *topdir);
 
@@ -120,3 +123,17 @@ extern int robust_close(int fd);
  * @returns: pointer to statically allocated string
  */
 char *get_original_cwd(void);
+
+/**
+ * Wrap gnulib's full_read() so that it behave like the read(2) syscall, ie
+ * return -1 on failure.
+ *
+ * @param fd: the file descriptor to read from
+ * @param buf: the buffer to write to
+ * @param count: the number of bytes to write into the buffer
+ * @returns: the number of bytes read (0 means EOF), or -1 on failure.
+ */
+
+ssize_t am_full_read(int fd, void *buf, size_t count);
+
+#endif /* __AM_FILE_H__ */

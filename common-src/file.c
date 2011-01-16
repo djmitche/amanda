@@ -792,6 +792,26 @@ get_original_cwd(void)
     return original_cwd;
 }
 
+/**
+ * Wrap gnulib's full_read() so that it behave like the read(2) syscall, ie
+ * return -1 on failure.
+ *
+ * @param fd: the file descriptor to read from
+ * @param buf: the buffer to write to
+ * @param count: the number of bytes to write into the buffer
+ * @returns: the number of bytes read (0 means EOF), or -1 on failure.
+ */
+
+ssize_t am_full_read(int fd, void *buf, size_t count)
+{
+    ssize_t ret = full_read(fd, buf, count);
+
+    if (ret == count)
+        return ret;
+
+    return (errno) ? -1 : ret;
+}
+
 #ifdef TEST
 
 int
