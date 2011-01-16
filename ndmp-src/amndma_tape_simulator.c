@@ -426,7 +426,7 @@ ndmos_tape_read (struct ndm_session *sess,
   char *buf, u_long count, u_long *done_count)
 {
 	struct ndm_tape_agent *	ta = &sess->tape_acb;
-	int			rc;
+	ssize_t			rc;
 	unsigned	nb;
 
 	if (ta->tape_fd < 0) {
@@ -447,7 +447,7 @@ ndmos_tape_read (struct ndm_session *sess,
 
 	nb = count;
 
-	rc = full_read (ta->tape_fd, buf, nb);
+	rc = am_full_read (ta->tape_fd, buf, nb);
 	if (rc < 0) {
 		return NDMP9_IO_ERR;
 	}
