@@ -920,11 +920,13 @@ setup_impl(
 	need_ring = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_PUSH_XBUF, XFER_MECH_DIRECTTCP_LISTEN):
     case mech_pair(XFER_MECH_PUSH_BUFFER, XFER_MECH_DIRECTTCP_LISTEN):
 	/* push will connect for output first */
 	self->on_push = PUSH_TO_FD | PUSH_CONNECT_FIRST;
 	break;
 
+    case mech_pair(XFER_MECH_PUSH_XBUF, XFER_MECH_DIRECTTCP_CONNECT):
     case mech_pair(XFER_MECH_PUSH_BUFFER, XFER_MECH_DIRECTTCP_CONNECT):
 	/* push will accept for output first */
 	self->on_push = PUSH_TO_FD | PUSH_ACCEPT_FIRST;
@@ -991,6 +993,7 @@ setup_impl(
 	need_listen_input = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PULL_XBUF):
     case mech_pair(XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PULL_BUFFER):
 	/* first pull will accept for input, then read from socket */
 	self->on_pull = PULL_FROM_FD | PULL_ACCEPT_FIRST;
@@ -1025,6 +1028,7 @@ setup_impl(
 	self->need_thread = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PULL_XBUF):
     case mech_pair(XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PULL_BUFFER):
 	/* first pull will connect for input, then read from socket */
 	self->on_pull = PULL_FROM_FD | PULL_CONNECT_FIRST;
@@ -1641,6 +1645,8 @@ static xfer_element_mech_pair_t _pairs[] = {
     { XFER_MECH_PUSH_XBUF, XFER_MECH_PULL_XBUF, XFER_NROPS(0), XFER_NTHREADS(0) }, /* async queue */
     { XFER_MECH_PUSH_XBUF, XFER_MECH_READFD, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand + pipe */
     { XFER_MECH_PUSH_XBUF, XFER_MECH_WRITEFD, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand */
+    { XFER_MECH_PUSH_XBUF, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand */
+    { XFER_MECH_PUSH_XBUF, XFER_MECH_DIRECTTCP_CONNECT, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand */
 
     { XFER_MECH_PUSH_BUFFER, XFER_MECH_READFD, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand + pipe */
     { XFER_MECH_PUSH_BUFFER, XFER_MECH_WRITEFD, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand */
@@ -1664,12 +1670,14 @@ static xfer_element_mech_pair_t _pairs[] = {
     { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_WRITEFD, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy */
     { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PUSH_XBUF, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
     { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PUSH_BUFFER, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
+    { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PULL_XBUF, XFER_NROPS(1), XFER_NTHREADS(0) }, /* read on demand */
     { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) }, /* read on demand */
     { XFER_MECH_DIRECTTCP_LISTEN, XFER_MECH_DIRECTTCP_CONNECT, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy */
 
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_READFD, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy + pipe */
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_WRITEFD, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy + pipe */
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PUSH_XBUF, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
+    { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PULL_XBUF, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PUSH_BUFFER, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) }, /* read on demand */
     { XFER_MECH_DIRECTTCP_CONNECT, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy  */
