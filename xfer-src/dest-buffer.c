@@ -118,6 +118,43 @@ push_buffer_impl(
     amfree(buf);
 }
 
+static void push_xbuf_impl(XferElement *elt, struct xbuf *xbuf)
+{
+    XferDestBuffer *self = (XferDestBuffer *)elt;
+    size_t len;
+
+    if (!xbuf)
+	return;
+
+    len = xbuf->size;
+
+    /* make sure this isn't too much data */
+    if (self->max_size && self->len + len > self->max_size) {
+	xfer_cancel_with_error(elt,
+	    _("illegal attempt to transfer more than %zd bytes"), self->max_size);
+	wait_until_xfer_cancelled(elt->xfer);
+	xbuf_cache_put(xbuf);
+	return;
+    }
+
+    /* expand the buffer if necessary */
+    if (self->len + len > self->allocated) {
+	gsize new_size = self->allocated * 2;
+	if (new_size < self->len+len)
+	    new_size = self->len+len;
+	if (self->max_size && new_size > self->max_size)
+	    new_size = self->max_size;
+
+	self->buf = g_realloc(self->buf, new_size);
+	self->allocated = new_size;
+    }
+
+    g_memmove(((guint8 *)self->buf)+self->len, xbuf->data, len);
+    self->len += len;
+
+    xbuf_cache_put(xbuf);
+}
+
 static void
 finalize_impl(
     GObject * obj_self)
@@ -139,11 +176,13 @@ class_init(
     XferElementClass *klass = XFER_ELEMENT_CLASS(selfc);
     GObjectClass *goc = G_OBJECT_CLASS(selfc);
     static xfer_element_mech_pair_t mech_pairs[] = {
+	{ XFER_MECH_PUSH_XBUF, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
 	{ XFER_MECH_PUSH_BUFFER, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
 	{ XFER_MECH_NONE, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
     };
 
     selfc->get = get_impl;
+    klass->push_xbuf = push_xbuf_impl;
     klass->push_buffer = push_buffer_impl;
     goc->finalize = finalize_impl;
 
