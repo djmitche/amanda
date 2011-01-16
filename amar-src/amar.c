@@ -489,7 +489,7 @@ amar_attr_add_data_fd(
     g_assert(!attribute->wrote_eoa);
 
     /* read and write until reaching EOF */
-    while ((size = full_read(fd, buf, MAX_RECORD_DATA_SIZE)) >= 0) {
+    while ((size = am_full_read(fd, buf, MAX_RECORD_DATA_SIZE)) >= 0) {
 	if (!write_record(archive, file->filenum, attribute->attrid,
 			    eoa && (size < MAX_RECORD_DATA_SIZE), buf, size, error))
 	    goto error_exit;
@@ -571,8 +571,8 @@ buf_atleast_(
     handling_params_t *hp,
     gsize atleast)
 {
-    gsize to_read;
-    gsize bytes_read;
+    ssize_t to_read;
+    ssize_t bytes_read;
 
     /* easy case of hp->buf_len >= atleast is taken care of by the macro, below */
 
@@ -610,11 +610,14 @@ buf_atleast_(
     else
 	to_read = hp->buf_size - hp->buf_offset - hp->buf_len;
 
-    bytes_read = full_read(archive->fd,
+    bytes_read = am_full_read(archive->fd,
 			   hp->buf+hp->buf_offset+hp->buf_len,
 			   to_read);
-    if (bytes_read < to_read)
+    if (bytes_read < to_read) {
+        if (bytes_read == -1) /* I/O error! */
+            return FALSE;
 	hp->got_eof = TRUE;
+    }
     hp->just_lseeked = FALSE;
 
     hp->buf_len += bytes_read;
