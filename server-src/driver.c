@@ -3536,7 +3536,7 @@ build_diskspace(
 	    amfree(result);
 	    return NULL;
 	}
-	if ((buflen = full_read(fd, buffer, SIZEOF(buffer))) > 0) {;
+	if ((buflen = am_full_read(fd, buffer, sizeof(buffer))) > 0) {
 		parse_file_header(buffer, &file, buflen);
 	}
 	close(fd);
@@ -3545,7 +3545,7 @@ build_diskspace(
 
     for(j = 0, i=0, ha = holdalloc; ha != NULL; ha = ha->next, j++ ) {
 	if(used[j] != (off_t)0) {
-	    result[i] = alloc(SIZEOF(assignedhd_t));
+	    result[i] = alloc(sizeof(assignedhd_t));
 	    result[i]->disk = ha;
 	    result[i]->reserved = used[j];
 	    result[i]->used = used[j];
