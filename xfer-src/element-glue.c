@@ -729,6 +729,7 @@ setup_impl(
 	self->write_fdp = &neighboring_element_fd;
 	break;
 
+    case mech_pair(XFER_MECH_PUSH_XBUF, XFER_MECH_PULL_XBUF):
     case mech_pair(XFER_MECH_PUSH_BUFFER, XFER_MECH_PULL_BUFFER):
 	self->on_push = PUSH_TO_RING_BUFFER;
 	self->on_pull = PULL_FROM_RING_BUFFER;
@@ -883,6 +884,131 @@ start_impl(
     return self->need_thread;
 }
 
+static struct xbuf *pull_xbuf_impl(XferElement *elt)
+{
+    XferElementGlue *self = XFER_ELEMENT_GLUE(elt);
+    struct xbuf *xbuf;
+    size_t size;
+
+    /* accept first, if required */
+    if (self->on_pull & PULL_ACCEPT_FIRST) {
+	/* don't accept the next time around */
+	self->on_pull &= ~PULL_ACCEPT_FIRST;
+
+	if (elt->cancelled)
+	    return NULL;
+
+	if ((self->input_data_socket = do_directtcp_accept(self,
+	    &self->input_listen_socket)) == -1)
+	    /* do_directtcp_accept already signalled an error; xfer
+	     * is cancelled */
+	    return NULL;
+
+	/* read from this new socket */
+	self->read_fdp = &self->input_data_socket;
+    }
+
+    /* or connect first, if required */
+    if (self->on_pull & PULL_CONNECT_FIRST) {
+	/* don't connect the next time around */
+	self->on_pull &= ~PULL_CONNECT_FIRST;
+
+	if (elt->cancelled)
+	    return NULL;
+
+	if ((self->input_data_socket = do_directtcp_connect(self,
+	    elt->upstream->output_listen_addrs)) == -1)
+	    /* do_directtcp_connect already signalled an error; xfer
+	     * is cancelled */
+	    return NULL;
+
+	/* read from this new socket */
+	self->read_fdp = &self->input_data_socket;
+    }
+
+    switch (self->on_pull) {
+	case PULL_FROM_RING_BUFFER: {
+	    gpointer buf;
+
+	    if (elt->cancelled)
+		/* the finalize method will empty the ring buffer */
+		return NULL;
+
+	    /* make sure there's at least one element available */
+	    semaphore_down(self->ring_used_sem);
+
+	    /* get it */
+	    buf = self->ring[self->ring_tail].buf;
+	    size = self->ring[self->ring_tail].size;
+	    self->ring_tail = (self->ring_tail + 1) % GLUE_RING_BUFFER_SIZE;
+
+	    /* and mark this element as free to be overwritten */
+	    semaphore_up(self->ring_free_sem);
+
+	    xbuf = xbuf_cache_get(size);
+	    memcpy(xbuf->data, buf, size);
+	    return xbuf;
+	}
+
+	case PULL_FROM_FD: {
+	    int fd = get_read_fd(self);
+	    ssize_t len;
+
+
+	    /* if the fd is already closed, it's possible upstream bailed out
+	     * so quickly that we didn't even get a look at the fd */
+	    if (elt->cancelled || fd == -1) {
+		if (fd != -1) {
+		    if (elt->expect_eof)
+			xfer_element_drain_fd(fd);
+
+		    close_read_fd(self);
+		}
+
+		return NULL;
+	    }
+
+	    xbuf = xbuf_cache_get(GLUE_BUFFER_SIZE);
+
+	    /* read from upstream */
+	    len = full_read(fd, xbuf->data, GLUE_BUFFER_SIZE);
+	    if (len < GLUE_BUFFER_SIZE) {
+		if (errno) {
+		    if (!elt->cancelled) {
+			xfer_cancel_with_error(elt,
+			    _("Error reading from fd %d: %s"), fd, strerror(errno));
+			wait_until_xfer_cancelled(elt->xfer);
+		    }
+
+		    /* return an EOF */
+		    len = 0;
+
+		    /* and finish off the upstream */
+		    if (elt->expect_eof) {
+			xfer_element_drain_fd(fd);
+		    }
+		    close_read_fd(self);
+		} else if (len == 0) {
+		    /* EOF */
+		    xbuf_cache_put(xbuf);
+		    xbuf = NULL;
+
+		    /* signal EOF to downstream */
+		    close_read_fd(self);
+		}
+	    }
+
+	    xbuf_clamp_size(xbuf, len);
+	    return xbuf;
+	}
+
+	default:
+	case PULL_INVALID:
+	    g_assert_not_reached();
+	    return NULL;
+    }
+}
+
 static gpointer
 pull_buffer_impl(
     XferElement *elt,
@@ -1018,6 +1144,120 @@ pull_buffer_impl(
 	case PULL_INVALID:
 	    g_assert_not_reached();
 	    return NULL;
+    }
+}
+
+static void push_xbuf_impl(XferElement *elt, struct xbuf *xbuf)
+{
+    XferElementGlue *self = (XferElementGlue *)elt;
+
+    /* accept first, if required */
+    if (self->on_push & PUSH_ACCEPT_FIRST) {
+	/* don't accept the next time around */
+	self->on_push &= ~PUSH_ACCEPT_FIRST;
+
+	if (elt->cancelled) {
+	    return;
+	}
+
+	if ((self->output_data_socket = do_directtcp_accept(self,
+					    &self->output_listen_socket)) == -1) {
+	    /* do_directtcp_accept already signalled an error; xfer
+	     * is cancelled */
+	    return;
+	}
+
+	/* write to this new socket */
+	self->write_fdp = &self->output_data_socket;
+    }
+
+    /* or connect first, if required */
+    if (self->on_push & PUSH_CONNECT_FIRST) {
+	/* don't accept the next time around */
+	self->on_push &= ~PUSH_CONNECT_FIRST;
+
+	if (elt->cancelled) {
+	    return;
+	}
+
+	if ((self->output_data_socket = do_directtcp_connect(self,
+				    elt->downstream->input_listen_addrs)) == -1) {
+	    /* do_directtcp_connect already signalled an error; xfer
+	     * is cancelled */
+	    return;
+	}
+
+	/* read from this new socket */
+	self->write_fdp = &self->output_data_socket;
+    }
+
+    switch (self->on_push) {
+	case PUSH_TO_RING_BUFFER:
+	    /* just drop packets if the transfer has been cancelled */
+	    if (elt->cancelled) {
+		xbuf_cache_put(xbuf);
+		return;
+	    }
+
+	    /* make sure there's at least one element free */
+	    semaphore_down(self->ring_free_sem);
+
+	    /* set it */
+	    self->ring[self->ring_head].buf = xbuf->data;
+	    self->ring[self->ring_head].size = xbuf->size;
+	    self->ring_head = (self->ring_head + 1) % GLUE_RING_BUFFER_SIZE;
+
+	    /* and mark this element as available for reading */
+	    semaphore_up(self->ring_used_sem);
+
+	    return;
+
+	case PUSH_TO_FD: {
+	    int fd = get_write_fd(self);
+
+	    /* if the fd is already closed, it's possible upstream bailed out
+	     * so quickly that we didn't even get a look at the fd.  In this
+	     * case we can assume the xfer has been cancelled and just discard
+	     * the data. */
+	    if (fd == -1)
+		return;
+
+	    if (elt->cancelled) {
+		if (!elt->expect_eof || !xbuf) {
+		    close_write_fd(self);
+
+		    /* hack to ensure we won't close the fd again, if we get another push */
+		    elt->expect_eof = TRUE;
+		}
+
+		xbuf_cache_put(xbuf);
+
+		return;
+	    }
+
+	    /* write the full buffer to the fd, or close on EOF */
+	    if (xbuf) {
+		size_t len = xbuf->size;
+		if (full_write(fd, xbuf->data, len) < len) {
+		    if (!elt->cancelled) {
+			xfer_cancel_with_error(elt,
+			    _("Error writing to fd %d: %s"), fd, strerror(errno));
+			wait_until_xfer_cancelled(elt->xfer);
+		    }
+		    /* nothing special to do to handle a cancellation */
+		}
+		xbuf_cache_put(xbuf);
+	    } else {
+		close_write_fd(self);
+	    }
+
+	    return;
+	}
+
+	default:
+	case PUSH_INVALID:
+	    g_assert_not_reached();
+	    break;
     }
 }
 
@@ -1203,6 +1443,8 @@ static xfer_element_mech_pair_t _pairs[] = {
     { XFER_MECH_WRITEFD, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(2), XFER_NTHREADS(1) }, /* pipe + splice or copy*/
     { XFER_MECH_WRITEFD, XFER_MECH_DIRECTTCP_CONNECT, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy + pipe */
 
+    { XFER_MECH_PUSH_XBUF, XFER_MECH_PULL_XBUF, XFER_NROPS(0), XFER_NTHREADS(0) }, /* async queue */
+
     { XFER_MECH_PUSH_BUFFER, XFER_MECH_READFD, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand + pipe */
     { XFER_MECH_PUSH_BUFFER, XFER_MECH_WRITEFD, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand */
     { XFER_MECH_PUSH_BUFFER, XFER_MECH_PULL_BUFFER, XFER_NROPS(0), XFER_NTHREADS(0) }, /* async queue */
@@ -1241,6 +1483,8 @@ class_init(
 
     klass->setup = setup_impl;
     klass->start = start_impl;
+    klass->push_xbuf = push_xbuf_impl;
+    klass->pull_xbuf = pull_xbuf_impl;
     klass->push_buffer = push_buffer_impl;
     klass->pull_buffer = pull_buffer_impl;
 
