@@ -868,7 +868,7 @@ holding_set_origsize(
 	return;
     }
 
-    buflen = full_read(fd, buffer, SIZEOF(buffer));
+    buflen = am_full_read(fd, buffer, SIZEOF(buffer));
     if (buflen <= 0) {
 	dbprintf(_("holding_set_origsize: %s: empty file?\n"), holding_file);
 	return;
