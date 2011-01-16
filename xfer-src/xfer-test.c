@@ -256,7 +256,7 @@ xfer_source_writefd_get_type (void)
     return type;
 }
 
-/* PUSH_BUFFER */
+/* PUSH_XBUF */
 
 static GType xfer_source_push_get_type(void);
 #define XFER_SOURCE_PUSH_TYPE (xfer_source_push_get_type())
@@ -277,29 +277,25 @@ typedef struct {
     XferElementClass __parent__;
 } XferSourcePushClass;
 
-static gpointer
-source_push_thread(
-    gpointer data)
+static gpointer source_push_thread(gpointer data)
 {
     XferSourcePush *self = XFER_SOURCE_PUSH(data);
-    char *buf;
+    struct xbuf *xbuf;
     int i;
 
     for (i = 0; i < TEST_BLOCK_COUNT; i++) {
-	buf = g_malloc(TEST_BLOCK_SIZE);
-	simpleprng_fill_buffer(&self->prng, buf, TEST_BLOCK_SIZE);
-	xfer_element_push_buffer(XFER_ELEMENT(self)->downstream, buf, TEST_BLOCK_SIZE);
-	buf = NULL;
+	xbuf = xbuf_cache_get(TEST_BLOCK_SIZE);
+	simpleprng_fill_buffer(&self->prng, xbuf->data, TEST_BLOCK_SIZE);
+	xfer_element_push_xbuf(XFER_ELEMENT(self)->downstream, xbuf);
     }
 
     /* send a smaller block */
-    buf = g_malloc(TEST_BLOCK_EXTRA);
-    simpleprng_fill_buffer(&self->prng, buf, TEST_BLOCK_EXTRA);
-    xfer_element_push_buffer(XFER_ELEMENT(self)->downstream, buf, TEST_BLOCK_EXTRA);
-    buf = NULL;
+    xbuf = xbuf_cache_get(TEST_BLOCK_EXTRA);
+    simpleprng_fill_buffer(&self->prng, xbuf->data, TEST_BLOCK_EXTRA);
+    xfer_element_push_xbuf(XFER_ELEMENT(self)->downstream, xbuf);
 
     /* send EOF */
-    xfer_element_push_buffer(XFER_ELEMENT(self)->downstream, NULL, 0);
+    xfer_element_push_xbuf(XFER_ELEMENT(self)->downstream, NULL);
 
     xfer_queue_message(XFER_ELEMENT(self)->xfer, xmsg_new(XFER_ELEMENT(self), XMSG_DONE, 0));
 
@@ -325,7 +321,7 @@ source_push_class_init(
 {
     XferElementClass *xec = XFER_ELEMENT_CLASS(klass);
     static xfer_element_mech_pair_t mech_pairs[] = {
-	{ XFER_MECH_NONE, XFER_MECH_PUSH_BUFFER, XFER_NROPS(1), XFER_NTHREADS(1) },
+	{ XFER_MECH_NONE, XFER_MECH_PUSH_XBUF, XFER_NROPS(1), XFER_NTHREADS(1) },
 	{ XFER_MECH_NONE, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
     };
 
@@ -358,7 +354,7 @@ xfer_source_push_get_type (void)
     return type;
 }
 
-/* PULL_BUFFER */
+/* PULL_XBUF */
 
 static GType xfer_source_pull_get_type(void);
 #define XFER_SOURCE_PULL_TYPE (xfer_source_pull_get_type())
@@ -380,27 +376,22 @@ typedef struct {
     XferElementClass __parent__;
 } XferSourcePullClass;
 
-static gpointer
-source_pull_pull_buffer_impl(
-    XferElement *elt,
-    size_t *size)
+static struct xbuf *source_pull_pull_xbuf_impl(XferElement *elt)
 {
     XferSourcePull *self = XFER_SOURCE_PULL(elt);
-    char *buf;
+    struct xbuf *xbuf;
     size_t bufsiz;
 
-    if (self->nbuffers > TEST_BLOCK_COUNT) {
-	*size = 0;
+    if (self->nbuffers > TEST_BLOCK_COUNT)
 	return NULL;
-    }
+
     bufsiz = (self->nbuffers != TEST_BLOCK_COUNT)? TEST_BLOCK_SIZE : TEST_BLOCK_EXTRA;
 
     self->nbuffers++;
 
-    buf = g_malloc(bufsiz);
-    simpleprng_fill_buffer(&self->prng, buf, bufsiz);
-    *size = bufsiz;
-    return buf;
+    xbuf = xbuf_cache_get(bufsiz);
+    simpleprng_fill_buffer(&self->prng, xbuf->data, bufsiz);
+    return xbuf;
 }
 
 static gboolean
@@ -420,11 +411,11 @@ source_pull_class_init(
 {
     XferElementClass *xec = XFER_ELEMENT_CLASS(klass);
     static xfer_element_mech_pair_t mech_pairs[] = {
-	{ XFER_MECH_NONE, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) },
+	{ XFER_MECH_NONE, XFER_MECH_PULL_XBUF, XFER_NROPS(1), XFER_NTHREADS(0) },
 	{ XFER_MECH_NONE, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
     };
 
-    xec->pull_buffer = source_pull_pull_buffer_impl;
+    xec->pull_xbuf = source_pull_pull_xbuf_impl;
     xec->setup = source_pull_setup_impl;
     xec->mech_pairs = mech_pairs;
 }
@@ -960,7 +951,7 @@ xfer_dest_writefd_get_type (void)
     return type;
 }
 
-/* PUSH_BUFFER */
+/* PUSH_XBUF */
 
 static GType xfer_dest_push_get_type(void);
 #define XFER_DEST_PUSH_TYPE (xfer_dest_push_get_type())
@@ -984,15 +975,12 @@ typedef struct {
     XferElementClass __parent__;
 } XferDestPushClass;
 
-static void
-dest_push_push_buffer_impl(
-    XferElement *elt,
-    gpointer buf,
-    size_t size)
+static void dest_push_push_xbuf_impl(XferElement *elt, struct xbuf *xbuf)
 {
     XferDestPush *self = XFER_DEST_PUSH(elt);
+    size_t size;
 
-    if (buf == NULL) {
+    if (xbuf == NULL) {
 	/* if we're at EOF, verify we got the right bytes */
 	g_assert(self->bufpos == TEST_XFER_SIZE);
 	if (!simpleprng_verify_buffer(&self->prng, self->buf, TEST_XFER_SIZE))
@@ -1001,8 +989,9 @@ dest_push_push_buffer_impl(
 	return;
     }
 
+    size = xbuf->size;
     g_assert(self->bufpos + size <= TEST_XFER_SIZE);
-    memcpy(self->buf + self->bufpos, buf, size);
+    memcpy(self->buf + self->bufpos, xbuf->data, size);
     self->bufpos += size;
 }
 
@@ -1024,11 +1013,11 @@ dest_push_class_init(
 {
     XferElementClass *xec = XFER_ELEMENT_CLASS(klass);
     static xfer_element_mech_pair_t mech_pairs[] = {
-	{ XFER_MECH_PUSH_BUFFER, XFER_MECH_NONE, XFER_NROPS(1), XFER_NTHREADS(0) },
+	{ XFER_MECH_PUSH_XBUF, XFER_MECH_NONE, XFER_NROPS(1), XFER_NTHREADS(0) },
 	{ XFER_MECH_NONE, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
     };
 
-    xec->push_buffer = dest_push_push_buffer_impl;
+    xec->push_xbuf = dest_push_push_xbuf_impl;
     xec->setup = dest_push_setup_impl;
     xec->mech_pairs = mech_pairs;
 }
@@ -1058,7 +1047,7 @@ xfer_dest_push_get_type (void)
     return type;
 }
 
-/* PULL_BUFFER */
+/* PULL_XBUF */
 
 static GType xfer_dest_pull_get_type(void);
 #define XFER_DEST_PULL_TYPE (xfer_dest_pull_get_type())
@@ -1085,13 +1074,14 @@ dest_pull_thread(
 {
     XferDestPull *self = XFER_DEST_PULL(data);
     char fullbuf[TEST_XFER_SIZE];
-    char *buf;
+    struct xbuf *xbuf;
     size_t bufpos = 0;
     size_t size;
 
-    while ((buf = xfer_element_pull_buffer(XFER_ELEMENT(self)->upstream, &size))) {
+    while ((xbuf = xfer_element_pull_xbuf(XFER_ELEMENT(self)->upstream))) {
+	size = xbuf->size;
 	g_assert(bufpos + size <= TEST_XFER_SIZE);
-	memcpy(fullbuf + bufpos, buf, size);
+	memcpy(fullbuf + bufpos, xbuf->data, size);
 	bufpos += size;
     }
 
@@ -1124,7 +1114,7 @@ dest_pull_class_init(
 {
     XferElementClass *xec = XFER_ELEMENT_CLASS(klass);
     static xfer_element_mech_pair_t mech_pairs[] = {
-	{ XFER_MECH_PULL_BUFFER, XFER_MECH_NONE, XFER_NROPS(1), XFER_NTHREADS(1) },
+	{ XFER_MECH_PULL_XBUF, XFER_MECH_NONE, XFER_NROPS(1), XFER_NTHREADS(1) },
 	{ XFER_MECH_NONE, XFER_MECH_NONE, XFER_NROPS(0), XFER_NTHREADS(0) },
     };
 
