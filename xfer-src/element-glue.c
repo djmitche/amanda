@@ -832,6 +832,7 @@ setup_impl(
 	self->need_thread = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_READFD, XFER_MECH_PULL_XBUF):
     case mech_pair(XFER_MECH_READFD, XFER_MECH_PULL_BUFFER):
 	self->read_fdp = &neighboring_element_fd;
 	self->on_pull = PULL_FROM_FD;
@@ -869,6 +870,7 @@ setup_impl(
 	self->need_thread = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_WRITEFD, XFER_MECH_PULL_XBUF):
     case mech_pair(XFER_MECH_WRITEFD, XFER_MECH_PULL_BUFFER):
 	make_pipe(self);
 	g_assert(xfer_element_swap_input_fd(elt, self->pipe[1]) == -1);
@@ -896,6 +898,7 @@ setup_impl(
 	need_listen_output = TRUE;
 	break;
 
+    case mech_pair(XFER_MECH_PUSH_XBUF, XFER_MECH_READFD):
     case mech_pair(XFER_MECH_PUSH_BUFFER, XFER_MECH_READFD):
 	make_pipe(self);
 	g_assert(xfer_element_swap_output_fd(elt, self->pipe[0]) == -1);
@@ -904,6 +907,7 @@ setup_impl(
 	self->write_fdp = &self->pipe[1];
 	break;
 
+    case mech_pair(XFER_MECH_PUSH_XBUF, XFER_MECH_WRITEFD):
     case mech_pair(XFER_MECH_PUSH_BUFFER, XFER_MECH_WRITEFD):
 	self->on_push = PUSH_TO_FD;
 	self->write_fdp = &neighboring_element_fd;
@@ -1621,6 +1625,7 @@ static xfer_element_mech_pair_t _pairs[] = {
     { XFER_MECH_READFD, XFER_MECH_WRITEFD, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy */
     { XFER_MECH_READFD, XFER_MECH_PUSH_XBUF, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
     { XFER_MECH_READFD, XFER_MECH_PUSH_BUFFER, XFER_NROPS(1), XFER_NTHREADS(1) }, /* read and call */
+    { XFER_MECH_READFD, XFER_MECH_PULL_XBUF, XFER_NROPS(1), XFER_NTHREADS(0) }, /* read on demand */
     { XFER_MECH_READFD, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) }, /* read on demand */
     { XFER_MECH_READFD, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy */
     { XFER_MECH_READFD, XFER_MECH_DIRECTTCP_CONNECT, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy */
@@ -1628,11 +1633,14 @@ static xfer_element_mech_pair_t _pairs[] = {
     { XFER_MECH_WRITEFD, XFER_MECH_READFD, XFER_NROPS(0), XFER_NTHREADS(0) }, /* pipe */
     { XFER_MECH_WRITEFD, XFER_MECH_PUSH_XBUF, XFER_NROPS(1), XFER_NTHREADS(1) }, /* pipe + read and call*/
     { XFER_MECH_WRITEFD, XFER_MECH_PUSH_BUFFER, XFER_NROPS(1), XFER_NTHREADS(1) }, /* pipe + read and call*/
+    { XFER_MECH_WRITEFD, XFER_MECH_PULL_XBUF, XFER_NROPS(1), XFER_NTHREADS(0) }, /* pipe + read on demand */
     { XFER_MECH_WRITEFD, XFER_MECH_PULL_BUFFER, XFER_NROPS(1), XFER_NTHREADS(0) }, /* pipe + read on demand */
     { XFER_MECH_WRITEFD, XFER_MECH_DIRECTTCP_LISTEN, XFER_NROPS(2), XFER_NTHREADS(1) }, /* pipe + splice or copy*/
     { XFER_MECH_WRITEFD, XFER_MECH_DIRECTTCP_CONNECT, XFER_NROPS(2), XFER_NTHREADS(1) }, /* splice or copy + pipe */
 
     { XFER_MECH_PUSH_XBUF, XFER_MECH_PULL_XBUF, XFER_NROPS(0), XFER_NTHREADS(0) }, /* async queue */
+    { XFER_MECH_PUSH_XBUF, XFER_MECH_READFD, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand + pipe */
+    { XFER_MECH_PUSH_XBUF, XFER_MECH_WRITEFD, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand */
 
     { XFER_MECH_PUSH_BUFFER, XFER_MECH_READFD, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand + pipe */
     { XFER_MECH_PUSH_BUFFER, XFER_MECH_WRITEFD, XFER_NROPS(1), XFER_NTHREADS(0) }, /* write on demand */
