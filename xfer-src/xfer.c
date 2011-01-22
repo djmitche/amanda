@@ -176,6 +176,39 @@ xfer_repr(
     return xfer->repr;
 }
 
+/**
+ * Set the maximum individual transfer size to be used along the chain. We do
+ * this by picking each XferElement's min_tsize and max_tsize using the
+ * get_blocksize() method; max_lower_bound will hold the maximum value of lower
+ * bounds, min_upper_bound will hold the minimum value of upper bounds. We check
+ * that min_upper_bound is greater than or equal to max_lower_bound. We then
+ * call set_transfersize() on each individual element.
+ *
+ * @param xfer: this Xfer
+ */
+
+static void xfer_set_transfersize(Xfer *xfer)
+{
+    guint i, nr_elements = xfer->elements->len;
+    gsize min_upper_bound = G_MAXUINT, max_lower_bound = 1;
+    gsize lower_bound, upper_bound;
+    XferElement *elt;
+
+    for (i = 0; i < nr_elements; i++) {
+        elt = g_ptr_array_index(xfer->elements, i);
+        xfer_element_get_blocksize(elt, &lower_bound, &upper_bound);
+        min_upper_bound = MIN(min_upper_bound, upper_bound);
+        max_lower_bound = MAX(max_lower_bound, lower_bound);
+    }
+
+    g_assert(min_upper_bound >= max_lower_bound);
+
+    for (i = 0; i < nr_elements; i++) {
+        elt = g_ptr_array_index(xfer->elements, i);
+        xfer_element_set_transfersize(elt, min_upper_bound);
+    }
+}
+
 void
 xfer_start(
     Xfer *xfer,
@@ -236,6 +269,9 @@ xfer_start(
 	    XferElement *xe = (XferElement *)g_ptr_array_index(xfer->elements, 0);
 	    xfer_element_set_size(xe, size);
 	}
+
+        /* Set the maximum transfer size along the chain */
+        xfer_set_transfersize(xfer);
 
 	/* now tell them all to start, in order from destination to source */
 	for (i = xfer->elements->len; i >= 1; i--) {
