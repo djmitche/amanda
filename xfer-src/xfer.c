@@ -187,6 +187,8 @@ xfer_repr(
  * @param xfer: this Xfer
  */
 
+#define XFER_ABSOLUTE_MAX (1 << 24) /* 16 MiB */
+
 static void xfer_set_transfersize(Xfer *xfer)
 {
     guint i, nr_elements = xfer->elements->len;
@@ -202,6 +204,8 @@ static void xfer_set_transfersize(Xfer *xfer)
     }
 
     g_assert(min_upper_bound >= max_lower_bound);
+
+    min_upper_bound = MIN(min_upper_bound, XFER_ABSOLUTE_MAX);
 
     for (i = 0; i < nr_elements; i++) {
         elt = g_ptr_array_index(xfer->elements, i);
