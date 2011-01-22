@@ -250,7 +250,6 @@ cancel_wait:
     return -1;
 }
 
-#define GLUE_BUFFER_SIZE 32768
 #define GLUE_RING_BUFFER_SIZE 32
 
 #define mech_pair(IN,OUT) ((IN)*XFER_MECH_MAX+(OUT))
@@ -363,9 +362,10 @@ static void
 read_and_write(XferElementGlue *self)
 {
     XferElement *elt = XFER_ELEMENT(self);
+    gsize bufsz = elt->tsize;
     /* dynamically allocate a buffer, in case this thread has
      * a limited amount of stack allocated */
-    char *buf = g_malloc(GLUE_BUFFER_SIZE);
+    char *buf = g_malloc(bufsz);
     int rfd = get_read_fd(self);
     int wfd = get_write_fd(self);
 
@@ -373,8 +373,8 @@ read_and_write(XferElementGlue *self)
 	size_t len;
 
 	/* read from upstream */
-	len = full_read(rfd, buf, GLUE_BUFFER_SIZE);
-	if (len < GLUE_BUFFER_SIZE) {
+	len = full_read(rfd, buf, bufsz);
+	if (len < bufsz) {
 	    if (errno) {
 		if (!elt->cancelled) {
 		    xfer_cancel_with_error(elt,
@@ -417,14 +417,15 @@ read_and_push(
 {
     XferElement *elt = XFER_ELEMENT(self);
     int fd = get_read_fd(self);
+    gsize bufsz = elt->tsize;
 
     while (!elt->cancelled) {
-	char *buf = g_malloc(GLUE_BUFFER_SIZE);
+	char *buf = g_malloc(bufsz);
 	size_t len;
 
 	/* read a buffer from upstream */
-	len = full_read(fd, buf, GLUE_BUFFER_SIZE);
-	if (len < GLUE_BUFFER_SIZE) {
+	len = full_read(fd, buf, bufsz);
+	if (len < bufsz) {
 	    if (errno) {
 		if (!elt->cancelled) {
 		    int saved_errno = errno;
@@ -896,6 +897,7 @@ pull_buffer_impl(
     size_t *size)
 {
     XferElementGlue *self = XFER_ELEMENT_GLUE(elt);
+    gsize bufsz = elt->tsize;
 
     /* accept first, if required */
     if (self->on_pull & PULL_ACCEPT_FIRST) {
@@ -966,7 +968,7 @@ pull_buffer_impl(
 	case PULL_FROM_FD: {
 	    int fd = get_read_fd(self);
 	    char *buf;
-	    ssize_t len;
+	    gsize len;
 
 	    /* if the fd is already closed, it's possible upstream bailed out
 	     * so quickly that we didn't even get a look at the fd */
@@ -982,11 +984,11 @@ pull_buffer_impl(
 		return NULL;
 	    }
 
-	    buf = g_malloc(GLUE_BUFFER_SIZE);
+	    buf = g_malloc(bufsz);
 
 	    /* read from upstream */
-	    len = full_read(fd, buf, GLUE_BUFFER_SIZE);
-	    if (len < GLUE_BUFFER_SIZE) {
+	    len = full_read(fd, buf, bufsz);
+	    if (len < bufsz) {
 		if (errno) {
 		    if (!elt->cancelled) {
 			xfer_cancel_with_error(elt,
