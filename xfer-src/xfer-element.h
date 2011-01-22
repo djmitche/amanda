@@ -146,6 +146,14 @@ typedef struct XferElement {
     DirectTCPAddr *input_listen_addrs;
     DirectTCPAddr *output_listen_addrs;
 
+    /*
+     * Minimum and maximum transfer sizes for this element, and the effective
+     * transfer size.
+     */
+
+    gsize min_tsize, max_tsize;
+    gsize tsize;
+
     /* cache for repr() */
     char *repr;
 
@@ -200,6 +208,26 @@ typedef struct {
      * @return: TRUE
      */
     gboolean (*set_size)(XferElement *elt, gint64 size);
+
+    /*
+     * Get the expected minimum and maximum transfer size for this element. For
+     * a file descriptor backed element, this will be 1 and G_MAXUINT. For
+     * physical devices, this will be this device's block size for both values.
+     *
+     * @param elt: the XferElement
+     * @param min_tsize (output): the minimum required transfer size
+     * @param max_tsize (output): the maximum transfer size
+     */
+    void (*get_blocksize)(XferElement *elt, gsize *min_tsize, gsize *max_tsize);
+
+    /*
+     * Set the effective transfer size for this element. The effective transfer
+     * size will be the same for all elements along the transfer chain.
+     *
+     * @param elt: the XferElement
+     * @param tsize: the effective transfer size
+     */
+    void (*set_transfersize)(XferElement *elt, gsize tsize);
 
     /* Start transferring data.  The element downstream of this one will
      * already be started, while the upstream element will not, so data will
@@ -306,6 +334,9 @@ gboolean xfer_element_link_to(XferElement *elt, XferElement *successor);
 char *xfer_element_repr(XferElement *elt);
 gboolean xfer_element_setup(XferElement *elt);
 gboolean xfer_element_set_size(XferElement *elt, gint64 size);
+void xfer_element_get_blocksize(XferElement *elt, gsize *min_tsize,
+    gsize *max_tsize);
+void xfer_element_set_transfersize(XferElement *elt, gsize tsize);
 gboolean xfer_element_start(XferElement *elt);
 void xfer_element_push_buffer(XferElement *elt, gpointer buf, size_t size);
 gpointer xfer_element_pull_buffer(XferElement *elt, size_t *size);

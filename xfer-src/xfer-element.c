@@ -60,6 +60,20 @@ xfer_element_set_size_impl(
     return TRUE; /* success */
 }
 
+static void xfer_element_get_blocksize_impl(XferElement *elt G_GNUC_UNUSED,
+    gsize *min_tsize G_GNUC_UNUSED, gsize *max_tsize G_GNUC_UNUSED)
+{
+    /* 1 and G_MAXUINT by default */
+    *min_tsize = 1;
+    *max_tsize = G_MAXUINT;
+}
+
+static void xfer_element_set_transfersize_impl(XferElement *elt G_GNUC_UNUSED,
+    gsize tsize)
+{
+    elt->tsize = tsize;
+}
+
 static gboolean
 xfer_element_start_impl(
     XferElement *elt G_GNUC_UNUSED)
@@ -145,6 +159,8 @@ xfer_element_class_init(
     klass->repr = xfer_element_repr_impl;
     klass->setup = xfer_element_setup_impl;
     klass->set_size = xfer_element_set_size_impl;
+    klass->get_blocksize = xfer_element_get_blocksize_impl;
+    klass->set_transfersize = xfer_element_set_transfersize_impl;
     klass->start = xfer_element_start_impl;
     klass->cancel = xfer_element_cancel_impl;
     klass->pull_buffer = xfer_element_pull_buffer_impl;
@@ -216,6 +232,18 @@ xfer_element_set_size(
     gint64       size)
 {
     return XFER_ELEMENT_GET_CLASS(elt)->set_size(elt, size);
+}
+
+void xfer_element_get_blocksize(XferElement *elt, gsize *min_tsize,
+    gsize *max_tsize)
+{
+    return XFER_ELEMENT_GET_CLASS(elt)->get_blocksize(elt, min_tsize,
+        max_tsize);
+}
+
+void xfer_element_set_transfersize(XferElement *elt, gsize tsize)
+{
+    return XFER_ELEMENT_GET_CLASS(elt)->set_transfersize(elt, tsize);
 }
 
 gboolean
