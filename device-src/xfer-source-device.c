@@ -120,6 +120,13 @@ pull_buffer_impl(
     return buf;
 }
 
+static void get_blocksize_impl(XferElement *elt, gsize *min_tsize,
+    gsize *max_tsize)
+{
+    XferSourceDevice *self = (XferSourceDevice *) elt;
+    *min_tsize = *max_tsize = self->device->block_size;
+}
+
 static void
 instance_init(
     XferElement *elt)
@@ -138,6 +145,7 @@ class_init(
     };
 
     klass->pull_buffer = pull_buffer_impl;
+    klass->get_blocksize = get_blocksize_impl;
 
     klass->perl_class = "Amanda::Xfer::Source::Device";
     klass->mech_pairs = mech_pairs;
