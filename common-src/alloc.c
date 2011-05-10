@@ -35,7 +35,7 @@
 
 #define	MIN_ALLOC	64
 
-static char *internal_vstralloc(const char *, int, const char *, va_list);
+static char *internal_vstralloc(const char *, va_list);
 
 /*
  * alloc - a wrapper for malloc.
@@ -96,68 +96,28 @@ debug_stralloc(
 }
 
 /*
- * internal_vstralloc - copies up to MAX_STR_ARGS strings into newly
- * allocated memory.
- *
- * The MAX_STR_ARGS limit is purely an efficiency issue so we do not have
- * to scan the strings more than necessary.
+ * internal_vstralloc(): appends strings together and return the result.
  */
-
-#define	MAX_VSTRALLOC_ARGS	40
 
 static char *
 internal_vstralloc(
-    const char *file,
-    int		line,
     const char *str,
     va_list argp)
 {
     char *next;
-    char *result;
-    int a, b;
-    size_t total_len;
-    const char *arg[MAX_VSTRALLOC_ARGS+1];
-    size_t len[MAX_VSTRALLOC_ARGS+1];
-    size_t l;
+    GString *strbuf;
 
     if (str == NULL) {
-	errordump(_("internal_vstralloc: str is NULL"));
-	/*NOTREACHED*/
+        errordump(_("internal_vstralloc: str is NULL"));
+        /*NOTREACHED*/
     }
 
-    a = 0;
-    arg[a] = str;
-    l = strlen(str);
-    total_len = len[a] = l;
-    a++;
+    strbuf = g_string_new(str);
 
-    while ((next = arglist_val(argp, char *)) != NULL) {
-	if ((l = strlen(next)) == 0) {
-	    continue;				/* minor optimisation */
-	}
-	if (a >= MAX_VSTRALLOC_ARGS) {
-	    errordump(_("%s@%d: more than %d args to vstralloc"),
-		      file ? file : _("(unknown)"),
-		      file ? line : -1,
-		      MAX_VSTRALLOC_ARGS);
-	    /*NOTREACHED*/
-	}
-	arg[a] = next;
-	len[a] = l;
-	total_len += l;
-	a++;
-    }
+    while ((next = arglist_val(argp, char *)) != NULL)
+        g_string_append(strbuf, next);
 
-    result = debug_alloc(file, line, total_len+1);
-
-    next = result;
-    for (b = 0; b < a; b++) {
-	memcpy(next, arg[b], len[b]);
-	next += len[b];
-    }
-    *next = '\0';
-
-    return result;
+    return g_string_free(strbuf, FALSE);
 }
 
 
@@ -166,8 +126,8 @@ internal_vstralloc(
  */
 char *
 debug_vstralloc(
-    const char *file,
-    int		line,
+    const char *file G_GNUC_UNUSED,
+    int		line G_GNUC_UNUSED,
     const char *str,
     ...)
 {
@@ -175,7 +135,7 @@ debug_vstralloc(
     char *result;
 
     arglist_start(argp, str);
-    result = internal_vstralloc(file, line, str, argp);
+    result = internal_vstralloc(str, argp);
     arglist_end(argp);
     return result;
 }
@@ -204,8 +164,8 @@ debug_newstralloc(
  */
 char *
 debug_newvstralloc(
-    const char *file,
-    int		line,
+    const char *file G_GNUC_UNUSED,
+    int		line G_GNUC_UNUSED,
     char *	oldstr,
     const char *newstr,
     ...)
@@ -214,7 +174,7 @@ debug_newvstralloc(
     char *result;
 
     arglist_start(argp, newstr);
-    result = internal_vstralloc(file, line, newstr, argp);
+    result = internal_vstralloc(newstr, argp);
     arglist_end(argp);
     amfree(oldstr);
     return result;
@@ -296,8 +256,8 @@ debug_newvstrallocf(
  * arguments. */
 char *
 debug_vstrextend(
-    const char *file,
-    int		line,
+    const char *file G_GNUC_UNUSED,
+    int		line G_GNUC_UNUSED,
     char **	oldstr,
     ...)
 {
@@ -308,7 +268,7 @@ debug_vstrextend(
 
 	if (*oldstr == NULL)
 		*oldstr = "";
-	*oldstr = internal_vstralloc(file, line, *oldstr, ap);
+	*oldstr = internal_vstralloc(*oldstr, ap);
         amfree(keep);
 
 	arglist_end(ap);
