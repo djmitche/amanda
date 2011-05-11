@@ -1256,33 +1256,34 @@ errfd_recv(
     void *	cookie)
 {
     struct active_service *as = cookie;
-    char  buf[32769];
-    int   n;
+    char buf[32769];
+    int n;
     char *r;
+    GString *strbuf;
 
     assert(as != NULL);
     assert(as->ev_errfd != NULL);
 
-    n = read(as->errfd, buf, 32768);
-    /* merge buffer */
-    if (n > 0) {
-	/* Terminate it with '\0' */
-	buf[n+1] = '\0';
+    strbuf = g_string_new(as->errbuf);
 
-	if (as->errbuf) {
-	    as->errbuf = vstrextend(&as->errbuf, buf, NULL);
-	} else {
-	    as->errbuf = stralloc(buf);
-	}
-    } else if (n == 0) {
-	event_release(as->ev_errfd);
-	as->ev_errfd = NULL;
-    } else { /* n < 0 */
-	event_release(as->ev_errfd);
-	as->ev_errfd = NULL;
-	g_snprintf(buf, 32768,
-		   "error reading stderr or service: %s\n", strerror(errno));
+    n = read(as->errfd, buf, 32768);
+
+    switch (n) {
+        case -1:
+            g_string_append_printf(strbuf,
+                "error reading stderr or service: %s\n", strerror(errno));
+            /* Fall through */
+        case 0:
+            event_release(as->ev_errfd);
+            as->ev_errfd = NULL;
+            break;
+        default:
+            buf[n+1] = '\0';
+            g_string_append(strbuf, buf);
     }
+
+    g_free(as->errbuf);
+    as->errbuf = g_string_free(strbuf, FALSE);
 
     /* for each line terminate by '\n' */
     while (as->errbuf != NULL  && (r = strchr(as->errbuf, '\n')) != NULL) {
