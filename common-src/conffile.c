@@ -7544,6 +7544,32 @@ val_t_print_token(
     g_strfreev(dispstrs);
 }
 
+static keytab_t conftype_execute_display[] = {
+	{ "PRE-AMCHECK", EXECUTE_ON_PRE_AMCHECK },
+	{ "POST-DLE-BACKUP", EXECUTE_ON_POST_DLE_BACKUP },
+	{ "POST-HOST-ESTIMATE", EXECUTE_ON_POST_HOST_ESTIMATE },
+	{ "PRE-HOST-ESTIMATE", EXECUTE_ON_PRE_HOST_ESTIMATE },
+	{ "INTER-LEVEL-RECOVER", EXECUTE_ON_INTER_LEVEL_RECOVER },
+	{ "PRE-RECOVER", EXECUTE_ON_PRE_RECOVER },
+	{ "PRE-DLE-BACKUP", EXECUTE_ON_PRE_DLE_BACKUP },
+	{ "POST-LEVEL-RECOVER", EXECUTE_ON_POST_LEVEL_RECOVER },
+	{ "POST-BACKUP", EXECUTE_ON_POST_BACKUP },
+	{ "PRE-ESTIMATE", EXECUTE_ON_PRE_ESTIMATE },
+	{ "POST-DLE-ESTIMATE", EXECUTE_ON_POST_DLE_ESTIMATE },
+	{ "PRE-LEVEL-RECOVER", EXECUTE_ON_PRE_LEVEL_RECOVER },
+	{ "POST-HOST-AMCHECK", EXECUTE_ON_POST_HOST_AMCHECK },
+	{ "PRE-HOST-BACKUP", EXECUTE_ON_PRE_HOST_BACKUP },
+	{ "PRE-DLE-AMCHECK", EXECUTE_ON_PRE_DLE_AMCHECK },
+	{ "POST-DLE-AMCHECK", EXECUTE_ON_POST_DLE_AMCHECK },
+	{ "PRE-DLE-ESTIMATE", EXECUTE_ON_PRE_DLE_ESTIMATE },
+	{ "POST-AMCHECK", EXECUTE_ON_POST_AMCHECK },
+	{ "PRE-HOST-AMCHECK", EXECUTE_ON_PRE_HOST_AMCHECK },
+	{ "POST-RECOVER", EXECUTE_ON_POST_RECOVER },
+	{ "POST-HOST-BACKUP", EXECUTE_ON_POST_HOST_BACKUP },
+	{ "PRE-BACKUP", EXECUTE_ON_PRE_BACKUP },
+	{ "POST-ESTIMATE", EXECUTE_ON_POST_ESTIMATE }
+};
+
 char **
 val_t_display_strs(
     val_t *val,
@@ -7906,104 +7932,35 @@ val_t_display_strs(
     }
 
     case CONFTYPE_EXECUTE_ON:
-	buf[0] = stralloc("");
-	if (val->v.i != 0) {
-	    char *sep = "";
-	    if (val->v.i & EXECUTE_ON_PRE_AMCHECK) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-AMCHECK", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_PRE_DLE_AMCHECK) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-DLE-AMCHECK", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_PRE_HOST_AMCHECK) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-HOST-AMCHECK", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_DLE_AMCHECK) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-DLE-AMCHECK", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_HOST_AMCHECK) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-HOST-AMCHECK", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_AMCHECK) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-AMCHECK", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_PRE_ESTIMATE) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-ESTIMATE", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_PRE_DLE_ESTIMATE) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-DLE-ESTIMATE", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_PRE_HOST_ESTIMATE) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-HOST-ESTIMATE", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_DLE_ESTIMATE) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-DLE-ESTIMATE", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_HOST_ESTIMATE) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-HOST-ESTIMATE", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_ESTIMATE) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-ESTIMATE", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_PRE_BACKUP) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-BACKUP", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_PRE_DLE_BACKUP) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-DLE-BACKUP", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_PRE_HOST_BACKUP) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-HOST-BACKUP", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_BACKUP) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-BACKUP", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_DLE_BACKUP) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-DLE-BACKUP", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_HOST_BACKUP) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-HOST-BACKUP", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_PRE_RECOVER) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-RECOVER", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_RECOVER) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-RECOVER", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_PRE_LEVEL_RECOVER) {
-		buf[0] = vstrextend(&buf[0], sep, "PRE-LEVEL-RECOVER", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_POST_LEVEL_RECOVER) {
-		buf[0] = vstrextend(&buf[0], sep, "POST-LEVEL-RECOVER", NULL);
-		sep = ", ";
-	    }
-	    if (val->v.i & EXECUTE_ON_INTER_LEVEL_RECOVER) {
-		buf[0] = vstrextend(&buf[0], sep, "INTER-LEVEL-RECOVER", NULL);
-		sep = ", ";
-	    }
-	}
-        break;
+        {
+            int flags = val->v.i;
+            int i, sz = G_N_ELEMENTS(conftype_execute_display);
+            GPtrArray *ptrarray = g_ptr_array_new();
+            gchar **strings;
 
+            for (i = 0; i < sz; i++) {
+                keytab_t *entry = &conftype_execute_display[i];
+                int this_flag = entry->token;
+                if (flags & this_flag) {
+                    g_ptr_array_add(ptrarray, entry->keyword);
+                    flags &= ~this_flag;
+                }
+            }
+
+            /*
+             * We must do that to ensure g_strjoinv() behaves as we expect
+             */
+
+            g_ptr_array_add(ptrarray, NULL);
+
+            g_assert(flags == 0);
+
+            strings = (gchar **) g_ptr_array_free(ptrarray, FALSE);
+
+            buf[0] = g_strjoinv(", ", strings);
+            g_strfreev(strings);
+            break;
+        }
     }
     return buf;
 }
