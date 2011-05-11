@@ -1263,7 +1263,7 @@ errfd_recv(
     assert(as != NULL);
     assert(as->ev_errfd != NULL);
 
-    n = read(as->errfd, &buf, 32768);
+    n = read(as->errfd, buf, 32768);
     /* merge buffer */
     if (n > 0) {
 	/* Terminate it with '\0' */
