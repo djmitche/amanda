@@ -97,6 +97,7 @@ AC_DEFUN([AMANDA_INIT_FLAGS],
 
     # Warn for just about everything
     AMANDA_ENABLE_GCC_WARNING(all)
+    AMANDA_ENABLE_GCC_WARNING(error)
     
     # And add any extra warnings too
     AMANDA_TEST_GCC_FLAG(-Wextra, [
