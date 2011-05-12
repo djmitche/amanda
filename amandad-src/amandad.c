@@ -123,7 +123,7 @@ struct active_service {
     event_handle_t *ev_reptimeout;	/* timeout for rep data */
     event_handle_t *ev_errfd;		/* read event handle for errfd */
     pkt_t rep_pkt;			/* rep packet we're sending out */
-    char *errbuf;			/* buffer to read the err into */
+    GString *error_buffer;		/* buffer to read the err into */
     char *repbuf;			/* buffer to read the rep into */
     size_t bufsize;			/* length of repbuf */
     size_t repbufsize;			/* length of repbuf */
@@ -832,7 +832,8 @@ s_sendack(
     as->ev_repfd = event_register((event_id_t)as->repfd, EV_READFD, repfd_recv, as);
     as->ev_reptimeout = event_register(REP_TIMEOUT, EV_TIME,
 	timeout_repfd, as);
-    as->errbuf = NULL;
+    g_assert(as->error_buffer != NULL);
+    g_string_truncate(as->error_buffer, 0);
     as->ev_errfd = event_register((event_id_t)as->errfd, EV_READFD, errfd_recv, as);
     security_recvpkt(as->security_handle, protocol_recv, as, -1);
     return (A_PENDING);
@@ -1258,44 +1259,48 @@ errfd_recv(
     struct active_service *as = cookie;
     char  buf[32769];
     int   n;
-    char *r;
+    char *s;
+    char *svname = services[as->service].name;
+    gchar **strings, **current, **prev = NULL;
 
     assert(as != NULL);
     assert(as->ev_errfd != NULL);
+    g_assert(as->error_buffer != NULL);
 
-    n = read(as->errfd, &buf, 32768);
+    n = read(as->errfd, buf, 32768);
     /* merge buffer */
-    if (n > 0) {
-	/* Terminate it with '\0' */
-	buf[n+1] = '\0';
-
-	if (as->errbuf) {
-	    as->errbuf = vstrextend(&as->errbuf, buf, NULL);
-	} else {
-	    as->errbuf = stralloc(buf);
-	}
-    } else if (n == 0) {
-	event_release(as->ev_errfd);
-	as->ev_errfd = NULL;
-    } else { /* n < 0 */
-	event_release(as->ev_errfd);
-	as->ev_errfd = NULL;
-	g_snprintf(buf, 32768,
-		   "error reading stderr or service: %s\n", strerror(errno));
+    switch (n) {
+        case -1:
+            g_string_append_printf(as->error_buffer,
+                "error reading stderr or service: %s\n", strerror(errno));
+            /* Fall through */
+        case 0:
+            event_release(as->ev_errfd);
+            as->ev_errfd = NULL;
+            break;
+        default:
+            buf[n] = '\0';
+            g_string_append(as->error_buffer, buf);
     }
 
-    /* for each line terminate by '\n' */
-    while (as->errbuf != NULL  && (r = strchr(as->errbuf, '\n')) != NULL) {
-	char *s;
+    /*
+     * Split the error buffer into newline-terminated strings. g_strsplit()
+     * returns a NULL terminated array of gchar pointers. If the last string
+     * appended to the error buffer ends with a newline, then the last non null
+     * element of the array will be an empty string, otherwise it will be the
+     * string without a newline.
+     */
 
-	*r = '\0';
-	s = vstrallocf("ERROR service %s: %s\n",
-		       services[as->service].name, as->errbuf);
+    strings = g_strsplit(as->error_buffer->str, "\n", 0);
 
-	/* Add to repbuf, error message will be in the REP packet if it
-	 * is not already sent
-	 */
-	n = strlen(s);
+    for (current = strings; current && *current; prev = current++) {
+        char *p = *current;
+
+        if (!*p) /* Empty string */
+            continue;
+
+        s = g_strdup_printf("ERROR service %s: %s\n", svname, p);
+
 	if (as->bufsize == 0) {
 	    as->bufsize = NETWORK_BLOCK_BYTES;
 	    as->repbuf = alloc(as->bufsize);
@@ -1305,21 +1310,20 @@ errfd_recv(
 	    as->bufsize *= 2;
 	    repbuf_temp = alloc(as->bufsize);
 	    memcpy(repbuf_temp, as->repbuf, as->repbufsize + 1);
-	    amfree(as->repbuf);
+	    g_free(as->repbuf);
 	    as->repbuf = repbuf_temp;
 	}
 	memcpy(as->repbuf + as->repbufsize, s, n);
 	as->repbufsize += n;
 
 	dbprintf("%s", s);
-	amfree(s);
-
-	/* remove first line from buffer */
-	r++;
-	s = stralloc(r);
-	amfree(as->errbuf);
-	as->errbuf = s;
+	g_free(s);
     }
+
+    if (prev)
+	g_string_assign(as->error_buffer, *prev);
+
+    g_strfreev(strings);
 }
 
 /*
@@ -1632,7 +1636,7 @@ service_new(
 	as->errfd = data_write[STDERR_PIPE][0];
 	aclose(data_write[STDERR_PIPE][1]);
 	as->ev_errfd = NULL;
-	as->errbuf = NULL;
+        as->error_buffer = g_string_sized_new(0);
 
 	/*
 	 * read from the rest of the general-use pipes
