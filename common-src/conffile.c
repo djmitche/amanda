@@ -5146,8 +5146,9 @@ static void validate_one_columnspec(const char *element)
  * validate_one_columnspec() above to validate each substring returned.
  */
 
-static void do_validate_columnspec(char *input)
+static void validate_columnspec(conf_var_t *var G_GNUC_UNUSED, val_t *value)
 {
+    gchar *input = val_t_to_str(value);
     gchar **elements, **ptr;
 
     elements = g_strsplit(input, ",", 0);
@@ -5158,10 +5159,6 @@ static void do_validate_columnspec(char *input)
     g_strfreev(elements);
 }
 
-static void validate_columnspec(conf_var_t *var G_GNUC_UNUSED, val_t *value)
-{
-    do_validate_columnspec(val_t_to_str(value));
-}
 /*
  * Initialization Implementation
  */

@@ -16,7 +16,7 @@
 # Contact information: Zmanda Inc, 465 S. Mathilda Ave., Suite 300
 # Sunnyvale, CA 94086, USA, or: http://www.zmanda.com
 
-use Test::More tests => 280;
+use Test::More tests => 278;
 use strict;
 use warnings;
 use Data::Dumper;
@@ -1194,8 +1194,6 @@ foreach my $exp_ok_columnspec (
     [0, "Disk=1:1:-1"],
 
     # column names (case insensitive)
-    [1, "Disk=1:1:-1"],
-    [1, "dISK=1:1:-1"],
     [1, "Compress=::2"],
     [1, "cOMPRESS=::2"],
     [1, "Disk=::2"],
