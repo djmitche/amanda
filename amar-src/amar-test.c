@@ -275,9 +275,9 @@ frag_cb(
  */
 
 static int
-open_temp(gboolean write)
+open_temp(gboolean for_write)
 {
-    int fd = open(temp_filename, write? O_WRONLY|O_CREAT|O_TRUNC : O_RDONLY, 0777);
+    int fd = open(temp_filename, for_write? O_WRONLY|O_CREAT|O_TRUNC : O_RDONLY, 0777);
     if (fd < 0) {
 	perror("open temporary file");
 	exit(1);

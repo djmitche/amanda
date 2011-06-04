@@ -195,8 +195,8 @@ log_rename(
     char *	datestamp)
 {
     char *conf_logdir;
-    char *logfile;
-    char *fname = NULL;
+    char *oldname;
+    char *newname = NULL;
     char seq_str[NUM_STR_SIZE];
     unsigned int seq;
     struct stat statbuf;
@@ -204,23 +204,23 @@ log_rename(
     if(datestamp == NULL) datestamp = "error";
 
     conf_logdir = config_dir_relative(getconf_str(CNF_LOGDIR));
-    logfile = g_strjoin(NULL, conf_logdir, "/log", NULL);
+    oldname = g_strjoin(NULL, conf_logdir, "/log", NULL);
 
     for(seq = 0; 1; seq++) {	/* if you've got MAXINT files in your dir... */
 	g_snprintf(seq_str, sizeof(seq_str), "%u", seq);
-        g_free(fname);
-        fname = g_strconcat(logfile, ".", datestamp, ".", seq_str, NULL);
-	if(stat(fname, &statbuf) == -1 && errno == ENOENT) break;
+        g_free(newname);
+        newname = g_strconcat(oldname, ".", datestamp, ".", seq_str, NULL);
+	if(stat(newname, &statbuf) == -1 && errno == ENOENT) break;
     }
 
-    if(rename(logfile, fname) == -1) {
+    if(rename(oldname, newname) == -1) {
 	error(_("could not rename \"%s\" to \"%s\": %s"),
-	      logfile, fname, strerror(errno));
+	      oldname, newname, strerror(errno));
 	/*NOTREACHED*/
     }
 
-    amfree(fname);
-    amfree(logfile);
+    amfree(newname);
+    amfree(oldname);
     amfree(conf_logdir);
 }
 
@@ -269,7 +269,7 @@ close_log(void)
  * WARNING: Function has static member logline, returned via globals */
 int
 get_logline(
-    FILE *	logf)
+    FILE *	log_fp)
 {
     static char *logline = NULL;
     char *logstr, *progstr;
@@ -277,7 +277,7 @@ get_logline(
     int ch;
 
     amfree(logline);
-    while ((logline = agets(logf)) != NULL) {
+    while ((logline = agets(log_fp)) != NULL) {
 	if (logline[0] != '\0')
 	    break;
 	amfree(logline);

@@ -399,7 +399,7 @@ parse_diskline(
     char *diskname, *diskdevice;
     char *dumptype;
     char *s, *fp;
-    int ch, dup = 0;
+    int ch, duplicate = 0;
     char *line = *line_p;
     int line_num = *line_num_p;
     struct tm *stm;
@@ -513,7 +513,7 @@ parse_diskline(
     disk = NULL;
     if (host) {
 	if ((disk = lookup_disk(hostname, diskname)) != NULL) {
-	    dup = 1;
+	    duplicate = 1;
 	} else {
 	    disk = host->disks;
 	    do {
@@ -522,16 +522,16 @@ parse_diskline(
 		a2 = clean_regex(disk->name, 1);
 
 		if (match_disk(a1, disk->name) && match_disk(a2, diskname)) {
-		    dup = 1;
+		    duplicate = 1;
 		} else {
 		    disk = disk->hostnext;
 		}
 		amfree(a1);
 		amfree(a2);
 	    }
-	    while (dup == 0 && disk != NULL);
+	    while (duplicate == 0 && disk != NULL);
 	}
-	if (dup == 1) {
+	if (duplicate == 1) {
 	    disk_parserror(filename, line_num,
 			   _("duplicate disk record, previous on line %d"),
 			   disk->line);
@@ -581,7 +581,7 @@ parse_diskline(
 	     strchr(s-1, '}') < strchr(s-1, '#'))) {
 	    disk_parserror(filename, line_num,_("'}' on same line than '{'"));
 	    amfree(hostname);
-	    if(!dup) {
+	    if(!duplicate) {
 		amfree(disk->device);
 		amfree(disk->name);
 		amfree(disk);
@@ -595,11 +595,11 @@ parse_diskline(
 					":", disk->name, ")",
 					".", anonymous_value(), NULL),
 			      diskf, (char*)filename, line_num_p);
-	if (dtype == NULL || dup) {
+	if (dtype == NULL || duplicate) {
 	    disk_parserror(filename, line_num,
 			   _("read of custom dumptype failed"));
 	    amfree(hostname);
-	    if(!dup) {
+	    if(!duplicate) {
 		amfree(disk->device);
 	        amfree(disk->name);
 	        amfree(disk);
@@ -625,7 +625,7 @@ parse_diskline(
 	    disk_parserror(filename, line_num, _("undefined dumptype `%s'"), qdt);
 	    amfree(qdt);
 	    amfree(hostname);
-	    if (!dup) {
+	    if (!duplicate) {
 		amfree(disk->device);
 		amfree(disk->name);
 		amfree(disk);
@@ -638,7 +638,7 @@ parse_diskline(
 	amfree(dumptype);
     }
 
-    if (dup) {
+    if (duplicate) {
 	/* disk_parserror already called, above */
 	g_assert(config_errors(NULL) != CFGERR_OK);
 	amfree(hostname);
@@ -815,10 +815,10 @@ parse_diskline(
 	 pp_iter = pp_iter->next) {
 	pp_script_t *pp_script;
 	char        *plugin;
-	char        *pp_script_name;
+	char        *name;
 
-	pp_script_name = (char*)pp_iter->data;
-	pp_script = lookup_pp_script(pp_script_name);
+	name = (char*)pp_iter->data;
+	pp_script = lookup_pp_script(name);
 	g_assert(pp_script != NULL);
 	plugin = pp_script_get_plugin(pp_script);
 	if (!plugin || strlen(plugin) == 0) {
@@ -1669,8 +1669,8 @@ xml_scripts(
     xml_scr = g_strdup("");
     for (pp_iter = pp_scriptlist; pp_iter != NULL;
 	 pp_iter = pp_iter->next) {
-	char *pp_script_name = pp_iter->data;
-	pp_script = lookup_pp_script(pp_script_name);
+	char *name = pp_iter->data;
+	pp_script = lookup_pp_script(name);
 	g_assert(pp_script != NULL);
 	plugin = pp_script_get_plugin(pp_script);
 	b64plugin = amxml_format_tag("plugin", plugin);

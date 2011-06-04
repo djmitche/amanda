@@ -38,14 +38,14 @@
 void
 dgram_socket(
     dgram_t *	dgram,
-    int		socket)
+    int		sock)
 {
-    if(socket < 0 || socket >= (int)FD_SETSIZE) {
-	error(_("dgram_socket: socket %d out of range (0 .. %d)\n"),
-	      socket, (int)FD_SETSIZE-1);
+    if(sock < 0 || sock >= (int)FD_SETSIZE) {
+	error(_("dgram_socket: sock %d out of range (0 .. %d)\n"),
+	      sock, (int)FD_SETSIZE-1);
         /*NOTREACHED*/
     }
-    dgram->socket = socket;
+    dgram->socket = sock;
 }
 
 

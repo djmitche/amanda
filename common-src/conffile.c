@@ -246,7 +246,7 @@ static tok_t lookup_keyword(char *str);
  * does not match, then a parse error is flagged.  This function reads from the
  * current_* static variables, recognizes keywords against the keytable static
  * variable, and places its result in tok and tokenval. */
-static void get_conftoken(tok_t exp);
+static void get_conftoken(tok_t expected);
 
 /* "Unget" the current token; this supports a 1-token lookahead. */
 static void unget_conftoken(void);
@@ -1491,7 +1491,7 @@ lookup_keyword(
 
 static void
 get_conftoken(
-    tok_t	exp)
+    tok_t	expected)
 {
     int ch, d;
     gint64 int64;
@@ -1519,7 +1519,7 @@ get_conftoken(
 	    break; /* not a keyword */
 
 	default:
-	    if (exp == CONF_IDENT)
+	    if (expected == CONF_IDENT)
 		tok = CONF_IDENT;
 	    else
 		tok = lookup_keyword(tokenval.v.s);
@@ -1568,7 +1568,7 @@ get_conftoken(
 	    tokenval.v.s = tkbuf;
 
 	    if (token_overflow) tok = CONF_UNKNOWN;
-	    else if (exp == CONF_IDENT) tok = CONF_IDENT;
+	    else if (expected == CONF_IDENT) tok = CONF_IDENT;
 	    else tok = lookup_keyword(tokenval.v.s);
 	}
 	else if (isdigit(ch)) {	/* integer */
@@ -1582,10 +1582,10 @@ negative_number: /* look for goto negative_number below sign is set there */
 	    } while (isdigit(ch));
 
 	    if (ch != '.') {
-		if (exp == CONF_INT) {
+		if (expected == CONF_INT) {
 		    tok = CONF_INT;
 		    tokenval.v.i = sign * (int)int64;
-		} else if (exp != CONF_REAL) {
+		} else if (expected != CONF_REAL) {
 		    tok = CONF_INT64;
 		    tokenval.v.int64 = (gint64)sign * int64;
 		} else {
@@ -1662,7 +1662,7 @@ negative_number: /* look for goto negative_number below sign is set there */
 	    tokenval.v.s = tkbuf;
 
 	    tok = (token_overflow) ? CONF_UNKNOWN :
-			(exp == CONF_IDENT) ? CONF_IDENT : CONF_STRING;
+			(expected == CONF_IDENT) ? CONF_IDENT : CONF_STRING;
 	    break;
 
 	case '-':
@@ -1710,11 +1710,11 @@ negative_number: /* look for goto negative_number below sign is set there */
 	}
     }
 
-    if (exp != CONF_ANY && tok != exp) {
+    if (expected != CONF_ANY && tok != expected) {
 	char *str;
 	keytab_t *kwp;
 
-	switch(exp) {
+	switch(expected) {
 	case CONF_LBRACE:
 	    str = "\"{\"";
 	    break;
@@ -1753,7 +1753,7 @@ negative_number: /* look for goto negative_number below sign is set there */
 
 	default:
 	    for(kwp = keytable; kwp->keyword != NULL; kwp++) {
-		if (exp == kwp->token)
+		if (expected == kwp->token)
 		    break;
 	    }
 	    if (kwp->keyword == NULL)
@@ -1763,7 +1763,7 @@ negative_number: /* look for goto negative_number below sign is set there */
 	    break;
 	}
 	conf_parserror(_("%s is expected"), str);
-	tok = exp;
+	tok = expected;
 	if (tok == CONF_INT)
 	    tokenval.v.i = 0;
 	else
@@ -3556,31 +3556,31 @@ read_encrypt(
     conf_var_t *np G_GNUC_UNUSED,
     val_t *val)
 {
-   encrypt_t encrypt;
+   encrypt_t result;
 
    ckseen(&val->seen);
 
    get_conftoken(CONF_ANY);
    switch(tok) {
    case CONF_NONE:  
-     encrypt = ENCRYPT_NONE; 
+     result = ENCRYPT_NONE;
      break;
 
    case CONF_CLIENT:  
-     encrypt = ENCRYPT_CUST;
+     result = ENCRYPT_CUST;
      break;
 
    case CONF_SERVER: 
-     encrypt = ENCRYPT_SERV_CUST;
+     result = ENCRYPT_SERV_CUST;
      break;
 
    default:
      conf_parserror(_("NONE, CLIENT or SERVER expected"));
-     encrypt = ENCRYPT_NONE;
+     result = ENCRYPT_NONE;
      break;
    }
 
-   val_t__encrypt(val) = (int)encrypt;
+   val_t__encrypt(val) = (int)result;
 }
 
 static void
@@ -6619,19 +6619,19 @@ void add_config_override(
 void
 add_config_override_opt(
     config_overrides_t *co,
-    char *optarg)
+    char *arg)
 {
     char *value;
-    assert(optarg != NULL);
+    assert(arg != NULL);
 
-    value = strchr(optarg, '=');
+    value = strchr(arg, '=');
     if (value == NULL) {
-	error(_("Must specify a value for %s."), optarg);
+	error(_("Must specify a value for %s."), arg);
 	/* NOTREACHED */
     }
 
     *value = '\0';
-    add_config_override(co, optarg, value+1);
+    add_config_override(co, arg, value+1);
     *value = '=';
 }
 

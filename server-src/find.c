@@ -313,8 +313,8 @@ search_holding_disk(
 
 static int
 find_compare(
-    const void *i1,
-    const void *j1)
+    const void *iv,
+    const void *jv)
 {
     int compare=0;
     find_result_t *i, *j;
@@ -327,11 +327,11 @@ find_compare(
         if (isupper((int)sort_key)) {
             /* swap */
             sort_key = tolower(sort_key);
-            j = *(find_result_t **)i1;
-            i = *(find_result_t **)j1;
+            j = *(find_result_t **)iv;
+            i = *(find_result_t **)jv;
         } else {
-            i = *(find_result_t **)i1;
-            j = *(find_result_t **)j1;
+            i = *(find_result_t **)iv;
+            j = *(find_result_t **)jv;
         }            
         
 	switch (sort_key) {

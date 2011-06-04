@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008,2009 Zmanda, Inc.  All Rights Reserved.
+ * Copyright (c) 2008, 2009, 2011 Zmanda, Inc.  All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -122,12 +122,12 @@ test_round_trip(void)
 
 static gboolean
 compare_strv(
-    const char **exp,
+    const char **expect,
     char **got,
     const char *source,
     const char *original)
 {
-    const char **a = exp;
+    const char **a = expect;
     char **b = got;
     while (*a && *b) {
 	if (0 != strcmp(*a, *b))
@@ -142,7 +142,7 @@ compare_strv(
 	safe = safestr(original);
 	g_printf("  %s: expected [", safe);
 	amfree(safe);
-	for (a = exp; *a; a++) {
+	for (a = expect; *a; a++) {
 	    safe = safestr(*a);
 	    g_printf("%s%s", safe, *(a+1)? ", " : "");
 	    amfree(safe);

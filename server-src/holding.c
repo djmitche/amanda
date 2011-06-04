@@ -749,7 +749,7 @@ holding_cleanup_file(
     int is_cruft)
 {
     holding_cleanup_datap_t *data = (holding_cleanup_datap_t *)datap;
-    int stat;
+    int rc;
     int l;
     dumpfile_t file;
     disk_t *dp;
@@ -762,9 +762,9 @@ holding_cleanup_file(
     }
 
 
-    stat = holding_file_get_dumpfile(fqpath, &file);
+    rc = holding_file_get_dumpfile(fqpath, &file);
 
-    if (!stat) {
+    if (!rc) {
 	if (data->verbose_output)
 	    g_fprintf(data->verbose_output, 
 		_("Could not read read header from '%s'\n"), element);

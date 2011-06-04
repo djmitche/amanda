@@ -502,9 +502,9 @@ main(
 
     startq.head = startq.tail = NULL;
     while(!empty(origq)) {
-	disk_t *dp = dequeue_disk(&origq);
-	if(dp->todo == 1) {
-	    setup_estimate(dp);
+	disk_t *disk = dequeue_disk(&origq);
+	if(disk->todo == 1) {
+	    setup_estimate(disk);
 	}
     }
 
@@ -580,17 +580,17 @@ main(
      */
 
     {
-	disk_t *dp;
+	disk_t *disk;
 
 	g_fprintf(stderr, _("INITIAL SCHEDULE (size %lld):\n"),
 		(long long)total_size);
-	for(dp = schedq.head; dp != NULL; dp = dp->next) {
-	    qname = quote_string(dp->name);
+	for(disk = schedq.head; disk != NULL; disk = disk->next) {
+	    qname = quote_string(disk->name);
 	    g_fprintf(stderr, _("  %s %s pri %d lev %d nsize %lld csize %lld\n"),
-		    dp->host->hostname, qname, est(dp)->dump_priority,
-		    est(dp)->dump_est->level,
-		    (long long)est(dp)->dump_est->nsize,
-                    (long long)est(dp)->dump_est->csize);
+		    disk->host->hostname, qname, est(disk)->dump_priority,
+		    est(disk)->dump_est->level,
+		    (long long)est(disk)->dump_est->nsize,
+                    (long long)est(disk)->dump_est->csize);
 	    amfree(qname);
 	}
     }
@@ -1364,15 +1364,16 @@ static void get_estimates(void)
     protocol_run();
 
     while(!empty(waitq)) {
-	disk_t *dp = dequeue_disk(&waitq);
+	dp = dequeue_disk(&waitq);
 	est(dp)->errstr = _("hmm, disk was stranded on waitq");
 	enqueue_disk(&failq, dp);
     }
 
     while(!empty(pestq)) {
-	disk_t *dp = dequeue_disk(&pestq);
 	char *  qname = quote_string(dp->name);
 	int i;
+
+	dp = dequeue_disk(&pestq);
 
 	for (i=0; i < MAX_LEVELS; i++) {
 	    if (est(dp)->estimate[i].level != -1 &&

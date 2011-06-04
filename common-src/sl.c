@@ -179,16 +179,16 @@ sl_t *
 duplicate_sl(
     sl_t *	sl)
 {
-    sl_t *new_sl = NULL;
+    sl_t *new = NULL;
     sle_t *a;
 
-    if(!sl) return new_sl;
+    if(!sl) return new;
 
     for(a = sl->first; a != NULL; a = a->next) {
-	new_sl = append_sl(new_sl, a->name);
+	new = append_sl(new, a->name);
     }
 
-    return new_sl;
+    return new;
 }
 
 /*

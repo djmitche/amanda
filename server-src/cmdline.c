@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, 2009, 2010 Zmanda, Inc.  All Rights Reserved.
+ * Copyright (c) 2007, 2008, 2009, 2010, 2011 Zmanda, Inc.  All Rights Reserved.
  * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -85,11 +85,11 @@ cmdline_parse_dumpspecs(
     GSList *list = NULL;
     char *errstr;
     char *name;
-    int optind = 0;
+    int i;
     enum { ARG_GET_HOST, ARG_GET_DISK, ARG_GET_DATESTAMP, ARG_GET_LEVEL } arg_state = ARG_GET_HOST;
 
-    while (optind < argc) {
-        name = argv[optind];
+    for (i = 0; i < argc; i++) {
+        name = argv[i];
         switch (arg_state) {
             case ARG_GET_HOST:
                 arg_state = ARG_GET_DISK;
@@ -118,8 +118,6 @@ cmdline_parse_dumpspecs(
                 dumpspec->level = g_strdup(name);
                 break;
         }
-
-	optind++;
     }
 
     /* if nothing was processed and the caller has requested it, 

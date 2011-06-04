@@ -211,26 +211,26 @@ bsdtcp_accept(
     void	(*fn)(security_handle_t *, pkt_t *),
     void       *datap)
 {
-    sockaddr_union sin;
+    sockaddr_union sa;
     socklen_t_equiv len;
     struct tcp_conn *rc;
     char hostname[NI_MAXHOST];
     int result;
     char *errmsg = NULL;
 
-    len = sizeof(sin);
-    if (getpeername(in, (struct sockaddr *)&sin, &len) < 0) {
+    len = sizeof(sa);
+    if (getpeername(in, (struct sockaddr *)&sa, &len) < 0) {
 	dbprintf(_("getpeername returned: %s\n"), strerror(errno));
 	return;
     }
-    if ((result = getnameinfo((struct sockaddr *)&sin, len,
+    if ((result = getnameinfo((struct sockaddr *)&sa, len,
 			      hostname, NI_MAXHOST, NULL, 0, 0) != 0)) {
 	dbprintf(_("getnameinfo failed: %s\n"),
 		  gai_strerror(result));
 	return;
     }
     if (check_name_give_sockaddr(hostname,
-				 (struct sockaddr *)&sin, &errmsg) < 0) {
+				 (struct sockaddr *)&sa, &errmsg) < 0) {
 	amfree(errmsg);
 	return;
     }
@@ -238,7 +238,7 @@ bsdtcp_accept(
     rc = sec_tcp_conn_get(hostname, 0);
     rc->recv_security_ok = &bsd_recv_security_ok;
     rc->prefix_packet = &bsd_prefix_packet;
-    copy_sockaddr(&rc->peer, &sin);
+    copy_sockaddr(&rc->peer, &sa);
     rc->read = in;
     rc->write = out;
     rc->accept_fn = fn;

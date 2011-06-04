@@ -1095,7 +1095,7 @@ amar_read(
     /* close any open files, assuming that they have been truncated */
 
     for (iter = hp.file_states; iter; iter = iter->next) {
-	file_state_t *fs = (file_state_t *)iter->data;
+	fs = (file_state_t *)iter->data;
 	finish_file(&hp, fs, TRUE);
     }
     g_slist_free(hp.file_states);

@@ -518,7 +518,6 @@ static void
 check_disk(
     dle_t *dle)
 {
-    char *tmpbuf;
     char *device = NULL;
     char *err = NULL;
     char *user_and_password = NULL;

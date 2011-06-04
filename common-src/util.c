@@ -1292,21 +1292,21 @@ _str_exit_status(
     }
 
     if (WIFSIGNALED(status)) {
-	int signal = WTERMSIG(status);
+	int sig = WTERMSIG(status);
 #ifdef WCOREDUMP
 	if (WCOREDUMP(status))
 	    return g_strdup_printf(_("%s exited after receiving signal %d (core dumped)"),
-		subject, signal);
+		subject, sig);
 	else
 #endif
 	    return g_strdup_printf(_("%s exited after receiving signal %d"),
-		subject, signal);
+		subject, sig);
     }
 
     if (WIFSTOPPED(status)) {
-	int signal = WSTOPSIG(status);
+	int sig = WSTOPSIG(status);
 	return g_strdup_printf(_("%s stopped temporarily after receiving signal %d"),
-	    subject, signal);
+	    subject, sig);
     }
 
 #ifdef WIFCONTINUED
