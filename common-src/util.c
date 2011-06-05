@@ -432,8 +432,7 @@ quote_string_maybe(
     const char *str,
     gboolean always)
 {
-    char *  s;
-    char *  ret;
+    char *ret;
 
     if ((str == NULL) || (*str == '\0')) {
 	ret = g_strdup("\"\"");
@@ -451,46 +450,9 @@ quote_string_maybe(
 	     */
 	    ret = g_strdup(str);
 	} else {
-	    /*
-	     * Allocate maximum possible string length.
-	     * (a string of all quotes plus room for leading ", trailing " and
-	     *  NULL)
-	     */
-	    ret = s = g_malloc((strlen(str) * 2) + 2 + 1);
-	    *(s++) = '"';
-	    while (*str != '\0') {
-                if (*str == '\t') {
-                    *(s++) = '\\';
-                    *(s++) = 't';
-		    str++;
-		    continue;
-	        } else if (*str == '\n') {
-                    *(s++) = '\\';
-                    *(s++) = 'n';
-		    str++;
-		    continue;
-	        } else if (*str == '\r') {
-                    *(s++) = '\\';
-                    *(s++) = 'r';
-		    str++;
-		    continue;
-	        } else if (*str == '\f') {
-                    *(s++) = '\\';
-                    *(s++) = 'f';
-		    str++;
-		    continue;
-	        } else if (*str == '\\') {
-                    *(s++) = '\\';
-                    *(s++) = '\\';
-		    str++;
-		    continue;
-	        }
-                if (*str == '"')
-                    *(s++) = '\\';
-                *(s++) = *(str++);
-            }
-            *(s++) = '"';
-            *s = '\0';
+            char *tmp = g_strescape(str, "\004");
+            ret = g_strconcat("\"", tmp, "\"", NULL);
+            g_free(tmp);
         }
     }
     return (ret);
@@ -520,45 +482,13 @@ len_quote_string_maybe(
 	     */
 	    ret = strlen(str);
 	} else {
-	    /*
-	     * Allocate maximum possible string length.
-	     * (a string of all quotes plus room for leading ", trailing " and
-	     *  NULL)
-	     */
-	    ret = 1;
-	        while (*str != '\0') {
-                if (*str == '\t') {
-                    ret++;
-                    ret++;
-		    str++;
-		    continue;
-	        } else if (*str == '\n') {
-                    ret++;
-                    ret++;
-		    str++;
-		    continue;
-	        } else if (*str == '\r') {
-                    ret++;
-                    ret++;
-		    str++;
-		    continue;
-	        } else if (*str == '\f') {
-                    ret++;
-                    ret++;
-		    str++;
-		    continue;
-	        } else if (*str == '\\') {
-                    ret++;
-                    ret++;
-		    str++;
-		    continue;
-	        }
-                if (*str == '"')
-		    ret++;
-	        ret++;
-                str++;
+	    char *lookup_chars = "\t\n\r\f\\\"";
+            char *p = (char *)str;
+            ret = strlen(str) + 2;
+            while ((p = strpbrk(p, lookup_chars)) != NULL) {
+                p++;
+                ret++;
             }
-	    ret++;
 	}
     }
     return (ret);
