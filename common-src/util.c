@@ -1640,59 +1640,35 @@ safe_env_full(char **add)
 	NULL
     };
 
-    char **envp;
+    GPtrArray *result = g_ptr_array_new();
+    char **ptr;
 
-    char **p;
-    char **q;
-    char **env;
-    int    env_cnt;
-    int nadd = 0;
-
-    /* count ADD */
-    for (p = add; p && *p; p++)
-	nadd++;
+    /*
+     * Copy the added variables, if any
+     */
+    for (ptr = add; ptr && *ptr; ptr++)
+        g_ptr_array_add(result, *ptr);
 
     if (getuid() == geteuid() && getgid() == getegid()) {
-	env_cnt = 1;
-	for (env = environ; *env != NULL; env++)
-	    env_cnt++;
-        q = g_new(char *, nadd + env_cnt);
-        envp = q;
-        p = envp;
-        /* copy in ADD */
-        for (env = add; env && *env; env++) {
-            *p = *env;
-            p++;
-        }
-        for (env = environ; *env != NULL; env++) {
-            if (strncmp("LANG=", *env, 5) != 0 &&
-                strncmp("LC_", *env, 3) != 0) {
-                *p = g_strdup(*env);
-                p++;
-            }
-        }
-        *p = NULL;
-	return envp;
+        /*
+         * We want everything except locale related variables
+         */
+        for (ptr = environ; *ptr; ptr++)
+            if (strncmp("LANG=", *ptr, 5) != 0 && strncmp("LC_", *ptr, 3) != 0)
+                g_ptr_array_add(result, g_strdup(*ptr));
+        g_ptr_array_add(result, NULL);
+        return (char **)g_ptr_array_free(result, FALSE);
     }
 
-    q = g_new(char *, nadd + G_N_ELEMENTS(safe_env_list));
-    envp = q;
-    /* copy in ADD */
-    for (p = add; p && *p; p++) {
-        *q = *p;
-        q++;
-    }
-
-    /* and copy any SAFE_ENV that are already set */
-    for (p = safe_env_list; *p != NULL; p++) {
-	char *var = *p;
+    for (ptr = safe_env_list; *ptr; ptr++) {
+	char *var = *ptr;
 	char *value = getenv(var);
 
 	if (!value) /* No such variable in the current environmant */
 	    continue;
 
-        *q++ = g_strdup_printf("%s=%s", var, value);
+        g_ptr_array_add(result, g_strdup_printf("%s=%s", var, value));
     }
-    *q = NULL;                                /* terminate the list */
-    return envp;
+    g_ptr_array_add(result, NULL);
+    return (char **)g_ptr_array_free(result, FALSE);
 }
