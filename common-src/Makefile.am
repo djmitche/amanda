@@ -18,7 +18,6 @@ LINT=$(AMLINT)
 LINTFLAGS=$(AMLINTFLAGS)
 
 libamanda_la_SOURCES =		\
-	alloc.c			\
 	amfeatures.c		\
 	amflock.c		\
 	ipc-binary.c		\

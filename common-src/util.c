@@ -1622,3 +1622,94 @@ debug_executing(
     g_free(cmdline);
 }
 
+/*
+ * safe_env_full - build a "safe" environment list.
+ */
+char **
+safe_env_full(char **add)
+{
+    static char *safe_env_list[] = {
+	"TZ",
+#ifdef __CYGWIN__
+	"SYSTEMROOT",
+#endif
+#ifdef NEED_PATH_ENV
+	"PATH",
+#endif
+	"DISPLAY",
+	NULL
+    };
+
+    /*
+     * If the initial environment pointer malloc fails, set up to
+     * pass back a pointer to the NULL string pointer at the end of
+     * safe_env_list so our result is always a valid, although possibly
+     * empty, environment list.
+     */
+    char **envp = safe_env_list + G_N_ELEMENTS(safe_env_list) - 1;
+
+    char **p;
+    char **q;
+    char *s;
+    char *v;
+    size_t l1, l2;
+    char **env;
+    int    env_cnt;
+    int nadd = 0;
+
+    /* count ADD */
+    for (p = add; p && *p; p++)
+	nadd++;
+
+    if (getuid() == geteuid() && getgid() == getegid()) {
+	env_cnt = 1;
+	for (env = environ; *env != NULL; env++)
+	    env_cnt++;
+	if ((q = (char **)malloc((nadd+env_cnt)*sizeof(char *))) != NULL) {
+	    envp = q;
+	    p = envp;
+	    /* copy in ADD */
+	    for (env = add; env && *env; env++) {
+		*p = *env;
+		p++;
+	    }
+	    for (env = environ; *env != NULL; env++) {
+		if (strncmp("LANG=", *env, 5) != 0 &&
+		    strncmp("LC_", *env, 3) != 0) {
+		    *p = g_strdup(*env);
+		    p++;
+		}
+	    }
+	    *p = NULL;
+	}
+	return envp;
+    }
+
+    if ((q = (char **)malloc(nadd*sizeof(char *) + sizeof(safe_env_list))) != NULL) {
+	envp = q;
+	/* copy in ADD */
+	for (p = add; p && *p; p++) {
+	    *q = *p;
+	    q++;
+	}
+
+	/* and copy any SAFE_ENV that are already set */
+	for (p = safe_env_list; *p != NULL; p++) {
+	    if ((v = getenv(*p)) == NULL) {
+		continue;			/* no variable to dup */
+	    }
+	    l1 = strlen(*p);			/* variable name w/o null */
+	    l2 = strlen(v) + 1;			/* include null byte here */
+	    if ((s = (char *)malloc(l1 + 1 + l2)) == NULL) {
+		break;				/* out of memory */
+	    }
+	    *q++ = s;				/* save the new pointer */
+	    memcpy(s, *p, l1);			/* left hand side */
+	    s += l1;
+	    *s++ = '=';
+	    memcpy(s, v, l2);			/* right hand side and null */
+	}
+	*q = NULL;				/* terminate the list */
+    }
+    return envp;
+}

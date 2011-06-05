@@ -430,12 +430,6 @@ typedef union sockaddr_union {
 #define agets(f)	      debug_agets(__FILE__,__LINE__,(f))
 #define areads(f)	      debug_areads(__FILE__,__LINE__,(f))
 
-/* return a "safe" version of the current environment; pass this to execle */
-#define safe_env() safe_env_full(NULL)
-
-/* like safe_env, but optionally add additional environment variables */
-char **	safe_env_full(char **add);
-
 time_t	unctime(char *timestr);
 
 /*
