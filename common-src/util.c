@@ -1644,9 +1644,6 @@ safe_env_full(char **add)
 
     char **p;
     char **q;
-    char *s;
-    char *v;
-    size_t l1, l2;
     char **env;
     int    env_cnt;
     int nadd = 0;
@@ -1688,17 +1685,15 @@ safe_env_full(char **add)
 
     /* and copy any SAFE_ENV that are already set */
     for (p = safe_env_list; *p != NULL; p++) {
-        if ((v = getenv(*p)) == NULL) {
-            continue;                        /* no variable to dup */
-        }
-        l1 = strlen(*p);                        /* variable name w/o null */
-        l2 = strlen(v) + 1;                        /* include null byte here */
-        s = g_malloc(l1 + 1 + l2);
-        *q++ = s;                                /* save the new pointer */
-        memcpy(s, *p, l1);                        /* left hand side */
-        s += l1;
-        *s++ = '=';
-        memcpy(s, v, l2);                        /* right hand side and null */
+        char *var, *value;
+
+        var = *p;
+        value = getenv(var);
+
+        if (!value) /* No such variable */
+            continue;
+
+        *q++ = g_strdup_printf("%s=%s", var, value);
     }
     *q = NULL;                                /* terminate the list */
     return envp;
