@@ -1,4 +1,11 @@
 2011-06-05  Francis Galiegue <fgaliegue@gmail.com>
+	* common-src/alloc.c, common-src/amanda.h: modify safe_env_full() to
+	  util.c and remove file and prototypes
+	* common-src/util.c, common-src/util.h: put function and prototypes
+	  here
+	* common-src/Makefile.am: remove alloc.c from sources
+
+2011-06-05  Francis Galiegue <fgaliegue@gmail.com>
 	* common-src/amanda.h: remove strappend() macro, it is not unused
 
 2011-06-05  Francis Galiegue <fgaliegue@gmail.com>

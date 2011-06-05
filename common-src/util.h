@@ -391,4 +391,10 @@ void property_add_to_argv(GPtrArray *argv_ptr, GHashTable *proplist);
  */
 void debug_executing(GPtrArray *argv_ptr);
 
+/* return a "safe" version of the current environment; pass this to execle */
+#define safe_env() safe_env_full(NULL)
+
+/* like safe_env, but optionally add additional environment variables */
+char **safe_env_full(char **add);
+
 #endif	/* UTIL_H */
