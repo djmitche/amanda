@@ -1,4 +1,8 @@
 2011-06-05  Francis Galiegue <fgaliegue@gmail.com>
+	* common-src/util.c: use g_strdup_printf() to create new variables;
+	  rename s to var, v to value
+
+2011-06-05  Francis Galiegue <fgaliegue@gmail.com>
 	* common-src/util.c: variable pushdown
 
 2011-06-05  Francis Galiegue <fgaliegue@gmail.com>
