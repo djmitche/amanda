@@ -1644,8 +1644,6 @@ safe_env_full(char **add)
 
     char **p;
     char **q;
-    char *s;
-    char *v;
     size_t l1, l2;
     char **env;
     int    env_cnt;
@@ -1688,6 +1686,7 @@ safe_env_full(char **add)
 
     /* and copy any SAFE_ENV that are already set */
     for (p = safe_env_list; *p != NULL; p++) {
+        char *s, *v;
         if ((v = getenv(*p)) == NULL) {
             continue;                        /* no variable to dup */
         }
