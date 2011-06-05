@@ -1640,13 +1640,7 @@ safe_env_full(char **add)
 	NULL
     };
 
-    /*
-     * If the initial environment pointer malloc fails, set up to
-     * pass back a pointer to the NULL string pointer at the end of
-     * safe_env_list so our result is always a valid, although possibly
-     * empty, environment list.
-     */
-    char **envp = safe_env_list + G_N_ELEMENTS(safe_env_list) - 1;
+    char **envp;
 
     char **p;
     char **q;
@@ -1665,51 +1659,47 @@ safe_env_full(char **add)
 	env_cnt = 1;
 	for (env = environ; *env != NULL; env++)
 	    env_cnt++;
-	if ((q = (char **)malloc((nadd+env_cnt)*sizeof(char *))) != NULL) {
-	    envp = q;
-	    p = envp;
-	    /* copy in ADD */
-	    for (env = add; env && *env; env++) {
-		*p = *env;
-		p++;
-	    }
-	    for (env = environ; *env != NULL; env++) {
-		if (strncmp("LANG=", *env, 5) != 0 &&
-		    strncmp("LC_", *env, 3) != 0) {
-		    *p = g_strdup(*env);
-		    p++;
-		}
-	    }
-	    *p = NULL;
-	}
+        q = g_new(char *, nadd + env_cnt);
+        envp = q;
+        p = envp;
+        /* copy in ADD */
+        for (env = add; env && *env; env++) {
+            *p = *env;
+            p++;
+        }
+        for (env = environ; *env != NULL; env++) {
+            if (strncmp("LANG=", *env, 5) != 0 &&
+                strncmp("LC_", *env, 3) != 0) {
+                *p = g_strdup(*env);
+                p++;
+            }
+        }
+        *p = NULL;
 	return envp;
     }
 
-    if ((q = (char **)malloc(nadd*sizeof(char *) + sizeof(safe_env_list))) != NULL) {
-	envp = q;
-	/* copy in ADD */
-	for (p = add; p && *p; p++) {
-	    *q = *p;
-	    q++;
-	}
-
-	/* and copy any SAFE_ENV that are already set */
-	for (p = safe_env_list; *p != NULL; p++) {
-	    if ((v = getenv(*p)) == NULL) {
-		continue;			/* no variable to dup */
-	    }
-	    l1 = strlen(*p);			/* variable name w/o null */
-	    l2 = strlen(v) + 1;			/* include null byte here */
-	    if ((s = (char *)malloc(l1 + 1 + l2)) == NULL) {
-		break;				/* out of memory */
-	    }
-	    *q++ = s;				/* save the new pointer */
-	    memcpy(s, *p, l1);			/* left hand side */
-	    s += l1;
-	    *s++ = '=';
-	    memcpy(s, v, l2);			/* right hand side and null */
-	}
-	*q = NULL;				/* terminate the list */
+    q = g_new(char *, nadd + G_N_ELEMENTS(safe_env_list));
+    envp = q;
+    /* copy in ADD */
+    for (p = add; p && *p; p++) {
+        *q = *p;
+        q++;
     }
+
+    /* and copy any SAFE_ENV that are already set */
+    for (p = safe_env_list; *p != NULL; p++) {
+        if ((v = getenv(*p)) == NULL) {
+            continue;                        /* no variable to dup */
+        }
+        l1 = strlen(*p);                        /* variable name w/o null */
+        l2 = strlen(v) + 1;                        /* include null byte here */
+        s = g_malloc(l1 + 1 + l2);
+        *q++ = s;                                /* save the new pointer */
+        memcpy(s, *p, l1);                        /* left hand side */
+        s += l1;
+        *s++ = '=';
+        memcpy(s, v, l2);                        /* right hand side and null */
+    }
+    *q = NULL;                                /* terminate the list */
     return envp;
 }
