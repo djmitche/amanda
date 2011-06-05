@@ -1623,10 +1623,67 @@ debug_executing(
 }
 
 /*
- * safe_env_full - build a "safe" environment list.
+ * Build a "safe" environment list. The resulting pointer array is guaranteed to
+ * be NULL (this is required by execve() and friends anyway, and consists of
+ * dynamically allocated values. It is therefore the responsibility of the
+ * caller to free that array entirely (using g_strfreev()).
  */
-char **
-safe_env_full(char **add)
+
+char** safe_env_full(char **add)
+{
+    GPtrArray *array = g_ptr_array_new();
+    char **ptr, **env;
+    gboolean sameuid = (getuid() == geteuid() && getgid() == getegid());
+
+    if (add)
+        for (ptr = add; *ptr; ptr++)
+            g_ptr_array_add(array, *ptr);
+
+    env = (sameuid) ? safe_env_sameuid() : safe_env_safeonly();
+
+    for (ptr = env; *ptr; ptr++)
+        g_ptr_array_add(array, *ptr);
+
+    g_ptr_array_add(array, NULL);
+
+    return (char **)g_ptr_array_free(array, FALSE);
+}
+
+/*
+ * Build a safe environment in case the {u,g}id are the same as the e{u,g}id.
+ *
+ * In this case, we copy the full environment, EXCEPT the locale-related
+ * environment variables (LC_*, LANG).
+ */
+
+char **safe_env_sameuid(void)
+{
+
+    GPtrArray *array = g_ptr_array_new();
+    char **ptr;
+
+    for (ptr = environ; *ptr; ptr++) {
+        char *p = *ptr;
+
+        if (strncmp(p, "LANG=", 5) == 0)
+            continue;
+        if (strncmp(p, "LC_", 3) == 0)
+            continue;
+
+        g_ptr_array_add(array, g_strdup(p));
+    }
+
+    g_ptr_array_add(array, NULL);
+
+    return (char **)g_ptr_array_free(array, FALSE);
+}
+
+/*
+ * Build a safe environment in case the {u,g}id differ. In this case, we only
+ * append the variables we trust, defined in the safe_env_list[] array.
+ */
+
+char **safe_env_safeonly(void)
 {
     static char *safe_env_list[] = {
 	"TZ",
@@ -1640,61 +1697,20 @@ safe_env_full(char **add)
 	NULL
     };
 
-    char **envp;
 
-    char **p;
-    char **q;
-    char **env;
-    int    env_cnt;
-    int nadd = 0;
+    GPtrArray *array = g_ptr_array_new();
+    char **ptr;
+    char *var, *value;
 
-    /* count ADD */
-    for (p = add; p && *p; p++)
-	nadd++;
-
-    if (getuid() == geteuid() && getgid() == getegid()) {
-	env_cnt = 1;
-	for (env = environ; *env != NULL; env++)
-	    env_cnt++;
-        q = g_new(char *, nadd + env_cnt);
-        envp = q;
-        p = envp;
-        /* copy in ADD */
-        for (env = add; env && *env; env++) {
-            *p = *env;
-            p++;
-        }
-        for (env = environ; *env != NULL; env++) {
-            if (strncmp("LANG=", *env, 5) != 0 &&
-                strncmp("LC_", *env, 3) != 0) {
-                *p = g_strdup(*env);
-                p++;
-            }
-        }
-        *p = NULL;
-	return envp;
-    }
-
-    q = g_new(char *, nadd + G_N_ELEMENTS(safe_env_list));
-    envp = q;
-    /* copy in ADD */
-    for (p = add; p && *p; p++) {
-        *q = *p;
-        q++;
-    }
-
-    /* and copy any SAFE_ENV that are already set */
-    for (p = safe_env_list; *p != NULL; p++) {
-        char *var, *value;
-
-        var = *p;
+    for (ptr = safe_env_list; *ptr; ptr++) {
+        var = *ptr;
         value = getenv(var);
 
-        if (!value) /* No such variable */
-            continue;
-
-        *q++ = g_strdup_printf("%s=%s", var, value);
+        if (value)
+            g_ptr_array_add(array, g_strdup_printf("%s=%s", var, value));
     }
-    *q = NULL;                                /* terminate the list */
-    return envp;
+
+    g_ptr_array_add(array, NULL);
+
+    return (char **)g_ptr_array_free(array, FALSE);
 }

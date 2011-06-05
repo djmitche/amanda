@@ -391,10 +391,21 @@ void property_add_to_argv(GPtrArray *argv_ptr, GHashTable *proplist);
  */
 void debug_executing(GPtrArray *argv_ptr);
 
-/* return a "safe" version of the current environment; pass this to execle */
-#define safe_env() safe_env_full(NULL)
-
-/* like safe_env, but optionally add additional environment variables */
+/*
+ * Return a safe environment, with optionally added environment variables. The
+ * caller MUST ensure that the pointer array passed as an argument (if any) is
+ * NULL-terminated, and consists of dynamically allocated values.
+ *
+ * According to whether the euid and egid match the uid and gid respectively,
+ * one of the two versions below will be called to build the environment.
+ */
 char **safe_env_full(char **add);
+char **safe_env_sameuid(void);
+char **safe_env_safeonly(void);
+
+/*
+ * A wrapper over safe_env_full() with no extra environment variables to set up.
+ */
+#define safe_env() safe_env_full(NULL)
 
 #endif	/* UTIL_H */
